@@ -11,6 +11,12 @@
     },
     {
       "path": "./apps/coach"
+    },
+    {
+      "path": "./apps/api-e2e"
+    },
+    {
+      "path": "./apps/api"
     }
   ]
 }
