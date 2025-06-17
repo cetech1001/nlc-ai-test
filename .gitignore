@@ -49,3 +49,4 @@ out
 
 .env
 pgadmin/servers.json
+apps/api/src/generated/prisma
