@@ -21,6 +21,7 @@ COPY --from=deps /app/package*.json ./
 
 COPY . .
 
+RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 RUN npm list nx || npm install nx@latest
 RUN npx nx build web --prod
 

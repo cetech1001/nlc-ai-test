@@ -20,7 +20,9 @@ services:
     container_name: nlc_ai_redis_gui
     restart: unless-stopped
     environment:
-      REDIS_HOSTS: "render:${REDIS_URL}"
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "8081:8081"
 
