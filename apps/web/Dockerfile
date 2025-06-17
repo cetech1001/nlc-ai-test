@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM --platform=linux/amd64 node:18-alpine AS base
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -8,8 +8,8 @@ COPY package*.json ./
 COPY nx.json ./
 COPY tsconfig.base.json ./
 
-COPY apps/web/project.json ./apps/web/
-#COPY libs ./libs
+COPY apps/web/package.json ./apps/web/
+COPY libs ./libs
 
 RUN npm ci --only=production && npm cache clean --force
 
@@ -21,24 +21,26 @@ COPY --from=deps /app/package*.json ./
 
 COPY . .
 
+RUN npm list nx || npm install nx@latest
 RUN npx nx build web --prod
 
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/dist/apps/web ./
+COPY --from=builder /app/apps/web/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
 
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["npx", "next", "start"]
