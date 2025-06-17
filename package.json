@@ -6,7 +6,10 @@
     "prisma:generate": "prisma generate --schema=apps/api/prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=apps/api/prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema=apps/api/prisma/schema.prisma",
-    "prisma:pull": "prisma db pull --schema=apps/api/prisma/schema.prisma"
+    "prisma:pull": "prisma db pull --schema=apps/api/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=apps/api/prisma/schema.prisma",
+    "prisma:reset": "prisma migrate reset --schema=apps/api/prisma/schema.prisma",
+    "db:seed": "ts-node apps/api/prisma/seed.ts"
   },
   "private": true,
   "dependencies": {
