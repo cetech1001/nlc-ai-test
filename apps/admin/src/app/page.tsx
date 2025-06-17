@@ -9,14 +9,14 @@ export default function Index() {
    */
   return (
     <div>
-      
-      
+
+
     <div className="wrapper">
       <div className="container">
         <div id="welcome">
           <h1>
             <span> Hello there, </span>
-            Welcome @nlc-ai/admin 👋
+            Welcome Administrator 👋
           </h1>
         </div>
 
@@ -456,7 +456,7 @@ export default function Index() {
         </p>
       </div>
     </div>
-  
+
     </div>
   );
 };
