@@ -9,21 +9,17 @@ const { composePlugins, withNx } = require('@nx/next');
  **/
 const nextConfig = {
   output: 'standalone',
-
   nx: {
     svgr: false,
   },
-
   /*experimental: {
     optimizeCss: true,
   },*/
-
   images: {
     domains: [],
   },
-
+  transpilePackages: ['@nlc-ai/ui'],
   env: {},
-
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
