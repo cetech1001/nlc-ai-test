@@ -50,3 +50,6 @@ out
 .env
 pgadmin/servers.json
 apps/api/src/generated/prisma
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
