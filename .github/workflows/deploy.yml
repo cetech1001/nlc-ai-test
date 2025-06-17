@@ -152,47 +152,47 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
-    needs: [changes, build-web, build-admin, build-coach, build-api]
-    if: always() && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy Web to Render
-        if: ${{ needs.changes.outputs.web == 'true' }}
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache": "clear"}' \
-            https://api.render.com/v1/services/${{ secrets.RENDER_WEB_SERVICE_ID }}/deploys
-
-      - name: Deploy Admin to Render
-        if: ${{ needs.changes.outputs.admin == 'true' }}
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache": "clear"}' \
-            https://api.render.com/v1/services/${{ secrets.RENDER_ADMIN_SERVICE_ID }}/deploys
-
-      - name: Deploy Coach to Render
-        if: ${{ needs.changes.outputs.coach == 'true' }}
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache": "clear"}' \
-            https://api.render.com/v1/services/${{ secrets.RENDER_COACH_SERVICE_ID }}/deploys
-
-      - name: Deploy API to Render
-        if: ${{ needs.changes.outputs.api == 'true' }}
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache": "clear"}' \
-            https://api.render.com/v1/services/${{ secrets.RENDER_API_SERVICE_ID }}/deploys
+#  deploy:
+#    needs: [changes, build-web, build-admin, build-coach, build-api]
+#    if: always() && github.ref == 'refs/heads/main'
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Deploy Web to Render
+#        if: ${{ needs.changes.outputs.web == 'true' }}
+#        run: |
+#          curl -X POST \
+#            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+#            -H "Accept: application/json" \
+#            -H "Content-Type: application/json" \
+#            -d '{"clearCache": "clear"}' \
+#            https://api.render.com/v1/services/${{ secrets.RENDER_WEB_SERVICE_ID }}/deploys
+#
+#      - name: Deploy Admin to Render
+#        if: ${{ needs.changes.outputs.admin == 'true' }}
+#        run: |
+#          curl -X POST \
+#            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+#            -H "Accept: application/json" \
+#            -H "Content-Type: application/json" \
+#            -d '{"clearCache": "clear"}' \
+#            https://api.render.com/v1/services/${{ secrets.RENDER_ADMIN_SERVICE_ID }}/deploys
+#
+#      - name: Deploy Coach to Render
+#        if: ${{ needs.changes.outputs.coach == 'true' }}
+#        run: |
+#          curl -X POST \
+#            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+#            -H "Accept: application/json" \
+#            -H "Content-Type: application/json" \
+#            -d '{"clearCache": "clear"}' \
+#            https://api.render.com/v1/services/${{ secrets.RENDER_COACH_SERVICE_ID }}/deploys
+#
+#      - name: Deploy API to Render
+#        if: ${{ needs.changes.outputs.api == 'true' }}
+#        run: |
+#          curl -X POST \
+#            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+#            -H "Accept: application/json" \
+#            -H "Content-Type: application/json" \
+#            -d '{"clearCache": "clear"}' \
+#            https://api.render.com/v1/services/${{ secrets.RENDER_API_SERVICE_ID }}/deploys
