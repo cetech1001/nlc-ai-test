@@ -72,36 +72,3 @@ export function MetricCard({ title, value, change, icon: Icon, className }: Metr
     </Card>
   )
 }
-
-// libs/ui/src/components/charts/simple-chart.tsx
-
-
-// libs/ui/src/index.ts
-// Primitives
-
-
-// Layouts
-
-
-// Data Display
-
-
-// Forms
-
-
-// Feedback
-
-
-// Charts
-
-
-// Utils
-
-
-// Styles
-
-
-// Types
-
-
-// libs/ui/project.json

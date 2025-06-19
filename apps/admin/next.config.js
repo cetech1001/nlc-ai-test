@@ -12,9 +12,10 @@ const nextConfig = {
   nx: {
     svgr: false,
   },
-  /*experimental: {
-    optimizeCss: true,
-  },*/
+  experimental: {
+    // optimizeCss: true,
+    externalDir: true,
+  },
   images: {
     domains: [],
   },
