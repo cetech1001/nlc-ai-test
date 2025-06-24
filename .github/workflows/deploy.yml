@@ -2,7 +2,7 @@ name: Build and Deploy NLC AI Nx Monorepo
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
