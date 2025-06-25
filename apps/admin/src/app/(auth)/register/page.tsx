@@ -18,7 +18,7 @@ export default function RegisterPage() {
   };
 
   const handleSignIn = () => {
-    router.push("/");
+    router.push("/login");
   };
 
   return (
