@@ -5,16 +5,16 @@ import {Button, Input } from "@nlc-ai/ui";
 import {useRouter} from "next/navigation";
 import {useState} from "react";
 
-export default function ForgotPasswordPage() {
+export default function AccountVerification() {
   const router = useRouter();
   const [email, setEmail] = useState("");
 
-  const handleLogin = () => {
-    router.push("/login");
+  const handleVerify = () => {
+    router.push("/reset-password");
   };
 
-  const handleAccountVerification = () => {
-    router.push("/account-verification");
+  const handleLogin = () => {
+    router.push("/login");
   };
 
   return (
@@ -35,22 +35,28 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="text-center mb-8">
-          <div className="self-stretch text-center justify-center text-stone-50 text-4xl font-semibold font-['Inter'] leading-[48px]">
-            Forgot Password
-          </div>
-          <div className="self-stretch text-center justify-center text-zinc-500 text-xl font-normal font-['Inter'] leading-loose">
-            Enter your registered email address & we’ll send you code to reset your password.
+          <h1
+            className="self-stretch text-center justify-center text-stone-50 text-4xl font-semibold font-['Inter'] leading-[48px]">
+            Account Verification
+          </h1>
+          <div className="self-stretch text-center justify-center">
+            <span className="text-zinc-500 text-xl font-normal font-['Inter'] leading-loose">
+              Enter the verification code we’ve sent you to
+            </span>
+            <span className="text-stone-50 text-xl font-normal font-['Inter'] leading-loose">
+              &nbsp;user@email.com
+            </span>
           </div>
         </div>
 
         <div className="space-y-6 mb-10">
           <div className="space-y-2">
             <label className="block text-[14px] text-[#F9F9F9] leading-6">
-              Email<span className="text-[#FF3030]">*</span>
+              Verification Code<span className="text-[#FF3030]">*</span>
             </label>
             <Input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Enter verification code"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="min-h-[64px] px-4 text-[16px] leading-5 border-[#EFEFEF] bg-transparent text-[#F9F9F9] placeholder:text-[#F9F9F9]/50 focus:border-magenta-light focus:ring-magenta-light/20 rounded-[12px]"
@@ -59,24 +65,24 @@ export default function ForgotPasswordPage() {
         </div>
 
         <Button
-          onClick={handleAccountVerification}
+          onClick={handleVerify}
           className="w-full min-h-[64px] text-[16px] leading-[22px] font-semibold text-white border-0 hover:opacity-90 transition-opacity rounded-[8px] mb-[29px]"
           style={{
             background:
               "linear-gradient(19deg, #FEBEFA 6.78%, #B339D4 34.87%, #7B21BA 61.32%, #7B26F0 91.07%)",
           }}
         >
-          Reset Password
+          Verify
         </Button>
 
         <div className="text-center space-y-[6px]">
           <p className="text-[16px] leading-6 text-[#F9F9F9]">
-            Remember your password?{" "}
+            Didn't Receive Code?{" "}
             <button
               onClick={handleLogin}
               className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
             >
-              Login
+              Resend 01:10
             </button>
           </p>
           <p className="text-[14px] leading-normal text-[#828282]">
