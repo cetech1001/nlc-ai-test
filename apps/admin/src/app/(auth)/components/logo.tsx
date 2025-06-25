@@ -6,14 +6,14 @@ interface IProps {
 }
 
 export const Logo = ({ width = 94, height = 80}: IProps) => {
-  const [svgWidth, svgHeight] = [width - 3, height - 5];
+  // const [svgWidth, svgHeight] = [width - 3, height - 5];
 
   return (
-    <div className={`w-[${width}px] h-[${height}px] flex items-center justify-center relative`}>
+    <div className={`w-[94px] h-[80px] flex items-center justify-center relative`}>
       <svg
-        width={svgWidth}
-        height={svgHeight}
-        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        width={91}
+        height={75}
+        viewBox={`0 0 91 75`}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="absolute"

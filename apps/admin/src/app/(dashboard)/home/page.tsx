@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   ResponsiveContainer,
@@ -23,14 +23,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
-      {/* Mobile Dashboard Title */}
-      <div className="block sm:hidden">
-        <h1 className="text-white text-2xl font-semibold mb-4">Dashboard</h1>
-      </div>
-
-      {/* Main Dashboard Content */}
       <div className="flex flex-col xl:flex-row gap-6 lg:gap-8">
-        {/* Revenue Chart Section */}
+        {/* Revenue Chart Section - Reduced height */}
         <div className="flex-1 bg-[#1A1A1A] rounded-xl p-4 sm:p-6 border border-[#2A2A2A] min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
             <div className="min-w-0">
@@ -58,9 +52,20 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="h-48 sm:h-64 lg:h-80">
+          <div className="h-40 sm:h-48 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <AreaChart
+                data={revenueData}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#7B21BA" stopOpacity={0.8}/>
+                    <stop offset="50%" stopColor="#7B21BA" stopOpacity={0.3}/>
+                    <stop offset="100%" stopColor="#7B21BA" stopOpacity={0.05}/>
+                  </linearGradient>
+                </defs>
+
                 <XAxis
                   dataKey="month"
                   axisLine={false}
@@ -81,15 +86,24 @@ export default function AdminDashboard() {
                     "Revenue",
                   ]}
                 />
-                <Line
+
+                {/* Area component with gradient fill */}
+                <Area
                   type="monotone"
                   dataKey="revenue"
                   stroke="#7B21BA"
-                  strokeWidth={3}
+                  strokeWidth={2}
+                  fill="url(#revenueGradient)"
+                  fillOpacity={1}
                   dot={false}
-                  activeDot={{ r: 6, fill: "#7B21BA" }}
+                  activeDot={{
+                    r: 6,
+                    fill: "#7B21BA",
+                    stroke: "#ffffff",
+                    strokeWidth: 2
+                  }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -114,6 +128,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Mobile View */}
         <div className="block sm:hidden">
           <div className="divide-y divide-[#2A2A2A]">
             {coachesData.map((coach, index) => (
