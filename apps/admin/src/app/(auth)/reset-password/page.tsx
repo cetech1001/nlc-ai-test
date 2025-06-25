@@ -35,13 +35,13 @@ export default function ResetPassword() {
           <Logo />
         </div>
 
-        <div className="text-center mb-8 lg:mb-[50px]">
-          <h1 className="text-[32px] lg:text-[40px] font-semibold text-[#F9F9F9] leading-[1.2] mb-3">
+        <div className="text-center mb-8">
+          <h1 className="self-stretch text-center justify-center text-stone-50 text-4xl font-semibold font-['Inter'] leading-[48px]">
             Password Reset
           </h1>
-          <p className="text-[18px] lg:text-[20px] text-[#898989] leading-[1.2] max-w-md mx-auto">
+          <div className="self-stretch text-center justify-center text-zinc-500 text-xl font-normal font-['Inter'] leading-normal">
             Create a new password to reset your account access.
-          </p>
+          </div>
         </div>
 
         <div className="space-y-6 mb-10">

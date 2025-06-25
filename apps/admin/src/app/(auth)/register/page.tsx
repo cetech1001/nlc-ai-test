@@ -35,17 +35,17 @@ export default function RegisterPage() {
     >
 
       <div className="relative px-6 sm:px-8 lg:px-[119px] py-12 lg:py-16">
-        <div className="flex justify-center mb-10 lg:mb-14">
+        <div className="flex justify-center mb-10">
           <Logo />
         </div>
 
-        <div className="text-center mb-8 lg:mb-[50px]">
-          <h1 className="text-[32px] lg:text-[40px] font-semibold text-[#F9F9F9] leading-[1.2] mb-3">
+        <div className="text-center mb-8">
+          <h1 className="self-stretch text-center justify-center text-stone-50 text-4xl font-semibold font-['Inter'] leading-[48px]">
             Create An Account
           </h1>
-          <p className="text-[18px] lg:text-[20px] text-[#898989] leading-[1.2]">
+          <div className="self-stretch text-center justify-center text-zinc-500 text-xl font-normal font-['Inter'] leading-normal">
             Enter following details to create your account.
-          </p>
+          </div>
         </div>
 
         <div className="space-y-6 mb-10">
