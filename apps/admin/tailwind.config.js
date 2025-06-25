@@ -73,6 +73,10 @@ module.exports = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      spacing: {
+        'sidebar': '16rem',
+        'sidebar-collapsed': '3rem',
+      },
       keyframes: {
         "accordion-down": {
           from: {
@@ -90,10 +94,20 @@ module.exports = {
             height: "0",
           },
         },
+        'sidebar-expand': {
+          from: { width: '3rem' },
+          to: { width: '16rem' },
+        },
+        'sidebar-collapse': {
+          from: { width: '16rem' },
+          to: { width: '3rem' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        'sidebar-expand': 'sidebar-expand 0.2s ease-out',
+        'sidebar-collapse': 'sidebar-collapse 0.2s ease-out',
       },
     },
   },
