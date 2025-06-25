@@ -1,8 +1,3 @@
-// export * from "./components/primitives/button";
-// export * from "./components/primitives/card";
-// export * from "./components/primitives/input";
-// export * from "./components/primitives/label";
-
 export * from "./components/layouts/dashboard-layout";
 export * from "./components/layouts/page-header";
 export * from "./components/layouts/stats-grid";
@@ -41,3 +36,5 @@ export * from './components/ui/table';
 export * from './components/ui/toast';
 export * from './components/ui/toaster';
 export * from './components/ui/use-toast';
+
+export * from './components/icons/eye-lash';

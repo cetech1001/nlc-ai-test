@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Checkbox } from "@nlc-ai/ui";
-import { Eye, EyeOff } from "lucide-react";
+import { Button, Input, Checkbox, EyeLash } from "@nlc-ai/ui";
 
 import { Logo } from "@/app/(auth)/components/logo";
 import { GoogleIcon } from "@/app/(auth)/components/google-icon";
@@ -16,7 +15,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSignUp = () => {
-    router.push("/signup");
+    router.push("/register");
   };
 
   const handleForgotPassword = () => {
@@ -85,11 +84,7 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-6 h-6" />
-                  ) : (
-                    <Eye className="w-6 h-6" />
-                  )}
+                  <EyeLash/>
                 </button>
               </div>
             </div>
