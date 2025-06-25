@@ -94,7 +94,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Stats Cards Section */}
         <div className="w-full xl:w-80 grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-1 gap-4 lg:gap-6">
           <StatCard title="Total Coaches" value="565" />
           <StatCard title="All Time Revenue" value="$718,240" />
@@ -103,7 +102,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recently Joined Coaches Table */}
       <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-[#2A2A2A]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -116,7 +114,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Mobile Table View */}
         <div className="block sm:hidden">
           <div className="divide-y divide-[#2A2A2A]">
             {coachesData.map((coach, index) => (

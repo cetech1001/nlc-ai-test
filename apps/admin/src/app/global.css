@@ -30,6 +30,16 @@
     --magenta-light: 290 100% 72%;
     --magenta: 286 73% 55%;
     --error: 0 100% 59%;
+
+    /* Sidebar variables */
+    --sidebar-background: 10 10% 4%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 280 80% 43.5%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 16.7 16.7% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 16.7 16.7% 10%;
+    --sidebar-ring: 290 100% 72%;
   }
 
   .dark {
@@ -49,9 +59,19 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 0 0% 94%;
-    --input: 0 0% 94%;
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
     --ring: 290 100% 72%;
+
+    /* Sidebar dark theme */
+    --sidebar-background: 10 10% 4%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 280 80% 43.5%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 16.7 16.7% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 16.7 16.7% 10%;
+    --sidebar-ring: 290 100% 72%;
   }
 }
 
@@ -62,6 +82,29 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Fix for mobile sidebar background */
+[data-mobile="true"] {
+  background-color: #0A0A0A !important;
+}
+
+/* Ensure sheet content has proper background */
+[data-sidebar="sidebar"][data-mobile="true"] {
+  background-color: #0A0A0A !important;
+}
+
+/* Hide screen reader text properly */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (max-width: 640px) {
@@ -86,5 +129,12 @@
 
   .sidebar-mobile.open {
     transform: translateX(0);
+  }
+}
+
+/* Adjust main content for fixed sidebar on desktop */
+@media (min-width: 768px) {
+  .md\\:ml-64 {
+    margin-left: 16rem;
   }
 }
