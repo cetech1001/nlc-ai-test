@@ -31,7 +31,7 @@ export const AuthInput = React.forwardRef<HTMLInputElement, AuthInputProps>(
             ref={ref}
             type={inputType}
             className={cn(
-              "w-full auth-input",
+              "w-full (auth)-input",
               error && "border-red-400 focus:border-red-400 focus:shadow-red-400/20",
               className
             )}

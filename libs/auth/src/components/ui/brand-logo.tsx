@@ -13,7 +13,7 @@ export function BrandLogo({ className, size = "md" }: BrandLogoProps) {
   }
 
   return (
-    <div className={cn("auth-logo", sizeClasses[size], className)}>
+    <div className={cn("(auth)-logo", sizeClasses[size], className)}>
       {/* The CSS pseudo-element creates the arrow/play icon */}
     </div>
   )

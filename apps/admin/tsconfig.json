@@ -51,6 +51,9 @@
   "references": [
     {
       "path": "../../libs/ui"
+    },
+    {
+      "path": "../../libs/auth"
     }
   ]
 }

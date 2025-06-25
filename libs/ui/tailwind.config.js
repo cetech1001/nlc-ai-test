@@ -1,4 +1,3 @@
-// libs/ui/tailwind.config.js
 const { createGlobPatternsForDependencies } = require('@nx/react/tailwind');
 const { join } = require('path');
 
@@ -11,7 +10,6 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Brand colors from Figma
         brand: {
           50: '#f0f9ff',
           100: '#e0f2fe',

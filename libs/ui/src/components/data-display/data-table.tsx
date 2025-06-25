@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "../../utils/cn"
 
-interface Column<T> {
+export interface DataTableColumn<T> {
   key: keyof T
   header: string
   render?: (value: any, row: T) => React.ReactNode
@@ -11,7 +11,7 @@ interface Column<T> {
 
 interface DataTableProps<T> {
   data: T[]
-  columns: Column<T>[]
+  columns: DataTableColumn<T>[]
   onRowClick?: (row: T) => void
   className?: string
   loading?: boolean

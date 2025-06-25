@@ -4,7 +4,7 @@ import {
   DashboardLayout,
   PageHeader,
   MetricCard,
-  Button, DataTable
+  Button, DataTable, DataTableColumn
 } from "@nlc-ai/ui";
 import {
   Users,
@@ -26,7 +26,7 @@ const adminNavItems = [
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ]
 
-const columns = [
+const columns: DataTableColumn<{ userId: string; name: string; }>[] = [
   { key: 'userId', header: 'User ID' },
   { key: 'name', header: 'Name' },
 ];

@@ -16,7 +16,7 @@ export const AuthButton = React.forwardRef<HTMLButtonElement, AuthButtonProps>(
         disabled={disabled || loading}
         className={cn(
           "w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
-          variant === "primary" ? "auth-button-primary" : "auth-button-secondary",
+          variant === "primary" ? "(auth)-button-primary" : "(auth)-button-secondary",
           className
         )}
         {...props}

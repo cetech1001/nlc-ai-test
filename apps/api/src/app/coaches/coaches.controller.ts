@@ -12,7 +12,7 @@ import {
 import { CoachesService } from './coaches.service';
 import { CreateCoachDto, UpdateCoachDto } from './dto';
 import {ApiTags} from "@nestjs/swagger";
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+// import { JwtAuthGuard } from '../(auth)/guards/jwt-(auth).guard';
 
 @ApiTags('Coaches Controller')
 @Controller('coaches')
