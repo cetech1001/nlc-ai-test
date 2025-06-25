@@ -14,12 +14,6 @@ export * from "./components/feedback/empty-state";
 export * from "./components/charts/metric-card";
 export * from "./components/charts/simple-chart";
 
-export * from "./utils/cn";
-
-export * from "./styles/globals.css";
-
-export * from "./types";
-
 export * from './components/ui/button';
 export * from './components/ui/input';
 export * from './components/ui/card';
@@ -38,3 +32,9 @@ export * from './components/ui/toaster';
 export * from './components/ui/use-toast';
 
 export * from './components/icons/eye-lash';
+
+export * from "./utils/cn";
+
+export * from "./styles/globals.css";
+
+export * from "./types";
