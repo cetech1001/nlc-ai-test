@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Checkbox, EyeLash } from "@nlc-ai/ui";
+import { Button, Input, Checkbox, EyeLashIcon } from "@nlc-ai/ui";
 
 import { Logo } from "@/app/(auth)/components/logo";
 import { GoogleIcon } from "@/app/(auth)/components/google-icon";
@@ -23,7 +23,7 @@ export default function LoginPage() {
   };
 
   const handleLogin = () => {
-    router.push("/dashboard");
+    router.push("/home");
   };
 
   return (
@@ -84,7 +84,7 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
                 >
-                  <EyeLash/>
+                  <EyeLashIcon/>
                 </button>
               </div>
             </div>

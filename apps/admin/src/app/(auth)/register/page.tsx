@@ -1,7 +1,7 @@
 'use client'
 
 import {Logo} from "@/app/(auth)/components/logo";
-import {Button, Input, EyeLash } from "@nlc-ai/ui";
+import {Button, Input, EyeLashIcon } from "@nlc-ai/ui";
 import {useRouter} from "next/navigation";
 import {useState} from "react";
 
@@ -92,7 +92,7 @@ export default function RegisterPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
               >
-                <EyeLash/>
+                <EyeLashIcon/>
               </button>
             </div>
           </div>

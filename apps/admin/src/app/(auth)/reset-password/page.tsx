@@ -3,7 +3,7 @@
 import {useRouter} from "next/navigation";
 import {useState} from "react";
 import {Logo} from "@/app/(auth)/components/logo";
-import { Input, EyeLash, Button } from "@nlc-ai/ui";
+import { Input, EyeLashIcon, Button } from "@nlc-ai/ui";
 
 export default function ResetPassword() {
   const router = useRouter();
@@ -62,7 +62,7 @@ export default function ResetPassword() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
               >
-                <EyeLash/>
+                <EyeLashIcon/>
               </button>
             </div>
           </div>

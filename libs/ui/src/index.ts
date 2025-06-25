@@ -1,19 +1,3 @@
-export * from "./components/layouts/dashboard-layout";
-export * from "./components/layouts/page-header";
-export * from "./components/layouts/stats-grid";
-
-export * from "./components/data-display/data-table";
-
-export * from "./components/forms/form-field";
-export * from "./components/forms/search-input";
-
-export * from "./components/feedback/alert";
-export * from "./components/feedback/loading-spinner";
-export * from "./components/feedback/empty-state";
-
-export * from "./components/charts/metric-card";
-export * from "./components/charts/simple-chart";
-
 export * from './components/ui/button';
 export * from './components/ui/input';
 export * from './components/ui/card';
@@ -31,10 +15,15 @@ export * from './components/ui/toast';
 export * from './components/ui/toaster';
 export * from './components/ui/use-toast';
 
+export * from './components/icons/calendar'
 export * from './components/icons/eye-lash';
+export * from './components/icons/home';
+export * from './components/icons/plans';
+export * from './components/icons/sleep';
+export * from './components/icons/speaker';
+export * from './components/icons/transactions';
+export * from './components/icons/user';
+export * from './components/icons/settings';
+export * from './components/icons/logout';
 
 export * from "./utils/cn";
-
-export * from "./styles/globals.css";
-
-export * from "./types";

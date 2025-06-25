@@ -1,31 +1,33 @@
 'use client'
 
 import {useRouter} from "next/navigation";
-import {
-  Home,
-  Users,
-  Calendar,
-  MessageSquare,
-  Settings,
-  HelpCircle,
-  LogOut,
-  CreditCard,
-} from "lucide-react";
 import {useState} from "react";
 import {Logo} from "@/app/(auth)/components/logo";
+import {
+  HomeIcon,
+  UserIcon,
+  PlansIcon,
+  CalendarIcon,
+  TransactionsIcon,
+  SleepIcon,
+  SpeakerIcon,
+  SettingsIcon,
+  LogoutIcon
+} from "@nlc-ai/ui";
 
 export const Sidebar = () => {
   const router = useRouter();
   const [activeItem, setActiveItem] = useState("Dashboard");
 
   const menuItems = [
-    { icon: Home, label: "Dashboard", path: "/(dashboard)" },
-    { icon: Users, label: "Coaches", path: "/coaches" },
-    { icon: CreditCard, label: "Subscription Plans", path: "/subscription-plans" },
-    { icon: Calendar, label: "Calendar", path: "/calendar" },
-    { icon: MessageSquare, label: "Messages", path: "/messages" },
-    { icon: Settings, label: "Settings", path: "/settings" },
-    { icon: HelpCircle, label: "Help", path: "/help" },
+    { icon: HomeIcon, label: "Dashboard", path: "/home" },
+    { icon: UserIcon, label: "Coaches", path: "/coaches" },
+    { icon: PlansIcon, label: "Subscription Plans", path: "/subscription-plans" },
+    { icon: TransactionsIcon, label: "Transactions", path: "/transactions" },
+    { icon: SleepIcon, label: "Inactive Coaches", path: "/inactive-coaches" },
+    { icon: CalendarIcon, label: "Calendar", path: "/calendar" },
+    { icon: SpeakerIcon, label: "Help", path: "/help" },
+    // { icon: SettingsIcon, label: "Settings", path: "/settings" },
   ];
 
   const handleLogout = () => {
@@ -44,7 +46,6 @@ export const Sidebar = () => {
       <div className="p-6 border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
           <Logo />
-          <span className="text-white text-lg font-semibold">Dashboard</span>
         </div>
       </div>
 
@@ -63,11 +64,25 @@ export const Sidebar = () => {
                     : "text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A]"
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <span className={"w-1/6"}>
+                  <Icon />
+                </span>
+                <span></span>
                 {item.label}
               </button>
             );
           })}
+
+          <div className={"border-b border-[#1A1A1A]"}></div>
+
+          <button
+            key={'Settings'}
+            onClick={() => handleNavigation({ icon: SettingsIcon, label: "Settings", path: "/settings" })}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A]`}
+          >
+            <SettingsIcon />
+            Settings
+          </button>
         </nav>
       </div>
 
@@ -76,7 +91,7 @@ export const Sidebar = () => {
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A] transition-colors"
         >
-          <LogOut className="w-5 h-5" />
+          <LogoutIcon />
           Logout
         </button>
       </div>
