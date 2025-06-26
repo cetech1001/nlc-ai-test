@@ -59,7 +59,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
   };
 
   const SidebarContent = () => (
-    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[#0A0A0A] px-6 pb-4">
+    <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[#1A1A1A] bg-[#0A0A0A] px-6 pb-4">
       <div className="flex h-24 shrink-0 items-center border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
           <Logo />
