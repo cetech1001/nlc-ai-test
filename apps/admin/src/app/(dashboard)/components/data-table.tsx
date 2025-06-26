@@ -199,11 +199,14 @@ export const tableRenderers = {
   ),
 
   simpleStatus: (value: string) => (
-    <span className={`text-sm font-normal leading-relaxed ${
-      value === "Active" ? "text-green-600" : "text-red-600"
-    }`}>
-    {value}
-  </span>
+    <div className="inline-flex items-center gap-2">
+      <span className={`text-sm font-normal leading-relaxed ${
+        value === "Active" ? "text-green-600" : "text-red-600"
+      }`}>
+        {value}
+      </span>
+      <ChevronDown className="w-4 h-4 text-stone-50" />
+    </div>
   ),
 
   simpleActions: (value: any, row: any, onAction?: (action: string, row: any) => void) => (

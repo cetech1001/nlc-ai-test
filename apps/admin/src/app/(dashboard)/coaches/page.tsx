@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { allCoachesData } from "@/app/data";
-import { ChevronDown, Filter, Search } from "lucide-react";
+import { ChevronDown, Settings2, Search } from "lucide-react";
 import { DataTable, tableRenderers } from "@/app/(dashboard)/components/data-table";
 
 export default function Coaches() {
@@ -74,64 +74,61 @@ export default function Coaches() {
     return pages;
   };
 
-  // Define table columns with custom widths
+  const colWidth = 100 / 7;
   const columns = [
     {
       key: 'id',
       header: 'User ID',
-      width: '120px',
+      width: `${colWidth}%`,
       render: tableRenderers.basicText
     },
     {
       key: 'name',
       header: 'Name',
-      width: '180px',
+      width: `${colWidth}%`,
       render: (value: string) => tableRenderers.truncateText(value, 20)
     },
     {
       key: 'email',
       header: 'Email',
-      width: '200px',
+      width: `${colWidth * (5 / 3)}%`,
       render: (value: string) => tableRenderers.truncateText(value, 25)
     },
     {
       key: 'dateJoined',
       header: 'Date Joined',
-      width: '140px',
+      width: `${colWidth}%`,
       render: tableRenderers.dateText
     },
     {
       key: 'plan',
       header: 'Plan',
-      width: '120px',
+      width: `${colWidth * (2 / 3)}%`,
       render: tableRenderers.basicText
     },
     {
       key: 'status',
       header: 'Status',
-      width: '120px',
-      render: tableRenderers.status
+      width: `${colWidth * (2 / 3)}%`,
+      render: tableRenderers.simpleStatus,
     },
     {
       key: 'actions',
       header: 'Actions',
-      width: 'auto',
-      render: (value: any, row: any, onAction?: (action: string, row: any) => void) =>
-        tableRenderers.actions(value, row, onAction)
+      width: `${colWidth}%`,
+      render: tableRenderers.simpleActions,
     }
   ];
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
-        {/* Header Section with Title, Search, and Filter */}
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <h2 className="text-stone-50 text-3xl font-medium leading-relaxed">
             Coaches List
           </h2>
           <div className="flex items-center gap-3">
-            {/* Search Bar */}
-            <div className="relative bg-transparent rounded-2xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
+            <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-[100rem] max-w-md">
               <input
                 type="text"
                 placeholder="Search users using name, plan, email etc."
@@ -141,9 +138,9 @@ export default function Coaches() {
               />
               <Search className="w-5 h-5 text-white" />
             </div>
-            {/* Filter Button */}
-            <button className="w-14 h-14 bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 rounded-2xl flex items-center justify-center hover:opacity-90 transition-opacity">
-              <Filter className="w-8 h-8 text-white" />
+
+            <button className="w-10 h-10 bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity p-2">
+              <Settings2 className="w-8 h-8 text-white" />
             </button>
           </div>
         </div>
