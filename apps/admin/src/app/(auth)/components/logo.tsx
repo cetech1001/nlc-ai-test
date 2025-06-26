@@ -3,20 +3,20 @@
 interface IProps {
   height?: number;
   width?: number;
+  className?: string;
 }
 
-export const Logo = ({ width = 94, height = 80}: IProps) => {
-  // const [svgWidth, svgHeight] = [width - 3, height - 5];
-
+export const Logo = ({ width = 94, height = 80, className = ""}: IProps) => {
   return (
-    <div className={`w-[94px] h-[80px] flex items-center justify-center relative`}>
-      <svg
-        width={91}
-        height={75}
-        viewBox={`0 0 91 75`}
+    <div className={`relative flex items-center justify-center ${className}`} style={{ width: `${width}px`, height: `${height}px` }}>
+      {/*<svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 91 75"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="absolute"
+        className="absolute inset-0"
+        preserveAspectRatio="xMidYMid meet"
       >
         <path
           d="M21.9795 37.2997C21.9795 37.2997 33.4398 27.1444 42.4689 51.5079C51.498 75.8714 71.3759 31.1707 71.3759 31.1707C71.3759 31.1707 60.4303 53.202 46.43 21.6003C32.4296 -10.0014 21.9795 37.2972 21.9795 37.2972V37.2997Z"
@@ -71,6 +71,8 @@ export const Logo = ({ width = 94, height = 80}: IProps) => {
           </linearGradient>
         </defs>
       </svg>
+
+       Star accent SVG
       <svg
         width="8"
         height="9"
@@ -78,6 +80,10 @@ export const Logo = ({ width = 94, height = 80}: IProps) => {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="absolute top-0 right-0"
+        style={{
+          transform: `scale(${Math.min(width / 94, height / 80)})`,
+          transformOrigin: 'top right'
+        }}
       >
         <g clipPath="url(#clip0_star)">
           <path
@@ -108,7 +114,8 @@ export const Logo = ({ width = 94, height = 80}: IProps) => {
             />
           </clipPath>
         </defs>
-      </svg>
+      </svg>*/}
+      <img src={"/logo.png"} alt={"Logo"}/>
     </div>
   );
 }

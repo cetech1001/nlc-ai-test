@@ -60,10 +60,10 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
 
   const SidebarContent = () => (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[#1A1A1A] bg-[#0A0A0A] px-6 pb-4">
-      <div className="flex h-24 shrink-0 items-center border-b border-[#1A1A1A]">
+      <div className="flex h-16 shrink-0 items-center border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
-          <Logo />
-          <span className="text-white font-semibold text-lg">ADMIN</span>
+          <Logo height={40} width={48}/>
+          <span className="text-white font-semibold text-lg">NLC AI ADMIN</span>
         </div>
       </div>
 
@@ -153,7 +153,6 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
 
   return (
     <>
-      {/* Mobile sidebar */}
       <Transition.Root show={sidebarOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpenAction}>
           <Transition.Child
@@ -202,7 +201,6 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
         </Dialog>
       </Transition.Root>
 
-      {/* Static sidebar for desktop */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <SidebarContent />
       </div>
