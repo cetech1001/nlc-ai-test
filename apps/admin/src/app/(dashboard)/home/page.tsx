@@ -9,22 +9,77 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-/*import {
-  MoreHorizontal,
-  ChevronDown,
-} from "lucide-react";*/
 import { StatCard } from "@/app/(dashboard)/components/stat-card";
-// import { useRouter } from "next/navigation";
+import {DataTable, TableAction, tableRenderers} from "@/app/(dashboard)/components/data-table";
+import { useRouter } from "next/navigation";
 import { coachesData, revenueData } from "@/app/data";
 
 export default function AdminDashboard() {
-  // const router = useRouter();
+  const router = useRouter();
   const [timePeriod, setTimePeriod] = useState("Year");
 
-  const handleMakePayment = (coach: any) => {
-    // Router functionality would go here
-    console.log('Making payment for:', coach.name);
+  const handleRowAction = (action: string, coach: any) => {
+    if (action === 'payment') {
+      router.push(`/make-payment?coach=${encodeURIComponent(coach.name)}&email=${encodeURIComponent(coach.email)}&date=${encodeURIComponent(coach.dateJoined)}&plan=${encodeURIComponent(coach.plan)}&status=${encodeURIComponent(coach.status)}`);
+    } else if (action === 'view') {
+      console.log('Viewing coach:', coach.name);
+      // Add view logic here
+    }
   };
+
+  const colWidth = 100 / 7;
+  const coachColumns = [
+    {
+      key: 'id',
+      header: 'User ID',
+      width: `${colWidth}%`,
+      render: tableRenderers.basicText
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      width: `${colWidth}%`,
+      render: (value: string) => tableRenderers.truncateText(value, 18)
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      width: `${colWidth * (5 / 3)}%`,
+      render: (value: string) => tableRenderers.truncateText(value, 25)
+    },
+    {
+      key: 'dateJoined',
+      header: 'Date Joined',
+      width: `${colWidth}%`,
+      render: tableRenderers.dateText
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      width: `${colWidth * (2 / 3)}%`,
+      render: tableRenderers.basicText
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      width: `${colWidth * (2 / 3)}%`,
+      render: tableRenderers.simpleStatus
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: `${colWidth}%`,
+      render: tableRenderers.simpleActions
+    }
+  ];
+
+  const actions: TableAction[] = [
+    {
+      label: 'Make Payment',
+      action: 'payment',
+      variant: 'primary',
+    }
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
@@ -132,122 +187,22 @@ export default function AdminDashboard() {
           <h2 className="text-stone-50 text-xl sm:text-2xl font-semibold leading-relaxed">
             Recently Joined Coaches
           </h2>
-          <button className="text-fuchsia-400 text-sm font-bold hover:text-fuchsia-300 transition-colors self-start sm:self-auto">
+          <button
+            onClick={() => router.push('/coaches')}
+            className="text-fuchsia-400 text-sm font-bold hover:text-fuchsia-300 transition-colors self-start sm:self-auto"
+          >
             View All
           </button>
         </div>
 
-        <div className="block sm:hidden">
-          <div className="space-y-4">
-            {coachesData.map((coach) => (
-              <div key={coach.id} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-                </div>
-                <div className="relative z-10 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-stone-50 font-medium text-base leading-tight truncate">{coach.name}</h3>
-                      <p className="text-stone-300 text-sm leading-tight mt-0.5">{coach.id}</p>
-                    </div>
-                    <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                      <span
-                        className={`text-sm font-medium whitespace-nowrap ${
-                          coach.status === "Active"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {coach.status}
-                      </span>
-                      {/*<ChevronDown className="w-4 h-4 text-stone-50" />*/}
-                    </div>
-                  </div>
-                  <div className="text-stone-300 text-sm leading-tight space-y-1">
-                    <p className="truncate">{coach.email}</p>
-                    <p className="text-xs">
-                      <span className="text-stone-400">{coach.dateJoined}</span>
-                      <span className="text-stone-500 mx-1">•</span>
-                      <span className="text-stone-300">{coach.plan}</span>
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleMakePayment(coach)}
-                    className="text-fuchsia-400 text-sm font-medium underline hover:text-fuchsia-300 transition-colors"
-                  >
-                    Make Payment
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="hidden sm:block relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden">
-          <div className="absolute inset-0 opacity-20">
-            {[...Array(7)].map((_, i) => (
-              <div
-                key={i}
-                className={`absolute w-56 h-56 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]`}
-                style={{
-                  left: `${-46 + i * 290}px`,
-                  top: i === 0 ? '-80px' : '-40px',
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="relative z-10">
-            <div className="h-16 rounded-tl-[30px] rounded-tr-[30px] flex items-center bg-[#7B21BA] px-6">
-              <div className="w-full grid grid-cols-7 gap-4 text-sm lg:text-base">
-                <div className="text-stone-50 font-semibold leading-relaxed">User ID</div>
-                <div className="text-stone-50 font-semibold leading-relaxed">Name</div>
-                <div className="text-stone-50 font-semibold leading-relaxed">Email</div>
-                <div className="text-stone-50 font-semibold leading-relaxed">Date Joined</div>
-                <div className="text-stone-50 font-semibold leading-relaxed">Plan</div>
-                <div className="text-stone-50 font-semibold leading-relaxed">Status</div>
-                <div className="text-stone-50 font-semibold leading-relaxed text-right">Actions</div>
-              </div>
-            </div>
-
-            <div className="divide-y divide-neutral-700">
-              {coachesData.map((coach, index) => (
-                <div key={coach.id} className="h-16 flex items-center px-6 hover:bg-black/10 transition-colors">
-                  <div className="w-full grid grid-cols-7 gap-4 items-center text-sm lg:text-base">
-                    <div className="text-stone-50 font-normal leading-relaxed">{coach.id}</div>
-                    <div className="text-stone-50 font-normal leading-relaxed truncate">{coach.name}</div>
-                    <div className="text-stone-50 font-normal leading-relaxed truncate">{coach.email}</div>
-                    <div className="text-stone-50 font-normal leading-relaxed whitespace-nowrap">{coach.dateJoined}</div>
-                    <div className="text-stone-50 font-normal leading-relaxed">{coach.plan}</div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-sm font-normal leading-relaxed ${
-                          coach.status === "Active"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {coach.status}
-                      </span>
-                      {/*<ChevronDown className="w-4 h-4 text-stone-50" />*/}
-                    </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleMakePayment(coach)}
-                        className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
-                      >
-                        Make Payment
-                      </button>
-                      {/*<button className="text-stone-50 hover:text-stone-300 transition-colors">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>*/}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <DataTable
+          columns={coachColumns}
+          data={coachesData}
+          onRowAction={handleRowAction}
+          actions={actions}
+          showMobileCards={true}
+          emptyMessage="No coaches found"
+        />
       </div>
     </div>
   );

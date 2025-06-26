@@ -1,4 +1,3 @@
-// Mock data for the revenue chart
 export const revenueData = [
   { month: "Jan", revenue: 45000 },
   { month: "Feb", revenue: 52000 },
@@ -14,7 +13,6 @@ export const revenueData = [
   { month: "Dec", revenue: 98000 },
 ];
 
-// Mock data for recently joined coaches
 export const coachesData = [
   {
     id: "#1234",
@@ -63,5 +61,129 @@ export const coachesData = [
     dateJoined: "Mar 15, 2025",
     plan: "Starter",
     status: "Active",
+  },
+];
+
+export const allCoachesData = [
+  {
+    id: "#1234",
+    name: "Charlie Levin",
+    email: "charlie.levin@gmail.com",
+    dateJoined: "Mar 25, 2025",
+    plan: "Starter",
+    status: "Active",
+  },
+  {
+    id: "#1233",
+    name: "Cheyenne Avera",
+    email: "cheyenne@gmail.com",
+    dateJoined: "Mar 25, 2025",
+    plan: "Premium",
+    status: "Blocked",
+  },
+  {
+    id: "#1232",
+    name: "Paylyn George",
+    email: "paylyn.george@gmail.com",
+    dateJoined: "Mar 22, 2025",
+    plan: "Growth",
+    status: "Active",
+  },
+  {
+    id: "#1231",
+    name: "Ryan Das",
+    email: "ryan.d@gmail.com",
+    dateJoined: "Mar 22, 2025",
+    plan: "Premium",
+    status: "Blocked",
+  },
+  {
+    id: "#1230",
+    name: "Erin Press",
+    email: "erin.press@gmail.com",
+    dateJoined: "Mar 21, 2025",
+    plan: "Growth",
+    status: "Active",
+  },
+  {
+    id: "#1229",
+    name: "Jordyn Herwitz",
+    email: "jordyn.herwitz@gmail.com",
+    dateJoined: "Mar 15, 2025",
+    plan: "Starter",
+    status: "Active",
+  },
+  {
+    id: "#1228",
+    name: "Zaire Botosh",
+    email: "zaire.botosh@gmail.com",
+    dateJoined: "Mar 14, 2025",
+    plan: "Growth",
+    status: "Blocked",
+  },
+  {
+    id: "#1227",
+    name: "Zan Das",
+    email: "zan.das@gmail.com",
+    dateJoined: "Mar 14, 2025",
+    plan: "Premium",
+    status: "Blocked",
+  },
+  {
+    id: "#1226",
+    name: "Erin Herwitz",
+    email: "erin.herwitz@gmail.com",
+    dateJoined: "Mar 12, 2025",
+    plan: "Starter",
+    status: "Active",
+  },
+  {
+    id: "#1225",
+    name: "Philip Dokidis",
+    email: "philip.d@gmail.com",
+    dateJoined: "Mar 12, 2025",
+    plan: "Starter",
+    status: "Active",
+  },
+  // Additional coaches for pagination demo
+  {
+    id: "#1224",
+    name: "Sarah Johnson",
+    email: "sarah.johnson@gmail.com",
+    dateJoined: "Mar 10, 2025",
+    plan: "Premium",
+    status: "Active",
+  },
+  {
+    id: "#1223",
+    name: "Mike Chen",
+    email: "mike.chen@gmail.com",
+    dateJoined: "Mar 09, 2025",
+    plan: "Growth",
+    status: "Blocked",
+  },
+  {
+    id: "#1222",
+    name: "Lisa Wang",
+    email: "lisa.wang@gmail.com",
+    dateJoined: "Mar 08, 2025",
+    plan: "Starter",
+    status: "Active",
+  },
+  {
+    id: "#1221",
+    name: "David Miller",
+    email: "david.miller@gmail.com",
+    dateJoined: "Mar 07, 2025",
+    plan: "Premium",
+    status: "Active",
+  },
+  {
+    id: "#1220",
+    name: "Emma Davis",
+    email: "emma.davis@gmail.com",
+    dateJoined: "Mar 06, 2025",
+    plan: "Growth",
+    status: "Blocked",
   },
 ];
