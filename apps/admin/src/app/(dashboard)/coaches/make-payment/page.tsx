@@ -33,7 +33,7 @@ export default function MakePayment() {
       <div className={`transition-all duration-300 ${ isPaymentModalOpen ? 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' : ''}`}>
 
         <div className="py-8">
-          <h2 className="text-stone-50 text-3xl font-medium font-['Inter'] leading-relaxed">Make Payment</h2>
+          <h2 className="text-stone-50 text-2xl font-medium font-['Inter'] leading-relaxed">Make Payment</h2>
         </div>
 
         <div className="mb-8">

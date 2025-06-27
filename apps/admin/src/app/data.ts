@@ -1,4 +1,4 @@
-import {tableRenderers} from "@/app/(dashboard)/components/data-table";
+import {TableColumn, tableRenderers} from "@/app/(dashboard)/components/data-table";
 
 export const revenueData = [
   { month: "Jan", revenue: 45000 },
@@ -325,4 +325,374 @@ export const getPlans = (currentPlan: string): Plan[] => [
     isCurrentPlan: currentPlan === "Scale Elite",
     colorClass: "bg-gradient-to-b from-violet-600 via-fuchsia-600 to-fuchsia-200 rotate-45",
   },
+];
+
+const txColWidth = 100 / 8;
+export const transactionColumns: TableColumn<Transaction>[] = [
+  {
+    key: 'id',
+    header: 'Transaction ID',
+    width: `${txColWidth * (3 / 4)}%`,
+    render: tableRenderers.basicText
+  },
+  {
+    key: 'name',
+    header: 'Name',
+    width: `${txColWidth}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 16)
+  },
+  {
+    key: 'email',
+    header: 'Email',
+    width: `${txColWidth * (5 / 4)}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 22)
+  },
+  {
+    key: 'subscriptionPlan',
+    header: 'Subscription Plan',
+    width: `${txColWidth}%`,
+    render: tableRenderers.basicText
+  },
+  {
+    key: 'invoiceDate',
+    header: 'Invoice Date',
+    width: `${txColWidth * (4 / 5)}%`,
+    render: tableRenderers.dateText
+  },
+  {
+    key: 'transactionDate',
+    header: 'Transaction Date',
+    width: `${txColWidth}%`,
+    render: tableRenderers.dateText
+  },
+  {
+    key: 'amount',
+    header: 'Amount',
+    width: `${txColWidth * (3 / 4)}%`,
+    render: tableRenderers.currencyText
+  },
+  {
+    key: 'actions',
+    header: 'Actions',
+    width: 'auto',
+    render: (value: string, row: Transaction, callback) => {
+      return tableRenderers.actions('Download', row, 'download', callback);
+    }
+  }
+];
+
+export interface Transaction {
+  id: string;
+  name: string;
+  email: string;
+  subscriptionPlan: 'Starter' | 'Premium' | 'Growth' | 'Scale Elite';
+  invoiceDate: string;
+  transactionDate: string;
+  amount: number;
+  status: 'completed' | 'pending' | 'failed' | 'refunded';
+  paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer';
+  currency: string;
+}
+
+export const sampleTransactions: Transaction[] = [
+  {
+    id: '#1234',
+    name: 'Charlie Levin',
+    email: 'charlie.levin@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Mar 25, 2025',
+    transactionDate: 'Mar 25, 2025',
+    amount: 400,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1233',
+    name: 'Cheyenne Avara',
+    email: 'cheyenne@email.com',
+    subscriptionPlan: 'Premium',
+    invoiceDate: 'Mar 25, 2025',
+    transactionDate: 'Mar 25, 2025',
+    amount: 2000,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1232',
+    name: 'Paityn George',
+    email: 'paityn.george@email.com',
+    subscriptionPlan: 'Growth',
+    invoiceDate: 'Mar 22, 2025',
+    transactionDate: 'Mar 22, 2025',
+    amount: 1200,
+    status: 'completed',
+    paymentMethod: 'debit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1231',
+    name: 'Ryan Dias',
+    email: 'ryan.d@email.com',
+    subscriptionPlan: 'Premium',
+    invoiceDate: 'Mar 22, 2025',
+    transactionDate: 'Mar 22, 2025',
+    amount: 2000,
+    status: 'completed',
+    paymentMethod: 'paypal',
+    currency: 'USD'
+  },
+  {
+    id: '#1230',
+    name: 'Erin Press',
+    email: 'erin.press@email.com',
+    subscriptionPlan: 'Growth',
+    invoiceDate: 'Mar 21, 2025',
+    transactionDate: 'Mar 21, 2025',
+    amount: 1200,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1229',
+    name: 'Jordyn Herwitz',
+    email: 'jordyn.herwitz@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Mar 15, 2025',
+    transactionDate: 'Mar 15, 2025',
+    amount: 400,
+    status: 'completed',
+    paymentMethod: 'bank_transfer',
+    currency: 'USD'
+  },
+  {
+    id: '#1228',
+    name: 'Zaire Botosh',
+    email: 'zaire.botosh@email.com',
+    subscriptionPlan: 'Growth',
+    invoiceDate: 'Mar 14, 2025',
+    transactionDate: 'Mar 14, 2025',
+    amount: 1200,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1227',
+    name: 'Zain Dias',
+    email: 'zain.dias@email.com',
+    subscriptionPlan: 'Premium',
+    invoiceDate: 'Mar 14, 2025',
+    transactionDate: 'Mar 14, 2025',
+    amount: 2000,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1226',
+    name: 'Erin Herwitz',
+    email: 'erin.herwitz@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Mar 12, 2025',
+    transactionDate: 'Mar 12, 2025',
+    amount: 400,
+    status: 'completed',
+    paymentMethod: 'paypal',
+    currency: 'USD'
+  },
+  {
+    id: '#1225',
+    name: 'Phillip Dokidis',
+    email: 'phillip.d@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Mar 12, 2025',
+    transactionDate: 'Mar 12, 2025',
+    amount: 400,
+    status: 'completed',
+    paymentMethod: 'debit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1224',
+    name: 'Sarah Mitchell',
+    email: 'sarah.mitchell@email.com',
+    subscriptionPlan: 'Scale Elite',
+    invoiceDate: 'Mar 10, 2025',
+    transactionDate: 'Mar 10, 2025',
+    amount: 1899,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1223',
+    name: 'Marcus Johnson',
+    email: 'marcus.j@email.com',
+    subscriptionPlan: 'Growth',
+    invoiceDate: 'Mar 08, 2025',
+    transactionDate: 'Mar 08, 2025',
+    amount: 1200,
+    status: 'pending',
+    paymentMethod: 'bank_transfer',
+    currency: 'USD'
+  },
+  {
+    id: '#1222',
+    name: 'Lisa Chen',
+    email: 'lisa.chen@email.com',
+    subscriptionPlan: 'Premium',
+    invoiceDate: 'Mar 07, 2025',
+    transactionDate: 'Mar 07, 2025',
+    amount: 2000,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1221',
+    name: 'David Rodriguez',
+    email: 'david.rodriguez@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Mar 05, 2025',
+    transactionDate: 'Mar 05, 2025',
+    amount: 400,
+    status: 'failed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1220',
+    name: 'Emma Thompson',
+    email: 'emma.thompson@email.com',
+    subscriptionPlan: 'Growth',
+    invoiceDate: 'Mar 03, 2025',
+    transactionDate: 'Mar 03, 2025',
+    amount: 1200,
+    status: 'completed',
+    paymentMethod: 'paypal',
+    currency: 'USD'
+  },
+  {
+    id: '#1219',
+    name: 'Michael Brown',
+    email: 'michael.brown@email.com',
+    subscriptionPlan: 'Scale Elite',
+    invoiceDate: 'Mar 01, 2025',
+    transactionDate: 'Mar 01, 2025',
+    amount: 1899,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1218',
+    name: 'Jessica Davis',
+    email: 'jessica.davis@email.com',
+    subscriptionPlan: 'Premium',
+    invoiceDate: 'Feb 28, 2025',
+    transactionDate: 'Feb 28, 2025',
+    amount: 2000,
+    status: 'refunded',
+    paymentMethod: 'debit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1217',
+    name: 'Robert Wilson',
+    email: 'robert.wilson@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Feb 26, 2025',
+    transactionDate: 'Feb 26, 2025',
+    amount: 400,
+    status: 'completed',
+    paymentMethod: 'bank_transfer',
+    currency: 'USD'
+  },
+  {
+    id: '#1216',
+    name: 'Ashley Martinez',
+    email: 'ashley.martinez@email.com',
+    subscriptionPlan: 'Growth',
+    invoiceDate: 'Feb 24, 2025',
+    transactionDate: 'Feb 24, 2025',
+    amount: 1200,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1215',
+    name: 'Christopher Lee',
+    email: 'chris.lee@email.com',
+    subscriptionPlan: 'Premium',
+    invoiceDate: 'Feb 22, 2025',
+    transactionDate: 'Feb 22, 2025',
+    amount: 2000,
+    status: 'completed',
+    paymentMethod: 'paypal',
+    currency: 'USD'
+  },
+  {
+    id: '#1214',
+    name: 'Amanda Taylor',
+    email: 'amanda.taylor@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Feb 20, 2025',
+    transactionDate: 'Feb 20, 2025',
+    amount: 400,
+    status: 'pending',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1213',
+    name: 'Daniel Anderson',
+    email: 'daniel.anderson@email.com',
+    subscriptionPlan: 'Scale Elite',
+    invoiceDate: 'Feb 18, 2025',
+    transactionDate: 'Feb 18, 2025',
+    amount: 1899,
+    status: 'completed',
+    paymentMethod: 'bank_transfer',
+    currency: 'USD'
+  },
+  {
+    id: '#1212',
+    name: 'Stephanie White',
+    email: 'stephanie.white@email.com',
+    subscriptionPlan: 'Growth',
+    invoiceDate: 'Feb 16, 2025',
+    transactionDate: 'Feb 16, 2025',
+    amount: 1200,
+    status: 'completed',
+    paymentMethod: 'debit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1211',
+    name: 'Kevin Harris',
+    email: 'kevin.harris@email.com',
+    subscriptionPlan: 'Premium',
+    invoiceDate: 'Feb 14, 2025',
+    transactionDate: 'Feb 14, 2025',
+    amount: 2000,
+    status: 'completed',
+    paymentMethod: 'credit_card',
+    currency: 'USD'
+  },
+  {
+    id: '#1210',
+    name: 'Rachel Clark',
+    email: 'rachel.clark@email.com',
+    subscriptionPlan: 'Starter',
+    invoiceDate: 'Feb 12, 2025',
+    transactionDate: 'Feb 12, 2025',
+    amount: 400,
+    status: 'failed',
+    paymentMethod: 'paypal',
+    currency: 'USD'
+  }
 ];

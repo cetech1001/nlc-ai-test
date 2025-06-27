@@ -30,7 +30,7 @@ const pageConfig = {
     breadcrumb: 'Plans'
   },
   '/transactions': {
-    title: 'Transaction History',
+    title: 'Transactions',
     subtitle: 'Track all payments and financial activities.',
     breadcrumb: 'Transactions'
   },

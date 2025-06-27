@@ -1,13 +1,13 @@
 import React from 'react';
-import { ChevronDown, MoreHorizontal } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
-export interface TableColumn {
+export interface TableColumn<T> {
   key: string;
   header: string;
   width?: string;
   className?: string;
   headerClassName?: string;
-  render?: (value: any, row: any, onAction?: (action: string, row: any) => void) => React.ReactNode;
+  render?: (value: any, row: T, onAction?: (action: string, row: T) => void) => React.ReactNode;
 }
 
 export interface TableAction {
@@ -17,9 +17,9 @@ export interface TableAction {
   variant?: 'default' | 'primary' | 'danger';
 }
 
-export interface TableProps {
-  columns: TableColumn[];
-  data: any[];
+export interface TableProps<T> {
+  columns: TableColumn<T>[];
+  data: T[];
   onRowAction?: (action: string, row: any) => void;
   className?: string;
   actions?: TableAction[];
@@ -27,7 +27,7 @@ export interface TableProps {
   emptyMessage?: string;
 }
 
-export const DataTable: React.FC<TableProps> = ({
+export const DataTable = <T,>({
   columns,
   data,
   onRowAction,
@@ -35,7 +35,7 @@ export const DataTable: React.FC<TableProps> = ({
   actions = [],
   showMobileCards = true,
   emptyMessage = "No data available"
-}) => {
+}: TableProps<T>) => {
   const getGridTemplate = () => {
     return columns.map(col => col.width || '1fr').join(' ');
   };
@@ -63,6 +63,7 @@ export const DataTable: React.FC<TableProps> = ({
               <div className="text-center py-8 text-stone-400">{emptyMessage}</div>
             ) : (
               data.map((row, index) => (
+                // @ts-ignore
                 <div key={row.id || index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 overflow-hidden">
                   <div className="absolute inset-0 opacity-10">
                     <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
@@ -72,8 +73,12 @@ export const DataTable: React.FC<TableProps> = ({
                       <div key={column.key} className="flex justify-between items-start">
                         <span className="text-stone-400 text-sm font-medium">{column.header}:</span>
                         <div className="flex-1 ml-3 text-right">
+                          {/*@ts-ignore*/}
                           {column.render ? column.render(row[column.key], row, onRowAction) : (
-                            <span className="text-stone-50 text-sm">{row[column.key]}</span>
+                            <span className="text-stone-50 text-sm">
+                              {/*@ts-ignore*/}
+                              {row[column.key]}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -140,6 +145,7 @@ export const DataTable: React.FC<TableProps> = ({
                   </div>
                 ) : (
                   data.map((row, index) => (
+                    // @ts-ignore
                     <div key={row.id || index} className="h-16 flex items-center px-6 hover:bg-black/10 transition-colors" style={{ minWidth: getMinTableWidth() }}>
                       <div
                         className="w-full grid gap-4 items-center text-sm lg:text-base"
@@ -147,8 +153,10 @@ export const DataTable: React.FC<TableProps> = ({
                       >
                         {columns.map((column) => (
                           <div key={column.key} className={`text-left ${column.className || ''}`}>
+                            {/*@ts-ignore*/}
                             {column.render ? column.render(row[column.key], row, onRowAction) : (
                               <span className="text-stone-50 font-normal leading-relaxed">
+                                {/*@ts-ignore*/}
                                 {row[column.key]}
                               </span>
                             )}
@@ -179,20 +187,20 @@ export const tableRenderers = {
     </div>
   ),
 
-  actions: (value: any, row: any, onAction?: (action: string, row: any) => void) => (
-    <div className="flex items-center justify-end gap-2">
+  actions: <T,>(value: string, row: T, action: string, onAction?: (action: string, row: any) => void) => (
+    <div className="inline-flex items-center justify-end gap-2">
       <button
-        onClick={() => onAction?.('payment', row)}
+        onClick={() => onAction?.(action, row)}
         className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
       >
-        Make Payment
+        {value}
       </button>
-      <button
+      {/*<button
         onClick={() => onAction?.('menu', row)}
         className="text-stone-50 hover:text-stone-300 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
-      </button>
+      </button>*/}
     </div>
   ),
 
@@ -225,12 +233,18 @@ export const tableRenderers = {
     </div>
   ),
 
-  simpleActions: (value: any, row: any, onAction?: (action: string, row: any) => void) => (
+  simpleActions: <T,>(_: string, row: T, onAction?: (action: string, row: T) => void) => (
     <button
       onClick={() => onAction?.('payment', row)}
       className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
     >
       Make Payment
     </button>
+  ),
+
+  currencyText: (value: number) => (
+    <span className="text-stone-50 font-normal leading-relaxed whitespace-nowrap">
+      ${value.toLocaleString()}
+    </span>
   ),
 };

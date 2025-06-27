@@ -24,7 +24,7 @@ const SubscriptionPlans = () => {
   return (
     <div className="mb-8 pt-2 sm:pt-8">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-white text-xl font-semibold">
+        <h2 className="text-white text-2xl font-semibold">
           Existing Plans
         </h2>
         <Button

@@ -7,7 +7,7 @@ import { ChevronDown, Settings2, Search } from "lucide-react";
 import { DataTable } from "@/app/(dashboard)/components/data-table";
 import {Pagination} from "@/app/(dashboard)/components/pagination";
 
-export default function Coaches() {
+export default function InactiveCoaches() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,10 +37,8 @@ export default function Coaches() {
   };
 
   const handleRowAction = (action: string, coach: any) => {
-    if (action === 'payment') {
-      router.push('/coaches/make-payment');
-    } else if (action === 'menu') {
-      console.log('Menu clicked for:', coach.name);
+    if (action === 'mail') {
+      router.push('/coaches/send-mail');
     }
   };
 
@@ -49,7 +47,7 @@ export default function Coaches() {
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <h2 className="text-stone-50 text-2xl font-medium leading-relaxed">
-            Coaches List
+            Inactive Coaches List
           </h2>
           <div className="flex items-center gap-3">
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-[100rem] max-w-md">
@@ -100,10 +98,10 @@ export default function Coaches() {
                     </p>
                   </div>
                   <button
-                    onClick={() => handleRowAction('payment', coach)}
+                    onClick={() => handleRowAction('mail', coach)}
                     className="text-fuchsia-400 text-sm font-medium underline hover:text-fuchsia-300 transition-colors"
                   >
-                    Make Payment
+                    Send Mail
                   </button>
                 </div>
               </div>

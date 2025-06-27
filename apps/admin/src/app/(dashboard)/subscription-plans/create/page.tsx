@@ -44,7 +44,7 @@ const CreateNewPlan = () => {
           className="flex items-center gap-2 text-white hover:text-[#7B21BA] transition-colors mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-xl font-semibold">Create New Plan</span>
+          <span className="text-2xl font-semibold">Create New Plan</span>
         </button>
       </div>
 
