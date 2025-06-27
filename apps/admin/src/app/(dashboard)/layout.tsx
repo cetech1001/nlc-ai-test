@@ -2,13 +2,71 @@
 
 import { ReactNode } from 'react';
 import { DashboardSidebarWrapper } from './components/dashboard-sidebar';
+import {usePathname} from "next/navigation";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+const pageConfig = {
+  '/home': {
+    title: 'Dashboard Overview',
+    subtitle: 'Welcome back! Here\'s what\'s happening with your coaching business.',
+    breadcrumb: 'Dashboard'
+  },
+  '/coaches': {
+    title: 'Coaches',
+    subtitle: 'View and manage all your coaches in one place.',
+    breadcrumb: 'Coaches'
+  },
+  '/make-payment': {
+    title: 'Coaches',
+    subtitle: 'View and manage all your coaches in one place.',
+    breadcrumb: 'Coaches'
+  },
+  '/subscription-plans': {
+    title: 'Subscription Plans',
+    subtitle: 'Manage your coaching plans and pricing.',
+    breadcrumb: 'Plans'
+  },
+  '/transactions': {
+    title: 'Transaction History',
+    subtitle: 'Track all payments and financial activities.',
+    breadcrumb: 'Transactions'
+  },
+  '/inactive-coaches': {
+    title: 'Inactive Coaches',
+    subtitle: 'Coaches who are currently inactive or need attention.',
+    breadcrumb: 'Inactive'
+  },
+  '/calendar': {
+    title: 'Calendar & Schedule',
+    subtitle: 'Manage appointments and coaching sessions.',
+    breadcrumb: 'Calendar'
+  },
+  '/help': {
+    title: 'Help & Support',
+    subtitle: 'Get assistance and find answers to common questions.',
+    breadcrumb: 'Help'
+  },
+  '/settings': {
+    title: 'Account Settings',
+    subtitle: 'Customize your account and application preferences.',
+    breadcrumb: 'Settings'
+  }
+};
+
+const defaultConfig = {
+  title: 'Admin Dashboard',
+  subtitle: 'Manage your coaching business efficiently.',
+  breadcrumb: 'Dashboard'
+};
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
+
+  const currentConfig = pageConfig[pathname as keyof typeof pageConfig] || defaultConfig;
 
   return (
     <div className="min-h-screen bg-[#000000]">
@@ -22,7 +80,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <h1 className="text-white text-xl sm:text-2xl font-semibold">Dashboard</h1>
+              <h1 className="text-white text-xl sm:text-2xl font-semibold">{currentConfig.title}</h1>
             </div>
 
             <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">

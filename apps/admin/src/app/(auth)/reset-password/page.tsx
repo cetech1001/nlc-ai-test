@@ -2,7 +2,7 @@
 
 import {useRouter} from "next/navigation";
 import {useState} from "react";
-import {Logo} from "@/app/(auth)/components/logo";
+import {Logo} from "@/app/components/logo";
 import { Input, EyeLashIcon, Button } from "@nlc-ai/ui";
 
 export default function ResetPassword() {

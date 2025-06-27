@@ -1,3 +1,5 @@
+import {tableRenderers} from "@/app/(dashboard)/components/data-table";
+
 export const revenueData = [
   { month: "Jan", revenue: 45000 },
   { month: "Feb", revenue: 52000 },
@@ -11,6 +13,52 @@ export const revenueData = [
   { month: "Oct", revenue: 85000 },
   { month: "Nov", revenue: 92000 },
   { month: "Dec", revenue: 98000 },
+];
+
+const colWidth = 100 / 7;
+export const coachColumns = [
+  {
+    key: 'id',
+    header: 'User ID',
+    width: `${colWidth * (2 / 3)}%`,
+    render: tableRenderers.basicText
+  },
+  {
+    key: 'name',
+    header: 'Name',
+    width: `${colWidth}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 18)
+  },
+  {
+    key: 'email',
+    header: 'Email',
+    width: `${colWidth * (5 / 3)}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 25)
+  },
+  {
+    key: 'dateJoined',
+    header: 'Date Joined',
+    width: `${colWidth}%`,
+    render: tableRenderers.dateText
+  },
+  {
+    key: 'plan',
+    header: 'Plan',
+    width: `${colWidth * (2 / 3)}%`,
+    render: tableRenderers.basicText
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: `${colWidth * (2 / 3)}%`,
+    render: tableRenderers.simpleStatus
+  },
+  {
+    key: 'actions',
+    header: 'Actions',
+    width: `auto`,
+    render: tableRenderers.simpleActions
+  }
 ];
 
 export const coachesData = [
@@ -185,5 +233,96 @@ export const allCoachesData = [
     dateJoined: "Mar 06, 2025",
     plan: "Growth",
     status: "Blocked",
+  },
+];
+
+export interface Plan {
+  title: string;
+  subtitle: string;
+  price: number;
+  monthlyPrice: number;
+  billingCycle: string;
+  monthlyBilling: string;
+  features: string[];
+  isCurrentPlan: boolean;
+  colorClass: string;
+}
+
+export const getPlans = (currentPlan: string): Plan[] => [
+  {
+    title: "Solo Agent",
+    subtitle: "Access to 1 agent",
+    price: 360,
+    monthlyPrice: 400,
+    billingCycle: "per user/month billed annually",
+    monthlyBilling: "$400 billed monthly",
+    features: [
+      "AI Email Management",
+      "Weekly Client Check-Ins",
+      "Content Suggestions",
+      "Lead Follow-Up Automation",
+      "Customizable Dashboard",
+      "Appointment Scheduling Integration",
+      "Progress Tracking and Analytics",
+    ],
+    isCurrentPlan: currentPlan === "Solo Agent",
+    colorClass: "bg-[#9C55FF]",
+  },
+  {
+    title: "Starter Pack",
+    subtitle: "Access to any 2 agents",
+    price: 360,
+    monthlyPrice: 400,
+    billingCycle: "per user/month billed annually",
+    monthlyBilling: "$400 billed monthly",
+    features: [
+      "AI Email Management",
+      "Weekly Client Check-Ins",
+      "Content Suggestions",
+      "Lead Follow-Up Automation",
+      "Customizable Dashboard",
+      "Appointment Scheduling Integration",
+      "Progress Tracking and Analytics",
+    ],
+    isCurrentPlan: currentPlan === "Starter Pack",
+    colorClass: "bg-[#B347FF]",
+  },
+  {
+    title: "Growth Pro",
+    subtitle: "Access to any 3 agents",
+    price: 1099,
+    monthlyPrice: 1200,
+    billingCycle: "per user/month billed annually",
+    monthlyBilling: "$1200 billed monthly",
+    features: [
+      "All Basic Plan Features",
+      "Client Retention Agent",
+      "Lead Qualification via Chatbot",
+      "CRM and Calendar Integration",
+      "Performance Analytics",
+      "Social Media Insights",
+      "Customizable Content Frameworks",
+    ],
+    isCurrentPlan: currentPlan === "Growth Pro",
+    colorClass: "bg-fuchsia-400",
+  },
+  {
+    title: "Scale Elite",
+    subtitle: "Access to all 5 agents",
+    price: 1899,
+    monthlyPrice: 2000,
+    billingCycle: "per user/month billed annually",
+    monthlyBilling: "$2000 billed monthly",
+    features: [
+      "All Pro Plan Features",
+      "AI Custom Training",
+      "Multi-Coach Management",
+      "Team Collaboration Tools",
+      "Advanced Reporting & Insights",
+      "Priority Customer Support",
+      "API Integrations",
+    ],
+    isCurrentPlan: currentPlan === "Scale Elite",
+    colorClass: "bg-gradient-to-l from-violet-600 via-fuchsia-600 to-fuchsia-200 rotate-45",
   },
 ];

@@ -1,6 +1,6 @@
 'use client'
 
-import {Logo} from "@/app/(auth)/components/logo";
+import {Logo} from "@/app/components/logo";
 import {Button, Input, EyeLashIcon } from "@nlc-ai/ui";
 import {useRouter} from "next/navigation";
 import {useState} from "react";

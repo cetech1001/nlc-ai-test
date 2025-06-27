@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { allCoachesData } from "@/app/data";
+import {allCoachesData, coachColumns} from "@/app/data";
 import { ChevronDown, Settings2, Search } from "lucide-react";
-import { DataTable, tableRenderers } from "@/app/(dashboard)/components/data-table";
+import { DataTable } from "@/app/(dashboard)/components/data-table";
+import {Pagination} from "@/app/(dashboard)/components/pagination";
 
 export default function Coaches() {
   const router = useRouter();
@@ -37,92 +38,15 @@ export default function Coaches() {
 
   const handleRowAction = (action: string, coach: any) => {
     if (action === 'payment') {
-      router.push(`/make-payment?coach=${encodeURIComponent(coach.name)}&email=${encodeURIComponent(coach.email)}&date=${encodeURIComponent(coach.dateJoined)}&plan=${encodeURIComponent(coach.plan)}&status=${encodeURIComponent(coach.status)}`);
+      router.push('/make-payment');
     } else if (action === 'menu') {
-      // Handle menu action
       console.log('Menu clicked for:', coach.name);
     }
   };
 
-  const getPaginationPages = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages + 2) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-      if (currentPage > 3) {
-        pages.push("...");
-      }
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      for (let i = start; i <= end; i++) {
-        if (i !== 1 && i !== totalPages) {
-          pages.push(i);
-        }
-      }
-      if (currentPage < totalPages - 2) {
-        pages.push("...");
-      }
-      if (totalPages > 1) {
-        pages.push(totalPages);
-      }
-    }
-    return pages;
-  };
-
-  const colWidth = 100 / 7;
-  const columns = [
-    {
-      key: 'id',
-      header: 'User ID',
-      width: `${colWidth}%`,
-      render: tableRenderers.basicText
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      width: `${colWidth}%`,
-      render: (value: string) => tableRenderers.truncateText(value, 20)
-    },
-    {
-      key: 'email',
-      header: 'Email',
-      width: `${colWidth * (5 / 3)}%`,
-      render: (value: string) => tableRenderers.truncateText(value, 25)
-    },
-    {
-      key: 'dateJoined',
-      header: 'Date Joined',
-      width: `${colWidth}%`,
-      render: tableRenderers.dateText
-    },
-    {
-      key: 'plan',
-      header: 'Plan',
-      width: `${colWidth * (2 / 3)}%`,
-      render: tableRenderers.basicText
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      width: `${colWidth * (2 / 3)}%`,
-      render: tableRenderers.simpleStatus,
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      width: `${colWidth}%`,
-      render: tableRenderers.simpleActions,
-    }
-  ];
-
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
+      <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <h2 className="text-stone-50 text-3xl font-medium leading-relaxed">
             Coaches List
@@ -189,32 +113,13 @@ export default function Coaches() {
 
         <div className="hidden sm:block">
           <DataTable
-            columns={columns}
+            columns={coachColumns}
             data={currentCoaches}
             onRowAction={handleRowAction}
           />
         </div>
 
-        <div className="bg-black/50 backdrop-blur-sm p-4 sm:p-6">
-          <div className="flex items-center justify-end gap-5">
-            {getPaginationPages().map((page, index) => (
-              <button
-                key={index}
-                onClick={() => typeof page === "number" && setCurrentPage(page)}
-                disabled={page === "..."}
-                className={`w-12 min-w-12 min-h-12 p-2.5 rounded-[10px] flex items-center justify-center text-xl font-semibold leading-relaxed transition-colors ${
-                  page === currentPage
-                    ? "bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-stone-50"
-                    : page === "..."
-                      ? "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 cursor-default"
-                      : "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 hover:bg-gradient-to-r hover:from-fuchsia-600/20 hover:via-purple-700/20 hover:to-violet-600/20"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage}/>
       </div>
     </div>
   );

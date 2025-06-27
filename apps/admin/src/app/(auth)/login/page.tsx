@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input, Checkbox, EyeLashIcon } from "@nlc-ai/ui";
 
-import { Logo } from "@/app/(auth)/components/logo";
+import { Logo } from "@/app/components/logo";
 import { GoogleIcon } from "@/app/(auth)/components/google-icon";
 
 export default function LoginPage() {

@@ -16,7 +16,7 @@ import {
   CogIcon as HiCog,
   ArrowRightStartOnRectangleIcon as HiLogout
 } from '@heroicons/react/24/outline';
-import { Logo } from '@/app/(auth)/components/logo';
+import { Logo } from '@/app/components/logo';
 
 const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },

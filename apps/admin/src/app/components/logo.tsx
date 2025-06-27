@@ -1,5 +1,7 @@
 'use client'
 
+import Image from "next/image";
+
 interface IProps {
   height?: number;
   width?: number;
@@ -115,7 +117,7 @@ export const Logo = ({ width = 94, height = 80, className = ""}: IProps) => {
           </clipPath>
         </defs>
       </svg>*/}
-      <img src={"/logo.png"} alt={"Logo"}/>
+      <Image src={"/logo.png"} alt={"Logo"} height={100} width={100}/>
     </div>
   );
 }

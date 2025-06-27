@@ -10,9 +10,9 @@ import {
   Tooltip,
 } from "recharts";
 import { StatCard } from "@/app/(dashboard)/components/stat-card";
-import {DataTable, TableAction, tableRenderers} from "@/app/(dashboard)/components/data-table";
+import {DataTable, TableAction} from "@/app/(dashboard)/components/data-table";
 import { useRouter } from "next/navigation";
-import { coachesData, revenueData } from "@/app/data";
+import {coachColumns, coachesData, revenueData} from "@/app/data";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -27,52 +27,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const colWidth = 100 / 7;
-  const coachColumns = [
-    {
-      key: 'id',
-      header: 'User ID',
-      width: `${colWidth}%`,
-      render: tableRenderers.basicText
-    },
-    {
-      key: 'name',
-      header: 'Name',
-      width: `${colWidth}%`,
-      render: (value: string) => tableRenderers.truncateText(value, 18)
-    },
-    {
-      key: 'email',
-      header: 'Email',
-      width: `${colWidth * (5 / 3)}%`,
-      render: (value: string) => tableRenderers.truncateText(value, 25)
-    },
-    {
-      key: 'dateJoined',
-      header: 'Date Joined',
-      width: `${colWidth}%`,
-      render: tableRenderers.dateText
-    },
-    {
-      key: 'plan',
-      header: 'Plan',
-      width: `${colWidth * (2 / 3)}%`,
-      render: tableRenderers.basicText
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      width: `${colWidth * (2 / 3)}%`,
-      render: tableRenderers.simpleStatus
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      width: `${colWidth}%`,
-      render: tableRenderers.simpleActions
-    }
-  ];
-
   const actions: TableAction[] = [
     {
       label: 'Make Payment',
@@ -82,7 +36,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
+    <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
       <div className="flex flex-col xl:flex-row gap-6 lg:gap-8">
         <div className="flex-1 relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 min-w-0 overflow-hidden">
           <div className="absolute w-64 h-64 -left-12 top-52 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
