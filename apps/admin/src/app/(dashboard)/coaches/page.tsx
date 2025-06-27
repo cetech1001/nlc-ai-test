@@ -38,14 +38,14 @@ export default function Coaches() {
 
   const handleRowAction = (action: string, coach: any) => {
     if (action === 'payment') {
-      router.push('/make-payment');
+      router.push('/coaches/make-payment');
     } else if (action === 'menu') {
       console.log('Menu clicked for:', coach.name);
     }
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col">
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <h2 className="text-stone-50 text-3xl font-medium leading-relaxed">

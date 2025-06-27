@@ -42,9 +42,9 @@ export const PlanCard = ({ plan, action, onActionClick }: IProps) => (
         ) : (
           <Button
             onClick={() => onActionClick(plan.title)}
-            className="w-full p-2.5 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-[10px] flex justify-center items-center"
+            className={`w-full p-2.5 rounded-[10px] flex justify-center items-center ${ action === 'Edit Plan' ? 'border border-fuchsia-400' : 'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600' }`}
           >
-            <div className="text-stone-50 text-base font-semibold font-['Inter'] leading-normal">{action}</div>
+            <div className={`${ action === 'Edit Plan' ? 'text-fuchsia-400' : 'text-stone-50' } text-base font-semibold font-['Inter'] leading-normal`}>{action}</div>
           </Button>
         )}
       </div>

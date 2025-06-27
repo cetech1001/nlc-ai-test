@@ -323,6 +323,6 @@ export const getPlans = (currentPlan: string): Plan[] => [
       "API Integrations",
     ],
     isCurrentPlan: currentPlan === "Scale Elite",
-    colorClass: "bg-gradient-to-l from-violet-600 via-fuchsia-600 to-fuchsia-200 rotate-45",
+    colorClass: "bg-gradient-to-b from-violet-600 via-fuchsia-600 to-fuchsia-200 rotate-45",
   },
 ];

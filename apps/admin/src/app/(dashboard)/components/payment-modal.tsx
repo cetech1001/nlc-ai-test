@@ -104,7 +104,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 </Dialog.Title>
 
                 <div className="space-y-6">
-                  {/* Select Plan */}
                   <div className="space-y-2">
                     <label className="text-white text-sm font-medium block">
                       Select Plan
@@ -164,7 +163,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </Listbox>
                   </div>
 
-                  {/* Amount */}
                   <div className="space-y-2">
                     <label htmlFor="amount" className="text-white text-sm font-medium block">
                       Amount
@@ -186,7 +184,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Payment Mode */}
                   <div className="space-y-3">
                     <label className="text-white text-sm font-medium block">
                       Payment Mode
@@ -231,7 +228,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </RadioGroup>
                   </div>
 
-                  {/* Display Payment Link if generated */}
                   {paymentLink && (
                     <div className="p-4 bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
                       <p className="text-[#A0A0A0] text-xs mb-2 font-medium">
@@ -248,7 +244,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </div>
                   )}
 
-                  {/* Pay Here Form (when selected) */}
                   {selectedPaymentMode.id === "pay-here" && (
                     <div className="p-4 bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
                       <p className="text-[#A0A0A0] text-sm mb-3">
@@ -282,12 +277,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-6 mt-6 border-t border-[#2A2A2A]">
+                <div className="flex gap-3 pt-3 mt-3">
                   <Button
                     onClick={handleCopyPaymentLink}
                     disabled={selectedPaymentMode.id === "pay-here"}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#7B21BA] hover:bg-[#8B31CA] disabled:bg-[#4A4A4A] disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] disabled:bg-[#4A4A4A] disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                   >
                     <Copy className="w-4 h-4" />
                     {isLinkCopied ? "Link Copied!" : "Copy Payment Link"}

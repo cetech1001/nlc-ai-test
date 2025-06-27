@@ -20,10 +20,9 @@ export default function AdminDashboard() {
 
   const handleRowAction = (action: string, coach: any) => {
     if (action === 'payment') {
-      router.push(`/make-payment?coach=${encodeURIComponent(coach.name)}&email=${encodeURIComponent(coach.email)}&date=${encodeURIComponent(coach.dateJoined)}&plan=${encodeURIComponent(coach.plan)}&status=${encodeURIComponent(coach.status)}`);
+      router.push('/coaches/make-payment');
     } else if (action === 'view') {
       console.log('Viewing coach:', coach.name);
-      // Add view logic here
     }
   };
 

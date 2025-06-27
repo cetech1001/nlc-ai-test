@@ -91,7 +91,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     kramer.andrew@example.com
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-[#7B21BA] rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">AK</span>
                 </div>
               </div>

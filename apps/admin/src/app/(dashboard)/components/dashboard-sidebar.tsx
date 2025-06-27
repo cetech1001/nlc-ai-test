@@ -81,7 +81,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
                       onClick={() => handleNavigation(item.path)}
                       className={classNames(
                         active
-                          ? 'bg-[#7B21BA] text-white shadow-lg shadow-[#7B21BA]/25'
+                          ? 'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 text-white shadow-lg shadow-[#7B21BA]/25'
                           : 'text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A]',
                         'group flex w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200'
                       )}
@@ -109,7 +109,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
                     onClick={() => handleNavigation('/settings')}
                     className={classNames(
                       isActive('/settings')
-                        ? 'bg-[#7B21BA] text-white shadow-lg shadow-[#7B21BA]/25'
+                        ? 'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 text-white shadow-lg shadow-[#7B21BA]/25'
                         : 'text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A]',
                       'group flex w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200'
                     )}
