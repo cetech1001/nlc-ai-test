@@ -16,7 +16,7 @@ export const revenueData = [
 ];
 
 const colWidth = 100 / 7;
-export const coachColumns = [
+export const coachColumns: TableColumn<Coach>[] = [
   {
     key: 'id',
     header: 'User ID',
@@ -60,6 +60,15 @@ export const coachColumns = [
     render: tableRenderers.simpleActions
   }
 ];
+
+export interface Coach {
+  id: string;
+  name: string;
+  email: string;
+  dateJoined: string;
+  plan: string;
+  status: string;
+}
 
 export const coachesData = [
   {
@@ -375,7 +384,7 @@ export const transactionColumns: TableColumn<Transaction>[] = [
     key: 'actions',
     header: 'Actions',
     width: 'auto',
-    render: (value: string, row: Transaction, callback) => {
+    render: (_: string, row: Transaction, callback) => {
       return tableRenderers.actions('Download', row, 'download', callback);
     }
   }

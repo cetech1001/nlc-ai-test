@@ -17,6 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
       <head>
         <meta name="apple-mobile-web-app-title" content="Next Level Coach AI" />
         <title>Next Level Coach AI - Admin Dashboard</title>
+        <link rel="icon" href="/images/favicon.ico" sizes="any" />
+        <link rel="icon" href="/images/icon.svg" type="image/svg" sizes="any"/>
+        <link rel="apple-touch-icon" href="/images/apple-icon.png" type="image/png" sizes="any"/>
       </head>
       <body className={inter.className}>
         <Providers>

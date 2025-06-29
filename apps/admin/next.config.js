@@ -30,7 +30,7 @@ const nextConfig = {
         hostname: 'nlc-ai-admin.onrender.com',
         port: '',
         pathname: '/**',
-      },
+      }
     ],
   },
   transpilePackages: ['@nlc-ai/ui'],

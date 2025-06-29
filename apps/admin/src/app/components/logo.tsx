@@ -117,7 +117,7 @@ export const Logo = ({ width = 94, height = 80, className = ""}: IProps) => {
           </clipPath>
         </defs>
       </svg>*/}
-      <Image src={"/logo.png"} alt={"Logo"} height={100} width={100}/>
+      <Image src={"/images/logo.png"} alt={"Logo"} height={100} width={100}/>
     </div>
   );
 }

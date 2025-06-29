@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {allCoachesData, coachColumns} from "@/app/data";
+import {allCoachesData, Coach, coachColumns} from "@/app/data";
 import { ChevronDown, Settings2, Search } from "lucide-react";
-import { DataTable } from "@/app/(dashboard)/components/data-table";
+import {DataTable, TableColumn, tableRenderers} from "@/app/(dashboard)/components/data-table";
 import {Pagination} from "@/app/(dashboard)/components/pagination";
 
 export default function InactiveCoaches() {
@@ -41,6 +41,22 @@ export default function InactiveCoaches() {
       router.push('/coaches/send-mail');
     }
   };
+
+  const columns: TableColumn<Coach>[] = [
+    ...coachColumns.map(column => {
+      if (column.key === 'actions') {
+        return {
+          key: 'actions',
+          header: 'Actions',
+          width: `auto`,
+          render: (_: string, row: Coach, onAction?: (action: string, row: Coach) => void) => {
+            return tableRenderers.actions('Send Mail', row, 'mail', onAction);
+          }
+        }
+      }
+      return column;
+    })
+  ];
 
   return (
     <div className="flex flex-col">
@@ -111,7 +127,7 @@ export default function InactiveCoaches() {
 
         <div className="hidden sm:block">
           <DataTable
-            columns={coachColumns}
+            columns={columns}
             data={currentCoaches}
             onRowAction={handleRowAction}
           />
