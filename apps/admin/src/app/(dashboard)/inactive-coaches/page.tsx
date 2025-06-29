@@ -38,7 +38,7 @@ export default function InactiveCoaches() {
 
   const handleRowAction = (action: string, coach: any) => {
     if (action === 'mail') {
-      router.push('/coaches/send-mail');
+      router.push('/inactive-coaches/send-mail');
     }
   };
 
