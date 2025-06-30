@@ -767,3 +767,239 @@ export const calendarEvents: CalendarEvents = {
     },
   ],
 };
+
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  meetingDate: string;
+  meetingTime: string;
+  agentsOfInterest: string[];
+  status: 'Converted' | 'Unresponsive' | 'Contacted' | 'Scheduled' | 'Follow-up';
+  phone?: string;
+  source?: string;
+  notes?: string;
+}
+
+export const leadsData: Lead[] = [
+  {
+    id: "#L001",
+    name: "Leslie Alexander",
+    email: "leslie.alexander@email.com",
+    meetingDate: "Mar 26, 2025",
+    meetingTime: "10:00 PM",
+    agentsOfInterest: ["A1", "A2", "A3", "A4", "A5"],
+    status: "Unresponsive",
+    phone: "+1 (555) 123-4567",
+    source: "Website Contact Form",
+    notes: "Interested in scaling coaching business"
+  },
+  {
+    id: "#L002",
+    name: "Savannah Nguyen",
+    email: "savannah.nguyen@email.com",
+    meetingDate: "Mar 26, 2025",
+    meetingTime: "10:00 PM",
+    agentsOfInterest: ["A1", "A2", "A3"],
+    status: "Converted",
+    phone: "+1 (555) 234-5678",
+    source: "Social Media",
+    notes: "New life coach, looking for automation"
+  },
+  {
+    id: "#L003",
+    name: "Kathryn Murphy",
+    email: "kathryn.murphy@email.com",
+    meetingDate: "Mar 26, 2025",
+    meetingTime: "10:00 PM",
+    agentsOfInterest: ["A1", "A2"],
+    status: "Converted",
+    phone: "+1 (555) 345-6789",
+    source: "Referral",
+    notes: "Existing business, wants to improve client retention"
+  },
+  {
+    id: "#L004",
+    name: "Dianne Russell",
+    email: "dianne.russell@email.com",
+    meetingDate: "Mar 26, 2025",
+    meetingTime: "10:00 PM",
+    agentsOfInterest: ["A3", "A4", "A5"],
+    status: "Converted",
+    phone: "+1 (555) 456-7890",
+    source: "Google Ads",
+    notes: "Health coach with 50+ clients"
+  },
+  {
+    id: "#L005",
+    name: "Annette Black",
+    email: "annette.black@email.com",
+    meetingDate: "Mar 26, 2025",
+    meetingTime: "10:00 PM",
+    agentsOfInterest: ["A4", "A5"],
+    status: "Unresponsive",
+    phone: "+1 (555) 567-8901",
+    source: "LinkedIn",
+    notes: "Business coach, expressed interest in lead generation"
+  },
+  {
+    id: "#L006",
+    name: "Kristin Watson",
+    email: "kristin.watson@email.com",
+    meetingDate: "Mar 26, 2025",
+    meetingTime: "10:00 PM",
+    agentsOfInterest: ["A1", "A2"],
+    status: "Unresponsive",
+    phone: "+1 (555) 678-9012",
+    source: "Webinar",
+    notes: "Career coach, interested in email automation"
+  },
+  {
+    id: "#L007",
+    name: "Matthew Wade",
+    email: "matthew.wade@email.com",
+    meetingDate: "Mar 26, 2025",
+    meetingTime: "10:00 PM",
+    agentsOfInterest: ["A1", "A2", "A3", "A4", "A5"],
+    status: "Converted",
+    phone: "+1 (555) 789-0123",
+    source: "Podcast",
+    notes: "Executive coach with enterprise clients"
+  },
+  {
+    id: "#L008",
+    name: "Eleanor Pena",
+    email: "eleanor.pena@email.com",
+    meetingDate: "Mar 27, 2025",
+    meetingTime: "2:00 PM",
+    agentsOfInterest: ["A1", "A3"],
+    status: "Scheduled",
+    phone: "+1 (555) 890-1234",
+    source: "Website Contact Form",
+    notes: "Relationship coach, wants content suggestions"
+  },
+  {
+    id: "#L009",
+    name: "Cameron Williamson",
+    email: "cameron.williamson@email.com",
+    meetingDate: "Mar 27, 2025",
+    meetingTime: "3:30 PM",
+    agentsOfInterest: ["A2", "A4"],
+    status: "Contacted",
+    phone: "+1 (555) 901-2345",
+    source: "Social Media",
+    notes: "Fitness coach, needs client check-in automation"
+  },
+  {
+    id: "#L010",
+    name: "Brooklyn Simmons",
+    email: "brooklyn.simmons@email.com",
+    meetingDate: "Mar 28, 2025",
+    meetingTime: "11:00 AM",
+    agentsOfInterest: ["A1", "A2", "A3"],
+    status: "Follow-up",
+    phone: "+1 (555) 012-3456",
+    source: "Referral",
+    notes: "Wellness coach, exploring AI solutions"
+  },
+  {
+    id: "#L011",
+    name: "Theresa Webb",
+    email: "theresa.webb@email.com",
+    meetingDate: "Mar 28, 2025",
+    meetingTime: "4:00 PM",
+    agentsOfInterest: ["A3", "A5"],
+    status: "Converted",
+    phone: "+1 (555) 123-0987",
+    source: "Google Ads",
+    notes: "Mindfulness coach, interested in analytics"
+  },
+  {
+    id: "#L012",
+    name: "Marvin McKinney",
+    email: "marvin.mckinney@email.com",
+    meetingDate: "Mar 29, 2025",
+    meetingTime: "9:00 AM",
+    agentsOfInterest: ["A1", "A4", "A5"],
+    status: "Scheduled",
+    phone: "+1 (555) 234-1098",
+    source: "LinkedIn",
+    notes: "Performance coach for athletes"
+  },
+  {
+    id: "#L013",
+    name: "Jerome Bell",
+    email: "jerome.bell@email.com",
+    meetingDate: "Mar 29, 2025",
+    meetingTime: "1:00 PM",
+    agentsOfInterest: ["A2", "A3"],
+    status: "Contacted",
+    phone: "+1 (555) 345-2109",
+    source: "Webinar",
+    notes: "Leadership coach, wants CRM integration"
+  },
+  {
+    id: "#L014",
+    name: "Courtney Henry",
+    email: "courtney.henry@email.com",
+    meetingDate: "Mar 30, 2025",
+    meetingTime: "10:30 AM",
+    agentsOfInterest: ["A1", "A2", "A4"],
+    status: "Follow-up",
+    phone: "+1 (555) 456-3210",
+    source: "Podcast",
+    notes: "Nutrition coach, needs lead qualification"
+  },
+  {
+    id: "#L015",
+    name: "Ralph Edwards",
+    email: "ralph.edwards@email.com",
+    meetingDate: "Mar 30, 2025",
+    meetingTime: "3:00 PM",
+    agentsOfInterest: ["A3", "A4", "A5"],
+    status: "Unresponsive",
+    phone: "+1 (555) 567-4321",
+    source: "Website Contact Form",
+    notes: "Business development coach"
+  }
+];
+
+const leadColWidth = 100 / 6;
+export const leadColumns: TableColumn<Lead>[] = [
+  {
+    key: 'name',
+    header: 'Name',
+    width: `${leadColWidth}%`,
+    render: tableRenderers.basicText
+  },
+  {
+    key: 'email',
+    header: 'Email',
+    width: `${leadColWidth * 1.2}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 25)
+  },
+  {
+    key: 'meetingDate',
+    header: 'Meeting Date',
+    width: `${leadColWidth * 0.9}%`,
+    render: tableRenderers.dateText
+  },
+  {
+    key: 'meetingTime',
+    header: 'Meeting Time',
+    width: `${leadColWidth * 0.9}%`,
+    render: tableRenderers.basicText
+  },
+  {
+    key: 'agentsOfInterest',
+    header: 'Agents of Interest',
+    width: `${leadColWidth}%`,
+    render: (value: string[]) => tableRenderers.basicText(value.join(', '))
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: `${leadColWidth * 0.8}%`,
+    render: tableRenderers.leadStatus
+  }
+];

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {allCoachesData, coachColumns} from "@/app/data";
-import { ChevronDown, Settings2, Search } from "lucide-react";
+import { Settings2, Search } from "lucide-react";
 import { DataTable } from "@/app/(dashboard)/components/data-table";
 import {Pagination} from "@/app/(dashboard)/components/pagination";
 
@@ -69,55 +69,11 @@ export default function Coaches() {
           </div>
         </div>
 
-        <div className="block sm:hidden">
-          <div className="space-y-4">
-            {currentCoaches.map((coach) => (
-              <div key={coach.id} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-                </div>
-                <div className="relative z-10 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-stone-50 font-medium text-base leading-tight truncate">{coach.name}</h3>
-                      <p className="text-stone-300 text-sm leading-tight mt-0.5">{coach.id}</p>
-                    </div>
-                    <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                      <span className={`text-sm font-medium whitespace-nowrap ${
-                        coach.status === "Active" ? "text-green-600" : "text-red-600"
-                      }`}>
-                        {coach.status}
-                      </span>
-                      <ChevronDown className="w-4 h-4 text-stone-50" />
-                    </div>
-                  </div>
-                  <div className="text-stone-300 text-sm leading-tight space-y-1">
-                    <p className="truncate">{coach.email}</p>
-                    <p className="text-xs">
-                      <span className="text-stone-400">{coach.dateJoined}</span>
-                      <span className="text-stone-500 mx-1">•</span>
-                      <span className="text-stone-300">{coach.plan}</span>
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleRowAction('payment', coach)}
-                    className="text-fuchsia-400 text-sm font-medium underline hover:text-fuchsia-300 transition-colors"
-                  >
-                    Make Payment
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="hidden sm:block">
-          <DataTable
-            columns={coachColumns}
-            data={currentCoaches}
-            onRowAction={handleRowAction}
-          />
-        </div>
+        <DataTable
+          columns={coachColumns}
+          data={currentCoaches}
+          onRowAction={handleRowAction}
+        />
 
         <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage}/>
       </div>
