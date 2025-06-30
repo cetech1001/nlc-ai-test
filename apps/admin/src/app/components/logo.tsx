@@ -1,6 +1,6 @@
 'use client'
 
-import Image from "next/image";
+// import Image from "next/image";
 
 interface IProps {
   height?: number;
@@ -11,7 +11,7 @@ interface IProps {
 export const Logo = ({ width = 94, height = 80, className = ""}: IProps) => {
   return (
     <div className={`relative flex items-center justify-center ${className}`} style={{ width: `${width}px`, height: `${height}px` }}>
-      {/*<svg
+      <svg
         width="100%"
         height="100%"
         viewBox="0 0 91 75"
@@ -73,8 +73,6 @@ export const Logo = ({ width = 94, height = 80, className = ""}: IProps) => {
           </linearGradient>
         </defs>
       </svg>
-
-       Star accent SVG
       <svg
         width="8"
         height="9"
@@ -116,8 +114,8 @@ export const Logo = ({ width = 94, height = 80, className = ""}: IProps) => {
             />
           </clipPath>
         </defs>
-      </svg>*/}
-      <Image src={"/images/logo.png"} alt={"Logo"} height={100} width={100}/>
+      </svg>
+      {/*<Image src={"/images/logo.png"} alt={"Logo"} height={100} width={100}/>*/}
     </div>
   );
 }
