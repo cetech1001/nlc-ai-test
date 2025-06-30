@@ -25,7 +25,7 @@ const menuItems = [
   { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
   { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
-  { icon: HiSpeakerphone, label: "Help", path: "/help" },
+  { icon: HiSpeakerphone, label: "Leads Follow Up", path: "/leads-follow-up" },
 ];
 
 interface SidebarProps {

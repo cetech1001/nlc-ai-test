@@ -975,7 +975,7 @@ export const leadColumns: TableColumn<Lead>[] = [
   {
     key: 'email',
     header: 'Email',
-    width: `${leadColWidth * 1.2}%`,
+    width: `${leadColWidth * 1.4}%`,
     render: (value: string) => tableRenderers.truncateText(value, 25)
   },
   {
@@ -987,7 +987,7 @@ export const leadColumns: TableColumn<Lead>[] = [
   {
     key: 'meetingTime',
     header: 'Meeting Time',
-    width: `${leadColWidth * 0.9}%`,
+    width: `${leadColWidth * 0.6}%`,
     render: tableRenderers.basicText
   },
   {

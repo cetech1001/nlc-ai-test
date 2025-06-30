@@ -397,6 +397,13 @@ export const tableRenderers = {
       'Follow-up': 'text-orange-400'
     };
 
-    return `<span class="${statusColors[value] || 'text-gray-400'}">${value}</span>`;
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span className={`text-sm font-normal leading-relaxed ${statusColors[value] || 'text-gray-400'}`}>
+          {value}
+        </span>
+        <ChevronDown className="w-4 h-4 text-stone-50" />
+      </div>
+    );
   }
 };
