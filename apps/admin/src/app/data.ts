@@ -986,7 +986,7 @@ export const leadColumns: TableColumn<Lead>[] = [
   },
   {
     key: 'meetingTime',
-    header: 'Meeting Time',
+    header: 'Time',
     width: `${leadColWidth * 0.6}%`,
     render: tableRenderers.basicText
   },
