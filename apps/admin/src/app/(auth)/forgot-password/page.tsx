@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
           <div className="self-stretch text-center justify-center text-stone-50 text-4xl font-semibold font-['Inter'] leading-[48px]">
             Forgot Password
           </div>
-          <div className="self-stretch text-center justify-center text-zinc-500 text-xl font-normal font-['Inter'] leading-loose">
+          <div className="self-stretch text-center justify-center text-zinc-500 text-md sm:text-xl font-normal font-['Inter'] leading-loose">
             Enter your registered email address & we’ll send you code to reset your password.
           </div>
         </div>

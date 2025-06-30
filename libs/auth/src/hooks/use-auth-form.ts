@@ -34,7 +34,7 @@ export const verificationSchema = z.object({
   code: z.string().min(4, "Please enter the verification code"),
 })
 
-export function useAuthForm<T extends z.ZodType>(schema: T) {
+export function useAuthForm<T extends z.ZodType>(schema: any) {
   return useForm<z.infer<T>>({
     resolver: zodResolver(schema),
     mode: "onChange",

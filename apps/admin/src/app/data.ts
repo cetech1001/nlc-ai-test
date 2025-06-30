@@ -1,18 +1,18 @@
 import {TableColumn, tableRenderers} from "@/app/(dashboard)/components/data-table";
 
 export const revenueData = [
-  { month: "Jan", revenue: 45000 },
-  { month: "Feb", revenue: 52000 },
-  { month: "Mar", revenue: 48000 },
-  { month: "Apr", revenue: 61000 },
-  { month: "May", revenue: 55000 },
-  { month: "Jun", revenue: 67000 },
-  { month: "Jul", revenue: 70000 },
-  { month: "Aug", revenue: 62000 },
-  { month: "Sep", revenue: 78000 },
-  { month: "Oct", revenue: 85000 },
-  { month: "Nov", revenue: 92000 },
-  { month: "Dec", revenue: 98000 },
+  { period: "Jan", revenue: 45000 },
+  { period: "Feb", revenue: 52000 },
+  { period: "Mar", revenue: 48000 },
+  { period: "Apr", revenue: 61000 },
+  { period: "May", revenue: 55000 },
+  { period: "Jun", revenue: 67000 },
+  { period: "Jul", revenue: 70000 },
+  { period: "Aug", revenue: 62000 },
+  { period: "Sep", revenue: 78000 },
+  { period: "Oct", revenue: 85000 },
+  { period: "Nov", revenue: 92000 },
+  { period: "Dec", revenue: 98000 },
 ];
 
 const colWidth = 100 / 7;

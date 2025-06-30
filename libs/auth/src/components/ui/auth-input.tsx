@@ -35,6 +35,7 @@ export const AuthInput = React.forwardRef<HTMLInputElement, AuthInputProps>(
               error && "border-red-400 focus:border-red-400 focus:shadow-red-400/20",
               className
             )}
+            autoFocus={isFocused}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             {...props}

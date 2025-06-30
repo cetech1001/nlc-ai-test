@@ -3,7 +3,8 @@
 import {Logo} from "@/app/components/logo";
 import {Button, Input, EyeLashIcon } from "@nlc-ai/ui";
 import {useRouter} from "next/navigation";
-import {useState} from "react";
+import React, {useState} from "react";
+import {GoogleIcon} from "@/app/(auth)/components/google-icon";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -109,6 +110,16 @@ export default function RegisterPage() {
               className="min-h-[64px] px-4 text-[16px] leading-5 border-[#EFEFEF] bg-transparent text-[#F9F9F9] placeholder:text-[#F9F9F9]/50 focus:border-magenta-light focus:ring-magenta-light/20 rounded-[12px]"
             />
           </div>
+
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center min-h-[64px] bg-transparent border-[#EFEFEF] hover:bg-white/5 text-[#F9F9F9]/50 hover:text-[#F9F9F9] transition-all duration-200 rounded-[12px] gap-[14px]"
+          >
+            <GoogleIcon />
+            <span className="text-[16px] leading-5">
+              Sign up with google
+            </span>
+          </Button>
         </div>
 
         <Button

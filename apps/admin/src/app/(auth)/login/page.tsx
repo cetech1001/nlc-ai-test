@@ -117,7 +117,7 @@ export default function LoginPage() {
           >
             <GoogleIcon />
             <span className="text-[16px] leading-5">
-              Sign up with google
+              Sign in with google
             </span>
           </Button>
         </div>
