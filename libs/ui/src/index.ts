@@ -15,6 +15,8 @@ export * from './components/ui/table';
 export * from './components/ui/toast';
 export * from './components/ui/toaster';
 export * from './components/ui/use-toast';
+export * from './components/ui/switch';
+export * from './components/ui/tabs';
 
 export * from './components/icons/calendar'
 export * from './components/icons/eye-lash';
