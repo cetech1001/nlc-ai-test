@@ -62,7 +62,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[#1A1A1A] bg-[#0A0A0A] px-6 pb-4">
       <div className="flex h-16 shrink-0 items-center border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
-          <Logo height={40} width={48}/>
+          <Logo height={40} width={48} type={sidebarOpen ? 'png' : 'svg'}/>
           <span className="text-white font-semibold text-lg">NLC AI ADMIN</span>
         </div>
       </div>
@@ -83,7 +83,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
                         active
                           ? 'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 text-white shadow-lg shadow-[#7B21BA]/25'
                           : 'text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A]',
-                        'group flex w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200'
+                        'group flex items-center w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200'
                       )}
                     >
                       <Icon
@@ -111,7 +111,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
                       isActive('/settings')
                         ? 'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 text-white shadow-lg shadow-[#7B21BA]/25'
                         : 'text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A]',
-                      'group flex w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200'
+                      'group flex items-center w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium transition-all duration-200'
                     )}
                   >
                     <HiCog
@@ -134,7 +134,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
                 <li>
                   <button
                     onClick={handleLogout}
-                    className="group flex w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A] transition-all duration-200"
+                    className="group flex items-center w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A] transition-all duration-200"
                   >
                     <HiLogout
                       className="h-5 w-5 shrink-0 text-[#A0A0A0] group-hover:text-white"
