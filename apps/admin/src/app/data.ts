@@ -705,3 +705,65 @@ export const sampleTransactions: Transaction[] = [
     currency: 'USD'
   }
 ];
+
+export const appointments = [
+  {
+    name: "Rachel Greene",
+    date: "May 15, 2024",
+    time: "10:00AM - 11:00AM",
+    avatar: "RG",
+  },
+  {
+    name: "John Doe",
+    date: "May 15, 2024",
+    time: "11:00AM - 12:00PM",
+    avatar: "JD",
+  },
+  {
+    name: "Ben Affleck",
+    date: "May 16, 2024",
+    time: "12:00PM - 01:00PM",
+    avatar: "BA",
+  },
+];
+
+export interface CalendarEvent {
+  title: string;
+  time: string;
+  color: string;
+}
+export type CalendarEvents = Record<number, CalendarEvent[]>
+
+export const calendarEvents: CalendarEvents = {
+  1: [
+    { title: "RDHP Interview", time: "13:00 - 14:00", color: "bg-gradient-to-l from-violet-600 via-fuchsia-600 to-fuchsia-200" },
+  ],
+  7: [
+    {
+      title: "Thomas Interview",
+      time: "10:00 - 12:00",
+      color: "bg-gradient-to-l from-violet-600 via-fuchsia-600 to-fuchsia-200",
+    },
+  ],
+  15: [
+    {
+      title: "Emily's Interview",
+      time: "14:00 - 15:00",
+      color: "bg-gradient-to-l from-violet-600 via-fuchsia-600 to-fuchsia-200",
+    },
+  ],
+  18: [
+    {
+      title: "Simon's Interview",
+      time: "09:00 - 10:00",
+      color: "bg-gradient-to-l from-violet-600 via-fuchsia-600 to-fuchsia-200",
+    },
+  ],
+  30: [
+    {
+      title: "Gabriel Interview",
+      time: "08:30 - 17:00",
+      color: "bg-gradient-to-l from-violet-600 via-fuchsia-600 to-fuchsia-200",
+    },
+  ],
+};

@@ -191,7 +191,7 @@ export default function ClientRetention() {
               charlie.levin@email.com
             </div>
 
-            <div className="grid grid-cols-2 gap-x-[173px] gap-y-4 mt-[47px]">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4 mt-[47px]">
               <div className="flex flex-col gap-1.5">
                 <div className="text-stone-50 text-sm font-medium font-['Inter']">User ID</div>
                 <div className="text-stone-300 text-sm font-normal font-['Inter']">#1234</div>

@@ -1,6 +1,6 @@
 'use client'
 
-import PaymentModal from "@/app/(dashboard)/components/payment-modal";
+import PaymentModal from "@/app/(dashboard)/coaches/make-payment/components/payment-modal";
 import { useState } from "react";
 import {getPlans} from "@/app/data";
 import {PlanCard} from "@/app/(dashboard)/components/plan-card";

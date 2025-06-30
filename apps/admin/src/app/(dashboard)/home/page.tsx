@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { StatCard } from "@/app/(dashboard)/components/stat-card";
+import { StatCard } from "@/app/(dashboard)/home/components/stat-card";
 import {DataTable, TableAction} from "@/app/(dashboard)/components/data-table";
 import { useRouter } from "next/navigation";
 import {coachColumns, coachesData, revenueData} from "@/app/data";
