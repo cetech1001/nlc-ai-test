@@ -48,7 +48,7 @@ Thumbs.db
 out
 
 .env
-apps/admin/.env
+.env.production
 pgadmin/servers.json
 apps/api/src/generated/prisma
 

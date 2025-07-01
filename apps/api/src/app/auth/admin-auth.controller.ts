@@ -4,12 +4,15 @@ import { AuthService } from './auth.service';
 import { AdminLoginDto, ForgotPasswordDto, VerifyCodeDto, ResetPasswordDto } from './dto';
 import {Public} from "./decorators/public.decorator";
 import {type Response} from "express";
+import {ConfigService} from "@nestjs/config";
 
 @ApiTags('Admin Authentication')
 @Controller('auth/admin')
 @Public()
 export class AdminAuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -23,7 +26,7 @@ export class AdminAuthController {
 
     response.cookie('adminToken', result.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       maxAge: adminLoginDto.rememberMe
         ? 30 * 24 * 60 * 60 * 1000
@@ -40,7 +43,7 @@ export class AdminAuthController {
   async logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('adminToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       path: '/',
     });
