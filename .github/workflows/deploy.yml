@@ -97,6 +97,9 @@ jobs:
           tags: ${{ env.REGISTRY }}/cetech/nlc-ai-admin:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_ENV=production
 
   #  build-coach:
   #    needs: changes

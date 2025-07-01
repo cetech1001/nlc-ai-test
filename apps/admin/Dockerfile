@@ -16,6 +16,12 @@ RUN npm ci --only=production && npm cache clean --force
 FROM base AS builder
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_ENV
+
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package*.json ./
 

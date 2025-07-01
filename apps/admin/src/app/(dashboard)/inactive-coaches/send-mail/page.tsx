@@ -5,7 +5,7 @@ import {
   ThumbsUp,
   Copy,
 } from "lucide-react";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { useRouter } from "next/navigation";
 import { BackTo } from "@/app/(dashboard)/components/back-to";
 import dynamic from 'next/dynamic';
@@ -14,6 +14,10 @@ const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Ed
   ssr: false,
   loading: () => <div className="w-full h-96 bg-neutral-800/50 border border-neutral-600 rounded-lg animate-pulse" />
 });
+
+interface TinyMCEConfig {
+  apiKey: string;
+}
 
 export default function ClientRetention() {
   const router = useRouter();
@@ -41,6 +45,26 @@ export default function ClientRetention() {
 <p>Best,<br>The Next Level Coach AI Team<br>[Support Contact Details]<br>[Company Website]</p>`);
 
   const [emailSubject, setEmailSubject] = useState("We Miss You! Let's Get Back to Growing Your Coaching Business 🚀");
+  const [tinyMCEConfig, setTinyMCEConfig] = useState<TinyMCEConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTinyMCEConfig = async () => {
+      try {
+        const response = await fetch('/api/tinymce/config');
+        if (response.ok) {
+          const config = await response.json();
+          setTinyMCEConfig(config);
+        }
+      } catch (error) {
+        console.error('Failed to load TinyMCE config:', error);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+
+    fetchTinyMCEConfig();
+  }, []);
 
   const handleSendEmail = () => {
     console.log('Sending email...');
@@ -53,6 +77,14 @@ export default function ClientRetention() {
   const handleEditorChange = (content: string) => {
     setEmailContent(content);
   };
+
+  if (configLoading || !tinyMCEConfig) {
+    return (
+      <div className="w-full h-96 bg-neutral-800/50 border border-neutral-600 rounded-lg animate-pulse flex items-center justify-center">
+        <span className="text-stone-400">Loading editor...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
@@ -129,7 +161,7 @@ export default function ClientRetention() {
 
                 <div className="tinymce-wrapper-mobile">
                   <Editor
-                    apiKey={process.env.NEXT_PUBLIC_TINY_MCE_API_KEY}
+                    apiKey={tinyMCEConfig.apiKey}
                     value={emailContent}
                     onEditorChange={handleEditorChange}
                     init={{
@@ -246,7 +278,7 @@ export default function ClientRetention() {
 
                 <div className="flex-1 tinymce-wrapper min-h-0">
                   <Editor
-                    apiKey={process.env.NEXT_PUBLIC_TINY_MCE_API_KEY}
+                    apiKey={tinyMCEConfig.apiKey}
                     value={emailContent}
                     onEditorChange={handleEditorChange}
                     init={{
