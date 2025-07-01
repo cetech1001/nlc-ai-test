@@ -23,17 +23,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect();
   }
 
-  async executeTransaction<T>(fn: (prisma: PrismaClient) => Promise<T>): Promise<T> {
-    return this.$transaction(fn);
-  }
-
-  async softDelete(table: string, id: string) {
-    return this[table].update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-  }
-
   async paginate<T>(
     model: any,
     {
