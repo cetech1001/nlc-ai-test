@@ -6,6 +6,8 @@ module.exports = {
   content: [
     join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'),
     ...createGlobPatternsForDependencies(__dirname),
+    '../../libs/auth/src/**/*.{ts,tsx}',
+    '../../libs/ui/src/**/*.{ts,tsx}',
   ],
   theme: {
     container: {
