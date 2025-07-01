@@ -2,25 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoginForm, useAuthPage, type LoginFormData } from '@nlc-ai/auth';
+import { LoginForm, AuthLayout, type LoginFormData } from '@nlc-ai/auth';
 
-export default function AdminLoginPage() {
+export default function CoachLoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useAuthPage({
-    title: 'Admin Login',
-    description: 'Enter your credentials to access the admin panel.',
-  });
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
     setError('');
 
     try {
-      // Replace with your actual authentication logic
-      const response = await fetch('/api/auth/admin/login', {
+      const response = await fetch('/api/auth/coach/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,12 +28,8 @@ export default function AdminLoginPage() {
       }
 
       const result = await response.json();
-
-      // Store token or handle successful authentication
-      localStorage.setItem('adminToken', result.token);
-
-      // Redirect to admin dashboard
-      router.push('/admin/dashboard');
+      localStorage.setItem('coachToken', result.token);
+      router.push('/coach/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -51,14 +41,24 @@ export default function AdminLoginPage() {
     router.push('/forgot-password');
   };
 
+  const handleSignUp = () => {
+    router.push('/register');
+  };
+
   return (
-    <LoginForm
-      onSubmit={handleLogin}
-      onForgotPassword={handleForgotPassword}
-      isLoading={isLoading}
-      error={error}
-      showGoogleAuth={false}
-      showRememberMe={true}
-    />
+    <AuthLayout
+      title="Coach Login"
+      description="Enter your email and password to access your account."
+    >
+      <LoginForm
+        onSubmit={handleLogin}
+        onForgotPassword={handleForgotPassword}
+        onSignUp={handleSignUp}
+        isLoading={isLoading}
+        error={error}
+        showGoogleAuth={true}
+        showRememberMe={true}
+      />
+    </AuthLayout>
   );
 }

@@ -2,24 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ForgotPasswordForm, useAuthPage, type ForgotPasswordFormData } from '@nlc-ai/auth';
+import { RegisterForm, AuthLayout, type RegisterFormData } from '@nlc-ai/auth';
 
-export default function AdminForgotPasswordPage() {
+export default function CoachRegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useAuthPage({
-    title: "Forgot Password",
-    description: "Enter your registered email address & we'll send you code to reset your password.",
-  });
-
-  const handleForgotPassword = async (data: ForgotPasswordFormData) => {
+  const handleRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/auth/admin/forgot-password', {
+      const response = await fetch('/api/auth/coach/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,7 +24,7 @@ export default function AdminForgotPasswordPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send reset email');
+        throw new Error(errorData.message || 'Registration failed');
       }
 
       // Redirect to verification page
@@ -41,16 +36,22 @@ export default function AdminForgotPasswordPage() {
     }
   };
 
-  const handleBackToLogin = () => {
+  const handleSignIn = () => {
     router.push('/login');
   };
 
   return (
-    <ForgotPasswordForm
-      onSubmit={handleForgotPassword}
-      onBackToLogin={handleBackToLogin}
-      isLoading={isLoading}
-      error={error}
-    />
+    <AuthLayout
+      title="Create An Account"
+      description="Enter following details to create your account."
+    >
+      <RegisterForm
+        onSubmit={handleRegister}
+        onSignIn={handleSignIn}
+        isLoading={isLoading}
+        error={error}
+        showGoogleAuth={true}
+      />
+    </AuthLayout>
   );
 }
