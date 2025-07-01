@@ -8,6 +8,7 @@ import { Button, Input, EyeLashIcon } from '@nlc-ai/ui';
 import { registerSchema, type RegisterFormData } from '../../schemas/auth-schemas';
 import { type RegisterFormProps } from '../../types/auth.types';
 import { GoogleIcon } from '../ui/google-icon';
+import {Eye} from "lucide-react";
 
 export const RegisterForm: FC<RegisterFormProps> = ({
   onSubmit,
@@ -96,7 +97,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
             >
-              <EyeLashIcon />
+              {showPassword ? <Eye/> : <EyeLashIcon/>}
             </button>
           </div>
           {errors.password && (

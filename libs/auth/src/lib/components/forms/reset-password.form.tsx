@@ -7,6 +7,7 @@ import { Button, Input, EyeLashIcon } from '@nlc-ai/ui';
 
 import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas/auth-schemas';
 import { type ResetPasswordFormProps } from '../../types/auth.types';
+import {Eye} from "lucide-react";
 
 export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
   onSubmit,
@@ -62,7 +63,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
             >
-              <EyeLashIcon />
+              {showPassword ? <Eye/> : <EyeLashIcon/>}
             </button>
           </div>
           {errors.password && (

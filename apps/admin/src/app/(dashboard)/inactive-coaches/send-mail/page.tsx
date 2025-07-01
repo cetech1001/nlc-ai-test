@@ -129,7 +129,7 @@ export default function ClientRetention() {
 
                 <div className="tinymce-wrapper-mobile">
                   <Editor
-                    apiKey={"x7tjtymizskqq6lgbevhcmmrcj6v47pvhgs3i9r4vbz4yml3"}
+                    apiKey={process.env.NEXT_PUBLIC_TINY_MCE_API_KEY}
                     value={emailContent}
                     onEditorChange={handleEditorChange}
                     init={{
@@ -246,7 +246,7 @@ export default function ClientRetention() {
 
                 <div className="flex-1 tinymce-wrapper min-h-0">
                   <Editor
-                    apiKey={"x7tjtymizskqq6lgbevhcmmrcj6v47pvhgs3i9r4vbz4yml3"}
+                    apiKey={process.env.NEXT_PUBLIC_TINY_MCE_API_KEY}
                     value={emailContent}
                     onEditorChange={handleEditorChange}
                     init={{

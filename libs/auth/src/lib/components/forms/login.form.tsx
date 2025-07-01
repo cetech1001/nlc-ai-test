@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, FC } from 'react';
-import { useForm } from 'react-hook-form';
+import {useState, FC} from 'react';
+import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, Checkbox, EyeLashIcon } from '@nlc-ai/ui';
 
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
+import {Eye} from "lucide-react";
 
 export const LoginForm: FC<LoginFormProps> = ({
   onSubmit,
@@ -23,9 +24,9 @@ export const LoginForm: FC<LoginFormProps> = ({
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
-    watch,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -34,8 +35,6 @@ export const LoginForm: FC<LoginFormProps> = ({
       rememberMe: false,
     },
   });
-
-  const rememberMe = watch('rememberMe');
 
   const handleFormSubmit = async (data: LoginFormData) => {
     try {
@@ -86,7 +85,7 @@ export const LoginForm: FC<LoginFormProps> = ({
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
               >
-                <EyeLashIcon />
+                {showPassword ? <Eye/> : <EyeLashIcon />}
               </button>
             </div>
             {errors.password && (
@@ -98,13 +97,19 @@ export const LoginForm: FC<LoginFormProps> = ({
             <div className="flex items-center justify-between">
               {showRememberMe && (
                 <label className="flex items-center gap-[6px] cursor-pointer">
-                  <div className="relative">
-                    <Checkbox
-                      {...register('rememberMe')}
-                      checked={rememberMe}
-                      className="w-8 h-8 border-2 border-[#CACACA] data-[state=checked]:bg-magenta data-[state=checked]:border-magenta rounded-lg"
-                    />
-                  </div>
+                  <Controller
+                    name="rememberMe"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked === 'indeterminate' ? false : checked);
+                        }}
+                        className="w-8 h-8 border-2 border-[#CACACA] data-[state=checked]:bg-magenta data-[state=checked]:border-magenta rounded-lg"
+                      />
+                    )}
+                  />
                   <span className="text-[16px] leading-5 text-[#F9F9F9]">
                     Remember me
                   </span>

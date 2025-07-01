@@ -1,10 +1,13 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {Controller, Post, Body, HttpCode, HttpStatus, Res} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AdminLoginDto, ForgotPasswordDto, VerifyCodeDto, ResetPasswordDto } from './dto';
+import {Public} from "./decorators/public.decorator";
+import {type Response} from "express";
 
 @ApiTags('Admin Authentication')
 @Controller('auth/admin')
+@Public()
 export class AdminAuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -13,8 +16,36 @@ export class AdminAuthController {
   @ApiOperation({ summary: 'Admin login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() adminLoginDto: AdminLoginDto) {
-    return this.authService.loginAdmin(adminLoginDto);
+  async login(
+    @Body() adminLoginDto: AdminLoginDto,
+    @Res({ passthrough: true }) response: Response) {
+    const result = await this.authService.loginAdmin(adminLoginDto);
+
+    response.cookie('adminToken', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: adminLoginDto.rememberMe
+        ? 30 * 24 * 60 * 60 * 1000
+        : 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return result;
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Admin logout' })
+  async logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('adminToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return { message: 'Logged out successfully' };
   }
 
   @Post('forgot-password')

@@ -13,8 +13,8 @@ import {JwtAuthGuard} from "./auth/guards/jwt-auth.guard";
       envFilePath: '.env',
     }),
     PrismaModule,
-    CoachesModule,
     AuthModule,
+    CoachesModule,
   ],
   providers: [
     {

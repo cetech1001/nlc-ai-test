@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {Injectable, UnauthorizedException, BadRequestException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
@@ -109,13 +109,11 @@ export class AuthService {
     return coach;
   }
 
-  // Admin Authentication
   async loginAdmin(adminLoginDto: AdminLoginDto) {
     const { email, password } = adminLoginDto;
 
     const admin = await this.validateAdmin(email, password);
 
-    // Update last login
     await this.prisma.admins.update({
       where: { id: admin.id },
       data: { lastLoginAt: new Date() },

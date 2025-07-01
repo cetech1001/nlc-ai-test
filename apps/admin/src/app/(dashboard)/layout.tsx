@@ -1,8 +1,9 @@
 'use client'
 
-import { ReactNode } from 'react';
+import {ReactNode} from 'react';
 import { DashboardSidebarWrapper } from './components/dashboard-sidebar';
 import {usePathname} from "next/navigation";
+import {useAuth} from "@/lib/hooks/use-auth";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -63,6 +64,7 @@ const defaultConfig = {
 };
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { user } = useAuth();
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
@@ -86,13 +88,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <p className="text-white text-sm font-medium">Andrew Kramer</p>
+                  <p className="text-white text-sm font-medium">{user?.firstName} {user?.lastName}</p>
                   <p className="text-[#A0A0A0] text-xs">
-                    kramer.andrew@example.com
+                    {user?.email}
                   </p>
                 </div>
                 <div className="w-8 h-8 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">AK</span>
+                  <span className="text-white text-sm font-medium">
+                    {user?.firstName[0]}{user?.lastName[0]}
+                  </span>
                 </div>
               </div>
             </div>

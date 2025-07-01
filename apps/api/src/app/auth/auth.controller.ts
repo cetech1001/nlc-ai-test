@@ -12,8 +12,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile(@Request() req: { user: { sub: string; type: 'coach' | 'admin'; } }) {
-    const { sub: id, type } = req.user;
+  async getProfile(@Request() req: { user: { id: string; type: 'coach' | 'admin'; } }) {
+    const { id, type } = req.user;
     return this.authService.findUserById(id, type);
   }
 }
