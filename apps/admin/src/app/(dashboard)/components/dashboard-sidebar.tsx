@@ -17,6 +17,7 @@ import {
   ArrowRightStartOnRectangleIcon as HiLogout
 } from '@heroicons/react/24/outline';
 import { Logo } from '@/app/components/logo';
+import {useAuth} from "@/lib/hooks/use-auth";
 
 const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
@@ -40,11 +41,7 @@ function classNames(...classes: string[]) {
 export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-
-  const handleLogout = () => {
-    document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-    router.push('/login');
-  };
+  const { logout } = useAuth();
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -133,7 +130,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
               <ul role="list" className="-mx-2 space-y-2">
                 <li>
                   <button
-                    onClick={handleLogout}
+                    onClick={logout}
                     className="group flex items-center w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A] transition-all duration-200"
                   >
                     <HiLogout
