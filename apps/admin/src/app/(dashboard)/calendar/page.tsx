@@ -144,6 +144,7 @@ export default function Calendar(){
       } else {
         newWeekStart.setDate(prev.getDate() + 7);
       }
+      setCurrentDate(newWeekStart);
       return newWeekStart;
     });
   };
