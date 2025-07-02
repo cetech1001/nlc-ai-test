@@ -759,7 +759,6 @@ export interface Lead {
   email: string;
   meetingDate: string;
   meetingTime: string;
-  agentsOfInterest: string[];
   status: 'Converted' | 'Unresponsive' | 'Contacted' | 'Scheduled' | 'Follow-up';
   phone?: string;
   source?: string;
@@ -773,7 +772,6 @@ export const leadsData: Lead[] = [
     email: "leslie.alexander@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    agentsOfInterest: ["A1", "A2", "A3", "A4", "A5"],
     status: "Unresponsive",
     phone: "+1 (555) 123-4567",
     source: "Website Contact Form",
@@ -785,7 +783,6 @@ export const leadsData: Lead[] = [
     email: "savannah.nguyen@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    agentsOfInterest: ["A1", "A2", "A3"],
     status: "Converted",
     phone: "+1 (555) 234-5678",
     source: "Social Media",
@@ -797,7 +794,6 @@ export const leadsData: Lead[] = [
     email: "kathryn.murphy@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    agentsOfInterest: ["A1", "A2"],
     status: "Converted",
     phone: "+1 (555) 345-6789",
     source: "Referral",
@@ -809,7 +805,6 @@ export const leadsData: Lead[] = [
     email: "dianne.russell@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    agentsOfInterest: ["A3", "A4", "A5"],
     status: "Converted",
     phone: "+1 (555) 456-7890",
     source: "Google Ads",
@@ -821,7 +816,6 @@ export const leadsData: Lead[] = [
     email: "annette.black@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    agentsOfInterest: ["A4", "A5"],
     status: "Unresponsive",
     phone: "+1 (555) 567-8901",
     source: "LinkedIn",
@@ -833,7 +827,6 @@ export const leadsData: Lead[] = [
     email: "kristin.watson@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    agentsOfInterest: ["A1", "A2"],
     status: "Unresponsive",
     phone: "+1 (555) 678-9012",
     source: "Webinar",
@@ -845,7 +838,6 @@ export const leadsData: Lead[] = [
     email: "matthew.wade@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    agentsOfInterest: ["A1", "A2", "A3", "A4", "A5"],
     status: "Converted",
     phone: "+1 (555) 789-0123",
     source: "Podcast",
@@ -857,7 +849,6 @@ export const leadsData: Lead[] = [
     email: "eleanor.pena@email.com",
     meetingDate: "Mar 27, 2025",
     meetingTime: "2:00 PM",
-    agentsOfInterest: ["A1", "A3"],
     status: "Scheduled",
     phone: "+1 (555) 890-1234",
     source: "Website Contact Form",
@@ -869,7 +860,6 @@ export const leadsData: Lead[] = [
     email: "cameron.williamson@email.com",
     meetingDate: "Mar 27, 2025",
     meetingTime: "3:30 PM",
-    agentsOfInterest: ["A2", "A4"],
     status: "Contacted",
     phone: "+1 (555) 901-2345",
     source: "Social Media",
@@ -881,7 +871,6 @@ export const leadsData: Lead[] = [
     email: "brooklyn.simmons@email.com",
     meetingDate: "Mar 28, 2025",
     meetingTime: "11:00 AM",
-    agentsOfInterest: ["A1", "A2", "A3"],
     status: "Follow-up",
     phone: "+1 (555) 012-3456",
     source: "Referral",
@@ -893,7 +882,6 @@ export const leadsData: Lead[] = [
     email: "theresa.webb@email.com",
     meetingDate: "Mar 28, 2025",
     meetingTime: "4:00 PM",
-    agentsOfInterest: ["A3", "A5"],
     status: "Converted",
     phone: "+1 (555) 123-0987",
     source: "Google Ads",
@@ -905,7 +893,6 @@ export const leadsData: Lead[] = [
     email: "marvin.mckinney@email.com",
     meetingDate: "Mar 29, 2025",
     meetingTime: "9:00 AM",
-    agentsOfInterest: ["A1", "A4", "A5"],
     status: "Scheduled",
     phone: "+1 (555) 234-1098",
     source: "LinkedIn",
@@ -917,7 +904,6 @@ export const leadsData: Lead[] = [
     email: "jerome.bell@email.com",
     meetingDate: "Mar 29, 2025",
     meetingTime: "1:00 PM",
-    agentsOfInterest: ["A2", "A3"],
     status: "Contacted",
     phone: "+1 (555) 345-2109",
     source: "Webinar",
@@ -929,7 +915,6 @@ export const leadsData: Lead[] = [
     email: "courtney.henry@email.com",
     meetingDate: "Mar 30, 2025",
     meetingTime: "10:30 AM",
-    agentsOfInterest: ["A1", "A2", "A4"],
     status: "Follow-up",
     phone: "+1 (555) 456-3210",
     source: "Podcast",
@@ -941,7 +926,6 @@ export const leadsData: Lead[] = [
     email: "ralph.edwards@email.com",
     meetingDate: "Mar 30, 2025",
     meetingTime: "3:00 PM",
-    agentsOfInterest: ["A3", "A4", "A5"],
     status: "Unresponsive",
     phone: "+1 (555) 567-4321",
     source: "Website Contact Form",
@@ -949,7 +933,7 @@ export const leadsData: Lead[] = [
   }
 ];
 
-const leadColWidth = 100 / 6;
+const leadColWidth = 100 / 5;
 export const leadColumns: TableColumn<Lead>[] = [
   {
     key: 'name',
@@ -974,12 +958,6 @@ export const leadColumns: TableColumn<Lead>[] = [
     header: 'Time',
     width: `${leadColWidth * 0.6}%`,
     render: tableRenderers.basicText
-  },
-  {
-    key: 'agentsOfInterest',
-    header: 'Agents of Interest',
-    width: `${leadColWidth}%`,
-    render: (value: string[]) => tableRenderers.basicText(value.join(', '))
   },
   {
     key: 'status',
