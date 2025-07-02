@@ -14,8 +14,8 @@ export class AdminAuthController {
 
   constructor(
     private readonly authService: AuthService,
-    configService: ConfigService) {
-    this.isProduction = configService.get('NODE_ENV') === 'production';
+    private readonly configService: ConfigService) {
+    this.isProduction = this.configService.get('NODE_ENV') === 'production';
   }
 
   @Post('login')
@@ -31,6 +31,7 @@ export class AdminAuthController {
     response.cookie('adminToken', result.access_token, {
       httpOnly: true,
       secure: this.isProduction,
+      domain: this.isProduction ? this.configService.get('COOKIE_DOMAIN') : undefined,
       sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: adminLoginDto.rememberMe
         ? 30 * 24 * 60 * 60 * 1000
@@ -48,6 +49,7 @@ export class AdminAuthController {
     response.clearCookie('adminToken', {
       httpOnly: true,
       secure: this.isProduction,
+      domain: this.isProduction ? this.configService.get('COOKIE_DOMAIN') : undefined,
       sameSite: this.isProduction ? 'none' : 'lax',
       path: '/',
     });
