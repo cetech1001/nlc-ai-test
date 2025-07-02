@@ -31,7 +31,7 @@ export const useAuth = () => {
         isAuthenticated: true,
       });
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // console.error('Auth check failed:', error);
       setAuthState({
         user: null,
         isLoading: false,

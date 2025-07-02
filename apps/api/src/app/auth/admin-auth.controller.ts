@@ -1,21 +1,14 @@
-import {Controller, Post, Body, HttpCode, HttpStatus, Res} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { AdminLoginDto, ForgotPasswordDto, VerifyCodeDto, ResetPasswordDto } from './dto';
+import {Body, Controller, HttpCode, HttpStatus, Post} from '@nestjs/common';
+import {ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
+import {AuthService} from './auth.service';
+import {AdminLoginDto, ForgotPasswordDto, ResetPasswordDto, VerifyCodeDto} from './dto';
 import {Public} from "./decorators/public.decorator";
-import {type Response} from "express";
-import {ConfigService} from "@nestjs/config";
 
 @ApiTags('Admin Authentication')
 @Controller('auth/admin')
 @Public()
 export class AdminAuthController {
-  private readonly isProduction: boolean = false;
-
-  constructor(
-    private readonly authService: AuthService,
-    private readonly configService: ConfigService) {
-    this.isProduction = this.configService.get('NODE_ENV') === 'production';
+  constructor(private readonly authService: AuthService) {
   }
 
   @Post('login')
@@ -23,37 +16,14 @@ export class AdminAuthController {
   @ApiOperation({ summary: 'Admin login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(
-    @Body() adminLoginDto: AdminLoginDto,
-    @Res({ passthrough: true }) response: Response) {
-    const result = await this.authService.loginAdmin(adminLoginDto);
-
-    response.cookie('adminToken', result.access_token, {
-      httpOnly: true,
-      secure: this.isProduction,
-      domain: this.isProduction ? this.configService.get('COOKIE_DOMAIN') : undefined,
-      sameSite: this.isProduction ? 'none' : 'lax',
-      maxAge: adminLoginDto.rememberMe
-        ? 30 * 24 * 60 * 60 * 1000
-        : 24 * 60 * 60 * 1000,
-      path: '/',
-    });
-
-    return result;
+  async login(@Body() adminLoginDto: AdminLoginDto) {
+    return await this.authService.loginAdmin(adminLoginDto);
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Admin logout' })
-  async logout(@Res({ passthrough: true }) response: Response) {
-    response.clearCookie('adminToken', {
-      httpOnly: true,
-      secure: this.isProduction,
-      domain: this.isProduction ? this.configService.get('COOKIE_DOMAIN') : undefined,
-      sameSite: this.isProduction ? 'none' : 'lax',
-      path: '/',
-    });
-
+  async logout() {
     return { message: 'Logged out successfully' };
   }
 

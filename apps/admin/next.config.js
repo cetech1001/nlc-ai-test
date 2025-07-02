@@ -17,7 +17,6 @@ const nextConfig = {
     externalDir: true,
   },
   images: {
-    domains: ['localhost', 'nlc-ai-admin.onrender.com'],
     remotePatterns: [
       {
         protocol: 'http',

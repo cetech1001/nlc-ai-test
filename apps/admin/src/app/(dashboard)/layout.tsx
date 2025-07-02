@@ -1,8 +1,8 @@
 'use client'
 
-import {ReactNode} from 'react';
+import {ReactNode, useEffect} from 'react';
 import { DashboardSidebarWrapper } from './components/dashboard-sidebar';
-import {usePathname} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@/lib/hooks/use-auth";
 
 interface DashboardLayoutProps {
@@ -64,11 +64,30 @@ const defaultConfig = {
 };
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
   const currentConfig = pageConfig[pathname as keyof typeof pageConfig] || defaultConfig;
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#000000]">
