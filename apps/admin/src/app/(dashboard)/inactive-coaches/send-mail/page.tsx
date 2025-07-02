@@ -167,6 +167,7 @@ export default function ClientRetention() {
                     init={{
                       height: 350,
                       menubar: false,
+                      elementpath: false,
                       plugins: [
                         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
                         'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
@@ -176,7 +177,7 @@ export default function ClientRetention() {
                       content_style: `
                         body {
                           font-family: Inter, sans-serif;
-                          font-size: 14px;
+                          font-size: 16px;
                           color: #d6d3d1;
                           background: rgb(0 0 0 / 1);
                           line-height: 1.6;
@@ -196,6 +197,12 @@ export default function ClientRetention() {
                             container.style.borderRadius = '8px';
                             container.style.backgroundColor = 'rgba(23, 23, 23, 0.5)';
                           }
+                        });
+                        editor.on('blur', () => {
+                          setTimeout(() => {
+                            window.scrollTo(window.scrollX, window.scrollY + 1);
+                            window.scrollTo(window.scrollX, window.scrollY - 1);
+                          }, 300);
                         });
                       }
                     }}
@@ -284,6 +291,7 @@ export default function ClientRetention() {
                     init={{
                       height: '100%',
                       menubar: false,
+                      elementpath: false,
                       plugins: [
                         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
                         'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
@@ -293,7 +301,7 @@ export default function ClientRetention() {
                       content_style: `
                         body {
                           font-family: Inter, sans-serif;
-                          font-size: 14px;
+                          font-size: 16px;
                           color: #d6d3d1;
                           background: rgb(0 0 0 / 1);
                           line-height: 1.6;
@@ -316,6 +324,12 @@ export default function ClientRetention() {
                             container.style.backgroundColor = 'rgba(23, 23, 23, 0.5)';
                             container.style.height = '100%';
                           }
+                        });
+                        editor.on('blur', () => {
+                          setTimeout(() => {
+                            window.scrollTo(window.scrollX, window.scrollY + 1);
+                            window.scrollTo(window.scrollX, window.scrollY - 1);
+                          }, 300);
                         });
                       }
                     }}
