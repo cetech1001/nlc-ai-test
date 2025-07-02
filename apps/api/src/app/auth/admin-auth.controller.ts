@@ -27,7 +27,7 @@ export class AdminAuthController {
     response.cookie('adminToken', result.access_token, {
       httpOnly: this.configService.get('NODE_ENV') === 'development',
       secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: adminLoginDto.rememberMe
         ? 30 * 24 * 60 * 60 * 1000
         : 24 * 60 * 60 * 1000,
@@ -42,9 +42,9 @@ export class AdminAuthController {
   @ApiOperation({ summary: 'Admin logout' })
   async logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('adminToken', {
-      httpOnly: this.configService.get('NODE_ENV') === 'development',
+      httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       path: '/',
     });
 
