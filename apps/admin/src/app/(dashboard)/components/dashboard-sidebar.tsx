@@ -60,7 +60,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
       <div className="flex h-16 shrink-0 items-center border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
           <Logo height={40} width={48} type={sidebarOpen ? 'png' : 'svg'}/>
-          <span className="text-white font-semibold text-lg">NLC AI ADMIN</span>
+          <span className="text-white font-semibold text-lg">ADMIN PANEL</span>
         </div>
       </div>
 

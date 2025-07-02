@@ -7,7 +7,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Next Level Coach AI Platform - Admin Dashboard',
+  title: 'Next Level Coach AI - Admin Dashboard',
   description: 'AI-powered coaching platform',
 };
 
