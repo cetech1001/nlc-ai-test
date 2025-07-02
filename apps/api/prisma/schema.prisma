@@ -142,6 +142,9 @@ model coaches {
   emailThreads          emailThreads[]
   integrations          integrations[]
   notifications         notifications[]
+  paymentMethods        paymentMethods[]
+  transactions          transactions[]
+  invoices              invoices[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -456,3 +459,159 @@ model webhookEvents {
   @@index([status], map: "idx_webhook_events_status")
   @@map("webhook_events")
 }
+
+model transactions {
+  id                String            @id @default(uuid())
+  coachId           String
+  subscriptionId    String?
+  planId            String
+
+  // Transaction details
+  amount            Int               // Amount in cents (e.g., 120000 = $1200.00)
+  currency          String            @default("USD")
+  status            TransactionStatus @default(pending)
+  paymentMethod     PaymentMethod
+
+  // External payment provider data
+  stripePaymentId   String?           // Stripe payment intent ID
+  paypalOrderId     String?           // PayPal order ID
+
+  // Invoice information
+  invoiceNumber     String?           @unique
+  invoiceDate       DateTime
+  dueDate           DateTime?
+  paidAt            DateTime?
+
+  // Metadata
+  description       String?
+  metadata          Json?             // Additional payment metadata
+  failureReason     String?           // Reason for failed payments
+  refundReason      String?           // Reason for refunds
+  refundedAmount    Int?              // Amount refunded in cents
+
+  // Timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  coach             coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  subscription      subscriptions?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  plan              plans             @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@map("Transactions")
+}
+
+model paymentMethods {
+  id                String            @id @default(uuid())
+  coachId           String
+
+  // Payment method details
+  type              PaymentMethod
+  isDefault         Boolean           @default(false)
+  isActive          Boolean           @default(true)
+
+  // Card details (if applicable)
+  cardLast4         String?
+  cardBrand         String?           // visa, mastercard, amex, etc.
+  cardExpMonth      Int?
+  cardExpYear       Int?
+
+  // External provider data
+  stripePaymentMethodId String?       // Stripe payment method ID
+  paypalEmail       String?           // PayPal email
+
+  // Timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  coach             coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@map("PaymentMethods")
+}
+
+model invoices {
+  id                String            @id @default(uuid())
+  coachId           String
+  subscriptionId    String?
+  transactionId     String?
+
+  // Invoice details
+  invoiceNumber     String            @unique
+  amount            Int               // Amount in cents
+  currency          String            @default("USD")
+  status            InvoiceStatus     @default(draft)
+
+  // Dates
+  issueDate         DateTime          @default(now())
+  dueDate           DateTime
+  paidAt            DateTime?
+
+  // Line items (stored as JSON for flexibility)
+  lineItems         Json              // Array of {description, quantity, unitPrice, total}
+
+  // Tax and discounts
+  subtotal          Int               // Subtotal in cents
+  taxRate           Float?            // Tax rate as decimal (0.08 = 8%)
+  taxAmount         Int?              // Tax amount in cents
+  discountAmount    Int?              // Discount amount in cents
+  total             Int               // Final total in cents
+
+  // Additional info
+  notes             String?
+  metadata          Json?
+
+  // Timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  coach             coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  subscription      subscriptions?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  transaction       transactions?     @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@map("Invoices")
+}
+
+// Enums for transaction-related fields
+enum TransactionStatus {
+  pending
+  processing
+  completed
+  failed
+  canceled
+  refunded
+  partially_refunded
+}
+
+enum PaymentMethod {
+  credit_card
+  debit_card
+  paypal
+  bank_transfer
+  stripe
+  manual
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+  canceled
+  refunded
+}
+
+// Update existing models to add transaction relationships
+
+// Add these fields to your existing Coaches model:
+// paymentMethods    PaymentMethods[]
+// transactions      Transactions[]
+// invoices          Invoices[]
+
+// Add these fields to your existing Plans model:
+// transactions      Transactions[]
+
+// Add these fields to your existing Subscriptions model:
+// transactions      Transactions[]
+// invoices          Invoices[]

@@ -1,20 +1,5 @@
 import {TableColumn, tableRenderers} from "@/app/(dashboard)/components/data-table";
 
-export const revenueData = [
-  { period: "Jan", revenue: 45000 },
-  { period: "Feb", revenue: 52000 },
-  { period: "Mar", revenue: 48000 },
-  { period: "Apr", revenue: 61000 },
-  { period: "May", revenue: 55000 },
-  { period: "Jun", revenue: 67000 },
-  { period: "Jul", revenue: 70000 },
-  { period: "Aug", revenue: 62000 },
-  { period: "Sep", revenue: 78000 },
-  { period: "Oct", revenue: 85000 },
-  { period: "Nov", revenue: 92000 },
-  { period: "Dec", revenue: 98000 },
-];
-
 const colWidth = 100 / 7;
 export const coachColumns: TableColumn<Coach>[] = [
   {
