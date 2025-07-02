@@ -94,7 +94,7 @@ export default function Settings() {
                   >
                     <div className="w-6 h-6 bg-white rounded-full" />
                   </button>
-                  <div className={`text-lg sm:text-xl font-normal font-['Plus_Jakarta_Sans'] ${
+                  <div className={`text-lg font-normal font-['Inter'] ${
                     desktopNotifications ? "text-white" : "text-zinc-500"
                   }`}>
                     {desktopNotifications ? "On" : "Off"}
@@ -114,7 +114,7 @@ export default function Settings() {
                   >
                     <div className="w-6 h-6 bg-white rounded-full" />
                   </button>
-                  <div className={`text-lg sm:text-xl font-normal font-['Plus_Jakarta_Sans'] ${
+                  <div className={`text-lg font-normal font-['Inter'] ${
                     emailNotifications ? "text-white" : "text-zinc-500"
                   }`}>
                     {emailNotifications ? "On" : "Off"}
