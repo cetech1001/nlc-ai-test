@@ -10,9 +10,13 @@ import {ConfigService} from "@nestjs/config";
 @Controller('auth/admin')
 @Public()
 export class AdminAuthController {
+  private readonly isProduction: boolean = false;
+
   constructor(
     private readonly authService: AuthService,
-    private readonly configService: ConfigService) {}
+    configService: ConfigService) {
+    this.isProduction = configService.get('NODE_ENV') === 'production';
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -25,9 +29,9 @@ export class AdminAuthController {
     const result = await this.authService.loginAdmin(adminLoginDto);
 
     response.cookie('adminToken', result.access_token, {
-      httpOnly: this.configService.get('NODE_ENV') === 'development',
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'none',
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'none' : 'lax',
       maxAge: adminLoginDto.rememberMe
         ? 30 * 24 * 60 * 60 * 1000
         : 24 * 60 * 60 * 1000,
@@ -43,8 +47,8 @@ export class AdminAuthController {
   async logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('adminToken', {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'none',
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'none' : 'lax',
       path: '/',
     });
 
