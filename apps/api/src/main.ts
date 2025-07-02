@@ -20,7 +20,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.setGlobalPrefix(globalPrefix);
 
-  const corsOrigins = configService.get('CORS_ORIGINS', 'http://localhost:3000').split(',');
+  const corsOrigins = configService.get('CORS_ORIGINS', '').split(',').filter(Boolean);
   app.enableCors({
     origin: corsOrigins,
     credentials: true,
