@@ -37,13 +37,21 @@ export const Pagination = (props: IProps) => {
     return pages;
   };
 
+  const handlePageClick = (page: number) => {
+    props.setCurrentPage(page);
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <div className="bg-black/50 backdrop-blur-sm p-4 sm:p-6">
       <div className="flex items-center justify-end gap-5">
         {getPaginationPages().map((page, index) => (
           <button
             key={index}
-            onClick={() => typeof page === "number" && props.setCurrentPage(page)}
+            onClick={() => typeof page === "number" && handlePageClick(page)}
             disabled={page === "..."}
             className={`w-10 min-w-10 min-h-10 h-10 p-2.5 rounded-[10px] flex items-center justify-center text-xl font-semibold leading-relaxed transition-colors ${
               page === props.currentPage
