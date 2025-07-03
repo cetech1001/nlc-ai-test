@@ -37,45 +37,41 @@ export const Pagination = (props: IProps) => {
     return pages;
   };
 
-  const handlePageClick = (page: number) => {
-    if (page === props.currentPage) return;
+  const smoothScrollToTop = () => {
+    const startPosition = window.pageYOffset;
+    const duration = 500;
+    const startTime = performance.now();
 
-    props.setCurrentPage(page);
+    const easeOutCubic = (t: number): number => {
+      return 1 - Math.pow(1 - t, 3);
+    };
 
-    const scrollToTop = () => {
-      if ('scrollBehavior' in document.documentElement.style) {
-        window.scrollTo({
-          top: 0,
-          left: 0,
-          behavior: 'smooth'
-        });
+    const animateScroll = (currentTime: number) => {
+      const timeElapsed = currentTime - startTime;
+      const progress = Math.min(timeElapsed / duration, 1);
+      const easedProgress = easeOutCubic(progress);
+
+      const currentPosition = startPosition * (1 - easedProgress);
+      window.scrollTo(0, currentPosition);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll);
       } else {
         window.scrollTo(0, 0);
       }
-
-      setTimeout(() => {
-        if (window.pageYOffset > 100) {
-          document.documentElement.scrollTop = 0;
-          document.body.scrollTop = 0;
-        }
-      }, 100);
-
-      setTimeout(() => {
-        if (window.pageYOffset > 100) {
-          window.scroll(0, 0);
-        }
-      }, 200);
     };
 
-    requestAnimationFrame(() => {
-      scrollToTop();
-    });
+    requestAnimationFrame(animateScroll);
+  };
 
-    setTimeout(() => {
-      if (window.pageYOffset > 100) {
-        window.scrollTo(0, 0);
-      }
-    }, 300);
+  const handlePageClick = (page: number) => {
+    if (page === props.currentPage) return;
+
+    // Update page state immediately
+    props.setCurrentPage(page);
+
+    // Start smooth scroll animation
+    smoothScrollToTop();
   };
 
   return (
@@ -86,12 +82,12 @@ export const Pagination = (props: IProps) => {
             key={index}
             onClick={() => typeof page === "number" && handlePageClick(page)}
             disabled={page === "..." || page === props.currentPage}
-            className={`w-10 min-w-10 min-h-10 h-10 p-2.5 rounded-[10px] flex items-center justify-center text-xl font-semibold leading-relaxed transition-colors ${
+            className={`w-10 min-w-10 min-h-10 h-10 p-2.5 rounded-[10px] flex items-center justify-center text-xl font-semibold leading-relaxed transition-all duration-200 ${
               page === props.currentPage
                 ? "bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-stone-50 cursor-default"
                 : page === "..."
                   ? "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 cursor-default"
-                  : "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 hover:bg-gradient-to-r hover:from-fuchsia-600/20 hover:via-purple-700/20 hover:to-violet-600/20 cursor-pointer"
+                  : "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 hover:bg-gradient-to-r hover:from-fuchsia-600/20 hover:via-purple-700/20 hover:to-violet-600/20 cursor-pointer active:scale-95"
             }`}
           >
             {page}

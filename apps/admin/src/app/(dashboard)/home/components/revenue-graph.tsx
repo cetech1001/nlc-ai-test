@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   AreaChart,
   Area,
@@ -10,9 +10,11 @@ import {
 
 export const RevenueGraph = () => {
   const [timePeriod, setTimePeriod] = useState("Year");
+  const chartRef = useRef<HTMLDivElement>(null);
 
-  const chartData = useMemo(() => {
-    const weekData = [
+  // Static data to prevent re-computation
+  const chartData = useMemo(() => ({
+    Week: [
       { period: "Sun", revenue: 19000 },
       { period: "Mon", revenue: 12000 },
       { period: "Tue", revenue: 15000 },
@@ -20,16 +22,14 @@ export const RevenueGraph = () => {
       { period: "Thu", revenue: 14000 },
       { period: "Fri", revenue: 22000 },
       { period: "Sat", revenue: 25000 },
-    ];
-
-    const monthData = [
+    ],
+    Month: [
       { period: "Week 1", revenue: 85000 },
       { period: "Week 2", revenue: 92000 },
       { period: "Week 3", revenue: 78000 },
       { period: "Week 4", revenue: 98000 },
-    ];
-
-    const yearData = [
+    ],
+    Year: [
       { period: "Jan", revenue: 45000 },
       { period: "Feb", revenue: 52000 },
       { period: "Mar", revenue: 48000 },
@@ -42,31 +42,39 @@ export const RevenueGraph = () => {
       { period: "Oct", revenue: 85000 },
       { period: "Nov", revenue: 92000 },
       { period: "Dec", revenue: 98000 },
-    ];
+    ],
+  }), []);
 
-    return {
-      Week: weekData,
-      Month: monthData,
-      Year: yearData,
-    };
-  }, []);
-
-  const growthDescription = useMemo(() => {
-    const descriptions = {
-      Week: "Your earnings has grown 8.5% since last week",
-      Month: "Your earnings has grown 12.3% since last month",
-      Year: "Your earnings has grown 33.16% since last year",
-    };
-    return descriptions[timePeriod as keyof typeof descriptions];
-  }, [timePeriod]);
+  const growthDescription = useMemo(() => ({
+    Week: "Your earnings has grown 8.5% since last week",
+    Month: "Your earnings has grown 12.3% since last month",
+    Year: "Your earnings has grown 33.16% since last year",
+  }), []);
 
   const handlePeriodChange = useCallback((period: string) => {
-    requestAnimationFrame(() => {
-      setTimePeriod(period);
-    });
-  }, []);
+    if (period === timePeriod) return;
 
-  const currentChartData = chartData[timePeriod as keyof typeof chartData];
+    // Smooth transition using CSS opacity
+    if (chartRef.current) {
+      chartRef.current.style.opacity = '0.7';
+      chartRef.current.style.transition = 'opacity 200ms ease-out';
+    }
+
+    // Use a small delay to allow for smooth transition
+    setTimeout(() => {
+      setTimePeriod(period);
+
+      // Restore opacity after state update
+      requestAnimationFrame(() => {
+        if (chartRef.current) {
+          chartRef.current.style.opacity = '1';
+        }
+      });
+    }, 100);
+  }, [timePeriod]);
+
+  const currentData = chartData[timePeriod as keyof typeof chartData];
+  const currentDescription = growthDescription[timePeriod as keyof typeof growthDescription];
 
   return (
     <div className="relative z-10">
@@ -75,8 +83,8 @@ export const RevenueGraph = () => {
           <h2 className="text-stone-50 text-2xl font-semibold leading-relaxed mb-1.5">
             Your Revenue
           </h2>
-          <p className="text-stone-300 text-sm font-normal leading-tight sm:leading-relaxed">
-            {growthDescription}
+          <p className="text-stone-300 text-sm font-normal leading-tight sm:leading-relaxed transition-all duration-300">
+            {currentDescription}
           </p>
         </div>
 
@@ -85,14 +93,11 @@ export const RevenueGraph = () => {
             <React.Fragment key={period}>
               <button
                 onClick={() => handlePeriodChange(period)}
-                className={`text-sm font-normal leading-relaxed transition-all duration-200 ease-out whitespace-nowrap ${
+                className={`text-sm font-normal leading-relaxed transition-all duration-300 ease-out whitespace-nowrap ${
                   timePeriod === period
-                    ? "text-fuchsia-400 font-bold transform scale-105"
+                    ? "text-fuchsia-400 font-bold"
                     : "text-stone-300 hover:text-stone-50"
                 }`}
-                style={{
-                  willChange: timePeriod === period ? 'auto' : 'transform',
-                }}
               >
                 {period}
               </button>
@@ -104,10 +109,13 @@ export const RevenueGraph = () => {
         </div>
       </div>
 
-      <div className="h-40 sm:h-48 lg:h-56 relative">
+      <div
+        ref={chartRef}
+        className="h-40 sm:h-48 lg:h-56 relative transition-opacity duration-300 ease-out"
+      >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={currentChartData}
+            data={currentData}
             margin={{
               top: 10,
               right: 20,
@@ -116,7 +124,7 @@ export const RevenueGraph = () => {
             }}
           >
             <defs>
-              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`revenueGradient-${timePeriod}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#C084FC" stopOpacity={0.2}/>
                 <stop offset="50%" stopColor="#7B21BA" stopOpacity={0.2}/>
                 <stop offset="100%" stopColor="#581C87" stopOpacity={0.2}/>
@@ -132,8 +140,8 @@ export const RevenueGraph = () => {
                 fontSize: 12
               }}
               interval={0}
-              angle={0}
-              textAnchor={"end"}
+              angle={timePeriod === "Year" ? -45 : 0}
+              textAnchor="middle"
               height={30}
             />
             <YAxis hide />
@@ -144,20 +152,19 @@ export const RevenueGraph = () => {
                 borderRadius: "12px",
                 color: "#ffffff",
               }}
-              formatter={(value) => [
+              formatter={(value: any) => [
                 `$${value.toLocaleString()}`,
                 "Revenue",
               ]}
-              // Optimize tooltip performance
-              animationDuration={150}
+              animationDuration={0}
             />
 
             <Area
-              type="linear"
+              type="monotone"
               dataKey="revenue"
               stroke="#7B21BA"
               strokeWidth={3.46}
-              fill="url(#revenueGradient)"
+              fill={`url(#revenueGradient-${timePeriod})`}
               fillOpacity={1}
               dot={false}
               activeDot={{
@@ -166,8 +173,8 @@ export const RevenueGraph = () => {
                 stroke: "#ffffff",
                 strokeWidth: 2
               }}
-              // Optimize area animations
-              animationDuration={300}
+              animationBegin={0}
+              animationDuration={400}
               animationEasing="ease-out"
             />
           </AreaChart>
