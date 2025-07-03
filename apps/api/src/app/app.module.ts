@@ -5,6 +5,7 @@ import { CoachesModule } from './coaches/coaches.module';
 import { AuthModule } from './auth/auth.module';
 import {APP_GUARD} from "@nestjs/core";
 import {JwtAuthGuard} from "./auth/guards/jwt-auth.guard";
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import {JwtAuthGuard} from "./auth/guards/jwt-auth.guard";
     PrismaModule,
     AuthModule,
     CoachesModule,
+    EmailModule,
   ],
   providers: [
     {
