@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ForgotPasswordForm, useAuthPage, type ForgotPasswordFormData } from '@nlc-ai/auth';
+import { authAPI, type ApiError } from '@/lib/api/auth';
 
 export default function AdminForgotPasswordPage() {
   const router = useRouter();
@@ -19,23 +20,12 @@ export default function AdminForgotPasswordPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/admin/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      await authAPI.forgotPassword(data.email);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send reset email');
-      }
-
-      // Redirect to verification page
       router.push(`/account-verification?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to send reset email');
     } finally {
       setIsLoading(false);
     }

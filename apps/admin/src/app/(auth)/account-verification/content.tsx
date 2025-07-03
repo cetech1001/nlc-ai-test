@@ -3,6 +3,7 @@
 import {useMemo, useState} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountVerificationForm, useAuthPage, type AccountVerificationFormData } from '@nlc-ai/auth';
+import { authAPI, type ApiError } from '@/lib/api/auth';
 
 export function AdminAccountVerificationContent() {
   const router = useRouter();
@@ -24,48 +25,39 @@ export function AdminAccountVerificationContent() {
   });
 
   const handleVerification = async (data: AccountVerificationFormData) => {
+    if (!email) {
+      setError('Email address is required');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/auth/admin/verify-code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          code: data.verificationCode,
-        }),
-      });
+      const response = await authAPI.verifyCode(email, data.verificationCode);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Invalid verification code');
-      }
-
-      // Redirect to reset password page
-      router.push(`/reset-password?token=${await response.text()}`);
+      router.push(`/reset-password?token=${encodeURIComponent(response.resetToken)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Invalid verification code');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResendCode = async () => {
-    if (!email) return;
+    if (!email) {
+      setError('Email address is required');
+      return;
+    }
 
     try {
-      await fetch('/api/auth/admin/resend-code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      await authAPI.resendCode(email);
+      // Show success message or toast
+      setError(''); // Clear any existing errors
     } catch (err) {
-      console.error('Failed to resend code:', err);
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to resend code');
     }
   };
 

@@ -86,6 +86,7 @@ export const AccountVerificationForm: FC<AccountVerificationFormProps> = ({
           <Input
             type="text"
             placeholder="Enter verification code"
+            autoComplete={"new-password"}
             {...register('verificationCode')}
             className="min-h-[64px] px-4 text-[16px] leading-5 border-[#EFEFEF] bg-transparent text-[#F9F9F9] placeholder:text-[#F9F9F9]/50 focus:border-magenta-light focus:ring-magenta-light/20 rounded-[12px]"
           />

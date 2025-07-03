@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, EyeLashIcon } from '@nlc-ai/ui';
 
-import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas/auth-schemas';
-import { type ResetPasswordFormProps } from '../../types/auth.types';
+import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas';
+import { type ResetPasswordFormProps } from '../../types';
 import {Eye} from "lucide-react";
 
 export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
@@ -61,7 +61,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
+              className="absolute right-4 top-1/3 sm:top-1/2 -translate-y-1/2 text-[#CACACA] hover:text-[#F9F9F9] transition-colors"
             >
               {showPassword ? <Eye/> : <EyeLashIcon/>}
             </button>

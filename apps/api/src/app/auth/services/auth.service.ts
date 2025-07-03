@@ -1,8 +1,8 @@
 import {Injectable, UnauthorizedException, BadRequestException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from './email.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { EmailService } from '../../email/email.service';
 import { TokenService } from './token.service';
 import {
   LoginDto,
@@ -11,7 +11,7 @@ import {
   ResetPasswordDto,
   VerifyCodeDto,
   AdminLoginDto,
-} from './dto';
+} from '../dto';
 
 @Injectable()
 export class AuthService {
@@ -22,11 +22,9 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  // Coach Authentication
   async registerCoach(registerDto: RegisterDto) {
     const { email, password, fullName } = registerDto;
 
-    // Check if coach already exists
     const existingCoach = await this.prisma.coaches.findUnique({
       where: { email },
     });
@@ -35,10 +33,8 @@ export class AuthService {
       throw new BadRequestException('Coach with this email already exists');
     }
 
-    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create coach
     const coach = await this.prisma.coaches.create({
       data: {
         email,
@@ -49,7 +45,6 @@ export class AuthService {
       },
     });
 
-    // Send verification email
     await this.sendVerificationEmail(email);
 
     return {
@@ -63,7 +58,6 @@ export class AuthService {
 
     const coach = await this.validateCoach(email, password);
 
-    // Update last login
     await this.prisma.coaches.update({
       where: { id: coach.id },
       data: { lastLoginAt: new Date() },
@@ -155,7 +149,6 @@ export class AuthService {
     return admin;
   }
 
-  // Password Reset Flow
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto, userType: 'coach' | 'admin') {
     const { email } = forgotPasswordDto;
 
@@ -167,7 +160,6 @@ export class AuthService {
     }
 
     if (!user) {
-      // Don't reveal if email exists or not
       return { message: 'If the email exists, a verification code has been sent.' };
     }
 
@@ -184,7 +176,6 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
-    // Generate reset token
     const resetToken = await this.tokenService.generateResetToken(email);
 
     return { resetToken };
@@ -212,7 +203,6 @@ export class AuthService {
       });
     }
 
-    // Clean up tokens
     await this.tokenService.invalidateTokens(email);
 
     return { message: 'Password reset successfully' };
