@@ -45,8 +45,8 @@ const pageConfig = {
     subtitle: 'Manage appointments and coaching sessions.',
     breadcrumb: 'Calendar'
   },
-  '/leads-follow-up': {
-    title: 'Leads Follow Up',
+  '/leads': {
+    title: 'Leads',
     subtitle: 'Get assistance and find answers to common questions.',
     breadcrumb: 'Help'
   },

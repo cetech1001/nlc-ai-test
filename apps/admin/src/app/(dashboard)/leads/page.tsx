@@ -5,9 +5,9 @@ import {leadsData, leadColumns} from "@/app/data";
 import { DataTable } from "@/app/(dashboard)/components/data-table";
 import {Pagination} from "@/app/(dashboard)/components/pagination";
 import { Button } from "@nlc-ai/ui";
-import ScheduleMeetingModal from "@/app/(dashboard)/leads-follow-up/components/schedule-meeting-modal";
+import ScheduleMeetingModal from "@/app/(dashboard)/leads/components/schedule-meeting-modal";
 
-export default function LeadsFollowUp() {
+export default function Leads() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredLeads] = useState(leadsData);
 
@@ -29,7 +29,7 @@ export default function LeadsFollowUp() {
         <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-white text-2xl font-semibold">
-              Leads Found
+              Leads
             </h2>
             <Button
               onClick={() => setIsScheduleMeetingModalOpen(true)}

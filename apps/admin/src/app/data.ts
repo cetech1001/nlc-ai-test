@@ -759,7 +759,7 @@ export interface Lead {
   email: string;
   meetingDate: string;
   meetingTime: string;
-  status: 'Converted' | 'Unresponsive' | 'Contacted' | 'Scheduled' | 'Follow-up';
+  status: 'Converted' | 'No Show' | 'Not Converted';
   phone?: string;
   source?: string;
   notes?: string;
@@ -772,7 +772,7 @@ export const leadsData: Lead[] = [
     email: "leslie.alexander@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    status: "Unresponsive",
+    status: "No Show",
     phone: "+1 (555) 123-4567",
     source: "Website Contact Form",
     notes: "Interested in scaling coaching business"
@@ -816,7 +816,7 @@ export const leadsData: Lead[] = [
     email: "annette.black@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    status: "Unresponsive",
+    status: "No Show",
     phone: "+1 (555) 567-8901",
     source: "LinkedIn",
     notes: "Business coach, expressed interest in lead generation"
@@ -827,7 +827,7 @@ export const leadsData: Lead[] = [
     email: "kristin.watson@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    status: "Unresponsive",
+    status: "No Show",
     phone: "+1 (555) 678-9012",
     source: "Webinar",
     notes: "Career coach, interested in email automation"
@@ -849,7 +849,7 @@ export const leadsData: Lead[] = [
     email: "eleanor.pena@email.com",
     meetingDate: "Mar 27, 2025",
     meetingTime: "2:00 PM",
-    status: "Scheduled",
+    status: "Not Converted",
     phone: "+1 (555) 890-1234",
     source: "Website Contact Form",
     notes: "Relationship coach, wants content suggestions"
@@ -860,7 +860,7 @@ export const leadsData: Lead[] = [
     email: "cameron.williamson@email.com",
     meetingDate: "Mar 27, 2025",
     meetingTime: "3:30 PM",
-    status: "Contacted",
+    status: "No Show",
     phone: "+1 (555) 901-2345",
     source: "Social Media",
     notes: "Fitness coach, needs client check-in automation"
@@ -871,7 +871,7 @@ export const leadsData: Lead[] = [
     email: "brooklyn.simmons@email.com",
     meetingDate: "Mar 28, 2025",
     meetingTime: "11:00 AM",
-    status: "Follow-up",
+    status: "Not Converted",
     phone: "+1 (555) 012-3456",
     source: "Referral",
     notes: "Wellness coach, exploring AI solutions"
@@ -893,7 +893,7 @@ export const leadsData: Lead[] = [
     email: "marvin.mckinney@email.com",
     meetingDate: "Mar 29, 2025",
     meetingTime: "9:00 AM",
-    status: "Scheduled",
+    status: "Not Converted",
     phone: "+1 (555) 234-1098",
     source: "LinkedIn",
     notes: "Performance coach for athletes"
@@ -904,7 +904,7 @@ export const leadsData: Lead[] = [
     email: "jerome.bell@email.com",
     meetingDate: "Mar 29, 2025",
     meetingTime: "1:00 PM",
-    status: "Contacted",
+    status: "No Show",
     phone: "+1 (555) 345-2109",
     source: "Webinar",
     notes: "Leadership coach, wants CRM integration"
@@ -915,7 +915,7 @@ export const leadsData: Lead[] = [
     email: "courtney.henry@email.com",
     meetingDate: "Mar 30, 2025",
     meetingTime: "10:30 AM",
-    status: "Follow-up",
+    status: "Not Converted",
     phone: "+1 (555) 456-3210",
     source: "Podcast",
     notes: "Nutrition coach, needs lead qualification"
@@ -926,7 +926,7 @@ export const leadsData: Lead[] = [
     email: "ralph.edwards@email.com",
     meetingDate: "Mar 30, 2025",
     meetingTime: "3:00 PM",
-    status: "Unresponsive",
+    status: "No Show",
     phone: "+1 (555) 567-4321",
     source: "Website Contact Form",
     notes: "Business development coach"

@@ -38,11 +38,44 @@ export const Pagination = (props: IProps) => {
   };
 
   const handlePageClick = (page: number) => {
+    if (page === props.currentPage) return;
+
     props.setCurrentPage(page);
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
+
+    const scrollToTop = () => {
+      if ('scrollBehavior' in document.documentElement.style) {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'smooth'
+        });
+      } else {
+        window.scrollTo(0, 0);
+      }
+
+      setTimeout(() => {
+        if (window.pageYOffset > 100) {
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }
+      }, 100);
+
+      setTimeout(() => {
+        if (window.pageYOffset > 100) {
+          window.scroll(0, 0);
+        }
+      }, 200);
+    };
+
+    requestAnimationFrame(() => {
+      scrollToTop();
     });
+
+    setTimeout(() => {
+      if (window.pageYOffset > 100) {
+        window.scrollTo(0, 0);
+      }
+    }, 300);
   };
 
   return (
@@ -52,13 +85,13 @@ export const Pagination = (props: IProps) => {
           <button
             key={index}
             onClick={() => typeof page === "number" && handlePageClick(page)}
-            disabled={page === "..."}
+            disabled={page === "..." || page === props.currentPage}
             className={`w-10 min-w-10 min-h-10 h-10 p-2.5 rounded-[10px] flex items-center justify-center text-xl font-semibold leading-relaxed transition-colors ${
               page === props.currentPage
-                ? "bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-stone-50"
+                ? "bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-stone-50 cursor-default"
                 : page === "..."
                   ? "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 cursor-default"
-                  : "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 hover:bg-gradient-to-r hover:from-fuchsia-600/20 hover:via-purple-700/20 hover:to-violet-600/20"
+                  : "bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 border border-neutral-700 text-stone-50 hover:bg-gradient-to-r hover:from-fuchsia-600/20 hover:via-purple-700/20 hover:to-violet-600/20 cursor-pointer"
             }`}
           >
             {page}

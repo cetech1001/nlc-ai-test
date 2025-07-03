@@ -391,10 +391,8 @@ export const tableRenderers = {
   leadStatus: (value: string) => {
     const statusColors: Record<string, string> = {
       'Converted': 'text-green-400',
-      'Unresponsive': 'text-red-400',
-      'Contacted': 'text-blue-400',
-      'Scheduled': 'text-yellow-400',
-      'Follow-up': 'text-orange-400'
+      'No Show': 'text-red-400',
+      'Not Converted': 'text-yellow-400',
     };
 
     return (

@@ -16,7 +16,7 @@ import {
   CogIcon as HiCog,
   ArrowRightStartOnRectangleIcon as HiLogout
 } from '@heroicons/react/24/outline';
-import { Logo } from '@/app/components/logo';
+import { Logo } from '@/app/(dashboard)/components/logo';
 import {useAuth} from "@/lib/hooks/use-auth";
 
 const menuItems = [
@@ -26,7 +26,7 @@ const menuItems = [
   { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
   { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
-  { icon: HiSpeakerphone, label: "Leads Follow Up", path: "/leads-follow-up" },
+  { icon: HiSpeakerphone, label: "Leads", path: "/leads" },
 ];
 
 interface SidebarProps {

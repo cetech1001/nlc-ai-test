@@ -1,6 +1,7 @@
 'use client'
 
 import Image from "next/image";
+import { useState } from "react";
 
 interface IProps {
   height?: number;
@@ -10,9 +11,18 @@ interface IProps {
 }
 
 export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: IProps) => {
+  const [imageError, setImageError] = useState(false);
+
+  // Force SVG for mobile if PNG fails or glitches
+  const shouldUseSvg = type === 'svg' || imageError;
+
   return (
-    <div className={`relative flex items-center justify-center ${className}`} style={{ width: `${width}px`, height: `${height}px` }}>
-      {type === 'svg' && (
+    <div
+      className={`relative flex items-center justify-center ${className}`}
+      style={{ width: `${width}px`, height: `${height}px` }}
+    >
+      {shouldUseSvg ? (
+        // SVG version - more reliable on mobile
         <>
           <svg
             width="100%"
@@ -22,6 +32,12 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
             xmlns="http://www.w3.org/2000/svg"
             className="absolute inset-0"
             preserveAspectRatio="xMidYMid meet"
+            style={{
+              // Prevent SVG glitches on mobile
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden',
+              perspective: '1000px'
+            }}
           >
             <path
               d="M21.9795 37.2997C21.9795 37.2997 33.4398 27.1444 42.4689 51.5079C51.498 75.8714 71.3759 31.1707 71.3759 31.1707C71.3759 31.1707 60.4303 53.202 46.43 21.6003C32.4296 -10.0014 21.9795 37.2972 21.9795 37.2972V37.2997Z"
@@ -84,8 +100,9 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
             xmlns="http://www.w3.org/2000/svg"
             className="absolute top-0 right-0"
             style={{
-              transform: `scale(${Math.min(width / 94, height / 80)})`,
-              transformOrigin: 'top right'
+              transform: `scale(${Math.min(width / 94, height / 80)}) translateZ(0)`,
+              transformOrigin: 'top right',
+              backfaceVisibility: 'hidden'
             }}
           >
             <g clipPath="url(#clip0_star)">
@@ -119,9 +136,26 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
             </defs>
           </svg>
         </>
-      )}
-      {type === 'png' && (
-        <Image src={"/images/logo.png"} alt={"Logo"} height={100} width={100}/>
+      ) : (
+        // PNG version with better error handling
+        <Image
+          src="/images/logo.png"
+          alt="Logo"
+          width={width}
+          height={height}
+          priority
+          quality={100}
+          onError={() => setImageError(true)}
+          style={{
+            // Prevent image glitches on mobile
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            maxWidth: '100%',
+            height: 'auto',
+            imageRendering: 'crisp-edges'
+          }}
+          sizes={`${width}px`}
+        />
       )}
     </div>
   );

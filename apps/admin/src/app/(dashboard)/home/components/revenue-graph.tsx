@@ -1,3 +1,4 @@
+import React, { useState, useMemo, useCallback } from "react";
 import {
   AreaChart,
   Area,
@@ -6,90 +7,93 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import React, {useState} from "react";
-
-const revenueData = [
-  { period: "Jan", revenue: 45000 },
-  { period: "Feb", revenue: 52000 },
-  { period: "Mar", revenue: 48000 },
-  { period: "Apr", revenue: 61000 },
-  { period: "May", revenue: 55000 },
-  { period: "Jun", revenue: 67000 },
-  { period: "Jul", revenue: 70000 },
-  { period: "Aug", revenue: 62000 },
-  { period: "Sep", revenue: 78000 },
-  { period: "Oct", revenue: 85000 },
-  { period: "Nov", revenue: 92000 },
-  { period: "Dec", revenue: 98000 },
-];
-
-const weekData = [
-  { period: "Sun", revenue: 19000 },
-  { period: "Mon", revenue: 12000 },
-  { period: "Tue", revenue: 15000 },
-  { period: "Wed", revenue: 18000 },
-  { period: "Thu", revenue: 14000 },
-  { period: "Fri", revenue: 22000 },
-  { period: "Sat", revenue: 25000 },
-];
-
-const monthData = [
-  { period: "Week 1", revenue: 85000 },
-  { period: "Week 2", revenue: 92000 },
-  { period: "Week 3", revenue: 78000 },
-  { period: "Week 4", revenue: 98000 },
-];
 
 export const RevenueGraph = () => {
   const [timePeriod, setTimePeriod] = useState("Year");
 
-  const getChartData = () => {
-    switch (timePeriod) {
-      case "Week":
-        return weekData;
-      case "Month":
-        return monthData;
-      case "Year":
-      default:
-        return revenueData;
-    }
-  };
+  const chartData = useMemo(() => {
+    const weekData = [
+      { period: "Sun", revenue: 19000 },
+      { period: "Mon", revenue: 12000 },
+      { period: "Tue", revenue: 15000 },
+      { period: "Wed", revenue: 18000 },
+      { period: "Thu", revenue: 14000 },
+      { period: "Fri", revenue: 22000 },
+      { period: "Sat", revenue: 25000 },
+    ];
 
-  const getGrowthDescription = () => {
-    switch (timePeriod) {
-      case "Week":
-        return "Your earnings has grown 8.5% since last week";
-      case "Month":
-        return "Your earnings has grown 12.3% since last month";
-      case "Year":
-      default:
-        return "Your earnings has grown 33.16% since last year";
-    }
-  };
+    const monthData = [
+      { period: "Week 1", revenue: 85000 },
+      { period: "Week 2", revenue: 92000 },
+      { period: "Week 3", revenue: 78000 },
+      { period: "Week 4", revenue: 98000 },
+    ];
 
-  const currentChartData = getChartData();
+    const yearData = [
+      { period: "Jan", revenue: 45000 },
+      { period: "Feb", revenue: 52000 },
+      { period: "Mar", revenue: 48000 },
+      { period: "Apr", revenue: 61000 },
+      { period: "May", revenue: 55000 },
+      { period: "Jun", revenue: 67000 },
+      { period: "Jul", revenue: 70000 },
+      { period: "Aug", revenue: 62000 },
+      { period: "Sep", revenue: 78000 },
+      { period: "Oct", revenue: 85000 },
+      { period: "Nov", revenue: 92000 },
+      { period: "Dec", revenue: 98000 },
+    ];
+
+    return {
+      Week: weekData,
+      Month: monthData,
+      Year: yearData,
+    };
+  }, []);
+
+  const growthDescription = useMemo(() => {
+    const descriptions = {
+      Week: "Your earnings has grown 8.5% since last week",
+      Month: "Your earnings has grown 12.3% since last month",
+      Year: "Your earnings has grown 33.16% since last year",
+    };
+    return descriptions[timePeriod as keyof typeof descriptions];
+  }, [timePeriod]);
+
+  const handlePeriodChange = useCallback((period: string) => {
+    requestAnimationFrame(() => {
+      setTimePeriod(period);
+    });
+  }, []);
+
+  const currentChartData = chartData[timePeriod as keyof typeof chartData];
 
   return (
     <div className="relative z-10">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 gap-4">
-        <div className="min-w-0 w-full sm:w-85">
+        <div className="min-w-0 w-full sm:w-80">
           <h2 className="text-stone-50 text-2xl font-semibold leading-relaxed mb-1.5">
             Your Revenue
           </h2>
           <p className="text-stone-300 text-sm font-normal leading-tight sm:leading-relaxed">
-            {getGrowthDescription()}
+            {growthDescription}
           </p>
         </div>
+
         <div className="flex items-center justify-start sm:justify-end gap-3 sm:gap-5 flex-shrink-0">
           {["Week", "Month", "Year"].map((period, index, array) => (
             <React.Fragment key={period}>
               <button
-                onClick={() => setTimePeriod(period)}
-                className={`text-sm font-normal leading-relaxed transition-colors whitespace-nowrap ${
+                onClick={() => handlePeriodChange(period)}
+                className={`text-sm font-normal leading-relaxed transition-all duration-200 ease-out whitespace-nowrap ${
                   timePeriod === period
-                    ? "text-fuchsia-400 font-bold"
+                    ? "text-fuchsia-400 font-bold transform scale-105"
                     : "text-stone-300 hover:text-stone-50"
                 }`}
+                style={{
+                  // Reduce paint operations on mobile
+                  willChange: timePeriod === period ? 'auto' : 'transform',
+                }}
               >
                 {period}
               </button>
@@ -129,9 +133,9 @@ export const RevenueGraph = () => {
                 fontSize: 12
               }}
               interval={0}
-              angle={0}
-              textAnchor={"middle"}
-              height={30}
+              angle={currentChartData.length > 7 ? -45 : 0}
+              textAnchor={currentChartData.length > 7 ? "end" : "middle"}
+              height={currentChartData.length > 7 ? 60 : 30}
             />
             <YAxis hide />
             <Tooltip
@@ -145,6 +149,8 @@ export const RevenueGraph = () => {
                 `$${value.toLocaleString()}`,
                 "Revenue",
               ]}
+              // Optimize tooltip performance
+              animationDuration={150}
             />
 
             <Area
@@ -161,10 +167,13 @@ export const RevenueGraph = () => {
                 stroke: "#ffffff",
                 strokeWidth: 2
               }}
+              // Optimize area animations
+              animationDuration={300}
+              animationEasing="ease-out"
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
   );
-}
+};

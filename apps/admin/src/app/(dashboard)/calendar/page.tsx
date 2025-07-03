@@ -172,6 +172,7 @@ export default function Calendar(){
           <div className="bg-[#1A1A1A] rounded-lg p-4 sm:p-6 border border-[#2A2A2A]">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-white text-lg font-semibold">Calendar</h2>
+              <h2 className="text-white text-lg font-semibold sm:hidden">{monthNames[currentDate.getMonth()]}</h2>
               <Button className="bg-gradient-to-b from-violet-600 via-fuchsia-600 to-fuchsia-200 hover:bg-[#8B31CA] text-white text-sm px-4 py-2">
                 {currentDate.getFullYear()}
               </Button>

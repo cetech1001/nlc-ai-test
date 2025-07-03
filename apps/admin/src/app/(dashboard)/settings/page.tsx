@@ -1,22 +1,33 @@
 'use client'
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Eye, EyeOff } from "lucide-react";
+import {useAuth} from "@/lib/hooks/use-auth";
 
 export default function Settings() {
+  const { user } = useAuth();
+
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [desktopNotifications, setDesktopNotifications] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [name, setName] = useState("Andrew Kramer");
-  const [email, setEmail] = useState("kramer.andrew@email.com");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [activeTab, setActiveTab] = useState("edit-profile");
 
+  useEffect(() => {
+    setFirstName(user?.firstName || "");
+    setLastName(user?.lastName || "");
+    setEmail(user?.email || "");
+  }, [user]);
+
   const handleSaveChanges = () => {
     console.log("Saving changes:", {
-      name,
+      firstName,
+      lastName,
       email,
       desktopNotifications,
       emailNotifications,
@@ -24,7 +35,7 @@ export default function Settings() {
   };
 
   const handleResetProfile = () => {
-    setName("Andrew Kramer");
+    setFirstName("Andrew Kramer");
     setEmail("kramer.andrew@email.com");
     setDesktopNotifications(false);
     setEmailNotifications(true);
@@ -48,7 +59,6 @@ export default function Settings() {
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-black overflow-hidden">
 
-      {/* Tab Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 mb-8 sm:mb-16">
         <button
           onClick={() => setActiveTab("edit-profile")}
@@ -71,18 +81,23 @@ export default function Settings() {
 
       {activeTab === "edit-profile" && (
         <div>
-          {/* Profile Section */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-7 mb-8 lg:mb-16">
             <img className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] mx-auto lg:mx-0" src="https://placehold.co/130x130" alt="Profile" />
             <div className="w-full lg:w-60 flex flex-col gap-3 text-center lg:text-left">
-              <div className="text-stone-50 text-2xl sm:text-3xl font-semibold font-['Inter'] leading-relaxed">Andrew Kramer</div>
-              <div className="text-stone-300 text-sm sm:text-base font-normal font-['Inter']">kramer.andrew@email.com</div>
-              <div className="text-stone-300 text-sm sm:text-base font-normal font-['Inter']">4 Social Account Linked</div>
+              <div className="text-stone-50 text-2xl sm:text-3xl font-semibold font-['Inter'] leading-relaxed">
+                {user?.firstName} {user?.lastName}
+              </div>
+              <div className="text-stone-300 text-sm sm:text-base font-normal font-['Inter']">
+                {user?.email}
+              </div>
+              {/*<div className="text-stone-300 text-sm sm:text-base font-normal font-['Inter']">4 Social Account Linked</div>*/}
             </div>
             <div className="hidden lg:block w-32 h-0 rotate-90 border-t border-neutral-700" />
             <div className="w-full lg:w-80 flex flex-col gap-5">
               <div className="flex justify-between items-center">
-                <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">Desktop Notifications</div>
+                <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">
+                  Desktop Notifications
+                </div>
                 <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setDesktopNotifications(!desktopNotifications)}
@@ -94,7 +109,7 @@ export default function Settings() {
                   >
                     <div className="w-6 h-6 bg-white rounded-full" />
                   </button>
-                  <div className={`text-lg font-normal font-['Inter'] ${
+                  <div className={`text-sm sm:text-base font-normal font-['Inter'] ${
                     desktopNotifications ? "text-white" : "text-zinc-500"
                   }`}>
                     {desktopNotifications ? "On" : "Off"}
@@ -102,7 +117,9 @@ export default function Settings() {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">Email Notifications</div>
+                <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">
+                  Email Notifications
+                </div>
                 <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setEmailNotifications(!emailNotifications)}
@@ -114,7 +131,7 @@ export default function Settings() {
                   >
                     <div className="w-6 h-6 bg-white rounded-full" />
                   </button>
-                  <div className={`text-lg font-normal font-['Inter'] ${
+                  <div className={`text-sm sm:text-base font-normal font-['Inter'] ${
                     emailNotifications ? "text-white" : "text-zinc-500"
                   }`}>
                     {emailNotifications ? "On" : "Off"}
@@ -124,19 +141,35 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Basic Details */}
           <div className="mb-8">
-            <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">Basic Details</div>
+            <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">
+              Basic Details
+            </div>
             <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-7 mb-6 lg:mb-8">
               <div className="w-full lg:w-[532px] flex flex-col gap-3">
                 <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
-                  Name<span className="text-red-600">*</span>
+                  First name<span className="text-red-600">*</span>
                 </div>
                 <div className="h-12 px-5 py-2.5 rounded-[10px] border border-white/30 flex justify-between items-center">
                   <input
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={firstName}
+                    name={"firstName"}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="bg-transparent text-stone-50 text-base font-medium font-['Inter'] leading-tight outline-none flex-1"
+                  />
+                </div>
+              </div>
+              <div className="w-full lg:w-[532px] flex flex-col gap-3">
+                <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+                  Last name<span className="text-red-600">*</span>
+                </div>
+                <div className="h-12 px-5 py-2.5 rounded-[10px] border border-white/30 flex justify-between items-center">
+                  <input
+                    type="text"
+                    value={lastName}
+                    name={"lastName"}
+                    onChange={(e) => setLastName(e.target.value)}
                     className="bg-transparent text-stone-50 text-base font-medium font-['Inter'] leading-tight outline-none flex-1"
                   />
                 </div>
