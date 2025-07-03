@@ -68,37 +68,37 @@ model Admins {
 }
 
 model AiAgents {
-  id              String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name            String            @db.VarChar(100)
-  type            String            @db.VarChar(50)
-  description     String?
-  isActive        Boolean?          @default(true)
-  defaultConfig   Json?             @default("{}")
-  createdAt       DateTime?         @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime?         @default(now()) @db.Timestamptz(6)
-  aiInteractions  AiInteractions[]
-  coachAiAgents   CoachAiAgents[]
+  id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name           String           @db.VarChar(100)
+  type           String           @db.VarChar(50)
+  description    String?
+  isActive       Boolean?         @default(true)
+  defaultConfig  Json?            @default("{}")
+  createdAt      DateTime?        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?        @default(now()) @db.Timestamptz(6)
+  aiInteractions AiInteractions[]
+  coachAiAgents  CoachAiAgents[]
 
   @@map("ai_agents")
 }
 
 model AiInteractions {
-  id                String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId           String     @db.Uuid
-  agentId           String     @db.Uuid
-  clientId          String?    @db.Uuid
-  interactionType   String     @db.VarChar(50)
-  inputData         Json
-  outputData        Json
-  tokensUsed        Int?       @default(0)
-  processingTimeMs  Int?
-  confidenceScore   Decimal?   @db.Decimal(3, 2)
-  status            String?    @default("completed") @db.VarChar(50)
-  errorMessage      String?
-  createdAt         DateTime?  @default(now()) @db.Timestamptz(6)
-  aiAgents          AiAgents   @relation(fields: [agentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  clients           Clients?   @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coaches           Coaches    @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId          String    @db.Uuid
+  agentId          String    @db.Uuid
+  clientId         String?   @db.Uuid
+  interactionType  String    @db.VarChar(50)
+  inputData        Json
+  outputData       Json
+  tokensUsed       Int?      @default(0)
+  processingTimeMs Int?
+  confidenceScore  Decimal?  @db.Decimal(3, 2)
+  status           String?   @default("completed") @db.VarChar(50)
+  errorMessage     String?
+  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
+  aiAgents         AiAgents  @relation(fields: [agentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  clients          Clients?  @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coaches          Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([agentId], map: "idx_ai_interactions_agent_id")
   @@index([coachId], map: "idx_ai_interactions_coach_id")
@@ -107,357 +107,347 @@ model AiInteractions {
 }
 
 model Clients {
-  id                  String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId             String               @db.Uuid
-  email               String               @db.VarChar(255)
-  firstName           String               @db.VarChar(100)
-  lastName            String               @db.VarChar(100)
-  phone               String?              @db.VarChar(20)
-  avatarUrl           String?
-  status              String?              @default("active") @db.VarChar(50)
-  source              String?              @db.VarChar(100)
-  tags                String[]
-  lastInteractionAt   DateTime?            @db.Timestamptz(6)
-  totalInteractions   Int?                 @default(0)
-  engagementScore     Decimal?             @default(0.00) @db.Decimal(3, 2)
-  customFields        Json?                @default("{}")
-  createdAt           DateTime?            @default(now()) @db.Timestamptz(6)
-  updatedAt           DateTime?            @default(now()) @db.Timestamptz(6)
-  aiInteractions      AiInteractions[]
-  coaches             Coaches              @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  courseEnrollments   CourseEnrollments[]
-  emailThreads        EmailThreads[]
+  id                String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId           String              @db.Uuid
+  email             String              @db.VarChar(255)
+  firstName         String              @db.VarChar(100)
+  lastName          String              @db.VarChar(100)
+  phone             String?             @db.VarChar(20)
+  avatarUrl         String?
+  status            String?             @default("active") @db.VarChar(50)
+  source            String?             @db.VarChar(100)
+  tags              String[]
+  lastInteractionAt DateTime?           @db.Timestamptz(6)
+  totalInteractions Int?                @default(0)
+  engagementScore   Decimal?            @default(0.00) @db.Decimal(3, 2)
+  customFields      Json?               @default("{}")
+  createdAt         DateTime?           @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?           @default(now()) @db.Timestamptz(6)
+  aiInteractions    AiInteractions[]
+  coaches           Coaches             @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courseEnrollments CourseEnrollments[]
+  emailThreads      EmailThreads[]
 
   @@unique([coachId, email])
   @@index([coachId], map: "idx_clients_coach_id")
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
   @@index([status], map: "idx_clients_status")
-
   @@map("clients")
 }
 
 model CoachAiAgents {
-  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId            String    @db.Uuid
-  agentId            String    @db.Uuid
-  isEnabled          Boolean?  @default(true)
-  customConfig       Json?     @default("{}")
-  fineTunedModelId   String?   @db.VarChar(255)
-  totalRequests      Int?      @default(0)
-  totalTokensUsed    BigInt?   @default(0)
-  lastUsedAt         DateTime? @db.Timestamptz(6)
-  createdAt          DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime? @default(now()) @db.Timestamptz(6)
-  aiAgents           AiAgents  @relation(fields: [agentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coaches            Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId          String    @db.Uuid
+  agentId          String    @db.Uuid
+  isEnabled        Boolean?  @default(true)
+  customConfig     Json?     @default("{}")
+  fineTunedModelId String?   @db.VarChar(255)
+  totalRequests    Int?      @default(0)
+  totalTokensUsed  BigInt?   @default(0)
+  lastUsedAt       DateTime? @db.Timestamptz(6)
+  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
+  aiAgents         AiAgents  @relation(fields: [agentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coaches          Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([coachId, agentId])
   @@map("coach_ai_agents")
 }
 
 model Coaches {
-  id                    String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email                 String                @unique @db.VarChar(255)
-  passwordHash          String?               @db.VarChar(255)
-  firstName             String                @db.VarChar(100)
-  lastName              String                @db.VarChar(100)
-  businessName          String?               @db.VarChar(255)
-  phone                 String?               @db.VarChar(20)
-  avatarUrl             String?
-  bio                   String?
-  websiteUrl            String?
-  timezone              String?               @default("UTC") @db.VarChar(50)
-  subscriptionStatus    String?               @default("trial") @db.VarChar(50)
-  subscriptionPlan      String?               @db.VarChar(50)
-  subscriptionEndsAt    DateTime?             @db.Timestamptz(6)
-  stripeCustomerId      String?               @db.VarChar(255)
-  isActive              Boolean?              @default(true)
-  isVerified            Boolean?              @default(false)
-  lastLoginAt           DateTime?             @db.Timestamptz(6)
-  onboardingCompleted   Boolean?              @default(false)
-  createdAt             DateTime?             @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime?             @default(now()) @db.Timestamptz(6)
-  aiInteractions        AiInteractions[]
-  clients               Clients[]
-  coachAiAgents         CoachAiAgents[]
-  contentPieces         ContentPieces[]
-  contentSuggestions    ContentSuggestions[]
-  courses               Courses[]
-  dailyKpis             DailyKpis[]
-  emailAccounts         EmailAccounts[]
-  emailTemplates        EmailTemplates[]
-  emailThreads          EmailThreads[]
-  integrations          Integrations[]
-  notifications         Notifications[]
-  paymentMethods        PaymentMethods[]
-  transactions          Transactions[]
-  invoices              Invoices[]
-  subscriptions         Subscriptions[]
+  id                  String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email               String               @unique @db.VarChar(255)
+  passwordHash        String?              @db.VarChar(255)
+  firstName           String               @db.VarChar(100)
+  lastName            String               @db.VarChar(100)
+  businessName        String?              @db.VarChar(255)
+  phone               String?              @db.VarChar(20)
+  avatarUrl           String?
+  bio                 String?
+  websiteUrl          String?
+  timezone            String?              @default("UTC") @db.VarChar(50)
+  subscriptionStatus  String?              @default("trial") @db.VarChar(50)
+  subscriptionPlan    String?              @db.VarChar(50)
+  subscriptionEndsAt  DateTime?            @db.Timestamptz(6)
+  stripeCustomerId    String?              @db.VarChar(255)
+  isActive            Boolean?             @default(true)
+  isVerified          Boolean?             @default(false)
+  lastLoginAt         DateTime?            @db.Timestamptz(6)
+  onboardingCompleted Boolean?             @default(false)
+  createdAt           DateTime?            @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime?            @default(now()) @db.Timestamptz(6)
+  aiInteractions      AiInteractions[]
+  clients             Clients[]
+  coachAiAgents       CoachAiAgents[]
+  contentPieces       ContentPieces[]
+  contentSuggestions  ContentSuggestions[]
+  courses             Courses[]
+  dailyKpis           DailyKpis[]
+  emailAccounts       EmailAccounts[]
+  emailTemplates      EmailTemplates[]
+  emailThreads        EmailThreads[]
+  integrations        Integrations[]
+  notifications       Notifications[]
+  paymentMethods      PaymentMethods[]
+  transactions        Transactions[]
+  invoices            Invoices[]
+  subscriptions       Subscriptions[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
   @@index([subscriptionStatus], map: "idx_coaches_subscription_status")
-
   @@map("coaches")
 }
 
 model ContentPieces {
-  id                     String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId                String    @db.Uuid
-  title                  String    @db.VarChar(500)
-  contentType            String    @db.VarChar(50)
-  platform               String?   @db.VarChar(50)
-  platformId             String?   @db.VarChar(255)
-  url                    String?
-  description            String?
-  tags                   String[]
-  thumbnailUrl           String?
-  durationSeconds        Int?
-  views                  Int?      @default(0)
-  likes                  Int?      @default(0)
-  comments               Int?      @default(0)
-  shares                 Int?      @default(0)
-  engagementRate         Decimal?  @default(0.00) @db.Decimal(5, 2)
-  aiAnalyzed             Boolean?  @default(false)
-  performancePrediction  Decimal?  @db.Decimal(3, 2)
-  topicCategories        String[]
-  suggestedImprovements  Json?     @default("[]")
-  status                 String?   @default("draft") @db.VarChar(50)
-  publishedAt            DateTime? @db.Timestamptz(6)
-  createdAt              DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt              DateTime? @default(now()) @db.Timestamptz(6)
-  coaches                Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId               String    @db.Uuid
+  title                 String    @db.VarChar(500)
+  contentType           String    @db.VarChar(50)
+  platform              String?   @db.VarChar(50)
+  platformId            String?   @db.VarChar(255)
+  url                   String?
+  description           String?
+  tags                  String[]
+  thumbnailUrl          String?
+  durationSeconds       Int?
+  views                 Int?      @default(0)
+  likes                 Int?      @default(0)
+  comments              Int?      @default(0)
+  shares                Int?      @default(0)
+  engagementRate        Decimal?  @default(0.00) @db.Decimal(5, 2)
+  aiAnalyzed            Boolean?  @default(false)
+  performancePrediction Decimal?  @db.Decimal(3, 2)
+  topicCategories       String[]
+  suggestedImprovements Json?     @default("[]")
+  status                String?   @default("draft") @db.VarChar(50)
+  publishedAt           DateTime? @db.Timestamptz(6)
+  createdAt             DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
+  coaches               Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([coachId], map: "idx_content_pieces_coach_id")
   @@index([contentType], map: "idx_content_pieces_content_type")
   @@index([publishedAt], map: "idx_content_pieces_published_at")
-
   @@map("content_pieces")
 }
 
 model ContentSuggestions {
-  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId          String    @db.Uuid
-  title            String    @db.VarChar(500)
-  contentType      String    @db.VarChar(50)
-  platform         String?   @db.VarChar(50)
-  description      String?
-  reasoning        String?
-  promptUsed       String?
-  confidenceScore  Decimal?  @db.Decimal(3, 2)
-  trendData        Json?     @default("{}")
-  status           String?   @default("pending") @db.VarChar(50)
-  feedback         String?
-  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
-  coaches          Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId         String    @db.Uuid
+  title           String    @db.VarChar(500)
+  contentType     String    @db.VarChar(50)
+  platform        String?   @db.VarChar(50)
+  description     String?
+  reasoning       String?
+  promptUsed      String?
+  confidenceScore Decimal?  @db.Decimal(3, 2)
+  trendData       Json?     @default("{}")
+  status          String?   @default("pending") @db.VarChar(50)
+  feedback        String?
+  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
+  coaches         Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("content_suggestions")
 }
 
 model CourseEnrollments {
-  id                      String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  courseId                String    @db.Uuid
-  clientId                String    @db.Uuid
-  enrolledAt              DateTime? @default(now()) @db.Timestamptz(6)
-  startedAt               DateTime? @db.Timestamptz(6)
-  completedAt             DateTime? @db.Timestamptz(6)
-  progressPercentage      Decimal?  @default(0.00) @db.Decimal(5, 2)
-  currentModule           Int?      @default(1)
-  modulesCompleted        Int?      @default(0)
-  lastActivityAt          DateTime? @db.Timestamptz(6)
-  totalTimeSpentMinutes   Int?      @default(0)
-  loginCount              Int?      @default(0)
-  daysSinceLastLogin      Int?      @default(0)
-  status                  String?   @default("active") @db.VarChar(50)
-  dropoutRiskScore        Decimal?  @default(0.00) @db.Decimal(3, 2)
-  recommendedActions      Json?     @default("[]")
-  createdAt               DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt               DateTime? @default(now()) @db.Timestamptz(6)
-  clients                 Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  courses                 Courses   @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  courseId              String    @db.Uuid
+  clientId              String    @db.Uuid
+  enrolledAt            DateTime? @default(now()) @db.Timestamptz(6)
+  startedAt             DateTime? @db.Timestamptz(6)
+  completedAt           DateTime? @db.Timestamptz(6)
+  progressPercentage    Decimal?  @default(0.00) @db.Decimal(5, 2)
+  currentModule         Int?      @default(1)
+  modulesCompleted      Int?      @default(0)
+  lastActivityAt        DateTime? @db.Timestamptz(6)
+  totalTimeSpentMinutes Int?      @default(0)
+  loginCount            Int?      @default(0)
+  daysSinceLastLogin    Int?      @default(0)
+  status                String?   @default("active") @db.VarChar(50)
+  dropoutRiskScore      Decimal?  @default(0.00) @db.Decimal(3, 2)
+  recommendedActions    Json?     @default("[]")
+  createdAt             DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
+  clients               Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courses               Courses   @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([courseId, clientId])
   @@index([clientId], map: "idx_course_enrollments_client_id")
   @@index([courseId], map: "idx_course_enrollments_course_id")
   @@index([status], map: "idx_course_enrollments_status")
-
   @@map("course_enrollments")
 }
 
 model Courses {
-  id                      String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId                 String               @db.Uuid
-  title                   String               @db.VarChar(255)
-  description             String?
-  category                String?              @db.VarChar(100)
-  difficultyLevel         String?              @db.VarChar(50)
-  platform                String?              @db.VarChar(50)
-  platformCourseId        String?              @db.VarChar(255)
-  platformUrl             String?
-  totalModules            Int?                 @default(0)
-  estimatedDurationHours  Int?
-  totalEnrollments        Int?                 @default(0)
-  activeEnrollments       Int?                 @default(0)
-  completionRate          Decimal?             @default(0.00) @db.Decimal(5, 2)
-  isActive                Boolean?             @default(true)
-  createdAt               DateTime?            @default(now()) @db.Timestamptz(6)
-  updatedAt               DateTime?            @default(now()) @db.Timestamptz(6)
-  courseEnrollments       CourseEnrollments[]
-  coaches                 Coaches              @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                     String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId                String              @db.Uuid
+  title                  String              @db.VarChar(255)
+  description            String?
+  category               String?             @db.VarChar(100)
+  difficultyLevel        String?             @db.VarChar(50)
+  platform               String?             @db.VarChar(50)
+  platformCourseId       String?             @db.VarChar(255)
+  platformUrl            String?
+  totalModules           Int?                @default(0)
+  estimatedDurationHours Int?
+  totalEnrollments       Int?                @default(0)
+  activeEnrollments      Int?                @default(0)
+  completionRate         Decimal?            @default(0.00) @db.Decimal(5, 2)
+  isActive               Boolean?            @default(true)
+  createdAt              DateTime?           @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime?           @default(now()) @db.Timestamptz(6)
+  courseEnrollments      CourseEnrollments[]
+  coaches                Coaches             @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([coachId], map: "idx_courses_coach_id")
-
   @@map("courses")
 }
 
 model DailyKpis {
-  id                      String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId                 String    @db.Uuid
-  date                    DateTime  @db.Date
-  totalClients            Int?      @default(0)
-  newClients              Int?      @default(0)
-  churnedClients          Int?      @default(0)
-  activeClients           Int?      @default(0)
-  totalInteractions       Int?      @default(0)
-  avgEngagementScore      Decimal?  @default(0.00) @db.Decimal(5, 2)
-  contentPiecesPublished  Int?      @default(0)
-  totalContentViews       Int?      @default(0)
-  avgContentEngagement    Decimal?  @default(0.00) @db.Decimal(5, 2)
-  newEnrollments          Int?      @default(0)
-  courseCompletions       Int?      @default(0)
-  avgCourseProgress       Decimal?  @default(0.00) @db.Decimal(5, 2)
-  aiRequests              Int?      @default(0)
-  aiTokensUsed            Int?      @default(0)
-  emailsSent              Int?      @default(0)
-  emailsOpened            Int?      @default(0)
-  emailsClicked           Int?      @default(0)
-  createdAt               DateTime? @default(now()) @db.Timestamptz(6)
-  coaches                 Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                     String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId                String    @db.Uuid
+  date                   DateTime  @db.Date
+  totalClients           Int?      @default(0)
+  newClients             Int?      @default(0)
+  churnedClients         Int?      @default(0)
+  activeClients          Int?      @default(0)
+  totalInteractions      Int?      @default(0)
+  avgEngagementScore     Decimal?  @default(0.00) @db.Decimal(5, 2)
+  contentPiecesPublished Int?      @default(0)
+  totalContentViews      Int?      @default(0)
+  avgContentEngagement   Decimal?  @default(0.00) @db.Decimal(5, 2)
+  newEnrollments         Int?      @default(0)
+  courseCompletions      Int?      @default(0)
+  avgCourseProgress      Decimal?  @default(0.00) @db.Decimal(5, 2)
+  aiRequests             Int?      @default(0)
+  aiTokensUsed           Int?      @default(0)
+  emailsSent             Int?      @default(0)
+  emailsOpened           Int?      @default(0)
+  emailsClicked          Int?      @default(0)
+  createdAt              DateTime? @default(now()) @db.Timestamptz(6)
+  coaches                Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([coachId, date])
   @@index([coachId, date], map: "idx_daily_kpis_coach_id_date")
-
   @@map("daily_kpis")
 }
 
 model EmailAccounts {
-  id              String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId         String          @db.Uuid
-  emailAddress    String          @db.VarChar(255)
-  provider        String          @db.VarChar(50)
-  accessToken     String?
-  refreshToken    String?
-  tokenExpiresAt  DateTime?       @db.Timestamptz(6)
-  isPrimary       Boolean?        @default(false)
-  isActive        Boolean?        @default(true)
-  syncEnabled     Boolean?        @default(true)
-  lastSyncAt      DateTime?       @db.Timestamptz(6)
-  createdAt       DateTime?       @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime?       @default(now()) @db.Timestamptz(6)
-  coaches         Coaches         @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  emailThreads    EmailThreads[]
+  id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId        String         @db.Uuid
+  emailAddress   String         @db.VarChar(255)
+  provider       String         @db.VarChar(50)
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiresAt DateTime?      @db.Timestamptz(6)
+  isPrimary      Boolean?       @default(false)
+  isActive       Boolean?       @default(true)
+  syncEnabled    Boolean?       @default(true)
+  lastSyncAt     DateTime?      @db.Timestamptz(6)
+  createdAt      DateTime?      @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?      @default(now()) @db.Timestamptz(6)
+  coaches        Coaches        @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailThreads   EmailThreads[]
 
   @@unique([coachId, emailAddress])
-
   @@map("email_accounts")
 }
 
 model EmailMessages {
-  id               String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  threadId         String        @db.Uuid
-  messageId        String        @db.VarChar(255)
-  senderEmail      String        @db.VarChar(255)
+  id               String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  threadId         String       @db.Uuid
+  messageId        String       @db.VarChar(255)
+  senderEmail      String       @db.VarChar(255)
   recipientEmails  String[]
   ccEmails         String[]
   bccEmails        String[]
-  subject          String?       @db.VarChar(500)
+  subject          String?      @db.VarChar(500)
   bodyText         String?
   bodyHtml         String?
-  attachments      Json?         @default("[]")
-  aiProcessed      Boolean?      @default(false)
-  sentimentScore   Decimal?      @db.Decimal(3, 2)
-  intentCategory   String?       @db.VarChar(100)
-  suggestedActions Json?         @default("[]")
-  sentAt           DateTime      @db.Timestamptz(6)
-  receivedAt       DateTime?     @default(now()) @db.Timestamptz(6)
-  createdAt        DateTime?     @default(now()) @db.Timestamptz(6)
-  emailThreads     EmailThreads  @relation(fields: [threadId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  attachments      Json?        @default("[]")
+  aiProcessed      Boolean?     @default(false)
+  sentimentScore   Decimal?     @db.Decimal(3, 2)
+  intentCategory   String?      @db.VarChar(100)
+  suggestedActions Json?        @default("[]")
+  sentAt           DateTime     @db.Timestamptz(6)
+  receivedAt       DateTime?    @default(now()) @db.Timestamptz(6)
+  createdAt        DateTime?    @default(now()) @db.Timestamptz(6)
+  emailThreads     EmailThreads @relation(fields: [threadId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([sentAt], map: "idx_email_messages_sent_at")
   @@index([threadId], map: "idx_email_messages_thread_id")
-
   @@map("email_messages")
 }
 
 model EmailTemplates {
-  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId           String    @db.Uuid
-  name              String    @db.VarChar(255)
-  category          String?   @db.VarChar(100)
-  subjectTemplate   String?   @db.VarChar(500)
-  bodyTemplate      String
-  isAiGenerated     Boolean?  @default(false)
-  generationPrompt  String?
-  usageCount        Int?      @default(0)
-  lastUsedAt        DateTime? @db.Timestamptz(6)
-  isActive          Boolean?  @default(true)
-  createdAt         DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime? @default(now()) @db.Timestamptz(6)
-  coaches           Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId          String    @db.Uuid
+  name             String    @db.VarChar(255)
+  category         String?   @db.VarChar(100)
+  subjectTemplate  String?   @db.VarChar(500)
+  bodyTemplate     String
+  isAiGenerated    Boolean?  @default(false)
+  generationPrompt String?
+  usageCount       Int?      @default(0)
+  lastUsedAt       DateTime? @db.Timestamptz(6)
+  isActive         Boolean?  @default(true)
+  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
+  coaches          Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("email_templates")
 }
 
 model EmailThreads {
-  id              String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId         String           @db.Uuid
-  clientId        String?          @db.Uuid
-  emailAccountId  String           @db.Uuid
-  threadId        String           @db.VarChar(255)
-  subject         String?          @db.VarChar(500)
-  participants    String[]
-  status          String?          @default("active") @db.VarChar(50)
-  isRead          Boolean?         @default(false)
-  priority        String?          @default("normal") @db.VarChar(20)
-  messageCount    Int?             @default(0)
-  lastMessageAt   DateTime?        @db.Timestamptz(6)
-  createdAt       DateTime?        @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime?        @default(now()) @db.Timestamptz(6)
-  emailMessages   EmailMessages[]
-  clients         Clients?         @relation(fields: [clientId], references: [id], onUpdate: NoAction)
-  coaches         Coaches          @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  emailAccounts   EmailAccounts    @relation(fields: [emailAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId        String          @db.Uuid
+  clientId       String?         @db.Uuid
+  emailAccountId String          @db.Uuid
+  threadId       String          @db.VarChar(255)
+  subject        String?         @db.VarChar(500)
+  participants   String[]
+  status         String?         @default("active") @db.VarChar(50)
+  isRead         Boolean?        @default(false)
+  priority       String?         @default("normal") @db.VarChar(20)
+  messageCount   Int?            @default(0)
+  lastMessageAt  DateTime?       @db.Timestamptz(6)
+  createdAt      DateTime?       @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?       @default(now()) @db.Timestamptz(6)
+  emailMessages  EmailMessages[]
+  clients        Clients?        @relation(fields: [clientId], references: [id], onUpdate: NoAction)
+  coaches        Coaches         @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailAccounts  EmailAccounts   @relation(fields: [emailAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([clientId], map: "idx_email_threads_client_id")
   @@index([coachId], map: "idx_email_threads_coach_id")
-
   @@map("email_threads")
 }
 
 model Integrations {
-  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  coachId          String           @db.Uuid
-  integrationType  String           @db.VarChar(50)
-  platformName     String           @db.VarChar(100)
-  accessToken      String?
-  refreshToken     String?
-  tokenExpiresAt   DateTime?        @db.Timestamptz(6)
-  apiKey           String?
-  webhookSecret    String?          @db.VarChar(255)
-  config           Json?            @default("{}")
-  syncSettings     Json?            @default("{}")
-  isActive         Boolean?         @default(true)
-  lastSyncAt       DateTime?        @db.Timestamptz(6)
-  syncError        String?
-  createdAt        DateTime?        @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime?        @default(now()) @db.Timestamptz(6)
-  coaches          Coaches          @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  webhookEvents    WebhookEvents[]
+  id              String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  coachId         String          @db.Uuid
+  integrationType String          @db.VarChar(50)
+  platformName    String          @db.VarChar(100)
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiresAt  DateTime?       @db.Timestamptz(6)
+  apiKey          String?
+  webhookSecret   String?         @db.VarChar(255)
+  config          Json?           @default("{}")
+  syncSettings    Json?           @default("{}")
+  isActive        Boolean?        @default(true)
+  lastSyncAt      DateTime?       @db.Timestamptz(6)
+  syncError       String?
+  createdAt       DateTime?       @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime?       @default(now()) @db.Timestamptz(6)
+  coaches         Coaches         @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  webhookEvents   WebhookEvents[]
 
   @@index([coachId], map: "idx_integrations_coach_id")
-
   @@map("integrations")
 }
 
@@ -480,29 +470,27 @@ model Notifications {
   @@index([adminId], map: "idx_notifications_admin_id")
   @@index([coachId], map: "idx_notifications_coach_id")
   @@index([isRead], map: "idx_notifications_is_read")
-
   @@map("notifications")
 }
 
 model PlatformAnalytics {
-  id                       String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  date                     DateTime  @unique @db.Date
-  totalCoaches             Int?      @default(0)
-  activeCoaches            Int?      @default(0)
-  newCoaches               Int?      @default(0)
-  churnedCoaches           Int?      @default(0)
-  totalRevenue             Decimal?  @default(0.00) @db.Decimal(12, 2)
-  monthlyRecurringRevenue  Decimal?  @default(0.00) @db.Decimal(12, 2)
-  churnRate                Decimal?  @default(0.00) @db.Decimal(5, 2)
-  totalAiRequests          Int?      @default(0)
-  totalAiTokens            Int?      @default(0)
-  totalEmailsProcessed     Int?      @default(0)
-  avgResponseTimeMs        Int?      @default(0)
-  uptimePercentage         Decimal?  @default(100.00) @db.Decimal(5, 2)
-  createdAt                DateTime? @default(now()) @db.Timestamptz(6)
+  id                      String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  date                    DateTime  @unique @db.Date
+  totalCoaches            Int?      @default(0)
+  activeCoaches           Int?      @default(0)
+  newCoaches              Int?      @default(0)
+  churnedCoaches          Int?      @default(0)
+  totalRevenue            Decimal?  @default(0.00) @db.Decimal(12, 2)
+  monthlyRecurringRevenue Decimal?  @default(0.00) @db.Decimal(12, 2)
+  churnRate               Decimal?  @default(0.00) @db.Decimal(5, 2)
+  totalAiRequests         Int?      @default(0)
+  totalAiTokens           Int?      @default(0)
+  totalEmailsProcessed    Int?      @default(0)
+  avgResponseTimeMs       Int?      @default(0)
+  uptimePercentage        Decimal?  @default(100.00) @db.Decimal(5, 2)
+  createdAt               DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([date], map: "idx_platform_analytics_date")
-
   @@map("platform_analytics")
 }
 
@@ -521,124 +509,124 @@ model WebhookEvents {
 
   @@index([integrationId], map: "idx_webhook_events_integration_id")
   @@index([status], map: "idx_webhook_events_status")
-
   @@map("webhook_events")
 }
 
 model Transactions {
-  id                String            @id @default(uuid())
-  coachId           String
-  subscriptionId    String?
-  planId            String
-  amount            Int
-  currency          String            @default("USD")
-  status            TransactionStatus @default(pending)
-  paymentMethod     PaymentMethod
-  stripePaymentId   String?
-  paypalOrderId     String?
-  invoiceNumber     String?           @unique
-  invoiceDate       DateTime
-  dueDate           DateTime?
-  paidAt            DateTime?
-  description       String?
-  metadata          Json?
-  failureReason     String?
-  refundReason      String?
-  refundedAmount    Int?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  coach             Coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  subscription      Subscriptions?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  plan              Plans             @relation(fields: [planId], references: [id], onDelete: Restrict)
+  id              String            @id @default(uuid())
+  coachId         String
+  subscriptionId  String?
+  planId          String
+  amount          Int
+  currency        String            @default("USD")
+  status          TransactionStatus @default(pending)
+  paymentMethod   PaymentMethod
+  stripePaymentId String?
+  paypalOrderId   String?
+  invoiceNumber   String?           @unique
+  invoiceDate     DateTime
+  dueDate         DateTime?
+  paidAt          DateTime?
+  description     String?
+  metadata        Json?
+  failureReason   String?
+  refundReason    String?
+  refundedAmount  Int?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  coach           Coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  subscription    Subscriptions?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  plan            Plans             @relation(fields: [planId], references: [id], onDelete: Restrict)
+  Invoices        Invoices[]
 
   @@map("transactions")
 }
 
 model PaymentMethods {
-  id                String            @id @default(uuid())
-  coachId           String
-  type              PaymentMethod
-  isDefault         Boolean           @default(false)
-  isActive          Boolean           @default(true)
-  cardLast4         String?
-  cardBrand         String?
-  cardExpMonth      Int?
-  cardExpYear       Int?
+  id                    String        @id @default(uuid())
+  coachId               String
+  type                  PaymentMethod
+  isDefault             Boolean       @default(false)
+  isActive              Boolean       @default(true)
+  cardLast4             String?
+  cardBrand             String?
+  cardExpMonth          Int?
+  cardExpYear           Int?
   stripePaymentMethodId String?
-  paypalEmail       String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  coach             Coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  paypalEmail           String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  coach                 Coaches       @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
   @@map("payment_methods")
 }
 
 model Invoices {
-  id                String            @id @default(uuid())
-  coachId           String
-  subscriptionId    String?
-  transactionId     String?
-  invoiceNumber     String            @unique
-  amount            Int
-  currency          String            @default("USD")
-  status            InvoiceStatus     @default(draft)
-  issueDate         DateTime          @default(now())
-  dueDate           DateTime
-  paidAt            DateTime?
-  lineItems         Json
-  subtotal          Int
-  taxRate           Float?
-  taxAmount         Int?
-  discountAmount    Int?
-  total             Int
-  notes             String?
-  metadata          Json?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  coach             Coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  subscription      Subscriptions?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  transaction       Transactions?     @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  id             String         @id @default(uuid())
+  coachId        String
+  subscriptionId String?
+  transactionId  String?
+  invoiceNumber  String         @unique
+  amount         Int
+  currency       String         @default("USD")
+  status         InvoiceStatus  @default(draft)
+  issueDate      DateTime       @default(now())
+  dueDate        DateTime
+  paidAt         DateTime?
+  lineItems      Json
+  subtotal       Int
+  taxRate        Float?
+  taxAmount      Int?
+  discountAmount Int?
+  total          Int
+  notes          String?
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  coach          Coaches        @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  subscription   Subscriptions? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  transaction    Transactions?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
   @@map("invoices")
 }
 
 model Plans {
-  id                String            @id @default(uuid())
-  name              String            @unique
-  description       String?
-  monthlyPrice      Int
-  annualPrice       Int
-  maxClients        Int?
-  maxAiAgents       Int?
-  features          Json?
-  isActive          Boolean           @default(true)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  subscriptions     Subscriptions[]
-  transactions      Transactions[]
+  id            String          @id @default(uuid())
+  name          String          @unique
+  description   String?
+  monthlyPrice  Int
+  annualPrice   Int
+  maxClients    Int?
+  maxAiAgents   Int?
+  features      Json?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  subscriptions Subscriptions[]
+  transactions  Transactions[]
 
   @@map("plans")
 }
 
 model Subscriptions {
-  id                    String              @id @default(uuid())
-  coachId               String
-  planId                String
-  status                SubscriptionStatus  @default(active)
-  billingCycle          BillingCycle        @default(monthly)
-  currentPeriodStart    DateTime
-  currentPeriodEnd      DateTime
-  canceledAt            DateTime?
-  cancelReason          String?
-  trialStart            DateTime?
-  trialEnd              DateTime?
-  nextBillingDate       DateTime?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  coach                 Coaches             @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  plan                  Plans               @relation(fields: [planId], references: [id], onDelete: Restrict)
-  transactions          Transactions[]
-  invoices              Invoices[]
+  id                 String             @id @default(uuid())
+  coachId            String
+  planId             String
+  status             SubscriptionStatus @default(active)
+  billingCycle       BillingCycle       @default(monthly)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  canceledAt         DateTime?
+  cancelReason       String?
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  nextBillingDate    DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  coach              Coaches            @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  plan               Plans              @relation(fields: [planId], references: [id], onDelete: Restrict)
+  transactions       Transactions[]
+  invoices           Invoices[]
 
   @@map("subscriptions")
 }
