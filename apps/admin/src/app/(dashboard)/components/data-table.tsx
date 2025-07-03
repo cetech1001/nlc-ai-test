@@ -398,6 +398,7 @@ export const tableRenderers = {
       'Converted': 'text-green-400',
       'No Show': 'text-red-400',
       'Not Converted': 'text-yellow-400',
+      'Scheduled': 'text-blue-400',
     };
 
     return (

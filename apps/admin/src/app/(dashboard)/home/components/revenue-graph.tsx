@@ -71,7 +71,7 @@ export const RevenueGraph = () => {
   return (
     <div className="relative z-10">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 gap-4">
-        <div className="min-w-0 w-full sm:w-80">
+        <div className="min-w-0 w-full sm:w-85">
           <h2 className="text-stone-50 text-2xl font-semibold leading-relaxed mb-1.5">
             Your Revenue
           </h2>
@@ -91,7 +91,6 @@ export const RevenueGraph = () => {
                     : "text-stone-300 hover:text-stone-50"
                 }`}
                 style={{
-                  // Reduce paint operations on mobile
                   willChange: timePeriod === period ? 'auto' : 'transform',
                 }}
               >
@@ -133,9 +132,9 @@ export const RevenueGraph = () => {
                 fontSize: 12
               }}
               interval={0}
-              angle={currentChartData.length > 7 ? -45 : 0}
-              textAnchor={currentChartData.length > 7 ? "end" : "middle"}
-              height={currentChartData.length > 7 ? 60 : 30}
+              angle={0}
+              textAnchor={"end"}
+              height={30}
             />
             <YAxis hide />
             <Tooltip

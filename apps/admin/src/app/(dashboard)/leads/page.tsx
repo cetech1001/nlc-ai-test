@@ -29,7 +29,7 @@ export default function Leads() {
         <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-white text-2xl font-semibold">
-              Leads
+              Leads List
             </h2>
             <Button
               onClick={() => setIsScheduleMeetingModalOpen(true)}

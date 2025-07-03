@@ -883,7 +883,7 @@ export interface Lead {
   email: string;
   meetingDate: string;
   meetingTime: string;
-  status: 'Converted' | 'No Show' | 'Not Converted';
+  status: 'Converted' | 'No Show' | 'Not Converted' | 'Scheduled';
   phone?: string;
   source?: string;
   notes?: string;
@@ -918,7 +918,7 @@ export const leadsData: Lead[] = [
     email: "kathryn.murphy@email.com",
     meetingDate: "Mar 26, 2025",
     meetingTime: "10:00 PM",
-    status: "Converted",
+    status: "Scheduled",
     phone: "+1 (555) 345-6789",
     source: "Referral",
     notes: "Existing business, wants to improve client retention"
