@@ -322,16 +322,21 @@ export const DataTable = <T,>({
 };
 
 export const tableRenderers = {
-  status: (value: string) => (
-    <div className="flex items-center gap-2">
-      <span className={`text-sm font-normal leading-relaxed ${
-        value === "Active" ? "text-green-600" : "text-red-600"
-      }`}>
-        {value}
-      </span>
-      <ChevronDown className="w-4 h-4 text-stone-50" />
-    </div>
-  ),
+  status: (value: string) => {
+    const statusColors: Record<string, string> = {
+      'Active': 'text-green-600',
+      'Inactive': 'text-red-400',
+      'Blocked': 'text-blue-400',
+    };
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`text-sm font-normal leading-relaxed ${statusColors[value] || 'text-gray-400'}`}>
+          {value}
+        </span>
+        <ChevronDown className="w-4 h-4 text-stone-50"/>
+      </div>
+    );
+  },
 
   actions: <T,>(value: string, row: T, action: string, onAction?: (action: string, row: any) => void) => (
     <div className="inline-flex items-center justify-end gap-2">

@@ -84,23 +84,18 @@
   }
 }
 
-/* Add to apps/admin/src/app/global.css */
 
-/* Mobile performance optimizations */
 @media (max-width: 768px) {
-  /* Improve mobile scrolling */
   html {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
   }
 
-  /* Prevent mobile zoom issues */
   input, textarea, select {
     font-size: 16px !important;
     transform: translateZ(0);
   }
 
-  /* Optimize mobile animations */
   * {
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
@@ -108,26 +103,22 @@
     perspective: 1000;
   }
 
-  /* Fix mobile pagination scroll */
   body {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Reduce motion for better performance */
   @media (prefers-reduced-motion: no-preference) {
     .recharts-wrapper {
       will-change: contents;
     }
   }
 
-  /* Force hardware acceleration for smooth transitions */
   .transition-all,
   [class*="transition-"] {
     transform: translateZ(0);
   }
 }
 
-/* Fix for iOS Safari pagination scroll issue */
 @supports (-webkit-touch-callout: none) {
   body {
     -webkit-overflow-scrolling: touch;

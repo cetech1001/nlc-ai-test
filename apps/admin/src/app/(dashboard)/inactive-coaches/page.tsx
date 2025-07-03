@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {allCoachesData, Coach, coachColumns} from "@/app/data";
+import {Coach, coachColumns, inactiveCoachesData} from "@/app/data";
 import { ChevronDown, Settings2, Search } from "lucide-react";
 import {DataTable, TableColumn, tableRenderers} from "@/app/(dashboard)/components/data-table";
 import {Pagination} from "@/app/(dashboard)/components/pagination";
@@ -11,7 +11,7 @@ export default function InactiveCoaches() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredCoaches, setFilteredCoaches] = useState(allCoachesData);
+  const [filteredCoaches, setFilteredCoaches] = useState(inactiveCoachesData);
 
   const coachesPerPage = 10;
   const totalPages = Math.ceil(filteredCoaches.length / coachesPerPage);
@@ -22,9 +22,9 @@ export default function InactiveCoaches() {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.trim() === "") {
-      setFilteredCoaches(allCoachesData);
+      setFilteredCoaches(inactiveCoachesData);
     } else {
-      const filtered = allCoachesData.filter(
+      const filtered = inactiveCoachesData.filter(
         (coach) =>
           coach.name.toLowerCase().includes(query.toLowerCase()) ||
           coach.email.toLowerCase().includes(query.toLowerCase()) ||
@@ -44,6 +44,14 @@ export default function InactiveCoaches() {
 
   const columns: TableColumn<Coach>[] = [
     ...coachColumns.map(column => {
+      if (column.key === 'dateJoined') {
+        return {
+          key: 'dateJoined',
+          header: 'Last Active',
+          width: `${100 / coachColumns.length}%`,
+          render: tableRenderers.dateText
+        };
+      }
       if (column.key === 'actions') {
         return {
           key: 'actions',
