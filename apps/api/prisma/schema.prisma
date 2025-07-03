@@ -52,7 +52,7 @@ enum BillingCycle {
 }
 
 model Admins {
-  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id            String          @id @default(uuid()) @db.Uuid
   email         String          @unique @db.VarChar(255)
   passwordHash  String          @db.VarChar(255)
   firstName     String          @db.VarChar(100)
@@ -68,7 +68,7 @@ model Admins {
 }
 
 model AiAgents {
-  id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id             String           @id @default(uuid()) @db.Uuid
   name           String           @db.VarChar(100)
   type           String           @db.VarChar(50)
   description    String?
@@ -83,7 +83,7 @@ model AiAgents {
 }
 
 model AiInteractions {
-  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String    @id @default(uuid()) @db.Uuid
   coachId          String    @db.Uuid
   agentId          String    @db.Uuid
   clientId         String?   @db.Uuid
@@ -107,7 +107,7 @@ model AiInteractions {
 }
 
 model Clients {
-  id                String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                String              @id @default(uuid()) @db.Uuid
   coachId           String              @db.Uuid
   email             String              @db.VarChar(255)
   firstName         String              @db.VarChar(100)
@@ -137,7 +137,7 @@ model Clients {
 }
 
 model CoachAiAgents {
-  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String    @id @default(uuid()) @db.Uuid
   coachId          String    @db.Uuid
   agentId          String    @db.Uuid
   isEnabled        Boolean?  @default(true)
@@ -156,7 +156,7 @@ model CoachAiAgents {
 }
 
 model Coaches {
-  id                  String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                  String               @id @default(uuid()) @db.Uuid
   email               String               @unique @db.VarChar(255)
   passwordHash        String?              @db.VarChar(255)
   firstName           String               @db.VarChar(100)
@@ -201,7 +201,7 @@ model Coaches {
 }
 
 model ContentPieces {
-  id                    String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                    String    @id @default(uuid()) @db.Uuid
   coachId               String    @db.Uuid
   title                 String    @db.VarChar(500)
   contentType           String    @db.VarChar(50)
@@ -234,7 +234,7 @@ model ContentPieces {
 }
 
 model ContentSuggestions {
-  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id              String    @id @default(uuid()) @db.Uuid
   coachId         String    @db.Uuid
   title           String    @db.VarChar(500)
   contentType     String    @db.VarChar(50)
@@ -254,7 +254,7 @@ model ContentSuggestions {
 }
 
 model CourseEnrollments {
-  id                    String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                    String    @id @default(uuid()) @db.Uuid
   courseId              String    @db.Uuid
   clientId              String    @db.Uuid
   enrolledAt            DateTime? @default(now()) @db.Timestamptz(6)
@@ -283,7 +283,7 @@ model CourseEnrollments {
 }
 
 model Courses {
-  id                     String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                     String              @id @default(uuid()) @db.Uuid
   coachId                String              @db.Uuid
   title                  String              @db.VarChar(255)
   description            String?
@@ -308,7 +308,7 @@ model Courses {
 }
 
 model DailyKpis {
-  id                     String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                     String    @id @default(uuid()) @db.Uuid
   coachId                String    @db.Uuid
   date                   DateTime  @db.Date
   totalClients           Int?      @default(0)
@@ -337,7 +337,7 @@ model DailyKpis {
 }
 
 model EmailAccounts {
-  id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id             String         @id @default(uuid()) @db.Uuid
   coachId        String         @db.Uuid
   emailAddress   String         @db.VarChar(255)
   provider       String         @db.VarChar(50)
@@ -358,7 +358,7 @@ model EmailAccounts {
 }
 
 model EmailMessages {
-  id               String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String       @id @default(uuid()) @db.Uuid
   threadId         String       @db.Uuid
   messageId        String       @db.VarChar(255)
   senderEmail      String       @db.VarChar(255)
@@ -384,7 +384,7 @@ model EmailMessages {
 }
 
 model EmailTemplates {
-  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String    @id @default(uuid()) @db.Uuid
   coachId          String    @db.Uuid
   name             String    @db.VarChar(255)
   category         String?   @db.VarChar(100)
@@ -403,7 +403,7 @@ model EmailTemplates {
 }
 
 model EmailThreads {
-  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id             String          @id @default(uuid()) @db.Uuid
   coachId        String          @db.Uuid
   clientId       String?         @db.Uuid
   emailAccountId String          @db.Uuid
@@ -428,7 +428,7 @@ model EmailThreads {
 }
 
 model Integrations {
-  id              String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id              String          @id @default(uuid()) @db.Uuid
   coachId         String          @db.Uuid
   integrationType String          @db.VarChar(50)
   platformName    String          @db.VarChar(100)
@@ -452,7 +452,7 @@ model Integrations {
 }
 
 model Notifications {
-  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
   coachId   String?   @db.Uuid
   adminId   String?   @db.Uuid
   type      String    @db.VarChar(50)
@@ -474,7 +474,7 @@ model Notifications {
 }
 
 model PlatformAnalytics {
-  id                      String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                      String    @id @default(uuid()) @db.Uuid
   date                    DateTime  @unique @db.Date
   totalCoaches            Int?      @default(0)
   activeCoaches           Int?      @default(0)
@@ -495,7 +495,7 @@ model PlatformAnalytics {
 }
 
 model WebhookEvents {
-  id             String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id             String        @id @default(uuid()) @db.Uuid
   integrationId  String?       @db.Uuid
   eventType      String        @db.VarChar(100)
   eventData      Json
@@ -513,10 +513,10 @@ model WebhookEvents {
 }
 
 model Transactions {
-  id              String            @id @default(uuid())
-  coachId         String
-  subscriptionId  String?
-  planId          String
+  id              String            @id @default(uuid()) @db.Uuid
+  coachId         String                                 @db.Uuid
+  subscriptionId  String?                                @db.Uuid
+  planId          String                                 @db.Uuid
   amount          Int
   currency        String            @default("USD")
   status          TransactionStatus @default(pending)
@@ -543,8 +543,8 @@ model Transactions {
 }
 
 model PaymentMethods {
-  id                    String        @id @default(uuid())
-  coachId               String
+  id                    String        @id @default(uuid()) @db.Uuid
+  coachId               String                             @db.Uuid
   type                  PaymentMethod
   isDefault             Boolean       @default(false)
   isActive              Boolean       @default(true)
@@ -562,10 +562,10 @@ model PaymentMethods {
 }
 
 model Invoices {
-  id             String         @id @default(uuid())
-  coachId        String
-  subscriptionId String?
-  transactionId  String?
+  id             String         @id @default(uuid()) @db.Uuid
+  coachId        String                              @db.Uuid
+  subscriptionId String?                             @db.Uuid
+  transactionId  String?                             @db.Uuid
   invoiceNumber  String         @unique
   amount         Int
   currency       String         @default("USD")
@@ -591,7 +591,7 @@ model Invoices {
 }
 
 model Plans {
-  id            String          @id @default(uuid())
+  id            String          @id @default(uuid()) @db.Uuid
   name          String          @unique
   description   String?
   monthlyPrice  Int
@@ -609,9 +609,9 @@ model Plans {
 }
 
 model Subscriptions {
-  id                 String             @id @default(uuid())
-  coachId            String
-  planId             String
+  id                 String             @id @default(uuid()) @db.Uuid
+  coachId            String                                  @db.Uuid
+  planId             String                                  @db.Uuid
   status             SubscriptionStatus @default(active)
   billingCycle       BillingCycle       @default(monthly)
   currentPeriodStart DateTime
