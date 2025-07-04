@@ -1,11 +1,12 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import {allCoachesData, coachColumns} from "@/app/data";
 import { Settings2, Search } from "lucide-react";
 import { DataTable } from "@/app/(dashboard)/components/data-table";
 import {Pagination} from "@/app/(dashboard)/components/pagination";
+import {CoachesPageSkeleton} from "@/app/(dashboard)/coaches/components/coaches-page.skeleton";
 
 export default function Coaches() {
   const router = useRouter();
@@ -43,6 +44,20 @@ export default function Coaches() {
       console.log('Menu clicked for:', coach.name);
     }
   };
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <CoachesPageSkeleton/>
+  }
 
   return (
     <div className="flex flex-col">

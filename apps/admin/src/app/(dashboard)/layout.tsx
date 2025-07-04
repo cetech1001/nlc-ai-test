@@ -4,6 +4,8 @@ import {ReactNode, useEffect} from 'react';
 import { DashboardSidebarWrapper } from './components/dashboard-sidebar';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@/lib/hooks/use-auth";
+import {Skeleton} from "@nlc-ai/ui";
+
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -77,14 +79,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
-  }
-
   if (!isAuthenticated) {
     return null;
   }
@@ -106,12 +100,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
               <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <p className="text-white text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-[#A0A0A0] text-xs">
-                    {user?.email}
-                  </p>
-                </div>
+                {isLoading
+                  ? (
+                    <div className="hidden sm:block">
+                      <Skeleton className="h-2 w-28 mb-1.5" />
+                      <Skeleton className="h-2 w-36 mb-1.5" />
+                    </div>
+                  ) : (
+                    <div className="text-right hidden sm:block">
+                      <p className="text-white text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+                      <p className="text-[#A0A0A0] text-xs">{user?.email}</p>
+                    </div>
+                  )
+                }
                 <div className="w-8 h-8 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
                     {user?.firstName[0]}{user?.lastName[0]}

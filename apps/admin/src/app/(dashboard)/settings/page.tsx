@@ -3,9 +3,10 @@
 import {useEffect, useState} from "react";
 import { Eye, EyeOff } from "lucide-react";
 import {useAuth} from "@/lib/hooks/use-auth";
+import {SettingsPageSkeleton} from "@/app/(dashboard)/settings/settings-page.skeleton";
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -55,6 +56,10 @@ export default function Settings() {
     setNewPassword("");
     setConfirmPassword("");
   };
+
+  if (isLoading) {
+    return <SettingsPageSkeleton/>;
+  }
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-black overflow-hidden">

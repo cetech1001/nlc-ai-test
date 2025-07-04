@@ -5,9 +5,22 @@ import {DataTable, TableAction} from "@/app/(dashboard)/components/data-table";
 import { useRouter } from "next/navigation";
 import {coachColumns, coachesData} from "@/app/data";
 import {RevenueGraph} from "@/app/(dashboard)/home/components/revenue-graph";
+import {useEffect, useState} from "react";
+import {HomePageSkeleton} from "@/app/(dashboard)/home/components/home-page.skeleton";
+
 
 export default function AdminDashboard() {
   const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleRowAction = (action: string, coach: any) => {
     if (action === 'payment') {
@@ -24,6 +37,10 @@ export default function AdminDashboard() {
       variant: 'primary',
     }
   ];
+
+  if (isLoading) {
+    return <HomePageSkeleton/>;
+  }
 
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">

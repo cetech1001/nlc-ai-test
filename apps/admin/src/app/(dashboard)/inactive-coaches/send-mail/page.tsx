@@ -9,6 +9,7 @@ import {useEffect, useState} from "react";
 import { useRouter } from "next/navigation";
 import { BackTo } from "@/app/(dashboard)/components/back-to";
 import dynamic from 'next/dynamic';
+import {SendMailPageSkeleton} from "@/app/(dashboard)/inactive-coaches/send-mail/components/send-mail-page.skeleton";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,
@@ -47,6 +48,15 @@ export default function ClientRetention() {
   const [emailSubject, setEmailSubject] = useState("We Miss You! Let's Get Back to Growing Your Coaching Business 🚀");
   const [tinyMCEConfig, setTinyMCEConfig] = useState<TinyMCEConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const fetchTinyMCEConfig = async () => {
@@ -78,12 +88,8 @@ export default function ClientRetention() {
     setEmailContent(content);
   };
 
-  if (configLoading || !tinyMCEConfig) {
-    return (
-      <div className="w-full h-96 bg-neutral-800/50 border border-neutral-600 rounded-lg animate-pulse flex items-center justify-center">
-        <span className="text-stone-400">Loading editor...</span>
-      </div>
-    );
+  if (configLoading || !tinyMCEConfig || isLoading) {
+    return <SendMailPageSkeleton/>;
   }
 
   return (

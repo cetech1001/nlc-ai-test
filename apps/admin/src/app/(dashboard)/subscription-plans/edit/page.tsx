@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { ArrowLeft } from "lucide-react";
 import {useRouter} from "next/navigation";
 import {PlanForm} from "@/app/(dashboard)/components/plan-form";
+import {PlanFormSkeleton} from "@/app/(dashboard)/subscription-plans/edit/components/plan-form.skeleton";
 
 
 const EditNewPlan = () => {
@@ -15,6 +16,15 @@ const EditNewPlan = () => {
     description: "",
     features: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -35,6 +45,10 @@ const EditNewPlan = () => {
   const handleBackToPlans = () => {
     router.push("/subscription-plans");
   };
+
+  if (isLoading) {
+    return <PlanFormSkeleton/>
+  }
 
   return (
     <main className="flex-1 pt-2 sm:pt-8">

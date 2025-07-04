@@ -5,10 +5,21 @@ import {useRouter} from "next/navigation";
 import {PlanCard} from "@/app/(dashboard)/components/plan-card";
 import {getPlans} from "@/app/data";
 import { Button } from "@nlc-ai/ui";
+import {useEffect, useState} from "react";
+import {PlansPageSkeleton} from "@/app/(dashboard)/subscription-plans/components/plans-page.skeleton";
 
 
 const SubscriptionPlans = () => {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const plans = getPlans("");
 
@@ -20,6 +31,10 @@ const SubscriptionPlans = () => {
   const handleCreateNewPlan = () => {
     router.push("/subscription-plans/create");
   };
+  
+  if (isLoading) {
+    return <PlansPageSkeleton/>
+  }
 
   return (
     <div className="mb-8 pt-2 sm:pt-8">

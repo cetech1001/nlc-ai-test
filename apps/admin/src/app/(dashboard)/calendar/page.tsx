@@ -10,6 +10,7 @@ import {appointments, CalendarEvent, calendarEvents} from "@/app/data";
 import {AppointmentCard} from "@/app/(dashboard)/calendar/components/appointment-card";
 import {CalendarCell, DayHeader} from "@/app/(dashboard)/calendar/components/calendar-cell";
 import {MiniCalendarCell} from "@/app/(dashboard)/calendar/components/mini-calendar-cell";
+import {CalendarPageSkeleton} from "@/app/(dashboard)/calendar/components/calendar-page.skeleton";
 
 
 interface CalendarDay {
@@ -107,6 +108,16 @@ export default function Calendar(){
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [weekDays, setWeekDays] = useState<CalendarDay[]>([]);
 
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const monthNames = [
     "January",
     "February",
@@ -164,6 +175,10 @@ export default function Calendar(){
   useEffect(() => {
     setWeekDays(getWeekForDate(currentWeekStart));
   }, [currentWeekStart]);
+
+  if (isLoading) {
+    return <CalendarPageSkeleton/>;
+  }
 
   return (
     <main className="flex-1 p-4 sm:p-6 lg:p-8">

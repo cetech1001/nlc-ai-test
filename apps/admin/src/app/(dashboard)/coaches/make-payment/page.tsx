@@ -1,9 +1,10 @@
 'use client'
 
 import PaymentModal from "@/app/(dashboard)/coaches/make-payment/components/payment-modal";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import {getPlans} from "@/app/data";
 import {PlanCard} from "@/app/(dashboard)/components/plan-card";
+import {MakePaymentSkeleton} from "@/app/(dashboard)/coaches/make-payment/components/make-payment-page.skeleton";
 
 export default function MakePayment() {
   const coachName = "Charlie Levin";
@@ -17,6 +18,15 @@ export default function MakePayment() {
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleUpgrade = (planTitle: string) => {
     setSelectedPlanForPayment(planTitle);
@@ -27,6 +37,10 @@ export default function MakePayment() {
     setIsPaymentModalOpen(false);
     console.log(`Payment completed for ${coachName} - ${selectedPlanForPayment}`);
   };
+
+  if (isLoading) {
+    return <MakePaymentSkeleton/>;
+  }
 
   return (
     <div>
@@ -86,13 +100,15 @@ export default function MakePayment() {
           ))}
         </div>
       </div>
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        coachName={coachName}
-        selectedPlan={selectedPlanForPayment}
-        onPaymentComplete={handlePaymentComplete}
-      />
+      {isPaymentModalOpen ? (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          coachName={coachName}
+          selectedPlan={selectedPlanForPayment}
+          onPaymentComplete={handlePaymentComplete}
+        />
+      ) : null}
     </div>
   );
 }
