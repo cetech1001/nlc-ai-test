@@ -7,6 +7,7 @@ import {APP_GUARD} from "@nestjs/core";
 import {JwtAuthGuard} from "./auth/guards/jwt-auth.guard";
 import { EmailModule } from './email/email.module';
 import {PlansModule} from "./plans/plans.module";
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import {PlansModule} from "./plans/plans.module";
     CoachesModule,
     EmailModule,
     PlansModule,
+    DashboardModule,
   ],
   providers: [
     {
