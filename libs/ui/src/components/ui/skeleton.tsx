@@ -1,17 +1,14 @@
-'use client'
+import {HTMLAttributes} from "react";
+import { cn } from "../../utils/cn"
 
-import { cn } from "../../utils/cn";
-
-function Skeleton({
+export const Skeleton = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-muted", className)}
+      className={cn("animate-pulse rounded-md bg-neutral-800/50", className)}
       {...props}
     />
-  );
+  )
 }
-
-export { Skeleton };
