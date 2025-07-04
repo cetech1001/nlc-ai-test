@@ -1,9 +1,3 @@
-export interface ApiResponse<T = any> {
-  data?: T;
-  message?: string;
-  error?: string;
-}
-
 export interface LoginResponse {
   access_token: string;
   user: {
@@ -19,6 +13,18 @@ export interface ApiError {
   message: string;
   statusCode: number;
   error?: string;
+}
+
+export interface UpdateProfileRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  desktopNotifications?: boolean;
+  emailNotifications?: boolean;
+}
+
+export interface UpdatePasswordRequest {
+  newPassword: string;
 }
 
 class AuthAPI {
@@ -121,6 +127,20 @@ class AuthAPI {
     return this.makeRequest('/auth/profile');
   }
 
+  async updateProfile(data: UpdateProfileRequest): Promise<{ message: string; user: LoginResponse['user'] }> {
+    return this.makeRequest('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePassword(data: UpdatePasswordRequest): Promise<{ message: string }> {
+    return this.makeRequest('/auth/password', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   async logout(): Promise<{ message: string }> {
     try {
       return await this.makeRequest<{ message: string }>('/auth/admin/logout', {
@@ -128,19 +148,6 @@ class AuthAPI {
       });
     } finally {
       this.removeToken();
-    }
-  }
-
-  async isAuthenticated(): Promise<boolean> {
-    const token = this.getToken();
-    if (!token) return false;
-
-    try {
-      await this.getProfile();
-      return true;
-    } catch {
-      this.removeToken();
-      return false;
     }
   }
 }

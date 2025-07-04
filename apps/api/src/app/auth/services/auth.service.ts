@@ -1,4 +1,4 @@
-import {Injectable, UnauthorizedException, BadRequestException} from '@nestjs/common';
+import {Injectable, UnauthorizedException, BadRequestException, ConflictException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -12,6 +12,8 @@ import {
   VerifyCodeDto,
   AdminLoginDto,
 } from '../dto';
+import {UpdateProfileDto} from "../dto/update-profile.dto";
+import {UpdatePasswordDto} from "../dto/update-password.dto";
 
 @Injectable()
 export class AuthService {
@@ -147,6 +149,107 @@ export class AuthService {
     }
 
     return admin;
+  }
+
+  async updateProfile(userId: string, userType: 'coach' | 'admin', updateProfileDto: UpdateProfileDto) {
+    const { firstName, lastName, email } = updateProfileDto;
+
+    if (userType === 'coach') {
+      const existingCoach = await this.prisma.coaches.findFirst({
+        where: {
+          email,
+          id: { not: userId },
+          isActive: true,
+        },
+      });
+
+      if (existingCoach) {
+        throw new ConflictException('Email already exists');
+      }
+
+      const updatedCoach = await this.prisma.coaches.update({
+        where: { id: userId },
+        data: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          updatedAt: new Date(),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          businessName: true,
+          isVerified: true,
+        },
+      });
+
+      return {
+        message: 'Profile updated successfully',
+        user: updatedCoach,
+      };
+    } else {
+      const existingAdmin = await this.prisma.admins.findFirst({
+        where: {
+          email,
+          id: { not: userId },
+          isActive: true,
+        },
+      });
+
+      if (existingAdmin) {
+        throw new ConflictException('Email already exists');
+      }
+
+      const updatedAdmin = await this.prisma.admins.update({
+        where: { id: userId },
+        data: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          updatedAt: new Date(),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+        },
+      });
+
+      return {
+        message: 'Profile updated successfully',
+        user: updatedAdmin,
+      };
+    }
+  }
+
+  async updatePassword(userId: string, userType: 'coach' | 'admin', updatePasswordDto: UpdatePasswordDto) {
+    const { newPassword } = updatePasswordDto;
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+
+    if (userType === 'coach') {
+      await this.prisma.coaches.update({
+        where: { id: userId },
+        data: {
+          passwordHash,
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      await this.prisma.admins.update({
+        where: { id: userId },
+        data: {
+          passwordHash,
+          updatedAt: new Date(),
+        },
+      });
+    }
+
+    return { message: 'Password updated successfully' };
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto, userType: 'coach' | 'admin') {

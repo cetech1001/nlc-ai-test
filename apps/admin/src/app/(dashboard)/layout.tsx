@@ -1,6 +1,6 @@
 'use client'
 
-import {ReactNode, useEffect} from 'react';
+import {ReactNode, useEffect, useMemo} from 'react';
 import { DashboardSidebarWrapper } from './components/dashboard-sidebar';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@/lib/hooks/use-auth";
@@ -65,6 +65,29 @@ const defaultConfig = {
   breadcrumb: 'Dashboard'
 };
 
+const UserDisplaySection = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
+  const userFullName = useMemo(() => {
+    if (!user?.firstName || !user?.lastName) return '';
+    return `${user.firstName} ${user.lastName}`;
+  }, [user?.firstName, user?.lastName]);
+
+  if (isLoading) {
+    return (
+      <div className="hidden sm:block">
+        <Skeleton className="h-2 w-28 mb-1.5" />
+        <Skeleton className="h-2 w-36 mb-1.5" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-right hidden sm:block">
+      <p className="text-white text-sm font-medium">{userFullName}</p>
+      <p className="text-[#A0A0A0] text-xs">{user?.email}</p>
+    </div>
+  );
+};
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -72,6 +95,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
   const currentConfig = pageConfig[pathname as keyof typeof pageConfig] || defaultConfig;
+
+  const userInitials = useMemo(() => {
+    if (!user?.firstName || !user?.lastName) return '';
+    return `${user.firstName[0]}${user.lastName[0]}`;
+  }, [user?.firstName, user?.lastName]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -100,22 +128,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
               <div className="flex items-center gap-3">
-                {isLoading
-                  ? (
-                    <div className="hidden sm:block">
-                      <Skeleton className="h-2 w-28 mb-1.5" />
-                      <Skeleton className="h-2 w-36 mb-1.5" />
-                    </div>
-                  ) : (
-                    <div className="text-right hidden sm:block">
-                      <p className="text-white text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                      <p className="text-[#A0A0A0] text-xs">{user?.email}</p>
-                    </div>
-                  )
-                }
-                <div className="w-8 h-8 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
+                <UserDisplaySection user={user} isLoading={isLoading} />
+                <div
+                  key={`${user?.firstName}-${user?.lastName}`} // Force re-render when name changes
+                  className="w-8 h-8 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center"
+                >
                   <span className="text-white text-sm font-medium">
-                    {user?.firstName[0]}{user?.lastName[0]}
+                    {userInitials}
                   </span>
                 </div>
               </div>

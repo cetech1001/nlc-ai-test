@@ -24,6 +24,12 @@ export const useAuth = () => {
 
   const checkAuthStatus = async () => {
     try {
+      if (!authState.isLoading) {
+        setAuthState(prevState => ({
+          ...prevState,
+          isLoading: true,
+        }));
+      }
       const user = await authAPI.getProfile();
       setAuthState({
         user,
@@ -31,7 +37,6 @@ export const useAuth = () => {
         isAuthenticated: true,
       });
     } catch (error) {
-      // console.error('Auth check failed:', error);
       setAuthState({
         user: null,
         isLoading: false,
