@@ -65,6 +65,7 @@ export function AdminResetPasswordContent() {
       onBackToLogin={handleBackToLogin}
       isLoading={isLoading}
       error={error}
+      clearErrorMessage={() => setError('')}
     />
   );
 }

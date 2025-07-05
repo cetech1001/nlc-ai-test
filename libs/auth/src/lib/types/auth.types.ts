@@ -4,6 +4,9 @@ export interface AuthFormProps {
   onSubmit: (data: any) => void | Promise<void>;
   isLoading?: boolean;
   error?: string;
+  clearErrorMessage?: () => void;
+  successMessage?: string;
+  clearSuccessMessage?: () => void;
   className?: string;
 }
 

@@ -3,7 +3,7 @@
 import { FC, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input, EyeLashIcon } from '@nlc-ai/ui';
+import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
 
 import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas';
 import { type ResetPasswordFormProps } from '../../types';
@@ -14,6 +14,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
   onBackToLogin,
   isLoading = false,
   error,
+  clearErrorMessage,
   className = '',
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -41,9 +42,10 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
+        <AlertBanner
+          type={"error"}
+          message={error}
+          onDismiss={clearErrorMessage}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">

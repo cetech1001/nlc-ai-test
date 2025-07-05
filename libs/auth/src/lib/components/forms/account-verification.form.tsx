@@ -3,19 +3,21 @@
 import { FC, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input } from '@nlc-ai/ui';
+import {AlertBanner, Button, Input } from '@nlc-ai/ui';
 
-import { accountVerificationSchema, type AccountVerificationFormData } from '../../schemas/auth-schemas';
-import { type AccountVerificationFormProps } from '../../types/auth.types';
+import { accountVerificationSchema, type AccountVerificationFormData } from '../../schemas';
+import { type AccountVerificationFormProps } from '../../types';
 
 export const AccountVerificationForm: FC<AccountVerificationFormProps> = ({
   onSubmit,
   onResendCode,
   onBackToLogin,
-  email,
   resendTimer = 70,
   isLoading = false,
   error,
+  clearErrorMessage,
+  successMessage,
+  clearSuccessMessage,
   className = '',
 }) => {
   const [timer, setTimer] = useState(resendTimer);
@@ -73,9 +75,17 @@ export const AccountVerificationForm: FC<AccountVerificationFormProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
+        <AlertBanner
+          type={"error"}
+          message={error}
+          onDismiss={clearErrorMessage}/>
+      )}
+
+      {successMessage && (
+        <AlertBanner
+          type={"success"}
+          message={successMessage}
+          onDismiss={clearSuccessMessage}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">

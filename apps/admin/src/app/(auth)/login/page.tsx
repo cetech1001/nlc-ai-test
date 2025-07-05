@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
+
 import { LoginForm, useAuthPage, type LoginFormData } from '@nlc-ai/auth';
 import {ApiError} from "@/lib/api/auth";
 import {useAuth} from "@/lib/hooks/use-auth";
@@ -51,20 +52,16 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <>
-      {successMessage && (
-        <div className="mb-4 p-4 bg-green-800/20 border border-green-600 rounded-lg">
-          <p className="text-green-400 text-sm">{successMessage}</p>
-        </div>
-      )}
-      <LoginForm
-        onSubmit={handleLogin}
-        onForgotPassword={handleForgotPassword}
-        isLoading={isLoading}
-        error={error}
-        showGoogleAuth={false}
-        showRememberMe={true}
-      />
-    </>
+    <LoginForm
+      onSubmit={handleLogin}
+      onForgotPassword={handleForgotPassword}
+      isLoading={isLoading}
+      error={error}
+      clearErrorMessage={() => setError('')}
+      successMessage={successMessage}
+      clearSuccessMessage={() => setSuccessMessage('')}
+      showGoogleAuth={false}
+      showRememberMe={true}
+    />
   );
 }

@@ -3,12 +3,12 @@
 import {useState, FC} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input, Checkbox, EyeLashIcon } from '@nlc-ai/ui';
+import {Eye} from "lucide-react";
+import { Button, Input, Checkbox, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
 
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
-import {Eye} from "lucide-react";
 
 export const LoginForm: FC<LoginFormProps> = ({
   onSubmit,
@@ -16,6 +16,9 @@ export const LoginForm: FC<LoginFormProps> = ({
   onSignUp,
   isLoading = false,
   error,
+  clearErrorMessage,
+  successMessage,
+  clearSuccessMessage,
   showGoogleAuth = true,
   showRememberMe = true,
   className = '',
@@ -47,9 +50,17 @@ export const LoginForm: FC<LoginFormProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
+        <AlertBanner
+          type={"error"}
+          message={error}
+          onDismiss={clearErrorMessage}/>
+      )}
+
+      {successMessage && (
+        <AlertBanner
+          type={"success"}
+          message={successMessage}
+          onDismiss={clearSuccessMessage}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">

@@ -11,6 +11,7 @@ export function AdminAccountVerificationContent() {
   const email = searchParams.get('email') || '';
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const description = useMemo(() => (
     <>
@@ -25,6 +26,8 @@ export function AdminAccountVerificationContent() {
   });
 
   const handleVerification = async (data: AccountVerificationFormData) => {
+    setSuccessMessage('');
+
     if (!email) {
       setError('Email address is required');
       return;
@@ -53,8 +56,8 @@ export function AdminAccountVerificationContent() {
 
     try {
       await authAPI.resendCode(email);
-      // Show success message or toast
-      setError(''); // Clear any existing errors
+      setSuccessMessage('Verification code has been resent to your email address');
+      setError('');
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Failed to resend code');
@@ -73,6 +76,9 @@ export function AdminAccountVerificationContent() {
       email={email}
       isLoading={isLoading}
       error={error}
+      clearErrorMessage={() => setError('')}
+      successMessage={successMessage}
+      clearSuccessMessage={() => setSuccessMessage('')}
     />
   );
 }

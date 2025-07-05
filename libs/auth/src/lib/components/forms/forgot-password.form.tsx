@@ -3,7 +3,7 @@
 import { FC } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input } from '@nlc-ai/ui';
+import {AlertBanner, Button, Input } from '@nlc-ai/ui';
 
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '../../schemas/auth-schemas';
 import { type ForgotPasswordFormProps } from '../../types/auth.types';
@@ -13,6 +13,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   onBackToLogin,
   isLoading = false,
   error,
+  clearErrorMessage,
   className = '',
 }) => {
   const {
@@ -37,9 +38,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
+        <AlertBanner type={"error"} message={error} onDismiss={clearErrorMessage}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">

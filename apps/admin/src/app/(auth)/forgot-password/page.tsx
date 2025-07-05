@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from "sonner";
 import { ForgotPasswordForm, useAuthPage, type ForgotPasswordFormData } from '@nlc-ai/auth';
 import { authAPI, type ApiError } from '@/lib/api/auth';
 
@@ -20,8 +21,8 @@ export default function AdminForgotPasswordPage() {
     setError('');
 
     try {
-      await authAPI.forgotPassword(data.email);
-
+      const response = await authAPI.forgotPassword(data.email);
+      toast.error(response.message);
       router.push(`/account-verification?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
       const apiError = err as ApiError;
@@ -41,6 +42,7 @@ export default function AdminForgotPasswordPage() {
       onBackToLogin={handleBackToLogin}
       isLoading={isLoading}
       error={error}
+      clearErrorMessage={() => setError('')}
     />
   );
 }

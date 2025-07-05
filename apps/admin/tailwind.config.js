@@ -7,7 +7,7 @@ module.exports = {
     join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'),
     ...createGlobPatternsForDependencies(__dirname),
     '../../libs/auth/src/**/*.{ts,tsx}',
-    '../../libs/ui/src/**/*.{ts,tsx}',
+    '../../libs/unused/src/**/*.{ts,tsx}',
   ],
   theme: {
     container: {
@@ -76,9 +76,9 @@ module.exports = {
           "radial-gradient(50% 50% at 50% 50%, #D497FF 0%, #7B21BA 100%)",
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        inter: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        "mier-a": ["Mier A", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Inter", "unused-sans-serif", "system-unused", "sans-serif"],
+        inter: ["Inter", "unused-sans-serif", "system-unused", "sans-serif"],
+        "mier-a": ["Mier A", "unused-sans-serif", "system-unused", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
