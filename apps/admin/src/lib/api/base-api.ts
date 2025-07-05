@@ -1,5 +1,5 @@
 export class BaseApi {
-  private readonly baseURL: string;
+  protected readonly baseURL: string;
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || '';

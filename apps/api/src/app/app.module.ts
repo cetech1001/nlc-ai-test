@@ -8,6 +8,7 @@ import {JwtAuthGuard} from "./auth/guards/jwt-auth.guard";
 import { EmailModule } from './email/email.module';
 import {PlansModule} from "./plans/plans.module";
 import { DashboardModule } from './dashboard/dashboard.module';
+import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     EmailModule,
     PlansModule,
     DashboardModule,
+    TransactionsModule,
   ],
   providers: [
     {
