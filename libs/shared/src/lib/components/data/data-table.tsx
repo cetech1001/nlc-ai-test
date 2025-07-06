@@ -1,31 +1,5 @@
-import React from 'react';
 import { ChevronDown } from 'lucide-react';
-
-export interface TableColumn<T> {
-  key: string;
-  header: string;
-  width?: string;
-  className?: string;
-  headerClassName?: string;
-  render?: (value: any, row: T, onAction?: (action: string, row: T) => void) => React.ReactNode;
-}
-
-export interface TableAction {
-  label: string;
-  action: string;
-  className?: string;
-  variant?: 'default' | 'primary' | 'danger';
-}
-
-export interface TableProps<T> {
-  columns: TableColumn<T>[];
-  data: T[];
-  onRowAction?: (action: string, row: any) => void;
-  className?: string;
-  actions?: TableAction[];
-  showMobileCards?: boolean;
-  emptyMessage?: string;
-}
+import {TableProps} from "../../types";
 
 export const DataTable = <T,>({
   columns,
@@ -56,58 +30,6 @@ export const DataTable = <T,>({
 
   return (
     <>
-      {/*{showMobileCards && (
-        <div className="block sm:hidden">
-          <div className="space-y-4">
-            {data.length === 0 ? (
-              <div className="text-center py-8 text-stone-400">{emptyMessage}</div>
-            ) : (
-              data.map((row, index) => (
-                // @ts-ignore
-                <div key={row.id || index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 overflow-hidden">
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-                  </div>
-                  <div className="relative z-10 space-y-3">
-                    {columns.slice(0, -1).map((column) => (
-                      <div key={column.key} className="flex justify-between items-start">
-                        <span className="text-stone-400 text-sm font-medium">{column.header}:</span>
-                        <div className="flex-1 ml-3 text-right">
-                          @ts-ignore
-                          {column.render ? column.render(row[column.key], row, onRowAction) : (
-                            <span className="text-stone-50 text-sm">
-                              @ts-ignore
-                              {row[column.key]}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {actions.length > 0 && (
-                      <div className="flex gap-2 pt-2 border-t border-neutral-700">
-                        {actions.map((action) => (
-                          <button
-                            key={action.action}
-                            onClick={() => onRowAction?.(action.action, row)}
-                            className={`text-sm font-medium transition-colors ${
-                              action.variant === 'primary' ? 'text-fuchsia-400 hover:text-fuchsia-300' :
-                                action.variant === 'danger' ? 'text-red-400 hover:text-red-300' :
-                                  'text-stone-300 hover:text-stone-50'
-                            } ${action.className || ''}`}
-                          >
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}*/}
-
       {showMobileCards && (
         <div className="block sm:hidden">
           <div className="space-y-4">
@@ -324,9 +246,13 @@ export const DataTable = <T,>({
 export const tableRenderers = {
   status: (value: string) => {
     const statusColors: Record<string, string> = {
-      'Active': 'text-green-600',
+      'Active': 'text-green-400',
       'Inactive': 'text-red-400',
       'Blocked': 'text-blue-400',
+      'Converted': 'text-green-400',
+      'No Show': 'text-red-400',
+      'Not Converted': 'text-yellow-400',
+      'Scheduled': 'text-blue-400',
     };
     return (
       <div className="flex items-center gap-2">
@@ -357,34 +283,14 @@ export const tableRenderers = {
 
   basicText: (value: string) => (
     <span className="text-stone-50 font-normal leading-relaxed">
-    {value}
-  </span>
+      {value}
+    </span>
   ),
 
   dateText: (value: string) => (
     <span className="text-stone-50 font-normal leading-relaxed whitespace-nowrap">
-    {value}
-  </span>
-  ),
-
-  simpleStatus: (value: string) => (
-    <div className="inline-flex items-center gap-2">
-      <span className={`text-sm font-normal leading-relaxed ${
-        value === "Active" ? "text-green-600" : "text-red-600"
-      }`}>
-        {value}
-      </span>
-      <ChevronDown className="w-4 h-4 text-stone-50" />
-    </div>
-  ),
-
-  simpleActions: <T,>(_: string, row: T, onAction?: (action: string, row: T) => void) => (
-    <button
-      onClick={() => onAction?.('payment', row)}
-      className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
-    >
-      Make Payment
-    </button>
+      {value}
+    </span>
   ),
 
   currencyText: (value: number) => (
@@ -392,22 +298,4 @@ export const tableRenderers = {
       ${value.toLocaleString()}
     </span>
   ),
-
-  leadStatus: (value: string) => {
-    const statusColors: Record<string, string> = {
-      'Converted': 'text-green-400',
-      'No Show': 'text-red-400',
-      'Not Converted': 'text-yellow-400',
-      'Scheduled': 'text-blue-400',
-    };
-
-    return (
-      <div className="inline-flex items-center gap-2">
-        <span className={`text-sm font-normal leading-relaxed ${statusColors[value] || 'text-gray-400'}`}>
-          {value}
-        </span>
-        <ChevronDown className="w-4 h-4 text-stone-50" />
-      </div>
-    );
-  }
 };

@@ -2,6 +2,9 @@
   "name": "@nlc-ai/api",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "prisma:studio": "prisma studio"
+  },
   "nx": {
     "targets": {
       "build": {

@@ -7,6 +7,7 @@ import { Button } from "@nlc-ai/ui";
 import { useEffect, useState } from "react";
 import { PlansPageSkeleton } from "@/app/(dashboard)/subscription-plans/components/plans-page.skeleton";
 import { plansAPI, type Plan as APIPlan } from "@/lib/api/plans";
+import { PageHeader } from "@nlc-ai/shared";
 
 const transformPlan = (apiPlan: APIPlan, isCurrentPlan = false) => ({
   id: apiPlan.id,
@@ -138,23 +139,16 @@ const SubscriptionPlans = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-white text-2xl font-semibold mb-2">
-            Subscription Plans
-          </h2>
-          <p className="text-stone-300 text-sm">
-            Manage your subscription plans and pricing structure
-          </p>
-        </div>
-        <Button
-          onClick={handleCreateNewPlan}
-          className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-lg hover:bg-[#8B31CA] text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create New Plan
-        </Button>
-      </div>
+      <PageHeader
+        title="Subscription Plans"
+        subtitle="Manage your subscription plans and pricing structure"
+        actionButton={{
+          label: "Create New Plan",
+          onClick: handleCreateNewPlan,
+          icon: <Plus className="w-4 h-4" />,
+          variant: "primary"
+        }}
+      />
 
       {plans.length === 0 ? (
         <div className="text-center py-12">
@@ -170,7 +164,7 @@ const SubscriptionPlans = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
           {plans.map((plan) => (
-            <div key={plan.id} className="relative group sm:mb-8">
+            <div key={plan.id} className="relative group mb-8">
               <div className="absolute -top-2 -right-2 z-10">
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                   plan.isActive

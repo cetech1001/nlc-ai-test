@@ -10,7 +10,7 @@ import {
   ArrowRightStartOnRectangleIcon as HiLogout
 } from '@heroicons/react/24/outline';
 import {MenuItem} from "../../types";
-import {Logo} from "../logo/logo";
+import {Logo} from "../logo";
 
 
 interface SidebarProps extends SidebarComponentProps{

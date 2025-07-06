@@ -1,13 +1,13 @@
 'use client'
 
 import { StatCard } from "@/app/(dashboard)/home/components/stat-card";
-import { DataTable, TableAction } from "@/app/(dashboard)/components/data-table";
+import { DataTable, PageHeader, TableAction } from "@nlc-ai/shared";
 import { useRouter } from "next/navigation";
-import { coachColumns } from "@/app/data";
 import { RevenueGraph } from "@/app/(dashboard)/home/components/revenue-graph";
 import { useEffect, useState } from "react";
 import { HomePageSkeleton } from "@/app/(dashboard)/home/components/home-page.skeleton";
 import { dashboardAPI, type DashboardData, type RecentCoach } from "@/lib/api/dashboard";
+import {coachColumns} from "@/lib/utils/coaches";
 
 const transformCoachData = (coaches: RecentCoach[]) => {
   return coaches.map(coach => ({
@@ -60,10 +60,6 @@ export default function AdminDashboard() {
     }
   ];
 
-  if (isLoading) {
-    return <HomePageSkeleton />;
-  }
-
   if (error) {
     return (
       <div className="py-4 sm:py-6 lg:py-8 space-y-6">
@@ -81,8 +77,8 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!dashboardData) {
-    return <HomePageSkeleton />;
+  if (isLoading || !dashboardData) {
+    return <HomePageSkeleton length={coachColumns.length} />;
   }
 
   const { stats, revenueData, recentCoaches } = dashboardData;
@@ -122,17 +118,14 @@ export default function AdminDashboard() {
       </div>
 
       <div className="relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-stone-50 text-xl sm:text-2xl font-semibold leading-relaxed">
-            Recently Joined Coaches
-          </h2>
-          <button
-            onClick={() => router.push('/coaches')}
-            className="text-fuchsia-400 text-sm font-bold hover:text-fuchsia-300 transition-colors self-start sm:self-auto"
-          >
-            View All
-          </button>
-        </div>
+        <PageHeader
+          title="Recently Joined Coaches"
+          actionButton={{
+            label: "View All",
+            onClick: () => router.push('/coaches'),
+            variant: "secondary"
+          }}
+        />
 
         {transformedCoaches.length === 0 ? (
           <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 text-center">

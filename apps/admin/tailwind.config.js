@@ -7,7 +7,8 @@ module.exports = {
     join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'),
     ...createGlobPatternsForDependencies(__dirname),
     '../../libs/auth/src/**/*.{ts,tsx}',
-    '../../libs/unused/src/**/*.{ts,tsx}',
+    '../../libs/ui/src/**/*.{ts,tsx}',
+    '../../libs/shared/src/**/*.{ts,tsx}',
   ],
   theme: {
     container: {

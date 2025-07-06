@@ -1,7 +1,6 @@
 import {DataTableSkeleton, Skeleton } from "@nlc-ai/ui";
-import {coachColumns} from "@/app/data";
 
-export const CoachesPageSkeleton = () => {
+export const CoachesPageSkeleton = (props: { length: number }) => {
   return (
     <div className="flex flex-col">
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
@@ -14,7 +13,7 @@ export const CoachesPageSkeleton = () => {
         </div>
 
         <DataTableSkeleton
-          columns={coachColumns.length}
+          columns={props.length}
           rows={10}
           showMobileCards={true}
         />

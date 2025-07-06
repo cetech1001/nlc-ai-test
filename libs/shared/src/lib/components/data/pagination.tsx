@@ -1,3 +1,4 @@
+/// <reference lib="dom"/>
 import {Dispatch, SetStateAction} from "react";
 
 interface IProps {
