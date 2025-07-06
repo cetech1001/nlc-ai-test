@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PlanCard } from "@/app/(dashboard)/components/plan-card";
 import { Button } from "@nlc-ai/ui";
 import { useEffect, useState } from "react";
-import { PlansPageSkeleton } from "@/app/(dashboard)/subscription-plans/components/plans-page.skeleton";
+import { PlansPageSkeleton } from "@/lib/skeletons/plans-page.skeleton";
 import { plansAPI, type Plan as APIPlan } from "@/lib/api/plans";
 import { PageHeader } from "@nlc-ai/shared";
 

@@ -18,7 +18,7 @@ export const StatCard = ({ title, value, subtitle, growth }: IProps) => {
       </div>
       <div className="relative z-10 flex flex-col justify-between h-full min-h-[100px] sm:min-h-[120px]">
         <h3 className="text-stone-300 text-sm sm:text-base font-medium leading-tight sm:leading-relaxed">{title}</h3>
-        <div className="flex justify-between items-end mt-auto pt-2">
+        <div className="flex flex-col justify-between items-start gap-2 mt-auto pt-2">
           <p className="text-stone-50 text-xl sm:text-2xl lg:text-3xl font-semibold leading-tight sm:leading-relaxed">{value}</p>
           {showGrowth && (
             <div className={`px-2.5 py-0.5 rounded-full border flex justify-center items-center gap-1 ${

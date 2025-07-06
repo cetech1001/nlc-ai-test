@@ -9,9 +9,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { CoachesService, type CoachStatus } from './coaches.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CoachesService } from './coaches.service';
 import { CreateCoachDto, UpdateCoachDto } from './dto';
+import { CoachQueryDto } from './dto/coach-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -25,24 +26,10 @@ export class CoachesController {
   constructor(private readonly coachesService: CoachesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all coaches with pagination and filters' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, enum: ['active', 'inactive', 'blocked'] })
-  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiOperation({ summary: 'Get all coaches with advanced filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Coaches retrieved successfully' })
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: CoachStatus,
-    @Query('search') search?: string,
-  ) {
-    return this.coachesService.findAll(
-      page ? parseInt(page) : 1,
-      limit ? parseInt(limit) : 10,
-      status,
-      search,
-    );
+  findAll(@Query() query: CoachQueryDto) {
+    return this.coachesService.findAll(query);
   }
 
   @Get('stats')
@@ -52,22 +39,19 @@ export class CoachesController {
     return this.coachesService.getCoachStats();
   }
 
+  @Get('recent')
+  @ApiOperation({ summary: 'Get recently joined coaches for dashboard' })
+  @ApiResponse({ status: 200, description: 'Recent coaches retrieved successfully' })
+  getRecentCoaches(@Query('limit') limit?: string) {
+    return this.coachesService.getRecentCoaches(limit ? parseInt(limit) : 6);
+  }
+
   @Get('inactive')
-  @ApiOperation({ summary: 'Get inactive coaches' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiOperation({ summary: 'Get inactive coaches (30+ days without login)' })
   @ApiResponse({ status: 200, description: 'Inactive coaches retrieved successfully' })
-  getInactiveCoaches(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.coachesService.getInactiveCoaches(
-      page ? parseInt(page) : 1,
-      limit ? parseInt(limit) : 10,
-      search,
-    );
+  getInactiveCoaches(@Query() query: CoachQueryDto) {
+    query.status = 'inactive' as any;
+    return this.coachesService.findAll(query);
   }
 
   @Get(':id')
@@ -80,7 +64,6 @@ export class CoachesController {
 
   @Get(':id/kpis')
   @ApiOperation({ summary: 'Get coach KPIs' })
-  @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'KPIs retrieved successfully' })
   getKpis(
     @Param('id') id: string,
@@ -108,7 +91,7 @@ export class CoachesController {
   }
 
   @Patch(':id/toggle-status')
-  @ApiOperation({ summary: 'Toggle coach active status' })
+  @ApiOperation({ summary: 'Toggle coach active status (block/unblock)' })
   @ApiResponse({ status: 200, description: 'Coach status toggled successfully' })
   @ApiResponse({ status: 404, description: 'Coach not found' })
   toggleStatus(@Param('id') id: string) {
@@ -116,7 +99,7 @@ export class CoachesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Deactivate a coach' })
+  @ApiOperation({ summary: 'Deactivate a coach (soft delete)' })
   @ApiResponse({ status: 200, description: 'Coach deactivated successfully' })
   @ApiResponse({ status: 404, description: 'Coach not found' })
   remove(@Param('id') id: string) {

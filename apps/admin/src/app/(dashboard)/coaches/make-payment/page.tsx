@@ -1,10 +1,10 @@
 'use client'
 
-import PaymentModal from "@/app/(dashboard)/coaches/make-payment/components/payment-modal";
+import PaymentModal from "@/lib/modals/payment-modal";
 import {useEffect, useState} from "react";
 import {getPlans} from "@/app/data";
 import {PlanCard} from "@/app/(dashboard)/components/plan-card";
-import {MakePaymentSkeleton} from "@/app/(dashboard)/coaches/make-payment/components/make-payment-page.skeleton";
+import {MakePaymentSkeleton} from "@/lib/skeletons/make-payment-page.skeleton";
 
 export default function MakePayment() {
   const coachName = "Charlie Levin";

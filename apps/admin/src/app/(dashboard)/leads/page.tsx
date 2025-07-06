@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {leadsData, leadColumns} from "@/app/data";
 import { DataTable, PageHeader, Pagination } from "@nlc-ai/shared";
-import ScheduleMeetingModal from "@/app/(dashboard)/leads/components/schedule-meeting-modal";
+import ScheduleMeetingModal from "@/lib/modals/schedule-meeting-modal";
 
 export default function Leads() {
   const [currentPage, setCurrentPage] = useState(1);

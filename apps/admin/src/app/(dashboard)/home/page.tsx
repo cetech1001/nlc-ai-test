@@ -5,9 +5,10 @@ import { DataTable, PageHeader, TableAction } from "@nlc-ai/shared";
 import { useRouter } from "next/navigation";
 import { RevenueGraph } from "@/app/(dashboard)/home/components/revenue-graph";
 import { useEffect, useState } from "react";
-import { HomePageSkeleton } from "@/app/(dashboard)/home/components/home-page.skeleton";
-import { dashboardAPI, type DashboardData, type RecentCoach } from "@/lib/api/dashboard";
+import { HomePageSkeleton } from "@/lib/skeletons/home-page.skeleton";
+import { dashboardAPI } from "@/lib/api/dashboard";
 import {coachColumns} from "@/lib/utils/coaches";
+import {DashboardData, RecentCoach} from "@nlc-ai/types";
 
 const transformCoachData = (coaches: RecentCoach[]) => {
   return coaches.map(coach => ({
@@ -90,29 +91,33 @@ export default function AdminDashboard() {
         <div className="flex-1 relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 min-w-0 overflow-hidden">
           <div className="absolute w-64 h-64 -left-12 top-52 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
           <div className="absolute w-64 h-64 right-40 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
-          <RevenueGraph revenueData={revenueData} />
+          <RevenueGraph revenueData={revenueData.yearly} />
         </div>
 
         <div className="w-full xl:w-1/3 grid grid-cols-2 gap-4 lg:gap-6">
           <StatCard
             title="Total Coaches"
             value={stats.totalCoaches.toLocaleString()}
-            subtitle={stats.coachGrowth > 0 ? `+${stats.coachGrowth.toFixed(1)}%` : undefined}
-            growth={stats.coachGrowth}
+            subtitle={stats.totalCoachesGrowth > 0 ? `+${stats.totalCoachesGrowth.toFixed(1)}%` : undefined}
+            growth={stats.totalCoachesGrowth}
           />
           <StatCard
             title="All Time Revenue"
             value={`$${stats.allTimeRevenue.toLocaleString()}`}
+            subtitle={stats.allTimeRevenueGrowth > 0 ? `+${stats.allTimeRevenueGrowth.toFixed(1)}%` : undefined}
+            growth={stats.allTimeRevenueGrowth}
           />
           <StatCard
             title="Inactive Coaches"
             value={stats.inactiveCoaches.toLocaleString()}
+            subtitle={stats.inactiveCoachesGrowth < 0 ? `-${stats.inactiveCoachesGrowth.toFixed(1)}%` : undefined}
+            growth={stats.inactiveCoachesGrowth * -1}
           />
           <StatCard
             title="Monthly Revenue"
             value={`$${stats.monthlyRevenue.toLocaleString()}`}
-            subtitle={stats.revenueGrowth > 0 ? `+${stats.revenueGrowth.toFixed(1)}%` : undefined}
-            growth={stats.revenueGrowth}
+            subtitle={stats.monthlyRevenueGrowth > 0 ? `+${stats.monthlyRevenueGrowth.toFixed(1)}%` : undefined}
+            growth={stats.monthlyRevenueGrowth}
           />
         </div>
       </div>

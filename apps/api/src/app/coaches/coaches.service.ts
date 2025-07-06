@@ -1,107 +1,168 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCoachDto, UpdateCoachDto } from './dto';
 import { PrismaService } from "../prisma/prisma.service";
-
-export type CoachStatus = 'active' | 'inactive' | 'blocked';
-
-export interface CoachWithStatus {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  businessName?: string;
-  isActive: boolean;
-  isVerified: boolean;
-  lastLoginAt?: Date;
-  createdAt: Date;
-  status: CoachStatus;
-  currentPlan?: string;
-  subscriptionStatus?: string;
-}
+import { CoachQueryDto } from './dto/coach-query.dto';
+import {CoachStatus, CoachWithStatus} from "@nlc-ai/types";
 
 @Injectable()
 export class CoachesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {
+  }
 
-  // Helper method to determine coach status
+  // Helper method to determine coach status based on login activity
   private determineCoachStatus(coach: any): CoachStatus {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    // Blocked coaches are those with isActive = false
     if (!coach.isActive) {
-      return 'blocked';
+      return CoachStatus.BLOCKED;
     }
 
-    if (coach.isActive && coach.lastLoginAt && coach.lastLoginAt > thirtyDaysAgo) {
-      return 'active';
+    // Active coaches: logged in within last 30 days
+    if (coach.lastLoginAt && coach.lastLoginAt > thirtyDaysAgo) {
+      return CoachStatus.ACTIVE;
     }
 
-    if (coach.isActive && (!coach.lastLoginAt || coach.lastLoginAt <= thirtyDaysAgo)) {
-      return 'inactive';
-    }
-
-    return 'inactive'; // Default fallback
+    // Inactive coaches: haven't logged in for 30+ days (or never logged in)
+    return CoachStatus.INACTIVE;
   }
 
-  async findAll(
-    page = 1,
-    limit = 10,
-    status?: CoachStatus,
-    search?: string
-  ) {
+  async findAll(query: CoachQueryDto) {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+      subscriptionPlan,
+      dateJoinedStart,
+      dateJoinedEnd,
+      lastActiveStart,
+      lastActiveEnd,
+      isVerified,
+      includeInactive = true
+    } = query;
+
     const skip = (page - 1) * limit;
 
     // Build where clause
     const where: any = {};
 
+    // Search across multiple fields
     if (search) {
       where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { businessName: { contains: search, mode: 'insensitive' } },
+        {firstName: {contains: search, mode: 'insensitive'}},
+        {lastName: {contains: search, mode: 'insensitive'}},
+        {email: {contains: search, mode: 'insensitive'}},
+        {businessName: {contains: search, mode: 'insensitive'}},
       ];
     }
 
-    // Get all coaches first (we'll filter by status after calculating it)
+    // Date joined filter
+    if (dateJoinedStart || dateJoinedEnd) {
+      where.createdAt = {};
+      if (dateJoinedStart) {
+        where.createdAt.gte = new Date(dateJoinedStart);
+      }
+      if (dateJoinedEnd) {
+        const endDate = new Date(dateJoinedEnd);
+        endDate.setHours(23, 59, 59, 999); // End of day
+        where.createdAt.lte = endDate;
+      }
+    }
+
+    // Last active filter
+    if (lastActiveStart || lastActiveEnd) {
+      where.lastLoginAt = {};
+      if (lastActiveStart) {
+        where.lastLoginAt.gte = new Date(lastActiveStart);
+      }
+      if (lastActiveEnd) {
+        const endDate = new Date(lastActiveEnd);
+        endDate.setHours(23, 59, 59, 999);
+        where.lastLoginAt.lte = endDate;
+      }
+    }
+
+    // Email verification filter
+    if (isVerified !== undefined) {
+      where.isVerified = isVerified;
+    }
+
+    // Subscription plan filter
+    if (subscriptionPlan) {
+      const planNames = subscriptionPlan.split(',').map(p => p.trim());
+      where.subscriptions = {
+        some: {
+          status: 'active',
+          plan: {
+            name: {in: planNames}
+          }
+        }
+      };
+    }
+
+    // Get all coaches with their relations
     const coaches = await this.prisma.coaches.findMany({
       where,
       include: {
         subscriptions: {
+          where: {status: 'active'},
           take: 1,
-          orderBy: { createdAt: 'desc' },
+          orderBy: {createdAt: 'desc'},
           include: {
             plan: {
-              select: { name: true }
+              select: {name: true}
             }
           }
+        },
+        clients: {
+          where: {status: 'active'},
+          select: {id: true}
+        },
+        transactions: {
+          where: {status: 'completed'},
+          select: {amount: true}
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: {createdAt: 'desc'},
     });
 
-    // Calculate status for each coach and filter if needed
-    const coachesWithStatus: CoachWithStatus[] = coaches.map(coach => ({
-      id: coach.id,
-      firstName: coach.firstName,
-      lastName: coach.lastName,
-      email: coach.email,
-      phone: coach.phone,
-      businessName: coach.businessName,
-      isActive: coach.isActive,
-      isVerified: coach.isVerified,
-      lastLoginAt: coach.lastLoginAt,
-      createdAt: coach.createdAt,
-      status: this.determineCoachStatus(coach),
-      currentPlan: coach.subscriptions[0]?.plan?.name || 'No Plan',
-      subscriptionStatus: coach.subscriptions[0]?.status || 'none',
-    }));
+    // Calculate status and additional metrics for each coach
+    const coachesWithStatus: CoachWithStatus[] = coaches.map(coach => {
+      const calculatedStatus = this.determineCoachStatus(coach);
+      const totalRevenue = coach.transactions.reduce((sum, t) => sum + t.amount, 0);
 
-    // Filter by status if specified
-    const filteredCoaches = status
-      ? coachesWithStatus.filter(coach => coach.status === status)
-      : coachesWithStatus;
+      return {
+        id: coach.id,
+        firstName: coach.firstName,
+        lastName: coach.lastName,
+        email: coach.email,
+        phone: coach.phone,
+        businessName: coach.businessName,
+        isActive: coach.isActive,
+        isVerified: coach.isVerified,
+        lastLoginAt: coach.lastLoginAt,
+        createdAt: coach.createdAt,
+        updatedAt: coach.updatedAt,
+        status: calculatedStatus,
+        currentPlan: coach.subscriptions[0]?.plan?.name || 'No Plan',
+        subscriptionStatus: coach.subscriptions[0]?.status || 'none',
+        clientCount: coach.clients.length,
+        totalRevenue: Math.round(totalRevenue / 100), // Convert from cents
+      };
+    });
+
+    // Filter by status if specified (after calculation)
+    let filteredCoaches = coachesWithStatus;
+    if (status) {
+      filteredCoaches = coachesWithStatus.filter(coach => coach.status === status);
+    }
+
+    // Exclude inactive coaches if requested
+    if (!includeInactive) {
+      filteredCoaches = filteredCoaches.filter(coach => coach.status !== CoachStatus.INACTIVE);
+    }
 
     // Apply pagination
     const total = filteredCoaches.length;
@@ -122,25 +183,25 @@ export class CoachesService {
 
   async findOne(id: string) {
     const coach = await this.prisma.coaches.findUnique({
-      where: { id },
+      where: {id},
       include: {
         subscriptions: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: {createdAt: 'desc'},
           include: {
             plan: true
           }
         },
         clients: {
-          where: { status: 'active' },
-          orderBy: { lastInteractionAt: 'desc' },
+          where: {status: 'active'},
+          orderBy: {lastInteractionAt: 'desc'},
           take: 5,
         },
         transactions: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: {createdAt: 'desc'},
           take: 10,
           include: {
             plan: {
-              select: { name: true }
+              select: {name: true}
             }
           }
         }
@@ -151,10 +212,19 @@ export class CoachesService {
       throw new NotFoundException(`Coach with ID ${id} not found`);
     }
 
+    const totalRevenue = await this.prisma.transactions.aggregate({
+      where: {
+        coachId: id,
+        status: 'completed'
+      },
+      _sum: {amount: true}
+    });
+
     return {
       ...coach,
       status: this.determineCoachStatus(coach),
       currentPlan: coach.subscriptions[0]?.plan?.name || 'No Plan',
+      totalRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
     };
   }
 
@@ -162,42 +232,46 @@ export class CoachesService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const coaches = await this.prisma.coaches.findMany({
-      select: {
-        id: true,
-        isActive: true,
-        lastLoginAt: true,
-      }
-    });
+    const [totalCoaches, activeCoaches, blockedCoaches] = await Promise.all([
+      this.prisma.coaches.count(),
+      this.prisma.coaches.count({
+        where: {
+          isActive: true,
+          lastLoginAt: {gte: thirtyDaysAgo}
+        }
+      }),
+      this.prisma.coaches.count({
+        where: {isActive: false}
+      })
+    ]);
 
-    const stats = coaches.reduce((acc, coach) => {
-      const status = this.determineCoachStatus(coach);
-      acc[status] = (acc[status] || 0) + 1;
-      acc.total = (acc.total || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const inactiveCoaches = totalCoaches - activeCoaches - blockedCoaches;
 
     return {
-      total: stats.total || 0,
-      active: stats.active || 0,
-      inactive: stats.inactive || 0,
-      blocked: stats.blocked || 0,
+      total: totalCoaches,
+      active: activeCoaches,
+      inactive: inactiveCoaches,
+      blocked: blockedCoaches,
     };
   }
 
   async getInactiveCoaches(page = 1, limit = 10, search?: string) {
-    return this.findAll(page, limit, 'inactive', search);
+    const queryDto = new CoachQueryDto();
+    queryDto.page = page;
+    queryDto.limit = limit;
+    queryDto.status = CoachStatus.INACTIVE;
+    queryDto.search = search;
+
+    return this.findAll(queryDto);
   }
 
   async create(createCoachDto: CreateCoachDto) {
     return this.prisma.coaches.create({
+      // @ts-ignore
       data: {
         ...createCoachDto,
-        // Set up default AI agents for new coach if needed
         coachAiAgents: {
-          create: [
-            // Add default AI agents here if they exist
-          ],
+          create: [],
         },
       },
       include: {
@@ -214,7 +288,7 @@ export class CoachesService {
     await this.findOne(id);
 
     return this.prisma.coaches.update({
-      where: { id },
+      where: {id},
       data: {
         ...updateCoachDto,
         updatedAt: new Date(),
@@ -226,7 +300,7 @@ export class CoachesService {
     const coach = await this.findOne(id);
 
     return this.prisma.coaches.update({
-      where: { id },
+      where: {id},
       data: {
         isActive: !coach.isActive,
         updatedAt: new Date(),
@@ -239,7 +313,7 @@ export class CoachesService {
 
     // Soft delete - just deactivate the coach
     return this.prisma.coaches.update({
-      where: { id },
+      where: {id},
       data: {
         isActive: false,
         updatedAt: new Date(),
@@ -252,9 +326,9 @@ export class CoachesService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const [totalClients, activeClients, recentInteractions, aiUsage] = await Promise.all([
+    const [totalClients, activeClients, recentInteractions, aiUsage, totalRevenue] = await Promise.all([
       this.prisma.clients.count({
-        where: { coachId },
+        where: {coachId},
       }),
       this.prisma.clients.count({
         where: {
@@ -265,16 +339,26 @@ export class CoachesService {
       this.prisma.aiInteractions.count({
         where: {
           coachId,
-          createdAt: { gte: startDate },
+          createdAt: {gte: startDate},
         },
       }),
       this.prisma.aiInteractions.aggregate({
         where: {
           coachId,
-          createdAt: { gte: startDate },
+          createdAt: {gte: startDate},
         },
         _sum: {
           tokensUsed: true,
+        },
+      }),
+      this.prisma.transactions.aggregate({
+        where: {
+          coachId,
+          status: 'completed',
+          createdAt: {gte: startDate},
+        },
+        _sum: {
+          amount: true,
         },
       }),
     ]);
@@ -284,6 +368,39 @@ export class CoachesService {
       activeClients,
       recentInteractions,
       tokensUsed: aiUsage._sum.tokensUsed || 0,
+      recentRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
     };
+  }
+
+// Method specifically for dashboard to get recent coaches
+  async getRecentCoaches(limit = 6) {
+    const coaches = await this.prisma.coaches.findMany({
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        subscriptions: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            plan: {
+              select: { name: true }
+            }
+          }
+        }
+      }
+    });
+
+    return coaches.map(coach => ({
+      id: coach.id,
+      name: `${coach.firstName} ${coach.lastName}`,
+      email: coach.email,
+      dateJoined: coach.createdAt?.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) || '',
+      plan: coach.subscriptions[0]?.plan?.name || 'No Plan',
+      status: this.determineCoachStatus(coach),
+    }));
   }
 }

@@ -24,12 +24,12 @@ const paymentModes = [
 ];
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
-                                                     isOpen,
-                                                     onClose,
-                                                     coachName,
-                                                     selectedPlan = "Growth Pro",
-                                                     onPaymentComplete,
-                                                   }) => {
+ isOpen,
+ onClose,
+ coachName,
+ selectedPlan = "Growth Pro",
+ onPaymentComplete,
+}) => {
   const [selectedPlanOption, setSelectedPlanOption] = useState(
     planOptions.find(p => p.name === selectedPlan) || planOptions[2]
   );

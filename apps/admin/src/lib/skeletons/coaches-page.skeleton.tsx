@@ -1,19 +1,23 @@
 import {DataTableSkeleton, Skeleton } from "@nlc-ai/ui";
 
-export const CoachesPageSkeleton = (props: { length: number }) => {
+interface IProps {
+  length: number;
+}
+
+export const CoachesPageSkeleton = ({ length }: IProps) => {
   return (
     <div className="flex flex-col">
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+        {/*<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <Skeleton className="h-8 w-32" />
           <div className="flex items-center gap-3">
             <Skeleton className="h-12 w-80 rounded-xl" />
             <Skeleton className="w-10 h-10 rounded-xl" />
           </div>
-        </div>
+        </div>*/}
 
         <DataTableSkeleton
-          columns={props.length}
+          columns={length}
           rows={10}
           showMobileCards={true}
         />

@@ -10,7 +10,7 @@ import {appointments, CalendarEvent, calendarEvents} from "@/app/data";
 import {AppointmentCard} from "@/app/(dashboard)/calendar/components/appointment-card";
 import {CalendarCell, DayHeader} from "@/app/(dashboard)/calendar/components/calendar-cell";
 import {MiniCalendarCell} from "@/app/(dashboard)/calendar/components/mini-calendar-cell";
-import {CalendarPageSkeleton} from "@/app/(dashboard)/calendar/components/calendar-page.skeleton";
+import {CalendarPageSkeleton} from "@/lib/skeletons/calendar-page.skeleton";
 
 
 interface CalendarDay {

@@ -1,14 +1,5 @@
 import {TableColumn, tableRenderers} from "@nlc-ai/shared";
 
-export interface Coach {
-  id: string;
-  name: string;
-  email: string;
-  dateJoined: string;
-  plan: string;
-  status: string;
-}
-
 export const inactiveCoachesData = [
   {
     id: "#1234",

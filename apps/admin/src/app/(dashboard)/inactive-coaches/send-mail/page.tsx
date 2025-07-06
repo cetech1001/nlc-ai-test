@@ -9,7 +9,7 @@ import {useEffect, useState} from "react";
 import { useRouter } from "next/navigation";
 import { BackTo } from "@/app/(dashboard)/components/back-to";
 import dynamic from 'next/dynamic';
-import {SendMailPageSkeleton} from "@/app/(dashboard)/inactive-coaches/send-mail/components/send-mail-page.skeleton";
+import {SendMailPageSkeleton} from "@/lib/skeletons/send-mail-page.skeleton";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,

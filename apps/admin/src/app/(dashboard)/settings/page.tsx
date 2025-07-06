@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from "react";
 import { Eye } from "lucide-react";
-import {SettingsPageSkeleton} from "@/app/(dashboard)/settings/settings-page.skeleton";
+import {SettingsPageSkeleton} from "@/lib/skeletons/settings-page.skeleton";
 import { Button, EyeLashIcon } from "@nlc-ai/ui";
 import { authAPI, useAuth } from "@nlc-ai/auth";
 
