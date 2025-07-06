@@ -23,6 +23,7 @@ COPY . .
 
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 RUN npm list nx || npm install nx@latest
+RUN npm install @rollup/rollup-linux-x64-musl --save-optional
 RUN npx nx build api --prod
 
 FROM base AS runner

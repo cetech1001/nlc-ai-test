@@ -28,6 +28,7 @@ COPY --from=deps /app/package*.json ./
 COPY . .
 
 RUN npm list nx || npm install nx@latest
+RUN npm install @rollup/rollup-linux-x64-musl --save-optional
 RUN npx nx build admin --prod
 
 FROM base AS runner
