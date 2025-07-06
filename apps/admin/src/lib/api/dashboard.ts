@@ -1,6 +1,4 @@
-// apps/admin/src/lib/api/dashboard.ts
-
-import {BaseApi} from "@/lib/api/base-api";
+import { BaseAPI } from "@nlc-ai/api-client";
 
 export interface DashboardStats {
   totalCoaches: number;
@@ -43,7 +41,7 @@ export interface ApiError {
   error?: string;
 }
 
-class DashboardAPI extends BaseApi{
+class DashboardAPI extends BaseAPI{
 
   async getDashboardData(): Promise<DashboardData> {
     return this.makeRequest('/dashboard');

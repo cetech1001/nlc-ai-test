@@ -32,7 +32,7 @@ const nextConfig = {
       }
     ],
   },
-  transpilePackages: ['@nlc-ai/unused', '@nlc-ai/auth'],
+  transpilePackages: ['@nlc-ai/ui', '@nlc-ai/auth', '@nlc-ai/shared'],
   env: {},
   webpack: (config, { isServer }) => {
     if (!isServer) {

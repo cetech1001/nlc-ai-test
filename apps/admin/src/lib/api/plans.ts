@@ -1,4 +1,4 @@
-import {BaseApi} from "@/lib/api/base-api";
+import { BaseAPI } from "@nlc-ai/api-client";
 
 export interface Plan {
   id: string;
@@ -41,13 +41,7 @@ export interface PlanAnalytics {
   };
 }
 
-export interface ApiError {
-  message: string;
-  statusCode: number;
-  error?: string;
-}
-
-class PlansAPI extends BaseApi {
+class PlansAPI extends BaseAPI {
   async getPlans(includeInactive = false): Promise<Plan[]> {
     return this.makeRequest(`/plans?includeInactive=${includeInactive}`);
   }

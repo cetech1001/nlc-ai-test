@@ -1,4 +1,5 @@
-export class BaseApi {
+/// <reference lib="dom" />
+export class BaseAPI {
   protected readonly baseURL: string;
 
   constructor() {

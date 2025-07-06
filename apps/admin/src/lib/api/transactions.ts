@@ -1,4 +1,4 @@
-import {BaseApi} from "@/lib/api/base-api";
+import { BaseAPI } from "@nlc-ai/api-client";
 
 export interface Transaction {
   id: string;
@@ -61,7 +61,7 @@ export interface RevenueData {
   revenue: number;
 }
 
-class TransactionsAPI extends BaseApi{
+class TransactionsAPI extends BaseAPI{
   async getTransactions(
     page = 1,
     limit = 10,

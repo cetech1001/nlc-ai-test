@@ -1,2 +1,2 @@
-export { useAuthForm } from './use-auth-form';
 export { useAuthPage } from './use-auth-page';
+export * from './use-auth';

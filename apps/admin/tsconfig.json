@@ -50,6 +50,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared"
+    },
+    {
       "path": "../../libs/ui"
     },
     {

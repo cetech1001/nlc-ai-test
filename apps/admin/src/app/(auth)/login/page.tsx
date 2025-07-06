@@ -3,9 +3,9 @@
 import {useEffect, useState} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 
-import { LoginForm, useAuthPage, type LoginFormData } from '@nlc-ai/auth';
-import {ApiError} from "@/lib/api/auth";
-import {useAuth} from "@/lib/hooks/use-auth";
+import { LoginForm, useAuthPage, type LoginFormData, useAuth } from '@nlc-ai/auth';
+import {ApiError} from "@nlc-ai/api-client";
+
 
 export default function AdminLoginPage() {
   const { login } = useAuth();

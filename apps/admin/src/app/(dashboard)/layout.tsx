@@ -1,10 +1,16 @@
 'use client'
 
-import {ReactNode, useEffect, useMemo} from 'react';
-import { DashboardSidebarWrapper } from './components/dashboard-sidebar';
+import {ReactNode, useEffect} from 'react';
+import { DashboardSidebarWrapper, PageHeader } from '@nlc-ai/shared';
 import {usePathname, useRouter} from "next/navigation";
-import {useAuth} from "@/lib/hooks/use-auth";
-import {Skeleton} from "@nlc-ai/ui";
+import {useAuth} from "@nlc-ai/auth";
+import {
+  CalendarIcon as HiCalendar,
+  CurrencyDollarIcon as HiCurrencyDollar,
+  HomeIcon as HiHome, MoonIcon as HiMoon,
+  RectangleStackIcon as HiCollection, SpeakerWaveIcon as HiSpeakerphone,
+  UsersIcon as HiUsers
+} from "@heroicons/react/24/outline";
 
 
 interface DashboardLayoutProps {
@@ -65,41 +71,23 @@ const defaultConfig = {
   breadcrumb: 'Dashboard'
 };
 
-const UserDisplaySection = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
-  const userFullName = useMemo(() => {
-    if (!user?.firstName || !user?.lastName) return '';
-    return `${user.firstName} ${user.lastName}`;
-  }, [user?.firstName, user?.lastName]);
+const menuItems = [
+  { icon: HiHome, label: "Dashboard", path: "/home" },
+  { icon: HiUsers, label: "Coaches", path: "/coaches" },
+  { icon: HiCollection, label: "Subscription Plans", path: "/subscription-plans" },
+  { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
+  { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
+  { icon: HiCalendar, label: "Calendar", path: "/calendar" },
+  { icon: HiSpeakerphone, label: "Leads", path: "/leads" },
+];
 
-  if (isLoading) {
-    return (
-      <div className="hidden sm:block">
-        <Skeleton className="h-2 w-28 mb-1.5" />
-        <Skeleton className="h-2 w-36 mb-1.5" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="text-right hidden sm:block">
-      <p className="text-white text-sm font-medium">{userFullName}</p>
-      <p className="text-[#A0A0A0] text-xs">{user?.email}</p>
-    </div>
-  );
-};
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
   const currentConfig = pageConfig[pathname as keyof typeof pageConfig] || defaultConfig;
-
-  const userInitials = useMemo(() => {
-    if (!user?.firstName || !user?.lastName) return '';
-    return `${user.firstName[0]}${user.lastName[0]}`;
-  }, [user?.firstName, user?.lastName]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -113,7 +101,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#000000]">
-      <SidebarComponent />
+      <SidebarComponent menuItems={menuItems} logout={logout} />
 
       <div className="lg:pl-72">
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-[#1A1A1A] bg-[#0A0A0A] px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
@@ -121,25 +109,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <div className="h-6 w-px bg-[#1A1A1A] lg:hidden" aria-hidden="true" />
 
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <h1 className="text-white text-xl sm:text-2xl font-semibold">{currentConfig.title}</h1>
-            </div>
-
-            <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
-              <div className="flex items-center gap-3">
-                <UserDisplaySection user={user} isLoading={isLoading} />
-                <div
-                  key={`${user?.firstName}-${user?.lastName}`} // Force re-render when name changes
-                  className="w-8 h-8 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center"
-                >
-                  <span className="text-white text-sm font-medium">
-                    {userInitials}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            key={`${user?.firstName}-${user?.lastName}`}
+            user={user}
+            isLoading={isLoading}
+            title={currentConfig.title}/>
         </div>
 
         <main className="py-6 md:py-0">
@@ -151,3 +125,5 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
+export default AdminDashboardLayout;

@@ -23,6 +23,12 @@
     },
     {
       "path": "./libs/auth"
+    },
+    {
+      "path": "./libs/shared"
+    },
+    {
+      "path": "./libs/api-client"
     }
   ]
 }

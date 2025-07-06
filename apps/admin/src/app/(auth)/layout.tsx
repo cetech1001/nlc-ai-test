@@ -5,7 +5,7 @@ import { AuthLayout, AuthLayoutProvider } from '@nlc-ai/auth';
 import {AuthSkeleton} from "@nlc-ai/ui";
 
 import {useRouter} from "next/navigation";
-import {useAuth} from "@/lib/hooks/use-auth";
+import {useAuth} from "@nlc-ai/auth";
 
 export default function AdminAuthLayout({ children }: {
   children: ReactNode;

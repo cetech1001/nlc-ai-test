@@ -7,6 +7,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "@nlc-ai/auth": "*",
-    "@nlc-ai/ui": "*"
+    "@nlc-ai/ui": "*",
+    "@nlc-ai/shared": "*"
   }
 }

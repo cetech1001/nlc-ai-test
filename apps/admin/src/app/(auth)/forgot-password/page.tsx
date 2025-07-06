@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import { ForgotPasswordForm, useAuthPage, type ForgotPasswordFormData } from '@nlc-ai/auth';
-import { authAPI, type ApiError } from '@/lib/api/auth';
+import { authAPI, type ApiError } from '@nlc-ai/auth';
 
 export default function AdminForgotPasswordPage() {
   const router = useRouter();

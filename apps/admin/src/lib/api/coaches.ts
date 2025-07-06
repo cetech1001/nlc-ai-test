@@ -1,4 +1,4 @@
-import {BaseApi} from "@/lib/api/base-api";
+import { BaseAPI } from "@nlc-ai/api-client";
 
 export type CoachStatus = 'active' | 'inactive' | 'blocked';
 
@@ -65,7 +65,7 @@ export interface PaginatedCoaches {
   };
 }
 
-class CoachesAPI extends BaseApi{
+class CoachesAPI extends BaseAPI{
   async getCoaches(
     page = 1,
     limit = 10,

@@ -13,7 +13,6 @@ interface IProps {
 export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: IProps) => {
   const [imageError, setImageError] = useState(false);
 
-  // Force SVG for mobile if PNG fails or glitches
   const shouldUseSvg = type === 'svg' || imageError;
 
   return (
@@ -22,7 +21,6 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
       style={{ width: `${width}px`, height: `${height}px` }}
     >
       {shouldUseSvg ? (
-        // SVG version - more reliable on mobile
         <>
           <svg
             width="100%"
@@ -33,7 +31,6 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
             className="absolute inset-0"
             preserveAspectRatio="xMidYMid meet"
             style={{
-              // Prevent SVG glitches on mobile
               transform: 'translateZ(0)',
               backfaceVisibility: 'hidden',
               perspective: '1000px'
@@ -137,7 +134,6 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
           </svg>
         </>
       ) : (
-        // PNG version with better error handling
         <Image
           src="/images/logo.png"
           alt="Logo"
@@ -147,7 +143,6 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
           quality={100}
           onError={() => setImageError(true)}
           style={{
-            // Prevent image glitches on mobile
             transform: 'translateZ(0)',
             backfaceVisibility: 'hidden',
             maxWidth: '100%',

@@ -6,30 +6,14 @@ import { Dialog, Transition } from '@headlessui/react';
 import {
   XMarkIcon,
   Bars3Icon,
-  HomeIcon as HiHome,
-  UsersIcon as HiUsers,
-  RectangleStackIcon as HiCollection,
-  CalendarIcon as HiCalendar,
-  CurrencyDollarIcon as HiCurrencyDollar,
-  MoonIcon as HiMoon,
-  SpeakerWaveIcon as HiSpeakerphone,
   CogIcon as HiCog,
   ArrowRightStartOnRectangleIcon as HiLogout
 } from '@heroicons/react/24/outline';
-import { Logo } from '@/app/(dashboard)/components/logo';
-import {useAuth} from "@/lib/hooks/use-auth";
+import {MenuItem} from "../../types";
+import {Logo} from "../logo/logo";
 
-const menuItems = [
-  { icon: HiHome, label: "Dashboard", path: "/home" },
-  { icon: HiUsers, label: "Coaches", path: "/coaches" },
-  { icon: HiCollection, label: "Subscription Plans", path: "/subscription-plans" },
-  { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
-  { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
-  { icon: HiCalendar, label: "Calendar", path: "/calendar" },
-  { icon: HiSpeakerphone, label: "Leads", path: "/leads" },
-];
 
-interface SidebarProps {
+interface SidebarProps extends SidebarComponentProps{
   sidebarOpen: boolean;
   setSidebarOpenAction: (open: boolean) => void;
 }
@@ -38,14 +22,13 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: SidebarProps) {
+const HeadlessUISidebar = (props: SidebarProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
 
   const handleNavigation = (path: string) => {
     router.push(path);
-    setSidebarOpenAction(false);
+    props.setSidebarOpenAction(false);
   };
 
   const isActive = (path: string) => {
@@ -59,7 +42,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[#1A1A1A] bg-[#0A0A0A] px-6 pb-4">
       <div className="flex h-16 shrink-0 items-center border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
-          <Logo height={40} width={48} type={sidebarOpen ? 'png' : 'svg'}/>
+          <Logo height={40} width={48} type={props.sidebarOpen ? 'png' : 'svg'}/>
           <span className="text-white font-semibold text-lg">ADMIN PANEL</span>
         </div>
       </div>
@@ -68,7 +51,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
         <ul role="list" className="flex flex-1 flex-col gap-y-7">
           <li>
             <ul role="list" className="-mx-2 space-y-2">
-              {menuItems.map((item) => {
+              {props.menuItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
 
@@ -130,7 +113,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
               <ul role="list" className="-mx-2 space-y-2">
                 <li>
                   <button
-                    onClick={logout}
+                    onClick={props.logout}
                     className="group flex items-center w-full gap-x-4 rounded-lg p-3 text-sm leading-6 font-medium text-[#A0A0A0] hover:text-white hover:bg-[#1A1A1A] transition-all duration-200"
                   >
                     <HiLogout
@@ -150,8 +133,8 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
 
   return (
     <>
-      <Transition.Root show={sidebarOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpenAction}>
+      <Transition.Root show={props.sidebarOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50 lg:hidden" onClose={props.setSidebarOpenAction}>
           <Transition.Child
             as={Fragment}
             enter="transition-opacity ease-linear duration-300"
@@ -185,7 +168,7 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
                   leaveTo="opacity-0"
                 >
                   <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                    <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpenAction(false)}>
+                    <button type="button" className="-m-2.5 p-2.5" onClick={() => props.setSidebarOpenAction(false)}>
                       <span className="sr-only">Close sidebar</span>
                       <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
                     </button>
@@ -205,12 +188,20 @@ export function HeadlessUISidebar({ sidebarOpen, setSidebarOpenAction }: Sidebar
   );
 }
 
-export function DashboardSidebarWrapper() {
+interface SidebarComponentProps {
+  logout: () => void;
+  menuItems: MenuItem[];
+}
+
+export const DashboardSidebarWrapper = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return {
-    SidebarComponent: () => (
-      <HeadlessUISidebar sidebarOpen={sidebarOpen} setSidebarOpenAction={setSidebarOpen} />
+    SidebarComponent: (props: SidebarComponentProps) => (
+      <HeadlessUISidebar
+        {...props}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpenAction={setSidebarOpen} />
     ),
     MobileMenuButton: () => (
       <button

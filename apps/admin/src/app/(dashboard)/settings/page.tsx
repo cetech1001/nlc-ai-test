@@ -2,10 +2,9 @@
 
 import {useEffect, useState} from "react";
 import { Eye } from "lucide-react";
-import {useAuth} from "@/lib/hooks/use-auth";
 import {SettingsPageSkeleton} from "@/app/(dashboard)/settings/settings-page.skeleton";
 import { Button, EyeLashIcon } from "@nlc-ai/ui";
-import { authAPI } from "@/lib/api/auth";
+import { authAPI, useAuth } from "@nlc-ai/auth";
 
 interface FormErrors {
   firstName?: string;

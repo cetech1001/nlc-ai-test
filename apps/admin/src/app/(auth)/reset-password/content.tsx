@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ResetPasswordForm, useAuthPage, type ResetPasswordFormData } from '@nlc-ai/auth';
-import { authAPI, type ApiError } from '@/lib/api/auth';
+import { authAPI, type ApiError } from '@nlc-ai/auth';
 
 export function AdminResetPasswordContent() {
   const router = useRouter();

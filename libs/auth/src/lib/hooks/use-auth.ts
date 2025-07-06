@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { authAPI, type LoginResponse } from '../api/auth';
+import {LoginResponse} from "../types";
+import {authAPI} from "../api";
 
 interface AuthState {
   user: LoginResponse['user'] | null;
