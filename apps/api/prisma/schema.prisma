@@ -52,17 +52,18 @@ enum BillingCycle {
 }
 
 model Admins {
-  id            String          @id @default(uuid()) @db.Uuid
-  email         String          @unique @db.VarChar(255)
-  passwordHash  String          @db.VarChar(255)
-  firstName     String          @db.VarChar(100)
-  lastName      String          @db.VarChar(100)
-  role          String?         @default("admin") @db.VarChar(50)
-  isActive      Boolean?        @default(true)
-  lastLoginAt   DateTime?       @db.Timestamptz(6)
-  createdAt     DateTime?       @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime?       @default(now()) @db.Timestamptz(6)
-  notifications Notifications[]
+  id             String           @id @default(uuid()) @db.Uuid
+  email          String           @unique @db.VarChar(255)
+  passwordHash   String           @db.VarChar(255)
+  firstName      String           @db.VarChar(100)
+  lastName       String           @db.VarChar(100)
+  role           String?          @default("admin") @db.VarChar(50)
+  isActive       Boolean?         @default(true)
+  lastLoginAt    DateTime?        @db.Timestamptz(6)
+  createdAt      DateTime?        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?        @default(now()) @db.Timestamptz(6)
+  notifications  Notifications[]
+  systemSettings SystemSettings[]
 
   @@map("admins")
 }
@@ -193,6 +194,7 @@ model Coaches {
   transactions        Transactions[]
   invoices            Invoices[]
   subscriptions       Subscriptions[]
+  leads               Leads[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -514,9 +516,9 @@ model WebhookEvents {
 
 model Transactions {
   id              String            @id @default(uuid()) @db.Uuid
-  coachId         String                                 @db.Uuid
-  subscriptionId  String?                                @db.Uuid
-  planId          String                                 @db.Uuid
+  coachId         String            @db.Uuid
+  subscriptionId  String?           @db.Uuid
+  planId          String            @db.Uuid
   amount          Int
   currency        String            @default("USD")
   status          TransactionStatus @default(pending)
@@ -544,7 +546,7 @@ model Transactions {
 
 model PaymentMethods {
   id                    String        @id @default(uuid()) @db.Uuid
-  coachId               String                             @db.Uuid
+  coachId               String        @db.Uuid
   type                  PaymentMethod
   isDefault             Boolean       @default(false)
   isActive              Boolean       @default(true)
@@ -563,9 +565,9 @@ model PaymentMethods {
 
 model Invoices {
   id             String         @id @default(uuid()) @db.Uuid
-  coachId        String                              @db.Uuid
-  subscriptionId String?                             @db.Uuid
-  transactionId  String?                             @db.Uuid
+  coachId        String         @db.Uuid
+  subscriptionId String?        @db.Uuid
+  transactionId  String?        @db.Uuid
   invoiceNumber  String         @unique
   amount         Int
   currency       String         @default("USD")
@@ -610,8 +612,8 @@ model Plans {
 
 model Subscriptions {
   id                 String             @id @default(uuid()) @db.Uuid
-  coachId            String                                  @db.Uuid
-  planId             String                                  @db.Uuid
+  coachId            String             @db.Uuid
+  planId             String             @db.Uuid
   status             SubscriptionStatus @default(active)
   billingCycle       BillingCycle       @default(monthly)
   currentPeriodStart DateTime
@@ -629,4 +631,59 @@ model Subscriptions {
   invoices           Invoices[]
 
   @@map("subscriptions")
+}
+
+model Leads {
+  id               String    @id @default(uuid()) @db.Uuid
+  coachId          String    @db.Uuid
+  firstName        String    @db.VarChar(100)
+  lastName         String    @db.VarChar(100)
+  email            String    @db.VarChar(255)
+  phone            String?   @db.VarChar(20)
+  source           String?   @db.VarChar(100)
+  status           String    @default("contacted") @db.VarChar(50) // contacted, scheduled, converted, unresponsive
+  meetingDate      DateTime? @db.Timestamptz(6)
+  meetingTime      String?   @db.VarChar(20)
+  agentsOfInterest String[] // ["A1", "A2", "A3"]
+  notes            String?
+  lastContactedAt  DateTime? @db.Timestamptz(6)
+  convertedAt      DateTime? @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
+  coach            Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@map("leads")
+}
+
+model ActivityLogs {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  userType   String   @db.VarChar(20) // "admin" or "coach"
+  action     String   @db.VarChar(100)
+  entityType String?  @db.VarChar(50)
+  entityId   String?  @db.Uuid
+  metadata   Json?
+  ipAddress  String?  @db.VarChar(45)
+  userAgent  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, userType])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model SystemSettings {
+  id          String   @id @default(uuid()) @db.Uuid
+  category    String   @db.VarChar(50)
+  key         String   @db.VarChar(100)
+  value       Json
+  description String?
+  isPublic    Boolean  @default(false)
+  updatedBy   String   @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  admin       Admins   @relation(fields: [updatedBy], references: [id])
+
+  @@unique([category, key])
+  @@map("system_settings")
 }
