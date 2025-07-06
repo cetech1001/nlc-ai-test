@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {Coach, inactiveCoachesData} from "@/app/data";
+import {inactiveCoachesData} from "@/app/data";
 import {DataTable, TableColumn, tableRenderers, Pagination, PageHeader} from "@nlc-ai/shared";
-import {coachColumns} from "@/lib/utils/coaches";
+import {coachColumns, DataTableCoach} from "@/lib/utils/coaches";
 
 export default function InactiveCoaches() {
   const router = useRouter();
@@ -41,7 +41,7 @@ export default function InactiveCoaches() {
     }
   };
 
-  const columns: TableColumn<Coach>[] = [
+  const columns: TableColumn<DataTableCoach>[] = [
     ...coachColumns.map(column => {
       if (column.key === 'dateJoined') {
         return {
@@ -56,7 +56,7 @@ export default function InactiveCoaches() {
           key: 'actions',
           header: 'Actions',
           width: `auto`,
-          render: (_: string, row: Coach, onAction?: (action: string, row: Coach) => void) => {
+          render: (_: string, row: DataTableCoach, onAction?: (action: string, row: DataTableCoach) => void) => {
             return tableRenderers.actions('Send Mail', row, 'mail', onAction);
           }
         }

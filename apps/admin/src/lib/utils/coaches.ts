@@ -9,8 +9,8 @@ export interface DataTableCoach {
   dateJoined: string;
   plan: string;
   status: string;
-  rawStatus: string;
-  originalId: string;
+  rawStatus?: string;
+  originalId?: string;
 }
 
 export const transformCoachData = (coaches: Coach[]): DataTableCoach[] => {
