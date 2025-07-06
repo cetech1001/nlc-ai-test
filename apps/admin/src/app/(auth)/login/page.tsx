@@ -1,6 +1,7 @@
 'use client';
 
 import { LoginForm, useAuthPage } from '@nlc-ai/auth';
+import { USER_TYPE } from '@nlc-ai/types';
 
 
 export default function AdminLoginPage() {
@@ -11,6 +12,7 @@ export default function AdminLoginPage() {
 
   return (
     <LoginForm
+      userType={USER_TYPE.admin}
       showSignUp={false}
       showGoogleAuth={false}
       showRememberMe={true}

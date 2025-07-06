@@ -1,9 +1,9 @@
 import {Injectable, UnauthorizedException, BadRequestException, ConflictException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../../prisma/prisma.service';
-import { EmailService } from '../../email/email.service';
-import { TokenService } from './token.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
+import { TokenService } from './services/token.service';
 import {
   LoginDto,
   RegisterDto,
@@ -11,9 +11,9 @@ import {
   ResetPasswordDto,
   VerifyCodeDto,
   AdminLoginDto,
-} from '../dto';
-import {UpdateProfileDto} from "../dto/update-profile.dto";
-import {UpdatePasswordDto} from "../dto/update-password.dto";
+} from './dto';
+import {UpdateProfileDto, UpdatePasswordDto} from "./dto";
+import {AUTH_USER_TYPE, USER_TYPE} from "@nlc-ai/types";
 
 @Injectable()
 export class AuthService {
@@ -68,7 +68,7 @@ export class AuthService {
     const payload = {
       sub: coach.id,
       email: coach.email,
-      type: 'coach',
+      type: USER_TYPE.coach,
     };
 
     return {
@@ -118,7 +118,7 @@ export class AuthService {
     const payload = {
       sub: admin.id,
       email: admin.email,
-      type: 'admin',
+      type: USER_TYPE.admin,
       role: admin.role,
     };
 
@@ -151,10 +151,10 @@ export class AuthService {
     return admin;
   }
 
-  async updateProfile(userId: string, userType: 'coach' | 'admin', updateProfileDto: UpdateProfileDto) {
+  async updateProfile(userId: string, userType: AUTH_USER_TYPE, updateProfileDto: UpdateProfileDto) {
     const { firstName, lastName, email } = updateProfileDto;
 
-    if (userType === 'coach') {
+    if (userType === USER_TYPE.coach) {
       const existingCoach = await this.prisma.coaches.findFirst({
         where: {
           email,
@@ -226,12 +226,12 @@ export class AuthService {
     }
   }
 
-  async updatePassword(userId: string, userType: 'coach' | 'admin', updatePasswordDto: UpdatePasswordDto) {
+  async updatePassword(userId: string, userType: AUTH_USER_TYPE, updatePasswordDto: UpdatePasswordDto) {
     const { newPassword } = updatePasswordDto;
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
-    if (userType === 'coach') {
+    if (userType === USER_TYPE.coach) {
       await this.prisma.coaches.update({
         where: { id: userId },
         data: {
@@ -252,11 +252,11 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto, userType: 'coach' | 'admin') {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto, userType: AUTH_USER_TYPE) {
     const { email } = forgotPasswordDto;
 
     let user;
-    if (userType === 'coach') {
+    if (userType === USER_TYPE.coach) {
       user = await this.prisma.coaches.findUnique({ where: { email } });
     } else {
       user = await this.prisma.admins.findUnique({ where: { email } });
@@ -284,7 +284,7 @@ export class AuthService {
     return { resetToken };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto, userType: 'coach' | 'admin') {
+  async resetPassword(resetPasswordDto: ResetPasswordDto, userType: AUTH_USER_TYPE) {
     const { token, password } = resetPasswordDto;
 
     const email = await this.tokenService.validateResetToken(token);
@@ -294,7 +294,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    if (userType === 'coach') {
+    if (userType === USER_TYPE.coach) {
       await this.prisma.coaches.update({
         where: { email },
         data: { passwordHash },
@@ -328,8 +328,8 @@ export class AuthService {
   }
 
   // Utility methods
-  async findUserById(id: string, type: 'coach' | 'admin') {
-    if (type === 'coach') {
+  async findUserById(id: string, type: AUTH_USER_TYPE) {
+    if (type === USER_TYPE.coach) {
       return this.prisma.coaches.findUnique({
         where: { id, isActive: true },
         select: {

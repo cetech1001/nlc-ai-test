@@ -1,5 +1,7 @@
 /// <reference lib="dom" />
 import {BaseAPI} from "@nlc-ai/api-client";
+import {AUTH_USER_TYPE} from "@nlc-ai/types";
+
 import {LoginResponse, UpdatePasswordRequest, UpdateProfileRequest} from "../types";
 
 
@@ -9,8 +11,17 @@ class AuthAPI extends BaseAPI{
     localStorage.setItem('adminToken', token);
   }
 
-  async loginAdmin(email: string, password: string, rememberMe?: boolean): Promise<LoginResponse> {
-    const result = await this.makeRequest<LoginResponse>('/auth/admin/login', {
+  async login(
+    email: string,
+    password: string,
+    rememberMe?: boolean,
+    userType?: AUTH_USER_TYPE
+  ): Promise<LoginResponse> {
+    let param = "";
+    if (userType) {
+      param += `?type=${userType}`;
+    }
+    const result = await this.makeRequest<LoginResponse>(`/auth/login${param}`, {
       method: 'POST',
       body: JSON.stringify({email, password, rememberMe}),
     });
@@ -19,18 +30,12 @@ class AuthAPI extends BaseAPI{
     return result;
   }
 
-  async loginCoach(email: string, password: string, rememberMe?: boolean): Promise<LoginResponse> {
-    const result = await this.makeRequest<LoginResponse>('/auth/coach/login', {
-      method: 'POST',
-      body: JSON.stringify({email, password, rememberMe}),
-    });
-
-    this.setToken(result.access_token);
-    return result;
-  }
-
-  async forgotPassword(email: string): Promise<{ message: string }> {
-    return this.makeRequest('/auth/admin/forgot-password', {
+  async forgotPassword(email: string, userType?: AUTH_USER_TYPE): Promise<{ message: string }> {
+    let param = "";
+    if (userType) {
+      param += `?type=${userType}`;
+    }
+    return this.makeRequest(`/auth/admin/forgot-password${param}`, {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -43,8 +48,12 @@ class AuthAPI extends BaseAPI{
     });
   }
 
-  async resetPassword(token: string, password: string): Promise<{ message: string }> {
-    return this.makeRequest('/auth/admin/reset-password', {
+  async resetPassword(token: string, password: string, userType?: AUTH_USER_TYPE): Promise<{ message: string }> {
+    let param = "";
+    if (userType) {
+      param += `?type=${userType}`;
+    }
+    return this.makeRequest(`/auth/admin/reset-password${param}`, {
       method: 'POST',
       body: JSON.stringify({ token, password }),
     });

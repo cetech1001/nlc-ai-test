@@ -39,7 +39,7 @@ export const ResetPasswordForm = (props: ResetPasswordFormProps) => {
     setError('');
 
     try {
-      await authAPI.resetPassword(props.token, data.password);
+      await authAPI.resetPassword(props.token, data.password, props.userType);
 
       router.push('/login?message=Password reset successfully. Please log in with your new password.');
     } catch (err) {

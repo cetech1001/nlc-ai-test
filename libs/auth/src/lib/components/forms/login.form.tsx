@@ -52,7 +52,7 @@ export const LoginForm = (props: LoginFormProps) => {
     setSuccessMessage('');
 
     try {
-      await login(data.email, data.password, data.rememberMe);
+      await login(data.email, data.password, data.rememberMe, props.userType);
       router.push('/home');
     } catch (err: unknown) {
       const apiError = err as ApiError;

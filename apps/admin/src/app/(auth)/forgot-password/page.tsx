@@ -1,6 +1,7 @@
 'use client';
 
 import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/auth';
+import {USER_TYPE} from "@nlc-ai/types";
 
 export default function AdminForgotPasswordPage() {
   useAuthPage({
@@ -8,6 +9,6 @@ export default function AdminForgotPasswordPage() {
     description: "Enter your registered email address & we'll send you code to reset your password.",
   });
   return (
-    <ForgotPasswordForm/>
+    <ForgotPasswordForm userType={USER_TYPE.admin}/>
   );
 }

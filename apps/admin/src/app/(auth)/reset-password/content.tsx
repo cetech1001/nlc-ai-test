@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ResetPasswordForm, useAuthPage } from '@nlc-ai/auth';
+import {USER_TYPE} from "@nlc-ai/types";
 
 export function AdminResetPasswordContent() {
   const router = useRouter();
@@ -32,6 +33,6 @@ export function AdminResetPasswordContent() {
   }
 
   return (
-    <ResetPasswordForm token={token}/>
+    <ResetPasswordForm token={token} userType={USER_TYPE.admin}/>
   );
 }

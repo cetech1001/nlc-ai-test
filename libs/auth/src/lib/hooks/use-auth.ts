@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {LoginResponse} from "../types";
 import {authAPI} from "../api";
+import {AUTH_USER_TYPE} from "@nlc-ai/types";
 
 interface AuthState {
   user: LoginResponse['user'] | null;
@@ -47,11 +48,14 @@ export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
     }
   };
 
-  const login = async (email: string, password: string, rememberMe?: boolean) => {
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe?: boolean,
+    userType?: AUTH_USER_TYPE
+  ) => {
     try {
-      const response = role === 'admin'
-        ? await authAPI.loginAdmin(email, password, rememberMe)
-        : await authAPI.loginAdmin(email, password, rememberMe);
+      const response = await authAPI.login(email, password, rememberMe, userType);
       setAuthState({
         user: response.user,
         isLoading: false,

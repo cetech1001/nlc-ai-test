@@ -27,16 +27,13 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    console.log("Use effect was called");
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
-    console.log("Dashboard data called");
     try {
       setIsLoading(true);
       setError("");
-      console.log("Called this");
       const data = await dashboardAPI.getDashboardData();
       setDashboardData(data);
     } catch (error: any) {

@@ -31,7 +31,7 @@ export const ForgotPasswordForm = (props: AuthFormProps) => {
     setError('');
 
     try {
-      const response = await authAPI.forgotPassword(data.email);
+      const response = await authAPI.forgotPassword(data.email, props.userType);
       toast.success(response.message);
       router.push(`/account-verification?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
