@@ -7,11 +7,10 @@ import {AlertBanner, Button, Input } from '@nlc-ai/ui';
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '../../schemas';
-import { type ForgotPasswordFormProps } from '../../types';
-import {ApiError} from "../../types";
+import {ApiError, AuthFormProps} from "../../types";
 import {authAPI} from "../../api";
 
-export const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
+export const ForgotPasswordForm = (props: AuthFormProps) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
