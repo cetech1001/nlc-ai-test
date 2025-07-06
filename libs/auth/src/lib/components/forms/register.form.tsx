@@ -3,22 +3,27 @@
 import { FC, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input, EyeLashIcon } from '@nlc-ai/ui';
+import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
 
-import { registerSchema, type RegisterFormData } from '../../schemas/auth-schemas';
-import { type RegisterFormProps } from '../../types/auth.types';
-import { GoogleIcon } from '../ui/google-icon';
+import { registerSchema, type RegisterFormData } from '../../schemas';
+import { type RegisterFormProps } from '../../types';
+import { GoogleIcon } from '../ui';
 import {Eye} from "lucide-react";
+import {useRouter} from "next/navigation";
 
 export const RegisterForm: FC<RegisterFormProps> = ({
-  onSubmit,
-  onSignIn,
-  isLoading = false,
-  error,
   showGoogleAuth = true,
   className = '',
 }) => {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSignIn = () => {
+    router.push('/login');
+  };
 
   const {
     register,
@@ -35,19 +40,38 @@ export const RegisterForm: FC<RegisterFormProps> = ({
   });
 
   const handleFormSubmit = async (data: RegisterFormData) => {
+    setIsLoading(true);
+    setError('');
+
     try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error('Registration error:', error);
+      const response = await fetch('/api/auth/coach/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
+
+      router.push(`/account-verification?email=${encodeURIComponent(data.email)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className={`space-y-6 ${className}`}>
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
+        <AlertBanner
+          type={"error"}
+          message={error}
+          onDismiss={() => setError('')}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -144,20 +168,18 @@ export const RegisterForm: FC<RegisterFormProps> = ({
         </Button>
       </form>
 
-      {onSignIn && (
-        <div className="text-center">
-          <p className="text-[16px] leading-6 text-[#F9F9F9]">
-            Already have an account?{' '}
-            <button
-              type="button"
-              onClick={onSignIn}
-              className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
-            >
-              Sign In
-            </button>
-          </p>
-        </div>
-      )}
+      <div className="text-center">
+        <p className="text-[16px] leading-6 text-[#F9F9F9]">
+          Already have an account?{' '}
+          <button
+            type="button"
+            onClick={handleSignIn}
+            className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
+          >
+            Sign In
+          </button>
+        </p>
+      </div>
     </div>
   );
 };

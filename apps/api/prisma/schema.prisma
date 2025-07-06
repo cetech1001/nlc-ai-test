@@ -644,7 +644,7 @@ model Leads {
   status           String    @default("contacted") @db.VarChar(50) // contacted, scheduled, converted, unresponsive
   meetingDate      DateTime? @db.Timestamptz(6)
   meetingTime      String?   @db.VarChar(20)
-  agentsOfInterest String[] // ["A1", "A2", "A3"]
+  agentsOfInterest String[]
   notes            String?
   lastContactedAt  DateTime? @db.Timestamptz(6)
   convertedAt      DateTime? @db.Timestamptz(6)
