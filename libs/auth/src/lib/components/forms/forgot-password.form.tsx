@@ -1,21 +1,21 @@
 'use client';
 
-import { FC } from 'react';
+import {useState} from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {AlertBanner, Button, Input } from '@nlc-ai/ui';
+import {useRouter} from "next/navigation";
+import {toast} from "sonner";
+import { forgotPasswordSchema, type ForgotPasswordFormData } from '../../schemas';
+import { type ForgotPasswordFormProps } from '../../types';
+import {ApiError} from "../../types";
+import {authAPI} from "../../api";
 
-import { forgotPasswordSchema, type ForgotPasswordFormData } from '../../schemas/auth-schemas';
-import { type ForgotPasswordFormProps } from '../../types/auth.types';
+export const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
-  onSubmit,
-  onBackToLogin,
-  isLoading = false,
-  error,
-  clearErrorMessage,
-  className = '',
-}) => {
   const {
     register,
     handleSubmit,
@@ -28,17 +28,29 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
   });
 
   const handleFormSubmit = async (data: ForgotPasswordFormData) => {
+    setIsLoading(true);
+    setError('');
+
     try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error('Forgot password error:', error);
+      const response = await authAPI.forgotPassword(data.email);
+      toast.success(response.message);
+      router.push(`/account-verification?email=${encodeURIComponent(data.email)}`);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to send reset email');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleBackToLogin = () => {
+    router.push('/login');
+  };
+
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${props.className}`}>
       {error && (
-        <AlertBanner type={"error"} message={error} onDismiss={clearErrorMessage}/>
+        <AlertBanner type={"error"} message={error} onDismiss={() => setError('')}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -70,20 +82,18 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
         </Button>
       </form>
 
-      {onBackToLogin && (
-        <div className="text-center">
-          <p className="text-[16px] leading-6 text-[#F9F9F9]">
-            Remember your password?{' '}
-            <button
-              type="button"
-              onClick={onBackToLogin}
-              className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
-            >
-              Login
-            </button>
-          </p>
-        </div>
-      )}
+      <div className="text-center">
+        <p className="text-[16px] leading-6 text-[#F9F9F9]">
+          Remember your password?{' '}
+          <button
+            type="button"
+            onClick={handleBackToLogin}
+            className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
+          >
+            Login
+          </button>
+        </p>
+      </div>
     </div>
   );
 };

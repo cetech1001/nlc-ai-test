@@ -1,46 +1,18 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ResetPasswordForm, useAuthPage, type ResetPasswordFormData } from '@nlc-ai/auth';
-import { authAPI, type ApiError } from '@nlc-ai/auth';
+import { ResetPasswordForm, useAuthPage } from '@nlc-ai/auth';
 
 export function AdminResetPasswordContent() {
   const router = useRouter();
+
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
   useAuthPage({
     title: "Password Reset",
     description: "Create a new password to reset your account access.",
   });
-
-  const handleResetPassword = async (data: ResetPasswordFormData) => {
-    if (!token) {
-      setError('Reset token is missing. Please try the process again.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      await authAPI.resetPassword(token, data.password);
-
-      router.push('/login?message=Password reset successfully. Please log in with your new password.');
-    } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to reset password');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleBackToLogin = () => {
-    router.push('/login');
-  };
 
   if (!token) {
     return (
@@ -60,12 +32,6 @@ export function AdminResetPasswordContent() {
   }
 
   return (
-    <ResetPasswordForm
-      onSubmit={handleResetPassword}
-      onBackToLogin={handleBackToLogin}
-      isLoading={isLoading}
-      error={error}
-      clearErrorMessage={() => setError('')}
-    />
+    <ResetPasswordForm token={token}/>
   );
 }

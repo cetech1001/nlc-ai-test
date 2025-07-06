@@ -1,29 +1,36 @@
 'use client';
 
-import {useState, FC} from 'react';
+import {useEffect, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
 import { Button, Input, Checkbox, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
-
+import {useRouter, useSearchParams} from "next/navigation";
+import {ApiError} from "@nlc-ai/api-client";
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
+import {useAuth} from "../../hooks";
 
-export const LoginForm: FC<LoginFormProps> = ({
-  onSubmit,
-  onForgotPassword,
-  onSignUp,
-  isLoading = false,
-  error,
-  clearErrorMessage,
-  successMessage,
-  clearSuccessMessage,
-  showGoogleAuth = true,
-  showRememberMe = true,
-  className = '',
-}) => {
+export const LoginForm = (props: LoginFormProps) => {
+  const { login } = useAuth();
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message) {
+      setSuccessMessage(message);
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams]);
 
   const {
     register,
@@ -40,27 +47,43 @@ export const LoginForm: FC<LoginFormProps> = ({
   });
 
   const handleFormSubmit = async (data: LoginFormData) => {
+    setIsLoading(true);
+    setError('');
+    setSuccessMessage('');
+
     try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error('Login error:', error);
+      await login(data.email, data.password, data.rememberMe);
+      router.push('/home');
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'An error occurred during login');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleForgotPassword = () => {
+    router.push('/forgot-password');
+  };
+
+  const handleSignUp = () => {
+    router.push('/register');
+  }
+
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${props.className}`}>
       {error && (
         <AlertBanner
           type={"error"}
           message={error}
-          onDismiss={clearErrorMessage}/>
+          onDismiss={() => setError('')}/>
       )}
 
       {successMessage && (
         <AlertBanner
           type={"success"}
           message={successMessage}
-          onDismiss={clearSuccessMessage}/>
+          onDismiss={() => setSuccessMessage('')}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -104,42 +127,38 @@ export const LoginForm: FC<LoginFormProps> = ({
             )}
           </div>
 
-          {(showRememberMe || onForgotPassword) && (
-            <div className="flex items-center justify-between">
-              {showRememberMe && (
-                <label className="flex items-center gap-[6px] cursor-pointer">
-                  <Controller
-                    name="rememberMe"
-                    control={control}
-                    render={({ field }) => (
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked === 'indeterminate' ? false : checked);
-                        }}
-                        className="w-8 h-8 border-2 border-[#CACACA] data-[state=checked]:bg-magenta data-[state=checked]:border-magenta rounded-lg"
-                      />
-                    )}
-                  />
-                  <span className="text-[16px] leading-5 text-[#F9F9F9]">
+          <div className="flex items-center justify-between">
+            {props.showRememberMe && (
+              <label className="flex items-center gap-[6px] cursor-pointer">
+                <Controller
+                  name="rememberMe"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked === 'indeterminate' ? false : checked);
+                      }}
+                      className="w-8 h-8 border-2 border-[#CACACA] data-[state=checked]:bg-magenta data-[state=checked]:border-magenta rounded-lg"
+                    />
+                  )}
+                />
+                <span className="text-[16px] leading-5 text-[#F9F9F9]">
                     Remember me
                   </span>
-                </label>
-              )}
-              {onForgotPassword && (
-                <button
-                  type="button"
-                  onClick={onForgotPassword}
-                  className="text-[16px] leading-5 text-[#F9F9F9] hover:text-magenta-light transition-colors"
-                >
-                  Forgot Password?
-                </button>
-              )}
-            </div>
-          )}
+              </label>
+            )}
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-[16px] leading-5 text-[#F9F9F9] hover:text-magenta-light transition-colors"
+            >
+              Forgot Password?
+            </button>
+          </div>
         </div>
 
-        {showGoogleAuth && (
+        {props.showGoogleAuth && (
           <Button
             type="button"
             variant="outline"
@@ -163,13 +182,13 @@ export const LoginForm: FC<LoginFormProps> = ({
         </Button>
       </form>
 
-      {onSignUp && (
+      {props.showSignUp && (
         <div className="text-center">
           <p className="text-[16px] leading-6 text-[#F9F9F9]">
             Don't have an account?{' '}
             <button
               type="button"
-              onClick={onSignUp}
+              onClick={handleSignUp}
               className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
             >
               Sign Up

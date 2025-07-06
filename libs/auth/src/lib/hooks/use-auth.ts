@@ -11,7 +11,7 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-export const useAuth = () => {
+export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -49,7 +49,9 @@ export const useAuth = () => {
 
   const login = async (email: string, password: string, rememberMe?: boolean) => {
     try {
-      const response = await authAPI.loginAdmin(email, password, rememberMe);
+      const response = role === 'admin'
+        ? await authAPI.loginAdmin(email, password, rememberMe)
+        : await authAPI.loginAdmin(email, password, rememberMe);
       setAuthState({
         user: response.user,
         isLoading: false,

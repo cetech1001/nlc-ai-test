@@ -1,23 +1,21 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
-
-import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas';
-import { type ResetPasswordFormProps } from '../../types';
 import {Eye} from "lucide-react";
+import {useRouter} from "next/navigation";
+import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas';
+import {ApiError, type ResetPasswordFormProps} from '../../types';
+import {authAPI} from "../../api";
 
-export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
-  onSubmit,
-  onBackToLogin,
-  isLoading = false,
-  error,
-  clearErrorMessage,
-  className = '',
-}) => {
+export const ResetPasswordForm = (props: ResetPasswordFormProps) => {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -32,20 +30,37 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
   });
 
   const handleFormSubmit = async (data: ResetPasswordFormData) => {
+    if (!props.token) {
+      setError('Reset token is missing. Please try the process again.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
     try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error('Reset password error:', error);
+      await authAPI.resetPassword(props.token, data.password);
+
+      router.push('/login?message=Password reset successfully. Please log in with your new password.');
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to reset password');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleBackToLogin = () => {
+    router.push('/login');
+  };
+
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${props.className}`}>
       {error && (
         <AlertBanner
           type={"error"}
           message={error}
-          onDismiss={clearErrorMessage}/>
+          onDismiss={() => setError('')}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -101,20 +116,18 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
         </Button>
       </form>
 
-      {onBackToLogin && (
-        <div className="text-center">
-          <p className="text-[16px] leading-6 text-[#F9F9F9]">
-            Remember your password?{' '}
-            <button
-              type="button"
-              onClick={onBackToLogin}
-              className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
-            >
-              Login
-            </button>
-          </p>
-        </div>
-      )}
+      <div className="text-center">
+        <p className="text-[16px] leading-6 text-[#F9F9F9]">
+          Remember your password?{' '}
+          <button
+            type="button"
+            onClick={handleBackToLogin}
+            className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
+          >
+            Login
+          </button>
+        </p>
+      </div>
     </div>
   );
 };

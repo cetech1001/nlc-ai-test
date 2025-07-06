@@ -1,26 +1,22 @@
 'use client';
 
-import { FC, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {AlertBanner, Button, Input } from '@nlc-ai/ui';
 
 import { accountVerificationSchema, type AccountVerificationFormData } from '../../schemas';
-import { type AccountVerificationFormProps } from '../../types';
+import {type AccountVerificationFormProps, ApiError} from '../../types';
+import {useRouter} from "next/navigation";
+import {authAPI} from "../../api";
 
-export const AccountVerificationForm: FC<AccountVerificationFormProps> = ({
-  onSubmit,
-  onResendCode,
-  onBackToLogin,
-  resendTimer = 70,
-  isLoading = false,
-  error,
-  clearErrorMessage,
-  successMessage,
-  clearSuccessMessage,
-  className = '',
-}) => {
-  const [timer, setTimer] = useState(resendTimer);
+export const AccountVerificationForm = (props: AccountVerificationFormProps) => {
+  const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [timer, setTimer] = useState(props.resendTimer || 60);
   const [canResend, setCanResend] = useState(false);
 
   const {
@@ -51,19 +47,54 @@ export const AccountVerificationForm: FC<AccountVerificationFormProps> = ({
   }, [timer]);
 
   const handleFormSubmit = async (data: AccountVerificationFormData) => {
+    setSuccessMessage('');
+
+    if (!props.email) {
+      setError('Email address is required');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
     try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error('Verification error:', error);
+      const response = await authAPI.verifyCode(props.email, data.verificationCode);
+
+      router.push(`/reset-password?token=${encodeURIComponent(response.resetToken)}`);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Invalid verification code');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleResend = () => {
-    if (canResend && onResendCode) {
-      onResendCode();
-      setTimer(resendTimer);
+  const handleResend = async () => {
+    if (canResend) {
+      await handleResendCode();
+      setTimer(props.resendTimer || 60);
       setCanResend(false);
     }
+  };
+
+  const handleResendCode = async () => {
+    if (!props.email) {
+      setError('Email address is required');
+      return;
+    }
+
+    try {
+      await authAPI.resendCode(props.email);
+      setSuccessMessage('Verification code has been resent to your email address');
+      setError('');
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Failed to resend code');
+    }
+  };
+
+  const handleBackToLogin = () => {
+    router.push('/login');
   };
 
   const formatTime = (seconds: number) => {
@@ -73,19 +104,19 @@ export const AccountVerificationForm: FC<AccountVerificationFormProps> = ({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${props.className}`}>
       {error && (
         <AlertBanner
           type={"error"}
           message={error}
-          onDismiss={clearErrorMessage}/>
+          onDismiss={() => setError('')}/>
       )}
 
       {successMessage && (
         <AlertBanner
           type={"success"}
           message={successMessage}
-          onDismiss={clearSuccessMessage}/>
+          onDismiss={() => setSuccessMessage('')}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -134,17 +165,15 @@ export const AccountVerificationForm: FC<AccountVerificationFormProps> = ({
             {canResend ? 'Resend' : `Resend ${formatTime(timer)}`}
           </button>
         </p>
-        {onBackToLogin && (
-          <p className="text-[16px] leading-6 text-[#F9F9F9]">
-            <button
-              type="button"
-              onClick={onBackToLogin}
-              className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
-            >
-              Back to Login
-            </button>
-          </p>
-        )}
+        <p className="text-[16px] leading-6 text-[#F9F9F9]">
+          <button
+            type="button"
+            onClick={handleBackToLogin}
+            className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
+          >
+            Back to Login
+          </button>
+        </p>
       </div>
     </div>
   );

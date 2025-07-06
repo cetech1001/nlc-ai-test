@@ -1,17 +1,12 @@
 'use client';
 
-import {useMemo, useState} from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { AccountVerificationForm, useAuthPage, type AccountVerificationFormData } from '@nlc-ai/auth';
-import { authAPI, type ApiError } from '@nlc-ai/auth';
+import {useMemo} from 'react';
+import { useSearchParams } from 'next/navigation';
+import { AccountVerificationForm, useAuthPage } from '@nlc-ai/auth';
 
 export function AdminAccountVerificationContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
   const description = useMemo(() => (
     <>
@@ -25,60 +20,7 @@ export function AdminAccountVerificationContent() {
     description,
   });
 
-  const handleVerification = async (data: AccountVerificationFormData) => {
-    setSuccessMessage('');
-
-    if (!email) {
-      setError('Email address is required');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await authAPI.verifyCode(email, data.verificationCode);
-
-      router.push(`/reset-password?token=${encodeURIComponent(response.resetToken)}`);
-    } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Invalid verification code');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (!email) {
-      setError('Email address is required');
-      return;
-    }
-
-    try {
-      await authAPI.resendCode(email);
-      setSuccessMessage('Verification code has been resent to your email address');
-      setError('');
-    } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to resend code');
-    }
-  };
-
-  const handleBackToLogin = () => {
-    router.push('/login');
-  };
-
   return (
-    <AccountVerificationForm
-      onSubmit={handleVerification}
-      onResendCode={handleResendCode}
-      onBackToLogin={handleBackToLogin}
-      email={email}
-      isLoading={isLoading}
-      error={error}
-      clearErrorMessage={() => setError('')}
-      successMessage={successMessage}
-      clearSuccessMessage={() => setSuccessMessage('')}
-    />
+    <AccountVerificationForm email={email} resendTimer={70}/>
   );
 }

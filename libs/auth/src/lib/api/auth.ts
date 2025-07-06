@@ -19,6 +19,16 @@ class AuthAPI extends BaseAPI{
     return result;
   }
 
+  async loginCoach(email: string, password: string, rememberMe?: boolean): Promise<LoginResponse> {
+    const result = await this.makeRequest<LoginResponse>('/auth/coach/login', {
+      method: 'POST',
+      body: JSON.stringify({email, password, rememberMe}),
+    });
+
+    this.setToken(result.access_token);
+    return result;
+  }
+
   async forgotPassword(email: string): Promise<{ message: string }> {
     return this.makeRequest('/auth/admin/forgot-password', {
       method: 'POST',
