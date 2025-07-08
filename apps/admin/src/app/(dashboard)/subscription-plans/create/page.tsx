@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PlanForm } from "@/app/(dashboard)/components/plan-form";
-import { plansAPI, type CreatePlanRequest } from "@/lib/api/plans";
+import { plansAPI, type CreatePlanRequest } from "@nlc-ai/api-client";
 
 interface FormData {
   planTitle: string;

@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlanForm } from "@/app/(dashboard)/components/plan-form";
 import { PlanFormSkeleton } from "@/lib/skeletons/plan-form.skeleton";
-import { plansAPI, type UpdatePlanRequest, type Plan } from "@/lib/api/plans";
+import { plansAPI, type UpdatePlanRequest, type Plan } from "@nlc-ai/api-client";
 
 interface FormData {
   planTitle: string;
