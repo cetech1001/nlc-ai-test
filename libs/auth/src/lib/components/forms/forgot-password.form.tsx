@@ -4,14 +4,12 @@ import {useState} from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {AlertBanner, Button, Input } from '@nlc-ai/ui';
-import {useRouter} from "next/navigation";
 import {toast} from "sonner";
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '../../schemas';
-import {ApiError, AuthFormProps} from "../../types";
+import {ApiError, ForgotPasswordFormProps} from "../../types";
 import {authAPI} from "../../api";
 
-export const ForgotPasswordForm = (props: AuthFormProps) => {
-  const router = useRouter();
+export const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,17 +31,13 @@ export const ForgotPasswordForm = (props: AuthFormProps) => {
     try {
       const response = await authAPI.forgotPassword(data.email, props.userType);
       toast.success(response.message);
-      router.push(`/account-verification?email=${encodeURIComponent(data.email)}`);
+      props.handleAccountVerification(data.email);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Failed to send reset email');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleBackToLogin = () => {
-    router.push('/login');
   };
 
   return (
@@ -86,7 +80,7 @@ export const ForgotPasswordForm = (props: AuthFormProps) => {
           Remember your password?{' '}
           <button
             type="button"
-            onClick={handleBackToLogin}
+            onClick={props.handleBackToLogin}
             className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
           >
             Login

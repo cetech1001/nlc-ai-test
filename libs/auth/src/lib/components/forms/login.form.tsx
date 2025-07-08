@@ -5,7 +5,7 @@ import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
 import { Button, Input, Checkbox, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
-import {useRouter, useSearchParams} from "next/navigation";
+import {useSearchParams} from "next/navigation";
 import {ApiError} from "@nlc-ai/api-client";
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
@@ -15,7 +15,6 @@ import {useAuth} from "../../hooks";
 export const LoginForm = (props: LoginFormProps) => {
   const { login } = useAuth();
 
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +52,7 @@ export const LoginForm = (props: LoginFormProps) => {
 
     try {
       await login(data.email, data.password, data.rememberMe, props.userType);
-      router.push('/home');
+      props.handleHome();
     } catch (err: unknown) {
       const apiError = err as ApiError;
       setError(apiError.message || 'An error occurred during login');
@@ -61,14 +60,6 @@ export const LoginForm = (props: LoginFormProps) => {
       setIsLoading(false);
     }
   };
-
-  const handleForgotPassword = () => {
-    router.push('/forgot-password');
-  };
-
-  const handleSignUp = () => {
-    router.push('/register');
-  }
 
   return (
     <div className={`space-y-6 ${props.className}`}>
@@ -150,7 +141,7 @@ export const LoginForm = (props: LoginFormProps) => {
             )}
             <button
               type="button"
-              onClick={handleForgotPassword}
+              onClick={props.handleForgotPassword}
               className="text-[16px] leading-5 text-[#F9F9F9] hover:text-magenta-light transition-colors"
             >
               Forgot Password?
@@ -188,7 +179,7 @@ export const LoginForm = (props: LoginFormProps) => {
             Don't have an account?{' '}
             <button
               type="button"
-              onClick={handleSignUp}
+              onClick={props.handleSignUp}
               className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
             >
               Sign Up

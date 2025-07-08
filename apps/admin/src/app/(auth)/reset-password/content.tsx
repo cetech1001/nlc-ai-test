@@ -32,7 +32,18 @@ export function AdminResetPasswordContent() {
     );
   }
 
+  const handleBackToLogin = (message?: string) => {
+    let param = "";
+    if (message) {
+      param = `?message=${message}`;
+    }
+    router.push(`/login${param}`);
+  };
+
   return (
-    <ResetPasswordForm token={token} userType={USER_TYPE.admin}/>
+    <ResetPasswordForm
+      handleBackToLogin={handleBackToLogin}
+      token={token}
+      userType={USER_TYPE.admin}/>
   );
 }

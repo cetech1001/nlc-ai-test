@@ -6,20 +6,33 @@ export interface AuthFormProps {
 }
 
 export interface LoginFormProps extends AuthFormProps {
+  handleHome: () => void;
+  handleSignUp: () => void;
+  handleForgotPassword: () => void;
   showSignUp?: boolean;
   showGoogleAuth?: boolean;
   showRememberMe?: boolean;
 }
 
 export interface RegisterFormProps extends AuthFormProps {
+  handleSignIn: () => void;
+  handleAccountVerification: (email: string) => void;
   showGoogleAuth?: boolean;
 }
 
+export interface ForgotPasswordFormProps extends AuthFormProps {
+  handleBackToLogin: () => void;
+  handleAccountVerification: (email: string) => void;
+}
+
 export interface ResetPasswordFormProps extends AuthFormProps {
+  handleBackToLogin: (message?: string) => void;
   token?: string;
 }
 
 export interface AccountVerificationFormProps extends AuthFormProps {
+  handleBackToLogin: () => void;
+  handleResetToken: (resetToken: string) => void;
   email?: string;
   resendTimer?: number;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Fragment } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   XMarkIcon,
@@ -16,6 +16,7 @@ import {Logo} from "../logo";
 interface SidebarProps extends SidebarComponentProps{
   sidebarOpen: boolean;
   setSidebarOpenAction: (open: boolean) => void;
+  navigateTo: (path: string) => void;
 }
 
 function classNames(...classes: string[]) {
@@ -23,11 +24,10 @@ function classNames(...classes: string[]) {
 }
 
 const HeadlessUISidebar = (props: SidebarProps) => {
-  const router = useRouter();
   const pathname = usePathname();
 
   const handleNavigation = (path: string) => {
-    router.push(path);
+    props.navigateTo(path);
     props.setSidebarOpenAction(false);
   };
 
@@ -191,6 +191,7 @@ const HeadlessUISidebar = (props: SidebarProps) => {
 interface SidebarComponentProps {
   logout: () => void;
   menuItems: MenuItem[];
+  navigateTo: (path: string) => void;
 }
 
 export const DashboardSidebarWrapper = () => {

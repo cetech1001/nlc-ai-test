@@ -5,14 +5,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
 import {Eye} from "lucide-react";
-import {useRouter} from "next/navigation";
 import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas';
 import {ApiError, type ResetPasswordFormProps} from '../../types';
 import {authAPI} from "../../api";
 
 export const ResetPasswordForm = (props: ResetPasswordFormProps) => {
-  const router = useRouter();
-
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,17 +38,13 @@ export const ResetPasswordForm = (props: ResetPasswordFormProps) => {
     try {
       await authAPI.resetPassword(props.token, data.password, props.userType);
 
-      router.push('/login?message=Password reset successfully. Please log in with your new password.');
+      props.handleBackToLogin('Password reset successfully. Please log in with your new password.');
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Failed to reset password');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleBackToLogin = () => {
-    router.push('/login');
   };
 
   return (
@@ -121,7 +114,7 @@ export const ResetPasswordForm = (props: ResetPasswordFormProps) => {
           Remember your password?{' '}
           <button
             type="button"
-            onClick={handleBackToLogin}
+            onClick={() => props.handleBackToLogin()}
             className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
           >
             Login

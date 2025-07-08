@@ -1,10 +1,12 @@
 'use client';
 
 import {useMemo} from 'react';
-import { useSearchParams } from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import { AccountVerificationForm, useAuthPage } from '@nlc-ai/auth';
 
 export function AdminAccountVerificationContent() {
+  const router = useRouter();
+
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
 
@@ -20,7 +22,18 @@ export function AdminAccountVerificationContent() {
     description,
   });
 
+  const handleBackToLogin = () => {
+    router.push('/login');
+  };
+
+  const handleResetToken = (resetToken: string) => {
+    router.push(`/reset-password?token=${encodeURIComponent(resetToken)}`);
+  }
+
   return (
-    <AccountVerificationForm email={email} resendTimer={70}/>
+    <AccountVerificationForm
+      handleBackToLogin={handleBackToLogin}
+      handleResetToken={handleResetToken}
+      email={email} resendTimer={70}/>
   );
 }

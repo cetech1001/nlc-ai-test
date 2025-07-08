@@ -7,12 +7,9 @@ import {AlertBanner, Button, Input } from '@nlc-ai/ui';
 
 import { accountVerificationSchema, type AccountVerificationFormData } from '../../schemas';
 import {type AccountVerificationFormProps, ApiError} from '../../types';
-import {useRouter} from "next/navigation";
 import {authAPI} from "../../api";
 
 export const AccountVerificationForm = (props: AccountVerificationFormProps) => {
-  const router = useRouter();
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -60,7 +57,7 @@ export const AccountVerificationForm = (props: AccountVerificationFormProps) => 
     try {
       const response = await authAPI.verifyCode(props.email, data.verificationCode);
 
-      router.push(`/reset-password?token=${encodeURIComponent(response.resetToken)}`);
+      props.handleResetToken(response.resetToken);
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Invalid verification code');
@@ -91,10 +88,6 @@ export const AccountVerificationForm = (props: AccountVerificationFormProps) => 
       const apiError = err as ApiError;
       setError(apiError.message || 'Failed to resend code');
     }
-  };
-
-  const handleBackToLogin = () => {
-    router.push('/login');
   };
 
   const formatTime = (seconds: number) => {
@@ -168,7 +161,7 @@ export const AccountVerificationForm = (props: AccountVerificationFormProps) => 
         <p className="text-[16px] leading-6 text-[#F9F9F9]">
           <button
             type="button"
-            onClick={handleBackToLogin}
+            onClick={props.handleBackToLogin}
             className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
           >
             Back to Login

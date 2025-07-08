@@ -9,21 +9,16 @@ import { registerSchema, type RegisterFormData } from '../../schemas';
 import { type RegisterFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
 import {Eye} from "lucide-react";
-import {useRouter} from "next/navigation";
 
 export const RegisterForm: FC<RegisterFormProps> = ({
+  handleSignIn,
+  handleAccountVerification,
   showGoogleAuth = true,
   className = '',
 }) => {
-  const router = useRouter();
-
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const handleSignIn = () => {
-    router.push('/login');
-  };
 
   const {
     register,
@@ -57,7 +52,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({
         throw new Error(errorData.message || 'Registration failed');
       }
 
-      router.push(`/account-verification?email=${encodeURIComponent(data.email)}`);
+      handleAccountVerification(data.email);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

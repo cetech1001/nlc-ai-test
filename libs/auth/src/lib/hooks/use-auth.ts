@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import {LoginResponse} from "../types";
 import {authAPI} from "../api";
 import {AUTH_USER_TYPE} from "@nlc-ai/types";
@@ -18,7 +17,6 @@ export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
     isLoading: true,
     isAuthenticated: false,
   });
-  const router = useRouter();
 
   useEffect(() => {
     checkAuthStatus();
@@ -79,8 +77,6 @@ export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
       isLoading: false,
       isAuthenticated: false,
     });
-
-    router.push('/login');
   };
 
   return {
