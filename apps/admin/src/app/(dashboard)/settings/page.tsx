@@ -5,6 +5,7 @@ import { Eye } from "lucide-react";
 import {SettingsPageSkeleton} from "@/lib/skeletons/settings-page.skeleton";
 import { Button, EyeLashIcon } from "@nlc-ai/ui";
 import { authAPI, useAuth } from "@nlc-ai/auth";
+import {USER_TYPE} from "@nlc-ai/types";
 
 interface FormErrors {
   firstName?: string;
@@ -141,7 +142,7 @@ export default function Settings() {
       });
 
       setSuccessMessage("Profile updated successfully!");
-      await checkAuthStatus();
+      await checkAuthStatus(USER_TYPE.admin);
 
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error: any) {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {LoginResponse} from "../types";
 import {authAPI} from "../api";
-import {AUTH_USER_TYPE} from "@nlc-ai/types";
+import {AUTH_USER_TYPE, USER_TYPE} from "@nlc-ai/types";
 
 interface AuthState {
   user: LoginResponse['user'] | null;
@@ -11,7 +11,7 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
+export const useAuth = (role?: AUTH_USER_TYPE) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -19,10 +19,10 @@ export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
   });
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    checkAuthStatus(role);
+  }, [role]);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = async (role?: AUTH_USER_TYPE) => {
     try {
       if (!authState.isLoading) {
         setAuthState(prevState => ({
@@ -31,6 +31,13 @@ export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
         }));
       }
       const user = await authAPI.getProfile();
+
+      if (role) {
+        if ((user.role && user.role !== role) || (!user.role && role === USER_TYPE.admin)) {
+          throw new Error('Unauthorised');
+        }
+      }
+
       setAuthState({
         user,
         isLoading: false,
