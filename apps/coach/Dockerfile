@@ -16,13 +16,18 @@ RUN npm ci --only=production && npm cache clean --force
 FROM base AS builder
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL
+
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_ENV=production
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package*.json ./
 
 COPY . .
 
-RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 RUN npm list nx || npm install nx@latest
+RUN npm install @rollup/rollup-linux-x64-musl --save-optional
 RUN npx nx build coach --prod
 
 FROM base AS runner
@@ -36,6 +41,7 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/apps/coach/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
+COPY apps/coach/public ./public
 
 RUN chown -R nextjs:nodejs /app
 USER nextjs
