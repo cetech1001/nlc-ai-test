@@ -1,4 +1,4 @@
-import { BaseAPI } from "@nlc-ai/api-client";
+import { BaseAPI } from "./base";
 
 export interface Plan {
   id: string;

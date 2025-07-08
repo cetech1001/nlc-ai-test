@@ -7,7 +7,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { dashboardAPI } from "@/lib/api/dashboard";
+import { dashboardAPI } from "@nlc-ai/api-client";
 import {RevenueGrowthData} from "@nlc-ai/types";
 
 interface RevenueGraphProps {

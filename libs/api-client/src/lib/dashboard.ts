@@ -1,4 +1,4 @@
-import { BaseAPI } from '@nlc-ai/api-client';
+import { BaseAPI } from './base';
 import {DashboardData, DashboardStats, RecentCoach, RevenueGrowthData} from "@nlc-ai/types";
 
 class DashboardAPI extends BaseAPI {

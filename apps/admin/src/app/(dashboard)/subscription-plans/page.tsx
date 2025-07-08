@@ -6,7 +6,7 @@ import { PlanCard } from "@/app/(dashboard)/components/plan-card";
 import { Button } from "@nlc-ai/ui";
 import { useEffect, useState } from "react";
 import { PlansPageSkeleton } from "@/lib/skeletons/plans-page.skeleton";
-import { plansAPI, type Plan as APIPlan } from "@/lib/api/plans";
+import { plansAPI, type Plan as APIPlan } from "@nlc-ai/api-client";
 import { PageHeader } from "@nlc-ai/shared";
 
 const transformPlan = (apiPlan: APIPlan, isCurrentPlan = false) => ({

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { RevenueGraph } from "@/app/(dashboard)/home/components/revenue-graph";
 import { useEffect, useState } from "react";
 import { HomePageSkeleton } from "@/lib/skeletons/home-page.skeleton";
-import { dashboardAPI } from "@/lib/api/dashboard";
+import { dashboardAPI } from "@nlc-ai/api-client";
 import {coachColumns} from "@/lib/utils/coaches";
 import {DashboardData, RecentCoach} from "@nlc-ai/types";
 
