@@ -1,10 +1,9 @@
 'use client';
 
 import {ReactNode, useEffect} from "react";
-import { AuthLayout, AuthLayoutProvider } from '@nlc-ai/auth';
+import { AuthLayout, AuthLayoutProvider, useAuth } from '@nlc-ai/auth';
 import {AuthSkeleton} from "@nlc-ai/ui";
 import {useRouter} from "next/navigation";
-import {useAuth} from "@nlc-ai/auth";
 
 const CoachAuthLayout = ({ children }: {
   children: ReactNode;

@@ -1,3 +1,5 @@
+'use client'
+
 import { useAuth } from "@nlc-ai/auth";
 import {USER_TYPE} from "@nlc-ai/types";
 
