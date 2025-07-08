@@ -12,12 +12,12 @@ interface DashboardLayoutProps {
 }
 
 const defaultConfig = {
-  title: 'Admin Dashboard',
+  title: 'Coach Dashboard',
   subtitle: 'Manage your coaching business efficiently.',
   breadcrumb: 'Dashboard'
 };
 
-const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
+const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const pathname = usePathname();
@@ -40,15 +40,15 @@ const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
     router.push(path);
   }
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
     router.push('/login');
   }
 
   return (
     <div className="min-h-screen bg-[#000000]">
       <SidebarComponent
-        dashboardHeader={'ADMIN PANEL'}
+        dashboardHeader={"COACH PANEL"}
         pathname={pathname}
         navigateTo={navigateTo}
         menuItems={menuItems}
@@ -77,4 +77,4 @@ const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
   );
 }
 
-export default AdminDashboardLayout;
+export default CoachDashboardLayout;

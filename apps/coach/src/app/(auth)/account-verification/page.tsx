@@ -1,15 +1,15 @@
 'use client';
 
 import { Suspense } from 'react';
-import { AdminAccountVerificationContent } from './content';
+import { CoachAccountVerificationContent } from './content';
 import { AccountVerificationSkeleton } from '@nlc-ai/auth';
 
-const AdminAccountVerificationPage = () => {
+const CoachAccountVerificationPage = () => {
   return (
     <Suspense fallback={<AccountVerificationSkeleton/>}>
-      <AdminAccountVerificationContent />
+      <CoachAccountVerificationContent />
     </Suspense>
   );
 }
 
-export default AdminAccountVerificationPage;
+export default CoachAccountVerificationPage;

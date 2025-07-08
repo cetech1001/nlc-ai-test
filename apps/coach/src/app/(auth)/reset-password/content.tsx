@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ResetPasswordForm, useAuthPage } from '@nlc-ai/auth';
 import {USER_TYPE} from "@nlc-ai/types";
 
-export const AdminResetPasswordContent = () => {
+export const CoachResetPasswordContent = () => {
   const router = useRouter();
 
   const searchParams = useSearchParams();

@@ -1,10 +1,15 @@
 'use client';
 
-import { RegisterForm } from '@nlc-ai/auth';
+import { RegisterForm, useAuthPage } from '@nlc-ai/auth';
 import {useRouter} from "next/navigation";
 
-export default function CoachRegisterPage() {
+const CoachRegisterPage = () => {
   const router = useRouter();
+
+  useAuthPage({
+    title: 'Create An Account',
+    description: 'Enter following details to create your account.',
+  });
 
   const handleSignIn = () => {
     router.push('/login');
@@ -21,3 +26,5 @@ export default function CoachRegisterPage() {
       showGoogleAuth={true}/>
   );
 }
+
+export default CoachRegisterPage;

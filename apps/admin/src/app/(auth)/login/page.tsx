@@ -6,7 +6,7 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 
 
-export default function AdminLoginPage() {
+const AdminLoginPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -52,3 +52,5 @@ export default function AdminLoginPage() {
     />
   );
 }
+
+export default AdminLoginPage;

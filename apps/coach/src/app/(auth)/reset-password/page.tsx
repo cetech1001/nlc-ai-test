@@ -1,15 +1,15 @@
 'use client';
 
 import { Suspense } from 'react';
-import { AdminResetPasswordContent } from './content';
+import { CoachResetPasswordContent } from './content';
 import { ResetPasswordSkeleton } from '@nlc-ai/auth';
 
-const AdminResetPasswordPage = () => {
+const CoachResetPasswordPage = () => {
   return (
     <Suspense fallback={<ResetPasswordSkeleton/>}>
-      <AdminResetPasswordContent />
+      <CoachResetPasswordContent />
     </Suspense>
   );
 }
 
-export default AdminResetPasswordPage;
+export default CoachResetPasswordPage;

@@ -66,11 +66,11 @@ export const useAuth = (role: 'admin' | 'coach' = 'admin') => {
   };
 
   const logout = async () => {
-    /*try {
+    try {
       await authAPI.logout();
     } catch (error) {
       console.error('Logout error:', error);
-    }*/
+    }
 
     setAuthState({
       user: null,

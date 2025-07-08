@@ -1,10 +1,10 @@
 'use client';
 
-import { LoginForm } from "@nlc-ai/auth";
+import { LoginForm, useAuthPage } from "@nlc-ai/auth";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 
-export default function CoachLoginPage() {
+const CoachLoginPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -18,6 +18,11 @@ export default function CoachLoginPage() {
       window.history.replaceState({}, '', newUrl);
     }
   }, [searchParams]);
+
+  useAuthPage({
+    title: 'Login',
+    description: 'Enter your email and password to access your account.',
+  });
 
   const handleForgotPassword = () => {
     router.push('/forgot-password');
@@ -44,3 +49,5 @@ export default function CoachLoginPage() {
     />
   );
 }
+
+export default CoachLoginPage;

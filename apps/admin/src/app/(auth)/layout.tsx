@@ -7,9 +7,9 @@ import {AuthSkeleton} from "@nlc-ai/ui";
 import {useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/auth";
 
-export default function AdminAuthLayout({ children }: {
+const AdminAuthLayout = ({ children }: {
   children: ReactNode;
-}) {
+}) => {
   const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
 
@@ -35,3 +35,5 @@ export default function AdminAuthLayout({ children }: {
     </AuthLayoutProvider>
   );
 }
+
+export default AdminAuthLayout;

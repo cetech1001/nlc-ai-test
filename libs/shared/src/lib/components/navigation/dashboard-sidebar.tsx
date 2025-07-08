@@ -13,6 +13,7 @@ import {Logo} from "../logo";
 
 
 interface SidebarProps extends SidebarComponentProps{
+  dashboardHeader: string;
   sidebarOpen: boolean;
   pathname: string;
   setSidebarOpenAction: (open: boolean) => void;
@@ -41,7 +42,7 @@ const HeadlessUISidebar = (props: SidebarProps) => {
       <div className="flex h-16 shrink-0 items-center border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
           <Logo height={40} width={48} type={props.sidebarOpen ? 'png' : 'svg'}/>
-          <span className="text-white font-semibold text-lg">ADMIN PANEL</span>
+          <span className="text-white font-semibold text-lg">{props.dashboardHeader}</span>
         </div>
       </div>
 
@@ -187,6 +188,7 @@ const HeadlessUISidebar = (props: SidebarProps) => {
 }
 
 interface SidebarComponentProps {
+  dashboardHeader: string;
   pathname: string;
   logout: () => void;
   menuItems: MenuItem[];
