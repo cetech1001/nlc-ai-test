@@ -2,11 +2,24 @@
 
 import { LoginForm, useAuthPage } from '@nlc-ai/auth';
 import { USER_TYPE } from '@nlc-ai/types';
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
+import {useEffect, useState} from "react";
 
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message) {
+      setSuccessMessage(message);
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams]);
 
   useAuthPage({
     title: 'Admin Login',
@@ -30,6 +43,8 @@ export default function AdminLoginPage() {
       handleHome={handleHome}
       handleSignUp={handleSignUp}
       handleForgotPassword={handleForgotPassword}
+      successMessage={successMessage}
+      setSuccessMessage={(message: string) => setSuccessMessage(message)}
       userType={USER_TYPE.admin}
       showSignUp={false}
       showGoogleAuth={false}

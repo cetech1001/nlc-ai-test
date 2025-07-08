@@ -1,11 +1,10 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
 import { Button, Input, Checkbox, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
-import {useSearchParams} from "next/navigation";
 import {ApiError} from "@nlc-ai/api-client";
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
@@ -15,21 +14,9 @@ import {useAuth} from "../../hooks";
 export const LoginForm = (props: LoginFormProps) => {
   const { login } = useAuth();
 
-  const searchParams = useSearchParams();
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    const message = searchParams.get('message');
-    if (message) {
-      setSuccessMessage(message);
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    }
-  }, [searchParams]);
 
   const {
     register,
@@ -48,7 +35,7 @@ export const LoginForm = (props: LoginFormProps) => {
   const handleFormSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError('');
-    setSuccessMessage('');
+    props.setSuccessMessage('');
 
     try {
       await login(data.email, data.password, data.rememberMe, props.userType);
@@ -70,11 +57,11 @@ export const LoginForm = (props: LoginFormProps) => {
           onDismiss={() => setError('')}/>
       )}
 
-      {successMessage && (
+      {props.successMessage && (
         <AlertBanner
           type={"success"}
-          message={successMessage}
-          onDismiss={() => setSuccessMessage('')}/>
+          message={props.successMessage}
+          onDismiss={() => props.setSuccessMessage('')}/>
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">

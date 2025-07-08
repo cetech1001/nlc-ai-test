@@ -35,14 +35,14 @@ class AuthAPI extends BaseAPI{
     if (userType) {
       param += `?type=${userType}`;
     }
-    return this.makeRequest(`/auth/admin/forgot-password${param}`, {
+    return this.makeRequest(`/auth/forgot-password${param}`, {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
   async verifyCode(email: string, code: string): Promise<{ resetToken: string }> {
-    return this.makeRequest('/auth/admin/verify-code', {
+    return this.makeRequest('/auth/verify-code', {
       method: 'POST',
       body: JSON.stringify({ email, code }),
     });
@@ -53,14 +53,14 @@ class AuthAPI extends BaseAPI{
     if (userType) {
       param += `?type=${userType}`;
     }
-    return this.makeRequest(`/auth/admin/reset-password${param}`, {
+    return this.makeRequest(`/auth/reset-password${param}`, {
       method: 'POST',
       body: JSON.stringify({ token, password }),
     });
   }
 
   async resendCode(email: string): Promise<{ message: string }> {
-    return this.makeRequest('/auth/admin/resend-code', {
+    return this.makeRequest('/auth/resend-code', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -86,7 +86,7 @@ class AuthAPI extends BaseAPI{
 
   async logout(): Promise<{ message: string }> {
     try {
-      return await this.makeRequest<{ message: string }>('/auth/admin/logout', {
+      return await this.makeRequest<{ message: string }>('/auth/logout', {
         method: 'POST',
       });
     } finally {

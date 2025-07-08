@@ -9,6 +9,8 @@ export interface LoginFormProps extends AuthFormProps {
   handleHome: () => void;
   handleSignUp: () => void;
   handleForgotPassword: () => void;
+  successMessage: string;
+  setSuccessMessage: (message: string) => void;
   showSignUp?: boolean;
   showGoogleAuth?: boolean;
   showRememberMe?: boolean;
