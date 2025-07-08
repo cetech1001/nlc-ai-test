@@ -40,7 +40,7 @@ jobs:
               - 'nx.json'
             api:
               - 'apps/api/**'
-              - 'libs/**'
+              - 'libs/types/**'
               - 'package*.json'
               - 'nx.json'
 
