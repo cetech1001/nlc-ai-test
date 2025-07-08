@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum LeadType {
+  coach_lead
+  admin_lead
+}
+
 enum TransactionStatus {
   pending
   processing
@@ -634,23 +639,23 @@ model Subscriptions {
 }
 
 model Leads {
-  id               String    @id @default(uuid()) @db.Uuid
-  coachId          String    @db.Uuid
-  firstName        String    @db.VarChar(100)
-  lastName         String    @db.VarChar(100)
-  email            String    @db.VarChar(255)
-  phone            String?   @db.VarChar(20)
-  source           String?   @db.VarChar(100)
-  status           String    @default("contacted") @db.VarChar(50) // contacted, scheduled, converted, unresponsive
-  meetingDate      DateTime? @db.Timestamptz(6)
-  meetingTime      String?   @db.VarChar(20)
-  agentsOfInterest String[]
-  notes            String?
-  lastContactedAt  DateTime? @db.Timestamptz(6)
-  convertedAt      DateTime? @db.Timestamptz(6)
-  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
-  coach            Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  id              String    @id @default(uuid()) @db.Uuid
+  coachId         String?   @db.Uuid // Made nullable to support admin leads
+  leadType        LeadType  @default(coach_lead)
+  firstName       String    @db.VarChar(100)
+  lastName        String    @db.VarChar(100)
+  email           String    @db.VarChar(255)
+  phone           String?   @db.VarChar(20)
+  source          String?   @db.VarChar(100)
+  status          String    @default("contacted") @db.VarChar(50) // contacted, scheduled, converted, unresponsive
+  meetingDate     DateTime? @db.Timestamptz(6)
+  meetingTime     String?   @db.VarChar(20)
+  notes           String?
+  lastContactedAt DateTime? @db.Timestamptz(6)
+  convertedAt     DateTime? @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
+  coach           Coaches?  @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
   @@map("leads")
 }
