@@ -131,7 +131,7 @@ export default function Coaches() {
   };
 
   const handleRowAction = (action: string, coach: any) => {
-    if (action === 'payment') {
+    if (action === 'make-payment') {
       router.push('/coaches/make-payment');
     } else if (action === 'toggle-status') {
       handleToggleStatus(coach.id);
@@ -188,7 +188,7 @@ export default function Coaches() {
           title="Coaches List"
           subtitle="Manage and monitor all coaches in your platform"
         >
-          <div className="flex items-center gap-3 w-full">
+          <div className="flex items-center gap-3 w-3/4">
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
                 type="text"

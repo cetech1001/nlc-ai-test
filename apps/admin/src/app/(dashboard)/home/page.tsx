@@ -1,7 +1,7 @@
 'use client'
 
 import { StatCard } from "@/app/(dashboard)/home/components/stat-card";
-import { DataTable, PageHeader, TableAction } from "@nlc-ai/shared";
+import { DataTable, TableAction } from "@nlc-ai/shared";
 import { useRouter } from "next/navigation";
 import { RevenueGraph } from "@/app/(dashboard)/home/components/revenue-graph";
 import { useEffect, useState } from "react";
@@ -123,14 +123,17 @@ export default function AdminDashboard() {
       </div>
 
       <div className="relative overflow-hidden">
-        <PageHeader
-          title="Recently Joined Coaches"
-          actionButton={{
-            label: "View All",
-            onClick: () => router.push('/coaches'),
-            variant: "secondary"
-          }}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-stone-50 text-xl sm:text-2xl font-semibold leading-relaxed">
+            Recently Joined Coaches
+          </h2>
+          <button
+            onClick={() => router.push('/coaches')}
+            className="text-fuchsia-400 text-sm font-bold hover:text-fuchsia-300 transition-colors self-start sm:self-auto"
+          >
+            View All
+          </button>
+        </div>
 
         {transformedCoaches.length === 0 ? (
           <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 text-center">
