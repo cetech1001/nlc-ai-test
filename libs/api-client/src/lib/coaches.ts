@@ -95,6 +95,10 @@ class CoachesAPI extends BaseAPI {
       params.append('isVerified', filters.isVerified);
     }
 
+    if (filters.includeDeleted && filters.includeDeleted !== '') {
+      params.append('includeDeleted', filters.includeDeleted);
+    }
+
     return this.makeRequest(`/coaches?${params.toString()}`);
   }
 

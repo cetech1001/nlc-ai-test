@@ -91,6 +91,7 @@ export const coachFilters: FilterConfig[] = [
       { label: 'Active', value: 'active' },
       { label: 'Inactive', value: 'inactive' },
       { label: 'Blocked', value: 'blocked' },
+      { label: 'Deleted', value: 'deleted' },
     ],
     defaultValue: '',
   },
@@ -149,4 +150,5 @@ export const emptyFilterValues: FilterValues = {
   dateJoined: { start: null, end: null },
   lastActive: { start: null, end: null },
   isVerified: '',
+  includeDeleted: 'false',
 };

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, useCallback } from 'react';
 import { Dialog, Transition, Popover } from '@headlessui/react';
 import {
   X,
@@ -50,15 +50,15 @@ interface DataFilterProps {
 }
 
 export const DataFilter = ({
-  filters,
-  values,
-  onChange,
-  onReset,
-  trigger = 'button',
-  buttonText = 'Filters',
-  showActiveCount = true,
-  className = '',
-  setIsFilterOpen,
+ filters,
+ values,
+ onChange,
+ onReset,
+ trigger = 'button',
+ buttonText = 'Filters',
+ showActiveCount = true,
+ className = '',
+ setIsFilterOpen,
 }: DataFilterProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [tempValues, setTempValues] = useState<FilterValues>(values);
@@ -70,7 +70,7 @@ export const DataFilter = ({
 
   useEffect(() => {
     setIsFilterOpen(isOpen);
-  }, [isOpen]);
+  }, [isOpen, setIsFilterOpen]);
 
   // Count active filters
   const activeFilterCount = Object.keys(values).filter(key => {
@@ -83,19 +83,38 @@ export const DataFilter = ({
     return value !== null && value !== undefined && value !== '';
   }).length;
 
-  const handleFilterChange = (key: string, value: any) => {
-    setTempValues(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
+  // Update temp values when external values change - but prevent loops
+  useEffect(() => {
+    // Only update if values actually changed
+    const valuesChanged = JSON.stringify(tempValues) !== JSON.stringify(values);
+    if (valuesChanged) {
+      console.log('External values changed, updating temp values:', values);
+      setTempValues(values);
+    }
+  }, [values]); // Remove tempValues from dependencies to prevent loop
 
-  const handleApply = () => {
+  // Memoize the filter change handler with better logic
+  const handleFilterChange = useCallback((key: string, newValue: any) => {
+    console.log(`DataFilter: ${key} changing to:`, newValue, typeof newValue);
+
+    setTempValues(prev => {
+      const updated = {
+        ...prev,
+        [key]: newValue
+      };
+      console.log('TempValues updated:', updated);
+      return updated;
+    });
+  }, []);
+
+  const handleApply = useCallback(() => {
+    console.log('Applying filters:', tempValues);
     onChange(tempValues);
     setIsOpen(false);
-  };
+  }, [tempValues, onChange]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    console.log('Resetting filters');
     const resetValues: FilterValues = {};
     filters.forEach(filter => {
       switch (filter.type) {
@@ -107,16 +126,18 @@ export const DataFilter = ({
           resetValues[filter.key] = { start: null, end: null };
           break;
         default:
-          resetValues[filter.key] = filter.defaultValue || '';
+          resetValues[filter.key] = filter.defaultValue !== undefined ? filter.defaultValue : '';
       }
     });
+
+    console.log('Reset values:', resetValues);
     setTempValues(resetValues);
     onChange(resetValues);
     onReset?.();
     setIsOpen(false);
-  };
+  }, [filters, onChange, onReset]);
 
-  const renderFilterInput = (filter: FilterConfig) => {
+  const renderFilterInput = useCallback((filter: FilterConfig) => {
     const value = tempValues[filter.key];
 
     switch (filter.type) {
@@ -151,7 +172,7 @@ export const DataFilter = ({
       default:
         return null;
     }
-  };
+  }, [tempValues, handleFilterChange]);
 
   if (trigger === 'popover') {
     return (
@@ -315,80 +336,3 @@ export const DataFilter = ({
     </>
   );
 };
-
-// Usage Examples:
-
-// For Coaches Page
-/*
-const coachFilters: FilterConfig[] = [
-  {
-    key: 'status',
-    label: 'Status',
-    type: 'select',
-    options: [
-      { label: 'Active', value: 'active', count: 45 },
-      { label: 'Inactive', value: 'inactive', count: 12 },
-      { label: 'Blocked', value: 'blocked', count: 3 },
-    ],
-  },
-  {
-    key: 'plan',
-    label: 'Subscription Plan',
-    type: 'multi-select',
-    options: [
-      { label: 'Solo Agent', value: 'solo_agent', count: 20 },
-      { label: 'Growth Pro', value: 'growth_pro', count: 25 },
-      { label: 'Scale Elite', value: 'scale_elite', count: 15 },
-    ],
-  },
-  {
-    key: 'dateJoined',
-    label: 'Date Joined',
-    type: 'date-range',
-  },
-];
-
-<DataFilter
-  filters={coachFilters}
-  values={filterValues}
-  onChange={setFilterValues}
-  onReset={() => setFilterValues({})}
-/>
-*/
-
-// For Transactions Page
-/*
-const transactionFilters: FilterConfig[] = [
-  {
-    key: 'status',
-    label: 'Transaction Status',
-    type: 'select',
-    options: [
-      { label: 'Completed', value: 'completed', count: 156 },
-      { label: 'Pending', value: 'pending', count: 23 },
-      { label: 'Failed', value: 'failed', count: 8 },
-      { label: 'Refunded', value: 'refunded', count: 4 },
-    ],
-  },
-  {
-    key: 'amount',
-    label: 'Amount',
-    type: 'number-range',
-  },
-  {
-    key: 'dateRange',
-    label: 'Transaction Date',
-    type: 'date-range',
-  },
-  {
-    key: 'paymentMethod',
-    label: 'Payment Method',
-    type: 'multi-select',
-    options: [
-      { label: 'Credit Card', value: 'credit_card' },
-      { label: 'PayPal', value: 'paypal' },
-      { label: 'Bank Transfer', value: 'bank_transfer' },
-    ],
-  },
-];
-*/
