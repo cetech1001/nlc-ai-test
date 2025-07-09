@@ -1,4 +1,4 @@
-import {FilterConfig, TableColumn, tableRenderers } from "@nlc-ai/shared";
+import {FilterConfig, FilterValues, TableColumn, tableRenderers } from "@nlc-ai/shared";
 import {Coach} from "@nlc-ai/types";
 
 
@@ -87,9 +87,9 @@ export const coachFilters: FilterConfig[] = [
     type: 'select',
     placeholder: 'All Statuses',
     options: [
-      { label: 'Active', value: 'active', count: 45 },
-      { label: 'Inactive', value: 'inactive', count: 12 },
-      { label: 'Blocked', value: 'blocked', count: 3 },
+      { label: 'Active', value: 'active' },
+      { label: 'Inactive', value: 'inactive' },
+      { label: 'Blocked', value: 'blocked' },
     ],
     defaultValue: '',
   },
@@ -98,11 +98,11 @@ export const coachFilters: FilterConfig[] = [
     label: 'Subscription Plan',
     type: 'multi-select',
     options: [
-      { label: 'Solo Agent', value: 'Solo Agent', count: 20 },
-      { label: 'Starter Pack', value: 'Starter Pack', count: 15 },
-      { label: 'Growth Pro', value: 'Growth Pro', count: 18 },
-      { label: 'Scale Elite', value: 'Scale Elite', count: 7 },
-      { label: 'No Plan', value: 'No Plan', count: 5 },
+      { label: 'Solo Agent', value: 'Solo Agent' },
+      { label: 'Starter Pack', value: 'Starter Pack' },
+      { label: 'Growth Pro', value: 'Growth Pro' },
+      { label: 'Scale Elite', value: 'Scale Elite' },
+      { label: 'No Plan', value: 'No Plan' },
     ],
     defaultValue: [],
   },
@@ -124,9 +124,17 @@ export const coachFilters: FilterConfig[] = [
     type: 'select',
     placeholder: 'All',
     options: [
-      { label: 'Verified', value: 'true', count: 52 },
-      { label: 'Not Verified', value: 'false', count: 8 },
+      { label: 'Verified', value: 'true' },
+      { label: 'Not Verified', value: 'false' },
     ],
     defaultValue: '',
   },
 ];
+
+export const emptyFilterValues: FilterValues = {
+  status: '',
+  subscriptionPlan: [],
+  dateJoined: { start: null, end: null },
+  lastActive: { start: null, end: null },
+  isVerified: '',
+};

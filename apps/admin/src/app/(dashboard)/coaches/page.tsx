@@ -3,70 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { DataTable, Pagination, PageHeader, DataFilter, FilterConfig, FilterValues } from "@nlc-ai/shared";
-import { CoachesPageSkeleton } from "@/lib/skeletons/coaches-page.skeleton";
+import { DataTable, Pagination, PageHeader, DataFilter, FilterValues } from "@nlc-ai/shared";
 import { coachesAPI } from "@nlc-ai/api-client";
-import {coachColumns, DataTableCoach, transformCoachData} from "@/lib/utils/coaches";
 import { AlertBanner } from '@nlc-ai/ui';
-
-const coachFilters: FilterConfig[] = [
-  {
-    key: 'status',
-    label: 'Coach Status',
-    type: 'select',
-    placeholder: 'All Statuses',
-    options: [
-      { label: 'Active', value: 'active' },
-      { label: 'Inactive', value: 'inactive' },
-      { label: 'Blocked', value: 'blocked' },
-    ],
-    defaultValue: '',
-  },
-  {
-    key: 'subscriptionPlan',
-    label: 'Subscription Plan',
-    type: 'multi-select',
-    options: [
-      { label: 'Solo Agent', value: 'Solo Agent' },
-      { label: 'Starter Pack', value: 'Starter Pack' },
-      { label: 'Growth Pro', value: 'Growth Pro' },
-      { label: 'Scale Elite', value: 'Scale Elite' },
-      { label: 'No Plan', value: 'No Plan' },
-    ],
-    defaultValue: [],
-  },
-  {
-    key: 'dateJoined',
-    label: 'Date Joined',
-    type: 'date-range',
-    defaultValue: { start: null, end: null },
-  },
-  {
-    key: 'lastActive',
-    label: 'Last Active',
-    type: 'date-range',
-    defaultValue: { start: null, end: null },
-  },
-  {
-    key: 'isVerified',
-    label: 'Email Verified',
-    type: 'select',
-    placeholder: 'All',
-    options: [
-      { label: 'Verified', value: 'true' },
-      { label: 'Not Verified', value: 'false' },
-    ],
-    defaultValue: '',
-  },
-];
-
-const emptyFilterValues: FilterValues = {
-  status: '',
-  subscriptionPlan: [],
-  dateJoined: { start: null, end: null },
-  lastActive: { start: null, end: null },
-  isVerified: '',
-};
+import {
+  coachColumns,
+  DataTableCoach,
+  transformCoachData,
+  CoachesPageSkeleton,
+  emptyFilterValues,
+  coachFilters
+} from "@/lib";
 
 export default function Coaches() {
   const router = useRouter();
@@ -130,9 +77,9 @@ export default function Coaches() {
     setCurrentPage(1);
   };
 
-  const handleRowAction = (action: string, coach: any) => {
+  const handleRowAction = (action: string, coach: DataTableCoach) => {
     if (action === 'make-payment') {
-      router.push('/coaches/make-payment');
+      router.push(`/coaches/make-payment?coachId=${coach.originalId}`);
     } else if (action === 'toggle-status') {
       handleToggleStatus(coach.id);
     } else if (action === 'delete') {
@@ -186,7 +133,7 @@ export default function Coaches() {
 
         <PageHeader
           title="Coaches List"
-          subtitle="Manage and monitor all coaches in your platform"
+          // subtitle="Manage and monitor all coaches in your platform"
         >
           <div className="flex items-center gap-3 w-3/4">
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
