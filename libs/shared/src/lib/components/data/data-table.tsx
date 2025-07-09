@@ -323,9 +323,12 @@ export const tableRenderers = {
           </>
         )}
         {coach.rawStatus === 'deleted' && (
-          <span className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400">
-          Marked for Deletion
-        </span>
+          <button
+            onClick={() => onRowAction?.('restore', coach)}
+            className="px-3 py-1 rounded text-sm bg-green-600/20 text-green-400 hover:bg-green-600/30"
+          >
+            Restore
+          </button>
         )}
         <button
           onClick={() => onRowAction?.('make-payment', coach)}

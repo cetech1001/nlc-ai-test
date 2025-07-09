@@ -1,13 +1,14 @@
 'use client'
 
-import { Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PlanCard } from "@/app/(dashboard)/components/plan-card";
 import { Button } from "@nlc-ai/ui";
 import { useEffect, useState } from "react";
 import { PlansPageSkeleton } from "@/lib/skeletons/plans-page.skeleton";
 import { plansAPI, type Plan as APIPlan } from "@nlc-ai/api-client";
-import { PageHeader } from "@nlc-ai/shared";
+import { PageHeader, DataFilter, FilterConfig, FilterValues } from "@nlc-ai/shared";
+import { AlertBanner } from '@nlc-ai/ui';
 
 const transformPlan = (apiPlan: APIPlan, isCurrentPlan = false) => ({
   id: apiPlan.id,
@@ -32,12 +33,60 @@ const getColorClass = (planName: string) => {
   return colorMap[planName] || 'bg-[#7B21BA]';
 };
 
+const planFilters: FilterConfig[] = [
+  {
+    key: 'status',
+    label: 'Plan Status',
+    type: 'select',
+    placeholder: 'All Statuses',
+    options: [
+      { label: 'Active', value: 'active' },
+      { label: 'Inactive', value: 'inactive' },
+      { label: 'Deleted', value: 'deleted' },
+    ],
+    defaultValue: '',
+  },
+  {
+    key: 'priceRange',
+    label: 'Price Range',
+    type: 'select',
+    placeholder: 'All Prices',
+    options: [
+      { label: 'Under $50', value: 'under-50' },
+      { label: '$50 - $100', value: '50-100' },
+      { label: '$100 - $200', value: '100-200' },
+      { label: 'Over $200', value: 'over-200' },
+    ],
+    defaultValue: '',
+  },
+  {
+    key: 'includeDeleted',
+    label: 'Include Deleted',
+    type: 'select',
+    placeholder: 'Exclude Deleted',
+    options: [
+      { label: 'Exclude Deleted', value: 'false' },
+      { label: 'Include Deleted', value: 'true' },
+    ],
+    defaultValue: 'false',
+  },
+];
+
+const emptyFilterValues: FilterValues = {
+  status: '',
+  priceRange: '',
+  includeDeleted: 'false',
+};
+
 const SubscriptionPlans = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [plans, setPlans] = useState<APIPlan[]>([]);
+  const [filteredPlans, setFilteredPlans] = useState<APIPlan[]>([]);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyFilterValues);
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -51,25 +100,81 @@ const SubscriptionPlans = () => {
   }, []);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (successMessage) {
-      timer = setTimeout(() => {
+      const timer = setTimeout(() => {
         setSuccessMessage("");
       }, 3000);
+      return () => clearTimeout(timer);
     }
-    return () => clearTimeout(timer);
+    return () => {}
   }, [successMessage]);
 
-  const fetchPlans = async () => {
+  useEffect(() => {
+    filterPlans();
+  }, [plans, filterValues]);
+
+  const fetchPlans = async (newIncludeDeleted?: string) => {
     try {
       setIsLoading(true);
-      const fetchedPlans = await plansAPI.getPlans(true); // Include inactive plans
+      const includeDeleted = newIncludeDeleted
+        ? newIncludeDeleted === 'true'
+        : filterValues.includeDeleted === 'true';
+
+      const fetchedPlans = await plansAPI.getPlans(true, includeDeleted);
       setPlans(fetchedPlans);
     } catch (error: any) {
       setError(error.message || "Failed to load plans");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const filterPlans = () => {
+    let filtered = [...plans];
+
+    // Status filter
+    if (filterValues.status) {
+      filtered = filtered.filter(plan => {
+        if (filterValues.status === 'active') return plan.isActive && !plan.isDeleted;
+        if (filterValues.status === 'inactive') return !plan.isActive && !plan.isDeleted;
+        if (filterValues.status === 'deleted') return plan.isDeleted;
+        return true;
+      });
+    }
+
+    // Price range filter
+    if (filterValues.priceRange) {
+      filtered = filtered.filter(plan => {
+        const monthlyPrice = plan.monthlyPrice / 100;
+        switch (filterValues.priceRange) {
+          case 'under-50': return monthlyPrice < 50;
+          case '50-100': return monthlyPrice >= 50 && monthlyPrice <= 100;
+          case '100-200': return monthlyPrice > 100 && monthlyPrice <= 200;
+          case 'over-200': return monthlyPrice > 200;
+          default: return true;
+        }
+      });
+    }
+
+    // Include deleted filter
+    if (filterValues.includeDeleted === 'false') {
+      filtered = filtered.filter(plan => !plan.isDeleted);
+    }
+
+    setFilteredPlans(filtered);
+  };
+
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters);
+
+    if (newFilters.includeDeleted !== filterValues.includeDeleted) {
+      fetchPlans(newFilters.includeDeleted);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setFilterValues(emptyFilterValues);
+    fetchPlans();
   };
 
   const handleEditPlan = (planId: string) => {
@@ -85,15 +190,13 @@ const SubscriptionPlans = () => {
       await plansAPI.togglePlanStatus(planId);
       setSuccessMessage("Plan status updated successfully!");
       await fetchPlans();
-
-      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error: any) {
       setError(error.message || "Failed to update plan status");
     }
   };
 
   const handleDeletePlan = async (planId: string) => {
-    if (!confirm("Are you sure you want to delete this plan? This action cannot be undone.")) {
+    if (!confirm("Are you sure you want to delete this plan? This action will mark it for deletion.")) {
       return;
     }
 
@@ -101,10 +204,22 @@ const SubscriptionPlans = () => {
       await plansAPI.deletePlan(planId);
       setSuccessMessage("Plan deleted successfully!");
       await fetchPlans();
-
-      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error: any) {
       setError(error.message || "Failed to delete plan");
+    }
+  };
+
+  const handleRestorePlan = async (planId: string) => {
+    if (!confirm("Are you sure you want to restore this plan?")) {
+      return;
+    }
+
+    try {
+      await plansAPI.restorePlan(planId);
+      setSuccessMessage("Plan restored successfully!");
+      await fetchPlans();
+    } catch (error: any) {
+      setError(error.message || "Failed to restore plan");
     }
   };
 
@@ -118,39 +233,40 @@ const SubscriptionPlans = () => {
   }
 
   return (
-    <div className="mb-8 pt-2 sm:pt-8">
+    <div className={`mb-8 pt-2 sm:pt-8 ${isFilterOpen ? 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' : ''}`}>
       {successMessage && (
-        <div className="mb-6 p-4 bg-green-800/20 border border-green-600 rounded-lg">
-          <p className="text-green-400 text-sm">{successMessage}</p>
-        </div>
+        <AlertBanner type="success" message={successMessage} onDismiss={clearMessages} />
       )}
 
       {error && (
-        <div className="mb-6 p-4 bg-red-800/20 border border-red-600 rounded-lg">
-          <div className="flex justify-between items-center">
-            <p className="text-red-400 text-sm">{error}</p>
-            <button
-              onClick={clearMessages}
-              className="text-red-400 hover:text-red-300 text-sm underline"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
+        <AlertBanner type="error" message={error} onDismiss={clearMessages} />
       )}
 
       <PageHeader
         title="Subscription Plans"
-        subtitle="Manage your subscription plans and pricing structure"
-        actionButton={{
-          label: "Create New Plan",
-          onClick: handleCreateNewPlan,
-          icon: <Plus className="w-4 h-4" />,
-          variant: "primary"
-        }}
-      />
+        // subtitle="Manage your subscription plans and pricing structure"
+      >
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleCreateNewPlan}
+            className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors'}
+          >
+            <span className="w-4 h-4 mr-2">
+              <Plus className="w-4 h-4" />
+            </span>
+            Create New Plan
+          </Button>
+          <DataFilter
+            filters={planFilters}
+            values={filterValues}
+            onChange={handleFilterChange}
+            onReset={handleResetFilters}
+            setIsFilterOpen={setIsFilterOpen}
+          />
+        </div>
+      </PageHeader>
 
-      {plans.length === 0 ? (
+      {filteredPlans.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-stone-400 text-lg mb-4">No subscription plans found</div>
           <Button
@@ -163,46 +279,60 @@ const SubscriptionPlans = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-          {plans.map((plan) => (
+          {filteredPlans.map((plan) => (
             <div key={plan.id} className="relative group mb-8">
               <div className="absolute -top-2 -right-2 z-10">
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  plan.isActive
-                    ? 'bg-green-600/20 text-green-400 border border-green-600/50'
-                    : 'bg-red-600/20 text-red-400 border border-red-600/50'
+                  plan.isDeleted
+                    ? 'bg-red-600/20 text-red-400 border border-red-600/50'
+                    : plan.isActive
+                      ? 'bg-green-600/20 text-green-400 border border-green-600/50'
+                      : 'bg-yellow-600/20 text-yellow-400 border border-yellow-600/50'
                 }`}>
-                  {plan.isActive ? 'Active' : 'Inactive'}
+                  {plan.isDeleted ? 'Deleted' : plan.isActive ? 'Active' : 'Inactive'}
                 </div>
               </div>
 
               <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => handleToggleStatus(plan.id)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      plan.isActive
-                        ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400'
-                        : 'bg-green-600/20 hover:bg-green-600/30 text-green-400'
-                    }`}
-                    title={plan.isActive ? 'Deactivate Plan' : 'Activate Plan'}
-                  >
-                    {plan.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                  </button>
+                  {plan.isDeleted ? (
+                    <button
+                      onClick={() => handleRestorePlan(plan.id)}
+                      className="p-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg transition-colors"
+                      title="Restore Plan"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleToggleStatus(plan.id)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          plan.isActive
+                            ? 'bg-red-600/20 hover:bg-red-600/30 text-red-400'
+                            : 'bg-green-600/20 hover:bg-green-600/30 text-green-400'
+                        }`}
+                        title={plan.isActive ? 'Deactivate Plan' : 'Activate Plan'}
+                      >
+                        {plan.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                      </button>
 
-                  <button
-                    onClick={() => handleDeletePlan(plan.id)}
-                    className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
-                    title="Delete Plan"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                      <button
+                        onClick={() => handleDeletePlan(plan.id)}
+                        className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
+                        title="Delete Plan"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
               <PlanCard
                 plan={transformPlan(plan)}
-                action="Edit Plan"
-                onActionClick={() => handleEditPlan(plan.id)}
+                action={plan.isDeleted ? "Deleted" : "Edit Plan"}
+                onActionClick={plan.isDeleted ? () => {} : () => handleEditPlan(plan.id)}
               />
 
               {plan._count && (

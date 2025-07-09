@@ -82,6 +82,17 @@ export class PlansController {
     return this.plansService.toggleStatus(id);
   }
 
+  @Patch(':id/restore')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Restore a deleted subscription plan' })
+  @ApiResponse({ status: 200, description: 'Plan restored successfully' })
+  @ApiResponse({ status: 404, description: 'Plan not found' })
+  @ApiResponse({ status: 400, description: 'Plan is not deleted' })
+  @ApiResponse({ status: 409, description: 'Plan name already exists' })
+  restore(@Param('id') id: string) {
+    return this.plansService.restore(id);
+  }
+
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Soft delete a subscription plan' })

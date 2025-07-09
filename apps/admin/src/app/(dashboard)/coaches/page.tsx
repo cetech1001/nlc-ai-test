@@ -8,7 +8,8 @@ import {
   Pagination,
   PageHeader,
   DataFilter,
-  FilterValues
+  FilterValues,
+  FilterConfig
 } from "@nlc-ai/shared";
 import { coachesAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
@@ -17,11 +18,81 @@ import {
   DataTableCoach,
   transformCoachData,
   CoachesPageSkeleton,
-  emptyFilterValues,
-  coachFilters
 } from "@/lib";
 
-export default function Coaches() {
+const coachFilters: FilterConfig[] = [
+  {
+    key: 'status',
+    label: 'Coach Status',
+    type: 'select',
+    placeholder: 'All Statuses',
+    options: [
+      { label: 'Active', value: 'active' },
+      { label: 'Inactive', value: 'inactive' },
+      { label: 'Blocked', value: 'blocked' },
+      { label: 'Deleted', value: 'deleted' },
+    ],
+    defaultValue: '',
+  },
+  {
+    key: 'subscriptionPlan',
+    label: 'Subscription Plan',
+    type: 'multi-select',
+    options: [
+      { label: 'Solo Agent', value: 'Solo Agent' },
+      { label: 'Starter Pack', value: 'Starter Pack' },
+      { label: 'Growth Pro', value: 'Growth Pro' },
+      { label: 'Scale Elite', value: 'Scale Elite' },
+      { label: 'No Plan', value: 'No Plan' },
+    ],
+    defaultValue: [],
+  },
+  {
+    key: 'dateJoined',
+    label: 'Date Joined',
+    type: 'date-range',
+    defaultValue: { start: null, end: null },
+  },
+  {
+    key: 'lastActive',
+    label: 'Last Active',
+    type: 'date-range',
+    defaultValue: { start: null, end: null },
+  },
+  {
+    key: 'isVerified',
+    label: 'Email Verified',
+    type: 'select',
+    placeholder: 'All',
+    options: [
+      { label: 'Verified', value: 'true' },
+      { label: 'Not Verified', value: 'false' },
+    ],
+    defaultValue: '',
+  },
+  /*{
+    key: 'includeDeleted',
+    label: 'Include Deleted',
+    type: 'select',
+    placeholder: 'Exclude Deleted',
+    options: [
+      { label: 'Include Deleted', value: 'true' },
+      { label: 'Exclude Deleted', value: 'false' },
+    ],
+    defaultValue: 'false',
+  },*/
+];
+
+const emptyFilterValues: FilterValues = {
+  status: '',
+  subscriptionPlan: [],
+  dateJoined: { start: null, end: null },
+  lastActive: { start: null, end: null },
+  isVerified: '',
+  // includeDeleted: 'false',
+};
+
+const Coaches = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,6 +161,24 @@ export default function Coaches() {
       handleToggleStatus(coach.originalId);
     } else if (action === 'delete') {
       handleDeleteCoach(coach.originalId);
+    } else if (action === 'restore') {
+      handleRestoreCoach(coach.originalId);
+    }
+  };
+
+  const handleRestoreCoach = async (coachId: string) => {
+    if (!confirm("Are you sure you want to restore this coach?")) {
+      return;
+    }
+
+    try {
+      await coachesAPI.restoreCoach(coachId);
+      setSuccessMessage("Coach restored successfully!");
+      await fetchCoaches();
+
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error: any) {
+      setError(error.message || "Failed to restore coach");
     }
   };
 
@@ -202,3 +291,5 @@ export default function Coaches() {
     </div>
   );
 }
+
+export default Coaches;

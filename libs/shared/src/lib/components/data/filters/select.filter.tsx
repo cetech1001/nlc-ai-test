@@ -22,8 +22,6 @@ export const SelectFilter: FC<IProps> = (props) => {
 
   // Memoize the onChange handler to prevent infinite re-renders
   const handleChange = useCallback((newValue: any) => {
-    console.log(`Filter ${filter.key} changing from "${normalizedValue}" to "${newValue}"`);
-
     // Only call handleFilterChange if the value actually changed
     if (String(newValue) !== normalizedValue) {
       handleFilterChange(filter.key, String(newValue));
@@ -36,14 +34,6 @@ export const SelectFilter: FC<IProps> = (props) => {
   }, [filter.options, normalizedValue]);
 
   const displayLabel = currentOption?.label || filter.placeholder || 'Select...';
-
-  // Debug log
-  console.log(`SelectFilter ${filter.key}:`, {
-    originalValue: value,
-    normalizedValue,
-    displayLabel,
-    options: filter.options?.map(o => ({ label: o.label, value: o.value, type: typeof o.value }))
-  });
 
   return (
     <Listbox value={normalizedValue} onChange={handleChange}>

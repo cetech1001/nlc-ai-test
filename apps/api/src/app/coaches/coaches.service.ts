@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, ConflictException, Injectable, NotFoundException} from '@nestjs/common';
 import { CreateCoachDto, UpdateCoachDto } from './dto';
 import { PrismaService } from "../prisma/prisma.service";
 import { CoachQueryDto } from './dto/coach-query.dto';
@@ -320,6 +320,92 @@ export class CoachesService {
         updatedAt: new Date(),
       },
     });
+  }
+
+  async restore(id: string) {
+    const coach = await this.prisma.coaches.findUnique({
+      where: { id },
+      include: {
+        subscriptions: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            plan: true
+          }
+        },
+        clients: {
+          where: { status: 'active' },
+          select: { id: true }
+        },
+        transactions: {
+          where: { status: 'completed' },
+          select: { amount: true }
+        }
+      },
+    });
+
+    if (!coach) {
+      throw new NotFoundException(`Coach with ID ${id} not found`);
+    }
+
+    if (!coach.isDeleted) {
+      throw new BadRequestException('Coach is not deleted');
+    }
+
+    // Check if there's already an active coach with the same email
+    const existingCoach = await this.prisma.coaches.findFirst({
+      where: {
+        email: coach.email,
+        isDeleted: false,
+        id: { not: id },
+      },
+    });
+
+    if (existingCoach) {
+      throw new ConflictException('A coach with this email already exists');
+    }
+
+    const restoredCoach = await this.prisma.coaches.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+        isActive: true,
+        updatedAt: new Date(),
+      },
+      include: {
+        subscriptions: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            plan: true
+          }
+        },
+        clients: {
+          where: { status: 'active' },
+          select: { id: true }
+        },
+        transactions: {
+          where: { status: 'completed' },
+          select: { amount: true }
+        }
+      },
+    });
+
+    const totalRevenue = await this.prisma.transactions.aggregate({
+      where: {
+        coachId: id,
+        status: 'completed'
+      },
+      _sum: { amount: true }
+    });
+
+    return {
+      ...restoredCoach,
+      status: this.determineCoachStatus(restoredCoach),
+      currentPlan: restoredCoach.subscriptions[0]?.plan?.name || 'No Plan',
+      totalRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
+    };
   }
 
   async getCoachKpis(coachId: string, days = 30) {

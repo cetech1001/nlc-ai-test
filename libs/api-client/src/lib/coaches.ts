@@ -185,6 +185,12 @@ class CoachesAPI extends BaseAPI {
       body: JSON.stringify(data),
     });
   }
+
+  async restoreCoach(id: string): Promise<Coach> {
+    return this.makeRequest(`/coaches/${id}/restore`, {
+      method: 'PATCH',
+    });
+  }
 }
 
 export const coachesAPI = new CoachesAPI();

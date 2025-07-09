@@ -10,6 +10,8 @@ export interface Plan {
   maxAiAgents?: number;
   features: string[];
   isActive: boolean;
+  isDeleted: boolean;
+  deletedAt: string;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -82,6 +84,12 @@ class PlansAPI extends BaseAPI {
 
   async getPlanAnalytics(id: string): Promise<PlanAnalytics> {
     return this.makeRequest(`/plans/${id}/analytics`);
+  }
+
+  async restorePlan(id: string): Promise<Plan> {
+    return this.makeRequest(`/plans/${id}/restore`, {
+      method: 'PATCH',
+    });
   }
 }
 

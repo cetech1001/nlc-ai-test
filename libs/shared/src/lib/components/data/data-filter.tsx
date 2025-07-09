@@ -88,33 +88,28 @@ export const DataFilter = ({
     // Only update if values actually changed
     const valuesChanged = JSON.stringify(tempValues) !== JSON.stringify(values);
     if (valuesChanged) {
-      console.log('External values changed, updating temp values:', values);
       setTempValues(values);
     }
   }, [values]); // Remove tempValues from dependencies to prevent loop
 
   // Memoize the filter change handler with better logic
   const handleFilterChange = useCallback((key: string, newValue: any) => {
-    console.log(`DataFilter: ${key} changing to:`, newValue, typeof newValue);
 
     setTempValues(prev => {
       const updated = {
         ...prev,
         [key]: newValue
       };
-      console.log('TempValues updated:', updated);
       return updated;
     });
   }, []);
 
   const handleApply = useCallback(() => {
-    console.log('Applying filters:', tempValues);
     onChange(tempValues);
     setIsOpen(false);
   }, [tempValues, onChange]);
 
   const handleReset = useCallback(() => {
-    console.log('Resetting filters');
     const resetValues: FilterValues = {};
     filters.forEach(filter => {
       switch (filter.type) {
@@ -130,7 +125,6 @@ export const DataFilter = ({
       }
     });
 
-    console.log('Reset values:', resetValues);
     setTempValues(resetValues);
     onChange(resetValues);
     onReset?.();

@@ -186,6 +186,52 @@ export class PlansService {
     };
   }
 
+  async restore(id: string) {
+    const plan = await this.prisma.plans.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            subscriptions: {
+              where: { status: 'active' }
+            },
+            transactions: true,
+          }
+        }
+      }
+    });
+
+    if (!plan) {
+      throw new NotFoundException(`Plan with ID ${id} not found`);
+    }
+
+    if (!plan.isDeleted) {
+      throw new BadRequestException('Plan is not deleted');
+    }
+
+    const existingPlan = await this.prisma.plans.findFirst({
+      where: {
+        name: plan.name,
+        isDeleted: false,
+        id: { not: id },
+      },
+    });
+
+    if (existingPlan) {
+      throw new ConflictException('A plan with this name already exists');
+    }
+
+    return this.prisma.plans.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+        isActive: true, // Restore as active by default
+        updatedAt: new Date(),
+      },
+    });
+  }
+
   async permanentDeleteExpired() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

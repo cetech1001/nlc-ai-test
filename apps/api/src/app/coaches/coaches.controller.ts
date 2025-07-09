@@ -98,6 +98,16 @@ export class CoachesController {
     return this.coachesService.toggleStatus(id);
   }
 
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restore a deleted coach' })
+  @ApiResponse({ status: 200, description: 'Coach restored successfully' })
+  @ApiResponse({ status: 404, description: 'Coach not found' })
+  @ApiResponse({ status: 400, description: 'Coach is not deleted' })
+  @ApiResponse({ status: 409, description: 'Coach email already exists' })
+  restore(@Param('id') id: string) {
+    return this.coachesService.restore(id);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Deactivate a coach (soft delete)' })
   @ApiResponse({ status: 200, description: 'Coach deactivated successfully' })
