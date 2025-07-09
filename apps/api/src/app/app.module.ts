@@ -10,6 +10,7 @@ import {PlansModule} from "./plans/plans.module";
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import {CleanupModule} from "./cleanup/cleanup.module";
+import { LeadsModule } from './leads/leads.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import {CleanupModule} from "./cleanup/cleanup.module";
     DashboardModule,
     TransactionsModule,
     CleanupModule,
+    LeadsModule,
   ],
   providers: [
     {

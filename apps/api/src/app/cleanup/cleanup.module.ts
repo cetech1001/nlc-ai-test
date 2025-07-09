@@ -1,9 +1,15 @@
 import {Module} from "@nestjs/common";
 import {CleanupService} from "./cleanup.service";
 import {CoachesModule} from "../coaches/coaches.module";
+import {CleanupController} from "./cleanup.controller";
+import {PlansModule} from "../plans/plans.module";
 
 @Module({
-  imports: [CoachesModule],
+  controllers: [CleanupController],
+  imports: [
+    CoachesModule,
+    PlansModule,
+  ],
   providers: [CleanupService],
   exports: [CleanupService]
 })

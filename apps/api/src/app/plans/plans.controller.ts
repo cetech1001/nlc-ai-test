@@ -36,8 +36,14 @@ export class PlansController {
   @Get()
   @ApiOperation({ summary: 'Get all subscription plans' })
   @ApiResponse({ status: 200, description: 'Plans retrieved successfully' })
-  findAll(@Query('includeInactive') includeInactive?: string) {
-    return this.plansService.findAll(includeInactive === 'true');
+  findAll(
+    @Query('includeInactive') includeInactive?: string,
+    @Query('includeDeleted') includeDeleted?: string
+  ) {
+    return this.plansService.findAll(
+      includeInactive === 'true',
+      includeDeleted === 'true'
+    );
   }
 
   @Get(':id')
@@ -78,8 +84,8 @@ export class PlansController {
 
   @Delete(':id')
   @Roles('admin')
-  @ApiOperation({ summary: 'Delete a subscription plan' })
-  @ApiResponse({ status: 200, description: 'Plan deactivated successfully' })
+  @ApiOperation({ summary: 'Soft delete a subscription plan' })
+  @ApiResponse({ status: 200, description: 'Plan marked for deletion successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
   @ApiResponse({ status: 409, description: 'Cannot delete plan with active subscriptions' })
   remove(@Param('id') id: string) {

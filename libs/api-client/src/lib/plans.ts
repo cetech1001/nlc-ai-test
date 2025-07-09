@@ -42,8 +42,12 @@ export interface PlanAnalytics {
 }
 
 class PlansAPI extends BaseAPI {
-  async getPlans(includeInactive = false): Promise<Plan[]> {
-    return this.makeRequest(`/plans?includeInactive=${includeInactive}`);
+  async getPlans(includeInactive = false, includeDeleted = false): Promise<Plan[]> {
+    const params = new URLSearchParams();
+    if (includeInactive) params.append('includeInactive', 'true');
+    if (includeDeleted) params.append('includeDeleted', 'true');
+
+    return this.makeRequest(`/plans?${params.toString()}`);
   }
 
   async getPlan(id: string): Promise<Plan> {

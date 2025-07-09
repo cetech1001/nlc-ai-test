@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {Injectable, NotFoundException, ConflictException, BadRequestException} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePlanDto, UpdatePlanDto } from './dto';
 
@@ -31,8 +31,16 @@ export class PlansService {
     });
   }
 
-  async findAll(includeInactive = false) {
-    const where = includeInactive ? {} : { isActive: true };
+  async findAll(includeInactive = false, includeDeleted = false) {
+    const where: any = {};
+
+    if (!includeDeleted) {
+      where.isDeleted = false;
+    }
+
+    if (!includeInactive) {
+      where.isActive = true;
+    }
 
     return this.prisma.plans.findMany({
       where,
@@ -66,7 +74,7 @@ export class PlansService {
       }
     });
 
-    if (!plan) {
+    if (!plan || plan.isDeleted) {
       throw new NotFoundException(`Plan with ID ${id} not found`);
     }
 
@@ -74,7 +82,11 @@ export class PlansService {
   }
 
   async update(id: string, updatePlanDto: UpdatePlanDto) {
-    await this.findOne(id);
+    const plan = await this.findOne(id);
+
+    if (plan.isDeleted) {
+      throw new BadRequestException('Cannot update deleted plans');
+    }
 
     const { name, ...otherData } = updatePlanDto;
 
@@ -83,6 +95,7 @@ export class PlansService {
         where: {
           name,
           id: { not: id },
+          isDeleted: false,
         },
       });
 
@@ -115,12 +128,20 @@ export class PlansService {
 
     return this.prisma.plans.update({
       where: { id },
-      data: { isActive: false },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        isActive: false
+      },
     });
   }
 
   async toggleStatus(id: string) {
     const plan = await this.findOne(id);
+
+    if (plan.isDeleted) {
+      throw new BadRequestException('Cannot toggle status of deleted plans');
+    }
 
     return this.prisma.plans.update({
       where: { id },
@@ -163,5 +184,33 @@ export class PlansService {
         conversionRate: totalSubscriptions > 0 ? (activeSubscriptions / totalSubscriptions) * 100 : 0,
       },
     };
+  }
+
+  async permanentDeleteExpired() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const expiredPlans = await this.prisma.plans.findMany({
+      where: {
+        isDeleted: true,
+        deletedAt: {
+          lte: thirtyDaysAgo
+        }
+      }
+    });
+
+    // Delete related data first, then plan
+    for (const plan of expiredPlans) {
+      await this.prisma.$transaction(async (tx) => {
+        // Delete related transactions and subscriptions
+        await tx.transactions.deleteMany({ where: { planId: plan.id } });
+        await tx.subscriptions.deleteMany({ where: { planId: plan.id } });
+
+        // Finally delete the plan
+        await tx.plans.delete({ where: { id: plan.id } });
+      });
+    }
+
+    return { deletedCount: expiredPlans.length };
   }
 }

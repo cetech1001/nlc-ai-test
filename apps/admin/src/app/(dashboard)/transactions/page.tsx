@@ -120,9 +120,9 @@ export default function Transactions() {
 
         <PageHeader
           title="All Transactions"
-          subtitle="Track all payments and financial activities across your platform"
+          // subtitle="Track all payments and financial activities across your platform"
         >
-          <div className="flex items-center gap-3 w-full">
+          <div className="flex items-center gap-3 w-full sm:w-3/4">
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
                 type="text"
