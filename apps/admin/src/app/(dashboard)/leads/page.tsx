@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search, Plus } from "lucide-react";
-import { DataTable, Pagination, PageHeader, DataFilter, FilterConfig, FilterValues } from "@nlc-ai/shared";
+import { DataTable, Pagination, PageHeader, DataFilter, FilterConfig, FilterValues, tableRenderers } from "@nlc-ai/shared";
 import { AlertBanner } from '@nlc-ai/ui';
 import { leadsAPI } from '@nlc-ai/api-client';
 
@@ -61,36 +61,36 @@ const transformLeadData = (leads: Lead[]): DataTableLead[] => {
   }));
 };
 
-// Table columns for leads
+const colWidth = 100 / 7;
 const leadColumns = [
   {
     key: 'name',
     header: 'Name',
-    width: '20%',
+    width: `${colWidth}%`,
     render: (value: string) => value
   },
   {
     key: 'email',
     header: 'Email',
-    width: '25%',
-    render: (value: string) => value
+    width: `${colWidth * (4 / 3)}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 22)
   },
   {
     key: 'phone',
     header: 'Phone',
-    width: '15%',
+    width: `${colWidth}%`,
     render: (value: string) => value
   },
   {
     key: 'source',
     header: 'Source',
-    width: '12%',
+    width: `${colWidth}%`,
     render: (value: string) => value
   },
   {
     key: 'status',
     header: 'Status',
-    width: '10%',
+    width: `${colWidth * (2 / 3)}%`,
     render: (value: string, row: any) => (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
         row.rawStatus === 'contacted' ? 'bg-blue-600/20 text-blue-400' :
@@ -105,7 +105,7 @@ const leadColumns = [
   {
     key: 'meetingDate',
     header: 'Meeting Date',
-    width: '12%',
+    width: `${colWidth * (2 / 3)}%`,
     render: (value: string) => value
   },
   {
