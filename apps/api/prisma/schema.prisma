@@ -609,6 +609,8 @@ model Plans {
   maxAiAgents   Int?
   features      Json?
   isActive      Boolean         @default(true)
+  isDeleted     Boolean         @default(false)
+  deletedAt     DateTime?       @db.Timestamptz(6)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   subscriptions Subscriptions[]

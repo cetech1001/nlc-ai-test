@@ -1,90 +1,243 @@
 'use client'
 
+import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import {inactiveCoachesData} from "@/app/data";
-import {DataTable, TableColumn, tableRenderers, Pagination, PageHeader} from "@nlc-ai/shared";
-import {coachColumns, DataTableCoach} from "@/lib/utils/coaches";
+import { Search } from "lucide-react";
+import { DataTable, Pagination, PageHeader, DataFilter, FilterConfig, FilterValues } from "@nlc-ai/shared";
+import { CoachesPageSkeleton } from "@/lib/skeletons/coaches-page.skeleton";
+import { coachesAPI } from "@nlc-ai/api-client";
+import {coachColumns, DataTableCoach, transformCoachData} from "@/lib/utils/coaches";
+import { AlertBanner } from '@nlc-ai/ui';
+
+const inactiveCoachFilters: FilterConfig[] = [
+  {
+    key: 'subscriptionPlan',
+    label: 'Subscription Plan',
+    type: 'multi-select',
+    options: [
+      { label: 'Solo Agent', value: 'Solo Agent' },
+      { label: 'Starter Pack', value: 'Starter Pack' },
+      { label: 'Growth Pro', value: 'Growth Pro' },
+      { label: 'Scale Elite', value: 'Scale Elite' },
+      { label: 'No Plan', value: 'No Plan' },
+    ],
+    defaultValue: [],
+  },
+  {
+    key: 'dateJoined',
+    label: 'Date Joined',
+    type: 'date-range',
+    defaultValue: { start: null, end: null },
+  },
+  {
+    key: 'lastActive',
+    label: 'Last Active',
+    type: 'date-range',
+    defaultValue: { start: null, end: null },
+  },
+  {
+    key: 'isVerified',
+    label: 'Email Verified',
+    type: 'select',
+    placeholder: 'All',
+    options: [
+      { label: 'Verified', value: 'true' },
+      { label: 'Not Verified', value: 'false' },
+    ],
+    defaultValue: '',
+  },
+];
+
+const emptyFilterValues: FilterValues = {
+  subscriptionPlan: [],
+  dateJoined: { start: null, end: null },
+  lastActive: { start: null, end: null },
+  isVerified: '',
+};
 
 export default function InactiveCoaches() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredCoaches, setFilteredCoaches] = useState(inactiveCoachesData);
+  const [isLoading, setIsLoading] = useState(true);
+  const [coaches, setCoaches] = useState<DataTableCoach[]>([]);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyFilterValues);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
+  const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const coachesPerPage = 10;
-  const totalPages = Math.ceil(filteredCoaches.length / coachesPerPage);
-  const startIndex = (currentPage - 1) * coachesPerPage;
-  const endIndex = startIndex + coachesPerPage;
-  const currentCoaches = filteredCoaches.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    fetchCoaches();
+  }, [currentPage, searchQuery, filterValues]);
+
+  const fetchCoaches = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      // Add status filter to only get inactive coaches
+      const filtersWithStatus = {
+        ...filterValues,
+        status: 'inactive'
+      };
+
+      const response = await coachesAPI.getCoachesWithFilters(
+        currentPage,
+        coachesPerPage,
+        filtersWithStatus,
+        searchQuery
+      );
+
+      setCoaches(transformCoachData(response.data));
+      setPagination(response.pagination);
+    } catch (error: any) {
+      setError(error.message || "Failed to load inactive coaches");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    if (query.trim() === "") {
-      setFilteredCoaches(inactiveCoachesData);
-    } else {
-      const filtered = inactiveCoachesData.filter(
-        (coach) =>
-          coach.name.toLowerCase().includes(query.toLowerCase()) ||
-          coach.email.toLowerCase().includes(query.toLowerCase()) ||
-          coach.plan.toLowerCase().includes(query.toLowerCase()) ||
-          coach.id.toLowerCase().includes(query.toLowerCase()),
-      );
-      setFilteredCoaches(filtered);
-    }
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters);
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilterValues(emptyFilterValues);
+    setSearchQuery("");
     setCurrentPage(1);
   };
 
   const handleRowAction = (action: string, coach: any) => {
-    if (action === 'mail') {
-      router.push('/inactive-coaches/send-mail');
+    if (action === 'make-payment') {
+      router.push(`/coaches/make-payment?coachId=${coach.originalId}`);
+    } else if (action === 'toggle-status') {
+      handleToggleStatus(coach.originalId);
+    } else if (action === 'delete') {
+      handleDeleteCoach(coach.originalId);
     }
   };
 
-  const columns: TableColumn<DataTableCoach>[] = [
-    ...coachColumns.map(column => {
-      if (column.key === 'dateJoined') {
-        return {
-          key: 'dateJoined',
-          header: 'Last Active',
-          width: `${100 / coachColumns.length}%`,
-          render: tableRenderers.dateText
-        };
-      }
-      if (column.key === 'actions') {
-        return {
-          key: 'actions',
-          header: 'Actions',
-          width: `auto`,
-          render: (_: string, row: DataTableCoach, onAction?: (action: string, row: DataTableCoach) => void) => {
-            return tableRenderers.actions('Send Mail', row, 'mail', onAction);
-          }
-        }
-      }
-      return column;
-    })
-  ];
+  const handleToggleStatus = async (coachId: string) => {
+    try {
+      await coachesAPI.toggleCoachStatus(coachId);
+      setSuccessMessage("Coach activated successfully!");
+      await fetchCoaches();
+
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error: any) {
+      setError(error.message || "Failed to activate coach");
+    }
+  };
+
+  const handleDeleteCoach = async (coachId: string) => {
+    if (!confirm("Are you sure you want to deactivate this coach? This action will set their status to blocked.")) {
+      return;
+    }
+
+    try {
+      await coachesAPI.deleteCoach(coachId);
+      setSuccessMessage("Coach deactivated successfully!");
+      await fetchCoaches();
+
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error: any) {
+      setError(error.message || "Failed to deactivate coach");
+    }
+  };
+
+  const clearMessages = () => {
+    setError("");
+    setSuccessMessage("");
+  };
 
   return (
-    <div className="flex flex-col">
+    <div className={`flex flex-col ${ isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' }`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
+        {successMessage && (
+          <AlertBanner type={"success"} message={successMessage} onDismiss={clearMessages}/>
+        )}
+
+        {error && (
+          <AlertBanner type={"error"} message={error} onDismiss={clearMessages}/>
+        )}
+
         <PageHeader
-          title="Inactive Coaches List"
-          showSearch={true}
-          searchPlaceholder="Search users using name, plan, email etc."
-          searchValue={searchQuery}
-          onSearchChange={handleSearch}
-          showFilterButton={true}
-          onFilterClick={() => console.log('Filter clicked')}
-        />
+          title="Inactive Coaches"
+          // subtitle="Coaches who haven't logged in for 30+ days"
+        >
+          <div className="flex items-center gap-3 w-full sm:w-3/4">
+            <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
+              <input
+                type="text"
+                placeholder="Search inactive coaches..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="flex-1 bg-transparent text-white placeholder:text-white/50 text-base font-normal leading-tight outline-none"
+              />
+              <Search className="w-5 h-5 text-white" />
+            </div>
 
-        <DataTable
-          columns={columns}
-          data={currentCoaches}
-          onRowAction={handleRowAction}
-        />
+            <DataFilter
+              filters={inactiveCoachFilters}
+              values={filterValues}
+              onChange={handleFilterChange}
+              onReset={handleResetFilters}
+              setIsFilterOpen={setIsFilterOpen}
+            />
+          </div>
+        </PageHeader>
 
-        <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage}/>
+        {isLoading && (
+          <CoachesPageSkeleton length={coachColumns.length}/>
+        )}
+
+        {!isLoading && (
+          <>
+            <DataTable
+              columns={coachColumns}
+              data={coaches}
+              onRowAction={handleRowAction}
+              emptyMessage="No inactive coaches found matching your criteria"
+            />
+
+            {pagination.totalPages > 1 && (
+              <Pagination
+                totalPages={pagination.totalPages}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
+            )}
+          </>
+        )}
+
+        {!isLoading && coaches.length > 0 && (
+          <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-4 sm:hidden">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-stone-300">
+                Showing {coaches.length} of {pagination.total} inactive coaches
+              </span>
+              <div className="flex gap-4 text-stone-400">
+                <span>Page {pagination.page} of {pagination.totalPages}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
