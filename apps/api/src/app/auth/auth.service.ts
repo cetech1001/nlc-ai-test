@@ -89,7 +89,7 @@ export class AuthService {
       where: { email },
     });
 
-    if (!coach || !coach.isActive) {
+    if (!coach || !coach.isActive || coach.isDeleted) {
       throw new UnauthorizedException('Invalid credentials');
     }
 

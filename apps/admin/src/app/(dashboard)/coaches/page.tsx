@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { DataTable, Pagination, PageHeader, DataFilter, FilterValues } from "@nlc-ai/shared";
+import {
+  DataTable,
+  Pagination,
+  PageHeader,
+  DataFilter,
+  FilterValues
+} from "@nlc-ai/shared";
 import { coachesAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {
@@ -81,9 +87,9 @@ export default function Coaches() {
     if (action === 'make-payment') {
       router.push(`/coaches/make-payment?coachId=${coach.originalId}`);
     } else if (action === 'toggle-status') {
-      handleToggleStatus(coach.id);
+      handleToggleStatus(coach.originalId);
     } else if (action === 'delete') {
-      handleDeleteCoach(coach.id);
+      handleDeleteCoach(coach.originalId);
     }
   };
 
@@ -100,7 +106,7 @@ export default function Coaches() {
   };
 
   const handleDeleteCoach = async (coachId: string) => {
-    if (!confirm("Are you sure you want to deactivate this coach? This action will set their status to blocked.")) {
+    if (!confirm("Are you sure you want to deactivate this coach?")) {
       return;
     }
 
@@ -135,7 +141,7 @@ export default function Coaches() {
           title="Coaches List"
           // subtitle="Manage and monitor all coaches in your platform"
         >
-          <div className="flex items-center gap-3 w-3/4">
+          <div className="flex items-center gap-3 w-full sm:w-3/4">
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
                 type="text"

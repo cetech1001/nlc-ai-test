@@ -1,4 +1,9 @@
-import {FilterConfig, FilterValues, TableColumn, tableRenderers } from "@nlc-ai/shared";
+import {
+  FilterConfig,
+  FilterValues,
+  TableColumn,
+  tableRenderers
+} from "@nlc-ai/shared";
 import {Coach} from "@nlc-ai/types";
 
 
@@ -9,8 +14,8 @@ export interface DataTableCoach {
   dateJoined: string;
   plan: string;
   status: string;
-  rawStatus?: string;
-  originalId?: string;
+  rawStatus: string;
+  originalId: string;
 }
 
 export const transformCoachData = (coaches: Coach[]): DataTableCoach[] => {
@@ -32,12 +37,12 @@ export const transformCoachData = (coaches: Coach[]): DataTableCoach[] => {
 
 const colWidth = 100 / 7;
 export const coachColumns: TableColumn<any>[] = [
-  {
+  /*{
     key: 'id',
     header: 'User ID',
     width: `${colWidth * (1 / 2)}%`,
     render: tableRenderers.basicText
-  },
+  },*/
   {
     key: 'name',
     header: 'Name',
@@ -47,8 +52,8 @@ export const coachColumns: TableColumn<any>[] = [
   {
     key: 'email',
     header: 'Email',
-    width: `${colWidth * (5 / 3)}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 25)
+    width: `${colWidth * (4 / 3)}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 20)
   },
   {
     key: 'dateJoined',
@@ -66,17 +71,13 @@ export const coachColumns: TableColumn<any>[] = [
     key: 'status',
     header: 'Status',
     width: `${colWidth * (2 / 3)}%`,
-    render: (value: string) => {
-      return tableRenderers.status(value);
-    }
+    render: tableRenderers.status,
   },
   {
     key: 'actions',
     header: 'Actions',
     width: `auto`,
-    render: (_: string, row: Coach, onAction?: (action: string, row: Coach) => void) => {
-      return tableRenderers.actions('Make Payment', row, 'make-payment', onAction);
-    }
+    render: tableRenderers.coachActions,
   }
 ];
 
@@ -128,6 +129,17 @@ export const coachFilters: FilterConfig[] = [
       { label: 'Not Verified', value: 'false' },
     ],
     defaultValue: '',
+  },
+  {
+    key: 'includeDeleted',
+    label: 'Include Deleted',
+    type: 'select',
+    placeholder: 'Exclude Deleted',
+    options: [
+      { label: 'Include Deleted', value: 'true' },
+      { label: 'Exclude Deleted', value: 'false' },
+    ],
+    defaultValue: 'false',
   },
 ];
 

@@ -179,6 +179,8 @@ model Coaches {
   stripeCustomerId    String?              @db.VarChar(255)
   isActive            Boolean?             @default(true)
   isVerified          Boolean?             @default(false)
+  isDeleted           Boolean?             @default(false)
+  deletedAt           DateTime?            @db.Timestamptz(6)
   lastLoginAt         DateTime?            @db.Timestamptz(6)
   onboardingCompleted Boolean?             @default(false)
   createdAt           DateTime?            @default(now()) @db.Timestamptz(6)

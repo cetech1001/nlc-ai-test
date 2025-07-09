@@ -298,4 +298,43 @@ export const tableRenderers = {
       ${value.toLocaleString()}
     </span>
   ),
+
+  coachActions: (_: string, coach: any, onRowAction?: (action: string, row: any) => void) => {
+    return (
+      <div className="flex gap-2">
+        {coach.rawStatus !== 'deleted' && (
+          <>
+            <button
+              onClick={() => onRowAction?.('toggle-status', coach)}
+              className={`px-3 py-1 rounded text-sm ${
+                coach.rawStatus === 'blocked'
+                  ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                  : 'bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30'
+              }`}
+            >
+              {coach.rawStatus === 'blocked' ? 'Unblock' : 'Block'}
+            </button>
+            <button
+              onClick={() => onRowAction?.('delete', coach)}
+              className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400 hover:bg-red-600/30"
+            >
+              Delete
+            </button>
+          </>
+        )}
+        {coach.rawStatus === 'deleted' && (
+          <span className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400">
+          Marked for Deletion
+        </span>
+        )}
+        <button
+          onClick={() => onRowAction?.('make-payment', coach)}
+          className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
+          disabled={coach.rawStatus === 'deleted'}
+        >
+          Make Payment
+        </button>
+      </div>
+    );
+  }
 };

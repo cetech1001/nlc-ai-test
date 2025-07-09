@@ -1,7 +1,8 @@
 export enum CoachStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
-  BLOCKED = 'blocked'
+  BLOCKED = 'blocked',
+  DELETED = 'deleted'
 }
 
 export interface CoachWithStatus {

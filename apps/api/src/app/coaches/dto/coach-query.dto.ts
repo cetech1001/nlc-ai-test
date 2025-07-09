@@ -60,4 +60,10 @@ export class CoachQueryDto {
   @Transform(({ value }) => value === 'true')
   @IsBoolean()
   includeInactive?: boolean = true;
+
+  @ApiPropertyOptional({ description: 'Include deleted coaches in results', default: false })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  includeDeleted?: boolean = false;
 }

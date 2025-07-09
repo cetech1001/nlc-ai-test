@@ -9,6 +9,7 @@ import { EmailModule } from './email/email.module';
 import {PlansModule} from "./plans/plans.module";
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import {CleanupModule} from "./cleanup/cleanup.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     PlansModule,
     DashboardModule,
     TransactionsModule,
+    CleanupModule,
   ],
   providers: [
     {
