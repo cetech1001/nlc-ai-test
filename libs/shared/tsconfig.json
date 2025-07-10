@@ -3,6 +3,12 @@
   "include": [],
   "references": [
     {
+      "path": "../types"
+    },
+    {
+      "path": "../api-client"
+    },
+    {
       "path": "../ui"
     },
     {
