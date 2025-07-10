@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
@@ -10,6 +10,8 @@ import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
 import {useAuth} from "../../hooks";
+import { useGoogleOAuth } from '../../hooks/use-google-oauth';
+import { authAPI } from '../../api';
 
 export const LoginForm = (props: LoginFormProps) => {
   const { login } = useAuth();
@@ -31,6 +33,40 @@ export const LoginForm = (props: LoginFormProps) => {
       rememberMe: false,
     },
   });
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setIsLoading(true);
+      setError('');
+      props.setSuccessMessage('');
+
+      const result = await authAPI.googleLogin(credentialResponse.credential);
+      await login(result.user.email, '', false, props.userType);
+      props.handleHome();
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Google login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google login was cancelled or failed');
+  };
+
+  const { isLoaded, signIn, renderButton } = useGoogleOAuth({
+    onSuccess: handleGoogleSuccess,
+    onError: handleGoogleError,
+  });
+
+  useEffect(() => {
+    if (isLoaded && props.showGoogleAuth) {
+      setTimeout(() => {
+        renderButton('google-signin-button');
+      }, 100);
+    }
+  }, [isLoaded, props.showGoogleAuth, renderButton]);
 
   const handleFormSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -137,14 +173,22 @@ export const LoginForm = (props: LoginFormProps) => {
         </div>
 
         {props.showGoogleAuth && (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full flex items-center justify-center min-h-[64px] bg-transparent border-[#EFEFEF] hover:bg-white/5 text-[#F9F9F9]/50 hover:text-[#F9F9F9] transition-all duration-200 rounded-[12px] gap-[14px]"
-          >
-            <GoogleIcon />
-            <span className="text-[16px] leading-5">Sign in with google</span>
-          </Button>
+          <div className="space-y-4">
+            {/* Custom Google Sign-in Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={signIn}
+              disabled={!isLoaded || isLoading}
+              className="w-full flex items-center justify-center min-h-[64px] bg-transparent border-[#EFEFEF] hover:bg-white/5 text-[#F9F9F9]/50 hover:text-[#F9F9F9] transition-all duration-200 rounded-[12px] gap-[14px]"
+            >
+              <GoogleIcon />
+              <span className="text-[16px] leading-5">Sign in with Google</span>
+            </Button>
+
+            {/* Hidden div for Google's rendered button (optional) */}
+            <div id="google-signin-button" className="hidden"></div>
+          </div>
         )}
 
         <Button

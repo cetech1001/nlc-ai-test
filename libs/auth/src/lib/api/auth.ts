@@ -30,6 +30,37 @@ class AuthAPI extends BaseAPI{
     return result;
   }
 
+  async register(
+    fullName: string,
+    email: string,
+    password: string
+  ): Promise<{ message: string; coachId: string }> {
+    return this.makeRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ fullName, email, password }),
+    });
+  }
+
+  async googleLogin(idToken: string): Promise<LoginResponse> {
+    const result = await this.makeRequest<LoginResponse>('/auth/google/login', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+
+    this.setToken(result.access_token);
+    return result;
+  }
+
+  async googleRegister(idToken: string): Promise<LoginResponse> {
+    const result = await this.makeRequest<LoginResponse>('/auth/google/register', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+
+    this.setToken(result.access_token);
+    return result;
+  }
+
   async forgotPassword(email: string, userType?: AUTH_USER_TYPE): Promise<{ message: string }> {
     let param = "";
     if (userType) {

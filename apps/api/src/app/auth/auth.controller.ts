@@ -1,6 +1,8 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Get, Patch, UseGuards, Request, Query } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Get, Patch, UseGuards, Query, Res, Req } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
+import { GoogleAuthService } from './services/google-auth.service';
 import {
   LoginDto,
   RegisterDto,
@@ -9,16 +11,23 @@ import {
   ResetPasswordDto,
   VerifyCodeDto,
   UpdateProfileDto,
-  UpdatePasswordDto
+  UpdatePasswordDto,
+  GoogleAuthDto
 } from './dto';
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import {type AUTH_USER_TYPE, USER_TYPE} from "@nlc-ai/types";
+import type {Response, Request} from 'express';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleAuthService: GoogleAuthService,
+    private readonly configService: ConfigService
+  ) {}
 
   @Post('login')
   @Public()
@@ -39,11 +48,53 @@ export class AuthController {
 
   @Post('register')
   @Public()
-  @ApiOperation({ summary: 'Register new coach (admin registration not supported)' })
+  @ApiOperation({ summary: 'Register new coach' })
   @ApiResponse({ status: 201, description: 'Registration successful' })
   @ApiResponse({ status: 400, description: 'Invalid input or email already exists' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.registerCoach(registerDto);
+  }
+
+  @Post('google/login')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with Google ID token' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 400, description: 'Invalid Google token' })
+  async googleLogin(@Body() googleAuthDto: GoogleAuthDto) {
+    return this.googleAuthService.loginWithGoogleToken(googleAuthDto.idToken);
+  }
+
+  @Post('google/register')
+  @Public()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register with Google ID token' })
+  @ApiResponse({ status: 201, description: 'Registration successful' })
+  @ApiResponse({ status: 400, description: 'Invalid Google token or user exists' })
+  async googleRegister(@Body() googleAuthDto: GoogleAuthDto) {
+    return this.googleAuthService.registerWithGoogle(googleAuthDto.idToken);
+  }
+
+  @Get('google')
+  @Public()
+  @UseGuards(GoogleOAuthGuard)
+  @ApiOperation({ summary: 'Initiate Google OAuth flow' })
+  async googleAuth(@Req() req: Request) {
+    // This will redirect to Google
+  }
+
+  @Get('google/callback')
+  @Public()
+  @UseGuards(GoogleOAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    const result = await this.googleAuthService.googleAuth(req.user);
+
+    // Redirect to frontend with token
+    const frontendUrl = this.configService.get<string>('COACH_PLATFORM_URL');
+    const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}`;
+
+    res.redirect(redirectUrl);
   }
 
   @Post('forgot-password')
@@ -103,7 +154,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile(@Request() req: { user: { id: string; type: AUTH_USER_TYPE } }) {
+  async getProfile(@Req() req: { user: { id: string; type: AUTH_USER_TYPE } }) {
     const { id, type } = req.user;
     return this.authService.findUserById(id, type);
   }
@@ -117,7 +168,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async updateProfile(
-    @Request() req: { user: { id: string; type: AUTH_USER_TYPE } },
+    @Req() req: { user: { id: string; type: AUTH_USER_TYPE } },
     @Body() updateProfileDto: UpdateProfileDto
   ) {
     const { id, type } = req.user;
@@ -132,7 +183,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid password format' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updatePassword(
-    @Request() req: { user: { id: string; type: AUTH_USER_TYPE } },
+    @Req() req: { user: { id: string; type: AUTH_USER_TYPE } },
     @Body() updatePasswordDto: UpdatePasswordDto
   ) {
     const { id, type } = req.user;

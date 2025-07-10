@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
@@ -8,7 +8,10 @@ import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
 import { registerSchema, type RegisterFormData } from '../../schemas';
 import { type RegisterFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
-import {Eye} from "lucide-react";
+import { Eye } from "lucide-react";
+import { useGoogleOAuth } from '../../hooks/use-google-oauth';
+import { authAPI } from '../../api';
+import { ApiError } from '@nlc-ai/api-client';
 
 export const RegisterForm: FC<RegisterFormProps> = ({
   handleSignIn,
@@ -34,27 +37,49 @@ export const RegisterForm: FC<RegisterFormProps> = ({
     },
   });
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setIsLoading(true);
+      setError('');
+
+      await authAPI.googleRegister(credentialResponse.credential);
+      window.location.href = '/home';
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Google registration failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google registration was cancelled or failed');
+  };
+
+  const { isLoaded, signIn, renderButton } = useGoogleOAuth({
+    onSuccess: handleGoogleSuccess,
+    onError: handleGoogleError,
+  });
+
+  useEffect(() => {
+    if (isLoaded && showGoogleAuth) {
+      // Render Google button after component mounts
+      setTimeout(() => {
+        renderButton('google-register-button');
+      }, 100);
+    }
+  }, [isLoaded, showGoogleAuth, renderButton]);
+
   const handleFormSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/auth/coach/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
-      }
-
+      await authAPI.register(data.fullName, data.email, data.password);
       handleAccountVerification(data.email);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -140,14 +165,22 @@ export const RegisterForm: FC<RegisterFormProps> = ({
         </div>
 
         {showGoogleAuth && (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full flex items-center justify-center min-h-[64px] bg-transparent border-[#EFEFEF] hover:bg-white/5 text-[#F9F9F9]/50 hover:text-[#F9F9F9] transition-all duration-200 rounded-[12px] gap-[14px]"
-          >
-            <GoogleIcon />
-            <span className="text-[16px] leading-5">Sign up with google</span>
-          </Button>
+          <div className="space-y-4">
+            {/* Custom Google Sign-up Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={signIn}
+              disabled={!isLoaded || isLoading}
+              className="w-full flex items-center justify-center min-h-[64px] bg-transparent border-[#EFEFEF] hover:bg-white/5 text-[#F9F9F9]/50 hover:text-[#F9F9F9] transition-all duration-200 rounded-[12px] gap-[14px]"
+            >
+              <GoogleIcon />
+              <span className="text-[16px] leading-5">Sign up with Google</span>
+            </Button>
+
+            {/* Hidden div for Google's rendered button (optional) */}
+            <div id="google-register-button" className="hidden"></div>
+          </div>
         )}
 
         <Button

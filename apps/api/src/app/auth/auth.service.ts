@@ -27,26 +27,37 @@ export class AuthService {
   async registerCoach(registerDto: RegisterDto) {
     const { email, password, fullName } = registerDto;
 
+    // Check if coach already exists
     const existingCoach = await this.prisma.coaches.findUnique({
       where: { email },
     });
 
     if (existingCoach) {
-      throw new BadRequestException('Coach with this email already exists');
+      throw new ConflictException('Coach with this email already exists');
     }
 
+    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
+    // Split fullName into firstName and lastName
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Create coach
     const coach = await this.prisma.coaches.create({
       data: {
         email,
         passwordHash,
-        firstName: fullName.split(' ')[0],
-        lastName: fullName.split(' ').slice(1).join(' ') || '',
+        firstName,
+        lastName,
         isVerified: false,
+        isActive: true,
+        subscriptionStatus: 'trial',
       },
     });
 
+    // Send verification email
     await this.sendVerificationEmail(email);
 
     return {
