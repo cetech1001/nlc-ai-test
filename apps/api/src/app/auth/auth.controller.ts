@@ -113,11 +113,21 @@ export class AuthController {
   @Post('verify-code')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify reset code' })
-  @ApiResponse({ status: 200, description: 'Code verified, reset token provided' })
+  @ApiOperation({ summary: 'Verify reset code or email verification code' })
+  @ApiResponse({ status: 200, description: 'Code verified, reset token or login provided' })
   @ApiResponse({ status: 400, description: 'Invalid or expired code' })
   async verifyCode(@Body() verifyCodeDto: VerifyCodeDto) {
     return this.authService.verifyCode(verifyCodeDto);
+  }
+
+  @Post('resend-code')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend verification code' })
+  async resendCode(
+    @Body() body: { email: string; type?: 'verification' | 'reset' }
+  ) {
+    return this.authService.resendCode(body.email, body.type);
   }
 
   @Post('reset-password')
@@ -132,14 +142,6 @@ export class AuthController {
     @Query('type') type: AUTH_USER_TYPE = USER_TYPE.coach
   ) {
     return this.authService.resetPassword(resetPasswordDto, type);
-  }
-
-  @Post('resend-code')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Resend verification code' })
-  async resendCode(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.resendCode(forgotPasswordDto.email);
   }
 
   @Post('logout')

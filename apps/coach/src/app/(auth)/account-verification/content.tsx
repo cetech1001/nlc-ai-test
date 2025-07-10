@@ -9,16 +9,30 @@ export const CoachAccountVerificationContent = () => {
 
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
+  const type = searchParams.get('type') || 'verification';
 
-  const description = useMemo(() => (
-    <>
-      Enter the verification code we've sent you to{' '}
-      <span className="text-stone-50">{email}</span>
-    </>
-  ), [email]);
+  const description = useMemo(() => {
+    if (type === 'verification') {
+      return (
+        <>
+          Please verify your email address. Enter the verification code we've sent to{' '}
+          <span className="text-stone-50">{email}</span>
+        </>
+      );
+    } else {
+      return (
+        <>
+          Enter the verification code we've sent you to{' '}
+          <span className="text-stone-50">{email}</span>
+        </>
+      );
+    }
+  }, [email, type]);
+
+  const title = type === 'verification' ? 'Email Verification' : 'Account Verification';
 
   useAuthPage({
-    title: "Account Verification",
+    title,
     description,
   });
 
@@ -30,10 +44,18 @@ export const CoachAccountVerificationContent = () => {
     router.push(`/reset-password?token=${encodeURIComponent(resetToken)}`);
   }
 
+  const handleHome = () => {
+    router.push('/home');
+  }
+
   return (
     <AccountVerificationForm
       handleBackToLogin={handleBackToLogin}
       handleResetToken={handleResetToken}
-      email={email} resendTimer={70}/>
+      handleHome={handleHome}
+      email={email}
+      resendTimer={70}
+      verificationType={type as 'verification' | 'reset'}
+    />
   );
 }

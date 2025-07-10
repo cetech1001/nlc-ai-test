@@ -69,6 +69,11 @@ export const LoginForm = (props: LoginFormProps) => {
       props.handleHome();
     } catch (err: unknown) {
       const apiError = err as ApiError;
+
+      if (apiError.requiresVerification && props.handleAccountVerification) {
+        return props.handleAccountVerification(apiError.email);
+      }
+
       setError(apiError.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);

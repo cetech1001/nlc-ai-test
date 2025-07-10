@@ -20,7 +20,7 @@ export class TokenService {
 
   async storeVerificationToken(email: string, code: string, type: 'verification' | 'reset' = 'verification'): Promise<void> {
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes expiry
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
     const tokenKey = `${email}-${type}`;
     this.tokens.set(tokenKey, {
@@ -30,7 +30,6 @@ export class TokenService {
       expiresAt,
     });
 
-    // Clean up expired tokens
     this.cleanupExpiredTokens();
   }
 
@@ -51,7 +50,6 @@ export class TokenService {
       return false;
     }
 
-    // Valid token - remove it after verification
     this.tokens.delete(tokenKey);
     return true;
   }
@@ -59,7 +57,7 @@ export class TokenService {
   async generateResetToken(email: string): Promise<string> {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
+    expiresAt.setHours(expiresAt.getHours() + 1);
 
     const tokenKey = `reset-${resetToken}`;
     this.tokens.set(tokenKey, {

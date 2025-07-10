@@ -23,7 +23,7 @@ const AdminForgotPasswordPage = () => {
     <ForgotPasswordForm
       handleBackToLogin={handleBackToLogin}
       handleAccountVerification={handleAccountVerification}
-      userType={USER_TYPE.admin}/>
+      userType={USER_TYPE.coach}/>
   );
 }
 

@@ -27,7 +27,6 @@ export class AuthService {
   async registerCoach(registerDto: RegisterDto) {
     const { email, password, fullName } = registerDto;
 
-    // Check if coach already exists
     const existingCoach = await this.prisma.coaches.findUnique({
       where: { email },
     });
@@ -36,15 +35,12 @@ export class AuthService {
       throw new ConflictException('Coach with this email already exists');
     }
 
-    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Split fullName into firstName and lastName
     const nameParts = fullName.trim().split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Create coach
     const coach = await this.prisma.coaches.create({
       data: {
         email,
@@ -58,11 +54,13 @@ export class AuthService {
     });
 
     // Send verification email
-    await this.sendVerificationEmail(email);
+    await this.sendVerificationEmail(email, 'verification');
 
     return {
       message: 'Registration successful. Please check your email for verification code.',
       coachId: coach.id,
+      requiresVerification: true,
+      email: email,
     };
   }
 
@@ -70,6 +68,17 @@ export class AuthService {
     const { email, password } = loginDto;
 
     const coach = await this.validateCoach(email, password);
+
+    if (!coach.isVerified) {
+      await this.sendVerificationEmail(email, 'verification');
+
+      throw new UnauthorizedException({
+        message: 'Email not verified. Please check your email for verification code.',
+        code: 'EMAIL_NOT_VERIFIED',
+        email: email,
+        requiresVerification: true,
+      });
+    }
 
     await this.prisma.coaches.update({
       where: { id: coach.id },
@@ -277,7 +286,7 @@ export class AuthService {
       return { message: 'If the email exists, a verification code has been sent.' };
     }
 
-    await this.sendVerificationEmail(email, 'password-reset');
+    await this.sendVerificationEmail(email, 'reset');
 
     return { message: 'Verification code sent to your email.' };
   }
@@ -285,14 +294,51 @@ export class AuthService {
   async verifyCode(verifyCodeDto: VerifyCodeDto) {
     const { email, code } = verifyCodeDto;
 
-    const isValid = await this.tokenService.verifyToken(email, code);
+    const isValid = await this.tokenService.verifyToken(email, code, 'verification');
     if (!isValid) {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
-    const resetToken = await this.tokenService.generateResetToken(email);
+    const user = await this.prisma.coaches.findUnique({
+      where: { email },
+    });
 
-    return { resetToken };
+    if (user && !user.isVerified) {
+      await this.prisma.coaches.update({
+        where: { email },
+        data: {
+          isVerified: true,
+          lastLoginAt: new Date(),
+        },
+      });
+
+      const payload = {
+        sub: user.id,
+        email: user.email,
+        type: USER_TYPE.coach,
+      };
+
+      return {
+        access_token: this.jwtService.sign(payload),
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          businessName: user.businessName,
+          isVerified: true,
+        },
+        verified: true,
+        message: 'Email verified successfully',
+      };
+    } else {
+      const resetToken = await this.tokenService.generateResetToken(email);
+      return {
+        resetToken,
+        verified: false,
+        message: 'Code verified successfully',
+      };
+    }
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto, userType: AUTH_USER_TYPE) {
@@ -322,14 +368,14 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  async resendCode(email: string) {
-    await this.sendVerificationEmail(email);
+  async resendCode(email: string, type: 'verification' | 'reset' = 'verification') {
+    await this.sendVerificationEmail(email, type);
     return { message: 'Verification code sent' };
   }
 
-  private async sendVerificationEmail(email: string, type: 'verification' | 'password-reset' = 'verification') {
+  private async sendVerificationEmail(email: string, type: 'verification' | 'reset' = 'verification') {
     const code = this.tokenService.generateVerificationCode();
-    await this.tokenService.storeVerificationToken(email, code);
+    await this.tokenService.storeVerificationToken(email, code, type);
 
     if (type === 'verification') {
       await this.emailService.sendVerificationEmail(email, code);
@@ -338,7 +384,6 @@ export class AuthService {
     }
   }
 
-  // Utility methods
   async findUserById(id: string, type: AUTH_USER_TYPE) {
     if (type === USER_TYPE.coach) {
       return this.prisma.coaches.findUnique({

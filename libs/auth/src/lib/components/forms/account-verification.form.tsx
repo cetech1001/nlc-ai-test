@@ -57,7 +57,16 @@ export const AccountVerificationForm = (props: AccountVerificationFormProps) => 
     try {
       const response = await authAPI.verifyCode(props.email, data.verificationCode);
 
-      props.handleResetToken(response.resetToken);
+      if (response.verified) {
+        setSuccessMessage('Email verified successfully! Redirecting...');
+        setTimeout(() => {
+          if (props.handleHome) {
+            props.handleHome();
+          }
+        }, 1500);
+      } else {
+        props.handleResetToken(response.resetToken || '');
+      }
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Invalid verification code');
@@ -81,7 +90,7 @@ export const AccountVerificationForm = (props: AccountVerificationFormProps) => 
     }
 
     try {
-      await authAPI.resendCode(props.email);
+      await authAPI.resendCode(props.email, props.verificationType);
       setSuccessMessage('Verification code has been resent to your email address');
       setError('');
     } catch (err) {

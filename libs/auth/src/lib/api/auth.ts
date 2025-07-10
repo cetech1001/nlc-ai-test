@@ -17,17 +17,28 @@ class AuthAPI extends BaseAPI{
     rememberMe?: boolean,
     userType?: AUTH_USER_TYPE
   ): Promise<LoginResponse> {
-    let param = "";
-    if (userType) {
-      param += `?type=${userType}`;
-    }
-    const result = await this.makeRequest<LoginResponse>(`/auth/login${param}`, {
-      method: 'POST',
-      body: JSON.stringify({email, password, rememberMe}),
-    });
+    try {
+      let param = "";
+      if (userType) {
+        param += `?type=${userType}`;
+      }
+      const result = await this.makeRequest<LoginResponse>(`/auth/login${param}`, {
+        method: 'POST',
+        body: JSON.stringify({email, password, rememberMe}),
+      });
 
-    this.setToken(result.access_token);
-    return result;
+      this.setToken(result.access_token);
+      return result;
+    } catch (e: any) {
+      if (e.code === 'EMAIL_NOT_VERIFIED') {
+        throw {
+          ...e,
+          requiresVerification: true,
+          email: e.email,
+        };
+      }
+      throw e;
+    }
   }
 
   async register(
@@ -72,11 +83,21 @@ class AuthAPI extends BaseAPI{
     });
   }
 
-  async verifyCode(email: string, code: string): Promise<{ resetToken: string }> {
-    return this.makeRequest('/auth/verify-code', {
+  async verifyCode(email: string, code: string): Promise<LoginResponse & {
+    resetToken?: string;
+    verified: boolean;
+    message: string;
+  }> {
+    const result: any = await this.makeRequest('/auth/verify-code', {
       method: 'POST',
       body: JSON.stringify({ email, code }),
     });
+
+    if (result.access_token) {
+      this.setToken(result.access_token);
+    }
+
+    return result;
   }
 
   async resetPassword(token: string, password: string, userType?: AUTH_USER_TYPE): Promise<{ message: string }> {
@@ -90,10 +111,10 @@ class AuthAPI extends BaseAPI{
     });
   }
 
-  async resendCode(email: string): Promise<{ message: string }> {
+  async resendCode(email: string, type: 'verification' | 'reset' = 'verification'): Promise<{ message: string }> {
     return this.makeRequest('/auth/resend-code', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, type }),
     });
   }
 

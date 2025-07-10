@@ -24,6 +24,10 @@ const CoachLoginPage = () => {
     description: 'Enter your email and password to access your account.',
   });
 
+  const handleAccountVerification = (email = '') => {
+    router.push(`/account-verification?email=${encodeURIComponent(email)}&type=verification`)
+  }
+
   const handleForgotPassword = () => {
     router.push('/forgot-password');
   };
@@ -41,6 +45,7 @@ const CoachLoginPage = () => {
       handleHome={handleHome}
       handleSignUp={handleSignUp}
       handleForgotPassword={handleForgotPassword}
+      handleAccountVerification={handleAccountVerification}
       successMessage={successMessage}
       setSuccessMessage={(message: string) => setSuccessMessage(message)}
       showSignUp={true}
