@@ -17,6 +17,7 @@ export interface LoginFormProps extends AuthFormProps {
 }
 
 export interface RegisterFormProps extends AuthFormProps {
+  handleHome: () => void;
   handleSignIn: () => void;
   handleAccountVerification: (email: string) => void;
   showGoogleAuth?: boolean;

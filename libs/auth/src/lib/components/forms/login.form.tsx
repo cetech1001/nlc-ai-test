@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
@@ -10,7 +10,7 @@ import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
 import {useAuth} from "../../hooks";
-import { useGoogleOAuth } from '../../hooks/use-google-oauth';
+import { useGoogleOAuth } from '../../hooks';
 import { authAPI } from '../../api';
 
 export const LoginForm = (props: LoginFormProps) => {
@@ -40,8 +40,7 @@ export const LoginForm = (props: LoginFormProps) => {
       setError('');
       props.setSuccessMessage('');
 
-      const result = await authAPI.googleLogin(credentialResponse.credential);
-      await login(result.user.email, '', false, props.userType);
+      await authAPI.googleLogin(credentialResponse.credential);
       props.handleHome();
     } catch (err: unknown) {
       const apiError = err as ApiError;
@@ -55,18 +54,10 @@ export const LoginForm = (props: LoginFormProps) => {
     setError('Google login was cancelled or failed');
   };
 
-  const { isLoaded, signIn, renderButton } = useGoogleOAuth({
+  const { isLoaded, signIn } = useGoogleOAuth({
     onSuccess: handleGoogleSuccess,
     onError: handleGoogleError,
   });
-
-  useEffect(() => {
-    if (isLoaded && props.showGoogleAuth) {
-      setTimeout(() => {
-        renderButton('google-signin-button');
-      }, 100);
-    }
-  }, [isLoaded, props.showGoogleAuth, renderButton]);
 
   const handleFormSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -174,7 +165,6 @@ export const LoginForm = (props: LoginFormProps) => {
 
         {props.showGoogleAuth && (
           <div className="space-y-4">
-            {/* Custom Google Sign-in Button */}
             <Button
               type="button"
               variant="outline"
@@ -185,9 +175,6 @@ export const LoginForm = (props: LoginFormProps) => {
               <GoogleIcon />
               <span className="text-[16px] leading-5">Sign in with Google</span>
             </Button>
-
-            {/* Hidden div for Google's rendered button (optional) */}
-            <div id="google-signin-button" className="hidden"></div>
           </div>
         )}
 

@@ -11,6 +11,10 @@ const CoachRegisterPage = () => {
     description: 'Enter following details to create your account.',
   });
 
+  const handleHome = () => {
+    router.push('/home');
+  }
+
   const handleSignIn = () => {
     router.push('/login');
   };
@@ -21,6 +25,7 @@ const CoachRegisterPage = () => {
 
   return (
     <RegisterForm
+      handleHome={handleHome}
       handleSignIn={handleSignIn}
       handleAccountVerification={handleAccountVerification}
       showGoogleAuth={true}/>

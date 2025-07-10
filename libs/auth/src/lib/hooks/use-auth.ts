@@ -57,7 +57,7 @@ export const useAuth = (role?: AUTH_USER_TYPE) => {
     email: string,
     password: string,
     rememberMe?: boolean,
-    userType?: AUTH_USER_TYPE
+    userType?: AUTH_USER_TYPE,
   ) => {
     try {
       const response = await authAPI.login(email, password, rememberMe, userType);

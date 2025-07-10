@@ -33,6 +33,8 @@ export const useGoogleOAuth = ({ onSuccess, onError }: UseGoogleOAuthProps) => {
           callback: onSuccess,
           auto_select: false,
           cancel_on_tap_outside: true,
+          use_fedcm_for_prompt: false,
+          ux_mode: 'popup',
         });
         setIsLoaded(true);
       }
@@ -53,23 +55,8 @@ export const useGoogleOAuth = ({ onSuccess, onError }: UseGoogleOAuthProps) => {
     }
   };
 
-  const renderButton = (elementId: string, options?: any) => {
-    if (window.google && isLoaded) {
-      window.google.accounts.id.renderButton(
-        document.getElementById(elementId),
-        {
-          theme: 'outline',
-          size: 'large',
-          width: '100%',
-          ...options,
-        }
-      );
-    }
-  };
-
   return {
     isLoaded,
     signIn,
-    renderButton,
   };
 };

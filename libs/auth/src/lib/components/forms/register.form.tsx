@@ -1,24 +1,19 @@
 'use client';
 
-import { FC, useState, useEffect } from 'react';
+import { FC, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/ui';
+import { Eye } from "lucide-react";
+import { ApiError } from '@nlc-ai/api-client';
 
 import { registerSchema, type RegisterFormData } from '../../schemas';
 import { type RegisterFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
-import { Eye } from "lucide-react";
-import { useGoogleOAuth } from '../../hooks/use-google-oauth';
+import { useGoogleOAuth } from '../../hooks';
 import { authAPI } from '../../api';
-import { ApiError } from '@nlc-ai/api-client';
 
-export const RegisterForm: FC<RegisterFormProps> = ({
-  handleSignIn,
-  handleAccountVerification,
-  showGoogleAuth = true,
-  className = '',
-}) => {
+export const RegisterForm: FC<RegisterFormProps> = (props) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -43,7 +38,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({
       setError('');
 
       await authAPI.googleRegister(credentialResponse.credential);
-      window.location.href = '/home';
+      props.handleHome();
     } catch (err: unknown) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Google registration failed');
@@ -56,19 +51,10 @@ export const RegisterForm: FC<RegisterFormProps> = ({
     setError('Google registration was cancelled or failed');
   };
 
-  const { isLoaded, signIn, renderButton } = useGoogleOAuth({
+  const { isLoaded, signIn } = useGoogleOAuth({
     onSuccess: handleGoogleSuccess,
     onError: handleGoogleError,
   });
-
-  useEffect(() => {
-    if (isLoaded && showGoogleAuth) {
-      // Render Google button after component mounts
-      setTimeout(() => {
-        renderButton('google-register-button');
-      }, 100);
-    }
-  }, [isLoaded, showGoogleAuth, renderButton]);
 
   const handleFormSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
@@ -76,7 +62,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({
 
     try {
       await authAPI.register(data.fullName, data.email, data.password);
-      handleAccountVerification(data.email);
+      props.handleAccountVerification(data.email);
     } catch (err: unknown) {
       const apiError = err as ApiError;
       setError(apiError.message || 'Registration failed');
@@ -86,7 +72,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${props.className}`}>
       {error && (
         <AlertBanner
           type={"error"}
@@ -164,7 +150,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({
           )}
         </div>
 
-        {showGoogleAuth && (
+        {props.showGoogleAuth && (
           <div className="space-y-4">
             {/* Custom Google Sign-up Button */}
             <Button
@@ -177,9 +163,6 @@ export const RegisterForm: FC<RegisterFormProps> = ({
               <GoogleIcon />
               <span className="text-[16px] leading-5">Sign up with Google</span>
             </Button>
-
-            {/* Hidden div for Google's rendered button (optional) */}
-            <div id="google-register-button" className="hidden"></div>
           </div>
         )}
 
@@ -201,7 +184,7 @@ export const RegisterForm: FC<RegisterFormProps> = ({
           Already have an account?{' '}
           <button
             type="button"
-            onClick={handleSignIn}
+            onClick={props.handleSignIn}
             className="text-[#DF69FF] hover:text-[#FEBEFA] transition-colors"
           >
             Sign In
