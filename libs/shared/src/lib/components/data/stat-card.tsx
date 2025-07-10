@@ -3,11 +3,11 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 interface IProps {
   title: string;
   value: string;
-  subtitle?: string;
+  description?: string;
   growth?: number;
 }
 
-export const StatCard = ({ title, value, subtitle, growth }: IProps) => {
+export const StatCard = ({ title, value, description, growth }: IProps) => {
   const showGrowth = growth !== undefined && growth !== 0;
   const isPositiveGrowth = growth && growth > 0;
 
@@ -17,7 +17,12 @@ export const StatCard = ({ title, value, subtitle, growth }: IProps) => {
         <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
       </div>
       <div className="relative z-10 flex flex-col justify-between h-full min-h-[100px] sm:min-h-[120px]">
-        <h3 className="text-stone-300 text-sm sm:text-base font-medium leading-tight sm:leading-relaxed">{title}</h3>
+        <div className={"flex-1"}>
+          <h3 className="text-stone-300 text-sm sm:text-base font-medium leading-tight sm:leading-relaxed">{title}</h3>
+          {description && (
+            <p className="text-stone-400 text-xs leading-tight mb-4">{description}</p>
+          )}
+        </div>
         <div className="flex flex-col justify-between items-start gap-2 mt-auto pt-2">
           <p className="text-stone-50 text-xl sm:text-2xl lg:text-3xl font-semibold leading-tight sm:leading-relaxed">{value}</p>
           {showGrowth && (
@@ -36,12 +41,6 @@ export const StatCard = ({ title, value, subtitle, growth }: IProps) => {
               }`}>
                 {Math.abs(growth).toFixed(1)}%
               </span>
-            </div>
-          )}
-          {subtitle && !showGrowth && (
-            <div className="px-2.5 py-0.5 bg-green-700/20 rounded-full border border-green-700 flex justify-center items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-green-400" />
-              <span className="text-green-400 text-sm font-medium leading-relaxed">{subtitle}</span>
             </div>
           )}
         </div>

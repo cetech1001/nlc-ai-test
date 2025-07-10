@@ -1,14 +1,12 @@
 'use client'
 
-import { StatCard } from "@/app/(dashboard)/home/components/stat-card";
-import { DataTable, TableAction } from "@nlc-ai/shared";
+import { DataTable, RevenueGraph, StatCard, TableAction } from "@nlc-ai/shared";
 import { useRouter } from "next/navigation";
-import { RevenueGraph } from "@/app/(dashboard)/home/components/revenue-graph";
 import { useEffect, useState } from "react";
 import { HomePageSkeleton } from "@/lib/skeletons/home-page.skeleton";
 import { dashboardAPI } from "@nlc-ai/api-client";
-import {coachColumns} from "@/lib/utils/coaches";
-import {DashboardData, RecentCoach} from "@nlc-ai/types";
+import { coachColumns } from "@/lib/utils/coaches";
+import { DashboardData, RecentCoach } from "@nlc-ai/types";
 
 const transformCoachData = (coaches: RecentCoach[]) => {
   return coaches.map(coach => ({
@@ -21,7 +19,7 @@ const transformCoachData = (coaches: RecentCoach[]) => {
   }));
 };
 
-export default function AdminDashboard() {
+const AdminHome = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -98,25 +96,21 @@ export default function AdminDashboard() {
           <StatCard
             title="Total Coaches"
             value={stats.totalCoaches.toLocaleString()}
-            subtitle={stats.totalCoachesGrowth > 0 ? `+${stats.totalCoachesGrowth.toFixed(1)}%` : undefined}
             growth={stats.totalCoachesGrowth}
           />
           <StatCard
             title="All Time Revenue"
             value={`$${stats.allTimeRevenue.toLocaleString()}`}
-            subtitle={stats.allTimeRevenueGrowth > 0 ? `+${stats.allTimeRevenueGrowth.toFixed(1)}%` : undefined}
             growth={stats.allTimeRevenueGrowth}
           />
           <StatCard
             title="Inactive Coaches"
             value={stats.inactiveCoaches.toLocaleString()}
-            subtitle={stats.inactiveCoachesGrowth < 0 ? `-${stats.inactiveCoachesGrowth.toFixed(1)}%` : undefined}
             growth={stats.inactiveCoachesGrowth * -1}
           />
           <StatCard
             title="Monthly Revenue"
             value={`$${stats.monthlyRevenue.toLocaleString()}`}
-            subtitle={stats.monthlyRevenueGrowth > 0 ? `+${stats.monthlyRevenueGrowth.toFixed(1)}%` : undefined}
             growth={stats.monthlyRevenueGrowth}
           />
         </div>
@@ -154,3 +148,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+export default AdminHome;
