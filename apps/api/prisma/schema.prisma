@@ -202,6 +202,7 @@ model Coaches {
   invoices            Invoices[]
   subscriptions       Subscriptions[]
   leads               Leads[]
+  PaymentLinks        PaymentLinks[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -615,6 +616,7 @@ model Plans {
   updatedAt     DateTime        @updatedAt
   subscriptions Subscriptions[]
   transactions  Transactions[]
+  PaymentLinks  PaymentLinks[]
 
   @@map("plans")
 }
@@ -695,4 +697,25 @@ model SystemSettings {
 
   @@unique([category, key])
   @@map("system_settings")
+}
+
+model PaymentLinks {
+  id                  String    @id @default(uuid()) @db.Uuid
+  coachId             String    @db.Uuid
+  planId              String    @db.Uuid
+  stripePaymentLinkId String    @unique
+  paymentLinkUrl      String
+  amount              Int
+  currency            String    @default("USD")
+  description         String?
+  isActive            Boolean   @default(true)
+  paymentsReceived    Int       @default(0)
+  totalAmountReceived Int       @default(0)
+  expiresAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  coach               Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  plan                Plans     @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@map("payment_links")
 }

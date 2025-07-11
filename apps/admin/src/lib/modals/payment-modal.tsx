@@ -11,6 +11,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { paymentsAPI } from "@nlc-ai/api-client";
 import { plansAPI } from "@nlc-ai/api-client";
+import {PaymentModalSkeleton} from "@/lib";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -178,19 +179,21 @@ const StripePaymentForm: React.FC<{
 };
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
-                                                     isOpen,
-                                                     onClose,
-                                                     coachName,
-                                                     coachId,
-                                                     selectedPlan = "Growth Pro",
-                                                     onPaymentComplete,
-                                                   }) => {
+ isOpen,
+ onClose,
+ coachName,
+ coachId,
+ selectedPlan = "Growth Pro",
+ onPaymentComplete,
+}) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanOption, setSelectedPlanOption] = useState<Plan | null>(null);
   const [amount, setAmount] = useState(0);
   const [selectedPaymentMode, setSelectedPaymentMode] = useState(paymentModes[0]);
   const [paymentLink, setPaymentLink] = useState("");
+  const [linkId, setPaymentLinkId] = useState("");
   const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [isCreatingLink, setIsCreatingLink] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string>('');
@@ -236,14 +239,54 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     }
   }, [selectedPlanOption]);
 
-  const handleCopyPaymentLink = () => {
-    const link = `https://payment.example.com/pay/${coachName.replace(/\s+/g, "-").toLowerCase()}/${selectedPlanOption?.name.replace(/\s+/g, "-").toLowerCase()}/${amount}`;
-    setPaymentLink(link);
+  const handleCopyPaymentLink = async () => {
+    if (!selectedPlanOption || !coachId) {
+      setPaymentError('Please select a plan first');
+      return;
+    }
 
-    navigator.clipboard.writeText(link).then(() => {
-      setIsLinkCopied(true);
-      setTimeout(() => setIsLinkCopied(false), 2000);
-    });
+    setIsCreatingLink(true);
+    setPaymentError('');
+
+    try {
+      let linkToSend = paymentLink;
+
+      if (!paymentLink) {
+        const response = await paymentsAPI.sendPaymentRequest({
+          coachId,
+          planId: selectedPlanOption.id,
+          amount: amount * 100, // Convert to cents
+          description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
+        });
+
+        linkToSend = response.paymentLink;
+        setPaymentLink(response.paymentLink);
+        setPaymentLinkId(response.linkId);
+
+        if (!response.emailSent) {
+          setPaymentError('Payment link was created but the system failed to send it to the coach. Try sending it again!');
+        }
+      } else {
+        await paymentsAPI.sendPaymentRequest({
+          coachId,
+          planId: selectedPlanOption.id,
+          amount: amount * 100,
+          description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
+          paymentLink,
+          linkId,
+        });
+      }
+
+      // Copy the link
+      navigator.clipboard.writeText(linkToSend).then(() => {
+        setIsLinkCopied(true);
+        setTimeout(() => setIsLinkCopied(false), 2000);
+      });
+    } catch (error: any) {
+      setPaymentError(error.message || 'Failed to send payment request');
+    } finally {
+      setIsCreatingLink(false);
+    }
   };
 
   const handlePaymentSuccess = () => {
@@ -269,7 +312,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     }
     setSelectedPaymentMode(paymentModes[0]);
     setPaymentLink("");
+    setPaymentLinkId("");
     setIsLinkCopied(false);
+    setIsCreatingLink(false);
     setPaymentError('');
     setPaymentSuccess(false);
     setIsProcessing(false);
@@ -317,10 +362,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[linear-gradient(202deg,rgba(38, 38, 38, 0.30)_11.62%,rgba(19, 19, 19, 0.30)_87.57%)] border border-[#2A2A2A] p-6 text-left align-middle shadow-xl transition-all">
-                  <div className="flex items-center justify-center space-y-4">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#7B21BA]" />
-                    <p className="text-white">Loading payment options...</p>
-                  </div>
+                  <PaymentModalSkeleton/>
                 </Dialog.Panel>
               </Transition.Child>
             </div>
@@ -461,6 +503,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                         className="w-full pl-7 pr-3 py-2 bg-transparent border border-[#3A3A3A] rounded-lg text-white placeholder:text-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-[#7B21BA]/50 focus:border-[#7B21BA]"
                         placeholder="1200"
                         min="0"
+                        readOnly={true}
                         disabled={isProcessing || paymentSuccess}
                       />
                     </div>
@@ -515,11 +558,22 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   {selectedPaymentMode.id === "send-link" && paymentLink && (
                     <div className="p-4 bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
                       <p className="text-[#A0A0A0] text-xs mb-2 font-medium">
-                        Payment Link:
+                        Stripe Payment Link:
                       </p>
                       <p className="text-white text-sm break-all bg-[#1A1A1A] p-2 rounded border font-mono">
                         {paymentLink}
                       </p>
+                      <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded">
+                        <p className="text-blue-300 text-sm">
+                          <strong>Instructions:</strong> This link has been sent to the coach. They can use it to make a secure payment directly through Stripe.
+                        </p>
+                        <ul className="text-blue-300 text-xs mt-2 space-y-1">
+                          <li>• Link expires automatically after payment</li>
+                          <li>• Secure payment processing by Stripe</li>
+                          <li>• Automatic subscription activation</li>
+                          <li>• Email receipt sent to coach</li>
+                        </ul>
+                      </div>
                       {isLinkCopied && (
                         <p className="text-green-400 text-xs mt-2">
                           ✓ Link copied to clipboard!
@@ -548,19 +602,28 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   <div className="flex gap-3 pt-3 mt-3">
                     <Button
                       onClick={handleCopyPaymentLink}
-                      disabled={isProcessing || paymentSuccess}
+                      disabled={isProcessing || paymentSuccess || isCreatingLink}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] disabled:bg-[#4A4A4A] disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                     >
-                      <Copy className="w-4 h-4" />
-                      {isLinkCopied ? "Link Copied!" : "Copy Payment Link"}
+                      {isCreatingLink ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Sending Payment Request...
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          {paymentLink ? (isLinkCopied ? "Request Sent!" : "Send Request Again") : "Send Payment Request"}
+                        </>
+                      )}
                     </Button>
                     <Button
                       variant={"outline"}
                       onClick={handleDiscard}
-                      disabled={isProcessing}
+                      disabled={isProcessing || isCreatingLink}
                       className="flex-1 bg-transparent border-[#3A3A3A] text-white hover:bg-[#2A2A2A]"
                     >
-                      {paymentSuccess ? "Close" : "Discard"}
+                      {paymentSuccess ? "Close" : "Cancel"}
                     </Button>
                   </div>
                 )}

@@ -1,7 +1,75 @@
+// libs/api-client/src/lib/payments.ts
 import { BaseAPI } from './base';
-import {CreatePaymentIntentRequest, PaymentIntentResponse, PaymentResult, ProcessPaymentRequest} from "@nlc-ai/types";
+
+export interface SendPaymentRequestResponse {
+  paymentLink: string;
+  linkId: string;
+  emailSent: boolean;
+}
+
+export interface CreatePaymentLinkRequest {
+  coachId: string;
+  planId: string;
+  amount: number; // in cents
+  currency?: string;
+  description?: string;
+}
+
+export interface SendPaymentRequest extends CreatePaymentLinkRequest{
+  paymentLink?: string;
+  linkId?: string;
+}
+
+export interface PaymentLinkResponse {
+  paymentLink: string;
+  linkId: string;
+}
+
+export interface CreatePaymentIntentRequest {
+  coachId: string;
+  planId: string;
+  amount: number; // in cents
+  currency?: string;
+  description?: string;
+}
+
+export interface PaymentIntentResponse {
+  clientSecret: string;
+  paymentIntentId: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+export interface ProcessPaymentRequest {
+  coachId: string;
+  planId: string;
+  amount: number;
+  paymentMethodId: string;
+  description?: string;
+}
+
+export interface PaymentResult {
+  transaction: any;
+  paymentIntent: any;
+  success: boolean;
+}
 
 class PaymentsAPI extends BaseAPI {
+  async sendPaymentRequest(data: SendPaymentRequest): Promise<SendPaymentRequestResponse> {
+    return this.makeRequest('/payments/send-payment-request', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createPaymentLink(data: CreatePaymentLinkRequest): Promise<PaymentLinkResponse> {
+    return this.makeRequest('/payments/create-payment-link', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async createPaymentIntent(data: CreatePaymentIntentRequest): Promise<PaymentIntentResponse> {
     return this.makeRequest('/payments/create-payment-intent', {
       method: 'POST',
@@ -18,6 +86,20 @@ class PaymentsAPI extends BaseAPI {
 
   async getPaymentMethods(customerId: string): Promise<any[]> {
     return this.makeRequest(`/payments/customer/${customerId}/payment-methods`);
+  }
+
+  async getPaymentLinkStatus(linkId: string): Promise<{
+    status: string;
+    paymentsCount: number;
+    totalAmount: number;
+  }> {
+    return this.makeRequest(`/payments/payment-link/${linkId}/status`);
+  }
+
+  async deactivatePaymentLink(linkId: string): Promise<{ message: string }> {
+    return this.makeRequest(`/payments/payment-link/${linkId}/deactivate`, {
+      method: 'PATCH',
+    });
   }
 
   async createSetupIntent(customerId: string): Promise<{ client_secret: string }> {

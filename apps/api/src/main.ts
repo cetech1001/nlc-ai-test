@@ -9,6 +9,7 @@ import { AppModule } from './app/app.module';
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
 import {ConfigService} from "@nestjs/config";
 import cookieParser from 'cookie-parser';
+import {Request, Response, NextFunction, json} from "express";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,6 +28,25 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
+  app.use('/api/payments/webhook', (req: Request, res: Response, next: NextFunction) => {
+    if (req.method === 'POST') {
+      let data = '';
+      req.setEncoding('utf8');
+      req.on('data', chunk => {
+        data += chunk;
+      });
+      req.on('end', () => {
+        req.body = data;
+        (req as any).rawBody = Buffer.from(data, 'utf8');
+        next();
+      });
+    } else {
+      next();
+    }
+  });
+
+  app.use(json());
 
   const config = new DocumentBuilder()
     .setTitle('NLC AI API')

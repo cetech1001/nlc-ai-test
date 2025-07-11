@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import FormData from 'form-data';
 import Mailgun from 'mailgun.js';
 import {getPasswordResetEmailTemplate, getVerificationEmailTemplate, getWelcomeEmailTemplate} from "./templates/auth";
+import {getPaymentRequestEmailTemplate} from "./templates/payment";
 
 @Injectable()
 export class EmailService {
@@ -50,6 +51,40 @@ export class EmailService {
     const text = `Welcome to Next Level Coach AI, ${name}! Your account has been successfully created.`;
 
     await this.sendEmail(email, subject, html, text);
+  }
+
+  async sendPaymentRequestEmail(data: {
+    to: string;
+    coachName: string;
+    planName: string;
+    planDescription?: string;
+    amount: number;
+    paymentLink: string;
+    description?: string;
+  }): Promise<void> {
+    const subject = `Payment Request - ${data.planName} Plan Subscription`;
+    const html = getPaymentRequestEmailTemplate(data);
+    const text = `
+    Hello ${data.coachName},
+
+    You have received a payment request for the ${data.planName} plan subscription.
+
+    Amount: $${data.amount}
+    Plan: ${data.planName}
+    ${data.description ? `Description: ${data.description}` : ''}
+
+    To complete your payment, please click the link below:
+    ${data.paymentLink}
+
+    This secure payment link will take you to Stripe's payment page where you can safely enter your payment details.
+
+    If you have any questions, please contact our support team.
+
+    Best regards,
+    The Next Level Coach AI Team
+  `;
+
+    await this.sendEmail(data.to, subject, html, text);
   }
 
   private async sendEmail(to: string, subject: string, html: string, text: string): Promise<void> {
