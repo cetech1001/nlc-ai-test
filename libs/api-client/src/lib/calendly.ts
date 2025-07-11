@@ -1,79 +1,41 @@
-// apps/admin/src/lib/services/calendly.service.ts
-// import { CalendarEvent } from '@/app/data';
+import { BaseAPI } from './base';
+import {CalendarEvent, CalendlyEvent, CalendlyEventType, CalendlySettings, CalendlyUser} from "@nlc-ai/types";
 
-import {CalendarEvent} from "@nlc-ai/types";
+class CalendlyAPI extends BaseAPI {
+  private calendlyBaseUrl = 'https://api.calendly.com';
 
-export interface CalendlyEvent {
-  uri: string;
-  name: string;
-  status: string;
-  start_time: string;
-  end_time: string;
-  event_type: string;
-  location?: {
-    type: string;
-    location?: string;
-    join_url?: string;
-  };
-  invitees_counter: {
-    total: number;
-    active: number;
-    limit: number;
-  };
-  created_at: string;
-  updated_at: string;
-  event_memberships: Array<{
-    user: string;
-    user_email: string;
-    user_name: string;
-  }>;
-  event_guests: Array<{
-    email: string;
-    created_at: string;
-  }>;
-}
-
-export interface CalendlyEventType {
-  uri: string;
-  name: string;
-  active: boolean;
-  kind: string;
-  slug: string;
-  scheduling_url: string;
-  duration: number;
-  color: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateEventRequest {
-  event_type: string;
-  start_time: string;
-  end_time: string;
-  invitee: {
-    email: string;
-    name: string;
-  };
-}
-
-class CalendlyAPI {
-  private baseUrl = 'https://api.calendly.com';
-  private accessToken: string | null = null;
-
-  constructor() {
-    // In a real app, you'd get this from environment variables or user settings
-    this.accessToken = process.env.NEXT_PUBLIC_CALENDLY_ACCESS_TOKEN || null;
+  async getSettings(): Promise<CalendlySettings> {
+    return this.makeRequest('/system-settings/calendly');
   }
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}) {
-    if (!this.accessToken) {
-      throw new Error('Calendly access token not configured');
+  async saveSettings(accessToken: string): Promise<{
+    success: boolean;
+    message: string;
+    data: CalendlySettings;
+  }> {
+    return this.makeRequest('/system-settings/calendly', {
+      method: 'POST',
+      body: JSON.stringify({ accessToken }),
+    });
+  }
+
+  async deleteSettings(): Promise<{ success: boolean; message: string }> {
+    return this.makeRequest('/system-settings/calendly', {
+      method: 'DELETE',
+    });
+  }
+
+  private async makeCalendlyRequest(endpoint: string, options: RequestInit = {}) {
+    const settings = await this.getSettings();
+
+    if (!settings.isConnected || !settings.accessToken) {
+      throw new Error('Calendly is not connected. Please configure in System Settings.');
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await fetch(`${this.calendlyBaseUrl}${endpoint}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
+        'Authorization': `Bearer ${settings.accessToken}`,
         'Content-Type': 'application/json',
         ...options.headers,
       },
@@ -87,18 +49,9 @@ class CalendlyAPI {
     return response.json();
   }
 
-  async getCurrentUser() {
-    return this.makeRequest('/users/me');
-  }
-
-  async getEventTypes(organizationUri?: string) {
-    const params = new URLSearchParams();
-    if (organizationUri) {
-      params.append('organization', organizationUri);
-    }
-
-    const response = await this.makeRequest(`/event_types?${params}`);
-    return response.collection as CalendlyEventType[];
+  async getCurrentUser(): Promise<CalendlyUser> {
+    const response = await this.makeCalendlyRequest('/users/me');
+    return response.resource;
   }
 
   async getScheduledEvents(
@@ -106,7 +59,7 @@ class CalendlyAPI {
     startDate?: Date,
     endDate?: Date,
     status: string = 'active'
-  ) {
+  ): Promise<CalendlyEvent[]> {
     const params = new URLSearchParams({
       user: userUri,
       status,
@@ -120,35 +73,29 @@ class CalendlyAPI {
       params.append('max_start_time', endDate.toISOString());
     }
 
-    const response = await this.makeRequest(`/scheduled_events?${params}`);
-    return response.collection as CalendlyEvent[];
+    const response = await this.makeCalendlyRequest(`/scheduled_events?${params}`);
+    return response.collection;
   }
 
-  async createEvent(eventTypeUri: string, data: CreateEventRequest) {
-    // Note: Calendly doesn't allow direct event creation via API for most plans
-    // This would typically redirect to Calendly's booking page
-    const eventType = await this.getEventTypeByUri(eventTypeUri);
+  async getEventTypes(organizationUri?: string): Promise<CalendlyEventType[]> {
+    const params = new URLSearchParams();
+    if (organizationUri) {
+      params.append('organization', organizationUri);
+    }
 
-    // Construct the booking URL with pre-filled data
-    const bookingUrl = new URL(eventType.scheduling_url);
-    bookingUrl.searchParams.set('name', data.invitee.name);
-    bookingUrl.searchParams.set('email', data.invitee.email);
-
-    // For demo purposes, we'll simulate creating an event
-    // In reality, you'd redirect the user to the booking URL
-    return {
-      booking_url: bookingUrl.toString(),
-      message: 'Redirect user to Calendly booking page'
-    };
+    const response = await this.makeCalendlyRequest(`/event_types?${params}`);
+    return response.collection;
   }
 
-  async getEventTypeByUri(uri: string) {
-    const response = await this.makeRequest(`/event_types/${uri.split('/').pop()}`);
-    return response.resource as CalendlyEventType;
+  async getEventTypeByUri(uri: string): Promise<CalendlyEventType> {
+    const eventTypeId = uri.split('/').pop();
+    const response = await this.makeCalendlyRequest(`/event_types/${eventTypeId}`);
+    return response.resource;
   }
 
-  async cancelEvent(eventUri: string, reason?: string) {
-    return this.makeRequest(`/scheduled_events/${eventUri.split('/').pop()}/cancellation`, {
+  async cancelEvent(eventUri: string, reason?: string): Promise<any> {
+    const eventId = eventUri.split('/').pop();
+    return this.makeCalendlyRequest(`/scheduled_events/${eventId}/cancellation`, {
       method: 'POST',
       body: JSON.stringify({
         reason: reason || 'Cancelled by host'
@@ -156,7 +103,6 @@ class CalendlyAPI {
     });
   }
 
-  // Convert Calendly events to our calendar format
   convertToCalendarEvents(calendlyEvents: CalendlyEvent[]): Record<number, CalendarEvent[]> {
     const eventsByDay: Record<number, CalendarEvent[]> = {};
 
@@ -207,32 +153,89 @@ class CalendlyAPI {
   }
 
   private getEventColor(eventType: string): string {
-    // Map different event types to colors
     const colorMap: Record<string, string> = {
       'consultation': 'bg-blue-500',
       'coaching-session': 'bg-green-500',
       'discovery-call': 'bg-purple-500',
       'follow-up': 'bg-yellow-500',
+      'meeting': 'bg-indigo-500',
+      'call': 'bg-pink-500',
       'default': 'bg-indigo-500'
     };
 
-    const type = eventType.toLowerCase().replace(/\s+/g, '-');
-    return colorMap[type] || colorMap.default;
+    const eventTypeName = eventType.toLowerCase().replace(/\s+/g, '-');
+    const typeKey = Object.keys(colorMap).find(key =>
+      eventTypeName.includes(key) || eventType.toLowerCase().includes(key)
+    );
+
+    return colorMap[typeKey || 'default'];
   }
 
-  // Webhook handler for real-time updates
+  async isConnected(): Promise<boolean> {
+    try {
+      const settings = await this.getSettings();
+      return settings.isConnected;
+    } catch (error) {
+      console.error('Failed to check Calendly connection:', error);
+      return false;
+    }
+  }
+
+  async getSchedulingUrl(): Promise<string | null> {
+    try {
+      const settings = await this.getSettings();
+      return settings.schedulingUrl || null;
+    } catch (error) {
+      console.error('Failed to get scheduling URL:', error);
+      return null;
+    }
+  }
+
+  async getUserUri(): Promise<string | null> {
+    try {
+      const settings = await this.getSettings();
+      return settings.userUri || null;
+    } catch (error) {
+      console.error('Failed to get user URI:', error);
+      return null;
+    }
+  }
+
+  async loadEventsForMonth(date: Date): Promise<Record<number, CalendarEvent[]>> {
+    try {
+      const settings = await this.getSettings();
+
+      if (!settings.isConnected || !settings.userUri) {
+        throw new Error('Calendly not connected');
+      }
+
+      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+      const calendlyEvents = await this.getScheduledEvents(
+        settings.userUri,
+        startOfMonth,
+        endOfMonth
+      );
+
+      return this.convertToCalendarEvents(calendlyEvents);
+    } catch (error) {
+      console.error('Failed to load Calendly events:', error);
+      throw error;
+    }
+  }
+
   async handleWebhook(payload: any) {
-    const { event, created_by, event_type } = payload;
-    console.log(created_by, event_type);
+    const { event } = payload;
 
     switch (event) {
       case 'invitee.created':
-        // Handle new booking
         console.log('New booking created:', payload);
+        // Handle new booking - you might want to refresh calendar data
         break;
       case 'invitee.canceled':
-        // Handle cancellation
         console.log('Booking canceled:', payload);
+        // Handle cancellation - you might want to refresh calendar data
         break;
       default:
         console.log('Unhandled webhook event:', event);

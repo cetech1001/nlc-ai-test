@@ -6,34 +6,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  AlertCircle,
 } from "lucide-react";
 import {AppointmentCard} from "@/app/(dashboard)/calendar/components/appointment-card";
 import {CalendarCell, DayHeader} from "@/app/(dashboard)/calendar/components/calendar-cell";
 import {MiniCalendarCell} from "@/app/(dashboard)/calendar/components/mini-calendar-cell";
 import {CalendarPageSkeleton} from "@/lib/skeletons/calendar-page.skeleton";
-import {CalendarEvent} from "@nlc-ai/types";
+import {Appointment, CalendarDay, CalendarEvent} from "@nlc-ai/types";
 import {calendlyAPI} from "@nlc-ai/api-client";
 import CalendlyEmbedModal from "@/lib/modals/calendly-embed-modal";
-
-interface CalendarDay {
-  day: number;
-  isCurrentMonth: boolean;
-  isToday: boolean;
-  events: CalendarEvent[];
-  eventCount: number;
-}
-
-interface Appointment {
-  id?: string;
-  name: string;
-  date: string;
-  time: string;
-  avatar: string;
-  type?: 'calendly' | 'manual';
-  calendlyUri?: string;
-  location?: string;
-  attendees?: Array<{name: string; email: string}>;
-}
 
 const isToday = (date: Date, day: number) => {
   const today = new Date();
@@ -135,6 +116,8 @@ export default function Calendar(){
   const [isLoading, setIsLoading] = useState(true);
   const [isCalendlyModalOpen, setIsCalendlyModalOpen] = useState(false);
   const [calendlyUrl, setCalendlyUrl] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [isCalendlyConnected, setIsCalendlyConnected] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -144,89 +127,64 @@ export default function Calendar(){
     return () => clearTimeout(timer);
   }, []);
 
-  // Load Calendly settings and events
+  // Check Calendly connection status
   useEffect(() => {
-    const loadCalendlyData = async () => {
+    const checkCalendlyConnection = async () => {
       try {
-        // Load Calendly settings
-        const savedSettings = localStorage.getItem('calendly_settings');
-        if (savedSettings) {
-          const settings = JSON.parse(savedSettings);
-          if (settings.isConnected && settings.schedulingUrl) {
-            setCalendlyUrl(settings.schedulingUrl);
-            await loadCalendlyEvents(currentDate, settings);
-          } else {
-            loadStaticEvents();
-          }
-        } else {
-          loadStaticEvents();
+        const isConnected = await calendlyAPI.isConnected();
+        setIsCalendlyConnected(isConnected);
+
+        if (isConnected) {
+          const schedulingUrl = await calendlyAPI.getSchedulingUrl();
+          setCalendlyUrl(schedulingUrl || '');
         }
       } catch (error) {
-        console.error('Failed to load Calendly data:', error);
-        loadStaticEvents();
+        console.error('Failed to check Calendly connection:', error);
+        setIsCalendlyConnected(false);
       }
     };
 
-    if (!isLoading) {
-      loadCalendlyData();
-    }
-  }, [isLoading, currentDate]);
 
-  const loadCalendlyEvents = async (date: Date, settings: any) => {
-    try {
-      if (!settings.userUri || !settings.accessToken) {
-        loadStaticEvents();
+    checkCalendlyConnection();
+  }, []);
+
+  // Load Calendly events when date changes
+  useEffect(() => {
+    const loadCalendlyEvents = async () => {
+      if (!isCalendlyConnected || isLoading) {
         return;
       }
 
-      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      try {
+        setError('');
+        const convertedEvents = await calendlyAPI.loadEventsForMonth(currentDate);
+        setCalendarEvents(convertedEvents);
 
-      const calendlyEvents = await calendlyAPI.getScheduledEvents(
-        settings.userUri,
-        startOfMonth,
-        endOfMonth
-      );
-
-      const convertedEvents = calendlyAPI.convertToCalendarEvents(calendlyEvents);
-      setCalendarEvents(convertedEvents);
-
-      // Update today's appointments if it's the current month
-      if (date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear()) {
-        const todayEvents = convertedEvents[today.getDate()] || [];
-        setSelectedDayAppointments(convertEventsToAppointments(todayEvents, today.getDate()));
-        setSelectedDay(today.getDate());
+        // Only update selected day appointments if we have a selected day and it exists in the new month
+        if (selectedDay && convertedEvents[selectedDay]) {
+          const dayEvents = convertedEvents[selectedDay] || [];
+          setSelectedDayAppointments(convertEventsToAppointments(dayEvents, selectedDay));
+        }
+        // If we're viewing the current month and no day is selected, show today's appointments
+        else if (!selectedDay && currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear()) {
+          const todayEvents = convertedEvents[today.getDate()] || [];
+          setSelectedDayAppointments(convertEventsToAppointments(todayEvents, today.getDate()));
+          setSelectedDay(today.getDate());
+        }
+        // If we're viewing a different month and have a selected day that doesn't exist, clear selection
+        else if (selectedDay && !convertedEvents[selectedDay]) {
+          setSelectedDayAppointments([]);
+          setSelectedDay(null);
+        }
+      } catch (error: any) {
+        console.error('Failed to load Calendly events:', error);
+        setError(error.message || 'Failed to load calendar events');
+        setCalendarEvents({});
       }
-    } catch (error) {
-      console.error('Failed to load Calendly events:', error);
-      loadStaticEvents();
-    }
-  };
-
-  const loadStaticEvents = () => {
-    // Fallback to existing static data
-    const staticEvents: Record<number, CalendarEvent[]> = {
-      12: [
-        { title: "Team Meeting", time: "10:00 AM", color: "bg-blue-500" },
-        { title: "Client Call", time: "2:00 PM", color: "bg-green-500" }
-      ],
-      15: [
-        { title: "Project Review", time: "11:00 AM", color: "bg-purple-500" }
-      ],
-      20: [
-        { title: "Strategy Session", time: "9:00 AM", color: "bg-indigo-500" },
-        { title: "Design Review", time: "3:00 PM", color: "bg-pink-500" },
-        { title: "Client Presentation", time: "5:00 PM", color: "bg-orange-500" }
-      ]
     };
 
-    setCalendarEvents(staticEvents);
-
-    if (selectedDay) {
-      const dayEvents = staticEvents[selectedDay] || [];
-      setSelectedDayAppointments(convertEventsToAppointments(dayEvents, selectedDay));
-    }
-  };
+    loadCalendlyEvents();
+  }, [isLoading, currentDate, isCalendlyConnected, today, selectedDay]);
 
   const convertEventsToAppointments = (events: CalendarEvent[], day: number): Appointment[] => {
     return events.map((event, index) => ({
@@ -296,10 +254,16 @@ export default function Calendar(){
   };
 
   const handleScheduleMeeting = () => {
-    if (!calendlyUrl) {
+    if (!isCalendlyConnected) {
       alert('Please configure Calendly in System Settings first');
       return;
     }
+
+    if (!calendlyUrl) {
+      alert('Calendly scheduling URL not found. Please check your Calendly configuration.');
+      return;
+    }
+
     setIsCalendlyModalOpen(true);
   };
 
@@ -313,7 +277,7 @@ export default function Calendar(){
 
   // Set initial selected day to today
   useEffect(() => {
-    if (!selectedDay && !isLoading) {
+    if (!selectedDay && !isLoading && Object.keys(calendarEvents).length > 0) {
       const todayEvents = calendarEvents[today.getDate()] || [];
       setSelectedDayAppointments(convertEventsToAppointments(todayEvents, today.getDate()));
       setSelectedDay(today.getDate());
@@ -326,7 +290,36 @@ export default function Calendar(){
 
   return (
     <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-800/20 border border-red-600 rounded-lg flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <div>
+            <p className="text-red-400 text-sm font-medium">Failed to load calendar events</p>
+            <p className="text-red-300 text-xs">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Calendly Not Connected Banner */}
+      {!isCalendlyConnected && (
+        <div className="mb-4 p-4 bg-yellow-800/20 border border-yellow-600 rounded-lg flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-yellow-400 text-sm font-medium">Calendly not connected</p>
+            <p className="text-yellow-300 text-xs">Connect your Calendly account in System Settings to view your events.</p>
+          </div>
+          <Button
+            onClick={() => window.location.href = '/settings?tab=system-settings'}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm px-3 py-1.5"
+          >
+            Configure
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 xl:gap-8 h-full">
+        {/* Left Sidebar */}
         <div className="w-full xl:w-80 lg:flex-shrink-0 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-3xl shadow-[0px_4px_12px_0px_rgba(0,0,0,0.04)]">
           <div className="bg-[#1A1A1A] rounded-lg p-4 sm:p-6 border border-[#2A2A2A]">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -395,7 +388,12 @@ export default function Calendar(){
               </div>
 
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {selectedDayAppointments.length === 0 ? (
+                {!isCalendlyConnected ? (
+                  <div className="text-[#A0A0A0] text-sm text-center py-8">
+                    <AlertCircle className="w-8 h-8 mx-auto mb-2 text-[#666]" />
+                    Connect Calendly to view appointments
+                  </div>
+                ) : selectedDayAppointments.length === 0 ? (
                   <div className="text-[#A0A0A0] text-sm text-center py-8">
                     No appointments for this day
                   </div>
@@ -416,6 +414,7 @@ export default function Calendar(){
           </div>
         </div>
 
+        {/* Main Calendar Area */}
         <div className="flex-1">
           <div className="bg-[#1A1A1A] rounded-lg border border-[#2A2A2A] h-full">
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[#2A2A2A]">
@@ -442,6 +441,7 @@ export default function Calendar(){
             </div>
 
             <div className="p-4 sm:p-6">
+              {/* Desktop Calendar Grid */}
               <div className="hidden sm:grid grid-cols-7 mb-2">
                 {dayNames.map((day, index) => (
                   <DayHeader key={index} day={day}/>
@@ -466,14 +466,15 @@ export default function Calendar(){
                 ))}
               </div>
 
+              {/* Mobile Week View */}
               <div className="grid grid-cols-1 gap-3 sm:hidden">
                 {weekDays.map((dayData, index) => (
-                  <div key={index} className={"flex flex-row items-center gap-4 w-full"}>
-                    <div className={"w-1/5"}>
+                  <div key={index} className="flex flex-row items-center gap-4 w-full">
+                    <div className="w-1/5">
                       <DayHeader day={dayNames[index]}/>
                     </div>
                     <div
-                      className={"w-4/5 cursor-pointer"}
+                      className="w-4/5 cursor-pointer"
                       onClick={() => handleCellClick(dayData.day, dayData.isCurrentMonth)}
                     >
                       <CalendarCell
@@ -493,11 +494,17 @@ export default function Calendar(){
         </div>
       </div>
 
+      {/* Calendly Embed Modal */}
       <CalendlyEmbedModal
         isOpen={isCalendlyModalOpen}
         onClose={() => {
           setIsCalendlyModalOpen(false);
-          setCurrentDate(new Date());
+          // Refresh calendar events after scheduling
+          if (isCalendlyConnected) {
+            calendlyAPI.loadEventsForMonth(currentDate)
+              .then(events => setCalendarEvents(events))
+              .catch(error => console.error('Failed to refresh events:', error));
+          }
         }}
         url={calendlyUrl}
       />

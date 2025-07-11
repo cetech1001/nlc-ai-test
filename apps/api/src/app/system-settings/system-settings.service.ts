@@ -25,7 +25,15 @@ export class SystemSettingsService {
         calendlyData[setting.key] = setting.value;
       });
 
-      return calendlyData;
+      return {
+        isConnected: calendlyData.isConnected,
+        accessToken: calendlyData.access_token,
+        organizationUri: calendlyData.organization_uri,
+        userUri: calendlyData.user_uri,
+        schedulingUrl: calendlyData.scheduling_url,
+        userName: calendlyData.user_name,
+        userEmail: calendlyData.user_email,
+      };
     } catch (error) {
       console.error('Error fetching Calendly settings:', error);
       return { isConnected: false };

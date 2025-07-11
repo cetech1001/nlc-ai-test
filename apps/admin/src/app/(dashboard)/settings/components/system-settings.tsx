@@ -3,24 +3,19 @@
 import { useState, useEffect } from "react";
 import { Button } from "@nlc-ai/ui";
 import { Check, ExternalLink, Settings, Trash2, Plus, AlertCircle } from "lucide-react";
-
-interface CalendlySettings {
-  accessToken?: string;
-  userUri?: string;
-  organizationUri?: string;
-  schedulingUrl?: string;
-  isConnected: boolean;
-  userName?: string;
-  userEmail?: string;
-}
+import { calendlyAPI } from "@nlc-ai/api-client";
+import {CalendlySettings} from "@nlc-ai/types";
+import {CalendlyTokenForm} from "@/app/(dashboard)/settings/components/calendly-token.form";
 
 export default function SystemSettings() {
   const [calendlySettings, setCalendlySettings] = useState<CalendlySettings>({
     isConnected: false
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showTokenForm, setShowTokenForm] = useState(false);
 
   useEffect(() => {
     loadCalendlySettings();
@@ -28,77 +23,66 @@ export default function SystemSettings() {
 
   const loadCalendlySettings = async () => {
     try {
-      const response = await fetch('/api/system-settings/calendly', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCalendlySettings(data);
-      }
-    } catch (error) {
+      setIsInitialLoading(true);
+      const data = await calendlyAPI.getSettings();
+      setCalendlySettings(data);
+    } catch (error: any) {
       console.error('Failed to load Calendly settings:', error);
+      setError('Failed to load Calendly settings');
+    } finally {
+      setIsInitialLoading(false);
     }
   };
 
-  const handleCalendlyConnect = async () => {
+  const handleCalendlyConnect = async (accessToken: string) => {
     setIsLoading(true);
     setError("");
+    setSuccess("");
 
     try {
-      const accessToken = prompt("Enter your Calendly Personal Access Token:");
+      const result = await calendlyAPI.saveSettings(accessToken);
 
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch('/api/system-settings/calendly', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({ accessToken }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
+      if (result.success) {
+        setCalendlySettings(result.data);
+        setSuccess("Calendly account connected successfully!");
+        setShowTokenForm(false);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
         throw new Error(result.message || 'Failed to connect Calendly account');
       }
-
-      setCalendlySettings(result.data);
-      setSuccess("Calendly account connected successfully!");
-
-      setTimeout(() => setSuccess(""), 3000);
     } catch (error: any) {
+      console.error('Failed to connect Calendly:', error);
       setError(error.message || "Failed to connect Calendly account");
+      setTimeout(() => setError(""), 5000);
+      throw error; // Re-throw so the form can handle it
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCalendlyDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect your Calendly account? This will remove all calendar integration.')) {
+      return;
+    }
+
     try {
       setIsLoading(true);
+      setError("");
+      setSuccess("");
 
-      const response = await fetch('/api/system-settings/calendly', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
+      const result = await calendlyAPI.deleteSettings();
 
-      if (response.ok) {
+      if (result.success) {
         setCalendlySettings({ isConnected: false });
-        setSuccess("Calendly account disconnected");
+        setSuccess("Calendly account disconnected successfully");
         setTimeout(() => setSuccess(""), 3000);
+      } else {
+        throw new Error(result.message || 'Failed to disconnect Calendly account');
       }
-    } catch (error) {
-      setError("Failed to disconnect Calendly account");
+    } catch (error: any) {
+      console.error('Failed to disconnect Calendly:', error);
+      setError(error.message || "Failed to disconnect Calendly account");
+      setTimeout(() => setError(""), 5000);
     } finally {
       setIsLoading(false);
     }
@@ -110,18 +94,57 @@ export default function SystemSettings() {
     }
   };
 
+  const testConnection = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      setSuccess("");
+
+      // Test the connection by trying to get current user
+      await calendlyAPI.getCurrentUser();
+      setSuccess("Calendly connection is working properly!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error: any) {
+      console.error('Calendly connection test failed:', error);
+      setError(`Connection test failed: ${error.message}`);
+      setTimeout(() => setError(""), 5000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isInitialLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">System Settings</h1>
+          <p className="text-[#A0A0A0]">Manage your platform integrations and system configurations</p>
+        </div>
+        <div className="animate-pulse">
+          <div className="bg-[#2A2A2A] h-64 rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Success/Error Messages */}
       {success && (
         <div className="p-4 bg-green-800/20 border border-green-600 rounded-lg">
-          <p className="text-green-400 text-sm">{success}</p>
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-green-400" />
+            <p className="text-green-400 text-sm">{success}</p>
+          </div>
         </div>
       )}
 
       {error && (
         <div className="p-4 bg-red-800/20 border border-red-600 rounded-lg">
-          <p className="text-red-400 text-sm">{error}</p>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400" />
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
         </div>
       )}
 
@@ -168,7 +191,7 @@ export default function SystemSettings() {
                   <div>
                     <h4 className="text-white font-medium mb-2">How to connect your Calendly account</h4>
                     <ol className="text-[#A0A0A0] text-sm space-y-2 list-decimal list-inside">
-                      <li>Go to your <a href="https://calendly.com/app/settings/developer" target="_blank" className="text-violet-400 hover:text-violet-300 underline">Calendly account settings</a></li>
+                      <li>Go to your <a href="https://calendly.com/app/settings/developer" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline">Calendly account settings</a></li>
                       <li>Navigate to "Integrations" → "API & Webhooks"</li>
                       <li>Generate a Personal Access Token</li>
                       <li>Copy the token and paste it when prompted below</li>
@@ -178,21 +201,14 @@ export default function SystemSettings() {
               </div>
 
               <Button
-                onClick={handleCalendlyConnect}
+                onClick={() => setShowTokenForm(true)}
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
               >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Connecting...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    Connect Calendly Account
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Connect Calendly Account
+                </div>
               </Button>
             </div>
           ) : (
@@ -207,20 +223,34 @@ export default function SystemSettings() {
                       </span>
                     </div>
                     <div>
-                      <div className="text-white font-medium">{calendlySettings.userName}</div>
-                      <div className="text-[#A0A0A0] text-sm">{calendlySettings.userEmail}</div>
+                      <div className="text-white font-medium">{calendlySettings.userName || 'Calendly User'}</div>
+                      <div className="text-[#A0A0A0] text-sm">{calendlySettings.userEmail || 'No email available'}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <Button
+                      onClick={testConnection}
+                      disabled={isLoading}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-blue-500 transition-colors"
+                    >
+                      {isLoading ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                      ) : (
+                        <Settings className="w-4 h-4 mr-2" />
+                      )}
+                      Test
+                    </Button>
                     <Button
                       onClick={openCalendlySettings}
                       variant="outline"
                       size="sm"
                       className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-violet-500 transition-colors"
                     >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open
                     </Button>
                     <Button
                       onClick={handleCalendlyDisconnect}
@@ -241,11 +271,13 @@ export default function SystemSettings() {
                 <div className="bg-[#2A2A2A]/30 border border-[#3A3A3A] rounded-lg p-4">
                   <div className="text-[#A0A0A0] text-sm mb-1">Scheduling URL</div>
                   <div className="text-white text-sm flex items-center gap-2">
-                    <span className="truncate flex-1">{calendlySettings.schedulingUrl}</span>
-                    <ExternalLink
-                      className="w-4 h-4 cursor-pointer hover:text-violet-400 transition-colors flex-shrink-0"
-                      onClick={openCalendlySettings}
-                    />
+                    <span className="truncate flex-1">{calendlySettings.schedulingUrl || 'Not available'}</span>
+                    {calendlySettings.schedulingUrl && (
+                      <ExternalLink
+                        className="w-4 h-4 cursor-pointer hover:text-violet-400 transition-colors flex-shrink-0"
+                        onClick={openCalendlySettings}
+                      />
+                    )}
                   </div>
                 </div>
                 <div className="bg-[#2A2A2A]/30 border border-[#3A3A3A] rounded-lg p-4">
@@ -253,6 +285,21 @@ export default function SystemSettings() {
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     <span className="text-green-400 text-sm font-medium">Active & Syncing</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Settings */}
+              <div className="bg-[#2A2A2A]/30 border border-[#3A3A3A] rounded-lg p-4">
+                <div className="text-white text-sm font-medium mb-2">Integration Details</div>
+                <div className="space-y-2 text-xs text-[#A0A0A0]">
+                  <div className="flex justify-between">
+                    <span>User URI:</span>
+                    <span className="text-white font-mono">{calendlySettings.userUri?.split('/').pop() || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Organization:</span>
+                    <span className="text-white font-mono">{calendlySettings.organizationUri?.split('/').pop() || 'N/A'}</span>
                   </div>
                 </div>
               </div>
@@ -295,6 +342,14 @@ export default function SystemSettings() {
           ))}
         </div>
       </div>
+
+      {/* Token Input Form */}
+      <CalendlyTokenForm
+        isOpen={showTokenForm}
+        onSubmit={handleCalendlyConnect}
+        onClose={() => setShowTokenForm(false)}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
