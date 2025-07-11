@@ -11,6 +11,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import {CleanupModule} from "./cleanup/cleanup.module";
 import { LeadsModule } from './leads/leads.module';
+import { SystemSettingsModule } from './system-settings/system-settings.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { LeadsModule } from './leads/leads.module';
     TransactionsModule,
     CleanupModule,
     LeadsModule,
+    SystemSettingsModule,
   ],
   providers: [
     {
