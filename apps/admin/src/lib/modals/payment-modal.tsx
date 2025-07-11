@@ -1,55 +1,243 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { Dialog, Transition, Listbox, RadioGroup } from "@headlessui/react";
-import { Copy, ChevronDown, CheckIcon } from "lucide-react";
+import { Copy, ChevronDown, CheckIcon, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@nlc-ai/ui";
+import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements
+} from '@stripe/react-stripe-js';
+import { paymentsAPI } from "@nlc-ai/api-client";
+import { plansAPI } from "@nlc-ai/api-client";
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   coachName: string;
+  coachId: string;
   selectedPlan?: string;
   onPaymentComplete?: () => void;
 }
 
-const planOptions = [
-  { name: "Solo Agent", price: 360 },
-  { name: "Starter Pack", price: 360 },
-  { name: "Growth Pro", price: 1099 },
-  { name: "Scale Elite", price: 1899 },
-];
+interface Plan {
+  id: string;
+  name: string;
+  monthlyPrice: number;
+  annualPrice: number;
+}
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 const paymentModes = [
   { id: "send-link", name: "Send A Link" },
   { id: "pay-here", name: "Pay Here" },
 ];
 
-const PaymentModal: React.FC<PaymentModalProps> = ({
- isOpen,
- onClose,
- coachName,
- selectedPlan = "Growth Pro",
- onPaymentComplete,
-}) => {
-  const [selectedPlanOption, setSelectedPlanOption] = useState(
-    planOptions.find(p => p.name === selectedPlan) || planOptions[2]
+// Stripe payment form component
+const StripePaymentForm: React.FC<{
+  selectedPlan: Plan;
+  amount: number;
+  coachId: string;
+  coachName: string;
+  onPaymentSuccess: () => void;
+  onPaymentError: (error: string) => void;
+  isProcessing: boolean;
+  setIsProcessing: (processing: boolean) => void;
+}> = ({ selectedPlan, amount, coachId, coachName, onPaymentSuccess, onPaymentError, isProcessing, setIsProcessing }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [clientSecret, setClientSecret] = useState<string>('');
+
+  useEffect(() => {
+    // Create payment intent when component mounts
+    const createPaymentIntent = async () => {
+      try {
+        const response = await paymentsAPI.createPaymentIntent({
+          coachId,
+          planId: selectedPlan.id,
+          amount: amount * 100, // Convert to cents
+          description: `Payment for ${coachName} - ${selectedPlan.name} plan`,
+        });
+        setClientSecret(response.clientSecret);
+      } catch (error: any) {
+        console.error('Error creating payment intent:', error);
+        onPaymentError(error.message || 'Failed to initialize payment');
+      }
+    };
+
+    if (selectedPlan && coachId && amount > 0) {
+      createPaymentIntent();
+    }
+  }, [selectedPlan, coachId, amount, coachName, onPaymentError]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements || !clientSecret) {
+      onPaymentError('Stripe is not properly initialized');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      onPaymentError('Card element not found');
+      setIsProcessing(false);
+      return;
+    }
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: coachName,
+          },
+        },
+      });
+
+      if (error) {
+        onPaymentError(error.message || 'Payment failed');
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        onPaymentSuccess();
+      }
+    } catch (error: any) {
+      onPaymentError(error.message || 'An unexpected error occurred');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const cardElementOptions = {
+    style: {
+      base: {
+        color: '#ffffff',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontSmoothing: 'antialiased',
+        fontSize: '16px',
+        '::placeholder': {
+          color: '#a0a0a0',
+        },
+      },
+      invalid: {
+        color: '#fa755a',
+        iconColor: '#fa755a',
+      },
+    },
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="p-4 bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
+        <p className="text-[#A0A0A0] text-sm mb-3">Card Details</p>
+        <div className="p-3 bg-[#1A1A1A] border border-[#3A3A3A] rounded">
+          <CardElement options={cardElementOptions} />
+        </div>
+      </div>
+
+      <div className="bg-[#2A2A2A] rounded-lg border border-[#3A3A3A] p-4">
+        <h4 className="text-white font-medium mb-2">Payment Summary</h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-[#A0A0A0]">Coach:</span>
+            <span className="text-white">{coachName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#A0A0A0]">Plan:</span>
+            <span className="text-white">{selectedPlan.name}</span>
+          </div>
+          <div className="flex justify-between font-medium">
+            <span className="text-[#A0A0A0]">Amount:</span>
+            <span className="text-white">${amount}</span>
+          </div>
+        </div>
+      </div>
+
+      <Button
+        type="submit"
+        disabled={!stripe || isProcessing || !clientSecret}
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] disabled:bg-[#4A4A4A] disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <CreditCard className="w-4 h-4" />
+            Process Payment ${amount}
+          </>
+        )}
+      </Button>
+    </form>
   );
-  const [amount, setAmount] = useState(selectedPlanOption.price);
+};
+
+const PaymentModal: React.FC<PaymentModalProps> = ({
+                                                     isOpen,
+                                                     onClose,
+                                                     coachName,
+                                                     coachId,
+                                                     selectedPlan = "Growth Pro",
+                                                     onPaymentComplete,
+                                                   }) => {
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [selectedPlanOption, setSelectedPlanOption] = useState<Plan | null>(null);
+  const [amount, setAmount] = useState(0);
   const [selectedPaymentMode, setSelectedPaymentMode] = useState(paymentModes[0]);
   const [paymentLink, setPaymentLink] = useState("");
   const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string>('');
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Load plans on component mount
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        setIsLoading(true);
+        const plansData = await plansAPI.getPlans(false, false); // Only active plans
+
+        const transformedPlans: Plan[] = plansData.map(plan => ({
+          id: plan.id,
+          name: plan.name,
+          monthlyPrice: Math.floor(plan.monthlyPrice / 100), // Convert from cents
+          annualPrice: Math.floor(plan.annualPrice / 100),
+        }));
+
+        setPlans(transformedPlans);
+
+        // Set default selected plan
+        const defaultPlan = transformedPlans.find(p => p.name === selectedPlan) || transformedPlans[0];
+        if (defaultPlan) {
+          setSelectedPlanOption(defaultPlan);
+          setAmount(defaultPlan.monthlyPrice);
+        }
+      } catch (error) {
+        console.error('Error loading plans:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      loadPlans();
+    }
+  }, [isOpen, selectedPlan]);
 
   useEffect(() => {
-    const plan = planOptions.find(p => p.name === selectedPlan) || planOptions[2];
-    setSelectedPlanOption(plan);
-    setAmount(plan.price);
-  }, [selectedPlan]);
-
-  useEffect(() => {
-    setAmount(selectedPlanOption.price);
+    if (selectedPlanOption) {
+      setAmount(selectedPlanOption.monthlyPrice);
+    }
   }, [selectedPlanOption]);
 
   const handleCopyPaymentLink = () => {
-    const link = `https://payment.example.com/pay/${coachName.replace(/\s+/g, "-").toLowerCase()}/${selectedPlanOption.name.replace(/\s+/g, "-").toLowerCase()}/${amount}`;
+    const link = `https://payment.example.com/pay/${coachName.replace(/\s+/g, "-").toLowerCase()}/${selectedPlanOption?.name.replace(/\s+/g, "-").toLowerCase()}/${amount}`;
     setPaymentLink(link);
 
     navigator.clipboard.writeText(link).then(() => {
@@ -58,15 +246,89 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     });
   };
 
+  const handlePaymentSuccess = () => {
+    setPaymentSuccess(true);
+    setPaymentError('');
+    setTimeout(() => {
+      onPaymentComplete?.();
+      handleDiscard();
+    }, 2000);
+  };
+
+  const handlePaymentError = (error: string) => {
+    setPaymentError(error);
+    setPaymentSuccess(false);
+  };
+
   const handleDiscard = () => {
-    const plan = planOptions.find(p => p.name === selectedPlan) || planOptions[2];
-    setSelectedPlanOption(plan);
-    setAmount(plan.price);
+    // Reset all state
+    const defaultPlan = plans.find(p => p.name === selectedPlan) || plans[0];
+    if (defaultPlan) {
+      setSelectedPlanOption(defaultPlan);
+      setAmount(defaultPlan.monthlyPrice);
+    }
     setSelectedPaymentMode(paymentModes[0]);
     setPaymentLink("");
     setIsLinkCopied(false);
+    setPaymentError('');
+    setPaymentSuccess(false);
+    setIsProcessing(false);
     onClose();
   };
+
+  const stripeElementsOptions: StripeElementsOptions = {
+    appearance: {
+      theme: 'night',
+      variables: {
+        colorPrimary: '#7B21BA',
+        colorBackground: '#1a1a1a',
+        colorText: '#ffffff',
+        colorDanger: '#dc2626',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      },
+    },
+  };
+
+  if (isLoading) {
+    return (
+      <Transition appear show={isOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={onClose}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/75" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[linear-gradient(202deg,rgba(38, 38, 38, 0.30)_11.62%,rgba(19, 19, 19, 0.30)_87.57%)] border border-[#2A2A2A] p-6 text-left align-middle shadow-xl transition-all">
+                  <div className="flex items-center justify-center space-y-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#7B21BA]" />
+                    <p className="text-white">Loading payment options...</p>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+    );
+  }
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -103,6 +365,25 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   <span className="text-[#7B21BA]">{coachName}</span>
                 </Dialog.Title>
 
+                {paymentSuccess && (
+                  <div className="mb-6 p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <CheckIcon className="w-5 h-5 text-green-400" />
+                      <p className="text-green-400 font-medium">Payment successful!</p>
+                    </div>
+                    <p className="text-green-300 text-sm mt-1">
+                      Payment has been processed successfully for {coachName}.
+                    </p>
+                  </div>
+                )}
+
+                {paymentError && (
+                  <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                    <p className="text-red-400 font-medium">Payment failed</p>
+                    <p className="text-red-300 text-sm mt-1">{paymentError}</p>
+                  </div>
+                )}
+
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-white text-sm font-medium block">
@@ -113,7 +394,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                       <div className="relative">
                         <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-[linear-gradient(202deg,rgba(38, 38, 38, 0.30)_11.62%,rgba(19, 19, 19, 0.30)_87.57%)] border border-[#3A3A3A] py-2 pl-3 pr-10 text-left text-white focus:outline-none focus:ring-2 focus:ring-[#7B21BA]/50 focus:border-[#7B21BA]">
                           <span className="block truncate">
-                            {selectedPlanOption.name} - ${selectedPlanOption.price}
+                            {selectedPlanOption ? `${selectedPlanOption.name} - ${selectedPlanOption.monthlyPrice}` : 'Select a plan'}
                           </span>
                           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                             <ChevronDown
@@ -129,9 +410,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                           leaveTo="opacity-0"
                         >
                           <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#2A2A2A] border border-[#3A3A3A] py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
-                            {planOptions.map((plan, planIdx) => (
+                            {plans.map((plan) => (
                               <Listbox.Option
-                                key={planIdx}
+                                key={plan.id}
                                 className={({ active }) =>
                                   `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
                                     active ? "bg-[#3A3A3A] text-white" : "text-white"
@@ -146,7 +427,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                         selected ? "font-medium" : "font-normal"
                                       }`}
                                     >
-                                      {plan.name} - ${plan.price}
+                                      {plan.name} - ${plan.monthlyPrice}
                                     </span>
                                     {selected ? (
                                       <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#7B21BA]">
@@ -177,9 +458,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(Number(e.target.value))}
-                        className="w-full pl-7 pr-3 py-2 bg-background border border-[#3A3A3A] rounded-lg text-white placeholder:text-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-[#7B21BA]/50 focus:border-[#7B21BA]"
+                        className="w-full pl-7 pr-3 py-2 bg-transparent border border-[#3A3A3A] rounded-lg text-white placeholder:text-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-[#7B21BA]/50 focus:border-[#7B21BA]"
                         placeholder="1200"
                         min="0"
+                        disabled={isProcessing || paymentSuccess}
                       />
                     </div>
                   </div>
@@ -189,7 +471,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                       Payment Mode
                       <span className="text-red-400 ml-1">*</span>
                     </label>
-                    <RadioGroup value={selectedPaymentMode} onChange={setSelectedPaymentMode}>
+                    <RadioGroup value={selectedPaymentMode} onChange={setSelectedPaymentMode} disabled={isProcessing || paymentSuccess}>
                       <div className="flex gap-6">
                         {paymentModes.map((mode) => (
                           <RadioGroup.Option
@@ -198,7 +480,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                             className={({ active, checked }) =>
                               `${active ? "ring-2 ring-[#7B21BA]/50" : ""}
                               ${checked ? "text-white" : "text-white"}
-                              relative flex cursor-pointer items-center space-x-2 focus:outline-none`
+                              relative flex cursor-pointer items-center space-x-2 focus:outline-none ${
+                                isProcessing || paymentSuccess ? 'opacity-50 pointer-events-none' : ''
+                              }`
                             }
                           >
                             {({ checked }) => (
@@ -228,7 +512,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </RadioGroup>
                   </div>
 
-                  {paymentLink && (
+                  {selectedPaymentMode.id === "send-link" && paymentLink && (
                     <div className="p-4 bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
                       <p className="text-[#A0A0A0] text-xs mb-2 font-medium">
                         Payment Link:
@@ -244,56 +528,55 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     </div>
                   )}
 
-                  {selectedPaymentMode.id === "pay-here" && (
-                    <div className="p-4 bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
-                      <p className="text-[#A0A0A0] text-sm mb-3">
-                        Payment integration coming soon...
-                      </p>
-                      <div className="opacity-50">
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          <input
-                            placeholder="Card number"
-                            disabled
-                            className="px-3 py-2 bg-[#1A1A1A] border border-[#3A3A3A] rounded text-white placeholder:text-[#A0A0A0]"
-                          />
-                          <input
-                            placeholder="MM/YY"
-                            disabled
-                            className="px-3 py-2 bg-[#1A1A1A] border border-[#3A3A3A] rounded text-white placeholder:text-[#A0A0A0]"
-                          />
-                        </div>
-                        <input
-                          placeholder="CVV"
-                          disabled
-                          className="w-full px-3 py-2 bg-[#1A1A1A] border border-[#3A3A3A] rounded text-white placeholder:text-[#A0A0A0] mb-3"
-                        />
-                        <input
-                          placeholder="Cardholder name"
-                          disabled
-                          className="w-full px-3 py-2 bg-[#1A1A1A] border border-[#3A3A3A] rounded text-white placeholder:text-[#A0A0A0]"
-                        />
-                      </div>
-                    </div>
+                  {selectedPaymentMode.id === "pay-here" && selectedPlanOption && (
+                    <Elements stripe={stripePromise} options={stripeElementsOptions}>
+                      <StripePaymentForm
+                        selectedPlan={selectedPlanOption}
+                        amount={amount}
+                        coachId={coachId}
+                        coachName={coachName}
+                        onPaymentSuccess={handlePaymentSuccess}
+                        onPaymentError={handlePaymentError}
+                        isProcessing={isProcessing}
+                        setIsProcessing={setIsProcessing}
+                      />
+                    </Elements>
                   )}
                 </div>
 
-                <div className="flex gap-3 pt-3 mt-3">
-                  <Button
-                    onClick={handleCopyPaymentLink}
-                    disabled={selectedPaymentMode.id === "pay-here"}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] disabled:bg-[#4A4A4A] disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                  >
-                    <Copy className="w-4 h-4" />
-                    {isLinkCopied ? "Link Copied!" : "Copy Payment Link"}
-                  </Button>
-                  <Button
-                    variant={"outline"}
-                    onClick={handleDiscard}
-                    className="flex-1 bg-transparent border-[#3A3A3A] text-white hover:bg-[#2A2A2A]"
-                  >
-                    Discard
-                  </Button>
-                </div>
+                {selectedPaymentMode.id === "send-link" && (
+                  <div className="flex gap-3 pt-3 mt-3">
+                    <Button
+                      onClick={handleCopyPaymentLink}
+                      disabled={isProcessing || paymentSuccess}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] disabled:bg-[#4A4A4A] disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {isLinkCopied ? "Link Copied!" : "Copy Payment Link"}
+                    </Button>
+                    <Button
+                      variant={"outline"}
+                      onClick={handleDiscard}
+                      disabled={isProcessing}
+                      className="flex-1 bg-transparent border-[#3A3A3A] text-white hover:bg-[#2A2A2A]"
+                    >
+                      {paymentSuccess ? "Close" : "Discard"}
+                    </Button>
+                  </div>
+                )}
+
+                {selectedPaymentMode.id === "pay-here" && !paymentSuccess && (
+                  <div className="flex gap-3 pt-3 mt-3">
+                    <Button
+                      variant={"outline"}
+                      onClick={handleDiscard}
+                      disabled={isProcessing}
+                      className="w-full bg-transparent border-[#3A3A3A] text-white hover:bg-[#2A2A2A]"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </Dialog.Panel>
             </Transition.Child>
           </div>

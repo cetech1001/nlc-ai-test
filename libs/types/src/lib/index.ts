@@ -5,3 +5,4 @@ export * from './transaction';
 export * from './plan';
 export * from './calendar';
 export * from './calendly';
+export * from './payments';

@@ -55,6 +55,7 @@ export default function MakePayment() {
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,11 +103,25 @@ export default function MakePayment() {
 
   const handlePaymentComplete = () => {
     setIsPaymentModalOpen(false);
-    console.log(`Payment completed for ${coach?.firstName} ${coach?.lastName} - ${selectedPlanForPayment}`);
+    setSuccessMessage(`Payment completed successfully for ${coach?.firstName} ${coach?.lastName} - ${selectedPlanForPayment}`);
+
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      setSuccessMessage("");
+    }, 5000);
+
+    // Optionally refresh coach data to show updated subscription
+    if (coachId) {
+      coachesAPI.getCoach(coachId).then(setCoach).catch(console.error);
+    }
   };
 
   const clearError = () => {
     setError("");
+  };
+
+  const clearSuccessMessage = () => {
+    setSuccessMessage("");
   };
 
   if (isLoading) {
@@ -158,6 +173,12 @@ export default function MakePayment() {
   return (
     <div>
       <div className={`transition-all duration-300 ${ isPaymentModalOpen ? 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' : ''}`}>
+
+        {successMessage && (
+          <div className="mb-6">
+            <AlertBanner type="success" message={successMessage} onDismiss={clearSuccessMessage} />
+          </div>
+        )}
 
         <div className="py-8">
           <h2 className="text-stone-50 text-2xl font-medium font-['Inter'] leading-relaxed">Make Payment</h2>
@@ -241,6 +262,7 @@ export default function MakePayment() {
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           coachName={`${coach.firstName} ${coach.lastName}`}
+          coachId={coach.id}
           selectedPlan={selectedPlanForPayment}
           onPaymentComplete={handlePaymentComplete}
         />

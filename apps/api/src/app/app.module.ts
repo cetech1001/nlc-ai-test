@@ -12,6 +12,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import {CleanupModule} from "./cleanup/cleanup.module";
 import { LeadsModule } from './leads/leads.module';
 import { SystemSettingsModule } from './system-settings/system-settings.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SystemSettingsModule } from './system-settings/system-settings.module';
     CleanupModule,
     LeadsModule,
     SystemSettingsModule,
+    PaymentsModule,
   ],
   providers: [
     {
