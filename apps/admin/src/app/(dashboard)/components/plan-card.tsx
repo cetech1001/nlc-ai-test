@@ -1,6 +1,6 @@
 import { Button } from "@nlc-ai/ui";
 import {Check} from "lucide-react";
-import {Plan} from "@/app/data";
+import {Plan} from "@nlc-ai/types";
 
 interface IProps {
   plan: Plan;

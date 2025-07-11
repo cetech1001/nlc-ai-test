@@ -5,3 +5,4 @@ export * from './plans';
 export * from './dashboard';
 export * from './transactions';
 export * from './leads';
+export * from './calendly';

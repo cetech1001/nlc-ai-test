@@ -1,20 +1,16 @@
 'use client'
 
-import React, { useState, Fragment } from "react";
+import { FC, useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Button } from "@nlc-ai/ui";
 
 interface ScheduleMeetingModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onCloseAction: () => void;
   onMeetingScheduled?: (meetingData: any) => void;
 }
 
-const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
- isOpen,
- onClose,
- onMeetingScheduled,
-}) => {
+export const ScheduleMeetingModal: FC<ScheduleMeetingModalProps> = (props) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -25,7 +21,7 @@ const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
     setEmail("");
     setSelectedDate("");
     setSelectedTime("");
-    onClose();
+    props.onCloseAction();
   };
 
   const handleScheduleMeeting = () => {
@@ -37,15 +33,15 @@ const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
       status: "Scheduled"
     };
 
-    onMeetingScheduled?.(meetingData);
+    props.onMeetingScheduled?.(meetingData);
     handleDiscard();
   };
 
   const isFormValid = name && email && selectedDate && selectedTime;
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+    <Transition appear show={props.isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={props.onCloseAction}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -161,5 +157,3 @@ const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
     </Transition>
   );
 };
-
-export default ScheduleMeetingModal;

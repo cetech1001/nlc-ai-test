@@ -6,6 +6,7 @@ import {SettingsPageSkeleton} from "@/lib/skeletons/settings-page.skeleton";
 import { Button, EyeLashIcon } from "@nlc-ai/ui";
 import { authAPI, useAuth } from "@nlc-ai/auth";
 import {USER_TYPE} from "@nlc-ai/types";
+import SystemSettings from "./components/system-settings";
 
 interface FormErrors {
   firstName?: string;
@@ -27,7 +28,7 @@ interface PasswordFormData {
 }
 
 export default function Settings() {
-  const { user, isLoading, checkAuthStatus } = useAuth();
+  const {user, isLoading, checkAuthStatus} = useAuth();
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -113,16 +114,16 @@ export default function Settings() {
   };
 
   const handleProfileInputChange = (field: keyof ProfileFormData, value: string) => {
-    setProfileForm(prev => ({ ...prev, [field]: value }));
+    setProfileForm(prev => ({...prev, [field]: value}));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors(prev => ({...prev, [field]: undefined}));
     }
   };
 
   const handlePasswordInputChange = (field: keyof PasswordFormData, value: string) => {
-    setPasswordForm(prev => ({ ...prev, [field]: value }));
+    setPasswordForm(prev => ({...prev, [field]: value}));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors(prev => ({...prev, [field]: undefined}));
     }
   };
 
@@ -180,7 +181,7 @@ export default function Settings() {
       });
 
       setSuccessMessage("Password updated successfully!");
-      setPasswordForm({ newPassword: "", confirmPassword: "" });
+      setPasswordForm({newPassword: "", confirmPassword: ""});
 
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error: any) {
@@ -193,7 +194,7 @@ export default function Settings() {
   };
 
   const handleResetPassword = () => {
-    setPasswordForm({ newPassword: "", confirmPassword: "" });
+    setPasswordForm({newPassword: "", confirmPassword: ""});
     setErrors({});
     setSuccessMessage("");
   };
@@ -219,21 +220,22 @@ export default function Settings() {
         >
           Edit Profile
         </button>
-        <div className="hidden sm:block w-7 h-0 rotate-90 border-t border-neutral-700" />
+        <div className="hidden sm:block w-7 h-0 rotate-90 border-t border-neutral-700"/>
         <button
-          onClick={() => setActiveTab("social-accounts")}
+          onClick={() => setActiveTab("system-settings")}
           className={`text-lg sm:text-xl font-medium font-['Inter'] leading-relaxed transition-colors ${
-            activeTab === "social-accounts" ? "text-fuchsia-400" : "text-zinc-600 hover:text-zinc-400"
+            activeTab === "system-settings" ? "text-fuchsia-400" : "text-zinc-600 hover:text-zinc-400"
           }`}
         >
-          Social Accounts Integration
+          System Settings
         </button>
       </div>
 
       {activeTab === "edit-profile" && (
         <div>
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-7 mb-8 lg:mb-16">
-            <img className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] mx-auto lg:mx-0" src="https://placehold.co/130x130" alt="Profile" />
+            <img className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] mx-auto lg:mx-0" src="https://placehold.co/130x130"
+                 alt="Profile"/>
             <div className="w-full lg:w-60 flex flex-col gap-3 text-center lg:text-left">
               <div className="text-stone-50 text-2xl sm:text-3xl font-semibold font-['Inter'] leading-relaxed">
                 {user?.firstName} {user?.lastName}
@@ -242,7 +244,7 @@ export default function Settings() {
                 {user?.email}
               </div>
             </div>
-            <div className="hidden lg:block w-32 h-0 rotate-90 border-t border-neutral-700" />
+            <div className="hidden lg:block w-32 h-0 rotate-90 border-t border-neutral-700"/>
             <div className="w-full lg:w-80 flex flex-col gap-5">
               <div className="flex justify-between items-center">
                 <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">
@@ -257,7 +259,7 @@ export default function Settings() {
                         : "bg-stone-300 border-stone-300 justify-start"
                     } flex items-center`}
                   >
-                    <div className="w-6 h-6 bg-white rounded-full" />
+                    <div className="w-6 h-6 bg-white rounded-full"/>
                   </button>
                   <div className={`text-sm sm:text-base font-normal font-['Inter'] ${
                     desktopNotifications ? "text-white" : "text-zinc-500"
@@ -279,7 +281,7 @@ export default function Settings() {
                         : "bg-stone-300 border-stone-300 justify-start"
                     } flex items-center`}
                   >
-                    <div className="w-6 h-6 bg-white rounded-full" />
+                    <div className="w-6 h-6 bg-white rounded-full"/>
                   </button>
                   <div className={`text-sm sm:text-base font-normal font-['Inter'] ${
                     emailNotifications ? "text-white" : "text-zinc-500"
@@ -376,10 +378,13 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="w-full max-w-[1094px] h-0 border-t border-neutral-700 mb-6 lg:mb-8" />
+          <div className="w-full max-w-[1094px] h-0 border-t border-neutral-700 mb-6 lg:mb-8"/>
 
           <div>
-            <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">Change Password</div>
+            <div
+              className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">Change
+              Password
+            </div>
             <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-7 mb-6 lg:mb-8">
               <div className="w-full lg:w-[532px] flex flex-col gap-3">
                 <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
@@ -400,7 +405,7 @@ export default function Settings() {
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     className="w-6 h-6 text-stone-50 ml-2"
                   >
-                    {showNewPassword ? <Eye className="w-5 h-4" /> : <EyeLashIcon className="w-5 h-4" />}
+                    {showNewPassword ? <Eye className="w-5 h-4"/> : <EyeLashIcon className="w-5 h-4"/>}
                   </button>
                 </div>
                 {errors.newPassword && (
@@ -426,7 +431,7 @@ export default function Settings() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="w-6 h-6 text-stone-50 ml-2"
                   >
-                    {showConfirmPassword ? <Eye className="w-5 h-4" /> : <EyeLashIcon className="w-5 h-4" />}
+                    {showConfirmPassword ? <Eye className="w-5 h-4"/> : <EyeLashIcon className="w-5 h-4"/>}
                   </button>
                 </div>
                 {errors.confirmPassword && (
@@ -456,12 +461,9 @@ export default function Settings() {
         </div>
       )}
 
-      {activeTab === "social-accounts" && (
-        <div className="text-center py-8 sm:py-16">
-          <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] mb-4">Social Accounts Integration</div>
-          <div className="text-stone-300 text-sm sm:text-base">Social accounts integration features coming soon.</div>
-        </div>
+      {activeTab === "system-settings" && (
+        <SystemSettings/>
       )}
     </div>
   );
-};
+}
