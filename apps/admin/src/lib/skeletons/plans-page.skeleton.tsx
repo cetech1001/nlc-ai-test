@@ -1,4 +1,5 @@
-import { PlanCardSkeleton, Skeleton } from "@nlc-ai/ui";
+import { Skeleton } from "@nlc-ai/ui";
+import { PlanCardSkeleton } from "@nlc-ai/shared";
 
 export const PlansPageSkeleton = () => {
   return (

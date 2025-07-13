@@ -1,4 +1,4 @@
-import {Skeleton} from "../data-display";
+import { Skeleton } from "@nlc-ai/ui";
 
 export const AuthSkeleton = () => {
   return (

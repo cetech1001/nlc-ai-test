@@ -1,4 +1,4 @@
-import {StatCardSkeleton, DataTableSkeleton, RevenueGraphSkeleton} from "@nlc-ai/ui";
+import {StatCardSkeleton, DataTableSkeleton, RevenueGraphSkeleton} from "@nlc-ai/shared";
 
 export const HomePageSkeleton = (props: { length: number }) => {
   return (

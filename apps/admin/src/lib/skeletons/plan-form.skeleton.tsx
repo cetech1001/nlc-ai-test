@@ -1,4 +1,6 @@
-import { FormSkeleton, Skeleton } from "@nlc-ai/ui";
+import { Skeleton } from "@nlc-ai/ui";
+import { FormSkeleton } from "@nlc-ai/shared";
+
 
 export const PlanFormSkeleton = () => {
   return (

@@ -1,8 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
-import { AdminResetPasswordContent } from './content';
 import { ResetPasswordSkeleton } from '@nlc-ai/auth';
+import { AdminResetPasswordContent } from './content';
 
 const AdminResetPasswordPage = () => {
   return (

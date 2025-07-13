@@ -1,7 +1,7 @@
 'use client';
 
-import {useMemo} from 'react';
-import {useRouter, useSearchParams} from 'next/navigation';
+import { useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountVerificationForm, useAuthPage } from '@nlc-ai/auth';
 
 export const AdminAccountVerificationContent = () => {
@@ -18,7 +18,7 @@ export const AdminAccountVerificationContent = () => {
   ), [email]);
 
   useAuthPage({
-    title: "Account Verification",
+    title: 'Account Verification',
     description,
   });
 

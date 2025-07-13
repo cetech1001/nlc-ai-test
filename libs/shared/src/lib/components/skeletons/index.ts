@@ -1,4 +1,3 @@
-export * from './auth.skeleton';
 export * from './calendar.skeleton';
 export * from './data-table.skeleton';
 export * from './form.skeleton';

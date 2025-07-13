@@ -1,8 +1,8 @@
 'use client';
 
+import { useRouter } from "next/navigation";
 import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/auth';
-import {USER_TYPE} from "@nlc-ai/types";
-import {useRouter} from "next/navigation";
+import { USER_TYPE } from "@nlc-ai/types";
 
 const AdminForgotPasswordPage = () => {
   const router = useRouter();
@@ -16,7 +16,7 @@ const AdminForgotPasswordPage = () => {
   }
 
   useAuthPage({
-    title: "Forgot Password",
+    title: 'Forgot Password',
     description: "Enter your registered email address & we'll send you code to reset your password.",
   });
   return (

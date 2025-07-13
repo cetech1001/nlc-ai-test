@@ -1,19 +1,22 @@
 'use client'
 
 import React, {useEffect, useState} from "react";
-import { Button } from "@nlc-ai/ui";
 import {
   ChevronLeft,
   ChevronRight,
   Plus,
   AlertCircle,
 } from "lucide-react";
-import {AppointmentCard} from "@/app/(dashboard)/calendar/components/appointment-card";
-import {CalendarCell, DayHeader} from "@/app/(dashboard)/calendar/components/calendar-cell";
-import {MiniCalendarCell} from "@/app/(dashboard)/calendar/components/mini-calendar-cell";
-import {CalendarPageSkeleton} from "@/lib/skeletons/calendar-page.skeleton";
+import { Button } from "@nlc-ai/ui";
 import {Appointment, CalendarDay, CalendarEvent} from "@nlc-ai/types";
 import {calendlyAPI} from "@nlc-ai/api-client";
+import {
+  CalendarCell,
+  DayHeader,
+  AppointmentCard,
+  MiniCalendarCell
+} from "./components";
+import {CalendarPageSkeleton} from "@/lib/skeletons/calendar-page.skeleton";
 import CalendlyEmbedModal from "@/lib/modals/calendly-embed-modal";
 
 const isToday = (date: Date, day: number) => {

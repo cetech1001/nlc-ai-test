@@ -1,9 +1,10 @@
 'use client';
 
 import { FC } from 'react';
-import { BackgroundBlobs, GlowOrbs, Logo } from '../ui';
+import { Logo } from "@nlc-ai/shared";
+import { BackgroundBlobs, GlowOrbs } from '../ui';
 import { type AuthLayoutProps } from '../../types';
-import {useAuthLayout} from "../../context";
+import { useAuthLayout } from "../../context";
 
 export const AuthLayout: FC<AuthLayoutProps> = ({
   children,

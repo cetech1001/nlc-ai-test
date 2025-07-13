@@ -1,4 +1,4 @@
-import { CalendarSkeleton } from "@nlc-ai/ui";
+import { CalendarSkeleton } from "@nlc-ai/shared";
 
 export const CalendarPageSkeleton = () => {
   return (

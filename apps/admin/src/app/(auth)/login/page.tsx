@@ -1,9 +1,9 @@
 'use client';
 
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { LoginForm, useAuthPage } from '@nlc-ai/auth';
 import { USER_TYPE } from '@nlc-ai/types';
-import {useRouter, useSearchParams} from "next/navigation";
-import {useEffect, useState} from "react";
 
 
 const AdminLoginPage = () => {

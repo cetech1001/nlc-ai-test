@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ResetPasswordForm, useAuthPage } from '@nlc-ai/auth';
-import {USER_TYPE} from "@nlc-ai/types";
+import { USER_TYPE } from "@nlc-ai/types";
 
 export const AdminResetPasswordContent = () => {
   const router = useRouter();
@@ -11,8 +11,8 @@ export const AdminResetPasswordContent = () => {
   const token = searchParams.get('token') || '';
 
   useAuthPage({
-    title: "Password Reset",
-    description: "Create a new password to reset your account access.",
+    title: 'Password Reset',
+    description: 'Create a new password to reset your account access.',
   });
 
   if (!token) {
@@ -33,7 +33,7 @@ export const AdminResetPasswordContent = () => {
   }
 
   const handleBackToLogin = (message?: string) => {
-    let param = "";
+    let param = '';
     if (message) {
       param = `?message=${message}`;
     }

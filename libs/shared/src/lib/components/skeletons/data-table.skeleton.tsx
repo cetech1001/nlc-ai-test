@@ -1,4 +1,4 @@
-import { Skeleton } from "../data-display/skeleton";
+import { Skeleton } from "@nlc-ai/ui";
 
 interface DataTableSkeletonProps {
   columns: number

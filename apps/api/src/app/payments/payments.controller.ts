@@ -123,23 +123,22 @@ export class PaymentsController {
 
   @Post('webhook')
   @Public()
-  @ApiOperation({ summary: 'Handle Stripe webhooks' })
-  @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid webhook signature' })
   async handleWebhook(
     @Headers('stripe-signature') signature: string,
-    @Req() req: any // Use any type to access rawBody
+    @Req() req: any
   ) {
     if (!signature) {
       throw new BadRequestException('Missing stripe-signature header');
     }
 
-    if (!(req as any).rawBody) {
-      throw new BadRequestException('Missing raw body for webhook verification');
+    const payload = req.body;
+
+    if (!payload) {
+      throw new BadRequestException('Missing webhook payload');
     }
 
     try {
-      await this.paymentsService.handleWebhook(signature, (req as any).rawBody);
+      await this.paymentsService.handleWebhook(signature, payload);
       return { received: true };
     } catch (error) {
       console.error('Webhook processing error:', error);

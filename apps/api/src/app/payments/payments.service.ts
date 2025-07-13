@@ -162,7 +162,7 @@ export class PaymentsService {
         paymentLink: paymentLink.url,
         linkId: paymentLink.id,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating payment link:', error);
       throw new BadRequestException(`Failed to create payment link: ${error.message}`);
     }
@@ -272,7 +272,7 @@ export class PaymentsService {
         paymentIntent: confirmedPayment,
         success: confirmedPayment.status === 'succeeded',
       };
-    } catch (error) {
+    } catch (error: any) {
       // Handle payment failure
       await this.createTransactionRecord({
         coachId,
@@ -307,7 +307,7 @@ export class PaymentsService {
     try {
       event = this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
       console.log('Webhook event constructed successfully:', event.type, event.id);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Webhook signature verification failed:', err);
       throw new BadRequestException(`Webhook signature verification failed: ${err.message}`);
     }
@@ -337,7 +337,7 @@ export class PaymentsService {
       }
 
       console.log('Webhook processed successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing webhook event:', error);
       throw error;
     }
@@ -405,7 +405,7 @@ export class PaymentsService {
       await this.createOrUpdateSubscription(coachId, planId);
 
       console.log('Payment processing completed successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error handling successful payment:', error);
       throw error;
     }
@@ -558,7 +558,7 @@ export class PaymentsService {
       emailSent = true;
 
       console.log('Payment request email sent successfully to:', coach.email);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send payment request email:', error);
       // Don't throw error - payment link was created successfully
     }
@@ -583,7 +583,7 @@ export class PaymentsService {
         paymentsCount: 0, // Stripe doesn't provide this directly
         totalAmount: 0, // Would need to query payment intents
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(`Failed to retrieve payment link status: ${error.message}`);
     }
   }
@@ -616,7 +616,7 @@ export class PaymentsService {
       });
 
       console.log('Payment link deactivated:', linkId);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deactivating payment link:', error);
       throw new BadRequestException(`Failed to deactivate payment link: ${error.message}`);
     }

@@ -1,8 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
-import { AdminAccountVerificationContent } from './content';
 import { AccountVerificationSkeleton } from '@nlc-ai/auth';
+import { AdminAccountVerificationContent } from './content';
 
 const AdminAccountVerificationPage = () => {
   return (

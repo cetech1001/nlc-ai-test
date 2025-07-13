@@ -1,15 +1,14 @@
 'use client';
 
-import {ReactNode, useEffect} from "react";
-import { AuthLayout, AuthLayoutProvider } from '@nlc-ai/auth';
-import {AuthSkeleton} from "@nlc-ai/ui";
+import { FC, ReactNode, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { AuthLayout, AuthLayoutProvider, useAuth, AuthSkeleton } from '@nlc-ai/auth';
 
-import {useRouter} from "next/navigation";
-import {useAuth} from "@nlc-ai/auth";
-
-const AdminAuthLayout = ({ children }: {
+interface AuthLayoutProps {
   children: ReactNode;
-}) => {
+}
+
+const AdminAuthLayout: FC<AuthLayoutProps> = ({ children }) => {
   const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
 
