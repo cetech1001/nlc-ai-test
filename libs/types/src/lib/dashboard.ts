@@ -2,15 +2,13 @@ import {RecentCoach} from "./coach";
 
 export interface DashboardStats {
   totalCoaches: number;
-  totalCoachesGrowth: number; // Growth from previous month
-  activeCoaches: number;
-  activeCoachesGrowth: number; // Growth from previous month
+  totalCoachesGrowth: number;
   inactiveCoaches: number;
-  inactiveCoachesGrowth: number; // Growth from previous month
+  inactiveCoachesGrowth: number;
   allTimeRevenue: number;
-  allTimeRevenueGrowth: number; // Growth from previous year
+  allTimeRevenueGrowth: number;
   monthlyRevenue: number;
-  monthlyRevenueGrowth: number; // Growth from previous month
+  monthlyRevenueGrowth: number;
 }
 
 export interface RevenueData {

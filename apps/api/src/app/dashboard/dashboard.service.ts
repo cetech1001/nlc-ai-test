@@ -1,86 +1,67 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {DashboardStats, RecentCoach, RevenueData, RevenueGrowthData} from "@nlc-ai/types";
+import {DashboardData, DashboardStats, RecentCoach, RevenueGrowthData} from "@nlc-ai/types";
 
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private startOfDay(date: Date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private endOfDay(date: Date) {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }
+
   async getDashboardStats(): Promise<DashboardStats> {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
-    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
-    const startOfThisYear = new Date(now.getFullYear(), 0, 1);
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const year = now.getFullYear();
+    const month = now.getMonth();
 
-    // Coach statistics for current month
+    const startOfMonth = this.startOfDay(new Date(year, month, 1));
+    const startOfLastMonth = this.startOfDay(new Date(year, month - 1, 1));
+    const endOfLastMonth = this.endOfDay(new Date(year, month, 0));
+    const startOfLastYear = this.startOfDay(new Date(year - 1, 0, 1));
+    const endOfLastYear = this.endOfDay(new Date(year - 1, 11, 31));
+    const startOfThisYear = this.startOfDay(new Date(year, 0, 1));
+
+    const thisMonthThreshold = startOfMonth;
+    thisMonthThreshold.setDate(thisMonthThreshold.getDate() - 30);
+
+    const lastMonthThreshold = startOfLastMonth;
+    lastMonthThreshold.setDate(lastMonthThreshold.getDate() - 30);
+
     const [
       totalCoaches,
       totalCoachesLastMonth,
-      activeCoaches,
-      activeCoachesLastMonth,
-      blockedCoaches,
-      blockedCoachesLastMonth,
+      inactiveCoaches,
+      inactiveCoachesLastMonth,
     ] = await Promise.all([
-      // Total coaches now
       this.prisma.coaches.count(),
-      // Total coaches at end of last month
       this.prisma.coaches.count({
-        where: { createdAt: { lte: endOfLastMonth } }
+        where: {
+          createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }
+        }
       }),
-      // Active coaches now (logged in within 30 days)
       this.prisma.coaches.count({
         where: {
           isActive: true,
-          lastLoginAt: { gte: thirtyDaysAgo }
+          lastLoginAt: { lte: thisMonthThreshold }
         }
       }),
-      // Active coaches last month (logged in within 30 days from end of last month)
       this.prisma.coaches.count({
         where: {
           isActive: true,
-          lastLoginAt: {
-            gte: new Date(endOfLastMonth.getTime() - (30 * 24 * 60 * 60 * 1000)),
-            lte: endOfLastMonth
-          },
-          createdAt: { lte: endOfLastMonth }
+          lastLoginAt: { lte: lastMonthThreshold },
         }
       }),
-      // Blocked coaches now
-      this.prisma.coaches.count({
-        where: { isActive: false }
-      }),
-      // Blocked coaches last month
-      this.prisma.coaches.count({
-        where: {
-          isActive: false,
-          createdAt: { lte: endOfLastMonth }
-        }
-      }),
-      // New coaches this month
-      this.prisma.coaches.count({
-        where: { createdAt: { gte: startOfMonth } }
-      }),
-      // New coaches last month
-      this.prisma.coaches.count({
-        where: {
-          createdAt: {
-            gte: startOfLastMonth,
-            lte: endOfLastMonth
-          }
-        }
-      })
     ]);
 
-    // Calculate inactive coaches
-    const inactiveCoaches = totalCoaches - activeCoaches - blockedCoaches;
-    const inactiveCoachesLastMonth = totalCoachesLastMonth - activeCoachesLastMonth - blockedCoachesLastMonth;
-
-    // Revenue statistics
     const [
       allTimeRevenue,
       lastYearRevenue,
@@ -88,12 +69,10 @@ export class DashboardService {
       monthlyRevenue,
       lastMonthRevenue
     ] = await Promise.all([
-      // All time revenue
       this.prisma.transactions.aggregate({
         where: { status: 'completed' },
         _sum: { amount: true }
       }),
-      // Last year's revenue
       this.prisma.transactions.aggregate({
         where: {
           status: 'completed',
@@ -104,7 +83,6 @@ export class DashboardService {
         },
         _sum: { amount: true }
       }),
-      // This year's revenue so far
       this.prisma.transactions.aggregate({
         where: {
           status: 'completed',
@@ -112,7 +90,6 @@ export class DashboardService {
         },
         _sum: { amount: true }
       }),
-      // This month's revenue
       this.prisma.transactions.aggregate({
         where: {
           status: 'completed',
@@ -120,7 +97,6 @@ export class DashboardService {
         },
         _sum: { amount: true }
       }),
-      // Last month's revenue
       this.prisma.transactions.aggregate({
         where: {
           status: 'completed',
@@ -133,13 +109,8 @@ export class DashboardService {
       })
     ]);
 
-    // Calculate growth percentages
     const totalCoachesGrowth = totalCoachesLastMonth > 0
       ? ((totalCoaches - totalCoachesLastMonth) / totalCoachesLastMonth) * 100
-      : 0;
-
-    const activeCoachesGrowth = activeCoachesLastMonth > 0
-      ? ((activeCoaches - activeCoachesLastMonth) / activeCoachesLastMonth) * 100
       : 0;
 
     const inactiveCoachesGrowth = inactiveCoachesLastMonth > 0
@@ -157,8 +128,6 @@ export class DashboardService {
     return {
       totalCoaches,
       totalCoachesGrowth: Math.round(totalCoachesGrowth * 100) / 100,
-      activeCoaches,
-      activeCoachesGrowth: Math.round(activeCoachesGrowth * 100) / 100,
       inactiveCoaches,
       inactiveCoachesGrowth: Math.round(inactiveCoachesGrowth * 100) / 100,
       allTimeRevenue: Math.round((allTimeRevenue._sum.amount || 0) / 100),
@@ -168,197 +137,203 @@ export class DashboardService {
     };
   }
 
-  async getRevenueData(period: 'week' | 'month' | 'year'): Promise<RevenueGrowthData> {
+  private async getWeeklyRevenueData(): Promise<RevenueGrowthData> {
     const now = new Date();
-    let revenueData: RevenueData[] = [];
-    let growthDescription = "";
-    let growthPercentage = 0;
+    const dailyRevenue = [];
 
-    if (period === 'week') {
-      // Get daily revenue for last 7 days
-      const dailyRevenue = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
 
-        const revenue = await this.prisma.transactions.aggregate({
-          where: {
-            status: 'completed',
-            createdAt: {
-              gte: startOfDay,
-              lt: endOfDay
-            }
-          },
-          _sum: { amount: true }
-        });
+      const startOfDay = this.startOfDay(date);
+      const endOfDay = this.endOfDay(date);
 
-        dailyRevenue.push({
-          period: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()],
-          revenue: Math.round((revenue._sum.amount || 0) / 100),
-          date: date.toISOString().split('T')[0]
-        });
-      }
-
-      // Calculate week-over-week growth
-      const thisWeekTotal = dailyRevenue.reduce((sum, day) => sum + day.revenue, 0);
-
-      // Get last week's total
-      const lastWeekStart = new Date(now);
-      lastWeekStart.setDate(lastWeekStart.getDate() - 13);
-      const lastWeekEnd = new Date(now);
-      lastWeekEnd.setDate(lastWeekEnd.getDate() - 7);
-
-      const lastWeekRevenue = await this.prisma.transactions.aggregate({
+      const revenue = await this.prisma.transactions.aggregate({
         where: {
           status: 'completed',
           createdAt: {
-            gte: lastWeekStart,
-            lt: lastWeekEnd
+            gte: startOfDay,
+            lte: endOfDay
           }
         },
         _sum: { amount: true }
       });
 
-      const lastWeekTotal = Math.round((lastWeekRevenue._sum.amount || 0) / 100);
-      growthPercentage = lastWeekTotal > 0
-        ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100
-        : 0;
-
-      const growthText = growthPercentage >= 0 ? "grown" : "decreased";
-      growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(1)}% since last week`;
-
-      revenueData = dailyRevenue;
+      dailyRevenue.push({
+        period: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()],
+        revenue: Math.round((revenue._sum.amount || 0) / 100),
+        date: date.toISOString().split('T')[0]
+      });
     }
 
-    else if (period === 'month') {
-      // Get weekly revenue for current month
-      const weeklyRevenue = [];
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      let weekStart = new Date(startOfMonth);
-      let weekNumber = 1;
+    const thisWeekTotal = dailyRevenue.reduce((sum, day) => sum + day.revenue, 0);
 
-      while (weekStart.getMonth() === now.getMonth()) {
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 7);
+    const lastWeekStart = new Date(now);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 13);
 
-        if (weekEnd.getMonth() > now.getMonth()) {
-          weekEnd.setDate(0);
-          weekEnd.setMonth(now.getMonth() + 1);
+    const lastWeekEnd = new Date(now);
+    lastWeekEnd.setDate(lastWeekEnd.getDate() - 7);
+
+    const lastWeekRevenue = await this.prisma.transactions.aggregate({
+      where: {
+        status: 'completed',
+        createdAt: {
+          gte: lastWeekStart,
+          lt: lastWeekEnd
         }
+      },
+      _sum: { amount: true }
+    });
+    const lastWeekTotal = Math.round((lastWeekRevenue._sum.amount || 0) / 100);
 
-        const revenue = await this.prisma.transactions.aggregate({
-          where: {
-            status: 'completed',
-            createdAt: {
-              gte: weekStart,
-              lt: weekEnd
-            }
-          },
-          _sum: { amount: true }
-        });
+    const growthPercentage = lastWeekTotal > 0
+      ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100
+      : 0;
 
-        weeklyRevenue.push({
-          period: `Week ${weekNumber}`,
-          revenue: Math.round((revenue._sum.amount || 0) / 100),
-          date: weekStart.toISOString().split('T')[0]
-        });
-
-        weekStart = new Date(weekEnd);
-        weekNumber++;
-      }
-
-      // Calculate month-over-month growth
-      const thisMonthTotal = weeklyRevenue.reduce((sum, week) => sum + week.revenue, 0);
-
-      // Get last month's total
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-      const lastMonthRevenue = await this.prisma.transactions.aggregate({
-        where: {
-          status: 'completed',
-          createdAt: {
-            gte: lastMonthStart,
-            lte: lastMonthEnd
-          }
-        },
-        _sum: { amount: true }
-      });
-
-      const lastMonthTotal = Math.round((lastMonthRevenue._sum.amount || 0) / 100);
-      growthPercentage = lastMonthTotal > 0
-        ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
-        : 0;
-
-      const growthText = growthPercentage >= 0 ? "grown" : "decreased";
-      growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(1)}% since last month`;
-
-      revenueData = weeklyRevenue;
-    }
-
-    else {
-      // Get monthly revenue for current year
-      const monthlyRevenue = [];
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-      for (let i = 0; i < 12; i++) {
-        const monthStart = new Date(now.getFullYear(), i, 1);
-        const monthEnd = new Date(now.getFullYear(), i + 1, 1);
-
-        const revenue = await this.prisma.transactions.aggregate({
-          where: {
-            status: 'completed',
-            createdAt: {
-              gte: monthStart,
-              lt: monthEnd
-            }
-          },
-          _sum: { amount: true }
-        });
-
-        monthlyRevenue.push({
-          period: months[i],
-          revenue: Math.round((revenue._sum.amount || 0) / 100),
-          date: monthStart.toISOString().split('T')[0]
-        });
-      }
-
-      // Calculate year-over-year growth
-      const thisYearTotal = monthlyRevenue.reduce((sum, month) => sum + month.revenue, 0);
-
-      // Get last year's total
-      const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
-      const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
-
-      const lastYearRevenue = await this.prisma.transactions.aggregate({
-        where: {
-          status: 'completed',
-          createdAt: {
-            gte: lastYearStart,
-            lte: lastYearEnd
-          }
-        },
-        _sum: { amount: true }
-      });
-
-      const lastYearTotal = Math.round((lastYearRevenue._sum.amount || 0) / 100);
-      growthPercentage = lastYearTotal > 0
-        ? ((thisYearTotal - lastYearTotal) / lastYearTotal) * 100
-        : 0;
-
-      const growthText = growthPercentage >= 0 ? "grown" : "decreased";
-      growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(2)}% since last year`;
-
-      revenueData = monthlyRevenue;
-    }
+    const growthText = growthPercentage >= 0 ? "grown" : "decreased";
+    const growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(1)}% since last week`;
 
     return {
-      data: revenueData,
+      data: dailyRevenue,
+      growthPercentage,
       growthDescription,
-      growthPercentage: Math.round(growthPercentage * 100) / 100
+    }
+  }
+
+  private async getMonthlyRevenueData(): Promise<RevenueGrowthData> {
+    const now = new Date();
+    const weeklyRevenue = [];
+    const startOfMonth = this.startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+    let weekStart = new Date(startOfMonth);
+    let weekNumber = 1;
+
+    while (weekStart.getMonth() === now.getMonth()) {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+
+      if (weekEnd.getMonth() > now.getMonth()) {
+        weekEnd.setDate(0);
+        weekEnd.setMonth(now.getMonth() + 1);
+      }
+
+      const revenue = await this.prisma.transactions.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: weekStart,
+            lt: weekEnd
+          }
+        },
+        _sum: { amount: true }
+      });
+
+      weeklyRevenue.push({
+        period: `Week ${weekNumber}`,
+        revenue: Math.round((revenue._sum.amount || 0) / 100),
+        date: weekStart.toISOString().split('T')[0]
+      });
+
+      weekStart = new Date(weekEnd);
+      weekNumber++;
+    }
+
+    const thisMonthTotal = weeklyRevenue.reduce((sum, week) => sum + week.revenue, 0);
+
+    const lastMonthStart = this.startOfDay(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const lastMonthEnd = this.endOfDay(new Date(now.getFullYear(), now.getMonth(), 0));
+
+    const lastMonthRevenue = await this.prisma.transactions.aggregate({
+      where: {
+        status: 'completed',
+        createdAt: {
+          gte: lastMonthStart,
+          lte: lastMonthEnd
+        }
+      },
+      _sum: { amount: true }
+    });
+
+    const lastMonthTotal = Math.round((lastMonthRevenue._sum.amount || 0) / 100);
+    const growthPercentage = lastMonthTotal > 0
+      ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
+      : 0;
+
+    const growthText = growthPercentage >= 0 ? "grown" : "decreased";
+    const growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(1)}% since last month`;
+
+    return {
+      data: weeklyRevenue,
+      growthPercentage,
+      growthDescription,
     };
+  }
+
+  private async getYearlyRevenueData(): Promise<RevenueGrowthData> {
+    const now = new Date();
+    const monthlyRevenue = [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    for (let i = 0; i < 12; i++) {
+      const monthStart = this.startOfDay(new Date(now.getFullYear(), i, 1));
+      const monthEnd = this.endOfDay(new Date(now.getFullYear(), i + 1, 0));
+
+      const revenue = await this.prisma.transactions.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: monthStart,
+            lte: monthEnd
+          }
+        },
+        _sum: { amount: true }
+      });
+
+      monthlyRevenue.push({
+        period: months[i],
+        revenue: Math.round((revenue._sum.amount || 0) / 100),
+        date: monthStart.toISOString().split('T')[0]
+      });
+    }
+
+    const thisYearTotal = monthlyRevenue.reduce((sum, month) => sum + month.revenue, 0);
+
+    const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+    const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+
+    const lastYearRevenue = await this.prisma.transactions.aggregate({
+      where: {
+        status: 'completed',
+        createdAt: {
+          gte: lastYearStart,
+          lte: lastYearEnd
+        }
+      },
+      _sum: { amount: true }
+    });
+
+    const lastYearTotal = Math.round((lastYearRevenue._sum.amount || 0) / 100);
+    const growthPercentage = lastYearTotal > 0
+      ? ((thisYearTotal - lastYearTotal) / lastYearTotal) * 100
+      : 0;
+
+    const growthText = growthPercentage >= 0 ? "grown" : "decreased";
+    const growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(2)}% since last year`;
+
+    return {
+      data: monthlyRevenue,
+      growthPercentage,
+      growthDescription,
+    }
+  }
+
+  async getRevenueData(): Promise<DashboardData['revenueData']> {
+    const [weekly, monthly, yearly] = await Promise.all([
+      this.getWeeklyRevenueData(),
+      this.getMonthlyRevenueData(),
+      this.getYearlyRevenueData(),
+    ]);
+
+    return { weekly, monthly, yearly };
   }
 
   async getRecentCoaches(limit: number = 6): Promise<RecentCoach[]> {
@@ -403,17 +378,15 @@ export class DashboardService {
   }
 
   async getDashboardData() {
-    const [stats, revenueDataYear, recentCoaches] = await Promise.all([
+    const [stats, revenueData, recentCoaches] = await Promise.all([
       this.getDashboardStats(),
-      this.getRevenueData('year'),
+      this.getRevenueData(),
       this.getRecentCoaches(6)
     ]);
 
     return {
       stats,
-      revenueData: {
-        yearly: revenueDataYear,
-      },
+      revenueData,
       recentCoaches
     };
   }

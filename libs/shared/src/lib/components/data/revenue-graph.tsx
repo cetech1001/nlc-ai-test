@@ -7,24 +7,32 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { dashboardAPI } from "@nlc-ai/api-client";
-import {RevenueGrowthData} from "@nlc-ai/types";
+import {DashboardData} from "@nlc-ai/types";
 
 interface RevenueGraphProps {
-  revenueData: RevenueGrowthData;
+  revenueData: DashboardData['revenueData'];
+  isLoading: boolean;
 }
 
-export const RevenueGraph = ({ revenueData: initialData }: RevenueGraphProps) => {
+export const RevenueGraph = ({ revenueData: initialData, isLoading }: RevenueGraphProps) => {
   const [timePeriod, setTimePeriod] = useState<"Week" | "Month" | "Year">("Year");
-  const [isLoading, setIsLoading] = useState(false);
-  const [revenueData, setRevenueData] = useState(initialData);
+  const [revenueData] = useState(initialData);
   const chartRef = useRef<HTMLDivElement>(null);
 
   const getCurrentData = useCallback(() => {
+    const periodKey = timePeriod.toLowerCase() as 'week' | 'month' | 'year';
     if (revenueData) {
-      return revenueData.data;
+      return revenueData[`${periodKey}ly`]?.data;
     }
     return [];
+  }, [timePeriod, revenueData]);
+
+  const getCurrentDescription = useCallback(() => {
+    const periodKey = timePeriod.toLowerCase() as 'week' | 'month' | 'year';
+    if (revenueData) {
+      return revenueData[`${periodKey}ly`]?.growthDescription;
+    }
+    return "";
   }, [timePeriod, revenueData]);
 
   const handlePeriodChange = useCallback(async (period: "Week" | "Month" | "Year") => {
@@ -35,20 +43,20 @@ export const RevenueGraph = ({ revenueData: initialData }: RevenueGraphProps) =>
       chartRef.current.style.transition = 'opacity 200ms ease-out';
     }
 
-    const periodKey = period.toLowerCase() as 'week' | 'month' | 'year';
+    /*const periodKey = period.toLowerCase() as 'week' | 'month' | 'year';
     const isNotCurrentPeriod = period !== timePeriod;
 
      if (isNotCurrentPeriod) {
       try {
         setIsLoading(true);
-        const newData = await dashboardAPI.getRevenueData(periodKey);
-        setRevenueData(newData);
+        // const newData = await dashboardAPI.getRevenueData(periodKey);
+        setRevenueData(revenueData[`${periodKey}ly`]);
       } catch (error) {
         console.error('Failed to fetch revenue data:', error);
       } finally {
         setIsLoading(false);
       }
-    }
+    }*/
 
     setTimeout(() => {
       setTimePeriod(period);
@@ -62,8 +70,9 @@ export const RevenueGraph = ({ revenueData: initialData }: RevenueGraphProps) =>
   }, [timePeriod, isLoading, revenueData]);
 
   const currentData = getCurrentData();
+  const growthDescription = getCurrentDescription();
 
-  const formatTooltip = useCallback((value: any, name: string) => {
+  const formatTooltip = useCallback((value: any) => {
     return [`${value.toLocaleString()}`, "Revenue"];
   }, []);
 
@@ -75,7 +84,7 @@ export const RevenueGraph = ({ revenueData: initialData }: RevenueGraphProps) =>
             Your Revenue
           </h2>
           <p className="text-stone-300 text-sm font-normal leading-tight sm:leading-relaxed transition-all duration-300">
-            {isLoading ? `Fetching revenue data...` : revenueData.growthDescription}
+            {isLoading ? `Fetching revenue data...` : growthDescription}
           </p>
         </div>
 
@@ -105,7 +114,7 @@ export const RevenueGraph = ({ revenueData: initialData }: RevenueGraphProps) =>
         ref={chartRef}
         className="h-40 sm:h-48 lg:h-56 relative transition-opacity duration-300 ease-out"
       >
-        {currentData.length === 0 ? (
+        {currentData?.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-stone-400 text-center">
               <div className="text-lg mb-2">No revenue data available</div>

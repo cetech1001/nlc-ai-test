@@ -36,7 +36,6 @@ const AdminHome = () => {
       const data = await dashboardAPI.getDashboardData();
       setDashboardData(data);
     } catch (error: any) {
-      console.error('Failed to fetch dashboard data:', error);
       setError(error.message || "Failed to load dashboard data");
     } finally {
       setIsLoading(false);
@@ -89,7 +88,7 @@ const AdminHome = () => {
         <div className="flex-1 relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 min-w-0 overflow-hidden">
           <div className="absolute w-64 h-64 -left-12 top-52 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
           <div className="absolute w-64 h-64 right-40 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
-          <RevenueGraph revenueData={revenueData.yearly} />
+          <RevenueGraph revenueData={revenueData} isLoading={isLoading || !dashboardData} />
         </div>
 
         <div className="w-full xl:w-1/3 grid grid-cols-2 gap-4 lg:gap-6">
