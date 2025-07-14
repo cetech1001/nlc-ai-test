@@ -5,15 +5,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { TokenService } from './services/token.service';
 import {
-  LoginDto,
-  RegisterDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  VerifyCodeDto,
-  AdminLoginDto,
-} from './dto';
-import {UpdateProfileDto, UpdatePasswordDto} from "./dto";
-import {AUTH_USER_TYPE, USER_TYPE} from "@nlc-ai/types";
+  AUTH_ROLES, ForgotPasswordRequest,
+  LoginRequest,
+  RegistrationRequest, ResetPasswordRequest,
+  UpdatePasswordRequest,
+  UpdateProfileRequest,
+  UserType, VerifyCodeRequest
+} from "@nlc-ai/types";
 
 @Injectable()
 export class AuthService {
@@ -24,7 +22,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  async registerCoach(registerDto: RegisterDto) {
+  async registerCoach(registerDto: RegistrationRequest) {
     const { email, password, fullName } = registerDto;
 
     const existingCoach = await this.prisma.coaches.findUnique({
@@ -64,7 +62,7 @@ export class AuthService {
     };
   }
 
-  async loginCoach(loginDto: LoginDto) {
+  async loginCoach(loginDto: LoginRequest) {
     const { email, password } = loginDto;
 
     const coach = await this.validateCoach(email, password);
@@ -88,7 +86,7 @@ export class AuthService {
     const payload = {
       sub: coach.id,
       email: coach.email,
-      type: USER_TYPE.coach,
+      type: UserType.coach,
     };
 
     return {
@@ -125,7 +123,7 @@ export class AuthService {
     return coach;
   }
 
-  async loginAdmin(adminLoginDto: AdminLoginDto) {
+  async loginAdmin(adminLoginDto: LoginRequest) {
     const { email, password } = adminLoginDto;
 
     const admin = await this.validateAdmin(email, password);
@@ -138,7 +136,7 @@ export class AuthService {
     const payload = {
       sub: admin.id,
       email: admin.email,
-      type: USER_TYPE.admin,
+      type: UserType.admin,
       role: admin.role,
     };
 
@@ -171,10 +169,10 @@ export class AuthService {
     return admin;
   }
 
-  async updateProfile(userId: string, userType: AUTH_USER_TYPE, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(userId: string, userType: AUTH_ROLES, updateProfileDto: UpdateProfileRequest) {
     const { firstName, lastName, email } = updateProfileDto;
 
-    if (userType === USER_TYPE.coach) {
+    if (userType === UserType.coach) {
       const existingCoach = await this.prisma.coaches.findFirst({
         where: {
           email,
@@ -246,12 +244,12 @@ export class AuthService {
     }
   }
 
-  async updatePassword(userId: string, userType: AUTH_USER_TYPE, updatePasswordDto: UpdatePasswordDto) {
+  async updatePassword(userId: string, userType: AUTH_ROLES, updatePasswordDto: UpdatePasswordRequest) {
     const { newPassword } = updatePasswordDto;
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
-    if (userType === USER_TYPE.coach) {
+    if (userType === UserType.coach) {
       await this.prisma.coaches.update({
         where: { id: userId },
         data: {
@@ -272,11 +270,11 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto, userType: AUTH_USER_TYPE) {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordRequest, userType: AUTH_ROLES) {
     const { email } = forgotPasswordDto;
 
     let user;
-    if (userType === USER_TYPE.coach) {
+    if (userType === UserType.coach) {
       user = await this.prisma.coaches.findUnique({ where: { email } });
     } else {
       user = await this.prisma.admins.findUnique({ where: { email } });
@@ -291,7 +289,7 @@ export class AuthService {
     return { message: 'Verification code sent to your email.' };
   }
 
-  async verifyCode(verifyCodeDto: VerifyCodeDto) {
+  async verifyCode(verifyCodeDto: VerifyCodeRequest) {
     const { email, code } = verifyCodeDto;
 
     const isValid = await this.tokenService.verifyToken(email, code, 'verification');
@@ -315,7 +313,7 @@ export class AuthService {
       const payload = {
         sub: user.id,
         email: user.email,
-        type: USER_TYPE.coach,
+        type: UserType.coach,
       };
 
       return {
@@ -341,7 +339,7 @@ export class AuthService {
     }
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto, userType: AUTH_USER_TYPE) {
+  async resetPassword(resetPasswordDto: ResetPasswordRequest, userType: AUTH_ROLES) {
     const { token, password } = resetPasswordDto;
 
     const email = await this.tokenService.validateResetToken(token);
@@ -351,7 +349,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    if (userType === USER_TYPE.coach) {
+    if (userType === UserType.coach) {
       await this.prisma.coaches.update({
         where: { email },
         data: { passwordHash },
@@ -384,8 +382,8 @@ export class AuthService {
     }
   }
 
-  async findUserById(id: string, type: AUTH_USER_TYPE) {
-    if (type === USER_TYPE.coach) {
+  async findUserById(id: string, type: AUTH_ROLES) {
+    if (type === UserType.coach) {
       return this.prisma.coaches.findUnique({
         where: { id, isActive: true },
         select: {

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ResetPasswordForm, useAuthPage } from '@nlc-ai/auth';
-import {USER_TYPE} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/types";
 
 export const CoachResetPasswordContent = () => {
   const router = useRouter();
@@ -44,6 +44,6 @@ export const CoachResetPasswordContent = () => {
     <ResetPasswordForm
       handleBackToLogin={handleBackToLogin}
       token={token}
-      userType={USER_TYPE.coach}/>
+      userType={UserType.coach}/>
   );
 }

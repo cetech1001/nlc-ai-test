@@ -6,7 +6,6 @@ import { GoogleAuthService } from './services/google-auth.service';
 import {
   LoginDto,
   RegisterDto,
-  AdminLoginDto,
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyCodeDto,
@@ -17,7 +16,7 @@ import {
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
-import {type AUTH_USER_TYPE, USER_TYPE} from "@nlc-ai/types";
+import {type AUTH_ROLES, UserType} from "@nlc-ai/types";
 import type {Response, Request} from 'express';
 
 @ApiTags('Authentication')
@@ -37,13 +36,13 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
-    @Body() loginDto: LoginDto | AdminLoginDto,
-    @Query('type') type: AUTH_USER_TYPE = USER_TYPE.coach
+    @Body() loginDto: LoginDto,
+    @Query('type') type: AUTH_ROLES = UserType.coach
   ) {
     if (type === 'admin') {
-      return this.authService.loginAdmin(loginDto as AdminLoginDto);
+      return this.authService.loginAdmin(loginDto);
     }
-    return this.authService.loginCoach(loginDto as LoginDto);
+    return this.authService.loginCoach(loginDto);
   }
 
   @Post('register')
@@ -75,14 +74,6 @@ export class AuthController {
     return this.googleAuthService.registerWithGoogle(googleAuthDto.idToken);
   }
 
-  @Get('google')
-  @Public()
-  @UseGuards(GoogleOAuthGuard)
-  @ApiOperation({ summary: 'Initiate Google OAuth flow' })
-  async googleAuth(@Req() req: Request) {
-    // This will redirect to Google
-  }
-
   @Get('google/callback')
   @Public()
   @UseGuards(GoogleOAuthGuard)
@@ -90,7 +81,6 @@ export class AuthController {
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
     const result = await this.googleAuthService.googleAuth(req.user);
 
-    // Redirect to frontend with token
     const frontendUrl = this.configService.get<string>('COACH_PLATFORM_URL');
     const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}`;
 
@@ -105,7 +95,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Verification code sent' })
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
-    @Query('type') type: AUTH_USER_TYPE = USER_TYPE.coach
+    @Query('type') type: AUTH_ROLES = UserType.coach
   ) {
     return this.authService.forgotPassword(forgotPasswordDto, type);
   }
@@ -139,7 +129,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
-    @Query('type') type: AUTH_USER_TYPE = USER_TYPE.coach
+    @Query('type') type: AUTH_ROLES = UserType.coach
   ) {
     return this.authService.resetPassword(resetPasswordDto, type);
   }
@@ -156,7 +146,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile(@Req() req: { user: { id: string; type: AUTH_USER_TYPE } }) {
+  async getProfile(@Req() req: { user: { id: string; type: AUTH_ROLES } }) {
     const { id, type } = req.user;
     return this.authService.findUserById(id, type);
   }
@@ -170,7 +160,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async updateProfile(
-    @Req() req: { user: { id: string; type: AUTH_USER_TYPE } },
+    @Req() req: { user: { id: string; type: AUTH_ROLES } },
     @Body() updateProfileDto: UpdateProfileDto
   ) {
     const { id, type } = req.user;
@@ -185,7 +175,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid password format' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updatePassword(
-    @Req() req: { user: { id: string; type: AUTH_USER_TYPE } },
+    @Req() req: { user: { id: string; type: AUTH_ROLES } },
     @Body() updatePasswordDto: UpdatePasswordDto
   ) {
     const { id, type } = req.user;

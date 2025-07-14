@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import {BaseAPI} from "@nlc-ai/api-client";
-import {AUTH_USER_TYPE} from "@nlc-ai/types";
+import {AUTH_ROLES} from "@nlc-ai/types";
 
 import {LoginResponse, UpdatePasswordRequest, UpdateProfileRequest} from "../types";
 
@@ -15,7 +15,7 @@ class AuthAPI extends BaseAPI{
     email: string,
     password: string,
     rememberMe?: boolean,
-    userType?: AUTH_USER_TYPE
+    userType?: AUTH_ROLES
   ): Promise<LoginResponse> {
     try {
       let param = "";
@@ -72,7 +72,7 @@ class AuthAPI extends BaseAPI{
     return result;
   }
 
-  async forgotPassword(email: string, userType?: AUTH_USER_TYPE): Promise<{ message: string }> {
+  async forgotPassword(email: string, userType?: AUTH_ROLES): Promise<{ message: string }> {
     let param = "";
     if (userType) {
       param += `?type=${userType}`;
@@ -100,7 +100,7 @@ class AuthAPI extends BaseAPI{
     return result;
   }
 
-  async resetPassword(token: string, password: string, userType?: AUTH_USER_TYPE): Promise<{ message: string }> {
+  async resetPassword(token: string, password: string, userType?: AUTH_ROLES): Promise<{ message: string }> {
     let param = "";
     if (userType) {
       param += `?type=${userType}`;

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/auth';
-import { USER_TYPE } from "@nlc-ai/types";
+import { UserType } from "@nlc-ai/types";
 
 const AdminForgotPasswordPage = () => {
   const router = useRouter();
@@ -23,7 +23,7 @@ const AdminForgotPasswordPage = () => {
     <ForgotPasswordForm
       handleBackToLogin={handleBackToLogin}
       handleAccountVerification={handleAccountVerification}
-      userType={USER_TYPE.admin}/>
+      userType={UserType.admin}/>
   );
 }
 

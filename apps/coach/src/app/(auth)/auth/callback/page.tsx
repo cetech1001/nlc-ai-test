@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@nlc-ai/auth';
-import {USER_TYPE} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/types";
 
 const AuthCallbackPage = () => {
   const router = useRouter();
@@ -16,7 +16,7 @@ const AuthCallbackPage = () => {
     if (token) {
       localStorage.setItem('adminToken', token);
 
-      checkAuthStatus(USER_TYPE.coach).then(() => {
+      checkAuthStatus(UserType.coach).then(() => {
         router.push('/home');
       }).catch(() => {
         router.push('/login?error=auth_failed');

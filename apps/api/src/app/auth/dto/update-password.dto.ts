@@ -1,7 +1,8 @@
 import { IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import {UpdatePasswordRequest} from "@nlc-ai/types";
 
-export class UpdatePasswordDto {
+export class UpdatePasswordDto implements UpdatePasswordRequest{
   @ApiProperty({ example: 'NewPassword123!' })
   @IsString()
   @MinLength(8)

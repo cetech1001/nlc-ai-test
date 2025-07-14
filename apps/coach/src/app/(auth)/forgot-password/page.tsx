@@ -1,7 +1,7 @@
 'use client';
 
 import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/auth';
-import {USER_TYPE} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/types";
 import {useRouter} from "next/navigation";
 
 const AdminForgotPasswordPage = () => {
@@ -23,7 +23,7 @@ const AdminForgotPasswordPage = () => {
     <ForgotPasswordForm
       handleBackToLogin={handleBackToLogin}
       handleAccountVerification={handleAccountVerification}
-      userType={USER_TYPE.coach}/>
+      userType={UserType.coach}/>
   );
 }
 

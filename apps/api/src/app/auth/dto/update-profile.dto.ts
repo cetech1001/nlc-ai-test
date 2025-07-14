@@ -1,7 +1,8 @@
 import { IsEmail, IsString, MinLength, Matches, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import {UpdateProfileRequest} from "@nlc-ai/types";
 
-export class UpdateProfileDto {
+export class UpdateProfileDto implements UpdateProfileRequest{
   @ApiProperty({ example: 'John' })
   @IsString()
   @MinLength(2)

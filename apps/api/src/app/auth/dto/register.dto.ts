@@ -1,7 +1,8 @@
 import { IsEmail, IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import {RegistrationRequest} from "@nlc-ai/types";
 
-export class RegisterDto {
+export class RegisterDto implements RegistrationRequest{
   @ApiProperty({ example: 'John Doe' })
   @IsString()
   @MinLength(2)

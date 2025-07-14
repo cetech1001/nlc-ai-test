@@ -5,7 +5,7 @@ import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/shared';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/auth";
 import {menuItems, pageConfig} from "@/lib/utils/constants";
-import {USER_TYPE} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/types";
 
 
 interface DashboardLayoutProps {
@@ -20,7 +20,7 @@ const defaultConfig = {
 
 const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
-  const { user, isLoading, isAuthenticated, logout } = useAuth(USER_TYPE.admin);
+  const { user, isLoading, isAuthenticated, logout } = useAuth(UserType.admin);
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 

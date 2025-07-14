@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LoginForm, useAuthPage } from '@nlc-ai/auth';
-import { USER_TYPE } from '@nlc-ai/types';
+import { UserType } from '@nlc-ai/types';
 
 
 const AdminLoginPage = () => {
@@ -45,7 +45,7 @@ const AdminLoginPage = () => {
       handleForgotPassword={handleForgotPassword}
       successMessage={successMessage}
       setSuccessMessage={(message: string) => setSuccessMessage(message)}
-      userType={USER_TYPE.admin}
+      userType={UserType.admin}
       showSignUp={false}
       showGoogleAuth={false}
       showRememberMe={true}

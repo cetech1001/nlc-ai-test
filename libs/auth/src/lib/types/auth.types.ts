@@ -2,7 +2,7 @@ import {ReactNode} from "react";
 
 export interface AuthFormProps {
   className?: string;
-  userType?: AUTH_USER_TYPE;
+  userType?: AUTH_ROLES;
 }
 
 export interface LoginFormProps extends AuthFormProps {
@@ -51,4 +51,4 @@ export interface AuthLayoutProps {
 }
 
 import Element = React.JSX.Element;
-import {AUTH_USER_TYPE} from "@nlc-ai/types";
+import {AUTH_ROLES} from "@nlc-ai/types";

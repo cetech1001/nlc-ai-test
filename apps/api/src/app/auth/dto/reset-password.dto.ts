@@ -1,7 +1,8 @@
 import { IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import {ResetPasswordRequest} from "@nlc-ai/types";
 
-export class ResetPasswordDto {
+export class ResetPasswordDto implements ResetPasswordRequest{
   @ApiProperty({ example: 'reset-token-here' })
   @IsString()
   token: string;

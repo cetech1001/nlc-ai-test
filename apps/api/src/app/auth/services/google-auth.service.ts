@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OAuth2Client } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
-import {USER_TYPE} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/types";
 
 @Injectable()
 export class GoogleAuthService {
@@ -67,7 +67,7 @@ export class GoogleAuthService {
     const payload = {
       sub: existingUser.id,
       email: existingUser.email,
-      type: USER_TYPE.coach,
+      type: UserType.coach,
     };
 
     return {
