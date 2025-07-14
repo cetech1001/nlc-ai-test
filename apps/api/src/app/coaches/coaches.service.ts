@@ -195,6 +195,52 @@ export class CoachesService {
     };
   }
 
+  async getCoachStats() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [totalCoaches, totalCoachesLastMonth, inactiveCoaches, inactiveCoachesLastMonth] = await Promise.all([
+      this.prisma.coach.count(),
+      this.prisma.coach.count({
+        where: {
+          createdAt: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
+            lte: new Date(new Date().getFullYear(), new Date().getMonth(), 0)
+          }
+        }
+      }),
+      this.prisma.coach.count({
+        where: {
+          isActive: true,
+          lastLoginAt: { lte: thirtyDaysAgo }
+        }
+      }),
+      this.prisma.coach.count({
+        where: {
+          isActive: true,
+          lastLoginAt: {
+            lte: new Date(new Date().setDate(new Date().getDate() - 60))
+          }
+        }
+      })
+    ]);
+
+    const totalCoachesGrowth = totalCoachesLastMonth > 0
+      ? ((totalCoaches - totalCoachesLastMonth) / totalCoachesLastMonth) * 100
+      : 0;
+
+    const inactiveCoachesGrowth = inactiveCoachesLastMonth > 0
+      ? ((inactiveCoaches - inactiveCoachesLastMonth) / inactiveCoachesLastMonth) * 100
+      : 0;
+
+    return {
+      totalCoaches,
+      inactiveCoaches,
+      totalCoachesGrowth: Math.round(totalCoachesGrowth * 100) / 100,
+      inactiveCoachesGrowth: Math.round(inactiveCoachesGrowth * 100) / 100,
+    };
+  }
+
   async findOne(id: string) {
     const coach = await this.prisma.coach.findUnique({
       where: {id},
@@ -239,33 +285,6 @@ export class CoachesService {
       status: this.determineCoachStatus(coach),
       currentPlan: coach.subscriptions[0]?.plan?.name || 'No Plan',
       totalRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
-    };
-  }
-
-  async getCoachStats() {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const [totalCoaches, activeCoaches, blockedCoaches] = await Promise.all([
-      this.prisma.coach.count(),
-      this.prisma.coach.count({
-        where: {
-          isActive: true,
-          lastLoginAt: {gte: thirtyDaysAgo}
-        }
-      }),
-      this.prisma.coach.count({
-        where: {isActive: false}
-      })
-    ]);
-
-    const inactiveCoaches = totalCoaches - activeCoaches - blockedCoaches;
-
-    return {
-      total: totalCoaches,
-      active: activeCoaches,
-      inactive: inactiveCoaches,
-      blocked: blockedCoaches,
     };
   }
 

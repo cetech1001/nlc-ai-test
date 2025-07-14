@@ -1,10 +1,5 @@
 import { BaseAPI } from './base';
-import {
-  TransactionDetails,
-  TransactionStats,
-  PaginatedTransactions,
-  RevenueData
-} from '@nlc-ai/types';
+import {Paginated, RevenueGrowthData, Transaction, TransactionStats} from '@nlc-ai/types';
 
 export class TransactionsAPI extends BaseAPI {
   async getTransactions(
@@ -12,7 +7,7 @@ export class TransactionsAPI extends BaseAPI {
     limit = 10,
     filters: Record<string, any> = {},
     search?: string
-  ): Promise<PaginatedTransactions> {
+  ): Promise<Paginated<Transaction>> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -20,17 +15,14 @@ export class TransactionsAPI extends BaseAPI {
 
     if (search) params.append('search', search);
 
-    // Handle status filter
     if (filters.status && filters.status !== '') {
       params.append('status', filters.status);
     }
 
-    // Handle payment method filter (array to comma-separated string)
     if (filters.paymentMethod && Array.isArray(filters.paymentMethod) && filters.paymentMethod.length > 0) {
       params.append('paymentMethod', filters.paymentMethod.join(','));
     }
 
-    // Handle date range filters
     if (filters.dateRange) {
       if (filters.dateRange.start) {
         params.append('startDate', filters.dateRange.start);
@@ -40,7 +32,6 @@ export class TransactionsAPI extends BaseAPI {
       }
     }
 
-    // Handle amount range filters
     if (filters.amountRange) {
       if (filters.amountRange.min) {
         params.append('minAmount', filters.amountRange.min);
@@ -50,7 +41,6 @@ export class TransactionsAPI extends BaseAPI {
       }
     }
 
-    // Handle plan names filter
     if (filters.planNames && Array.isArray(filters.planNames) && filters.planNames.length > 0) {
       params.append('planNames', filters.planNames.join(','));
     }
@@ -58,7 +48,7 @@ export class TransactionsAPI extends BaseAPI {
     return this.makeRequest(`/transactions?${params.toString()}`);
   }
 
-  async getTransaction(id: string): Promise<TransactionDetails> {
+  async getTransaction(id: string): Promise<Transaction> {
     return this.makeRequest(`/transactions/${id}`);
   }
 
@@ -66,8 +56,12 @@ export class TransactionsAPI extends BaseAPI {
     return this.makeRequest('/transactions/stats');
   }
 
-  async getRevenueData(period: 'week' | 'month' | 'year' = 'month'): Promise<RevenueData[]> {
+  async getRevenueByPeriod(period: 'week' | 'month' | 'year' = 'month'): Promise<RevenueGrowthData> {
     return this.makeRequest(`/transactions/revenue?period=${period}`);
+  }
+
+  async getRevenueStats(): Promise<any> {
+    return this.makeRequest('/transactions/revenue/stats');
   }
 
   async downloadTransaction(id: string): Promise<void> {

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {Transaction, TransactionsQueryParams, TransactionStatus} from "@nlc-ai/types";
+import {RevenueGrowthData, Transaction, TransactionsQueryParams, TransactionStatus} from "@nlc-ai/types";
 
 export interface TransactionWithDetails {
   id: string;
@@ -197,61 +197,292 @@ export class TransactionsService {
     };
   }
 
-  async getRevenueByPeriod(period: 'week' | 'month' | 'year' = 'month') {
-    const now = new Date();
-    let startDate: Date;
+  private startOfDay(date: Date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
 
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-      default:
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
+  private endOfDay(date: Date) {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }
+
+  private async getWeeklyRevenueData(): Promise<RevenueGrowthData> {
+    const now = new Date();
+    const dailyRevenue = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+
+      const startOfDay = this.startOfDay(date);
+      const endOfDay = this.endOfDay(date);
+
+      const revenue = await this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: startOfDay,
+            lte: endOfDay
+          }
+        },
+        _sum: { amount: true }
+      });
+
+      dailyRevenue.push({
+        period: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()],
+        revenue: Math.round((revenue._sum.amount || 0) / 100),
+        date: date.toISOString().split('T')[0]
+      });
     }
 
-    const transactions = await this.prisma.transaction.findMany({
+    const thisWeekTotal = dailyRevenue.reduce((sum, day) => sum + day.revenue, 0);
+
+    const lastWeekStart = new Date(now);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 13);
+
+    const lastWeekEnd = new Date(now);
+    lastWeekEnd.setDate(lastWeekEnd.getDate() - 7);
+
+    const lastWeekRevenue = await this.prisma.transaction.aggregate({
       where: {
         status: 'completed',
-        createdAt: { gte: startDate }
+        createdAt: {
+          gte: lastWeekStart,
+          lt: lastWeekEnd
+        }
       },
-      select: {
-        amount: true,
-        createdAt: true,
+      _sum: { amount: true }
+    });
+    const lastWeekTotal = Math.round((lastWeekRevenue._sum.amount || 0) / 100);
+
+    const growthPercentage = lastWeekTotal > 0
+      ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100
+      : 0;
+
+    const growthText = growthPercentage >= 0 ? "grown" : "decreased";
+    const growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(1)}% since last week`;
+
+    return {
+      data: dailyRevenue,
+      growthPercentage,
+      growthDescription,
+    }
+  }
+
+  private async getMonthlyRevenueData(): Promise<RevenueGrowthData> {
+    const now = new Date();
+    const weeklyRevenue = [];
+    const startOfMonth = this.startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+    let weekStart = new Date(startOfMonth);
+    let weekNumber = 1;
+
+    while (weekStart.getMonth() === now.getMonth()) {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+
+      if (weekEnd.getMonth() > now.getMonth()) {
+        weekEnd.setDate(0);
+        weekEnd.setMonth(now.getMonth() + 1);
+      }
+
+      const revenue = await this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: weekStart,
+            lt: weekEnd
+          }
+        },
+        _sum: { amount: true }
+      });
+
+      weeklyRevenue.push({
+        period: `Week ${weekNumber}`,
+        revenue: Math.round((revenue._sum.amount || 0) / 100),
+        date: weekStart.toISOString().split('T')[0]
+      });
+
+      weekStart = new Date(weekEnd);
+      weekNumber++;
+    }
+
+    const thisMonthTotal = weeklyRevenue.reduce((sum, week) => sum + week.revenue, 0);
+
+    const lastMonthStart = this.startOfDay(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const lastMonthEnd = this.endOfDay(new Date(now.getFullYear(), now.getMonth(), 0));
+
+    const lastMonthRevenue = await this.prisma.transaction.aggregate({
+      where: {
+        status: 'completed',
+        createdAt: {
+          gte: lastMonthStart,
+          lte: lastMonthEnd
+        }
       },
-      orderBy: { createdAt: 'asc' }
+      _sum: { amount: true }
     });
 
-    // Group transactions by period
-    const revenueData = transactions.reduce((acc, transaction) => {
-      const date = transaction.createdAt;
-      let key: string;
+    const lastMonthTotal = Math.round((lastMonthRevenue._sum.amount || 0) / 100);
+    const growthPercentage = lastMonthTotal > 0
+      ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
+      : 0;
 
-      if (period === 'week') {
-        key = date.toLocaleDateString('en-US', { weekday: 'short' });
-      } else if (period === 'month') {
-        const weekOfMonth = Math.ceil(date.getDate() / 7);
-        key = `Week ${weekOfMonth}`;
-      } else {
-        key = date.toLocaleDateString('en-US', { month: 'short' });
-      }
+    const growthText = growthPercentage >= 0 ? "grown" : "decreased";
+    const growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(1)}% since last month`;
 
-      if (!acc[key]) {
-        acc[key] = 0;
-      }
-      acc[key] += transaction.amount;
+    return {
+      data: weeklyRevenue,
+      growthPercentage,
+      growthDescription,
+    };
+  }
 
-      return acc;
-    }, {} as Record<string, number>);
+  private async getYearlyRevenueData(): Promise<RevenueGrowthData> {
+    const now = new Date();
+    const monthlyRevenue = [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    return Object.entries(revenueData).map(([period, amount]) => ({
-      period,
-      revenue: Math.round(amount / 100), // Convert from cents
-    }));
+    for (let i = 0; i < 12; i++) {
+      const monthStart = this.startOfDay(new Date(now.getFullYear(), i, 1));
+      const monthEnd = this.endOfDay(new Date(now.getFullYear(), i + 1, 0));
+
+      const revenue = await this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: monthStart,
+            lte: monthEnd
+          }
+        },
+        _sum: { amount: true }
+      });
+
+      monthlyRevenue.push({
+        period: months[i],
+        revenue: Math.round((revenue._sum.amount || 0) / 100),
+        date: monthStart.toISOString().split('T')[0]
+      });
+    }
+
+    const thisYearTotal = monthlyRevenue.reduce((sum, month) => sum + month.revenue, 0);
+
+    const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+    const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+
+    const lastYearRevenue = await this.prisma.transaction.aggregate({
+      where: {
+        status: 'completed',
+        createdAt: {
+          gte: lastYearStart,
+          lte: lastYearEnd
+        }
+      },
+      _sum: { amount: true }
+    });
+
+    const lastYearTotal = Math.round((lastYearRevenue._sum.amount || 0) / 100);
+    const growthPercentage = lastYearTotal > 0
+      ? ((thisYearTotal - lastYearTotal) / lastYearTotal) * 100
+      : 0;
+
+    const growthText = growthPercentage >= 0 ? "grown" : "decreased";
+    const growthDescription = `Your earnings has ${growthText} ${Math.abs(growthPercentage).toFixed(2)}% since last year`;
+
+    return {
+      data: monthlyRevenue,
+      growthPercentage,
+      growthDescription,
+    }
+  }
+
+  async getRevenueByPeriod(period: 'week' | 'month' | 'year' = 'month') {
+    switch (period) {
+      case 'week':
+        return this.getWeeklyRevenueData();
+      case 'month':
+        return this.getMonthlyRevenueData();
+      case 'year':
+      default:
+        return this.getYearlyRevenueData();
+    }
+  }
+
+  async getRevenueStats() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    const startOfMonth = new Date(year, month, 1);
+    const startOfLastMonth = new Date(year, month - 1, 1);
+    const endOfLastMonth = new Date(year, month, 0, 23, 59, 59, 999);
+    const startOfLastYear = new Date(year - 1, 0, 1);
+    const endOfLastYear = new Date(year - 1, 11, 31, 23, 59, 59, 999);
+    const startOfThisYear = new Date(year, 0, 1);
+
+    const [
+      allTimeRevenue,
+      lastYearRevenue,
+      thisYearRevenue,
+      monthlyRevenue,
+      lastMonthRevenue
+    ] = await Promise.all([
+      this.prisma.transaction.aggregate({
+        where: { status: 'completed' },
+        _sum: { amount: true }
+      }),
+      this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: startOfLastYear,
+            lte: endOfLastYear
+          }
+        },
+        _sum: { amount: true }
+      }),
+      this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: { gte: startOfThisYear }
+        },
+        _sum: { amount: true }
+      }),
+      this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: { gte: startOfMonth }
+        },
+        _sum: { amount: true }
+      }),
+      this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: startOfLastMonth,
+            lte: endOfLastMonth
+          }
+        },
+        _sum: { amount: true }
+      })
+    ]);
+
+    const allTimeRevenueGrowth = (lastYearRevenue._sum.amount || 0) > 0
+      ? (((thisYearRevenue._sum.amount || 0) - (lastYearRevenue._sum.amount || 0)) / (lastYearRevenue._sum.amount || 1)) * 100
+      : 0;
+
+    const monthlyRevenueGrowth = (lastMonthRevenue._sum.amount || 0) > 0
+      ? (((monthlyRevenue._sum.amount || 0) - (lastMonthRevenue._sum.amount || 0)) / (lastMonthRevenue._sum.amount || 1)) * 100
+      : 0;
+
+    return {
+      allTimeRevenue: Math.round((allTimeRevenue._sum.amount || 0) / 100),
+      allTimeRevenueGrowth: Math.round(allTimeRevenueGrowth * 100) / 100,
+      monthlyRevenue: Math.round((monthlyRevenue._sum.amount || 0) / 100),
+      monthlyRevenueGrowth: Math.round(monthlyRevenueGrowth * 100) / 100,
+    };
   }
 
   async getTransactionExport(transactionID: string) {

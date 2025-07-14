@@ -11,7 +11,6 @@ import {Transaction} from "./transaction";
 import {Invoice} from "./invoice";
 import {Subscription} from "./subscription";
 import {Lead} from "./lead";
-import {Plan} from "./plan";
 
 export enum CoachStatus {
   ACTIVE = 'active',
@@ -100,8 +99,9 @@ export interface CoachQueryParams extends CoachFilters {
   limit?: number;
 }
 
-export interface CoachWithSubscription extends Coach {
-  subscriptions: (Subscription & {
-    plan: Plan;
-  })[];
+export interface CoachStats {
+  totalCoaches: number;
+  totalCoachesGrowth: number;
+  inactiveCoaches: number;
+  inactiveCoachesGrowth: number;
 }

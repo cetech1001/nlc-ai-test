@@ -1,29 +1,24 @@
 'use client'
 
-import { DataTable, RevenueGraph, StatCard } from "@nlc-ai/shared";
+import { RevenueGraph, StatCard } from "@nlc-ai/shared";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HomePageSkeleton } from "@/lib/skeletons/home-page.skeleton";
-import { dashboardAPI } from "@nlc-ai/api-client";
-import { DashboardData, RecentCoach } from "@nlc-ai/types";
+import {coachesAPI, transactionsAPI} from "@nlc-ai/api-client";
 import {coachColumns, CoachesTable} from "@/lib";
 import { AlertBanner } from "@nlc-ai/ui";
-
-const transformCoachData = (coaches: RecentCoach[]) => {
-  return coaches.map(coach => ({
-    id: `#${coach.id.slice(-4)}`,
-    name: coach.name,
-    email: coach.email,
-    dateJoined: coach.dateJoined,
-    plan: coach.plan,
-    status: coach.status === 'active' ? 'Active' : coach.status === 'inactive' ? 'Inactive' : 'Blocked',
-  }));
-};
+import {CoachStats, CoachWithStatus, RevenueStats, TimePeriodRevenueData} from "@nlc-ai/types";
 
 const AdminHome = () => {
   const router = useRouter();
+
   const [isLoading, setIsLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+
+  const [revenueData, setRevenueData] = useState<TimePeriodRevenueData>();
+  const [coachStats, setCoachStats] = useState<CoachStats>();
+  const [revenueStats, setRevenueStats] = useState<RevenueStats>();
+  const [recentCoaches, setRecentCoaches] = useState<CoachWithStatus[]>([]);
+
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -31,12 +26,37 @@ const AdminHome = () => {
     (() => fetchDashboardData())();
   }, []);
 
+
+
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
       setError("");
-      const data = await dashboardAPI.getDashboardData();
-      setDashboardData(data);
+
+      const [
+        coachStatsData,
+        revenueStatsData,
+        weeklyData,
+        monthlyData,
+        yearlyData,
+        coachesData
+      ] = await Promise.all([
+        coachesAPI.getCoachStats(),
+        transactionsAPI.getRevenueStats(),
+        transactionsAPI.getRevenueByPeriod('week'),
+        transactionsAPI.getRevenueByPeriod('month'),
+        transactionsAPI.getRevenueByPeriod('year'),
+        coachesAPI.getCoaches(1, 6),
+      ]);
+
+      setCoachStats(coachStatsData);
+      setRevenueStats(revenueStatsData);
+      setRevenueData({
+        weekly: weeklyData,
+        monthly: monthlyData,
+        yearly: yearlyData
+      });
+      setRecentCoaches(coachesData.data);
     } catch (error: any) {
       setError(error.message || "Failed to load dashboard data");
     } finally {
@@ -49,17 +69,9 @@ const AdminHome = () => {
   }
 
   const handleActionSuccess = async (message: string) => {
-    setSuccessMessage("Coach restored successfully!");
-    const recentCoaches = await dashboardAPI.getRecentCoaches();
-    setDashboardData(prevState => {
-      if (prevState) {
-        return {
-          ...prevState,
-          recentCoaches,
-        }
-      }
-      return prevState;
-    });
+    setSuccessMessage(message);
+    const recentCoaches = await coachesAPI.getCoaches(1, 6);
+    setRecentCoaches(recentCoaches.data);
     setTimeout(() => setSuccessMessage(""), 3000);
   }
 
@@ -80,12 +92,9 @@ const AdminHome = () => {
     );
   }
 
-  if (isLoading || !dashboardData) {
+  if (isLoading || !revenueData || !revenueStats || !coachStats) {
     return <HomePageSkeleton length={coachColumns.length} />;
   }
-
-  const { stats, revenueData, recentCoaches } = dashboardData;
-  const transformedCoaches = transformCoachData(recentCoaches);
 
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
@@ -93,29 +102,29 @@ const AdminHome = () => {
         <div className="flex-1 relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 min-w-0 overflow-hidden">
           <div className="absolute w-64 h-64 -left-12 top-52 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
           <div className="absolute w-64 h-64 right-40 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
-          <RevenueGraph revenueData={revenueData} isLoading={isLoading || !dashboardData} />
+          <RevenueGraph revenueData={revenueData} isLoading={isLoading} />
         </div>
 
         <div className="w-full xl:w-1/3 grid grid-cols-2 gap-4 lg:gap-6">
           <StatCard
             title="Total Coaches"
-            value={stats.totalCoaches.toLocaleString()}
-            growth={stats.totalCoachesGrowth}
+            value={coachStats.totalCoaches.toLocaleString()}
+            growth={coachStats.totalCoachesGrowth}
           />
           <StatCard
             title="All Time Revenue"
-            value={`$${stats.allTimeRevenue.toLocaleString()}`}
-            growth={stats.allTimeRevenueGrowth}
+            value={`$${revenueStats.allTimeRevenue.toLocaleString()}`}
+            growth={revenueStats.allTimeRevenueGrowth}
           />
           <StatCard
             title="Inactive Coaches"
-            value={stats.inactiveCoaches.toLocaleString()}
-            growth={stats.inactiveCoachesGrowth * -1}
+            value={coachStats.inactiveCoaches.toLocaleString()}
+            growth={coachStats.inactiveCoachesGrowth * -1}
           />
           <StatCard
             title="Monthly Revenue"
-            value={`$${stats.monthlyRevenue.toLocaleString()}`}
-            growth={stats.monthlyRevenueGrowth}
+            value={`$${revenueStats.monthlyRevenue.toLocaleString()}`}
+            growth={revenueStats.monthlyRevenueGrowth}
           />
         </div>
       </div>
@@ -141,14 +150,14 @@ const AdminHome = () => {
           </button>
         </div>
 
-        {transformedCoaches.length === 0 ? (
+        {recentCoaches.length === 0 ? (
           <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 text-center">
             <div className="text-stone-400 text-lg mb-2">No coaches found</div>
             <p className="text-stone-500 text-sm">New coaches will appear here when they join</p>
           </div>
         ) : (
           <CoachesTable
-            coaches={dashboardData.recentCoaches}
+            coaches={recentCoaches}
             handleMakePayment={handleMakePayment}
             handleActionSuccess={handleActionSuccess}
             setError={setError}

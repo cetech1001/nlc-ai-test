@@ -8,7 +8,6 @@ export * from './client';
 export * from './coach';
 export * from './content';
 export * from './course';
-export * from './dashboard';
 export * from './data-table';
 export * from './email';
 export * from './filter';

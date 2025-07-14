@@ -37,6 +37,13 @@ export class TransactionsController {
     return this.transactionsService.getTransactionStats();
   }
 
+  @Get('revenue/stats')
+  @ApiOperation({ summary: 'Get revenue statistics' })
+  @ApiResponse({ status: 200, description: 'Revenue statistics retrieved successfully' })
+  getRevenueStats() {
+    return this.transactionsService.getRevenueStats();
+  }
+
   @Get('revenue')
   @ApiOperation({ summary: 'Get revenue data by period' })
   @ApiQuery({ name: 'period', enum: ['week', 'month', 'year'], required: false })

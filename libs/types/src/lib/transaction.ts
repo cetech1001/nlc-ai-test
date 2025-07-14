@@ -51,3 +51,36 @@ export interface TransactionsQueryParams extends QueryParams{
   maxAmount?: number;
   planNames?: string;
 }
+
+export interface RevenueData {
+  period: string;
+  revenue: number;
+  date?: string;
+}
+
+export interface RevenueGrowthData {
+  data: RevenueData[];
+  growthDescription: string;
+  growthPercentage: number;
+}
+
+export interface TimePeriodRevenueData {
+  weekly?: RevenueGrowthData;
+  monthly?: RevenueGrowthData;
+  yearly: RevenueGrowthData;
+}
+
+export interface RevenueStats {
+  allTimeRevenue: number;
+  allTimeRevenueGrowth: number;
+  monthlyRevenue: number;
+  monthlyRevenueGrowth: number;
+}
+
+export interface TransactionStats {
+  total: number;
+  completed: number;
+  pending: number;
+  failed: number;
+  totalRevenue: number;
+}

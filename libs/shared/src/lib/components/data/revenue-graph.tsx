@@ -7,10 +7,10 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import {DashboardData} from "@nlc-ai/types";
+import {TimePeriodRevenueData} from "@nlc-ai/types";
 
 interface RevenueGraphProps {
-  revenueData: DashboardData['revenueData'];
+  revenueData: TimePeriodRevenueData;
   isLoading: boolean;
 }
 

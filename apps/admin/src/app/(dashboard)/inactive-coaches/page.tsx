@@ -91,7 +91,7 @@ export default function InactiveCoaches() {
         status: 'inactive'
       };
 
-      const response = await coachesAPI.getCoachesWithFilters(
+      const response = await coachesAPI.getCoaches(
         currentPage,
         coachesPerPage,
         filtersWithStatus,
