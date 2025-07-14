@@ -1,88 +1,17 @@
-/*import {
-  ContentPieces,
-  ContentSuggestions,
-  Courses,
-  DailyKpis,
-  EmailAccounts,
-  EmailTemplates,
-  EmailThreads,
-  Integrations,
-  Invoices,
-  Leads,
-  Notifications,
-  PaymentLinks,
-  PaymentMethods,
-  Subscriptions,
-  SubscriptionStatus,
-  Transactions
-} from "./index";*/
-
-export enum CoachStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  BLOCKED = 'blocked',
-  DELETED = 'deleted'
-}
-
-/*export interface CoachWithStatus extends Coach{
-  status: CoachStatus;
-  currentPlan?: string;
-  subscriptionStatus?: string;
-  clientCount?: number;
-  totalRevenue?: number;
-}
-
-export interface Coach {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  businessName?: string;
-  isActive: boolean;
-  isVerified: boolean;
-  lastLoginAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}*/
-
-export interface CoachFilters {
-  status?: CoachStatus;
-  search?: string;
-  subscriptionPlan?: string; // Comma-separated plan names
-  dateJoinedStart?: string; // YYYY-MM-DD
-  dateJoinedEnd?: string;   // YYYY-MM-DD
-  lastActiveStart?: string; // YYYY-MM-DD
-  lastActiveEnd?: string;   // YYYY-MM-DD
-  isVerified?: boolean;
-  includeInactive?: boolean;
-}
-
-export interface CoachQueryParams extends CoachFilters {
-  page?: number;
-  limit?: number;
-}
-
-export interface CoachStats {
-  total: number;
-  active: number;
-  inactive: number;
-  blocked: number;
-}
-
-export interface CoachKPIs {
-  totalClients: number;
-  activeClients: number;
-  recentInteractions: number;
-  tokensUsed: number;
-  recentRevenue: number;
-}
-
-export interface CoachDetail extends Coach {
-  subscriptions?: any[];
-  clients?: any[];
-  transactions?: any[];
-}
+import {AiInteraction, CoachAiAgent} from "./agent";
+import {Client} from "./client";
+import {ContentPiece, ContentSuggestion} from "./content";
+import {Course, CourseEnrollment} from "./course";
+import {DailyKPI} from "./kpi";
+import {EmailAccount, EmailTemplate, EmailThread} from "./email";
+import {Integration} from "./integration";
+import {Notification} from "./notification";
+import {PaymentLink, PaymentMethod} from "./payment";
+import {Transaction} from "./transaction";
+import {Invoice} from "./invoice";
+import {Subscription} from "./subscription";
+import {Lead} from "./lead";
+import {Plan} from "./plan";
 
 export interface Coach {
   id: string;
@@ -96,10 +25,10 @@ export interface Coach {
   bio?: string | null;
   websiteUrl?: string | null;
   timezone?: string | null;
-  subscriptionStatus?: SubscriptionStatus | null;
+  subscriptionStatus?: string | null;
   subscriptionPlan?: string | null;
   subscriptionEndsAt?: Date | null;
-  stripeCustomerId?: string | null;
+  stripeCustomerID?: string | null;
   isActive?: boolean | null;
   isVerified?: boolean | null;
   isDeleted?: boolean | null;
@@ -108,22 +37,44 @@ export interface Coach {
   onboardingCompleted?: boolean | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
-  aiInteractions: AiInteractions[];
-  clients: Clients[];
-  coachAiAgents: CoachAiAgents[];
-  contentPieces: ContentPieces[];
-  contentSuggestions: ContentSuggestions[];
-  courses: Courses[];
-  dailyKpis: DailyKpis[];
-  emailAccounts: EmailAccounts[];
-  emailTemplates: EmailTemplates[];
-  emailThreads: EmailThreads[];
-  integrations: Integrations[];
-  notifications: Notifications[];
-  paymentMethods: PaymentMethods[];
-  transactions: Transactions[];
-  invoices: Invoices[];
-  subscriptions: Subscriptions[];
-  leads: Leads[];
-  PaymentLinks: PaymentLinks[];
+  aiInteractions?: AiInteraction[];
+  clients?: Client[];
+  coachAiAgents?: CoachAiAgent[];
+  contentPieces?: ContentPiece[];
+  contentSuggestions?: ContentSuggestion[];
+  courses?: Course[];
+  dailyKpis?: DailyKPI[];
+  emailAccounts?: EmailAccount[];
+  emailTemplates?: EmailTemplate[];
+  emailThreads?: EmailThread[];
+  integrations?: Integration[];
+  notifications?: Notification[];
+  paymentMethods?: PaymentMethod[];
+  transactions?: Transaction[];
+  invoices?: Invoice[];
+  subscriptions?: Subscription[];
+  leads?: Lead[];
+  paymentLinks?: PaymentLink[];
+}
+
+export type CreateCoach = Omit<Coach, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateCoach = Partial<Omit<Coach, 'id' | 'createdAt' | 'updatedAt'>>;
+export type CreateClient = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateClient = Partial<Omit<Client, 'id' | 'createdAt' | 'updatedAt'>>;
+
+// Database response types with relations
+export interface CoachWithClients extends Coach {
+  clients: Client[];
+}
+
+export interface ClientWithCourses extends Client {
+  courseEnrollments: (CourseEnrollment & {
+    course: Course;
+  })[];
+}
+
+export interface CoachWithSubscription extends Coach {
+  subscriptions: (Subscription & {
+    plan: Plan;
+  })[];
 }

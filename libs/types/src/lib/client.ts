@@ -1,8 +1,11 @@
-import {AiInteractions, Coaches, CourseEnrollments, EmailThreads} from "./index";
+import {AiInteraction} from "./agent";
+import {Coach} from "./coach";
+import {CourseEnrollment} from "./course";
+import {EmailThread} from "./email";
 
 export interface Client {
   id: string;
-  coachId: string;
+  coachID: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -14,11 +17,11 @@ export interface Client {
   lastInteractionAt?: Date | null;
   totalInteractions?: number | null;
   engagementScore?: number | null;
-  customFields?: any;
+  customFields?: any | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
-  aiInteractions: AiInteractions[];
-  coaches: Coaches;
-  courseEnrollments: CourseEnrollments[];
-  emailThreads: EmailThreads[];
+  aiInteractions?: AiInteraction[];
+  coach?: Coach;
+  courseEnrollments?: CourseEnrollment[];
+  emailThreads?: EmailThread[];
 }

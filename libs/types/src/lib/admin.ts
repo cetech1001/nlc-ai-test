@@ -12,6 +12,6 @@ export interface Admin {
   lastLoginAt?: Date | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
-  notifications: Notification[];
-  systemSettings: SystemSetting[];
+  notifications?: Notification[];
+  systemSettings?: SystemSetting[];
 }

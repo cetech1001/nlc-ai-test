@@ -1,12 +1,12 @@
 import {Coach} from "./coach";
 
-export interface ContentPieces {
+export interface ContentPiece {
   id: string;
-  coachId: string;
+  coachID: string;
   title: string;
   contentType: string;
   platform?: string | null;
-  platformId?: string | null;
+  platformID?: string | null;
   url?: string | null;
   description?: string | null;
   tags: string[];
@@ -20,17 +20,17 @@ export interface ContentPieces {
   aiAnalyzed?: boolean | null;
   performancePrediction?: number | null;
   topicCategories: string[];
-  suggestedImprovements?: any;
+  suggestedImprovements?: any | null;
   status?: string | null;
   publishedAt?: Date | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
-  coaches: Coach;
+  coach?: Coach;
 }
 
-export interface ContentSuggestions {
+export interface ContentSuggestion {
   id: string;
-  coachId: string;
+  coachID: string;
   title: string;
   contentType: string;
   platform?: string | null;
@@ -38,10 +38,10 @@ export interface ContentSuggestions {
   reasoning?: string | null;
   promptUsed?: string | null;
   confidenceScore?: number | null;
-  trendData?: any;
+  trendData?: any | null;
   status?: string | null;
   feedback?: string | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
-  coaches: Coach;
+  coach?: Coach;
 }

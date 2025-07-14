@@ -1,75 +1,43 @@
+import {Coach} from "./coach";
+import {Plan} from "./plan";
+import {Invoice} from "./invoice";
+import {PaymentMethod} from "./payment";
+import {Subscription} from "./subscription";
+
+export enum TransactionStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELED = 'canceled',
+  REFUNDED = 'refunded',
+  PARTIALLY_REFUNDED = 'partially_refunded'
+}
+
 export interface Transaction {
   id: string;
-  coachId: string;
-  coachName: string;
-  coachEmail: string;
-  planName: string;
+  coachID: string;
+  subscriptionID?: string | null;
+  planID: string;
   amount: number;
   currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'canceled' | 'refunded' | 'partially_refunded';
-  paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer' | 'stripe' | 'manual';
-  invoiceNumber?: string;
-  invoiceDate: string;
-  transactionDate: string;
-  paidAt?: string;
-  description?: string;
-}
-
-export interface TransactionDetails extends Transaction {
-  coach: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    businessName?: string;
-  };
-  plan: {
-    name: string;
-    description?: string;
-  };
-  subscription?: {
-    id: string;
-    status: string;
-    billingCycle: string;
-  };
-}
-
-export interface TransactionStats {
-  total: number;
-  completed: number;
-  pending: number;
-  failed: number;
-  totalRevenue: number;
-}
-
-export interface PaginatedTransactions {
-  data: Transaction[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
-
-export interface TransactionFilters {
-  status: string;
-  paymentMethod: string[];
-  dateRange: { start: string | null; end: string | null };
-  amountRange: { min: string; max: string };
-  planNames: string[];
-}
-
-export interface DataTableTransaction {
-  id: string;
-  coachName: string;
-  coachEmail: string;
-  planName: string;
-  amount: number;
-  status: string;
-  paymentMethod: string;
-  transactionDate: string;
-  invoiceNumber?: string;
+  status: TransactionStatus;
+  paymentMethod: PaymentMethod;
+  stripePaymentID?: string | null;
+  paypalOrderID?: string | null;
+  invoiceNumber?: string | null;
+  invoiceDate: Date;
+  dueDate?: Date | null;
+  paidAt?: Date | null;
+  description?: string | null;
+  metadata?: any | null;
+  failureReason?: string | null;
+  refundReason?: string | null;
+  refundedAmount?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  coach?: Coach;
+  subscription?: Subscription | null;
+  plan?: Plan;
+  invoices?: Invoice[];
 }

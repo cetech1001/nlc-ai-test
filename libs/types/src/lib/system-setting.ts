@@ -6,9 +6,9 @@ export interface SystemSetting {
   key: string;
   value: any;
   description?: string | null;
-  isPublic?: boolean | null;
+  isPublic: boolean;
   updatedBy: string;
   createdAt: Date;
   updatedAt: Date;
-  admin: Admin;
+  admin?: Admin;
 }

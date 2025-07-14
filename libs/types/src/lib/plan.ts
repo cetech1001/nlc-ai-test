@@ -1,11 +1,22 @@
+import {Transaction} from "./transaction";
+import {Subscription} from "./subscription";
+import {PaymentLink} from "./payment";
+
 export interface Plan {
-  title: string;
-  subtitle: string;
-  price: number;
+  id: string;
+  name: string;
+  description?: string | null;
   monthlyPrice: number;
-  billingCycle: string;
-  monthlyBilling: string;
-  features: string[];
-  isCurrentPlan: boolean;
-  colorClass: string;
+  annualPrice: number;
+  maxClients?: number | null;
+  maxAiAgents?: number | null;
+  features?: any | null;
+  isActive: boolean;
+  isDeleted: boolean;
+  deletedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  subscriptions?: Subscription[];
+  transactions?: Transaction[];
+  paymentLinks?: PaymentLink[];
 }
