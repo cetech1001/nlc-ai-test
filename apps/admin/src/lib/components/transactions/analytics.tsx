@@ -54,7 +54,7 @@ export const TransactionAnalytics: React.FC = () => {
       setRevenueComparison(revenueData);
       setTopCoaches(topCoachesData);
     } catch (error: any) {
-      setError(error.message || 'Failed to load analytics data');
+      setError(error.message || 'Failed to load transactions data');
     } finally {
       setIsLoading(false);
     }

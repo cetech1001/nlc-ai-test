@@ -9,45 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@nlc-ai/ui';
 import {SearchFilter, SelectFilter, MultiSelectFilter, DateRangeFilter, NumberRangeFilter} from "./filters";
-
-// Filter types
-export type FilterType = 'select' | 'multi-select' | 'date-range' | 'search' | 'number-range' | 'amount-range';
-
-export interface FilterOption {
-  label: string;
-  value: string | number;
-  count?: number; // For showing result counts
-}
-
-export interface FilterConfig {
-  key: string;
-  label: string;
-  type: FilterType;
-  options?: FilterOption[]; // For select/multi-select
-  placeholder?: string;
-  defaultValue?: any;
-}
-
-export interface FilterValues {
-  [key: string]: any;
-}
-
-interface DataFilterProps {
-  filters: FilterConfig[];
-  values: FilterValues;
-  onChange: (values: FilterValues) => void;
-  onReset?: () => void;
-
-  // Display options
-  trigger?: 'button' | 'popover'; // How to show filters
-  buttonText?: string;
-  showActiveCount?: boolean;
-
-  // Styling
-  className?: string;
-
-  setIsFilterOpen: (isFilterOpen: boolean) => void;
-}
+import {DataFilterProps, FilterConfig, FilterValues} from "@nlc-ai/types";
 
 export const DataFilter = ({
  filters,
@@ -57,7 +19,6 @@ export const DataFilter = ({
  trigger = 'button',
  buttonText = 'Filters',
  showActiveCount = true,
- className = '',
  setIsFilterOpen,
 }: DataFilterProps) => {
   const [isOpen, setIsOpen] = useState(false);

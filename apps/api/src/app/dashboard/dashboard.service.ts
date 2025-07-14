@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {DashboardData, DashboardStats, RecentCoach, RevenueGrowthData} from "@nlc-ai/types";
+import {DashboardData, DashboardStats, RevenueGrowthData, CoachWithStatus} from "@nlc-ai/types";
+import {CoachesService} from "../coaches/coaches.service";
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly coachesService: CoachesService,
+  ) {}
 
   private startOfDay(date: Date) {
     const d = new Date(date);
@@ -336,45 +340,9 @@ export class DashboardService {
     return { weekly, monthly, yearly };
   }
 
-  async getRecentCoaches(limit: number = 6): Promise<RecentCoach[]> {
-    const coaches = await this.prisma.coaches.findMany({
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        subscriptions: {
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            plan: true
-          }
-        }
-      }
-    });
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    return coaches.map(coach => {
-      let status = 'inactive';
-      if (!coach.isActive) {
-        status = 'blocked';
-      } else if (coach.lastLoginAt && coach.lastLoginAt > thirtyDaysAgo) {
-        status = 'active';
-      }
-
-      return {
-        id: coach.id,
-        name: `${coach.firstName} ${coach.lastName}`,
-        email: coach.email,
-        dateJoined: coach.createdAt?.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        }) || '',
-        plan: coach.subscriptions[0]?.plan?.name || 'No Plan',
-        status
-      };
-    });
+  async getRecentCoaches(limit: number = 6): Promise<CoachWithStatus[]> {
+    const { data } = await this.coachesService.findAll({ limit });
+    return data;
   }
 
   async getDashboardData() {

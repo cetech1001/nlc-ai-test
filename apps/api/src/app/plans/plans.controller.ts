@@ -54,9 +54,9 @@ export class PlansController {
     return this.plansService.findOne(id);
   }
 
-  @Get(':id/analytics')
+  @Get(':id/transactions')
   @Roles('admin')
-  @ApiOperation({ summary: 'Get plan analytics' })
+  @ApiOperation({ summary: 'Get plan transactions' })
   @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
   getAnalytics(@Param('id') id: string) {

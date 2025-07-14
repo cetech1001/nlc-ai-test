@@ -2,7 +2,7 @@ import {BadRequestException, ConflictException, Injectable, NotFoundException} f
 import { CreateCoachDto, UpdateCoachDto } from './dto';
 import { PrismaService } from "../prisma/prisma.service";
 import { CoachQueryDto } from './dto/coach-query.dto';
-import {CoachStatus, CoachWithStatus} from "@nlc-ai/types";
+import {Coach, CoachStatus, CoachWithStatus} from "@nlc-ai/types";
 
 @Injectable()
 export class CoachesService {
@@ -102,7 +102,7 @@ export class CoachesService {
       };
     }
 
-    const coaches = await this.prisma.coaches.findMany({
+    const coaches: Coach[] = await this.prisma.coaches.findMany({
       where,
       include: {
         subscriptions: {
@@ -132,17 +132,7 @@ export class CoachesService {
       const totalRevenue = coach.transactions.reduce((sum, t) => sum + t.amount, 0);
 
       return {
-        id: coach.id,
-        firstName: coach.firstName,
-        lastName: coach.lastName,
-        email: coach.email,
-        phone: coach.phone,
-        businessName: coach.businessName,
-        isActive: coach.isActive,
-        isVerified: coach.isVerified,
-        lastLoginAt: coach.lastLoginAt,
-        createdAt: coach.createdAt,
-        updatedAt: coach.updatedAt,
+        ...coach,
         status: calculatedStatus,
         currentPlan: coach.subscriptions[0]?.plan?.name || 'No Plan',
         subscriptionStatus: coach.subscriptions[0]?.status || 'none',

@@ -1,12 +1,13 @@
 'use client'
 
-import { DataTable, RevenueGraph, StatCard, TableAction } from "@nlc-ai/shared";
+import { DataTable, RevenueGraph, StatCard } from "@nlc-ai/shared";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HomePageSkeleton } from "@/lib/skeletons/home-page.skeleton";
 import { dashboardAPI } from "@nlc-ai/api-client";
-import { coachColumns } from "@/lib/utils/coaches";
 import { DashboardData, RecentCoach } from "@nlc-ai/types";
+import {coachColumns, CoachesTable} from "@/lib";
+import { AlertBanner } from "@nlc-ai/ui";
 
 const transformCoachData = (coaches: RecentCoach[]) => {
   return coaches.map(coach => ({
@@ -23,10 +24,11 @@ const AdminHome = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    fetchDashboardData();
+    (() => fetchDashboardData())();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -42,21 +44,24 @@ const AdminHome = () => {
     }
   };
 
-  const handleRowAction = (action: string, coach: any) => {
-    if (action === 'payment') {
-      router.push('/coaches/make-payment');
-    } else if (action === 'view') {
-      console.log('Viewing coach:', coach.name);
-    }
-  };
+  const handleMakePayment = (coachId: string) => {
+    router.push(`/coaches/make-payment?coachId=${coachId}`);
+  }
 
-  const actions: TableAction[] = [
-    {
-      label: 'Make Payment',
-      action: 'payment',
-      variant: 'primary',
-    }
-  ];
+  const handleActionSuccess = async (message: string) => {
+    setSuccessMessage("Coach restored successfully!");
+    const recentCoaches = await dashboardAPI.getRecentCoaches();
+    setDashboardData(prevState => {
+      if (prevState) {
+        return {
+          ...prevState,
+          recentCoaches,
+        }
+      }
+      return prevState;
+    });
+    setTimeout(() => setSuccessMessage(""), 3000);
+  }
 
   if (error) {
     return (
@@ -115,6 +120,14 @@ const AdminHome = () => {
         </div>
       </div>
 
+      {successMessage && (
+        <AlertBanner
+          type={'success'}
+          message={successMessage}
+          onDismiss={() => setSuccessMessage('')}
+        />
+      )}
+
       <div className="relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-stone-50 text-xl sm:text-2xl font-semibold leading-relaxed">
@@ -134,13 +147,11 @@ const AdminHome = () => {
             <p className="text-stone-500 text-sm">New coaches will appear here when they join</p>
           </div>
         ) : (
-          <DataTable
-            columns={coachColumns}
-            data={transformedCoaches}
-            onRowAction={handleRowAction}
-            actions={actions}
-            showMobileCards={true}
-            emptyMessage="No coaches found"
+          <CoachesTable
+            coaches={dashboardData.recentCoaches}
+            handleMakePayment={handleMakePayment}
+            handleActionSuccess={handleActionSuccess}
+            setError={setError}
           />
         )}
       </div>

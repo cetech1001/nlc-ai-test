@@ -1,4 +1,4 @@
-import {RecentCoach} from "./coach";
+import {CoachWithStatus} from "./coach";
 
 export interface DashboardStats {
   totalCoaches: number;
@@ -30,5 +30,5 @@ export interface DashboardData {
     monthly?: RevenueGrowthData;
     yearly: RevenueGrowthData;
   };
-  recentCoaches: RecentCoach[];
+  recentCoaches: CoachWithStatus[];
 }

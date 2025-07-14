@@ -1,5 +1,5 @@
 import { BaseAPI } from './base';
-import {DashboardData, DashboardStats, RecentCoach, RevenueGrowthData} from "@nlc-ai/types";
+import {DashboardData, DashboardStats, CoachWithStatus, RevenueGrowthData} from "@nlc-ai/types";
 
 class DashboardAPI extends BaseAPI {
   async getDashboardData(): Promise<DashboardData> {
@@ -14,7 +14,7 @@ class DashboardAPI extends BaseAPI {
     return this.makeRequest(`/dashboard/revenue?period=${period}`);
   }
 
-  async getRecentCoaches(limit = 6): Promise<RecentCoach[]> {
+  async getRecentCoaches(limit = 6): Promise<CoachWithStatus[]> {
     return this.makeRequest(`/dashboard/recent-coaches?limit=${limit}`);
   }
 }

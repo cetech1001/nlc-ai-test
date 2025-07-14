@@ -3,11 +3,10 @@ import {
   Coach,
   CoachDetail,
   CoachFilters,
-  CoachKpis,
+  CoachKPIs,
   CoachStats,
-  CoachStatus,
+  CoachStatus, CoachWithStatus,
   PaginatedCoachesResponse,
-  RecentCoach
 } from "@nlc-ai/types";
 
 class CoachesAPI extends BaseAPI {
@@ -112,7 +111,7 @@ class CoachesAPI extends BaseAPI {
   /**
    * Get recent coaches for dashboard
    */
-  async getRecentCoaches(limit = 6): Promise<RecentCoach[]> {
+  async getRecentCoaches(limit = 6): Promise<CoachWithStatus[]> {
     return this.makeRequest(`/coaches/recent?limit=${limit}`);
   }
 
@@ -144,7 +143,7 @@ class CoachesAPI extends BaseAPI {
   /**
    * Get coach KPIs
    */
-  async getCoachKpis(id: string, days = 30): Promise<CoachKpis> {
+  async getCoachKpis(id: string, days = 30): Promise<CoachKPIs> {
     return this.makeRequest(`/coaches/${id}/kpis?days=${days}`);
   }
 

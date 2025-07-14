@@ -4,101 +4,26 @@ import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import {
-  DataTable,
   Pagination,
   PageHeader,
   DataFilter,
-  FilterValues,
-  FilterConfig
 } from "@nlc-ai/shared";
 import { coachesAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {
   coachColumns,
-  DataTableCoach,
-  transformCoachData,
-  CoachesPageSkeleton,
+  CoachesPageSkeleton, CoachesTable, coachFilters, emptyCoachFilterValues,
 } from "@/lib";
-
-const coachFilters: FilterConfig[] = [
-  {
-    key: 'status',
-    label: 'Coach Status',
-    type: 'select',
-    placeholder: 'All Statuses',
-    options: [
-      { label: 'Active', value: 'active' },
-      { label: 'Inactive', value: 'inactive' },
-      { label: 'Blocked', value: 'blocked' },
-      { label: 'Deleted', value: 'deleted' },
-    ],
-    defaultValue: '',
-  },
-  {
-    key: 'subscriptionPlan',
-    label: 'Subscription Plan',
-    type: 'multi-select',
-    options: [
-      { label: 'Solo Agent', value: 'Solo Agent' },
-      { label: 'Starter Pack', value: 'Starter Pack' },
-      { label: 'Growth Pro', value: 'Growth Pro' },
-      { label: 'Scale Elite', value: 'Scale Elite' },
-      { label: 'No Plan', value: 'No Plan' },
-    ],
-    defaultValue: [],
-  },
-  {
-    key: 'dateJoined',
-    label: 'Date Joined',
-    type: 'date-range',
-    defaultValue: { start: null, end: null },
-  },
-  {
-    key: 'lastActive',
-    label: 'Last Active',
-    type: 'date-range',
-    defaultValue: { start: null, end: null },
-  },
-  {
-    key: 'isVerified',
-    label: 'Email Verified',
-    type: 'select',
-    placeholder: 'All',
-    options: [
-      { label: 'Verified', value: 'true' },
-      { label: 'Not Verified', value: 'false' },
-    ],
-    defaultValue: '',
-  },
-  /*{
-    key: 'includeDeleted',
-    label: 'Include Deleted',
-    type: 'select',
-    placeholder: 'Exclude Deleted',
-    options: [
-      { label: 'Include Deleted', value: 'true' },
-      { label: 'Exclude Deleted', value: 'false' },
-    ],
-    defaultValue: 'false',
-  },*/
-];
-
-const emptyFilterValues: FilterValues = {
-  status: '',
-  subscriptionPlan: [],
-  dateJoined: { start: null, end: null },
-  lastActive: { start: null, end: null },
-  isVerified: '',
-  // includeDeleted: 'false',
-};
+import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
 const Coaches = () => {
   const router = useRouter();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [coaches, setCoaches] = useState<DataTableCoach[]>([]);
-  const [filterValues, setFilterValues] = useState<FilterValues>(emptyFilterValues);
+  const [coaches, setCoaches] = useState<CoachWithStatus[]>([]);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyCoachFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -114,7 +39,9 @@ const Coaches = () => {
   const coachesPerPage = 10;
 
   useEffect(() => {
-    fetchCoaches();
+    (async () => {
+      await fetchCoaches();
+    })();
   }, [currentPage, searchQuery, filterValues]);
 
   const fetchCoaches = async () => {
@@ -129,7 +56,7 @@ const Coaches = () => {
         searchQuery
       );
 
-      setCoaches(transformCoachData(response.data));
+      setCoaches(response.data);
       setPagination(response.pagination);
     } catch (error: any) {
       setError(error.message || "Failed to load coaches");
@@ -149,71 +76,25 @@ const Coaches = () => {
   };
 
   const handleResetFilters = () => {
-    setFilterValues(emptyFilterValues);
+    setFilterValues(emptyCoachFilterValues);
     setSearchQuery("");
     setCurrentPage(1);
-  };
-
-  const handleRowAction = (action: string, coach: DataTableCoach) => {
-    if (action === 'make-payment') {
-      router.push(`/coaches/make-payment?coachId=${coach.originalId}`);
-    } else if (action === 'toggle-status') {
-      handleToggleStatus(coach.originalId);
-    } else if (action === 'delete') {
-      handleDeleteCoach(coach.originalId);
-    } else if (action === 'restore') {
-      handleRestoreCoach(coach.originalId);
-    }
-  };
-
-  const handleRestoreCoach = async (coachId: string) => {
-    if (!confirm("Are you sure you want to restore this coach?")) {
-      return;
-    }
-
-    try {
-      await coachesAPI.restoreCoach(coachId);
-      setSuccessMessage("Coach restored successfully!");
-      await fetchCoaches();
-
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error: any) {
-      setError(error.message || "Failed to restore coach");
-    }
-  };
-
-  const handleToggleStatus = async (coachId: string) => {
-    try {
-      await coachesAPI.toggleCoachStatus(coachId);
-      setSuccessMessage("Coach status updated successfully!");
-      await fetchCoaches();
-
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error: any) {
-      setError(error.message || "Failed to update coach status");
-    }
-  };
-
-  const handleDeleteCoach = async (coachId: string) => {
-    if (!confirm("Are you sure you want to deactivate this coach?")) {
-      return;
-    }
-
-    try {
-      await coachesAPI.deleteCoach(coachId);
-      setSuccessMessage("Coach deactivated successfully!");
-      await fetchCoaches();
-
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error: any) {
-      setError(error.message || "Failed to deactivate coach");
-    }
   };
 
   const clearMessages = () => {
     setError("");
     setSuccessMessage("");
   };
+
+  const handleMakePayment = (coachId: string) => {
+    router.push(`/coaches/make-payment?coachId=${coachId}`);
+  }
+
+  const handleActionSuccess = async (message: string) => {
+    setSuccessMessage("Coach restored successfully!");
+    await fetchCoaches();
+    setTimeout(() => setSuccessMessage(""), 3000);
+  }
 
   return (
     <div className={`flex flex-col ${ isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' }`}>
@@ -228,7 +109,6 @@ const Coaches = () => {
 
         <PageHeader
           title="Coaches List"
-          // subtitle="Manage and monitor all coaches in your platform"
         >
           <div className="flex items-center gap-3 w-full sm:w-3/4">
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
@@ -258,12 +138,11 @@ const Coaches = () => {
 
         {!isLoading && (
           <>
-            <DataTable
-              columns={coachColumns}
-              data={coaches}
-              onRowAction={handleRowAction}
-              emptyMessage="No coaches found matching your criteria"
-            />
+            <CoachesTable
+              coaches={coaches}
+              handleActionSuccess={handleActionSuccess}
+              handleMakePayment={handleMakePayment}
+              setError={setError}/>
 
             {pagination.totalPages > 1 && (
               <Pagination

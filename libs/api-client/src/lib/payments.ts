@@ -1,4 +1,4 @@
-// libs/api-client/src/lib/payments.ts
+// libs/api-client/src/lib/payment.ts
 import { BaseAPI } from './base';
 
 export interface SendPaymentRequestResponse {

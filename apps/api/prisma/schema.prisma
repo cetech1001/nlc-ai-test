@@ -22,7 +22,7 @@ enum TransactionStatus {
   partially_refunded
 }
 
-enum PaymentMethod {
+enum PaymentMethodType {
   credit_card
   debit_card
   paypal
@@ -56,7 +56,7 @@ enum BillingCycle {
   annual
 }
 
-model Admins {
+model Admin {
   id             String           @id @default(uuid()) @db.Uuid
   email          String           @unique @db.VarChar(255)
   passwordHash   String           @db.VarChar(255)
@@ -67,13 +67,13 @@ model Admins {
   lastLoginAt    DateTime?        @db.Timestamptz(6)
   createdAt      DateTime?        @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime?        @default(now()) @db.Timestamptz(6)
-  notifications  Notifications[]
-  systemSettings SystemSettings[]
+  notifications  Notification[]
+  systemSettings SystemSetting[]
 
   @@map("admins")
 }
 
-model AiAgents {
+model AiAgent {
   id             String           @id @default(uuid()) @db.Uuid
   name           String           @db.VarChar(100)
   type           String           @db.VarChar(50)
@@ -82,17 +82,17 @@ model AiAgents {
   defaultConfig  Json?            @default("{}")
   createdAt      DateTime?        @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime?        @default(now()) @db.Timestamptz(6)
-  aiInteractions AiInteractions[]
-  coachAiAgents  CoachAiAgents[]
+  aiInteractions AiInteraction[]
+  coachAiAgents  CoachAiAgent[]
 
   @@map("ai_agents")
 }
 
-model AiInteractions {
+model AiInteraction {
   id               String    @id @default(uuid()) @db.Uuid
-  coachId          String    @db.Uuid
-  agentId          String    @db.Uuid
-  clientId         String?   @db.Uuid
+  coachID          String    @db.Uuid
+  agentID          String    @db.Uuid
+  clientID         String?   @db.Uuid
   interactionType  String    @db.VarChar(50)
   inputData        Json
   outputData       Json
@@ -102,19 +102,19 @@ model AiInteractions {
   status           String?   @default("completed") @db.VarChar(50)
   errorMessage     String?
   createdAt        DateTime? @default(now()) @db.Timestamptz(6)
-  aiAgents         AiAgents  @relation(fields: [agentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  clients          Clients?  @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coaches          Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  aiAgent          AiAgent   @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  client           Client?   @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach            Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([agentId], map: "idx_ai_interactions_agent_id")
-  @@index([coachId], map: "idx_ai_interactions_coach_id")
+  @@index([agentID], map: "idx_ai_interactions_agent_id")
+  @@index([coachID], map: "idx_ai_interactions_coach_id")
   @@index([createdAt], map: "idx_ai_interactions_created_at")
   @@map("ai_interactions")
 }
 
-model Clients {
+model Client {
   id                String              @id @default(uuid()) @db.Uuid
-  coachId           String              @db.Uuid
+  coachID           String              @db.Uuid
   email             String              @db.VarChar(255)
   firstName         String              @db.VarChar(100)
   lastName          String              @db.VarChar(100)
@@ -129,39 +129,39 @@ model Clients {
   customFields      Json?               @default("{}")
   createdAt         DateTime?           @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime?           @default(now()) @db.Timestamptz(6)
-  aiInteractions    AiInteractions[]
-  coaches           Coaches             @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  courseEnrollments CourseEnrollments[]
-  emailThreads      EmailThreads[]
+  aiInteractions    AiInteraction[]
+  coach             Coach               @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courseEnrollments CourseEnrollment[]
+  emailThreads      EmailThread[]
 
-  @@unique([coachId, email])
-  @@index([coachId], map: "idx_clients_coach_id")
+  @@unique([coachID, email])
+  @@index([coachID], map: "idx_clients_coach_id")
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
   @@index([status], map: "idx_clients_status")
   @@map("clients")
 }
 
-model CoachAiAgents {
+model CoachAiAgent {
   id               String    @id @default(uuid()) @db.Uuid
-  coachId          String    @db.Uuid
-  agentId          String    @db.Uuid
+  coachID          String    @db.Uuid
+  agentID          String    @db.Uuid
   isEnabled        Boolean?  @default(true)
   customConfig     Json?     @default("{}")
-  fineTunedModelId String?   @db.VarChar(255)
+  fineTunedModelID String?   @db.VarChar(255)
   totalRequests    Int?      @default(0)
   totalTokensUsed  BigInt?   @default(0)
   lastUsedAt       DateTime? @db.Timestamptz(6)
   createdAt        DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
-  aiAgents         AiAgents  @relation(fields: [agentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coaches          Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  aiAgent          AiAgent   @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach            Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([coachId, agentId])
+  @@unique([coachID, agentID])
   @@map("coach_ai_agents")
 }
 
-model Coaches {
+model Coach {
   id                  String               @id @default(uuid()) @db.Uuid
   email               String               @unique @db.VarChar(255)
   passwordHash        String?              @db.VarChar(255)
@@ -176,7 +176,7 @@ model Coaches {
   subscriptionStatus  String?              @default("trial") @db.VarChar(50)
   subscriptionPlan    String?              @db.VarChar(50)
   subscriptionEndsAt  DateTime?            @db.Timestamptz(6)
-  stripeCustomerId    String?              @db.VarChar(255)
+  stripeCustomerID    String?              @db.VarChar(255)
   isActive            Boolean?             @default(true)
   isVerified          Boolean?             @default(false)
   isDeleted           Boolean?             @default(false)
@@ -185,24 +185,24 @@ model Coaches {
   onboardingCompleted Boolean?             @default(false)
   createdAt           DateTime?            @default(now()) @db.Timestamptz(6)
   updatedAt           DateTime?            @default(now()) @db.Timestamptz(6)
-  aiInteractions      AiInteractions[]
-  clients             Clients[]
-  coachAiAgents       CoachAiAgents[]
-  contentPieces       ContentPieces[]
-  contentSuggestions  ContentSuggestions[]
-  courses             Courses[]
-  dailyKpis           DailyKpis[]
-  emailAccounts       EmailAccounts[]
-  emailTemplates      EmailTemplates[]
-  emailThreads        EmailThreads[]
-  integrations        Integrations[]
-  notifications       Notifications[]
-  paymentMethods      PaymentMethods[]
-  transactions        Transactions[]
-  invoices            Invoices[]
-  subscriptions       Subscriptions[]
-  leads               Leads[]
-  PaymentLinks        PaymentLinks[]
+  aiInteractions      AiInteraction[]
+  clients             Client[]
+  coachAiAgents       CoachAiAgent[]
+  contentPieces       ContentPiece[]
+  contentSuggestions  ContentSuggestion[]
+  courses             Course[]
+  dailyKpis           DailyKpi[]
+  emailAccounts       EmailAccount[]
+  emailTemplates      EmailTemplate[]
+  emailThreads        EmailThread[]
+  integrations        Integration[]
+  notifications       Notification[]
+  paymentMethods      PaymentMethod[]
+  transactions        Transaction[]
+  invoices            Invoice[]
+  subscriptions       Subscription[]
+  leads               Lead[]
+  paymentLinks        PaymentLink[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -210,13 +210,13 @@ model Coaches {
   @@map("coaches")
 }
 
-model ContentPieces {
+model ContentPiece {
   id                    String    @id @default(uuid()) @db.Uuid
-  coachId               String    @db.Uuid
+  coachID               String    @db.Uuid
   title                 String    @db.VarChar(500)
   contentType           String    @db.VarChar(50)
   platform              String?   @db.VarChar(50)
-  platformId            String?   @db.VarChar(255)
+  platformID            String?   @db.VarChar(255)
   url                   String?
   description           String?
   tags                  String[]
@@ -235,17 +235,17 @@ model ContentPieces {
   publishedAt           DateTime? @db.Timestamptz(6)
   createdAt             DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
-  coaches               Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach                 Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([coachId], map: "idx_content_pieces_coach_id")
+  @@index([coachID], map: "idx_content_pieces_coach_id")
   @@index([contentType], map: "idx_content_pieces_content_type")
   @@index([publishedAt], map: "idx_content_pieces_published_at")
   @@map("content_pieces")
 }
 
-model ContentSuggestions {
+model ContentSuggestion {
   id              String    @id @default(uuid()) @db.Uuid
-  coachId         String    @db.Uuid
+  coachID         String    @db.Uuid
   title           String    @db.VarChar(500)
   contentType     String    @db.VarChar(50)
   platform        String?   @db.VarChar(50)
@@ -258,15 +258,15 @@ model ContentSuggestions {
   feedback        String?
   createdAt       DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
-  coaches         Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach           Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("content_suggestions")
 }
 
-model CourseEnrollments {
+model CourseEnrollment {
   id                    String    @id @default(uuid()) @db.Uuid
-  courseId              String    @db.Uuid
-  clientId              String    @db.Uuid
+  courseID              String    @db.Uuid
+  clientID              String    @db.Uuid
   enrolledAt            DateTime? @default(now()) @db.Timestamptz(6)
   startedAt             DateTime? @db.Timestamptz(6)
   completedAt           DateTime? @db.Timestamptz(6)
@@ -282,25 +282,25 @@ model CourseEnrollments {
   recommendedActions    Json?     @default("[]")
   createdAt             DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
-  clients               Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  courses               Courses   @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  client                Client    @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  course                Course    @relation(fields: [courseID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([courseId, clientId])
-  @@index([clientId], map: "idx_course_enrollments_client_id")
-  @@index([courseId], map: "idx_course_enrollments_course_id")
+  @@unique([courseID, clientID])
+  @@index([clientID], map: "idx_course_enrollments_client_id")
+  @@index([courseID], map: "idx_course_enrollments_course_id")
   @@index([status], map: "idx_course_enrollments_status")
   @@map("course_enrollments")
 }
 
-model Courses {
+model Course {
   id                     String              @id @default(uuid()) @db.Uuid
-  coachId                String              @db.Uuid
+  coachID                String              @db.Uuid
   title                  String              @db.VarChar(255)
   description            String?
   category               String?             @db.VarChar(100)
   difficultyLevel        String?             @db.VarChar(50)
   platform               String?             @db.VarChar(50)
-  platformCourseId       String?             @db.VarChar(255)
+  platformCourseID       String?             @db.VarChar(255)
   platformUrl            String?
   totalModules           Int?                @default(0)
   estimatedDurationHours Int?
@@ -310,16 +310,16 @@ model Courses {
   isActive               Boolean?            @default(true)
   createdAt              DateTime?           @default(now()) @db.Timestamptz(6)
   updatedAt              DateTime?           @default(now()) @db.Timestamptz(6)
-  courseEnrollments      CourseEnrollments[]
-  coaches                Coaches             @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courseEnrollments      CourseEnrollment[]
+  coach                  Coach               @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([coachId], map: "idx_courses_coach_id")
+  @@index([coachID], map: "idx_courses_coach_id")
   @@map("courses")
 }
 
-model DailyKpis {
+model DailyKpi {
   id                     String    @id @default(uuid()) @db.Uuid
-  coachId                String    @db.Uuid
+  coachID                String    @db.Uuid
   date                   DateTime  @db.Date
   totalClients           Int?      @default(0)
   newClients             Int?      @default(0)
@@ -339,16 +339,16 @@ model DailyKpis {
   emailsOpened           Int?      @default(0)
   emailsClicked          Int?      @default(0)
   createdAt              DateTime? @default(now()) @db.Timestamptz(6)
-  coaches                Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach                  Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([coachId, date])
-  @@index([coachId, date], map: "idx_daily_kpis_coach_id_date")
+  @@unique([coachID, date])
+  @@index([coachID, date], map: "idx_daily_kpis_coach_id_date")
   @@map("daily_kpis")
 }
 
-model EmailAccounts {
+model EmailAccount {
   id             String         @id @default(uuid()) @db.Uuid
-  coachId        String         @db.Uuid
+  coachID        String         @db.Uuid
   emailAddress   String         @db.VarChar(255)
   provider       String         @db.VarChar(50)
   accessToken    String?
@@ -360,17 +360,17 @@ model EmailAccounts {
   lastSyncAt     DateTime?      @db.Timestamptz(6)
   createdAt      DateTime?      @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime?      @default(now()) @db.Timestamptz(6)
-  coaches        Coaches        @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  emailThreads   EmailThreads[]
+  coach          Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailThreads   EmailThread[]
 
-  @@unique([coachId, emailAddress])
+  @@unique([coachID, emailAddress])
   @@map("email_accounts")
 }
 
-model EmailMessages {
+model EmailMessage {
   id               String       @id @default(uuid()) @db.Uuid
-  threadId         String       @db.Uuid
-  messageId        String       @db.VarChar(255)
+  threadID         String       @db.Uuid
+  messageID        String       @db.VarChar(255)
   senderEmail      String       @db.VarChar(255)
   recipientEmails  String[]
   ccEmails         String[]
@@ -386,16 +386,16 @@ model EmailMessages {
   sentAt           DateTime     @db.Timestamptz(6)
   receivedAt       DateTime?    @default(now()) @db.Timestamptz(6)
   createdAt        DateTime?    @default(now()) @db.Timestamptz(6)
-  emailThreads     EmailThreads @relation(fields: [threadId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailThread      EmailThread  @relation(fields: [threadID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([sentAt], map: "idx_email_messages_sent_at")
-  @@index([threadId], map: "idx_email_messages_thread_id")
+  @@index([threadID], map: "idx_email_messages_thread_id")
   @@map("email_messages")
 }
 
-model EmailTemplates {
+model EmailTemplate {
   id               String    @id @default(uuid()) @db.Uuid
-  coachId          String    @db.Uuid
+  coachID          String    @db.Uuid
   name             String    @db.VarChar(255)
   category         String?   @db.VarChar(100)
   subjectTemplate  String?   @db.VarChar(500)
@@ -407,17 +407,17 @@ model EmailTemplates {
   isActive         Boolean?  @default(true)
   createdAt        DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
-  coaches          Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach            Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("email_templates")
 }
 
-model EmailThreads {
+model EmailThread {
   id             String          @id @default(uuid()) @db.Uuid
-  coachId        String          @db.Uuid
-  clientId       String?         @db.Uuid
-  emailAccountId String          @db.Uuid
-  threadId       String          @db.VarChar(255)
+  coachID        String          @db.Uuid
+  clientID       String?         @db.Uuid
+  emailAccountID String          @db.Uuid
+  threadID       String          @db.VarChar(255)
   subject        String?         @db.VarChar(500)
   participants   String[]
   status         String?         @default("active") @db.VarChar(50)
@@ -427,19 +427,19 @@ model EmailThreads {
   lastMessageAt  DateTime?       @db.Timestamptz(6)
   createdAt      DateTime?       @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime?       @default(now()) @db.Timestamptz(6)
-  emailMessages  EmailMessages[]
-  clients        Clients?        @relation(fields: [clientId], references: [id], onUpdate: NoAction)
-  coaches        Coaches         @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  emailAccounts  EmailAccounts   @relation(fields: [emailAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailMessages  EmailMessage[]
+  client         Client?         @relation(fields: [clientID], references: [id], onUpdate: NoAction)
+  coach          Coach           @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailAccount   EmailAccount    @relation(fields: [emailAccountID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([clientId], map: "idx_email_threads_client_id")
-  @@index([coachId], map: "idx_email_threads_coach_id")
+  @@index([clientID], map: "idx_email_threads_client_id")
+  @@index([coachID], map: "idx_email_threads_coach_id")
   @@map("email_threads")
 }
 
-model Integrations {
+model Integration {
   id              String          @id @default(uuid()) @db.Uuid
-  coachId         String          @db.Uuid
+  coachID         String          @db.Uuid
   integrationType String          @db.VarChar(50)
   platformName    String          @db.VarChar(100)
   accessToken     String?
@@ -454,17 +454,17 @@ model Integrations {
   syncError       String?
   createdAt       DateTime?       @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime?       @default(now()) @db.Timestamptz(6)
-  coaches         Coaches         @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  webhookEvents   WebhookEvents[]
+  coach           Coach           @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  webhookEvents   WebhookEvent[]
 
-  @@index([coachId], map: "idx_integrations_coach_id")
+  @@index([coachID], map: "idx_integrations_coach_id")
   @@map("integrations")
 }
 
-model Notifications {
+model Notification {
   id        String    @id @default(uuid()) @db.Uuid
-  coachId   String?   @db.Uuid
-  adminId   String?   @db.Uuid
+  coachID   String?   @db.Uuid
+  adminID   String?   @db.Uuid
   type      String    @db.VarChar(50)
   title     String    @db.VarChar(255)
   message   String
@@ -474,16 +474,16 @@ model Notifications {
   priority  String?   @default("normal") @db.VarChar(20)
   metadata  Json?     @default("{}")
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
-  admins    Admins?   @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coaches   Coaches?  @relation(fields: [coachId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  admin     Admin?    @relation(fields: [adminID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach     Coach?    @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([adminId], map: "idx_notifications_admin_id")
-  @@index([coachId], map: "idx_notifications_coach_id")
+  @@index([adminID], map: "idx_notifications_admin_id")
+  @@index([coachID], map: "idx_notifications_coach_id")
   @@index([isRead], map: "idx_notifications_is_read")
   @@map("notifications")
 }
 
-model PlatformAnalytics {
+model PlatformAnalytic {
   id                      String    @id @default(uuid()) @db.Uuid
   date                    DateTime  @unique @db.Date
   totalCoaches            Int?      @default(0)
@@ -504,35 +504,35 @@ model PlatformAnalytics {
   @@map("platform_analytics")
 }
 
-model WebhookEvents {
-  id             String        @id @default(uuid()) @db.Uuid
-  integrationId  String?       @db.Uuid
-  eventType      String        @db.VarChar(100)
+model WebhookEvent {
+  id             String       @id @default(uuid()) @db.Uuid
+  integrationID  String?      @db.Uuid
+  eventType      String       @db.VarChar(100)
   eventData      Json
-  sourcePlatform String        @db.VarChar(100)
-  status         String?       @default("pending") @db.VarChar(50)
-  processedAt    DateTime?     @db.Timestamptz(6)
+  sourcePlatform String       @db.VarChar(100)
+  status         String?      @default("pending") @db.VarChar(50)
+  processedAt    DateTime?    @db.Timestamptz(6)
   errorMessage   String?
-  retryCount     Int?          @default(0)
-  createdAt      DateTime?     @default(now()) @db.Timestamptz(6)
-  integrations   Integrations? @relation(fields: [integrationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  retryCount     Int?         @default(0)
+  createdAt      DateTime?    @default(now()) @db.Timestamptz(6)
+  integration    Integration? @relation(fields: [integrationID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([integrationId], map: "idx_webhook_events_integration_id")
+  @@index([integrationID], map: "idx_webhook_events_integration_id")
   @@index([status], map: "idx_webhook_events_status")
   @@map("webhook_events")
 }
 
-model Transactions {
+model Transaction {
   id              String            @id @default(uuid()) @db.Uuid
-  coachId         String            @db.Uuid
-  subscriptionId  String?           @db.Uuid
-  planId          String            @db.Uuid
+  coachID         String            @db.Uuid
+  subscriptionID  String?           @db.Uuid
+  planID          String            @db.Uuid
   amount          Int
   currency        String            @default("USD")
   status          TransactionStatus @default(pending)
   paymentMethod   PaymentMethod
-  stripePaymentId String?
-  paypalOrderId   String?
+  stripePaymentID String?
+  paypalOrderID   String?
   invoiceNumber   String?           @unique
   invoiceDate     DateTime
   dueDate         DateTime?
@@ -544,38 +544,38 @@ model Transactions {
   refundedAmount  Int?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  coach           Coaches           @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  subscription    Subscriptions?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  plan            Plans             @relation(fields: [planId], references: [id], onDelete: Restrict)
-  Invoices        Invoices[]
+  coach           Coach             @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  subscription    Subscription?     @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
+  plan            Plan              @relation(fields: [planID], references: [id], onDelete: Restrict)
+  invoices        Invoice[]
 
   @@map("transactions")
 }
 
-model PaymentMethods {
+model PaymentMethod {
   id                    String        @id @default(uuid()) @db.Uuid
-  coachId               String        @db.Uuid
-  type                  PaymentMethod
+  coachID               String        @db.Uuid
+  type                  PaymentMethodType
   isDefault             Boolean       @default(false)
   isActive              Boolean       @default(true)
   cardLast4             String?
   cardBrand             String?
   cardExpMonth          Int?
   cardExpYear           Int?
-  stripePaymentMethodId String?
+  stripePaymentMethodID String?
   paypalEmail           String?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
-  coach                 Coaches       @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coach                 Coach         @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
   @@map("payment_methods")
 }
 
-model Invoices {
+model Invoice {
   id             String         @id @default(uuid()) @db.Uuid
-  coachId        String         @db.Uuid
-  subscriptionId String?        @db.Uuid
-  transactionId  String?        @db.Uuid
+  coachID        String         @db.Uuid
+  subscriptionID String?        @db.Uuid
+  transactionID  String?        @db.Uuid
   invoiceNumber  String         @unique
   amount         Int
   currency       String         @default("USD")
@@ -593,14 +593,14 @@ model Invoices {
   metadata       Json?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  coach          Coaches        @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  subscription   Subscriptions? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  transaction    Transactions?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  coach          Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  subscription   Subscription?  @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
+  transaction    Transaction?   @relation(fields: [transactionID], references: [id], onDelete: SetNull)
 
   @@map("invoices")
 }
 
-model Plans {
+model Plan {
   id            String          @id @default(uuid()) @db.Uuid
   name          String          @unique
   description   String?
@@ -614,17 +614,17 @@ model Plans {
   deletedAt     DateTime?       @db.Timestamptz(6)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  subscriptions Subscriptions[]
-  transactions  Transactions[]
-  PaymentLinks  PaymentLinks[]
+  subscriptions Subscription[]
+  transactions  Transaction[]
+  paymentLinks  PaymentLink[]
 
   @@map("plans")
 }
 
-model Subscriptions {
+model Subscription {
   id                 String             @id @default(uuid()) @db.Uuid
-  coachId            String             @db.Uuid
-  planId             String             @db.Uuid
+  coachID            String             @db.Uuid
+  planID             String             @db.Uuid
   status             SubscriptionStatus @default(active)
   billingCycle       BillingCycle       @default(monthly)
   currentPeriodStart DateTime
@@ -636,17 +636,17 @@ model Subscriptions {
   nextBillingDate    DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  coach              Coaches            @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  plan               Plans              @relation(fields: [planId], references: [id], onDelete: Restrict)
-  transactions       Transactions[]
-  invoices           Invoices[]
+  coach              Coach              @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  plan               Plan               @relation(fields: [planID], references: [id], onDelete: Restrict)
+  transactions       Transaction[]
+  invoices           Invoice[]
 
   @@map("subscriptions")
 }
 
-model Leads {
+model Lead {
   id              String    @id @default(uuid()) @db.Uuid
-  coachId         String?   @db.Uuid // Made nullable to support admin leads
+  coachID         String?   @db.Uuid // Made nullable to support admin leads
   leadType        LeadType  @default(coach_lead)
   firstName       String    @db.VarChar(100)
   lastName        String    @db.VarChar(100)
@@ -661,29 +661,29 @@ model Leads {
   convertedAt     DateTime? @db.Timestamptz(6)
   createdAt       DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
-  coach           Coaches?  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coach           Coach?    @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
   @@map("leads")
 }
 
-model ActivityLogs {
+model ActivityLog {
   id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @db.Uuid
+  userID     String   @db.Uuid
   userType   String   @db.VarChar(20) // "admin" or "coach"
   action     String   @db.VarChar(100)
   entityType String?  @db.VarChar(50)
-  entityId   String?  @db.Uuid
+  entityID   String?  @db.Uuid
   metadata   Json?
   ipAddress  String?  @db.VarChar(45)
   userAgent  String?
   createdAt  DateTime @default(now()) @db.Timestamptz(6)
 
-  @@index([userId, userType])
+  @@index([userID, userType])
   @@index([createdAt])
   @@map("activity_logs")
 }
 
-model SystemSettings {
+model SystemSetting {
   id          String   @id @default(uuid()) @db.Uuid
   category    String   @db.VarChar(50)
   key         String   @db.VarChar(100)
@@ -693,17 +693,17 @@ model SystemSettings {
   updatedBy   String   @db.Uuid
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
-  admin       Admins   @relation(fields: [updatedBy], references: [id])
+  admin       Admin    @relation(fields: [updatedBy], references: [id])
 
   @@unique([category, key])
   @@map("system_settings")
 }
 
-model PaymentLinks {
+model PaymentLink {
   id                  String    @id @default(uuid()) @db.Uuid
-  coachId             String    @db.Uuid
-  planId              String    @db.Uuid
-  stripePaymentLinkId String    @unique
+  coachID             String    @db.Uuid
+  planID              String    @db.Uuid
+  stripePaymentLinkID String    @unique
   paymentLinkUrl      String
   amount              Int
   currency            String    @default("USD")
@@ -714,8 +714,8 @@ model PaymentLinks {
   expiresAt           DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
-  coach               Coaches   @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  plan                Plans     @relation(fields: [planId], references: [id], onDelete: Restrict)
+  coach               Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  plan                Plan      @relation(fields: [planID], references: [id], onDelete: Restrict)
 
   @@map("payment_links")
 }

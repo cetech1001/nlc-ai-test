@@ -1,4 +1,4 @@
-import React from "react";
+import { ReactNode } from "react";
 
 export interface TableColumn<T> {
   key: string;
@@ -6,7 +6,7 @@ export interface TableColumn<T> {
   width?: string;
   className?: string;
   headerClassName?: string;
-  render?: (value: any, row: T, onAction?: (action: string, row: T) => void) => React.ReactNode;
+  render?: (value: any, row: T, onAction?: (action: string, row: T) => void) => ReactNode;
 }
 
 export interface TableAction {
@@ -24,4 +24,15 @@ export interface TableProps<T> {
   actions?: TableAction[];
   showMobileCards?: boolean;
   emptyMessage?: string;
+}
+
+export interface DataTableCoach {
+  id: string;
+  name: string;
+  email: string;
+  dateJoined: string;
+  plan: string;
+  status: string;
+  rawStatus: string;
+  originalId: string;
 }

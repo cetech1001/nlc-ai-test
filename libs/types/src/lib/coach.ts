@@ -1,3 +1,22 @@
+/*import {
+  ContentPieces,
+  ContentSuggestions,
+  Courses,
+  DailyKpis,
+  EmailAccounts,
+  EmailTemplates,
+  EmailThreads,
+  Integrations,
+  Invoices,
+  Leads,
+  Notifications,
+  PaymentLinks,
+  PaymentMethods,
+  Subscriptions,
+  SubscriptionStatus,
+  Transactions
+} from "./index";*/
+
 export enum CoachStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
@@ -5,26 +24,13 @@ export enum CoachStatus {
   DELETED = 'deleted'
 }
 
-export interface CoachWithStatus {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string | null;
-  businessName: string | null;
-  isActive: boolean | null;
-  isVerified: boolean | null;
-  lastLoginAt: Date | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  status: CoachStatus | null;
-  currentPlan?: string | null;
-  subscriptionStatus?: string | null;
-  clientCount?: number | null;
-  totalRevenue?: number | null;
+/*export interface CoachWithStatus extends Coach{
+  status: CoachStatus;
+  currentPlan?: string;
+  subscriptionStatus?: string;
+  clientCount?: number;
+  totalRevenue?: number;
 }
-
-// export type CoachStatus = 'active' | 'inactive' | 'blocked';
 
 export interface Coach {
   id: string;
@@ -38,12 +44,7 @@ export interface Coach {
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  status: CoachStatus;
-  currentPlan?: string;
-  subscriptionStatus?: string;
-  clientCount?: number;
-  totalRevenue?: number;
-}
+}*/
 
 export interface CoachFilters {
   status?: CoachStatus;
@@ -62,18 +63,6 @@ export interface CoachQueryParams extends CoachFilters {
   limit?: number;
 }
 
-export interface PaginatedCoachesResponse {
-  data: Coach[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
-
 export interface CoachStats {
   total: number;
   active: number;
@@ -81,21 +70,12 @@ export interface CoachStats {
   blocked: number;
 }
 
-export interface CoachKpis {
+export interface CoachKPIs {
   totalClients: number;
   activeClients: number;
   recentInteractions: number;
   tokensUsed: number;
   recentRevenue: number;
-}
-
-export interface RecentCoach {
-  id: string;
-  name: string;
-  email: string;
-  dateJoined: string;
-  plan: string;
-  status: string;
 }
 
 export interface CoachDetail extends Coach {
@@ -104,3 +84,46 @@ export interface CoachDetail extends Coach {
   transactions?: any[];
 }
 
+export interface Coach {
+  id: string;
+  email: string;
+  passwordHash?: string | null;
+  firstName: string;
+  lastName: string;
+  businessName?: string | null;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  websiteUrl?: string | null;
+  timezone?: string | null;
+  subscriptionStatus?: SubscriptionStatus | null;
+  subscriptionPlan?: string | null;
+  subscriptionEndsAt?: Date | null;
+  stripeCustomerId?: string | null;
+  isActive?: boolean | null;
+  isVerified?: boolean | null;
+  isDeleted?: boolean | null;
+  deletedAt?: Date | null;
+  lastLoginAt?: Date | null;
+  onboardingCompleted?: boolean | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  aiInteractions: AiInteractions[];
+  clients: Clients[];
+  coachAiAgents: CoachAiAgents[];
+  contentPieces: ContentPieces[];
+  contentSuggestions: ContentSuggestions[];
+  courses: Courses[];
+  dailyKpis: DailyKpis[];
+  emailAccounts: EmailAccounts[];
+  emailTemplates: EmailTemplates[];
+  emailThreads: EmailThreads[];
+  integrations: Integrations[];
+  notifications: Notifications[];
+  paymentMethods: PaymentMethods[];
+  transactions: Transactions[];
+  invoices: Invoices[];
+  subscriptions: Subscriptions[];
+  leads: Leads[];
+  PaymentLinks: PaymentLinks[];
+}
