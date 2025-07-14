@@ -2,88 +2,20 @@
 
 import { Plus, Trash2, ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { PlanCard } from "@/app/(dashboard)/components/plan-card";
 import { Button } from "@nlc-ai/ui";
 import { useEffect, useState } from "react";
-import { PlansPageSkeleton } from "@/lib/skeletons/plans-page.skeleton";
-import { plansAPI, type Plan as APIPlan } from "@nlc-ai/api-client";
-import { PageHeader, DataFilter, FilterConfig, FilterValues } from "@nlc-ai/shared";
+import { plansAPI } from "@nlc-ai/api-client";
+import { PageHeader, DataFilter, PlanCard } from "@nlc-ai/shared";
 import { AlertBanner } from '@nlc-ai/ui';
-
-const transformPlan = (apiPlan: APIPlan, isCurrentPlan = false) => ({
-  id: apiPlan.id,
-  title: apiPlan.name,
-  subtitle: apiPlan.description || `Access to ${apiPlan.maxAiAgents || 'unlimited'} agents`,
-  price: Math.floor(apiPlan.annualPrice / 100),
-  monthlyPrice: Math.floor(apiPlan.monthlyPrice / 100),
-  billingCycle: "per user/month billed annually",
-  monthlyBilling: `$${Math.floor(apiPlan.monthlyPrice / 100)} billed monthly`,
-  features: apiPlan.features || [],
-  isCurrentPlan,
-  colorClass: getColorClass(apiPlan.name),
-});
-
-const getColorClass = (planName: string) => {
-  const colorMap: Record<string, string> = {
-    'Solo Agent': 'bg-[#9C55FF]',
-    'Starter Pack': 'bg-[#B347FF]',
-    'Growth Pro': 'bg-fuchsia-400',
-    'Scale Elite': 'bg-gradient-to-b from-violet-600 via-fuchsia-600 to-fuchsia-200 rotate-45',
-  };
-  return colorMap[planName] || 'bg-[#7B21BA]';
-};
-
-const planFilters: FilterConfig[] = [
-  {
-    key: 'status',
-    label: 'Plan Status',
-    type: 'select',
-    placeholder: 'All Statuses',
-    options: [
-      { label: 'Active', value: 'active' },
-      { label: 'Inactive', value: 'inactive' },
-      { label: 'Deleted', value: 'deleted' },
-    ],
-    defaultValue: '',
-  },
-  {
-    key: 'priceRange',
-    label: 'Price Range',
-    type: 'select',
-    placeholder: 'All Prices',
-    options: [
-      { label: 'Under $50', value: 'under-50' },
-      { label: '$50 - $100', value: '50-100' },
-      { label: '$100 - $200', value: '100-200' },
-      { label: 'Over $200', value: 'over-200' },
-    ],
-    defaultValue: '',
-  },
-  {
-    key: 'includeDeleted',
-    label: 'Include Deleted',
-    type: 'select',
-    placeholder: 'Exclude Deleted',
-    options: [
-      { label: 'Exclude Deleted', value: 'false' },
-      { label: 'Include Deleted', value: 'true' },
-    ],
-    defaultValue: 'false',
-  },
-];
-
-const emptyFilterValues: FilterValues = {
-  status: '',
-  priceRange: '',
-  includeDeleted: 'false',
-};
+import {FilterValues, Plan} from "@nlc-ai/types";
+import {emptyPlanFilterValues, planFilters, PlansPageSkeleton, transformPlan} from "@/lib";
 
 const SubscriptionPlans = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [plans, setPlans] = useState<APIPlan[]>([]);
-  const [filteredPlans, setFilteredPlans] = useState<APIPlan[]>([]);
-  const [filterValues, setFilterValues] = useState<FilterValues>(emptyFilterValues);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [filteredPlans, setFilteredPlans] = useState<Plan[]>([]);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyPlanFilterValues);
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -96,7 +28,7 @@ const SubscriptionPlans = () => {
       window.history.replaceState({}, '', window.location.pathname);
     }
 
-    fetchPlans();
+    (() => fetchPlans())();
   }, []);
 
   useEffect(() => {
@@ -132,7 +64,6 @@ const SubscriptionPlans = () => {
   const filterPlans = () => {
     let filtered = [...plans];
 
-    // Status filter
     if (filterValues.status) {
       filtered = filtered.filter(plan => {
         if (filterValues.status === 'active') return plan.isActive && !plan.isDeleted;
@@ -142,39 +73,17 @@ const SubscriptionPlans = () => {
       });
     }
 
-    // Price range filter
-    if (filterValues.priceRange) {
-      filtered = filtered.filter(plan => {
-        const monthlyPrice = plan.monthlyPrice / 100;
-        switch (filterValues.priceRange) {
-          case 'under-50': return monthlyPrice < 50;
-          case '50-100': return monthlyPrice >= 50 && monthlyPrice <= 100;
-          case '100-200': return monthlyPrice > 100 && monthlyPrice <= 200;
-          case 'over-200': return monthlyPrice > 200;
-          default: return true;
-        }
-      });
-    }
-
-    // Include deleted filter
-    if (filterValues.includeDeleted === 'false') {
-      filtered = filtered.filter(plan => !plan.isDeleted);
-    }
-
     setFilteredPlans(filtered);
   };
 
-  const handleFilterChange = (newFilters: FilterValues) => {
+  const handleFilterChange = async (newFilters: FilterValues) => {
     setFilterValues(newFilters);
-
-    if (newFilters.includeDeleted !== filterValues.includeDeleted) {
-      fetchPlans(newFilters.includeDeleted);
-    }
+    await fetchPlans();
   };
 
-  const handleResetFilters = () => {
-    setFilterValues(emptyFilterValues);
-    fetchPlans();
+  const handleResetFilters = async () => {
+    setFilterValues(emptyPlanFilterValues);
+    await fetchPlans();
   };
 
   const handleEditPlan = (planId: string) => {
@@ -244,7 +153,6 @@ const SubscriptionPlans = () => {
 
       <PageHeader
         title="Subscription Plans"
-        // subtitle="Manage your subscription plans and pricing structure"
       >
         <div className="flex items-center gap-3">
           <Button

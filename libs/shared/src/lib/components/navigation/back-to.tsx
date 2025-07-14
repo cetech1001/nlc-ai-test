@@ -1,26 +1,18 @@
 'use client'
 
 import {ArrowLeft} from "lucide-react";
-import React from "react";
-import {useRouter} from "next/navigation";
-
+import {FC} from "react";
 
 interface IProps {
-  route: string;
   title: string;
+  onClick: () => void;
 }
 
-export const BackTo = (props: IProps) => {
-  const router = useRouter();
-
-  const onButtonClick = () => {
-    router.push(props.route);
-  }
-
+export const BackTo: FC<IProps> = (props) => {
   return (
     <div className="mb-8">
       <button
-        onClick={onButtonClick}
+        onClick={props.onClick}
         className="flex items-center gap-2 text-white hover:text-[#7B21BA] transition-colors mb-6"
       >
         <ArrowLeft className="w-5 h-5" />

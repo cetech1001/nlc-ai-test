@@ -606,6 +606,7 @@ model Plan {
   description   String?
   monthlyPrice  Int
   annualPrice   Int
+  color         String?        @default("#7B21BA") @db.VarChar(50)
   maxClients    Int?
   maxAiAgents   Int?
   features      Json?

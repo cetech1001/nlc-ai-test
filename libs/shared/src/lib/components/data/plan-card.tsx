@@ -1,9 +1,9 @@
 import { Button } from "@nlc-ai/ui";
 import {Check} from "lucide-react";
-import {Plan} from "@nlc-ai/types";
+import {TransformedPlan} from "@nlc-ai/types";
 
 interface IProps {
-  plan: Plan;
+  plan: TransformedPlan;
   action: string;
   onActionClick: (planId: string) => void;
 }

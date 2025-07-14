@@ -37,8 +37,8 @@ export const PageHeader = ({
   className = "",
 }: PageHeaderProps) => {
   return (
-    <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 ${className}`}>
-      <div className="min-w-0 flex-1">
+    <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 ${className}`}>
+      <div className="min-w-0 flex-1 w-full sm:w-1/3">
         <h2 className="text-stone-50 text-2xl font-medium leading-relaxed mb-2">
           {title}
         </h2>
@@ -49,7 +49,7 @@ export const PageHeader = ({
         )}
       </div>
 
-      <div className="flex items-center gap-3 flex-shrink-0 justify-end sm:w-3/4 xl:w-5/12">
+      <div className="flex items-center gap-3 w-full sm:w-2/3 justify-end">
         {children ? (
           children
         ) : (

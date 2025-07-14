@@ -4,42 +4,24 @@ import {
   Textarea,
   Label
 } from "@nlc-ai/ui";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Palette } from "lucide-react";
 import { useState } from "react";
-
-interface FormData {
-  planTitle: string;
-  description: string;
-  monthlyPrice: string;
-  annualPrice: string;
-  maxClients: string;
-  maxAiAgents: string;
-  features: string[];
-  isActive: boolean;
-}
-
-interface FormErrors {
-  planTitle?: string;
-  monthlyPrice?: string;
-  annualPrice?: string;
-  maxClients?: string;
-  maxAiAgents?: string;
-  features?: string;
-  general?: string;
-}
+import {PLAN_COLORS} from "@/lib";
+import {PlanFormData, PlanFormErrors} from "@nlc-ai/types";
 
 interface IProps {
   type: "create" | "edit";
-  formData: FormData;
+  formData: PlanFormData;
   handleInputChange: (field: string, value: string | boolean | string[]) => void;
   onAction: () => void;
   onDiscard: () => void;
   isLoading?: boolean;
-  errors?: FormErrors;
+  errors?: PlanFormErrors;
 }
 
 export const PlanForm = (props: IProps) => {
   const [newFeature, setNewFeature] = useState("");
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const addFeature = () => {
     if (newFeature.trim() && !props.formData.features.includes(newFeature.trim())) {
@@ -60,6 +42,8 @@ export const PlanForm = (props: IProps) => {
       addFeature();
     }
   };
+
+  const selectedColor = PLAN_COLORS.find(color => color.value === props.formData.color) || PLAN_COLORS[0];
 
   return (
     <div className="max-w-4xl">
@@ -102,6 +86,59 @@ export const PlanForm = (props: IProps) => {
             placeholder="Enter brief description for the plan (e.g., Perfect for growing coaching businesses)"
             disabled={props.isLoading}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white text-sm">
+            Plan Color
+          </Label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowColorPicker(!showColorPicker)}
+              disabled={props.isLoading}
+              className="flex items-center gap-3 w-full p-3 bg-background border border-[#3A3A3A] rounded-lg text-white hover:border-[#7B21BA] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div
+                className={`w-6 h-6 rounded-full ${selectedColor.class}`}
+                style={{ backgroundColor: props.formData.color }}
+              />
+              <span className="flex-1 text-left">{selectedColor.label}</span>
+              <Palette className="w-4 h-4 text-[#A0A0A0]" />
+            </button>
+
+            {showColorPicker && (
+              <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-lg z-10">
+                <div className="grid grid-cols-4 gap-3">
+                  {PLAN_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => {
+                        props.handleInputChange("color", color.value);
+                        setShowColorPicker(false);
+                      }}
+                      disabled={props.isLoading}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        props.formData.color === color.value
+                          ? 'border-white bg-[#3A3A3A]'
+                          : 'border-transparent hover:border-[#7B21BA]'
+                      }`}
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-full ${color.class}`}
+                        style={{ backgroundColor: color.value }}
+                      />
+                      <span className="text-xs text-white">{color.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          {props.errors?.color && (
+            <p className="text-red-400 text-sm">{props.errors.color}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

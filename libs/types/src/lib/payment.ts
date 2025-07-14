@@ -79,3 +79,20 @@ export interface ProcessPaymentRequest {
 export interface CreateSetupIntentRequest {
   customerID: string;
 }
+
+export interface PaymentLinkResponse {
+  paymentLink: string;
+  linkID: string;
+}
+
+export interface PaymentResult {
+  transaction: any;
+  paymentIntent: any;
+  success: boolean;
+}
+
+export interface SendPaymentRequestResponse {
+  paymentLink: string;
+  linkID: string;
+  emailSent: boolean;
+}

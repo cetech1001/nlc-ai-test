@@ -9,15 +9,14 @@ import {
   useStripe,
   useElements
 } from '@stripe/react-stripe-js';
-import { paymentsAPI } from "@nlc-ai/api-client";
-import { plansAPI } from "@nlc-ai/api-client";
+import { paymentsAPI, plansAPI } from "@nlc-ai/api-client";
 import {PaymentModalSkeleton} from "@/lib";
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   coachName: string;
-  coachId: string;
+  coachID: string;
   selectedPlan?: string;
   onPaymentComplete?: () => void;
 }
@@ -40,13 +39,13 @@ const paymentModes = [
 const StripePaymentForm: React.FC<{
   selectedPlan: Plan;
   amount: number;
-  coachId: string;
+  coachID: string;
   coachName: string;
   onPaymentSuccess: () => void;
   onPaymentError: (error: string) => void;
   isProcessing: boolean;
   setIsProcessing: (processing: boolean) => void;
-}> = ({ selectedPlan, amount, coachId, coachName, onPaymentSuccess, onPaymentError, isProcessing, setIsProcessing }) => {
+}> = ({ selectedPlan, amount, coachID, coachName, onPaymentSuccess, onPaymentError, isProcessing, setIsProcessing }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [clientSecret, setClientSecret] = useState<string>('');
@@ -56,8 +55,8 @@ const StripePaymentForm: React.FC<{
     const createPaymentIntent = async () => {
       try {
         const response = await paymentsAPI.createPaymentIntent({
-          coachID: coachId,
-          planId: selectedPlan.id,
+          coachID: coachID,
+          planID: selectedPlan.id,
           amount: amount * 100, // Convert to cents
           description: `Payment for ${coachName} - ${selectedPlan.name} plan`,
         });
@@ -68,10 +67,10 @@ const StripePaymentForm: React.FC<{
       }
     };
 
-    if (selectedPlan && coachId && amount > 0) {
+    if (selectedPlan && coachID && amount > 0) {
       createPaymentIntent();
     }
-  }, [selectedPlan, coachId, amount, coachName, onPaymentError]);
+  }, [selectedPlan, coachID, amount, coachName, onPaymentError]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -178,11 +177,11 @@ const StripePaymentForm: React.FC<{
   );
 };
 
-const PaymentModal: React.FC<PaymentModalProps> = ({
+export const PaymentModal: React.FC<PaymentModalProps> = ({
  isOpen,
  onClose,
  coachName,
- coachId,
+ coachID,
  selectedPlan = "Growth Pro",
  onPaymentComplete,
 }) => {
@@ -191,7 +190,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [amount, setAmount] = useState(0);
   const [selectedPaymentMode, setSelectedPaymentMode] = useState(paymentModes[0]);
   const [paymentLink, setPaymentLink] = useState("");
-  const [linkId, setPaymentLinkId] = useState("");
+  const [linkID, setPaymentLinkID] = useState("");
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isCreatingLink, setIsCreatingLink] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -240,7 +239,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   }, [selectedPlanOption]);
 
   const handleCopyPaymentLink = async () => {
-    if (!selectedPlanOption || !coachId) {
+    if (!selectedPlanOption || !coachID) {
       setPaymentError('Please select a plan first');
       return;
     }
@@ -253,27 +252,27 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
       if (!paymentLink) {
         const response = await paymentsAPI.sendPaymentRequest({
-          coachID: coachId,
-          planId: selectedPlanOption.id,
+          coachID: coachID,
+          planID: selectedPlanOption.id,
           amount: amount * 100, // Convert to cents
           description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
         });
 
         linkToSend = response.paymentLink;
         setPaymentLink(response.paymentLink);
-        setPaymentLinkId(response.linkId);
+        setPaymentLinkID(response.linkID);
 
         if (!response.emailSent) {
           setPaymentError('Payment link was created but the system failed to send it to the coach. Try sending it again!');
         }
       } else {
         await paymentsAPI.sendPaymentRequest({
-          coachID: coachId,
-          planId: selectedPlanOption.id,
+          coachID: coachID,
+          planID: selectedPlanOption.id,
           amount: amount * 100,
           description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
           paymentLink,
-          linkId,
+          linkID,
         });
       }
 
@@ -312,7 +311,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     }
     setSelectedPaymentMode(paymentModes[0]);
     setPaymentLink("");
-    setPaymentLinkId("");
+    setPaymentLinkID("");
     setIsLinkCopied(false);
     setIsCreatingLink(false);
     setPaymentError('');
@@ -587,7 +586,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                       <StripePaymentForm
                         selectedPlan={selectedPlanOption}
                         amount={amount}
-                        coachId={coachId}
+                        coachID={coachID}
                         coachName={coachName}
                         onPaymentSuccess={handlePaymentSuccess}
                         onPaymentError={handlePaymentError}
@@ -648,5 +647,3 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     </Transition>
   );
 };
-
-export default PaymentModal;

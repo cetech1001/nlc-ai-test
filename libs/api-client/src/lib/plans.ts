@@ -1,47 +1,5 @@
 import { BaseAPI } from "./base";
-
-export interface Plan {
-  id: string;
-  name: string;
-  description?: string;
-  monthlyPrice: number;
-  annualPrice: number;
-  maxClients?: number;
-  maxAiAgents?: number;
-  features: string[];
-  isActive: boolean;
-  isDeleted: boolean;
-  deletedAt: string;
-  createdAt: string;
-  updatedAt: string;
-  _count?: {
-    subscriptions: number;
-    transactions: number;
-  };
-}
-
-export interface CreatePlanRequest {
-  name: string;
-  description?: string;
-  monthlyPrice: number;
-  annualPrice: number;
-  maxClients?: number;
-  maxAiAgents?: number;
-  features?: string[];
-  isActive?: boolean;
-}
-
-export interface UpdatePlanRequest extends Partial<CreatePlanRequest> {}
-
-export interface PlanAnalytics {
-  plan: Plan;
-  analytics: {
-    totalRevenue: number;
-    activeSubscriptions: number;
-    totalSubscriptions: number;
-    conversionRate: number;
-  };
-}
+import {CreatePlanRequest, Plan, PlanAnalytics, UpdatePlanRequest} from "@nlc-ai/types";
 
 class PlansAPI extends BaseAPI {
   async getPlans(includeInactive = false, includeDeleted = false): Promise<Plan[]> {

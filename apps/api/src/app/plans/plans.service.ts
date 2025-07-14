@@ -7,7 +7,7 @@ export class PlansService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createPlanDto: CreatePlanDto) {
-    const { name, description, monthlyPrice, annualPrice, maxClients, maxAiAgents, features, isActive } = createPlanDto;
+    const { name, description, monthlyPrice, annualPrice, maxClients, maxAiAgents, features, isActive, color } = createPlanDto;
 
     const existingPlan = await this.prisma.plan.findUnique({
       where: { name },
@@ -25,6 +25,7 @@ export class PlansService {
         annualPrice,
         maxClients,
         maxAiAgents,
+        color,
         features: features || [],
         isActive: isActive ?? true,
       },
@@ -103,6 +104,8 @@ export class PlansService {
         throw new ConflictException('Plan with this name already exists');
       }
     }
+
+    console.log("Data: ", updatePlanDto);
 
     return this.prisma.plan.update({
       where: { id },

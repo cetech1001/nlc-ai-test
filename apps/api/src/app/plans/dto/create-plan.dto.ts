@@ -1,8 +1,9 @@
 import { IsString, IsInt, IsOptional, IsBoolean, IsArray, Min, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import {CreatePlanRequest} from "@nlc-ai/types";
 
-export class CreatePlanDto {
+export class CreatePlanDto implements CreatePlanRequest{
   @ApiProperty({ example: 'Growth Pro' })
   @IsString()
   @IsNotEmpty()
@@ -12,6 +13,11 @@ export class CreatePlanDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({ example: '#7B21BA', required: false })
+  @IsOptional()
+  @IsString()
+  color?: string;
 
   @ApiProperty({ example: 1099 })
   @IsInt()

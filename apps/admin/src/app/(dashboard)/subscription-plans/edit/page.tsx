@@ -3,30 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PlanForm } from "@/app/(dashboard)/components/plan-form";
+import { PlanForm } from "@/lib/components/plans/plan-form";
 import { PlanFormSkeleton } from "@/lib/skeletons/plan-form.skeleton";
-import { plansAPI, type UpdatePlanRequest, type Plan } from "@nlc-ai/api-client";
-
-interface FormData {
-  planTitle: string;
-  description: string;
-  monthlyPrice: string;
-  annualPrice: string;
-  maxClients: string;
-  maxAiAgents: string;
-  features: string[];
-  isActive: boolean;
-}
-
-interface FormErrors {
-  planTitle?: string;
-  monthlyPrice?: string;
-  annualPrice?: string;
-  maxClients?: string;
-  maxAiAgents?: string;
-  features?: string;
-  general?: string;
-}
+import { plansAPI } from "@nlc-ai/api-client";
+import {Plan, PlanFormData, PlanFormErrors, UpdatePlanRequest} from "@nlc-ai/types";
 
 const EditPlan = () => {
   const router = useRouter();
@@ -35,13 +15,14 @@ const EditPlan = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<PlanFormErrors>({});
   const [originalPlan, setOriginalPlan] = useState<Plan | null>(null);
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<PlanFormData>({
     planTitle: "",
     description: "",
     monthlyPrice: "",
+    color: "",
     annualPrice: "",
     maxClients: "",
     maxAiAgents: "",
@@ -67,8 +48,9 @@ const EditPlan = () => {
       setFormData({
         planTitle: plan.name,
         description: plan.description || "",
-        monthlyPrice: (plan.monthlyPrice / 100).toString(), // Convert from cents
-        annualPrice: (plan.annualPrice / 100).toString(), // Convert from cents
+        color: plan.color || "",
+        monthlyPrice: (plan.monthlyPrice / 100).toString(),
+        annualPrice: (plan.annualPrice / 100).toString(),
         maxClients: plan.maxClients?.toString() || "",
         maxAiAgents: plan.maxAiAgents?.toString() || "",
         features: plan.features || [],
@@ -83,7 +65,7 @@ const EditPlan = () => {
 
   // Validation functions
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: PlanFormErrors = {};
 
     // Plan title validation
     if (!formData.planTitle.trim()) {
@@ -136,7 +118,7 @@ const EditPlan = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
     // Clear field error when user starts typing
-    if (errors[field as keyof FormErrors]) {
+    if (errors[field as keyof PlanFormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
@@ -153,8 +135,9 @@ const EditPlan = () => {
       const requestData: UpdatePlanRequest = {
         name: formData.planTitle.trim(),
         description: formData.description.trim() || undefined,
-        monthlyPrice: Math.round(parseFloat(formData.monthlyPrice) * 100), // Convert to cents
-        annualPrice: Math.round(parseFloat(formData.annualPrice) * 100), // Convert to cents
+        color: formData.color,
+        monthlyPrice: Math.round(parseFloat(formData.monthlyPrice) * 100),
+        annualPrice: Math.round(parseFloat(formData.annualPrice) * 100),
         maxClients: formData.maxClients.trim() ? parseInt(formData.maxClients) : undefined,
         maxAiAgents: formData.maxAiAgents.trim() ? parseInt(formData.maxAiAgents) : undefined,
         features: formData.features.length > 0 ? formData.features : undefined,
@@ -163,7 +146,6 @@ const EditPlan = () => {
 
       await plansAPI.updatePlan(planId, requestData);
 
-      // Redirect to plans page with success message
       router.push("/subscription-plans?success=Plan updated successfully");
     } catch (error: any) {
       if (error.statusCode === 409) {

@@ -1,55 +1,18 @@
 'use client'
 
-import PaymentModal from "@/lib/modals/payment-modal";
 import {useEffect, useState} from "react";
-import {PlanCard} from "@/app/(dashboard)/components/plan-card";
-import {MakePaymentSkeleton} from "@/lib/skeletons/make-payment-page.skeleton";
 import { useSearchParams } from "next/navigation";
-import { coachesAPI, plansAPI, type Plan } from "@nlc-ai/api-client";
+import {PlanCard} from "@nlc-ai/shared";
+import { coachesAPI, plansAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
-import type { CoachDetail } from "@nlc-ai/types";
-
-interface TransformedPlan {
-  id: string;
-  title: string;
-  subtitle: string;
-  price: number;
-  monthlyPrice: number;
-  billingCycle: string;
-  monthlyBilling: string;
-  features: string[];
-  isCurrentPlan: boolean;
-  colorClass: string;
-}
-
-const getColorClass = (planName: string) => {
-  const colorMap: Record<string, string> = {
-    'Solo Agent': 'bg-[#9C55FF]',
-    'Starter Pack': 'bg-[#B347FF]',
-    'Growth Pro': 'bg-fuchsia-400',
-    'Scale Elite': 'bg-gradient-to-b from-violet-600 via-fuchsia-600 to-fuchsia-200 rotate-45',
-  };
-  return colorMap[planName] || 'bg-[#7B21BA]';
-};
-
-const transformPlan = (plan: Plan, currentPlanName?: string): TransformedPlan => ({
-  id: plan.id,
-  title: plan.name,
-  subtitle: plan.description || `Access to ${plan.maxAiAgents || 'unlimited'} agents`,
-  price: Math.floor(plan.annualPrice / 100), // Convert from cents to dollars
-  monthlyPrice: Math.floor(plan.monthlyPrice / 100),
-  billingCycle: "per user/month billed annually",
-  monthlyBilling: `$${Math.floor(plan.monthlyPrice / 100)} billed monthly`,
-  features: plan.features || [],
-  isCurrentPlan: plan.name === currentPlanName,
-  colorClass: getColorClass(plan.name),
-});
+import {CoachWithStatus, TransformedPlan} from "@nlc-ai/types";
+import {transformPlan, MakePaymentSkeleton, PaymentModal} from "@/lib";
 
 export default function MakePayment() {
   const searchParams = useSearchParams();
-  const coachId = searchParams.get('coachId');
+  const coachID = searchParams.get('coachID');
 
-  const [coach, setCoach] = useState<CoachDetail | null>(null);
+  const [coach, setCoach] = useState<CoachWithStatus | null>(null);
   const [plans, setPlans] = useState<TransformedPlan[]>([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState("");
@@ -58,8 +21,8 @@ export default function MakePayment() {
   const [successMessage, setSuccessMessage] = useState<string>("");
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!coachId) {
+    (async () => {
+      if (!coachID) {
         setError("No coach ID provided");
         setIsLoading(false);
         return;
@@ -69,18 +32,15 @@ export default function MakePayment() {
         setIsLoading(true);
         setError("");
 
-        // Fetch coach data and plans in parallel
         const [coachData, plansData] = await Promise.all([
-          coachesAPI.getCoach(coachId),
-          plansAPI.getPlans(false) // Only get active plans
+          coachesAPI.getCoach(coachID),
+          plansAPI.getPlans(false)
         ]);
 
         setCoach(coachData);
 
-        // Get current plan name from coach's active subscription
         const currentPlanName = coachData.subscriptions?.[0]?.plan?.name;
 
-        // Transform plans data to match the expected format
         const transformedPlans = plansData.map(plan =>
           transformPlan(plan, currentPlanName)
         );
@@ -91,10 +51,8 @@ export default function MakePayment() {
       } finally {
         setIsLoading(false);
       }
-    };
-
-    fetchData();
-  }, [coachId]);
+    })();
+  }, [coachID]);
 
   const handleUpgrade = (planTitle: string) => {
     setSelectedPlanForPayment(planTitle);
@@ -105,14 +63,12 @@ export default function MakePayment() {
     setIsPaymentModalOpen(false);
     setSuccessMessage(`Payment completed successfully for ${coach?.firstName} ${coach?.lastName} - ${selectedPlanForPayment}`);
 
-    // Clear success message after 5 seconds
     setTimeout(() => {
       setSuccessMessage("");
     }, 5000);
 
-    // Optionally refresh coach data to show updated subscription
-    if (coachId) {
-      coachesAPI.getCoach(coachId).then(setCoach).catch(console.error);
+    if (coachID) {
+      coachesAPI.getCoach(coachID).then(setCoach).catch(console.error);
     }
   };
 
@@ -144,13 +100,11 @@ export default function MakePayment() {
     );
   }
 
-  // Get current subscription details
   const currentSubscription = coach.subscriptions?.[0];
   const currentPlan = currentSubscription?.plan?.name || 'No Plan';
   const subscriptionStatus = currentSubscription?.status || 'none';
   const billingCycle = currentSubscription?.billingCycle || 'Monthly';
 
-  // Format the status for display
   const getStatusDisplay = (status: string) => {
     switch (status) {
       case 'active':
@@ -204,7 +158,7 @@ export default function MakePayment() {
               <div className="flex sm:flex-col gap-3 sm:gap-1.5">
                 <div className="text-stone-300 text-sm font-normal font-['Inter'] leading-relaxed">Date Joined</div>
                 <div className="text-stone-50 text-base font-medium font-['Inter']">
-                  {new Date(coach.createdAt).toLocaleDateString('en-US', {
+                  {new Date(coach.createdAt || '').toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
@@ -262,7 +216,7 @@ export default function MakePayment() {
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           coachName={`${coach.firstName} ${coach.lastName}`}
-          coachId={coach.id}
+          coachID={coach.id}
           selectedPlan={selectedPlanForPayment}
           onPaymentComplete={handlePaymentComplete}
         />

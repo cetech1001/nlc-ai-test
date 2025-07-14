@@ -64,8 +64,8 @@ const AdminHome = () => {
     }
   };
 
-  const handleMakePayment = (coachId: string) => {
-    router.push(`/coaches/make-payment?coachId=${coachId}`);
+  const handleMakePayment = (coachID: string) => {
+    router.push(`/coaches/make-payment?coachID=${coachID}`);
   }
 
   const handleActionSuccess = async (message: string) => {

@@ -3,37 +3,18 @@
 import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { PlanForm } from "@/app/(dashboard)/components/plan-form";
-import { plansAPI, type CreatePlanRequest } from "@nlc-ai/api-client";
-
-interface FormData {
-  planTitle: string;
-  description: string;
-  monthlyPrice: string;
-  annualPrice: string;
-  maxClients: string;
-  maxAiAgents: string;
-  features: string[];
-  isActive: boolean;
-}
-
-interface FormErrors {
-  planTitle?: string;
-  monthlyPrice?: string;
-  annualPrice?: string;
-  maxClients?: string;
-  maxAiAgents?: string;
-  features?: string;
-  general?: string;
-}
+import { PlanForm } from "@/lib/components/plans/plan-form";
+import { plansAPI } from "@nlc-ai/api-client";
+import {CreatePlanRequest, PlanFormData, PlanFormErrors} from "@nlc-ai/types";
 
 const CreateNewPlan = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<PlanFormErrors>({});
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<PlanFormData>({
     planTitle: "",
+    color: "",
     description: "",
     monthlyPrice: "",
     annualPrice: "",
@@ -45,7 +26,7 @@ const CreateNewPlan = () => {
 
   // Validation functions
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: PlanFormErrors = {};
 
     // Plan title validation
     if (!formData.planTitle.trim()) {
@@ -98,7 +79,7 @@ const CreateNewPlan = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
     // Clear field error when user starts typing
-    if (errors[field as keyof FormErrors]) {
+    if (errors[field as keyof PlanFormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
@@ -114,6 +95,7 @@ const CreateNewPlan = () => {
     try {
       const requestData: CreatePlanRequest = {
         name: formData.planTitle.trim(),
+        color: formData.color,
         description: formData.description.trim() || undefined,
         monthlyPrice: Math.round(parseFloat(formData.monthlyPrice) * 100), // Convert to cents
         annualPrice: Math.round(parseFloat(formData.annualPrice) * 100), // Convert to cents

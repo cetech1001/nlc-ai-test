@@ -1,7 +1,7 @@
 import {Listbox, Transition} from "@headlessui/react";
 import {Check, ChevronDown} from "lucide-react";
 import {FC, Fragment, useCallback, useMemo} from "react";
-import {FilterConfig} from "../index";
+import {FilterConfig} from "@nlc-ai/types";
 
 interface IProps {
   value: any;
@@ -30,7 +30,7 @@ export const SelectFilter: FC<IProps> = (props) => {
 
   // Find the current option label
   const currentOption = useMemo(() => {
-    return filter.options?.find(opt => String(opt.value) === normalizedValue);
+    return filter.options?.find((opt: any) => String(opt.value) === normalizedValue);
   }, [filter.options, normalizedValue]);
 
   const displayLabel = currentOption?.label || filter.placeholder || 'Select...';
@@ -52,7 +52,7 @@ export const SelectFilter: FC<IProps> = (props) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#2A2A2A] border border-[#3A3A3A] py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
+          <Listbox.Options className="absolute mt-1 max-h-96 w-full overflow-auto rounded-md bg-[#2A2A2A] border border-[#3A3A3A] py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
             <Listbox.Option
               value=""
               className={({ active }) =>
@@ -74,7 +74,7 @@ export const SelectFilter: FC<IProps> = (props) => {
                 </>
               )}
             </Listbox.Option>
-            {filter.options?.map((option, optionIdx) => (
+            {filter.options?.map((option: any, optionIdx: number) => (
               <Listbox.Option
                 key={`${filter.key}-${option.value}-${optionIdx}`}
                 value={String(option.value)} // Ensure value is string

@@ -5,7 +5,7 @@ export const coachFilters: FilterConfig[] = [
     key: 'status',
     label: 'Coach Status',
     type: 'select',
-    placeholder: 'All Statuses',
+    placeholder: 'All',
     options: [
       { label: 'Active', value: 'active' },
       { label: 'Inactive', value: 'inactive' },
@@ -39,28 +39,6 @@ export const coachFilters: FilterConfig[] = [
     type: 'date-range',
     defaultValue: { start: null, end: null },
   },
-  {
-    key: 'isVerified',
-    label: 'Email Verified',
-    type: 'select',
-    placeholder: 'All',
-    options: [
-      { label: 'Verified', value: 'true' },
-      { label: 'Not Verified', value: 'false' },
-    ],
-    defaultValue: '',
-  },
-  /*{
-    key: 'includeDeleted',
-    label: 'Include Deleted',
-    type: 'select',
-    placeholder: 'Exclude Deleted',
-    options: [
-      { label: 'Include Deleted', value: 'true' },
-      { label: 'Exclude Deleted', value: 'false' },
-    ],
-    defaultValue: 'false',
-  },*/
 ];
 
 export const emptyCoachFilterValues: FilterValues = {
@@ -68,6 +46,4 @@ export const emptyCoachFilterValues: FilterValues = {
   subscriptionPlan: [],
   dateJoined: { start: null, end: null },
   lastActive: { start: null, end: null },
-  isVerified: '',
-  // includeDeleted: 'false',
 };

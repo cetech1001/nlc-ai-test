@@ -7,12 +7,16 @@ import {
   Pagination,
   PageHeader,
   DataFilter,
+  MobilePagination,
 } from "@nlc-ai/shared";
 import { coachesAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {
   coachColumns,
-  CoachesPageSkeleton, CoachesTable, coachFilters, emptyCoachFilterValues,
+  CoachesPageSkeleton,
+  CoachesTable,
+  coachFilters,
+  emptyCoachFilterValues,
 } from "@/lib";
 import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
@@ -110,7 +114,7 @@ const Coaches = () => {
         <PageHeader
           title="Coaches List"
         >
-          <div className="flex items-center gap-3 w-full sm:w-3/4">
+          <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
                 type="text"
@@ -129,7 +133,7 @@ const Coaches = () => {
               onReset={handleResetFilters}
               setIsFilterOpen={setIsFilterOpen}
             />
-          </div>
+          </>
         </PageHeader>
 
         {isLoading && (
@@ -155,16 +159,7 @@ const Coaches = () => {
         )}
 
         {!isLoading && coaches.length > 0 && (
-          <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-4 sm:hidden">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-stone-300">
-                Showing {coaches.length} of {pagination.total} coaches
-              </span>
-              <div className="flex gap-4 text-stone-400">
-                <span>Page {pagination.page} of {pagination.totalPages}</span>
-              </div>
-            </div>
-          </div>
+          <MobilePagination pagination={pagination}/>
         )}
       </div>
     </div>
