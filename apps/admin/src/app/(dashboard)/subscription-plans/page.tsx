@@ -86,17 +86,17 @@ const SubscriptionPlans = () => {
     await fetchPlans();
   };
 
-  const handleEditPlan = (planId: string) => {
-    router.push(`/subscription-plans/edit?id=${planId}`);
+  const handleEditPlan = (planID: string) => {
+    router.push(`/subscription-plans/edit?id=${planID}`);
   };
 
   const handleCreateNewPlan = () => {
     router.push("/subscription-plans/create");
   };
 
-  const handleToggleStatus = async (planId: string) => {
+  const handleToggleStatus = async (planID: string) => {
     try {
-      await plansAPI.togglePlanStatus(planId);
+      await plansAPI.togglePlanStatus(planID);
       setSuccessMessage("Plan status updated successfully!");
       await fetchPlans();
     } catch (error: any) {
@@ -104,13 +104,13 @@ const SubscriptionPlans = () => {
     }
   };
 
-  const handleDeletePlan = async (planId: string) => {
+  const handleDeletePlan = async (planID: string) => {
     if (!confirm("Are you sure you want to delete this plan? This action will mark it for deletion.")) {
       return;
     }
 
     try {
-      await plansAPI.deletePlan(planId);
+      await plansAPI.deletePlan(planID);
       setSuccessMessage("Plan deleted successfully!");
       await fetchPlans();
     } catch (error: any) {
@@ -118,13 +118,13 @@ const SubscriptionPlans = () => {
     }
   };
 
-  const handleRestorePlan = async (planId: string) => {
+  const handleRestorePlan = async (planID: string) => {
     if (!confirm("Are you sure you want to restore this plan?")) {
       return;
     }
 
     try {
-      await plansAPI.restorePlan(planId);
+      await plansAPI.restorePlan(planID);
       setSuccessMessage("Plan restored successfully!");
       await fetchPlans();
     } catch (error: any) {

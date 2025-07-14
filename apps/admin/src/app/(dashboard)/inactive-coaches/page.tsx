@@ -3,65 +3,25 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { DataTable, Pagination, PageHeader, DataFilter, FilterConfig, FilterValues } from "@nlc-ai/shared";
-import { CoachesPageSkeleton } from "@/lib/skeletons/coaches-page.skeleton";
+import { Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/shared";
 import { coachesAPI } from "@nlc-ai/api-client";
-import {coachColumns, DataTableCoach, transformCoachData} from "@/lib/utils/coaches";
+import {
+  coachColumns,
+  emptyInactiveCoachesFilterValues,
+  CoachesPageSkeleton,
+  inactiveCoachFilters,
+  CoachesTable
+} from "@/lib";
 import { AlertBanner } from '@nlc-ai/ui';
-
-const inactiveCoachFilters: FilterConfig[] = [
-  {
-    key: 'subscriptionPlan',
-    label: 'Subscription Plan',
-    type: 'multi-select',
-    options: [
-      { label: 'Solo Agent', value: 'Solo Agent' },
-      { label: 'Starter Pack', value: 'Starter Pack' },
-      { label: 'Growth Pro', value: 'Growth Pro' },
-      { label: 'Scale Elite', value: 'Scale Elite' },
-      { label: 'No Plan', value: 'No Plan' },
-    ],
-    defaultValue: [],
-  },
-  {
-    key: 'dateJoined',
-    label: 'Date Joined',
-    type: 'date-range',
-    defaultValue: { start: null, end: null },
-  },
-  {
-    key: 'lastActive',
-    label: 'Last Active',
-    type: 'date-range',
-    defaultValue: { start: null, end: null },
-  },
-  {
-    key: 'isVerified',
-    label: 'Email Verified',
-    type: 'select',
-    placeholder: 'All',
-    options: [
-      { label: 'Verified', value: 'true' },
-      { label: 'Not Verified', value: 'false' },
-    ],
-    defaultValue: '',
-  },
-];
-
-const emptyFilterValues: FilterValues = {
-  subscriptionPlan: [],
-  dateJoined: { start: null, end: null },
-  lastActive: { start: null, end: null },
-  isVerified: '',
-};
+import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
 export default function InactiveCoaches() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [coaches, setCoaches] = useState<DataTableCoach[]>([]);
-  const [filterValues, setFilterValues] = useState<FilterValues>(emptyFilterValues);
+  const [coaches, setCoaches] = useState<CoachWithStatus[]>([]);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyInactiveCoachesFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -77,7 +37,7 @@ export default function InactiveCoaches() {
   const coachesPerPage = 10;
 
   useEffect(() => {
-    fetchCoaches();
+    (() => fetchCoaches())();
   }, [currentPage, searchQuery, filterValues]);
 
   const fetchCoaches = async () => {
@@ -85,7 +45,6 @@ export default function InactiveCoaches() {
       setIsLoading(true);
       setError("");
 
-      // Add status filter to only get inactive coaches
       const filtersWithStatus = {
         ...filterValues,
         status: 'inactive'
@@ -98,7 +57,7 @@ export default function InactiveCoaches() {
         searchQuery
       );
 
-      setCoaches(transformCoachData(response.data));
+      setCoaches(response.data);
       setPagination(response.pagination);
     } catch (error: any) {
       setError(error.message || "Failed to load inactive coaches");
@@ -118,48 +77,20 @@ export default function InactiveCoaches() {
   };
 
   const handleResetFilters = () => {
-    setFilterValues(emptyFilterValues);
+    setFilterValues(emptyInactiveCoachesFilterValues);
     setSearchQuery("");
     setCurrentPage(1);
   };
 
-  const handleRowAction = (action: string, coach: any) => {
-    if (action === 'make-payment') {
-      router.push(`/coaches/make-payment?coachId=${coach.originalId}`);
-    } else if (action === 'toggle-status') {
-      handleToggleStatus(coach.originalId);
-    } else if (action === 'delete') {
-      handleDeleteCoach(coach.originalId);
-    }
-  };
+  const handleMakePayment = (coachID: string) => {
+    router.push(`/coaches/make-payment?coachID=${coachID}`);
+  }
 
-  const handleToggleStatus = async (coachId: string) => {
-    try {
-      await coachesAPI.toggleCoachStatus(coachId);
-      setSuccessMessage("Coach activated successfully!");
-      await fetchCoaches();
-
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error: any) {
-      setError(error.message || "Failed to activate coach");
-    }
-  };
-
-  const handleDeleteCoach = async (coachId: string) => {
-    if (!confirm("Are you sure you want to deactivate this coach? This action will set their status to blocked.")) {
-      return;
-    }
-
-    try {
-      await coachesAPI.deleteCoach(coachId);
-      setSuccessMessage("Coach deactivated successfully!");
-      await fetchCoaches();
-
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (error: any) {
-      setError(error.message || "Failed to deactivate coach");
-    }
-  };
+  const handleActionSuccess = async () => {
+    setSuccessMessage("Coach activated successfully!");
+    await fetchCoaches();
+    setTimeout(() => setSuccessMessage(""), 3000);
+  }
 
   const clearMessages = () => {
     setError("");
@@ -179,9 +110,8 @@ export default function InactiveCoaches() {
 
         <PageHeader
           title="Inactive Coaches"
-          // subtitle="Coaches who haven't logged in for 30+ days"
         >
-          <div className="flex items-center gap-3 w-full sm:w-3/4">
+          <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
                 type="text"
@@ -200,7 +130,7 @@ export default function InactiveCoaches() {
               onReset={handleResetFilters}
               setIsFilterOpen={setIsFilterOpen}
             />
-          </div>
+          </>
         </PageHeader>
 
         {isLoading && (
@@ -209,12 +139,11 @@ export default function InactiveCoaches() {
 
         {!isLoading && (
           <>
-            <DataTable
-              columns={coachColumns}
-              data={coaches}
-              onRowAction={handleRowAction}
-              emptyMessage="No inactive coaches found matching your criteria"
-            />
+            <CoachesTable
+              coaches={coaches}
+              handleMakePayment={handleMakePayment}
+              handleActionSuccess={handleActionSuccess}
+              setError={setError}/>
 
             {pagination.totalPages > 1 && (
               <Pagination
@@ -227,16 +156,7 @@ export default function InactiveCoaches() {
         )}
 
         {!isLoading && coaches.length > 0 && (
-          <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-4 sm:hidden">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-stone-300">
-                Showing {coaches.length} of {pagination.total} inactive coaches
-              </span>
-              <div className="flex gap-4 text-stone-400">
-                <span>Page {pagination.page} of {pagination.totalPages}</span>
-              </div>
-            </div>
-          </div>
+          <MobilePagination pagination={pagination}/>
         )}
       </div>
     </div>

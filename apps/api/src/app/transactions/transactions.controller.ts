@@ -112,7 +112,7 @@ export class TransactionsController {
     });
   }
 
-  @Get('transactions/top-coaches')
+  @Get('analytics/top-coaches')
   @ApiOperation({ summary: 'Get top paying coaches' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Top paying coaches retrieved successfully' })
@@ -120,7 +120,7 @@ export class TransactionsController {
     return this.transactionsService.getTopPayingCoaches(limit ? parseInt(limit) : 10);
   }
 
-  @Get('transactions/monthly-comparison')
+  @Get('analytics/monthly-comparison')
   @ApiOperation({ summary: 'Get monthly revenue comparison' })
   @ApiResponse({ status: 200, description: 'Monthly revenue comparison retrieved successfully' })
   getMonthlyRevenueComparison() {

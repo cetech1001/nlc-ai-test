@@ -5,7 +5,7 @@ import {coachesAPI} from "@nlc-ai/api-client";
 
 interface IProps {
   coaches: CoachWithStatus[];
-  handleMakePayment: (coachId: string) => void;
+  handleMakePayment: (coachID: string) => void;
   handleActionSuccess: (message: string) => void;
   setError: Dispatch<SetStateAction<string>>;
 }
@@ -82,35 +82,35 @@ export const CoachesTable: FC<IProps> = (props) => {
     }
   };
 
-  const handleRestoreCoach = async (coachId: string) => {
+  const handleRestoreCoach = async (coachID: string) => {
     if (!confirm("Are you sure you want to restore this coach?")) {
       return;
     }
 
     try {
-      await coachesAPI.restoreCoach(coachId);
+      await coachesAPI.restoreCoach(coachID);
       props.handleActionSuccess("Coach restored successfully!");
     } catch (error: any) {
       props.setError(error.message || "Failed to restore coach");
     }
   };
 
-  const handleToggleStatus = async (coachId: string) => {
+  const handleToggleStatus = async (coachID: string) => {
     try {
-      await coachesAPI.toggleCoachStatus(coachId);
+      await coachesAPI.toggleCoachStatus(coachID);
       props.handleActionSuccess("Coach status updated successfully!");
     } catch (error: any) {
       props.setError(error.message || "Failed to update coach status");
     }
   };
 
-  const handleDeleteCoach = async (coachId: string) => {
+  const handleDeleteCoach = async (coachID: string) => {
     if (!confirm("Are you sure you want to deactivate this coach?")) {
       return;
     }
 
     try {
-      await coachesAPI.deleteCoach(coachId);
+      await coachesAPI.deleteCoach(coachID);
       props.handleActionSuccess("Coach deactivated successfully!");
     } catch (error: any) {
       props.setError(error.message || "Failed to deactivate coach");

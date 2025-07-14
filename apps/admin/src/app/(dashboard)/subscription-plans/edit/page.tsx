@@ -11,7 +11,7 @@ import {Plan, PlanFormData, PlanFormErrors, UpdatePlanRequest} from "@nlc-ai/typ
 const EditPlan = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const planId = searchParams.get('id');
+  const planID = searchParams.get('id');
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
@@ -31,13 +31,13 @@ const EditPlan = () => {
   });
 
   useEffect(() => {
-    if (!planId) {
+    if (!planID) {
       router.push("/subscription-plans");
       return;
     }
 
-    loadPlan(planId);
-  }, [planId, router]);
+    loadPlan(planID);
+  }, [planID, router]);
 
   const loadPlan = async (id: string) => {
     try {
@@ -124,7 +124,7 @@ const EditPlan = () => {
   };
 
   const handleEditPlan = async () => {
-    if (!validateForm() || !planId) {
+    if (!validateForm() || !planID) {
       return;
     }
 
@@ -144,7 +144,7 @@ const EditPlan = () => {
         isActive: formData.isActive,
       };
 
-      await plansAPI.updatePlan(planId, requestData);
+      await plansAPI.updatePlan(planID, requestData);
 
       router.push("/subscription-plans?success=Plan updated successfully");
     } catch (error: any) {

@@ -10,10 +10,10 @@ import {
   TransactionAnalytics,
   TransactionsPageSkeleton
 } from "@/lib";
-import { DataTable, Pagination, PageHeader, DataFilter, FilterValues } from "@nlc-ai/shared";
+import { DataTable, Pagination, PageHeader, DataFilter } from "@nlc-ai/shared";
 import { transactionsAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
-import {DataTableTransaction} from "@nlc-ai/types";
+import {DataTableTransaction, FilterValues} from "@nlc-ai/types";
 
 
 const emptyFilterValues: FilterValues = {
@@ -120,9 +120,8 @@ export default function Transactions() {
 
         <PageHeader
           title="All Transactions"
-          // subtitle="Track all payments and financial activities across your platform"
         >
-          <div className="flex items-center gap-3 w-full sm:w-3/4">
+          <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
                 type="text"
@@ -141,7 +140,7 @@ export default function Transactions() {
               onReset={handleResetFilters}
               setIsFilterOpen={setIsFilterOpen}
             />
-          </div>
+          </>
         </PageHeader>
 
         {isLoading && (

@@ -47,3 +47,39 @@ export const emptyCoachFilterValues: FilterValues = {
   dateJoined: { start: null, end: null },
   lastActive: { start: null, end: null },
 };
+
+export const inactiveCoachFilters: FilterConfig[] = [
+  {
+    key: 'subscriptionPlan',
+    label: 'Subscription Plan',
+    type: 'multi-select',
+    options: [
+      { label: 'Solo Agent', value: 'Solo Agent' },
+      { label: 'Starter Pack', value: 'Starter Pack' },
+      { label: 'Growth Pro', value: 'Growth Pro' },
+      { label: 'Scale Elite', value: 'Scale Elite' },
+      { label: 'No Plan', value: 'No Plan' },
+    ],
+    defaultValue: [],
+  },
+  {
+    key: 'dateJoined',
+    label: 'Date Joined',
+    type: 'date-range',
+    defaultValue: { start: null, end: null },
+  },
+  {
+    key: 'lastActive',
+    label: 'Last Active',
+    type: 'date-range',
+    defaultValue: { start: null, end: null },
+  },
+];
+
+export const emptyInactiveCoachesFilterValues: FilterValues = {
+  subscriptionPlan: [],
+  dateJoined: { start: null, end: null },
+  lastActive: { start: null, end: null },
+  isVerified: '',
+};
+

@@ -4,29 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, TrendingUp, TrendingDown, DollarSign, CreditCard, Users, Activity } from 'lucide-react';
 import { transactionsAPI } from '@nlc-ai/api-client';
 import { Button } from '@nlc-ai/ui';
-
-interface TransactionStats {
-  total: number;
-  completed: number;
-  pending: number;
-  failed: number;
-  totalRevenue: number;
-}
-
-interface RevenueComparison {
-  currentMonth: number;
-  previousMonth: number;
-  percentageChange: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
-interface TopCoach {
-  coachId: string;
-  coachName: string;
-  coachEmail: string;
-  totalAmount: number;
-  transactionCount: number;
-}
+import {RevenueComparison, TopCoach, TransactionStats} from "@nlc-ai/types";
 
 export const TransactionAnalytics: React.FC = () => {
   const [stats, setStats] = useState<TransactionStats | null>(null);
@@ -36,7 +14,7 @@ export const TransactionAnalytics: React.FC = () => {
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchAnalyticsData();
+    (() => fetchAnalyticsData())();
   }, []);
 
   const fetchAnalyticsData = async () => {
@@ -210,7 +188,7 @@ export const TransactionAnalytics: React.FC = () => {
           {topCoaches.length > 0 ? (
             <div className="space-y-4">
               {topCoaches.map((coach, index) => (
-                <div key={coach.coachId} className="flex items-center justify-between p-4 bg-neutral-800/50 rounded-lg">
+                <div key={coach.coachID} className="flex items-center justify-between p-4 bg-neutral-800/50 rounded-lg">
                   <div className="flex items-center gap-4">
                     <div className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 text-white text-sm font-bold rounded-full w-8 h-8 flex items-center justify-center">
                       {index + 1}
