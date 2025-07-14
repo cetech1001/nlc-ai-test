@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search, Plus } from "lucide-react";
-import { DataTable, Pagination, PageHeader, DataFilter, FilterConfig, FilterValues, tableRenderers } from "@nlc-ai/shared";
+import { DataTable, Pagination, PageHeader, DataFilter, tableRenderers } from "@nlc-ai/shared";
 import { AlertBanner } from '@nlc-ai/ui';
 import { leadsAPI } from '@nlc-ai/api-client';
+import {FilterConfig, FilterValues} from "@nlc-ai/types";
 
 // Types for Leads
 interface Lead {

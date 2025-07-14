@@ -1,8 +1,8 @@
-import { FilterConfig, TableColumn, tableRenderers } from "@nlc-ai/shared";
-import { Transaction, DataTableTransaction } from "@nlc-ai/types";
+import { tableRenderers } from "@nlc-ai/shared";
+import {FilterConfig, TableColumn, DataTableTransaction, TransactionWithDetails} from "@nlc-ai/types";
 
-export const transformTransactionData = (transactions: Transaction[]): DataTableTransaction[] => {
-  return transactions.map(transaction => ({
+export const transformTransactionData = (transactions: TransactionWithDetails[]): DataTableTransaction[] => {
+  return transactions.map((transaction: TransactionWithDetails) => ({
     id: transaction.id,
     coachName: transaction.coachName,
     coachEmail: transaction.coachEmail,

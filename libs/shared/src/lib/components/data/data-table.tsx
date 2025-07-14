@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import {TableProps} from "../../types";
+import {TableProps} from "@nlc-ai/types";
 
 export const DataTable = <T,>({
   columns,

@@ -1,5 +1,5 @@
 import {Search} from "lucide-react";
-import {FilterConfig} from "../index";
+import {FilterConfig} from "@nlc-ai/types";
 import {FC} from "react";
 
 interface IProps {

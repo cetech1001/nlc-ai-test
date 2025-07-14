@@ -1,5 +1,5 @@
 import { BaseAPI } from './base';
-import {Paginated, RevenueGrowthData, Transaction, TransactionStats} from '@nlc-ai/types';
+import {Paginated, RevenueGrowthData, Transaction, TransactionStats, TransactionWithDetails} from '@nlc-ai/types';
 
 export class TransactionsAPI extends BaseAPI {
   async getTransactions(
@@ -7,7 +7,7 @@ export class TransactionsAPI extends BaseAPI {
     limit = 10,
     filters: Record<string, any> = {},
     search?: string
-  ): Promise<Paginated<Transaction>> {
+  ): Promise<Paginated<TransactionWithDetails>> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),

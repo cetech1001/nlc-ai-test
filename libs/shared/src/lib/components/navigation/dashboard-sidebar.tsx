@@ -8,7 +8,7 @@ import {
   CogIcon as HiCog,
   ArrowRightStartOnRectangleIcon as HiLogout
 } from '@heroicons/react/24/outline';
-import {MenuItem} from "../../types";
+import {MenuItem} from "@nlc-ai/types";
 import {Logo} from "../logo";
 
 

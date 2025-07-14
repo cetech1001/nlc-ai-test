@@ -1,23 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {RevenueGrowthData, Transaction, TransactionsQueryParams, TransactionStatus} from "@nlc-ai/types";
-
-export interface TransactionWithDetails {
-  id: string;
-  coachID: string;
-  coachName: string;
-  coachEmail: string;
-  planName: string;
-  amount: number;
-  currency: string;
-  status: string;
-  paymentMethod: string;
-  invoiceNumber?: string;
-  invoiceDate: Date;
-  transactionDate: Date;
-  paidAt?: Date;
-  description?: string;
-}
+import {
+  Coach,
+  RevenueGrowthData,
+  Transaction,
+  TransactionsQueryParams,
+  TransactionStatus,
+  TransactionWithDetails
+} from "@nlc-ai/types";
 
 @Injectable()
 export class TransactionsService {
@@ -550,14 +540,14 @@ export class TransactionsService {
       orderBy: { createdAt: 'desc' }
     });
 
-    return transactions.map(transaction => ({
+    return transactions.map((transaction: Transaction) => ({
       transactionID: transaction.id,
       invoiceNumber: transaction.invoiceNumber,
-      coachName: `${transaction.coach.firstName} ${transaction.coach.lastName}`,
-      coachEmail: transaction.coach.email,
-      coachBusinessName: transaction.coach.businessName,
-      planName: transaction.plan.name,
-      planDescription: transaction.plan.description,
+      coachName: `${transaction.coach?.firstName} ${transaction.coach?.lastName}`,
+      coachEmail: transaction.coach?.email,
+      coachBusinessName: transaction.coach?.businessName,
+      planName: transaction.plan?.name,
+      planDescription: transaction.plan?.description,
       amount: (transaction.amount / 100), // Convert from cents
       currency: transaction.currency,
       status: transaction.status,
@@ -639,7 +629,7 @@ export class TransactionsService {
       take: limit,
     });
 
-    const coachIDs = result.map(r => r.coachID);
+    const coachIDs = result.map((r: Transaction) => r.coachID);
     const coaches = await this.prisma.coach.findMany({
       where: {
         id: {
@@ -654,8 +644,8 @@ export class TransactionsService {
       },
     });
 
-    return result.map(r => {
-      const coach = coaches.find(c => c.id === r.coachID);
+    return result.map((r: any) => {
+      const coach = coaches.find((c: Coach) => c.id === r.coachID);
       return {
         coachID: r.coachID,
         coachName: coach ? `${coach.firstName} ${coach.lastName}` : 'Unknown',
@@ -762,7 +752,7 @@ export class TransactionsService {
       orderBy: { createdAt: 'asc' }
     });
 
-    const trends = transactions.reduce((acc, transaction) => {
+    const trends = transactions.reduce((acc: any, transaction: Transaction) => {
       const date = transaction.createdAt;
       let key: string;
 
@@ -790,7 +780,7 @@ export class TransactionsService {
       return acc;
     }, {} as Record<string, { revenue: number; count: number }>);
 
-    return Object.entries(trends).map(([period, data]) => ({
+    return Object.entries(trends).map(([period, data]: any) => ({
       period,
       revenue: Math.round(data.revenue / 100), // Convert from cents
       transactionCount: data.count,
@@ -811,14 +801,14 @@ export class TransactionsService {
       },
     });
 
-    const totalRevenue = result.reduce((sum, r) => sum + (r._sum.amount || 0), 0);
+    const totalRevenue = result.reduce((sum: any, r: any) => sum + (r._sum.amount || 0), 0);
 
-    return result.map(r => ({
+    return result.map((r: any) => ({
       paymentMethod: r.paymentMethod,
       totalAmount: Math.round((r._sum.amount || 0) / 100),
       transactionCount: r._count.id,
       percentage: totalRevenue > 0 ? Math.round(((r._sum.amount || 0) / totalRevenue) * 100 * 100) / 100 : 0,
-    })).sort((a, b) => b.totalAmount - a.totalAmount);
+    })).sort((a: any, b: any) => b.totalAmount - a.totalAmount);
   }
 
   async refundTransaction(id: string, reason?: string) {

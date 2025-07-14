@@ -111,3 +111,20 @@ export interface DataTableTransaction {
   transactionDate: string;
   invoiceNumber?: string;
 }
+
+export interface TransactionWithDetails {
+  id: string;
+  coachID: string;
+  coachName: string;
+  coachEmail: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentMethod: string;
+  invoiceNumber?: string;
+  invoiceDate: Date;
+  transactionDate: Date;
+  paidAt?: Date;
+  description?: string;
+}

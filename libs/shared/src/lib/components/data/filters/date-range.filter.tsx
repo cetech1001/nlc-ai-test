@@ -1,5 +1,5 @@
 import {FC} from "react";
-import {FilterConfig} from "../index";
+import {FilterConfig} from "@nlc-ai/types";
 
 interface IProps {
   dateValue: {
