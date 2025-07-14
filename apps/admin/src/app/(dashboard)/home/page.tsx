@@ -138,16 +138,20 @@ const AdminHome = () => {
       )}
 
       <div className="relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h2 className="text-stone-50 text-xl sm:text-2xl font-semibold leading-relaxed">
-            Recently Joined Coaches
-          </h2>
-          <button
-            onClick={() => router.push('/coaches')}
-            className="text-fuchsia-400 text-sm font-bold hover:text-fuchsia-300 transition-colors self-start sm:self-auto"
-          >
-            View All
-          </button>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-stone-50 text-xl sm:text-2xl font-semibold leading-relaxed">
+              Recently Joined Coaches
+            </h2>
+          </div>
+          <div>
+            <button
+              onClick={() => router.push('/coaches')}
+              className="text-fuchsia-400 text-sm font-bold hover:text-fuchsia-300 transition-colors self-start sm:self-auto"
+            >
+              View All
+            </button>
+          </div>
         </div>
 
         {recentCoaches.length === 0 ? (

@@ -19,7 +19,7 @@ export const HomePageSkeleton = (props: { length: number }) => {
       </div>
 
       <div className="relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center justify-between gap-4 mb-6">
           <div className="h-6 sm:h-8 w-48 bg-neutral-800/50 rounded animate-pulse" />
           <div className="h-4 w-16 bg-neutral-800/50 rounded animate-pulse self-start sm:self-auto" />
         </div>

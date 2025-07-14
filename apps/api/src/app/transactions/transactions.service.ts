@@ -113,7 +113,6 @@ export class TransactionsService {
       }
     });
 
-    // Transform data to include additional fields
     const transactionsWithDetails: TransactionWithDetails[] = result.data.map((transaction: Transaction) => ({
       id: transaction.id,
       coachID: transaction.coachID,
