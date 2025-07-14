@@ -7,9 +7,9 @@ import {
 } from "lucide-react";
 import {useEffect, useState} from "react";
 import { useRouter } from "next/navigation";
-import { BackTo } from "@/app/(dashboard)/components/back-to";
 import dynamic from 'next/dynamic';
 import {SendMailPageSkeleton} from "@/lib/skeletons/send-mail-page.skeleton";
+import { BackTo } from "@nlc-ai/shared";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,
@@ -76,6 +76,10 @@ export default function ClientRetention() {
     fetchTinyMCEConfig();
   }, []);
 
+  const handleBackClick = () => {
+    router.push('/inactive-coaches');
+  }
+
   const handleSendEmail = () => {
     console.log('Sending email...');
   };
@@ -94,7 +98,7 @@ export default function ClientRetention() {
 
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
-      <BackTo route={'/inactive-coaches'} title={'Client Retention Email'}/>
+      <BackTo onClick={handleBackClick} title={'Client Retention Email'}/>
 
       <div className="w-full max-w-[1750px] relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 overflow-hidden">
 
