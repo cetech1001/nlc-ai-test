@@ -530,7 +530,7 @@ model Transaction {
   amount          Int
   currency        String            @default("USD")
   status          TransactionStatus @default(pending)
-  paymentMethod   PaymentMethod?     @relation(fields: [paymentMethodID], references: [id], onDelete: SetNull)
+  paymentMethod   PaymentMethodType @default(stripe)
   stripePaymentID String?
   paypalOrderID   String?
   invoiceNumber   String?           @unique
@@ -542,7 +542,6 @@ model Transaction {
   failureReason   String?
   refundReason    String?
   refundedAmount  Int?
-  paymentMethodID String?           @db.Uuid
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   coach           Coach             @relation(fields: [coachID], references: [id], onDelete: Cascade)
@@ -568,7 +567,6 @@ model PaymentMethod {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
   coach                 Coach             @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  transactions          Transaction[]
 
   @@map("payment_methods")
 }

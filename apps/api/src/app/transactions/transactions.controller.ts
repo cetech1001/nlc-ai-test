@@ -1,5 +1,3 @@
-// apps/api/src/app/transactions/transactions.controller.ts (Enhanced)
-
 import {
   Controller,
   Get,
@@ -9,11 +7,13 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { TransactionsService } from './transactions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import type { Response } from 'express';
+import {TransactionsQueryParamsDto} from "./dto";
+import {TransactionStatus} from "@nlc-ai/types";
 
 @ApiTags('Transactions')
 @Controller('transactions')
@@ -25,41 +25,9 @@ export class TransactionsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all transactions with pagination and filters' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, type: String })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'startDate', required: false, type: String })
-  @ApiQuery({ name: 'endDate', required: false, type: String })
-  @ApiQuery({ name: 'paymentMethod', required: false, type: String, description: 'Comma-separated payment methods' })
-  @ApiQuery({ name: 'minAmount', required: false, type: String })
-  @ApiQuery({ name: 'maxAmount', required: false, type: String })
-  @ApiQuery({ name: 'planNames', required: false, type: String, description: 'Comma-separated plan names' })
   @ApiResponse({ status: 200, description: 'Transactions retrieved successfully' })
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-    @Query('search') search?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('paymentMethod') paymentMethod?: string,
-    @Query('minAmount') minAmount?: string,
-    @Query('maxAmount') maxAmount?: string,
-    @Query('planNames') planNames?: string,
-  ) {
-    return this.transactionsService.findAll(
-      page ? parseInt(page) : 1,
-      limit ? parseInt(limit) : 10,
-      status,
-      search,
-      startDate,
-      endDate,
-      paymentMethod,
-      minAmount,
-      maxAmount,
-      planNames
-    );
+  findAll(@Query() query: TransactionsQueryParamsDto) {
+    return this.transactionsService.findAll(query);
   }
 
   @Get('stats')
@@ -155,7 +123,7 @@ export class TransactionsController {
   @Get('by-status/:status')
   @ApiOperation({ summary: 'Get transactions by status' })
   @ApiResponse({ status: 200, description: 'Transactions by status retrieved successfully' })
-  getTransactionsByStatus(@Param('status') status: string) {
+  getTransactionsByStatus(@Param('status') status: TransactionStatus) {
     return this.transactionsService.getTransactionsByStatus(status);
   }
 

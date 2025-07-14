@@ -56,7 +56,7 @@ const StripePaymentForm: React.FC<{
     const createPaymentIntent = async () => {
       try {
         const response = await paymentsAPI.createPaymentIntent({
-          coachId,
+          coachID: coachId,
           planId: selectedPlan.id,
           amount: amount * 100, // Convert to cents
           description: `Payment for ${coachName} - ${selectedPlan.name} plan`,
@@ -253,7 +253,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
       if (!paymentLink) {
         const response = await paymentsAPI.sendPaymentRequest({
-          coachId,
+          coachID: coachId,
           planId: selectedPlanOption.id,
           amount: amount * 100, // Convert to cents
           description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
@@ -268,7 +268,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         }
       } else {
         await paymentsAPI.sendPaymentRequest({
-          coachId,
+          coachID: coachId,
           planId: selectedPlanOption.id,
           amount: amount * 100,
           description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,

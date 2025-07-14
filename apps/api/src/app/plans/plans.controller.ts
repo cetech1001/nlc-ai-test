@@ -15,6 +15,7 @@ import { CreatePlanDto, UpdatePlanDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import {UserType} from "@nlc-ai/types";
 
 @ApiTags('Plans')
 @Controller('plans')
@@ -24,7 +25,7 @@ export class PlansController {
   constructor(private readonly plansService: PlansService) {}
 
   @Post()
-  @Roles('admin')
+  @Roles(UserType.admin)
   @ApiOperation({ summary: 'Create a new subscription plan' })
   @ApiResponse({ status: 201, description: 'Plan created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
@@ -54,8 +55,8 @@ export class PlansController {
     return this.plansService.findOne(id);
   }
 
-  @Get(':id/transactions')
-  @Roles('admin')
+  @Get(':id/analytics')
+  @Roles(UserType.admin)
   @ApiOperation({ summary: 'Get plan transactions' })
   @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -64,7 +65,7 @@ export class PlansController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  @Roles(UserType.admin)
   @ApiOperation({ summary: 'Update a subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan updated successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -74,7 +75,7 @@ export class PlansController {
   }
 
   @Patch(':id/toggle-status')
-  @Roles('admin')
+  @Roles(UserType.admin)
   @ApiOperation({ summary: 'Toggle plan active status' })
   @ApiResponse({ status: 200, description: 'Plan status toggled successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -83,7 +84,7 @@ export class PlansController {
   }
 
   @Patch(':id/restore')
-  @Roles('admin')
+  @Roles(UserType.admin)
   @ApiOperation({ summary: 'Restore a deleted subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan restored successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -94,7 +95,7 @@ export class PlansController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  @Roles(UserType.admin)
   @ApiOperation({ summary: 'Soft delete a subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan marked for deletion successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })

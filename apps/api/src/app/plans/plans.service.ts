@@ -9,7 +9,7 @@ export class PlansService {
   async create(createPlanDto: CreatePlanDto) {
     const { name, description, monthlyPrice, annualPrice, maxClients, maxAiAgents, features, isActive } = createPlanDto;
 
-    const existingPlan = await this.prisma.plans.findUnique({
+    const existingPlan = await this.prisma.plan.findUnique({
       where: { name },
     });
 
@@ -17,7 +17,7 @@ export class PlansService {
       throw new ConflictException('Plan with this name already exists');
     }
 
-    return this.prisma.plans.create({
+    return this.prisma.plan.create({
       data: {
         name,
         description,
@@ -42,7 +42,7 @@ export class PlansService {
       where.isActive = true;
     }
 
-    return this.prisma.plans.findMany({
+    return this.prisma.plan.findMany({
       where,
       orderBy: [
         { monthlyPrice: 'asc' },
@@ -60,7 +60,7 @@ export class PlansService {
   }
 
   async findOne(id: string) {
-    const plan = await this.prisma.plans.findUnique({
+    const plan = await this.prisma.plan.findUnique({
       where: { id },
       include: {
         _count: {
@@ -91,7 +91,7 @@ export class PlansService {
     const { name, ...otherData } = updatePlanDto;
 
     if (name) {
-      const existingPlan = await this.prisma.plans.findFirst({
+      const existingPlan = await this.prisma.plan.findFirst({
         where: {
           name,
           id: { not: id },
@@ -104,7 +104,7 @@ export class PlansService {
       }
     }
 
-    return this.prisma.plans.update({
+    return this.prisma.plan.update({
       where: { id },
       data: {
         name,
@@ -115,9 +115,9 @@ export class PlansService {
   }
 
   async remove(id: string) {
-    const activeSubscriptions = await this.prisma.subscriptions.count({
+    const activeSubscriptions = await this.prisma.subscription.count({
       where: {
-        planId: id,
+        planID: id,
         status: 'active',
       },
     });
@@ -126,7 +126,7 @@ export class PlansService {
       throw new ConflictException('Cannot delete plan with active subscriptions. Deactivate it instead.');
     }
 
-    return this.prisma.plans.update({
+    return this.prisma.plan.update({
       where: { id },
       data: {
         isDeleted: true,
@@ -143,7 +143,7 @@ export class PlansService {
       throw new BadRequestException('Cannot toggle status of deleted plans');
     }
 
-    return this.prisma.plans.update({
+    return this.prisma.plan.update({
       where: { id },
       data: { isActive: !plan.isActive },
     });
@@ -153,24 +153,24 @@ export class PlansService {
     const plan = await this.findOne(id);
 
     const [totalRevenue, activeSubscriptions, totalSubscriptions] = await Promise.all([
-      this.prisma.transactions.aggregate({
+      this.prisma.transaction.aggregate({
         where: {
-          planId: id,
+          planID: id,
           status: 'completed',
         },
         _sum: {
           amount: true,
         },
       }),
-      this.prisma.subscriptions.count({
+      this.prisma.subscription.count({
         where: {
-          planId: id,
+          planID: id,
           status: 'active',
         },
       }),
-      this.prisma.subscriptions.count({
+      this.prisma.subscription.count({
         where: {
-          planId: id,
+          planID: id,
         },
       }),
     ]);
@@ -187,7 +187,7 @@ export class PlansService {
   }
 
   async restore(id: string) {
-    const plan = await this.prisma.plans.findUnique({
+    const plan = await this.prisma.plan.findUnique({
       where: { id },
       include: {
         _count: {
@@ -209,7 +209,7 @@ export class PlansService {
       throw new BadRequestException('Plan is not deleted');
     }
 
-    const existingPlan = await this.prisma.plans.findFirst({
+    const existingPlan = await this.prisma.plan.findFirst({
       where: {
         name: plan.name,
         isDeleted: false,
@@ -221,12 +221,12 @@ export class PlansService {
       throw new ConflictException('A plan with this name already exists');
     }
 
-    return this.prisma.plans.update({
+    return this.prisma.plan.update({
       where: { id },
       data: {
         isDeleted: false,
         deletedAt: null,
-        isActive: true, // Restore as active by default
+        isActive: true,
         updatedAt: new Date(),
       },
     });
@@ -236,7 +236,7 @@ export class PlansService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const expiredPlans = await this.prisma.plans.findMany({
+    const expiredPlans = await this.prisma.plan.findMany({
       where: {
         isDeleted: true,
         deletedAt: {
@@ -245,15 +245,11 @@ export class PlansService {
       }
     });
 
-    // Delete related data first, then plan
     for (const plan of expiredPlans) {
       await this.prisma.$transaction(async (tx) => {
-        // Delete related transactions and subscriptions
-        await tx.transactions.deleteMany({ where: { planId: plan.id } });
-        await tx.subscriptions.deleteMany({ where: { planId: plan.id } });
-
-        // Finally delete the plan
-        await tx.plans.delete({ where: { id: plan.id } });
+        await tx.transaction.deleteMany({ where: { planID: plan.id } });
+        await tx.subscription.deleteMany({ where: { planID: plan.id } });
+        await tx.plan.delete({ where: { id: plan.id } });
       });
     }
 

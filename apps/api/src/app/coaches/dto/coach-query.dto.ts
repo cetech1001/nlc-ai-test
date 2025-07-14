@@ -1,9 +1,9 @@
 import { IsOptional, IsString, IsEnum, IsDateString, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
-import {CoachStatus} from "@nlc-ai/types";
+import {CoachQueryParams, CoachStatus} from "@nlc-ai/types";
 
-export class CoachQueryDto {
+export class CoachQueryDto implements CoachQueryParams{
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)

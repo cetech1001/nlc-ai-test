@@ -1,38 +1,19 @@
-// apps/api/src/app/payments/payments.service.ts
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {Injectable, BadRequestException, NotFoundException, Logger} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import Stripe from 'stripe';
-
-export interface CreatePaymentIntentRequest {
-  coachId: string;
-  planId: string;
-  amount: number; // in cents
-  currency?: string;
-  description?: string;
-  paymentMethodId?: string; // for immediate processing
-}
-
-export interface PaymentIntentResponse {
-  clientSecret: string;
-  paymentIntentId: string;
-  amount: number;
-  currency: string;
-  status: string;
-}
-
-export interface ProcessPaymentRequest {
-  coachId: string;
-  planId: string;
-  amount: number;
-  paymentMethodId: string;
-  description?: string;
-}
+import {
+  CreatePaymentIntentRequest,
+  PaymentIntentResponse,
+  PaymentMethodType,
+  ProcessPaymentRequest, SendPaymentRequest
+} from "@nlc-ai/types";
 
 @Injectable()
 export class PaymentsService {
   private stripe: Stripe;
+  private readonly logger = new Logger(PaymentsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -47,18 +28,11 @@ export class PaymentsService {
     this.stripe = new Stripe(stripeSecretKey);
   }
 
-  async createPaymentLink(data: {
-    coachId: string;
-    planId: string;
-    amount: number;
-    currency?: string;
-    description?: string;
-  }): Promise<{ paymentLink: string; linkId: string }> {
-    const { coachId, planId, amount, currency = 'USD', description } = data;
+  async createPaymentLink(data: CreatePaymentIntentRequest): Promise<{ paymentLink: string; linkID: string }> {
+    const { coachID, planID, amount, currency = 'USD', description } = data;
 
-    // Validate coach exists
-    const coach = await this.prisma.coaches.findUnique({
-      where: { id: coachId },
+    const coach = await this.prisma.coach.findUnique({
+      where: { id: coachID },
       select: { id: true, email: true, firstName: true, lastName: true }
     });
 
@@ -66,9 +40,8 @@ export class PaymentsService {
       throw new NotFoundException('Coach not found');
     }
 
-    // Validate plan exists
-    const plan = await this.prisma.plans.findUnique({
-      where: { id: planId },
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: planID },
       select: { id: true, name: true }
     });
 
@@ -77,7 +50,6 @@ export class PaymentsService {
     }
 
     try {
-      // Create a price for this specific payment
       const price = await this.stripe.prices.create({
         unit_amount: amount,
         currency: currency.toLowerCase(),
@@ -85,15 +57,14 @@ export class PaymentsService {
           name: `${plan.name} Plan Payment`,
         },
         metadata: {
-          coachId,
-          planId,
+          coachID,
+          planID,
           planName: plan.name,
           coachName: `${coach.firstName} ${coach.lastName}`,
           description: description || `Payment for ${plan.name} plan for ${coach.firstName} ${coach.lastName}`,
         },
       });
 
-      // Create payment link
       const paymentLink = await this.stripe.paymentLinks.create({
         line_items: [
           {
@@ -102,8 +73,8 @@ export class PaymentsService {
           },
         ],
         metadata: {
-          coachId,
-          planId,
+          coachID,
+          planID,
           planName: plan.name,
           coachName: `${coach.firstName} ${coach.lastName}`,
           coachEmail: coach.email,
@@ -111,7 +82,7 @@ export class PaymentsService {
         after_completion: {
           type: 'redirect',
           redirect: {
-            url: `${this.configService.get('ADMIN_PLATFORM_URL')}/coaches/make-payment?coachId=${coachId}&payment=success`,
+            url: `${this.configService.get('COACH_PLATFORM_URL')}/payments/completed?coachID=${coachID}&payment=success`,
           },
         },
         allow_promotion_codes: true,
@@ -135,55 +106,43 @@ export class PaymentsService {
         ],
       });
 
-      // Store payment link in PaymentLinks table
-      const paymentLinkRecord = await this.prisma.paymentLinks.create({
+      await this.prisma.paymentLink.create({
         data: {
-          coachId,
-          planId,
-          stripePaymentLinkId: paymentLink.id,
+          coachID,
+          planID,
+          stripePaymentLinkID: paymentLink.id,
           paymentLinkUrl: paymentLink.url,
           amount,
           currency: currency.toUpperCase(),
           description,
           isActive: true,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
-      });
-
-      console.log('Payment link created:', {
-        id: paymentLinkRecord.id,
-        stripeId: paymentLink.id,
-        coachId,
-        planId,
-        amount,
       });
 
       return {
         paymentLink: paymentLink.url,
-        linkId: paymentLink.id,
+        linkID: paymentLink.id,
       };
     } catch (error: any) {
-      console.error('Error creating payment link:', error);
       throw new BadRequestException(`Failed to create payment link: ${error.message}`);
     }
   }
 
   async createPaymentIntent(data: CreatePaymentIntentRequest): Promise<PaymentIntentResponse> {
-    const { coachId, planId, amount, currency = 'USD', description } = data;
+    const { coachID, planID, amount, currency = 'USD', description } = data;
 
-    // Validate coach exists
-    const coach = await this.prisma.coaches.findUnique({
-      where: { id: coachId },
-      select: { id: true, email: true, firstName: true, lastName: true, stripeCustomerId: true }
+    const coach = await this.prisma.coach.findUnique({
+      where: { id: coachID },
+      select: { id: true, email: true, firstName: true, lastName: true, stripeCustomerID: true }
     });
 
     if (!coach) {
       throw new NotFoundException('Coach not found');
     }
 
-    // Validate plan exists
-    const plan = await this.prisma.plans.findUnique({
-      where: { id: planId },
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: planID },
       select: { id: true, name: true }
     });
 
@@ -191,35 +150,32 @@ export class PaymentsService {
       throw new NotFoundException('Plan not found');
     }
 
-    // Create or get Stripe customer
-    let customerId = coach.stripeCustomerId;
-    if (!customerId) {
+    let customerID = coach.stripeCustomerID;
+    if (!customerID) {
       const customer = await this.stripe.customers.create({
         email: coach.email,
         name: `${coach.firstName} ${coach.lastName}`,
         metadata: {
-          coachId: coach.id,
+          coachID: coach.id,
         },
       });
 
-      customerId = customer.id;
+      customerID = customer.id;
 
-      // Update coach with Stripe customer ID
-      await this.prisma.coaches.update({
-        where: { id: coachId },
-        data: { stripeCustomerId: customerId },
+      await this.prisma.coach.update({
+        where: { id: coachID },
+        data: { stripeCustomerID: customerID },
       });
     }
 
-    // Create payment intent
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount,
       currency: currency.toLowerCase(),
-      customer: customerId,
+      customer: customerID,
       description: description || `Payment for ${plan.name} plan`,
       metadata: {
-        coachId,
-        planId,
+        coachID,
+        planID,
         planName: plan.name,
       },
       automatic_payment_methods: {
@@ -229,7 +185,7 @@ export class PaymentsService {
 
     return {
       clientSecret: paymentIntent.client_secret!,
-      paymentIntentId: paymentIntent.id,
+      paymentIntentID: paymentIntent.id,
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
       status: paymentIntent.status,
@@ -237,32 +193,29 @@ export class PaymentsService {
   }
 
   async processPayment(data: ProcessPaymentRequest): Promise<any> {
-    const { coachId, planId, amount, paymentMethodId, description } = data;
+    const { coachID, planID, amount, paymentMethodID, description } = data;
 
-    // First create payment intent
     const paymentIntentData = await this.createPaymentIntent({
-      coachId,
-      planId,
+      coachID: coachID,
+      planID,
       amount,
       description,
     });
 
     try {
-      // Confirm payment with payment method
       const confirmedPayment = await this.stripe.paymentIntents.confirm(
-        paymentIntentData.paymentIntentId,
+        paymentIntentData.paymentIntentID,
         {
-          payment_method: paymentMethodId,
+          payment_method: paymentMethodID,
           return_url: `${this.configService.get('ADMIN_PLATFORM_URL')}/coaches/make-payment`,
         }
       );
 
-      // Create transaction record
       const transaction = await this.createTransactionRecord({
-        coachId,
-        planId,
+        coachID: coachID,
+        planID,
         amount,
-        stripePaymentId: confirmedPayment.id,
+        stripePaymentID: confirmedPayment.id,
         status: confirmedPayment.status,
         description,
       });
@@ -273,12 +226,11 @@ export class PaymentsService {
         success: confirmedPayment.status === 'succeeded',
       };
     } catch (error: any) {
-      // Handle payment failure
       await this.createTransactionRecord({
-        coachId,
-        planId,
+        coachID: coachID,
+        planID,
         amount,
-        stripePaymentId: paymentIntentData.paymentIntentId,
+        stripePaymentID: paymentIntentData.paymentIntentID,
         status: 'failed',
         description,
         failureReason: error.message,
@@ -295,28 +247,13 @@ export class PaymentsService {
       throw new Error('Stripe webhook secret not configured');
     }
 
-    console.log('Processing webhook with:', {
-      hasSignature: !!signature,
-      hasPayload: !!payload,
-      payloadLength: payload ? payload.length : 0,
-      webhookSecretExists: !!webhookSecret,
-    });
-
     let event: Stripe.Event;
 
     try {
       event = this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-      console.log('Webhook event constructed successfully:', event.type, event.id);
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err);
       throw new BadRequestException(`Webhook signature verification failed: ${err.message}`);
     }
-
-    console.log('Processing webhook event:', {
-      type: event.type,
-      id: event.id,
-      livemode: event.livemode,
-    });
 
     try {
       switch (event.type) {
@@ -329,69 +266,46 @@ export class PaymentsService {
         case 'checkout.session.completed':
           await this.handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
           break;
-        case 'customer.created':
-          console.log('Customer created:', event.data.object);
-          break;
         default:
-          console.log(`Unhandled event type: ${event.type}`);
+          break;
       }
-
-      console.log('Webhook processed successfully');
     } catch (error: any) {
-      console.error('Error processing webhook event:', error);
       throw error;
     }
   }
 
   private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
-    const { coachId, planId } = session.metadata || {};
+    const { coachID, planID } = session.metadata || {};
 
-    if (!coachId || !planId) {
+    if (!coachID || !planID) {
       console.error('Missing metadata in checkout session:', session.id);
       return;
     }
 
-    // Create transaction record for payment link payment
-    const transaction = await this.createTransactionRecord({
-      coachId,
-      planId,
+    await this.createTransactionRecord({
+      coachID: coachID,
+      planID,
       amount: session.amount_total || 0,
-      stripePaymentId: session.payment_intent as string,
+      stripePaymentID: session.payment_intent as string,
       status: 'completed',
       description: `Payment via payment link - Session: ${session.id}`,
     });
 
-    // Create or update subscription
-    await this.createOrUpdateSubscription(coachId, planId);
-
-    console.log('Payment link payment completed:', {
-      sessionId: session.id,
-      coachId,
-      planId,
-      transactionId: transaction.id,
-    });
+    await this.createOrUpdateSubscription(coachID, planID);
   }
 
   private async handleSuccessfulPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    const { coachId, planId } = paymentIntent.metadata;
+    const { coachID, planID } = paymentIntent.metadata;
 
-    console.log('Handling successful payment:', {
-      paymentIntentId: paymentIntent.id,
-      coachId,
-      planId,
-      amount: paymentIntent.amount,
-    });
-
-    if (!coachId || !planId) {
+    if (!coachID || !planID) {
       console.error('Missing metadata in payment intent:', paymentIntent.id);
       return;
     }
 
     try {
-      // Update transaction status
-      const updatedTransactions = await this.prisma.transactions.updateMany({
+      await this.prisma.transaction.updateMany({
         where: {
-          stripePaymentId: paymentIntent.id,
+          stripePaymentID: paymentIntent.id,
         },
         data: {
           status: 'completed',
@@ -399,22 +313,16 @@ export class PaymentsService {
         },
       });
 
-      console.log('Updated transactions:', updatedTransactions.count);
-
-      // Create or update subscription
-      await this.createOrUpdateSubscription(coachId, planId);
-
-      console.log('Payment processing completed successfully');
+      await this.createOrUpdateSubscription(coachID, planID);
     } catch (error: any) {
-      console.error('Error handling successful payment:', error);
       throw error;
     }
   }
 
   private async handleFailedPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    await this.prisma.transactions.updateMany({
+    await this.prisma.transaction.updateMany({
       where: {
-        stripePaymentId: paymentIntent.id,
+        stripePaymentID: paymentIntent.id,
       },
       data: {
         status: 'failed',
@@ -424,25 +332,25 @@ export class PaymentsService {
   }
 
   private async createTransactionRecord(data: {
-    coachId: string;
-    planId: string;
+    coachID: string;
+    planID: string;
     amount: number;
-    stripePaymentId: string;
+    stripePaymentID: string;
     status: string;
     description?: string;
     failureReason?: string;
   }) {
     const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    return this.prisma.transactions.create({
+    return this.prisma.transaction.create({
       data: {
-        coachId: data.coachId,
-        planId: data.planId,
+        coachID: data.coachID,
+        planID: data.planID,
         amount: data.amount,
         currency: 'USD',
         status: data.status as any,
-        paymentMethod: 'stripe',
-        stripePaymentId: data.stripePaymentId,
+        paymentMethod: PaymentMethodType.STRIPE,
+        stripePaymentID: data.stripePaymentID,
         invoiceNumber,
         invoiceDate: new Date(),
         description: data.description,
@@ -465,76 +373,64 @@ export class PaymentsService {
     });
   }
 
-  private async createOrUpdateSubscription(coachId: string, planId: string): Promise<void> {
-    // Check if coach has an active subscription
-    const existingSubscription = await this.prisma.subscriptions.findFirst({
+  private async createOrUpdateSubscription(coachID: string, planID: string): Promise<void> {
+    const existingSubscription = await this.prisma.subscription.findFirst({
       where: {
-        coachId,
+        coachID,
         status: 'active',
       },
     });
 
     if (existingSubscription) {
-      // Update existing subscription
-      await this.prisma.subscriptions.update({
+      await this.prisma.subscription.update({
         where: { id: existingSubscription.id },
         data: {
-          planId,
+          planID,
           currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       });
     } else {
-      // Create new subscription
-      await this.prisma.subscriptions.create({
+      await this.prisma.subscription.create({
         data: {
-          coachId,
-          planId,
+          coachID,
+          planID,
           status: 'active',
           billingCycle: 'monthly',
           currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       });
     }
   }
 
-  async getPaymentMethods(customerId: string): Promise<Stripe.PaymentMethod[]> {
+  async getPaymentMethods(customerID: string): Promise<Stripe.PaymentMethod[]> {
     const paymentMethods = await this.stripe.paymentMethods.list({
-      customer: customerId,
+      customer: customerID,
       type: 'card',
     });
 
     return paymentMethods.data;
   }
 
-  async sendPaymentRequest(data: {
-    coachId: string;
-    planId: string;
-    amount: number;
-    paymentLink?: string;
-    linkId?: string;
-    currency?: string;
-    description?: string;
-  }): Promise<{ paymentLink: string; linkId: string; emailSent: boolean }> {
+  async sendPaymentRequest(data: SendPaymentRequest): Promise<{ paymentLink: string; linkID: string; emailSent: boolean }> {
     let paymentLink = data.paymentLink;
-    let linkId = data.linkId;
-    if (!paymentLink || !linkId) {
+    let linkID = data.linkID;
+    if (!paymentLink || !linkID) {
       const result = await this.createPaymentLink(data);
       paymentLink = result.paymentLink;
-      linkId = result.linkId;
+      linkID = result.linkID;
     }
 
-    // Get coach and plan details for email
     const [coach, plan] = await Promise.all([
-      this.prisma.coaches.findUnique({
-        where: { id: data.coachId },
+      this.prisma.coach.findUnique({
+        where: { id: data.coachID },
         select: { email: true, firstName: true, lastName: true }
       }),
-      this.prisma.plans.findUnique({
-        where: { id: data.planId },
+      this.prisma.plan.findUnique({
+        where: { id: data.planID },
         select: { name: true, description: true }
       })
     ]);
@@ -545,38 +441,34 @@ export class PaymentsService {
 
     let emailSent = false;
     try {
-      // Send payment request email
       await this.emailService.sendPaymentRequestEmail({
         to: coach.email,
         coachName: `${coach.firstName} ${coach.lastName}`,
         planName: plan.name,
         planDescription: plan.description || undefined,
-        amount: Math.floor(data.amount / 100), // Convert from cents to dollars
+        amount: Math.floor(data.amount / 100),
         paymentLink,
         description: data.description,
       });
       emailSent = true;
-
-      console.log('Payment request email sent successfully to:', coach.email);
     } catch (error: any) {
-      console.error('Failed to send payment request email:', error);
-      // Don't throw error - payment link was created successfully
+      this.logger.error('Failed to send payment request email:', error);
     }
 
     return {
       paymentLink,
-      linkId,
+      linkID,
       emailSent,
     };
   }
 
-  async getPaymentLinkStatus(linkId: string): Promise<{
+  async getPaymentLinkStatus(linkID: string): Promise<{
     status: string;
     paymentsCount: number;
     totalAmount: number;
   }> {
     try {
-      const paymentLink = await this.stripe.paymentLinks.retrieve(linkId);
+      const paymentLink = await this.stripe.paymentLinks.retrieve(linkID);
 
       return {
         status: paymentLink.active ? 'active' : 'inactive',
@@ -588,36 +480,29 @@ export class PaymentsService {
     }
   }
 
-  async createSetupIntent(customerId: string): Promise<{ client_secret: string }> {
+  async createSetupIntent(customerID: string): Promise<{ client_secret: string }> {
     const setupIntent = await this.stripe.setupIntents.create({
-      customer: customerId,
+      customer: customerID,
       payment_method_types: ['card'],
     });
 
     return { client_secret: setupIntent.client_secret! };
   }
 
-  // Add this method to your PaymentsService class
-
-  async deactivatePaymentLink(linkId: string): Promise<void> {
+  async deactivatePaymentLink(linkID: string): Promise<void> {
     try {
-      // Deactivate in Stripe
-      await this.stripe.paymentLinks.update(linkId, {
+      await this.stripe.paymentLinks.update(linkID, {
         active: false,
       });
 
-      // Deactivate in database
-      await this.prisma.paymentLinks.updateMany({
-        where: { stripePaymentLinkId: linkId },
+      await this.prisma.paymentLink.updateMany({
+        where: { stripePaymentLinkID: linkID },
         data: {
           isActive: false,
           updatedAt: new Date(),
         },
       });
-
-      console.log('Payment link deactivated:', linkId);
     } catch (error: any) {
-      console.error('Error deactivating payment link:', error);
       throw new BadRequestException(`Failed to deactivate payment link: ${error.message}`);
     }
   }

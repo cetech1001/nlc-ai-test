@@ -1,19 +1,47 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsBoolean } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import {LoginRequest} from "@nlc-ai/types";
+import { CreateCoach } from "@nlc-ai/types";
 
-export class LoginDto implements LoginRequest{
+export class CreateCoachDto implements CreateCoach {
   @ApiProperty({ example: 'coach@example.com' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: 'John' })
   @IsString()
-  @MinLength(1)
-  password: string;
+  firstName: string;
 
-  @ApiProperty({ example: false, required: false })
+  @ApiProperty({ example: 'Doe' })
+  @IsString()
+  lastName: string;
+
+  @ApiProperty({ example: 'Success Coaching LLC', required: false })
   @IsOptional()
-  @IsBoolean()
-  rememberMe?: boolean;
+  @IsString()
+  businessName?: string;
+
+  @ApiProperty({ example: '+1-555-0123', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({ example: 'https://example.com/avatar.jpg', required: false })
+  @IsOptional()
+  @IsUrl()
+  avatarUrl?: string;
+
+  @ApiProperty({ example: 'Experienced life coach specializing in career transitions', required: false })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiProperty({ example: 'https://mycoaching.com', required: false })
+  @IsOptional()
+  @IsUrl()
+  websiteUrl?: string;
+
+  @ApiProperty({ example: 'America/New_York', required: false })
+  @IsOptional()
+  @IsString()
+  timezone?: string;
 }

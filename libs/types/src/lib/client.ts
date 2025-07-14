@@ -1,6 +1,6 @@
 import {AiInteraction} from "./agent";
 import {Coach} from "./coach";
-import {CourseEnrollment} from "./course";
+import {Course, CourseEnrollment} from "./course";
 import {EmailThread} from "./email";
 
 export interface Client {
@@ -24,4 +24,13 @@ export interface Client {
   coach?: Coach;
   courseEnrollments?: CourseEnrollment[];
   emailThreads?: EmailThread[];
+}
+
+export type CreateClient = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateClient = Partial<CreateClient>;
+
+export interface ClientWithCourses extends Client {
+  courseEnrollments: (CourseEnrollment & {
+    course: Course;
+  })[];
 }

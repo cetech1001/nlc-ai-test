@@ -17,11 +17,9 @@ export class CleanupService {
     this.logger.log('Starting daily cleanup of expired deletions...');
 
     try {
-      // Cleanup expired coaches
       const coachResult = await this.coachesService.permanentDeleteExpired();
       this.logger.log(`Cleaned up ${coachResult.deletedCount} expired coach records`);
 
-      // Cleanup expired plans
       const planResult = await this.plansService.permanentDeleteExpired();
       this.logger.log(`Cleaned up ${planResult.deletedCount} expired plan records`);
 
@@ -31,7 +29,6 @@ export class CleanupService {
     }
   }
 
-  // Manual cleanup endpoints
   async cleanupExpiredCoaches() {
     this.logger.log('Manual cleanup of expired coaches requested');
     return this.coachesService.permanentDeleteExpired();

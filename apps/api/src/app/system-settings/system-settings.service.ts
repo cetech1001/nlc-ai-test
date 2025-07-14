@@ -5,12 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SystemSettingsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getCalendlySettings(adminId: string) {
+  async getCalendlySettings() {
     try {
-      const settings = await this.prisma.systemSettings.findMany({
+      const settings = await this.prisma.systemSetting.findMany({
         where: {
           category: 'calendly',
-          updatedBy: adminId,
         },
       });
 
@@ -35,12 +34,11 @@ export class SystemSettingsService {
         userEmail: calendlyData.user_email,
       };
     } catch (error) {
-      console.error('Error fetching Calendly settings:', error);
       return { isConnected: false };
     }
   }
 
-  async saveCalendlySettings(adminId: string, accessToken: string) {
+  async saveCalendlySettings(adminID: string, accessToken: string) {
     try {
       const response = await fetch('https://api.calendly.com/users/me', {
         headers: {
@@ -67,7 +65,7 @@ export class SystemSettingsService {
 
       await this.prisma.$transaction(async (tx) => {
         for (const setting of settingsToSave) {
-          await tx.systemSettings.upsert({
+          await tx.systemSetting.upsert({
             where: {
               category_key: {
                 category: 'calendly',
@@ -76,7 +74,7 @@ export class SystemSettingsService {
             },
             update: {
               value: setting.value,
-              updatedBy: adminId,
+              updatedBy: adminID,
               updatedAt: new Date(),
             },
             create: {
@@ -85,7 +83,7 @@ export class SystemSettingsService {
               value: setting.value,
               description: `Calendly ${setting.key.replace('_', ' ')}`,
               isPublic: false,
-              updatedBy: adminId,
+              updatedBy: adminID,
             },
           });
         }
@@ -102,17 +100,16 @@ export class SystemSettingsService {
         },
       };
     } catch (error: any) {
-      console.error('Error saving Calendly settings:', error);
       throw new BadRequestException(error.message || 'Failed to save Calendly settings');
     }
   }
 
-  async deleteCalendlySettings(adminId: string) {
+  async deleteCalendlySettings(adminID: string) {
     try {
-      await this.prisma.systemSettings.deleteMany({
+      await this.prisma.systemSetting.deleteMany({
         where: {
           category: 'calendly',
-          updatedBy: adminId,
+          updatedBy: adminID,
         },
       });
 
@@ -121,7 +118,6 @@ export class SystemSettingsService {
         message: 'Calendly settings deleted successfully',
       };
     } catch (error) {
-      console.error('Error deleting Calendly settings:', error);
       throw new BadRequestException('Failed to delete Calendly settings');
     }
   }

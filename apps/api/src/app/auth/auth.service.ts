@@ -25,7 +25,7 @@ export class AuthService {
   async registerCoach(registerDto: RegistrationRequest) {
     const { email, password, fullName } = registerDto;
 
-    const existingCoach = await this.prisma.coaches.findUnique({
+    const existingCoach = await this.prisma.coach.findUnique({
       where: { email },
     });
 
@@ -39,7 +39,7 @@ export class AuthService {
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    const coach = await this.prisma.coaches.create({
+    const coach = await this.prisma.coach.create({
       data: {
         email,
         passwordHash,
@@ -51,7 +51,6 @@ export class AuthService {
       },
     });
 
-    // Send verification email
     await this.sendVerificationEmail(email, 'verification');
 
     return {
@@ -78,7 +77,7 @@ export class AuthService {
       });
     }
 
-    await this.prisma.coaches.update({
+    await this.prisma.coach.update({
       where: { id: coach.id },
       data: { lastLoginAt: new Date() },
     });
@@ -103,7 +102,7 @@ export class AuthService {
   }
 
   async validateCoach(email: string, password: string) {
-    const coach = await this.prisma.coaches.findUnique({
+    const coach = await this.prisma.coach.findUnique({
       where: { email },
     });
 
@@ -128,7 +127,7 @@ export class AuthService {
 
     const admin = await this.validateAdmin(email, password);
 
-    await this.prisma.admins.update({
+    await this.prisma.admin.update({
       where: { id: admin.id },
       data: { lastLoginAt: new Date() },
     });
@@ -153,7 +152,7 @@ export class AuthService {
   }
 
   async validateAdmin(email: string, password: string) {
-    const admin = await this.prisma.admins.findUnique({
+    const admin = await this.prisma.admin.findUnique({
       where: { email },
     });
 
@@ -173,7 +172,7 @@ export class AuthService {
     const { firstName, lastName, email } = updateProfileDto;
 
     if (userType === UserType.coach) {
-      const existingCoach = await this.prisma.coaches.findFirst({
+      const existingCoach = await this.prisma.coach.findFirst({
         where: {
           email,
           id: { not: userId },
@@ -185,7 +184,7 @@ export class AuthService {
         throw new ConflictException('Email already exists');
       }
 
-      const updatedCoach = await this.prisma.coaches.update({
+      const updatedCoach = await this.prisma.coach.update({
         where: { id: userId },
         data: {
           firstName: firstName.trim(),
@@ -208,7 +207,7 @@ export class AuthService {
         user: updatedCoach,
       };
     } else {
-      const existingAdmin = await this.prisma.admins.findFirst({
+      const existingAdmin = await this.prisma.admin.findFirst({
         where: {
           email,
           id: { not: userId },
@@ -220,7 +219,7 @@ export class AuthService {
         throw new ConflictException('Email already exists');
       }
 
-      const updatedAdmin = await this.prisma.admins.update({
+      const updatedAdmin = await this.prisma.admin.update({
         where: { id: userId },
         data: {
           firstName: firstName.trim(),
@@ -250,7 +249,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     if (userType === UserType.coach) {
-      await this.prisma.coaches.update({
+      await this.prisma.coach.update({
         where: { id: userId },
         data: {
           passwordHash,
@@ -258,7 +257,7 @@ export class AuthService {
         },
       });
     } else {
-      await this.prisma.admins.update({
+      await this.prisma.admin.update({
         where: { id: userId },
         data: {
           passwordHash,
@@ -275,9 +274,9 @@ export class AuthService {
 
     let user;
     if (userType === UserType.coach) {
-      user = await this.prisma.coaches.findUnique({ where: { email } });
+      user = await this.prisma.coach.findUnique({ where: { email } });
     } else {
-      user = await this.prisma.admins.findUnique({ where: { email } });
+      user = await this.prisma.admin.findUnique({ where: { email } });
     }
 
     if (!user) {
@@ -297,12 +296,12 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
-    const user = await this.prisma.coaches.findUnique({
+    const user = await this.prisma.coach.findUnique({
       where: { email },
     });
 
     if (user && !user.isVerified) {
-      await this.prisma.coaches.update({
+      await this.prisma.coach.update({
         where: { email },
         data: {
           isVerified: true,
@@ -350,12 +349,12 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, 12);
 
     if (userType === UserType.coach) {
-      await this.prisma.coaches.update({
+      await this.prisma.coach.update({
         where: { email },
         data: { passwordHash },
       });
     } else {
-      await this.prisma.admins.update({
+      await this.prisma.admin.update({
         where: { email },
         data: { passwordHash },
       });
@@ -384,7 +383,7 @@ export class AuthService {
 
   async findUserById(id: string, type: AUTH_ROLES) {
     if (type === UserType.coach) {
-      return this.prisma.coaches.findUnique({
+      return this.prisma.coach.findUnique({
         where: { id, isActive: true },
         select: {
           id: true,
@@ -396,7 +395,7 @@ export class AuthService {
         },
       });
     } else {
-      return this.prisma.admins.findUnique({
+      return this.prisma.admin.findUnique({
         where: { id, isActive: true },
         select: {
           id: true,

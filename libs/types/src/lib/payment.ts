@@ -47,32 +47,35 @@ export interface PaymentLink {
 }
 
 export interface CreatePaymentIntentRequest {
-  coachId: string;
-  planId: string;
+  coachID: string;
+  planID: string;
   amount: number;
   currency?: string;
   description?: string;
-  paymentMethodId?: string;
+  paymentMethodID?: string;
+}
+
+export interface SendPaymentRequest extends CreatePaymentIntentRequest{
+  paymentLink?: string;
+  linkID?: string;
 }
 
 export interface PaymentIntentResponse {
   clientSecret: string;
-  paymentIntentId: string;
+  paymentIntentID: string;
   amount: number;
   currency: string;
   status: string;
 }
 
 export interface ProcessPaymentRequest {
-  coachId: string;
-  planId: string;
+  coachID: string;
+  planID: string;
   amount: number;
-  paymentMethodId: string;
+  paymentMethodID: string;
   description?: string;
 }
 
-export interface PaymentResult {
-  transaction: any;
-  paymentIntent: any;
-  success: boolean;
+export interface CreateSetupIntentRequest {
+  customerID: string;
 }

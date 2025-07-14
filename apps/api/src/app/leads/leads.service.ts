@@ -19,21 +19,17 @@ export class LeadsService {
       meetingEndDate,
     } = query;
 
-    const skip = (page - 1) * limit;
     const where: any = {};
 
-    // Status filter
     if (status) {
       where.status = status;
     }
 
-    // Source filter
     if (source) {
       const sources = source.split(',').map(s => s.trim());
       where.source = { in: sources };
     }
 
-    // Search filter
     if (search) {
       where.OR = [
         { firstName: { contains: search, mode: 'insensitive' } },
@@ -42,7 +38,6 @@ export class LeadsService {
       ];
     }
 
-    // Date range filter
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = new Date(startDate);
@@ -53,7 +48,6 @@ export class LeadsService {
       }
     }
 
-    // Meeting date range filter
     if (meetingStartDate || meetingEndDate) {
       where.meetingDate = {};
       if (meetingStartDate) where.meetingDate.gte = new Date(meetingStartDate);
@@ -64,31 +58,16 @@ export class LeadsService {
       }
     }
 
-    const [leads, total] = await Promise.all([
-      this.prisma.leads.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.leads.count({ where }),
-    ]);
-
-    return {
-      data: leads,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: skip + limit < total,
-        hasPrev: page > 1,
-      },
-    };
+    return this.prisma.paginate(this.prisma.lead, {
+      page,
+      limit,
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
   }
 
   async findOne(id: string) {
-    const lead = await this.prisma.leads.findUnique({
+    const lead = await this.prisma.lead.findUnique({
       where: { id },
     });
 
@@ -100,7 +79,7 @@ export class LeadsService {
   }
 
   async create(createLeadDto: CreateLeadDto) {
-    return this.prisma.leads.create({
+    return this.prisma.lead.create({
       data: {
         ...createLeadDto,
         status: createLeadDto.status || 'contacted',
@@ -112,7 +91,7 @@ export class LeadsService {
   async update(id: string, updateLeadDto: UpdateLeadDto) {
     await this.findOne(id);
 
-    return this.prisma.leads.update({
+    return this.prisma.lead.update({
       where: { id },
       data: {
         ...updateLeadDto,
@@ -125,7 +104,7 @@ export class LeadsService {
   async remove(id: string) {
     await this.findOne(id);
 
-    return this.prisma.leads.delete({
+    return this.prisma.lead.delete({
       where: { id },
     });
   }
@@ -138,17 +117,15 @@ export class LeadsService {
       updatedAt: new Date(),
     };
 
-    // If converting to 'converted', set convertedAt
     if (status === 'converted') {
       data.convertedAt = new Date();
     }
 
-    // If contacting, update lastContactedAt
     if (status === 'contacted') {
       data.lastContactedAt = new Date();
     }
 
-    return this.prisma.leads.update({
+    return this.prisma.lead.update({
       where: { id },
       data,
     });
@@ -156,11 +133,11 @@ export class LeadsService {
 
   async getStats() {
     const [total, contacted, scheduled, converted, unresponsive] = await Promise.all([
-      this.prisma.leads.count(),
-      this.prisma.leads.count({ where: { status: 'contacted' } }),
-      this.prisma.leads.count({ where: { status: 'scheduled' } }),
-      this.prisma.leads.count({ where: { status: 'converted' } }),
-      this.prisma.leads.count({ where: { status: 'unresponsive' } }),
+      this.prisma.lead.count(),
+      this.prisma.lead.count({ where: { status: 'contacted' } }),
+      this.prisma.lead.count({ where: { status: 'scheduled' } }),
+      this.prisma.lead.count({ where: { status: 'converted' } }),
+      this.prisma.lead.count({ where: { status: 'unresponsive' } }),
     ]);
 
     const conversionRate = total > 0 ? (converted / total) * 100 : 0;

@@ -1,19 +1,13 @@
 import {BadRequestException, ConflictException, Injectable, NotFoundException} from '@nestjs/common';
-import { CreateCoachDto, UpdateCoachDto } from './dto';
 import { PrismaService } from "../prisma/prisma.service";
-import { CoachQueryDto } from './dto/coach-query.dto';
-import {Coach, CoachStatus, CoachWithStatus} from "@nlc-ai/types";
+import {Coach, CoachQueryParams, CoachStatus, CoachWithStatus, CreateCoach, UpdateCoach} from "@nlc-ai/types";
 
 @Injectable()
 export class CoachesService {
   constructor(private prisma: PrismaService) {
   }
 
-  // Updated determineCoachStatus method
   private determineCoachStatus(coach: any): CoachStatus {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     if (coach.isDeleted) {
       return CoachStatus.DELETED;
     }
@@ -22,6 +16,9 @@ export class CoachesService {
       return CoachStatus.BLOCKED;
     }
 
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     if (coach.lastLoginAt && coach.lastLoginAt > thirtyDaysAgo) {
       return CoachStatus.ACTIVE;
     }
@@ -29,7 +26,7 @@ export class CoachesService {
     return CoachStatus.INACTIVE;
   }
 
-  async findAll(query: CoachQueryDto) {
+  async findAll(query: CoachQueryParams) {
     const {
       page = 1,
       limit = 10,
@@ -45,20 +42,67 @@ export class CoachesService {
       includeDeleted = false
     } = query;
 
-    const skip = (page - 1) * limit;
-
     const where: any = {};
 
     if (!includeDeleted) {
       where.isDeleted = false;
     }
 
+    if (status) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      switch (status) {
+        case CoachStatus.DELETED:
+          where.isDeleted = true;
+          break;
+        case CoachStatus.BLOCKED:
+          where.isDeleted = false;
+          where.isActive = false;
+          break;
+        case CoachStatus.ACTIVE:
+          where.isDeleted = false;
+          where.isActive = true;
+          where.lastLoginAt = { gte: thirtyDaysAgo };
+          break;
+        case CoachStatus.INACTIVE:
+          where.isDeleted = false;
+          where.isActive = true;
+          where.OR = [
+            { lastLoginAt: { lt: thirtyDaysAgo } },
+            { lastLoginAt: null }
+          ];
+          break;
+      }
+    } else {
+      if (!includeInactive) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        where.AND = [
+          {
+            OR: [
+              {
+                isDeleted: false,
+                isActive: true,
+                lastLoginAt: { gte: thirtyDaysAgo }
+              },
+              {
+                isDeleted: false,
+                isActive: false
+              }
+            ]
+          }
+        ];
+      }
+    }
+
     if (search) {
       where.OR = [
-        {firstName: {contains: search, mode: 'insensitive'}},
-        {lastName: {contains: search, mode: 'insensitive'}},
-        {email: {contains: search, mode: 'insensitive'}},
-        {businessName: {contains: search, mode: 'insensitive'}},
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { businessName: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -69,13 +113,15 @@ export class CoachesService {
       }
       if (dateJoinedEnd) {
         const endDate = new Date(dateJoinedEnd);
-        endDate.setHours(23, 59, 59, 999); // End of day
+        endDate.setHours(23, 59, 59, 999);
         where.createdAt.lte = endDate;
       }
     }
 
     if (lastActiveStart || lastActiveEnd) {
-      where.lastLoginAt = {};
+      where.lastLoginAt = {
+        ...where.lastLoginAt,
+      };
       if (lastActiveStart) {
         where.lastLoginAt.gte = new Date(lastActiveStart);
       }
@@ -96,79 +142,61 @@ export class CoachesService {
         some: {
           status: 'active',
           plan: {
-            name: {in: planNames}
+            name: { in: planNames }
           }
         }
       };
     }
 
-    const coaches: Coach[] = await this.prisma.coaches.findMany({
+    const result = await this.prisma.paginate(this.prisma.coach, {
+      page,
+      limit,
       where,
+      orderBy: { createdAt: 'desc' },
       include: {
         subscriptions: {
-          where: {status: 'active'},
+          where: { status: 'active' },
           take: 1,
-          orderBy: {createdAt: 'desc'},
+          orderBy: { createdAt: 'desc' },
           include: {
             plan: {
-              select: {name: true}
+              select: { name: true }
             }
           }
         },
         clients: {
-          where: {status: 'active'},
-          select: {id: true}
+          where: { status: 'active' },
+          select: { id: true }
         },
         transactions: {
-          where: {status: 'completed'},
-          select: {amount: true}
+          where: { status: 'completed' },
+          select: { amount: true }
         }
       },
-      orderBy: {createdAt: 'desc'},
     });
 
-    const coachesWithStatus: CoachWithStatus[] = coaches.map(coach => {
+    const coachesWithStatus: CoachWithStatus[] = result.data.map((coach: Coach) => {
       const calculatedStatus = this.determineCoachStatus(coach);
-      const totalRevenue = coach.transactions.reduce((sum, t) => sum + t.amount, 0);
+      const totalRevenue = coach.transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
 
       return {
         ...coach,
         status: calculatedStatus,
-        currentPlan: coach.subscriptions[0]?.plan?.name || 'No Plan',
-        subscriptionStatus: coach.subscriptions[0]?.status || 'none',
-        clientCount: coach.clients.length,
+        currentPlan: coach.subscriptions?.[0]?.plan?.name || 'No Plan',
+        subscriptionStatus: coach.subscriptions?.[0]?.status || 'none',
+        clientCount: coach.clients?.length || 0,
         totalRevenue: Math.round(totalRevenue / 100),
       };
     });
 
-
-    let filteredCoaches = coachesWithStatus;
-    if (status) {
-      filteredCoaches = coachesWithStatus.filter(coach => coach.status === status);
-    }
-
-    if (!includeInactive) {
-      filteredCoaches = filteredCoaches.filter(coach => coach.status !== CoachStatus.INACTIVE);
-    }
-
-    const total = filteredCoaches.length;
-    const paginatedCoaches = filteredCoaches.slice(skip, skip + limit);
-
     return {
-      data: paginatedCoaches,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: skip + limit < total,
-        hasPrev: page > 1,
-      },
+      data: coachesWithStatus,
+      pagination: result.pagination,
     };
   }
 
   async findOne(id: string) {
-    const coach = await this.prisma.coaches.findUnique({
+    const coach = await this.prisma.coach.findUnique({
       where: {id},
       include: {
         subscriptions: {
@@ -198,9 +226,9 @@ export class CoachesService {
       throw new NotFoundException(`Coach with ID ${id} not found`);
     }
 
-    const totalRevenue = await this.prisma.transactions.aggregate({
+    const totalRevenue = await this.prisma.transaction.aggregate({
       where: {
-        coachId: id,
+        coachID: id,
         status: 'completed'
       },
       _sum: {amount: true}
@@ -219,14 +247,14 @@ export class CoachesService {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const [totalCoaches, activeCoaches, blockedCoaches] = await Promise.all([
-      this.prisma.coaches.count(),
-      this.prisma.coaches.count({
+      this.prisma.coach.count(),
+      this.prisma.coach.count({
         where: {
           isActive: true,
           lastLoginAt: {gte: thirtyDaysAgo}
         }
       }),
-      this.prisma.coaches.count({
+      this.prisma.coach.count({
         where: {isActive: false}
       })
     ]);
@@ -241,39 +269,18 @@ export class CoachesService {
     };
   }
 
-  async getInactiveCoaches(page = 1, limit = 10, search?: string) {
-    const queryDto = new CoachQueryDto();
-    queryDto.page = page;
-    queryDto.limit = limit;
-    queryDto.status = CoachStatus.INACTIVE;
-    queryDto.search = search;
-
-    return this.findAll(queryDto);
-  }
-
-  async create(createCoachDto: CreateCoachDto) {
-    return this.prisma.coaches.create({
-      // @ts-ignore
+  async create(createCoachDto: CreateCoach) {
+    return this.prisma.coach.create({
       data: {
         ...createCoachDto,
-        coachAiAgents: {
-          create: [],
-        },
-      },
-      include: {
-        subscriptions: {
-          include: {
-            plan: true
-          }
-        }
       },
     });
   }
 
-  async update(id: string, updateCoachDto: UpdateCoachDto) {
+  async update(id: string, updateCoachDto: UpdateCoach) {
     await this.findOne(id);
 
-    return this.prisma.coaches.update({
+    return this.prisma.coach.update({
       where: {id},
       data: {
         ...updateCoachDto,
@@ -289,7 +296,7 @@ export class CoachesService {
       throw new BadRequestException('Cannot toggle status of deleted coaches');
     }
 
-    return this.prisma.coaches.update({
+    return this.prisma.coach.update({
       where: {id},
       data: {
         isActive: !coach.isActive,
@@ -301,7 +308,7 @@ export class CoachesService {
   async remove(id: string) {
     await this.findOne(id);
 
-    return this.prisma.coaches.update({
+    return this.prisma.coach.update({
       where: {id},
       data: {
         isDeleted: true,
@@ -313,7 +320,7 @@ export class CoachesService {
   }
 
   async restore(id: string) {
-    const coach = await this.prisma.coaches.findUnique({
+    const coach = await this.prisma.coach.findUnique({
       where: { id },
       include: {
         subscriptions: {
@@ -342,8 +349,7 @@ export class CoachesService {
       throw new BadRequestException('Coach is not deleted');
     }
 
-    // Check if there's already an active coach with the same email
-    const existingCoach = await this.prisma.coaches.findFirst({
+    const existingCoach = await this.prisma.coach.findFirst({
       where: {
         email: coach.email,
         isDeleted: false,
@@ -355,7 +361,7 @@ export class CoachesService {
       throw new ConflictException('A coach with this email already exists');
     }
 
-    const restoredCoach = await this.prisma.coaches.update({
+    const restoredCoach = await this.prisma.coach.update({
       where: { id },
       data: {
         isDeleted: false,
@@ -382,9 +388,9 @@ export class CoachesService {
       },
     });
 
-    const totalRevenue = await this.prisma.transactions.aggregate({
+    const totalRevenue = await this.prisma.transaction.aggregate({
       where: {
-        coachId: id,
+        coachID: id,
         status: 'completed'
       },
       _sum: { amount: true }
@@ -398,38 +404,38 @@ export class CoachesService {
     };
   }
 
-  async getCoachKpis(coachId: string, days = 30) {
+  async getCoachKpis(coachID: string, days = 30) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
     const [totalClients, activeClients, recentInteractions, aiUsage, totalRevenue] = await Promise.all([
-      this.prisma.clients.count({
-        where: {coachId},
+      this.prisma.client.count({
+        where: {coachID},
       }),
-      this.prisma.clients.count({
+      this.prisma.client.count({
         where: {
-          coachId,
+          coachID,
           status: 'active',
         },
       }),
-      this.prisma.aiInteractions.count({
+      this.prisma.aiInteraction.count({
         where: {
-          coachId,
+          coachID,
           createdAt: {gte: startDate},
         },
       }),
-      this.prisma.aiInteractions.aggregate({
+      this.prisma.aiInteraction.aggregate({
         where: {
-          coachId,
+          coachID,
           createdAt: {gte: startDate},
         },
         _sum: {
           tokensUsed: true,
         },
       }),
-      this.prisma.transactions.aggregate({
+      this.prisma.transaction.aggregate({
         where: {
-          coachId,
+          coachID,
           status: 'completed',
           createdAt: {gte: startDate},
         },
@@ -448,42 +454,11 @@ export class CoachesService {
     };
   }
 
-  async getRecentCoaches(limit = 6) {
-    const coaches = await this.prisma.coaches.findMany({
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        subscriptions: {
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            plan: {
-              select: { name: true }
-            }
-          }
-        }
-      }
-    });
-
-    return coaches.map(coach => ({
-      id: coach.id,
-      name: `${coach.firstName} ${coach.lastName}`,
-      email: coach.email,
-      dateJoined: coach.createdAt?.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      }) || '',
-      plan: coach.subscriptions[0]?.plan?.name || 'No Plan',
-      status: this.determineCoachStatus(coach),
-    }));
-  }
-
   async permanentDeleteExpired() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const expiredCoaches = await this.prisma.coaches.findMany({
+    const expiredCoaches = await this.prisma.coach.findMany({
       where: {
         isDeleted: true,
         deletedAt: {
@@ -494,10 +469,10 @@ export class CoachesService {
 
     for (const coach of expiredCoaches) {
       await this.prisma.$transaction(async (tx) => {
-        await tx.clients.deleteMany({ where: { coachId: coach.id } });
-        await tx.subscriptions.deleteMany({ where: { coachId: coach.id } });
-        await tx.transactions.deleteMany({ where: { coachId: coach.id } });
-        await tx.coaches.delete({ where: { id: coach.id } });
+        await tx.client.deleteMany({ where: { coachID: coach.id } });
+        await tx.subscription.deleteMany({ where: { coachID: coach.id } });
+        await tx.transaction.deleteMany({ where: { coachID: coach.id } });
+        await tx.coach.delete({ where: { id: coach.id } });
       });
     }
 

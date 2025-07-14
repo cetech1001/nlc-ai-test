@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {Transaction, TransactionsQueryParams, TransactionStatus} from "@nlc-ai/types";
 
 export interface TransactionWithDetails {
   id: string;
-  coachId: string;
+  coachID: string;
   coachName: string;
   coachEmail: string;
   planName: string;
@@ -22,35 +23,31 @@ export interface TransactionWithDetails {
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(
-    page = 1,
-    limit = 10,
-    status?: string,
-    search?: string,
-    startDate?: string,
-    endDate?: string,
-    paymentMethod?: string,
-    minAmount?: string,
-    maxAmount?: string,
-    planNames?: string
-  ) {
-    const skip = (page - 1) * limit;
+  async findAll(query: TransactionsQueryParams) {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+      startDate,
+      endDate,
+      paymentMethod,
+      minAmount,
+      maxAmount,
+      planNames,
+    } = query;
 
-    // Build where clause
     const where: any = {};
 
-    // Status filter
     if (status) {
       where.status = status;
     }
 
-    // Payment method filter
     if (paymentMethod) {
       const methods = paymentMethod.split(',').map(m => m.trim());
       where.paymentMethod = { in: methods };
     }
 
-    // Plan names filter
     if (planNames) {
       const names = planNames.split(',').map(n => n.trim());
       where.plan = {
@@ -58,29 +55,26 @@ export class TransactionsService {
       };
     }
 
-    // Amount range filter
     if (minAmount || maxAmount) {
       where.amount = {};
       if (minAmount) {
-        where.amount.gte = parseFloat(minAmount) * 100; // Convert to cents
+        where.amount.gte = parseFloat(String(minAmount)) * 100;
       }
       if (maxAmount) {
-        where.amount.lte = parseFloat(maxAmount) * 100; // Convert to cents
+        where.amount.lte = parseFloat(String(maxAmount)) * 100;
       }
     }
 
-    // Date range filter
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = new Date(startDate);
       if (endDate) {
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); // End of day
+        end.setHours(23, 59, 59, 999);
         where.createdAt.lte = end;
       }
     }
 
-    // Search filter
     if (search) {
       where.OR = [
         { id: { contains: search, mode: 'insensitive' } },
@@ -97,37 +91,35 @@ export class TransactionsService {
       ];
     }
 
-    const [transactions, total] = await Promise.all([
-      this.prisma.transactions.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          coach: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            }
-          },
-          plan: {
-            select: {
-              name: true,
-            }
+    const result = await this.prisma.paginate(this.prisma.transaction, {
+      page,
+      limit,
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        coach: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          }
+        },
+        plan: {
+          select: {
+            name: true,
           }
         }
-      }),
-      this.prisma.transactions.count({ where })
-    ]);
+      }
+    });
 
-    const transactionsWithDetails: TransactionWithDetails[] = transactions.map(transaction => ({
+    // Transform data to include additional fields
+    const transactionsWithDetails: TransactionWithDetails[] = result.data.map((transaction: Transaction) => ({
       id: transaction.id,
-      coachId: transaction.coachId,
-      coachName: `${transaction.coach.firstName} ${transaction.coach.lastName}`,
-      coachEmail: transaction.coach.email,
-      planName: transaction.plan.name,
+      coachID: transaction.coachID,
+      coachName: `${transaction.coach?.firstName} ${transaction.coach?.lastName}`,
+      coachEmail: transaction.coach?.email,
+      planName: transaction.plan?.name,
       amount: transaction.amount,
       currency: transaction.currency,
       status: transaction.status,
@@ -141,19 +133,12 @@ export class TransactionsService {
 
     return {
       data: transactionsWithDetails,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: skip + limit < total,
-        hasPrev: page > 1,
-      },
+      pagination: result.pagination,
     };
   }
 
   async findOne(id: string) {
-    const transaction = await this.prisma.transactions.findUnique({
+    const transaction = await this.prisma.transaction.findUnique({
       where: { id },
       include: {
         coach: {
@@ -193,11 +178,11 @@ export class TransactionsService {
 
   async getTransactionStats() {
     const [totalTransactions, completedTransactions, pendingTransactions, failedTransactions, totalRevenue] = await Promise.all([
-      this.prisma.transactions.count(),
-      this.prisma.transactions.count({ where: { status: 'completed' } }),
-      this.prisma.transactions.count({ where: { status: 'pending' } }),
-      this.prisma.transactions.count({ where: { status: 'failed' } }),
-      this.prisma.transactions.aggregate({
+      this.prisma.transaction.count(),
+      this.prisma.transaction.count({ where: { status: 'completed' } }),
+      this.prisma.transaction.count({ where: { status: 'pending' } }),
+      this.prisma.transaction.count({ where: { status: 'failed' } }),
+      this.prisma.transaction.aggregate({
         where: { status: 'completed' },
         _sum: { amount: true }
       })
@@ -229,7 +214,7 @@ export class TransactionsService {
         break;
     }
 
-    const transactions = await this.prisma.transactions.findMany({
+    const transactions = await this.prisma.transaction.findMany({
       where: {
         status: 'completed',
         createdAt: { gte: startDate }
@@ -269,11 +254,11 @@ export class TransactionsService {
     }));
   }
 
-  async getTransactionExport(transactionId: string) {
-    const transaction = await this.findOne(transactionId);
+  async getTransactionExport(transactionID: string) {
+    const transaction = await this.findOne(transactionID);
 
     return {
-      transactionId: transaction.id,
+      transactionID: transaction.id,
       invoiceNumber: transaction.invoiceNumber,
       coachName: transaction.coachName,
       coachEmail: transaction.coach.email,
@@ -306,7 +291,7 @@ export class TransactionsService {
   }
 
   async bulkExportTransactions(filters: any = {}) {
-    const transactions = await this.prisma.transactions.findMany({
+    const transactions = await this.prisma.transaction.findMany({
       where: filters,
       include: {
         coach: {
@@ -336,7 +321,7 @@ export class TransactionsService {
     });
 
     return transactions.map(transaction => ({
-      transactionId: transaction.id,
+      transactionID: transaction.id,
       invoiceNumber: transaction.invoiceNumber,
       coachName: `${transaction.coach.firstName} ${transaction.coach.lastName}`,
       coachEmail: transaction.coach.email,
@@ -351,14 +336,14 @@ export class TransactionsService {
       transactionDate: transaction.createdAt.toISOString(),
       paidAt: transaction.paidAt?.toISOString() || null,
       description: transaction.description,
-      subscriptionId: transaction.subscription?.id,
+      subscriptionID: transaction.subscription?.id,
       subscriptionStatus: transaction.subscription?.status,
       subscriptionBillingCycle: transaction.subscription?.billingCycle,
     }));
   }
 
-  async getTransactionsByStatus(status: string) {
-    return this.prisma.transactions.findMany({
+  async getTransactionsByStatus(status: TransactionStatus) {
+    return this.prisma.transaction.findMany({
       where: { status },
       include: {
         coach: {
@@ -379,7 +364,7 @@ export class TransactionsService {
   }
 
   async getTransactionsByDateRange(startDate: Date, endDate: Date) {
-    return this.prisma.transactions.findMany({
+    return this.prisma.transaction.findMany({
       where: {
         createdAt: {
           gte: startDate,
@@ -405,8 +390,8 @@ export class TransactionsService {
   }
 
   async getTopPayingCoaches(limit = 10) {
-    const result = await this.prisma.transactions.groupBy({
-      by: ['coachId'],
+    const result = await this.prisma.transaction.groupBy({
+      by: ['coachID'],
       where: {
         status: 'completed'
       },
@@ -424,12 +409,11 @@ export class TransactionsService {
       take: limit,
     });
 
-    // Get coach details for the top paying coaches
-    const coachIds = result.map(r => r.coachId);
-    const coaches = await this.prisma.coaches.findMany({
+    const coachIDs = result.map(r => r.coachID);
+    const coaches = await this.prisma.coach.findMany({
       where: {
         id: {
-          in: coachIds,
+          in: coachIDs,
         },
       },
       select: {
@@ -441,12 +425,12 @@ export class TransactionsService {
     });
 
     return result.map(r => {
-      const coach = coaches.find(c => c.id === r.coachId);
+      const coach = coaches.find(c => c.id === r.coachID);
       return {
-        coachId: r.coachId,
+        coachID: r.coachID,
         coachName: coach ? `${coach.firstName} ${coach.lastName}` : 'Unknown',
         coachEmail: coach?.email || 'Unknown',
-        totalAmount: Math.round((r._sum.amount || 0) / 100), // Convert from cents
+        totalAmount: Math.round((r._sum.amount || 0) / 100),
         transactionCount: r._count.id,
       };
     });
@@ -459,7 +443,7 @@ export class TransactionsService {
     const previousMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
 
     const [currentMonthRevenue, previousMonthRevenue] = await Promise.all([
-      this.prisma.transactions.aggregate({
+      this.prisma.transaction.aggregate({
         where: {
           status: 'completed',
           createdAt: {
@@ -468,7 +452,7 @@ export class TransactionsService {
         },
         _sum: { amount: true },
       }),
-      this.prisma.transactions.aggregate({
+      this.prisma.transaction.aggregate({
         where: {
           status: 'completed',
           createdAt: {
@@ -492,8 +476,8 @@ export class TransactionsService {
     };
   }
 
-  async updateTransactionStatus(id: string, status: string) {
-    const transaction = await this.prisma.transactions.findUnique({
+  async updateTransactionStatus(id: string, status: TransactionStatus) {
+    const transaction = await this.prisma.transaction.findUnique({
       where: { id },
     });
 
@@ -501,7 +485,7 @@ export class TransactionsService {
       throw new NotFoundException(`Transaction with ID ${id} not found`);
     }
 
-    const updatedTransaction = await this.prisma.transactions.update({
+    const updatedTransaction = await this.prisma.transaction.update({
       where: { id },
       data: {
         status,
@@ -533,7 +517,7 @@ export class TransactionsService {
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000));
 
-    const transactions = await this.prisma.transactions.findMany({
+    const transactions = await this.prisma.transaction.findMany({
       where: {
         status: 'completed',
         createdAt: {
@@ -548,7 +532,6 @@ export class TransactionsService {
       orderBy: { createdAt: 'asc' }
     });
 
-    // Group transactions by period
     const trends = transactions.reduce((acc, transaction) => {
       const date = transaction.createdAt;
       let key: string;
@@ -585,7 +568,7 @@ export class TransactionsService {
   }
 
   async getPaymentMethodBreakdown() {
-    const result = await this.prisma.transactions.groupBy({
+    const result = await this.prisma.transaction.groupBy({
       by: ['paymentMethod'],
       where: {
         status: 'completed'
@@ -602,14 +585,14 @@ export class TransactionsService {
 
     return result.map(r => ({
       paymentMethod: r.paymentMethod,
-      totalAmount: Math.round((r._sum.amount || 0) / 100), // Convert from cents
+      totalAmount: Math.round((r._sum.amount || 0) / 100),
       transactionCount: r._count.id,
       percentage: totalRevenue > 0 ? Math.round(((r._sum.amount || 0) / totalRevenue) * 100 * 100) / 100 : 0,
     })).sort((a, b) => b.totalAmount - a.totalAmount);
   }
 
   async refundTransaction(id: string, reason?: string) {
-    const transaction = await this.prisma.transactions.findUnique({
+    const transaction = await this.prisma.transaction.findUnique({
       where: { id },
     });
 
@@ -621,7 +604,7 @@ export class TransactionsService {
       throw new Error('Only completed transactions can be refunded');
     }
 
-    return this.prisma.transactions.update({
+    return this.prisma.transaction.update({
       where: { id },
       data: {
         status: 'refunded',

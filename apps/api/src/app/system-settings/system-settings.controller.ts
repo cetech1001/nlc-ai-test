@@ -4,11 +4,12 @@ import { SystemSettingsService } from './system-settings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import {UserType} from "@nlc-ai/types";
 
 @ApiTags('System Settings')
 @Controller('system-settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles(UserType.admin)
 @ApiBearerAuth()
 export class SystemSettingsController {
   constructor(private readonly systemSettingsService: SystemSettingsService) {}
@@ -16,8 +17,8 @@ export class SystemSettingsController {
   @Get('calendly')
   @ApiOperation({ summary: 'Get Calendly integration settings' })
   @ApiResponse({ status: 200, description: 'Calendly settings retrieved successfully' })
-  getCalendlySettings(@Request() req: { user: { id: string } }) {
-    return this.systemSettingsService.getCalendlySettings(req.user.id);
+  getCalendlySettings() {
+    return this.systemSettingsService.getCalendlySettings();
   }
 
   @Post('calendly')

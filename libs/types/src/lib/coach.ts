@@ -1,7 +1,7 @@
 import {AiInteraction, CoachAiAgent} from "./agent";
 import {Client} from "./client";
 import {ContentPiece, ContentSuggestion} from "./content";
-import {Course, CourseEnrollment} from "./course";
+import {Course} from "./course";
 import {DailyKPI} from "./kpi";
 import {EmailAccount, EmailTemplate, EmailThread} from "./email";
 import {Integration} from "./integration";
@@ -12,6 +12,13 @@ import {Invoice} from "./invoice";
 import {Subscription} from "./subscription";
 import {Lead} from "./lead";
 import {Plan} from "./plan";
+
+export enum CoachStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  BLOCKED = 'blocked',
+  DELETED = 'deleted'
+}
 
 export interface Coach {
   id: string;
@@ -43,7 +50,7 @@ export interface Coach {
   contentPieces?: ContentPiece[];
   contentSuggestions?: ContentSuggestion[];
   courses?: Course[];
-  dailyKpis?: DailyKPI[];
+  dailyKPIs?: DailyKPI[];
   emailAccounts?: EmailAccount[];
   emailTemplates?: EmailTemplate[];
   emailThreads?: EmailThread[];
@@ -57,20 +64,40 @@ export interface Coach {
   paymentLinks?: PaymentLink[];
 }
 
-export type CreateCoach = Omit<Coach, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateCoach = Partial<Omit<Coach, 'id' | 'createdAt' | 'updatedAt'>>;
-export type CreateClient = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateClient = Partial<Omit<Client, 'id' | 'createdAt' | 'updatedAt'>>;
+export type CreateCoach = Pick<Coach, 'email'
+  | 'firstName'
+  | 'lastName'
+  | 'businessName'
+  | 'phone'
+  | 'avatarUrl'
+  | 'bio'
+  | 'websiteUrl'
+  | 'timezone'>;
+export type UpdateCoach = Partial<CreateCoach>;
 
-// Database response types with relations
-export interface CoachWithClients extends Coach {
-  clients: Client[];
+export interface CoachWithStatus extends Coach {
+  status: CoachStatus;
+  currentPlan?: string;
+  clientCount?: number;
+  totalRevenue: number;
 }
 
-export interface ClientWithCourses extends Client {
-  courseEnrollments: (CourseEnrollment & {
-    course: Course;
-  })[];
+export interface CoachFilters {
+  status?: CoachStatus;
+  search?: string;
+  subscriptionPlan?: string;
+  dateJoinedStart?: string;
+  dateJoinedEnd?: string;
+  lastActiveStart?: string;
+  lastActiveEnd?: string;
+  isVerified?: boolean;
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
+
+export interface CoachQueryParams extends CoachFilters {
+  page?: number;
+  limit?: number;
 }
 
 export interface CoachWithSubscription extends Coach {

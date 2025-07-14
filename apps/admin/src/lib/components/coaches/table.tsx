@@ -15,7 +15,7 @@ const transformCoachData = (coaches: CoachWithStatus[]): DataTableCoach[] => {
     id: `#${coach.id.slice(-4)}`,
     name: `${coach.firstName} ${coach.lastName}`,
     email: coach.email,
-    dateJoined: new Date(coach.createdAt).toLocaleDateString('en-US', {
+    dateJoined: new Date(coach.createdAt || '').toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'

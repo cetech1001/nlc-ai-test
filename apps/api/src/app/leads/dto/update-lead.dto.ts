@@ -1,9 +1,5 @@
-import {ApiProperty} from "@nestjs/swagger";
-import {IsEnum} from "class-validator";
-import {LeadStatus} from "./create-lead.dto";
+import {PartialType} from "@nestjs/swagger";
+import {CreateLeadDto} from "./create-lead.dto";
+import {UpdateLead} from "@nlc-ai/types";
 
-export class UpdateLeadStatusDto {
-  @ApiProperty({ enum: LeadStatus, example: LeadStatus.CONVERTED })
-  @IsEnum(LeadStatus)
-  status: LeadStatus;
-}
+export class UpdateLeadDto extends PartialType(CreateLeadDto) implements UpdateLead{}

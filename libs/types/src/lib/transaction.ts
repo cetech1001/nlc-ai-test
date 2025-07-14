@@ -1,8 +1,9 @@
 import {Coach} from "./coach";
 import {Plan} from "./plan";
 import {Invoice} from "./invoice";
-import {PaymentMethod} from "./payment";
+import {PaymentMethodType} from "./payment";
 import {Subscription} from "./subscription";
+import {QueryParams} from "./query-params";
 
 export enum TransactionStatus {
   PENDING = 'pending',
@@ -22,7 +23,7 @@ export interface Transaction {
   amount: number;
   currency: string;
   status: TransactionStatus;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethodType;
   stripePaymentID?: string | null;
   paypalOrderID?: string | null;
   invoiceNumber?: string | null;
@@ -40,4 +41,13 @@ export interface Transaction {
   subscription?: Subscription | null;
   plan?: Plan;
   invoices?: Invoice[];
+}
+
+export interface TransactionsQueryParams extends QueryParams{
+  startDate?: string;
+  endDate?: string;
+  paymentMethod?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  planNames?: string;
 }

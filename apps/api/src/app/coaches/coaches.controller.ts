@@ -39,21 +39,6 @@ export class CoachesController {
     return this.coachesService.getCoachStats();
   }
 
-  @Get('recent')
-  @ApiOperation({ summary: 'Get recently joined coaches for dashboard' })
-  @ApiResponse({ status: 200, description: 'Recent coaches retrieved successfully' })
-  getRecentCoaches(@Query('limit') limit?: string) {
-    return this.coachesService.getRecentCoaches(limit ? parseInt(limit) : 6);
-  }
-
-  @Get('inactive')
-  @ApiOperation({ summary: 'Get inactive coaches (30+ days without login)' })
-  @ApiResponse({ status: 200, description: 'Inactive coaches retrieved successfully' })
-  getInactiveCoaches(@Query() query: CoachQueryDto) {
-    query.status = 'inactive' as any;
-    return this.coachesService.findAll(query);
-  }
-
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific coach by ID' })
   @ApiResponse({ status: 200, description: 'Coach retrieved successfully' })
