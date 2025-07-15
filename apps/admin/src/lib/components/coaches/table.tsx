@@ -1,13 +1,14 @@
-import {Dispatch, FC, SetStateAction} from "react";
+import {Dispatch, FC, SetStateAction, useMemo} from "react";
 import { DataTable, tableRenderers } from "@nlc-ai/shared";
 import {TableColumn, DataTableCoach, CoachWithStatus} from "@nlc-ai/types";
 import {coachesAPI} from "@nlc-ai/api-client";
 
 interface IProps {
   coaches: CoachWithStatus[];
-  handleMakePayment: (coachID: string) => void;
+  handleRouteClick: (coachID: string) => void;
   handleActionSuccess: (message: string) => void;
   setError: Dispatch<SetStateAction<string>>;
+  areInactiveCoaches?: boolean;
 }
 
 const transformCoachData = (coaches: CoachWithStatus[]): DataTableCoach[] => {
@@ -28,51 +29,52 @@ const transformCoachData = (coaches: CoachWithStatus[]): DataTableCoach[] => {
 };
 
 const colWidth = 100 / 7;
-export const coachColumns: TableColumn<any>[] = [
-  {
-    key: 'name',
-    header: 'Name',
-    width: `${colWidth}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 18)
-  },
-  {
-    key: 'email',
-    header: 'Email',
-    width: `${colWidth * (4 / 3)}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 20)
-  },
-  {
-    key: 'dateJoined',
-    header: 'Date Joined',
-    width: `${colWidth}%`,
-    render: tableRenderers.dateText
-  },
-  {
-    key: 'plan',
-    header: 'Plan',
-    width: `${colWidth * (2 / 3)}%`,
-    render: tableRenderers.basicText
-  },
-  {
-    key: 'status',
-    header: 'Status',
-    width: `${colWidth * (2 / 3)}%`,
-    render: tableRenderers.status,
-  },
-  {
-    key: 'actions',
-    header: 'Actions',
-    width: `auto`,
-    render: tableRenderers.coachActions,
-  }
-];
 
 export const CoachesTable: FC<IProps> = (props) => {
   const transformedCoaches = transformCoachData(props.coaches);
 
+  const coachColumns: TableColumn<any>[] = useMemo(() => [
+    {
+      key: 'name',
+      header: 'Name',
+      width: `${colWidth}%`,
+      render: (value: string) => tableRenderers.truncateText(value, 18)
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      width: `${colWidth * (4 / 3)}%`,
+      render: (value: string) => tableRenderers.truncateText(value, 20)
+    },
+    {
+      key: 'dateJoined',
+      header: 'Date Joined',
+      width: `${colWidth}%`,
+      render: tableRenderers.dateText
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      width: `${colWidth * (2 / 3)}%`,
+      render: tableRenderers.basicText
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      width: `${colWidth * (2 / 3)}%`,
+      render: tableRenderers.status,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: `auto`,
+      render: tableRenderers.coachActions(props.areInactiveCoaches),
+    }
+  ], [props.areInactiveCoaches]);
+
   const handleRowAction = async (action: string, coach: DataTableCoach) => {
-    if (action === 'make-payment') {
-      props.handleMakePayment(coach.originalId);
+    if (action === 'make-payment' || action === 'send-mail') {
+      props.handleRouteClick(coach.originalId);
     } else if (action === 'toggle-status') {
       await handleToggleStatus(coach.originalId);
     } else if (action === 'delete') {

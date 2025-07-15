@@ -24,7 +24,7 @@ const emptyFilterValues: FilterValues = {
   planNames: [],
 };
 
-export default function Transactions() {
+const Transactions = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,7 +148,7 @@ export default function Transactions() {
         )}
 
         {!isLoading && (
-          <>
+          <div data-table-container>
             <DataTable
               columns={transactionColumns}
               data={transactions}
@@ -163,7 +163,7 @@ export default function Transactions() {
                 setCurrentPage={setCurrentPage}
               />
             )}
-          </>
+          </div>
         )}
 
         {!isLoading && transactions.length > 0 && (
@@ -182,3 +182,5 @@ export default function Transactions() {
     </div>
   );
 }
+
+export default Transactions;

@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlanForm } from "@/lib/components/plans/plan-form";
 import { PlanFormSkeleton } from "@/lib/skeletons/plan-form.skeleton";
 import { plansAPI } from "@nlc-ai/api-client";
 import {Plan, PlanFormData, PlanFormErrors, UpdatePlanRequest} from "@nlc-ai/types";
+import { BackTo } from "@nlc-ai/shared";
 
 const EditPlan = () => {
   const router = useRouter();
@@ -206,16 +206,7 @@ const EditPlan = () => {
 
   return (
     <main className="flex-1 pt-2 sm:pt-8">
-      <div className="mb-8">
-        <button
-          onClick={handleBackToPlans}
-          disabled={isLoading}
-          className="flex items-center gap-2 text-white hover:text-[#7B21BA] transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-2xl font-semibold">Edit Plan</span>
-        </button>
-      </div>
+      <BackTo title={'Edit Plan'} onClick={handleBackToPlans} />
 
       <PlanForm
         type="edit"

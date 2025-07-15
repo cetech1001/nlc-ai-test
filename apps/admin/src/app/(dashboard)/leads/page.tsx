@@ -180,7 +180,7 @@ const emptyFilterValues: FilterValues = {
   meetingDateRange: { start: null, end: null },
 };
 
-export default function Leads() {
+const Leads = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -304,8 +304,7 @@ export default function Leads() {
         )}
 
         <PageHeader
-          title="Leads Management"
-          // subtitle="Track and manage potential customers"
+          title="Lead Management"
           actionButton={{
             label: "Add New Lead",
             onClick: () => router.push('/leads/create'),
@@ -378,3 +377,5 @@ export default function Leads() {
     </div>
   );
 }
+
+export default Leads;

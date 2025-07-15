@@ -1,14 +1,15 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import { useSearchParams } from "next/navigation";
-import {PlanCard} from "@nlc-ai/shared";
+import { useSearchParams, useRouter } from "next/navigation";
+import {BackTo, PlanCard} from "@nlc-ai/shared";
 import { coachesAPI, plansAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {CoachWithStatus, TransformedPlan} from "@nlc-ai/types";
 import {transformPlan, MakePaymentSkeleton, PaymentModal} from "@/lib";
 
 export default function MakePayment() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const coachID = searchParams.get('coachID');
 
@@ -134,8 +135,8 @@ export default function MakePayment() {
           </div>
         )}
 
-        <div className="py-8">
-          <h2 className="text-stone-50 text-2xl font-medium font-['Inter'] leading-relaxed">Make Payment</h2>
+        <div className="py-4">
+          <BackTo onClick={() => router.push('/coaches')} title={"Make Payment"}/>
         </div>
 
         <div className="mb-8">

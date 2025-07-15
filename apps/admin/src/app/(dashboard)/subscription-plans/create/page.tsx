@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PlanForm } from "@/lib/components/plans/plan-form";
 import { plansAPI } from "@nlc-ai/api-client";
 import {CreatePlanRequest, PlanFormData, PlanFormErrors} from "@nlc-ai/types";
+import { BackTo } from "@nlc-ai/shared";
 
 const CreateNewPlan = () => {
   const router = useRouter();
@@ -141,16 +141,7 @@ const CreateNewPlan = () => {
 
   return (
     <main className="flex-1 pt-2 sm:pt-8">
-      <div className="mb-8">
-        <button
-          onClick={handleBackToPlans}
-          disabled={isLoading}
-          className="flex items-center gap-2 text-white hover:text-[#7B21BA] transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-2xl font-semibold">Create New Plan</span>
-        </button>
-      </div>
+      <BackTo title={'Create New Plan'} onClick={handleBackToPlans} />
 
       <PlanForm
         type="create"

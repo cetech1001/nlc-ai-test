@@ -3,9 +3,8 @@
 import { RevenueGraph, StatCard } from "@nlc-ai/shared";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { HomePageSkeleton } from "@/lib/skeletons/home-page.skeleton";
 import {coachesAPI, transactionsAPI} from "@nlc-ai/api-client";
-import {coachColumns, CoachesTable} from "@/lib";
+import {HomePageSkeleton, CoachesTable} from "@/lib";
 import { AlertBanner } from "@nlc-ai/ui";
 import {CoachStats, CoachWithStatus, RevenueStats, TimePeriodRevenueData} from "@nlc-ai/types";
 
@@ -93,7 +92,7 @@ const AdminHome = () => {
   }
 
   if (isLoading || !revenueData || !revenueStats || !coachStats) {
-    return <HomePageSkeleton length={coachColumns.length} />;
+    return <HomePageSkeleton length={7} />;
   }
 
   return (
@@ -162,7 +161,7 @@ const AdminHome = () => {
         ) : (
           <CoachesTable
             coaches={recentCoaches}
-            handleMakePayment={handleMakePayment}
+            handleRouteClick={handleMakePayment}
             handleActionSuccess={handleActionSuccess}
             setError={setError}
           />

@@ -6,7 +6,6 @@ import { Search } from "lucide-react";
 import { Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/shared";
 import { coachesAPI } from "@nlc-ai/api-client";
 import {
-  coachColumns,
   emptyInactiveCoachesFilterValues,
   CoachesPageSkeleton,
   inactiveCoachFilters,
@@ -82,8 +81,8 @@ export default function InactiveCoaches() {
     setCurrentPage(1);
   };
 
-  const handleMakePayment = (coachID: string) => {
-    router.push(`/coaches/make-payment?coachID=${coachID}`);
+  const handleSendEmail = (coachID: string) => {
+    router.push(`/inactive-coaches/send-mail?coachID=${coachID}`);
   }
 
   const handleActionSuccess = async () => {
@@ -134,16 +133,18 @@ export default function InactiveCoaches() {
         </PageHeader>
 
         {isLoading && (
-          <CoachesPageSkeleton length={coachColumns.length}/>
+          <CoachesPageSkeleton length={7}/>
         )}
 
         {!isLoading && (
           <>
             <CoachesTable
               coaches={coaches}
-              handleMakePayment={handleMakePayment}
+              handleRouteClick={handleSendEmail}
               handleActionSuccess={handleActionSuccess}
-              setError={setError}/>
+              setError={setError}
+              areInactiveCoaches={true}
+            />
 
             {pagination.totalPages > 1 && (
               <Pagination

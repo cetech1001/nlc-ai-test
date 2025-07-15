@@ -12,7 +12,6 @@ import {
 import { coachesAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {
-  coachColumns,
   CoachesPageSkeleton,
   CoachesTable,
   coachFilters,
@@ -137,7 +136,7 @@ const Coaches = () => {
         </PageHeader>
 
         {isLoading && (
-          <CoachesPageSkeleton length={coachColumns.length}/>
+          <CoachesPageSkeleton length={7}/>
         )}
 
         {!isLoading && (
@@ -145,7 +144,7 @@ const Coaches = () => {
             <CoachesTable
               coaches={coaches}
               handleActionSuccess={handleActionSuccess}
-              handleMakePayment={handleMakePayment}
+              handleRouteClick={handleMakePayment}
               setError={setError}/>
 
             {pagination.totalPages > 1 && (
