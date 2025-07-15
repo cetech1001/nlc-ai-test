@@ -102,7 +102,7 @@ const getWeekForDate = (date: Date, calendarEvents: Record<number, CalendarEvent
   return weekDays;
 };
 
-export default function Calendar(){
+const Calendar = () =>{
   const [today] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(today);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
@@ -121,6 +121,7 @@ export default function Calendar(){
   const [calendlyUrl, setCalendlyUrl] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isCalendlyConnected, setIsCalendlyConnected] = useState(false);
+  const [hasInitializedSelectedDay, setHasInitializedSelectedDay] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -130,7 +131,6 @@ export default function Calendar(){
     return () => clearTimeout(timer);
   }, []);
 
-  // Check Calendly connection status
   useEffect(() => {
     const checkCalendlyConnection = async () => {
       try {
@@ -147,11 +147,10 @@ export default function Calendar(){
       }
     };
 
-
     checkCalendlyConnection();
   }, []);
 
-  // Load Calendly events when date changes
+  // Update calendar events when month changes or Calendly connects
   useEffect(() => {
     const loadCalendlyEvents = async () => {
       if (!isCalendlyConnected || isLoading) {
@@ -162,23 +161,6 @@ export default function Calendar(){
         setError('');
         const convertedEvents = await calendlyAPI.loadEventsForMonth(currentDate);
         setCalendarEvents(convertedEvents);
-
-        // Only update selected day appointments if we have a selected day and it exists in the new month
-        if (selectedDay && convertedEvents[selectedDay]) {
-          const dayEvents = convertedEvents[selectedDay] || [];
-          setSelectedDayAppointments(convertEventsToAppointments(dayEvents, selectedDay));
-        }
-        // If we're viewing the current month and no day is selected, show today's appointments
-        else if (!selectedDay && currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear()) {
-          const todayEvents = convertedEvents[today.getDate()] || [];
-          setSelectedDayAppointments(convertEventsToAppointments(todayEvents, today.getDate()));
-          setSelectedDay(today.getDate());
-        }
-        // If we're viewing a different month and have a selected day that doesn't exist, clear selection
-        else if (selectedDay && !convertedEvents[selectedDay]) {
-          setSelectedDayAppointments([]);
-          setSelectedDay(null);
-        }
       } catch (error: any) {
         console.error('Failed to load Calendly events:', error);
         setError(error.message || 'Failed to load calendar events');
@@ -187,7 +169,37 @@ export default function Calendar(){
     };
 
     loadCalendlyEvents();
-  }, [isLoading, currentDate, isCalendlyConnected, today, selectedDay]);
+  }, [isLoading, currentDate, isCalendlyConnected]);
+
+  // Update selected day appointments when calendar events change or selected day changes
+  useEffect(() => {
+    const updateSelectedDayAppointments = () => {
+      if (!selectedDay) return;
+
+      const dayEvents = calendarEvents[selectedDay] || [];
+      setSelectedDayAppointments(convertEventsToAppointments(dayEvents, selectedDay));
+    };
+
+    updateSelectedDayAppointments();
+  }, [calendarEvents, selectedDay, currentDate]);
+
+  // Initialize selected day to today ONLY once when calendar events are first loaded
+  useEffect(() => {
+    if (!hasInitializedSelectedDay && !isLoading && Object.keys(calendarEvents).length > 0 && isCalendlyConnected) {
+      // Only auto-select today if we're viewing the current month
+      if (currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear()) {
+        setSelectedDay(today.getDate());
+      }
+      setHasInitializedSelectedDay(true);
+    }
+  }, [calendarEvents, isLoading, hasInitializedSelectedDay, today, currentDate, isCalendlyConnected]);
+
+  // Reset selected day when month changes
+  useEffect(() => {
+    setSelectedDay(null);
+    setSelectedDayAppointments([]);
+    setHasInitializedSelectedDay(false);
+  }, [currentDate.getMonth(), currentDate.getFullYear()]);
 
   const convertEventsToAppointments = (events: CalendarEvent[], day: number): Appointment[] => {
     return events.map((event, index) => ({
@@ -246,8 +258,7 @@ export default function Calendar(){
   const handleCellClick = (day: number, isCurrentMonth: boolean) => {
     if (!isCurrentMonth) return;
 
-    const dayEvents = calendarEvents[day] || [];
-    setSelectedDayAppointments(convertEventsToAppointments(dayEvents, day));
+    // Immediately update selected day - this prevents the glitch
     setSelectedDay(day);
     setShowAllAppointments(false);
   };
@@ -277,15 +288,6 @@ export default function Calendar(){
   useEffect(() => {
     setWeekDays(getWeekForDate(currentWeekStart, calendarEvents));
   }, [currentWeekStart, calendarEvents]);
-
-  // Set initial selected day to today
-  useEffect(() => {
-    if (!selectedDay && !isLoading && Object.keys(calendarEvents).length > 0) {
-      const todayEvents = calendarEvents[today.getDate()] || [];
-      setSelectedDayAppointments(convertEventsToAppointments(todayEvents, today.getDate()));
-      setSelectedDay(today.getDate());
-    }
-  }, [calendarEvents, isLoading, selectedDay, today]);
 
   if (isLoading) {
     return <CalendarPageSkeleton/>;
@@ -368,7 +370,7 @@ export default function Calendar(){
                 <h3 className="text-white text-sm font-medium">
                   {selectedDay
                     ? `${monthNames[currentDate.getMonth()]} ${selectedDay} appointments`
-                    : "Today's appointments"
+                    : "Select a day to view appointments"
                   }
                 </h3>
                 <div className="flex items-center gap-2">
@@ -396,6 +398,10 @@ export default function Calendar(){
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-[#666]" />
                     Connect Calendly to view appointments
                   </div>
+                ) : !selectedDay ? (
+                  <div className="text-[#A0A0A0] text-sm text-center py-8">
+                    Click on a date to view appointments
+                  </div>
                 ) : selectedDayAppointments.length === 0 ? (
                   <div className="text-[#A0A0A0] text-sm text-center py-8">
                     No appointments for this day
@@ -417,7 +423,6 @@ export default function Calendar(){
           </div>
         </div>
 
-        {/* Main Calendar Area */}
         <div className="flex-1">
           <div className="bg-[#1A1A1A] rounded-lg border border-[#2A2A2A] h-full">
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[#2A2A2A]">
@@ -444,7 +449,6 @@ export default function Calendar(){
             </div>
 
             <div className="p-4 sm:p-6">
-              {/* Desktop Calendar Grid */}
               <div className="hidden sm:grid grid-cols-7 mb-2">
                 {dayNames.map((day, index) => (
                   <DayHeader key={index} day={day}/>
@@ -469,7 +473,6 @@ export default function Calendar(){
                 ))}
               </div>
 
-              {/* Mobile Week View */}
               <div className="grid grid-cols-1 gap-3 sm:hidden">
                 {weekDays.map((dayData, index) => (
                   <div key={index} className="flex flex-row items-center gap-4 w-full">
@@ -497,12 +500,10 @@ export default function Calendar(){
         </div>
       </div>
 
-      {/* Calendly Embed Modal */}
       <CalendlyEmbedModal
         isOpen={isCalendlyModalOpen}
         onClose={() => {
           setIsCalendlyModalOpen(false);
-          // Refresh calendar events after scheduling
           if (isCalendlyConnected) {
             calendlyAPI.loadEventsForMonth(currentDate)
               .then(events => setCalendarEvents(events))
@@ -514,3 +515,5 @@ export default function Calendar(){
     </main>
   );
 };
+
+export default Calendar;
