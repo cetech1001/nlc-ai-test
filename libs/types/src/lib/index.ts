@@ -25,3 +25,4 @@ export * from './subscription';
 export * from './system-setting';
 export * from './transaction';
 export * from './webhook';
+export * from './profile';

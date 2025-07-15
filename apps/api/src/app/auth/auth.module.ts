@@ -9,6 +9,7 @@ import { EmailService } from '../email/email.service';
 import { TokenService } from './services/token.service';
 import {GoogleAuthService} from "./services/google-auth.service";
 import {GoogleStrategy} from "./strategies/google.strategy";
+import {CloudinaryService} from "./services/cloudinary.service";
 
 @Module({
   imports: [
@@ -30,9 +31,10 @@ import {GoogleStrategy} from "./strategies/google.strategy";
     GoogleAuthService,
     EmailService,
     TokenService,
+    CloudinaryService,
     JwtStrategy,
     GoogleStrategy,
   ],
-  exports: [AuthService, GoogleAuthService, TokenService],
+  exports: [AuthService, GoogleAuthService, TokenService, CloudinaryService],
 })
 export class AuthModule {}

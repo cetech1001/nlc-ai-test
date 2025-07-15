@@ -122,6 +122,13 @@ class AuthAPI extends BaseAPI{
     return this.makeRequest('/auth/profile');
   }
 
+  async uploadAvatar(formData: FormData) {
+    return this.makeRequest('/auth/upload-avatar', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
   async updateProfile(data: UpdateProfileRequest): Promise<{ message: string; user: LoginResponse['user'] }> {
     return this.makeRequest('/auth/profile', {
       method: 'PATCH',

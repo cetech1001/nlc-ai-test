@@ -4,6 +4,8 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { TokenService } from './services/token.service';
+import { CloudinaryService } from "./services/cloudinary.service";
+
 import {
   AUTH_ROLES, ForgotPasswordRequest,
   LoginRequest,
@@ -20,6 +22,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly tokenService: TokenService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async registerCoach(registerDto: RegistrationRequest) {
@@ -55,7 +58,7 @@ export class AuthService {
 
     return {
       message: 'Registration successful. Please check your email for verification code.',
-      coachId: coach.id,
+      coachID: coach.id,
       requiresVerification: true,
       email: email,
     };
@@ -97,6 +100,7 @@ export class AuthService {
         lastName: coach.lastName,
         businessName: coach.businessName,
         isVerified: coach.isVerified,
+        avatarUrl: coach.avatarUrl,
       },
     };
   }
@@ -147,6 +151,7 @@ export class AuthService {
         firstName: admin.firstName,
         lastName: admin.lastName,
         role: admin.role,
+        avatarUrl: admin.avatarUrl,
       },
     };
   }
@@ -168,14 +173,49 @@ export class AuthService {
     return admin;
   }
 
-  async updateProfile(userId: string, userType: AUTH_ROLES, updateProfileDto: UpdateProfileRequest) {
+  async uploadAvatar(userID: string, userType: AUTH_ROLES, file: Express.Multer.File) {
+    try {
+      const result = await this.cloudinaryService.uploadImage(file, {
+        folder: `nlc-ai/avatars/${userType}s`,
+        public_id: `${userID}_avatar`,
+        overwrite: true,
+        transformation: [
+          { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+          { quality: 'auto', fetch_format: 'auto' }
+        ]
+      });
+
+      const avatarUrl = result.secure_url;
+
+      if (userType === UserType.coach) {
+        await this.prisma.coach.update({
+          where: { id: userID },
+          data: { avatarUrl, updatedAt: new Date() },
+        });
+      } else {
+        await this.prisma.admin.update({
+          where: { id: userID },
+          data: { avatarUrl, updatedAt: new Date() },
+        });
+      }
+
+      return {
+        message: 'Avatar uploaded successfully',
+        avatarUrl,
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to upload avatar');
+    }
+  }
+
+  async updateProfile(userID: string, userType: AUTH_ROLES, updateProfileDto: UpdateProfileRequest) {
     const { firstName, lastName, email } = updateProfileDto;
 
     if (userType === UserType.coach) {
       const existingCoach = await this.prisma.coach.findFirst({
         where: {
           email,
-          id: { not: userId },
+          id: { not: userID },
           isActive: true,
         },
       });
@@ -185,7 +225,7 @@ export class AuthService {
       }
 
       const updatedCoach = await this.prisma.coach.update({
-        where: { id: userId },
+        where: { id: userID },
         data: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -210,7 +250,7 @@ export class AuthService {
       const existingAdmin = await this.prisma.admin.findFirst({
         where: {
           email,
-          id: { not: userId },
+          id: { not: userID },
           isActive: true,
         },
       });
@@ -220,7 +260,7 @@ export class AuthService {
       }
 
       const updatedAdmin = await this.prisma.admin.update({
-        where: { id: userId },
+        where: { id: userID },
         data: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -243,14 +283,14 @@ export class AuthService {
     }
   }
 
-  async updatePassword(userId: string, userType: AUTH_ROLES, updatePasswordDto: UpdatePasswordRequest) {
+  async updatePassword(userID: string, userType: AUTH_ROLES, updatePasswordDto: UpdatePasswordRequest) {
     const { newPassword } = updatePasswordDto;
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     if (userType === UserType.coach) {
       await this.prisma.coach.update({
-        where: { id: userId },
+        where: { id: userID },
         data: {
           passwordHash,
           updatedAt: new Date(),
@@ -258,7 +298,7 @@ export class AuthService {
       });
     } else {
       await this.prisma.admin.update({
-        where: { id: userId },
+        where: { id: userID },
         data: {
           passwordHash,
           updatedAt: new Date(),
@@ -323,6 +363,7 @@ export class AuthService {
           firstName: user.firstName,
           lastName: user.lastName,
           businessName: user.businessName,
+          avatarUrl: user.avatarUrl,
           isVerified: true,
         },
         verified: true,
@@ -381,7 +422,7 @@ export class AuthService {
     }
   }
 
-  async findUserById(id: string, type: AUTH_ROLES) {
+  async findUserByID(id: string, type: AUTH_ROLES) {
     if (type === UserType.coach) {
       return this.prisma.coach.findUnique({
         where: { id, isActive: true },
@@ -392,6 +433,7 @@ export class AuthService {
           lastName: true,
           businessName: true,
           isVerified: true,
+          avatarUrl: true,
         },
       });
     } else {
@@ -403,6 +445,7 @@ export class AuthService {
           firstName: true,
           lastName: true,
           role: true,
+          avatarUrl: true,
         },
       });
     }

@@ -13,7 +13,6 @@ const nextConfig = {
     svgr: false,
   },
   experimental: {
-    // optimizeCss: true,
     externalDir: true,
   },
   images: {
@@ -27,6 +26,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'nlc-ai-admin.onrender.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
         port: '',
         pathname: '/**',
       }

@@ -1,4 +1,17 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Get, Patch, UseGuards, Query, Res, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Get,
+  Patch,
+  UseGuards,
+  Query,
+  Res,
+  Req,
+  UseInterceptors, BadRequestException, UploadedFile
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
@@ -18,6 +31,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import {type AUTH_ROLES, UserType} from "@nlc-ai/types";
 import type {Response, Request} from 'express';
+import {FileInterceptor} from "@nestjs/platform-express";
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -142,13 +156,39 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('upload-avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('avatar', {
+    limits: {
+      fileSize: 5 * 1024 * 1024,
+    },
+    fileFilter: (_, file, callback) => {
+      if (!file.mimetype.startsWith('image/')) {
+        return callback(new BadRequestException('Only image files are allowed'), false);
+      }
+      callback(null, true);
+    },
+  }))
+  async uploadAvatar(@Req() req: { user: { id: string; type: AUTH_ROLES } }, @UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('File size must be less than 5MB');
+    }
+
+    return this.authService.uploadAvatar(req.user?.id, req.user?.type, file);
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   async getProfile(@Req() req: { user: { id: string; type: AUTH_ROLES } }) {
     const { id, type } = req.user;
-    return this.authService.findUserById(id, type);
+    return this.authService.findUserByID(id, type);
   }
 
   @Patch('profile')

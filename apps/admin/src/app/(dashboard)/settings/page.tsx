@@ -1,31 +1,12 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import { Eye } from "lucide-react";
+import { Eye, Camera, Upload, X } from "lucide-react";
 import {SettingsPageSkeleton} from "@/lib/skeletons/settings-page.skeleton";
 import { Button, EyeLashIcon } from "@nlc-ai/ui";
 import { authAPI, useAuth } from "@nlc-ai/auth";
-import {UserType} from "@nlc-ai/types";
+import {PasswordFormData, ProfileFormData, ProfileFormErrors, UserType} from "@nlc-ai/types";
 import SystemSettings from "./components/system-settings";
-
-interface FormErrors {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-}
-
-interface ProfileFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-
-interface PasswordFormData {
-  newPassword: string;
-  confirmPassword: string;
-}
 
 export default function Settings() {
   const {user, isLoading, checkAuthStatus} = useAuth();
@@ -36,6 +17,12 @@ export default function Settings() {
 
   const [desktopNotifications, setDesktopNotifications] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
+
+  // Profile photo upload states
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const [profileForm, setProfileForm] = useState<ProfileFormData>({
     firstName: "",
@@ -50,7 +37,7 @@ export default function Settings() {
 
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
@@ -64,7 +51,7 @@ export default function Settings() {
   }, [user]);
 
   const validateProfileForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: ProfileFormErrors = {};
 
     if (!profileForm.firstName.trim()) {
       newErrors.firstName = "First name is required";
@@ -93,7 +80,7 @@ export default function Settings() {
   };
 
   const validatePasswordForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: ProfileFormErrors = {};
 
     if (!passwordForm.newPassword) {
       newErrors.newPassword = "New password is required";
@@ -125,6 +112,63 @@ export default function Settings() {
     if (errors[field]) {
       setErrors(prev => ({...prev, [field]: undefined}));
     }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({...prev, photo: 'Please select a valid image file'}));
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({...prev, photo: 'Image size must be less than 5MB'}));
+        return;
+      }
+
+      setSelectedFile(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      setErrors(prev => ({...prev, photo: undefined}));
+    }
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', selectedFile);
+
+      await authAPI.uploadAvatar(formData);
+
+      setSuccessMessage("Profile photo updated successfully!");
+      setShowUploadModal(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+
+      await checkAuthStatus(UserType.admin);
+
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error: any) {
+      setErrors(prev => ({...prev, photo: error.message || "Failed to upload photo"}));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const closeUploadModal = () => {
+    setShowUploadModal(false);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setErrors(prev => ({...prev, photo: undefined}));
   };
 
   const handleSaveProfile = async () => {
@@ -234,8 +278,20 @@ export default function Settings() {
       {activeTab === "edit-profile" && (
         <div>
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-7 mb-8 lg:mb-16">
-            <img className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] mx-auto lg:mx-0" src="https://placehold.co/130x130"
-                 alt="Profile"/>
+            <div className="relative group mx-auto lg:mx-0">
+              <img
+                className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] object-cover"
+                src={user?.avatarUrl || "https://placehold.co/130x130"}
+                alt="Profile"
+              />
+              <div
+                className="absolute inset-0 bg-black/50 rounded-[20px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
+                onClick={() => setShowUploadModal(true)}
+              >
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+            </div>
+
             <div className="w-full lg:w-60 flex flex-col gap-3 text-center lg:text-left">
               <div className="text-stone-50 text-2xl sm:text-3xl font-semibold font-['Inter'] leading-relaxed">
                 {user?.firstName} {user?.lastName}
@@ -292,6 +348,79 @@ export default function Settings() {
               </div>
             </div>
           </div>
+
+          {showUploadModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-neutral-900 rounded-lg border border-neutral-700 p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold text-white">Upload Profile Photo</h3>
+                  <button
+                    onClick={closeUploadModal}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="photo-upload"
+                    />
+                    <label
+                      htmlFor="photo-upload"
+                      className="cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <Upload className="w-8 h-8 text-gray-400" />
+                      <span className="text-sm text-gray-400">
+                        Click to select an image
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Max file size: 5MB
+                      </span>
+                    </label>
+                  </div>
+
+                  {previewUrl && (
+                    <div className="flex justify-center">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-24 h-24 rounded-[20px] object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {errors.photo && (
+                    <p className="text-red-400 text-sm">{errors.photo}</p>
+                  )}
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={closeUploadModal}
+                      disabled={uploadingPhoto}
+                      className="flex-1 px-4 py-3 rounded-lg border border-white/30 flex justify-center items-center"
+                    >
+                      <span className="text-white text-sm font-medium">Cancel</span>
+                    </Button>
+                    <Button
+                      onClick={handlePhotoUpload}
+                      disabled={!selectedFile || uploadingPhoto}
+                      className="flex-1 px-4 py-3 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-lg flex justify-center items-center disabled:opacity-50"
+                    >
+                      <span className="text-white text-sm font-semibold">
+                        {uploadingPhoto ? "Uploading..." : "Upload"}
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mb-8">
             <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">

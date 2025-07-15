@@ -6,6 +6,7 @@ export interface LoginResponse {
     firstName: string;
     lastName: string;
     role?: string;
+    avatarUrl?: string;
   };
 }
 

@@ -62,6 +62,7 @@ model Admin {
   passwordHash   String          @db.VarChar(255)
   firstName      String          @db.VarChar(100)
   lastName       String          @db.VarChar(100)
+  avatarUrl      String?
   role           String?         @default("admin") @db.VarChar(50)
   isActive       Boolean?        @default(true)
   lastLoginAt    DateTime?       @db.Timestamptz(6)

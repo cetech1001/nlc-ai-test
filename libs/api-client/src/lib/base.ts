@@ -23,11 +23,17 @@ export class BaseAPI {
     const url = `${this.baseURL}${endpoint}`;
     const token = this.getToken();
 
+    const defaultHeaders: Record<string, string> = {
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    };
+
+    const isFormData = options.body instanceof FormData;
+    if (!isFormData) {
+      defaultHeaders['Content-Type'] = 'application/json';
+    }
+
     const defaultOptions: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
+      headers: defaultHeaders,
     };
 
     const response = await fetch(url, {
