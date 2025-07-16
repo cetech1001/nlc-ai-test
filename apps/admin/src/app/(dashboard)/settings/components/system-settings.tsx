@@ -161,8 +161,8 @@ export default function SystemSettings() {
 
         <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl p-8">
           {/* Header */}
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between mb-6">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">📅</span>
               </div>
@@ -215,7 +215,7 @@ export default function SystemSettings() {
             <div className="space-y-6">
               {/* Connected Account Info */}
               <div className="bg-[#2A2A2A]/50 border border-[#3A3A3A] rounded-xl p-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-medium text-sm">
@@ -228,7 +228,7 @@ export default function SystemSettings() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                     <Button
                       onClick={testConnection}
                       disabled={isLoading}
@@ -267,7 +267,7 @@ export default function SystemSettings() {
               </div>
 
               {/* Connection Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-[#2A2A2A]/30 border border-[#3A3A3A] rounded-lg p-4">
                   <div className="text-[#A0A0A0] text-sm mb-1">Scheduling URL</div>
                   <div className="text-white text-sm flex items-center gap-2">
@@ -290,7 +290,7 @@ export default function SystemSettings() {
               </div>
 
               {/* Additional Settings */}
-              <div className="bg-[#2A2A2A]/30 border border-[#3A3A3A] rounded-lg p-4">
+              <div className="hidden sm:block bg-[#2A2A2A]/30 border border-[#3A3A3A] rounded-lg p-4">
                 <div className="text-white text-sm font-medium mb-2">Integration Details</div>
                 <div className="space-y-2 text-xs text-[#A0A0A0]">
                   <div className="flex justify-between">

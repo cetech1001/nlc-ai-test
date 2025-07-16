@@ -193,7 +193,7 @@ export const EmailAutomationModal = ({ isOpen, onClose, leadName, leadEmail, lea
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#3A3A3A]">
           <div className="flex items-center gap-4">
@@ -233,8 +233,8 @@ export const EmailAutomationModal = ({ isOpen, onClose, leadName, leadEmail, lea
           <div className="space-y-4">
             {sequence.emails.map((email, index) => (
               <div key={email.id} className="bg-[#1A1A1A]/50 border border-[#2A2A2A] rounded-xl p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-3 sm:gap-0">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <div className={`w-8 h-8 bg-gradient-to-br ${sequence.color} rounded-lg flex items-center justify-center text-sm font-medium ${sequence.iconColor}`}>
                       {index + 1}
                     </div>
@@ -277,7 +277,7 @@ export const EmailAutomationModal = ({ isOpen, onClose, leadName, leadEmail, lea
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between p-6 border-t border-[#3A3A3A]">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-center justify-between p-6 border-t border-[#3A3A3A]">
           <div className="text-[#A0A0A0] text-sm">
             {sequence.emails.length} emails • Scheduled over 2 weeks
           </div>

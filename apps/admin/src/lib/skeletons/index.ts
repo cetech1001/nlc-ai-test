@@ -8,3 +8,4 @@ export * from './plans-page.skeleton';
 export * from './send-mail-page.skeleton';
 export * from './settings-page.skeleton';
 export * from './transactions-page.skeleton';
+export * from './leads-page.skeleton';

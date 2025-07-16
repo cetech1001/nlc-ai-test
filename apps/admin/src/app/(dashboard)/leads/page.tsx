@@ -7,7 +7,7 @@ import { DataTable, Pagination, PageHeader, DataFilter, tableRenderers, MobilePa
 import { AlertBanner, Button } from '@nlc-ai/ui';
 import { leadsAPI } from '@nlc-ai/api-client';
 import {FilterConfig, FilterValues} from "@nlc-ai/types";
-import { EmailAutomationModal } from '@/lib';
+import {EmailAutomationModal, LeadsPageSkeleton} from '@/lib';
 
 // Types for Leads
 interface Lead {
@@ -431,7 +431,7 @@ const Leads = () => {
 
             <Button
               onClick={() => router.push('/leads/create')}
-              className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:block'}
+              className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex'}
             >
               <span className="w-4 h-4 mr-2">
                 <Plus className="w-4 h-4" />
@@ -454,15 +454,11 @@ const Leads = () => {
         </div>
 
         {isLoading && (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-[#2A2A2A] h-16 rounded-lg"></div>
-            ))}
-          </div>
+          <LeadsPageSkeleton length={leadColumns.length}/>
         )}
 
         {!isLoading && (
-          <div data-table-container>
+          <>
             <DataTable
               columns={leadColumns}
               data={leads}
@@ -477,7 +473,7 @@ const Leads = () => {
                 setCurrentPage={setCurrentPage}
               />
             )}
-          </div>
+          </>
         )}
 
         {!isLoading && leads.length > 0 && (

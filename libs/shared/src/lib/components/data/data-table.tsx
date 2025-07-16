@@ -29,7 +29,7 @@ export const DataTable = <T,>({
   };
 
   return (
-    <>
+    <div data-table-container>
       {showMobileCards && (
         <div className="block sm:hidden">
           <div className="space-y-4">
@@ -239,7 +239,7 @@ export const DataTable = <T,>({
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

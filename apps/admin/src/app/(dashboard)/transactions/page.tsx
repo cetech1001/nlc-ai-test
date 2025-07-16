@@ -148,7 +148,7 @@ const Transactions = () => {
         )}
 
         {!isLoading && (
-          <div data-table-container>
+          <>
             <DataTable
               columns={transactionColumns}
               data={transactions}
@@ -163,7 +163,7 @@ const Transactions = () => {
                 setCurrentPage={setCurrentPage}
               />
             )}
-          </div>
+          </>
         )}
 
         {!isLoading && transactions.length > 0 && (
