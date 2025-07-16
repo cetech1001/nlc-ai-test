@@ -10,7 +10,7 @@ import {
   TransactionAnalytics,
   TransactionsPageSkeleton
 } from "@/lib";
-import { DataTable, Pagination, PageHeader, DataFilter } from "@nlc-ai/shared";
+import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/shared";
 import { transactionsAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {DataTableTransaction, FilterValues} from "@nlc-ai/types";
@@ -167,16 +167,7 @@ const Transactions = () => {
         )}
 
         {!isLoading && transactions.length > 0 && (
-          <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-4 sm:hidden">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-stone-300">
-                Showing {transactions.length} of {pagination.total} transactions
-              </span>
-              <div className="flex gap-4 text-stone-400">
-                <span>Page {pagination.page} of {pagination.totalPages}</span>
-              </div>
-            </div>
-          </div>
+          <MobilePagination pagination={pagination}/>
         )}
       </div>
     </div>

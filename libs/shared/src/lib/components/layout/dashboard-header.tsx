@@ -1,6 +1,5 @@
 import {useMemo} from "react";
 import {Skeleton} from "@nlc-ai/ui";
-import Image from "next/image";
 
 const UserDisplaySection = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const userFullName = useMemo(() => {
@@ -36,12 +35,11 @@ export const DashboardHeader = (props: IProps) => {
   const userInitials = useMemo(() => {
     if (user?.avatarUrl) {
       return (
-        <Image
+        <img
           src={user?.avatarUrl}
           alt={'Avatar'}
-          className={"rounded-full"}
-          height={32}
-          width={32}
+          className={"w-full h-full rounded-full"}
+          // style={"w-full h-full"}
         />
       )
     }

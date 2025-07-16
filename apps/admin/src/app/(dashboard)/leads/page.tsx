@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Plus, Mail, Calendar, TrendingUp, AlertCircle } from "lucide-react";
-import { DataTable, Pagination, PageHeader, DataFilter, tableRenderers } from "@nlc-ai/shared";
+import { DataTable, Pagination, PageHeader, DataFilter, tableRenderers, MobilePagination } from "@nlc-ai/shared";
 import { AlertBanner, Button } from '@nlc-ai/ui';
 import { leadsAPI } from '@nlc-ai/api-client';
 import {FilterConfig, FilterValues} from "@nlc-ai/types";
@@ -471,16 +471,7 @@ const Leads = () => {
         )}
 
         {!isLoading && leads.length > 0 && (
-          <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-4 sm:hidden">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-stone-300">
-                Showing {leads.length} of {pagination.total} leads
-              </span>
-              <div className="flex gap-4 text-stone-400">
-                <span>Page {pagination.page} of {pagination.totalPages}</span>
-              </div>
-            </div>
-          </div>
+          <MobilePagination pagination={pagination}/>
         )}
 
         {/* Email Automation Info */}

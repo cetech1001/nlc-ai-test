@@ -247,10 +247,12 @@ export const tableRenderers = {
   status: (value: string) => {
     const statusColors: Record<string, string> = {
       'Active': 'text-green-400',
+      'Completed': 'text-green-400',
       'Inactive': 'text-red-400',
       'Blocked': 'text-blue-400',
       'Converted': 'text-green-400',
       'No Show': 'text-red-400',
+      'Failed': 'text-red-400',
       'Not Converted': 'text-yellow-400',
       'Scheduled': 'text-blue-400',
     };
@@ -259,7 +261,6 @@ export const tableRenderers = {
         <span className={`text-sm font-normal leading-relaxed ${statusColors[value] || 'text-gray-400'}`}>
           {value}
         </span>
-        <ChevronDown className="w-4 h-4 text-stone-50"/>
       </div>
     );
   },
