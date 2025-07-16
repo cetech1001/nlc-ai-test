@@ -1,28 +1,30 @@
-import { ChevronDown } from 'lucide-react';
 import {TableProps} from "@nlc-ai/types";
+import {DataTableSkeleton} from "../skeletons";
 
-export const DataTable = <T,>({
-  columns,
-  data,
-  onRowAction,
-  className = "",
-  actions = [],
-  showMobileCards = true,
-  emptyMessage = "No data available"
-}: TableProps<T>) => {
+export const DataTable = <T,>(props: TableProps<T>) => {
+  if (props.isLoading) {
+    return (
+      <DataTableSkeleton
+        columns={props.columns.length}
+        rows={5}
+        showMobileCards={true}
+      />
+    )
+  }
+
   const getGridTemplate = () => {
-    return columns.map(col => col.width || '1fr').join(' ');
+    return props.columns.map(col => col.width || '1fr').join(' ');
   };
 
   const getMinTableWidth = () => {
-    const totalFixedWidth = columns.reduce((total, col) => {
+    const totalFixedWidth = props.columns.reduce((total, col) => {
       if (col.width && col.width.includes('px')) {
         return total + parseInt(col.width);
       }
       return total + 150; // Default minimum width per column
     }, 0);
 
-    const gaps = (columns.length - 1) * 16; // 4 * 4px gap between columns
+    const gaps = (props.columns.length - 1) * 16; // 4 * 4px gap between props.columns
     const padding = 48; // 24px padding on each side
 
     return `${totalFixedWidth + gaps + padding}px`;
@@ -30,19 +32,19 @@ export const DataTable = <T,>({
 
   return (
     <div data-table-container>
-      {showMobileCards && (
+      {props.showMobileCards && (
         <div className="block sm:hidden">
           <div className="space-y-4">
-            {data.length === 0 ? (
-              <div className="text-center py-8 text-stone-400">{emptyMessage}</div>
+            {props.data.length === 0 ? (
+              <div className="text-center py-8 text-stone-400">{props.emptyMessage}</div>
             ) : (
-              data.map((row, index) => {
-                const primaryField = columns.find(col => col.key === 'name') || columns[0];
-                const secondaryField = columns.find(col => col.key === 'id') || columns[1];
-                const statusField = columns.find(col => col.key === 'status');
-                const actionsColumn = columns.find(col => col.key === 'actions');
+              props.data.map((row, index) => {
+                const primaryField = props.columns.find(col => col.key === 'name') || props.columns[0];
+                const secondaryField = props.columns.find(col => col.key === 'id') || props.columns[1];
+                const statusField = props.columns.find(col => col.key === 'status');
+                const actionsColumn = props.columns.find(col => col.key === 'actions');
 
-                const detailFields = columns.filter(col =>
+                const detailFields = props.columns.filter(col =>
                   col.key !== primaryField?.key &&
                   col.key !== secondaryField?.key &&
                   col.key !== statusField?.key &&
@@ -62,7 +64,7 @@ export const DataTable = <T,>({
                             {primaryField?.render ? (
                               <div className="truncate">
                                 {/* @ts-ignore */}
-                                {primaryField.render(row[primaryField.key], row, onRowAction)}
+                                {primaryField.render(row[primaryField.key], row, props.onRowAction)}
                               </div>
                             ) : (
                               /* @ts-ignore */
@@ -74,7 +76,7 @@ export const DataTable = <T,>({
                               {secondaryField.render ? (
                                 <span className="truncate">
                                   {/* @ts-ignore */}
-                                  {secondaryField.render(row[secondaryField.key], row, onRowAction)}
+                                  {secondaryField.render(row[secondaryField.key], row, props.onRowAction)}
                                 </span>
                               ) : (
                                 /* @ts-ignore */
@@ -89,21 +91,18 @@ export const DataTable = <T,>({
                             {statusField.render ? (
                               <div className="flex items-center gap-2">
                                 {/* @ts-ignore */}
-                                {statusField.render(row[statusField.key], row, onRowAction)}
+                                {statusField.render(row[statusField.key], row, props.onRowAction)}
                               </div>
                             ) : (
-                              <>
-                          <span className={`text-sm font-medium whitespace-nowrap ${
-                            /* @ts-ignore */
-                            row[statusField.key] === "Active" || row[statusField.key] === "Converted"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}>
-                            {/* @ts-ignore */}
-                            {row[statusField.key]}
-                          </span>
-                                <ChevronDown className="w-4 h-4 text-stone-50" />
-                              </>
+                              <span className={`text-sm font-medium whitespace-nowrap ${
+                                /* @ts-ignore */
+                                row[statusField.key] === "Active" || row[statusField.key] === "Converted"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}>
+                                {/* @ts-ignore */}
+                                {row[statusField.key]}
+                              </span>
                             )}
                           </div>
                         )}
@@ -138,10 +137,10 @@ export const DataTable = <T,>({
                         <div className="pt-1">
                           {actionsColumn.render ? (
                             /* @ts-ignore */
-                            actionsColumn.render(row[actionsColumn.key], row, onRowAction)
+                            actionsColumn.render(row[actionsColumn.key], row, props.onRowAction)
                           ) : (
                             <button
-                              onClick={() => onRowAction?.('default', row)}
+                              onClick={() => props.onRowAction?.('default', row)}
                               className="text-fuchsia-400 text-sm font-medium underline hover:text-fuchsia-300 transition-colors"
                             >
                               Action
@@ -150,12 +149,12 @@ export const DataTable = <T,>({
                         </div>
                       )}
 
-                      {!actionsColumn && actions.length > 0 && (
+                      {!actionsColumn && (props.actions?.length || 0) > 0 && (
                         <div className="flex gap-2 pt-2 border-t border-neutral-700">
-                          {actions.map((action) => (
+                          {props.actions?.map((action) => (
                             <button
                               key={action.action}
-                              onClick={() => onRowAction?.(action.action, row)}
+                              onClick={() => props.onRowAction?.(action.action, row)}
                               className={`text-sm font-medium transition-colors ${
                                 action.variant === 'primary' ? 'text-fuchsia-400 hover:text-fuchsia-300' :
                                   action.variant === 'danger' ? 'text-red-400 hover:text-red-300' :
@@ -176,11 +175,11 @@ export const DataTable = <T,>({
         </div>
       )}
 
-      <div className={`${showMobileCards ? 'hidden sm:block' : ''}`}>
+      <div className={`${props.showMobileCards ? 'hidden sm:block' : ''}`}>
         <div className="overflow-x-auto">
-          <div className={`relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden ${className}`} style={{ minWidth: 'max-content' }}>
+          <div className={`relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden ${props.className}`} style={{ minWidth: 'max-content' }}>
             <div className="absolute inset-0 opacity-20">
-              {[...Array(Math.min(columns.length, 7))].map((_, i) => (
+              {[...Array(props.columns.length)].map((_, i) => (
                 <div
                   key={i}
                   className="absolute w-56 h-56 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]"
@@ -198,7 +197,7 @@ export const DataTable = <T,>({
                   className="w-full grid gap-4 text-sm lg:text-base"
                   style={{ gridTemplateColumns: getGridTemplate() }}
                 >
-                  {columns.map((column) => (
+                  {props.columns.map((column) => (
                     <div key={column.key} className={`text-stone-50 font-semibold leading-relaxed text-left ${column.headerClassName || column.className || ''}`}>
                       {column.header}
                     </div>
@@ -207,22 +206,22 @@ export const DataTable = <T,>({
               </div>
 
               <div className="divide-y divide-neutral-700">
-                {data.length === 0 ? (
+                {props.data.length === 0 ? (
                   <div className="h-32 flex items-center justify-center" style={{ minWidth: getMinTableWidth() }}>
-                    <span className="text-stone-400 text-lg">{emptyMessage}</span>
+                    <span className="text-stone-400 text-lg">{props.emptyMessage}</span>
                   </div>
                 ) : (
-                  data.map((row, index) => (
+                  props.data.map((row, index) => (
                     // @ts-ignore
                     <div key={row.id || index} className="h-16 flex items-center px-6 hover:bg-black/10 transition-colors" style={{ minWidth: getMinTableWidth() }}>
                       <div
                         className="w-full grid gap-4 items-center text-sm lg:text-base"
                         style={{ gridTemplateColumns: getGridTemplate() }}
                       >
-                        {columns.map((column) => (
+                        {props.columns.map((column) => (
                           <div key={column.key} className={`text-left ${column.className || ''}`}>
                             {/*@ts-ignore*/}
-                            {column.render ? column.render(row[column.key], row, onRowAction) : (
+                            {column.render ? column.render(row[column.key], row, props.onRowAction) : (
                               <span className="text-stone-50 font-normal leading-relaxed">
                                 {/*@ts-ignore*/}
                                 {row[column.key]}
@@ -299,48 +298,4 @@ export const tableRenderers = {
       ${value.toLocaleString()}
     </span>
   ),
-
-  coachActions: (areInactiveCoaches: boolean = false) => {
-    return (_: string, coach: any, onRowAction?: (action: string, row: any) => void) => {
-      return (
-        <div className="flex gap-2">
-          {coach.rawStatus !== 'deleted' && (
-            <>
-              <button
-                onClick={() => onRowAction?.('toggle-status', coach)}
-                className={`px-3 py-1 rounded text-sm ${
-                  coach.rawStatus === 'blocked'
-                    ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
-                    : 'bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30'
-                }`}
-              >
-                {coach.rawStatus === 'blocked' ? 'Unblock' : 'Block'}
-              </button>
-              <button
-                onClick={() => onRowAction?.('delete', coach)}
-                className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400 hover:bg-red-600/30"
-              >
-                Delete
-              </button>
-            </>
-          )}
-          {coach.rawStatus === 'deleted' && (
-            <button
-              onClick={() => onRowAction?.('restore', coach)}
-              className="px-3 py-1 rounded text-sm bg-green-600/20 text-green-400 hover:bg-green-600/30"
-            >
-              Restore
-            </button>
-          )}
-          <button
-            onClick={() => onRowAction?.(areInactiveCoaches ? 'send-mail' : 'make-payment', coach)}
-            className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
-            disabled={coach.rawStatus === 'deleted'}
-          >
-            {areInactiveCoaches ? 'Send Mail' : 'Make Payment'}
-          </button>
-        </div>
-      );
-    }
-  }
 };

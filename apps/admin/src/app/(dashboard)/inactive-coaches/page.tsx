@@ -144,6 +144,7 @@ export default function InactiveCoaches() {
               handleActionSuccess={handleActionSuccess}
               setError={setError}
               areInactiveCoaches={true}
+              emptyMessage={"No inactive coaches found matching your criteria"}
             />
 
             {pagination.totalPages > 1 && (

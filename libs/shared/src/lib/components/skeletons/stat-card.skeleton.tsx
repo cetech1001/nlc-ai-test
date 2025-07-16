@@ -9,9 +9,9 @@ export const StatCardSkeleton = () => {
       </div>
       <div className="relative z-10 flex flex-col justify-between h-full min-h-[100px] sm:min-h-[120px]">
         <Skeleton className="h-4 w-24 sm:w-32" />
-        <div className="flex justify-between items-end mt-auto pt-2">
+        <div className="flex flex-col gap-3 items-start mt-auto pt-2">
           <Skeleton className="h-6 sm:h-8 lg:h-10 w-16 sm:w-20 lg:w-24" />
-          <Skeleton className="h-6 w-12 opacity-0" />
+          <Skeleton className="h-6 w-12 opacity-20" />
         </div>
       </div>
     </div>

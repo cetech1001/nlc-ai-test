@@ -24,6 +24,7 @@ export interface TableProps<T> {
   actions?: TableAction[];
   showMobileCards?: boolean;
   emptyMessage?: string;
+  isLoading?: boolean;
 }
 
 export interface DataTableCoach {

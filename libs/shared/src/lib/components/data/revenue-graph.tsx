@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, {useState, useCallback, useRef, FC} from "react";
 import {
   AreaChart,
   Area,
@@ -8,15 +8,20 @@ import {
   Tooltip,
 } from "recharts";
 import {TimePeriodRevenueData} from "@nlc-ai/types";
+import {RevenueGraphSkeleton} from "../skeletons";
 
 interface RevenueGraphProps {
-  revenueData: TimePeriodRevenueData;
+  revenueData: TimePeriodRevenueData | undefined;
   isLoading: boolean;
 }
 
-export const RevenueGraph = ({ revenueData: initialData, isLoading }: RevenueGraphProps) => {
+export const RevenueGraph: FC<RevenueGraphProps> = (props) => {
+  if (props.isLoading) {
+    return <RevenueGraphSkeleton/>
+  }
+
   const [timePeriod, setTimePeriod] = useState<"Week" | "Month" | "Year">("Year");
-  const [revenueData] = useState(initialData);
+  const [revenueData] = useState(props.revenueData);
   const chartRef = useRef<HTMLDivElement>(null);
 
   const getCurrentData = useCallback(() => {
@@ -36,27 +41,12 @@ export const RevenueGraph = ({ revenueData: initialData, isLoading }: RevenueGra
   }, [timePeriod, revenueData]);
 
   const handlePeriodChange = useCallback(async (period: "Week" | "Month" | "Year") => {
-    if (period === timePeriod || isLoading) return;
+    if (period === timePeriod || props.isLoading) return;
 
     if (chartRef.current) {
       chartRef.current.style.opacity = '0.7';
       chartRef.current.style.transition = 'opacity 200ms ease-out';
     }
-
-    /*const periodKey = period.toLowerCase() as 'week' | 'month' | 'year';
-    const isNotCurrentPeriod = period !== timePeriod;
-
-     if (isNotCurrentPeriod) {
-      try {
-        setIsLoading(true);
-        // const newData = await dashboardAPI.getRevenueData(periodKey);
-        setRevenueData(revenueData[`${periodKey}ly`]);
-      } catch (error) {
-        console.error('Failed to fetch revenue data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }*/
 
     setTimeout(() => {
       setTimePeriod(period);
@@ -67,7 +57,7 @@ export const RevenueGraph = ({ revenueData: initialData, isLoading }: RevenueGra
         }
       });
     }, 100);
-  }, [timePeriod, isLoading, revenueData]);
+  }, [timePeriod, props.isLoading, revenueData]);
 
   const currentData = getCurrentData();
   const growthDescription = getCurrentDescription();
@@ -84,7 +74,7 @@ export const RevenueGraph = ({ revenueData: initialData, isLoading }: RevenueGra
             Your Revenue
           </h2>
           <p className="text-stone-300 text-sm font-normal leading-tight sm:leading-relaxed transition-all duration-300">
-            {isLoading ? `Fetching revenue data...` : growthDescription}
+            {props.isLoading ? `Fetching revenue data...` : growthDescription}
           </p>
         </div>
 
@@ -93,7 +83,7 @@ export const RevenueGraph = ({ revenueData: initialData, isLoading }: RevenueGra
             <React.Fragment key={period}>
               <button
                 onClick={() => handlePeriodChange(period)}
-                disabled={isLoading}
+                disabled={props.isLoading}
                 className={`text-sm font-normal leading-relaxed transition-all duration-300 ease-out whitespace-nowrap disabled:opacity-50 ${
                   timePeriod === period
                     ? "text-fuchsia-400 font-bold"
