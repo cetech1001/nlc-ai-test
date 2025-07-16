@@ -61,7 +61,7 @@ export const PlanCard = ({ plan, action, onActionClick }: IProps) => {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
               <div className="text-stone-50 text-2xl font-semibold font-['Inter']">${plan.price}</div>
-              <div className="text-stone-50/50 text-sm font-normal font-['Inter']">{plan.billingCycle}</div>
+              <div className="text-stone-50/50 text-xs font-normal font-['Inter']">{plan.billingCycle}</div>
             </div>
             <div>
               <span className="text-stone-50/50 text-sm font-normal font-['Inter']">or </span>

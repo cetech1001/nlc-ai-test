@@ -1,19 +1,21 @@
 import {
   CalendarIcon as HiCalendar,
   CurrencyDollarIcon as HiCurrencyDollar,
-  HomeIcon as HiHome, MoonIcon as HiMoon,
-  RectangleStackIcon as HiCollection, SpeakerWaveIcon as HiSpeakerphone,
-  UsersIcon as HiUsers
+  HomeIcon as HiHome,
+  MoonIcon as HiMoon,
+  RectangleStackIcon as HiCollection,
+  EnvelopeIcon as HiEnvelope,
+  UsersIcon as HiUsers,
 } from "@heroicons/react/24/outline";
 
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
   { icon: HiUsers, label: "Coaches", path: "/coaches" },
+  { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
+  { icon: HiEnvelope, label: "Leads", path: "/leads" },
+  { icon: HiCalendar, label: "Calendar", path: "/calendar" },
   { icon: HiCollection, label: "Subscription Plans", path: "/subscription-plans" },
   { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
-  { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
-  { icon: HiCalendar, label: "Calendar", path: "/calendar" },
-  { icon: HiSpeakerphone, label: "Leads", path: "/leads" },
 ];
 
 export const pageConfig = {

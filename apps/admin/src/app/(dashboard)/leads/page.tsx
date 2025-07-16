@@ -379,6 +379,13 @@ const Leads = () => {
             color="from-violet-600/20 to-fuchsia-600/20"
           />
           <StatCard
+            title="Converted"
+            value={stats.converted}
+            subtitle={`${stats.conversionRate}% rate`}
+            icon={TrendingUp}
+            color="from-green-600/20 to-emerald-600/20"
+          />
+          <StatCard
             title="Not Converted"
             value={stats.contacted}
             subtitle="Need follow-up"
@@ -391,13 +398,6 @@ const Leads = () => {
             subtitle="Meetings booked"
             icon={Calendar}
             color="from-blue-600/20 to-cyan-600/20"
-          />
-          <StatCard
-            title="Converted"
-            value={stats.converted}
-            subtitle={`${stats.conversionRate}% rate`}
-            icon={TrendingUp}
-            color="from-green-600/20 to-emerald-600/20"
           />
           <StatCard
             title="No Show"
@@ -431,15 +431,27 @@ const Leads = () => {
 
             <Button
               onClick={() => router.push('/leads/create')}
-              className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors'}
+              className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:block'}
             >
-            <span className="w-4 h-4 mr-2">
-              <Plus className="w-4 h-4" />
-            </span>
+              <span className="w-4 h-4 mr-2">
+                <Plus className="w-4 h-4" />
+              </span>
               Add New Lead
             </Button>
           </>
         </PageHeader>
+
+        <div className={'flex sm:hidden justify-end'}>
+          <Button
+            onClick={() => router.push('/leads/create')}
+            className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors'}
+          >
+              <span className="w-4 h-4 mr-2">
+                <Plus className="w-4 h-4" />
+              </span>
+            Add New Lead
+          </Button>
+        </div>
 
         {isLoading && (
           <div className="space-y-4">
@@ -450,24 +462,22 @@ const Leads = () => {
         )}
 
         {!isLoading && (
-          <>
-            <div data-table-container>
-              <DataTable
-                columns={leadColumns}
-                data={leads}
-                onRowAction={handleRowAction}
-                emptyMessage="No leads found matching your criteria"
-              />
+          <div data-table-container>
+            <DataTable
+              columns={leadColumns}
+              data={leads}
+              onRowAction={handleRowAction}
+              emptyMessage="No leads found matching your criteria"
+            />
 
-              {pagination.totalPages > 1 && (
-                <Pagination
-                  totalPages={pagination.totalPages}
-                  currentPage={currentPage}
-                  setCurrentPage={setCurrentPage}
-                />
-              )}
-            </div>
-          </>
+            {pagination.totalPages > 1 && (
+              <Pagination
+                totalPages={pagination.totalPages}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
+            )}
+          </div>
         )}
 
         {!isLoading && leads.length > 0 && (
