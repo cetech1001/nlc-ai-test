@@ -9,7 +9,7 @@ import { EmailService } from '../email/email.service';
 import { TokenService } from './services/token.service';
 import {GoogleAuthService} from "./services/google-auth.service";
 import {GoogleStrategy} from "./strategies/google.strategy";
-import {CloudinaryService} from "./services/cloudinary.service";
+import {CloudinaryModule} from "../cloudinary/cloudinary.module";
 
 @Module({
   imports: [
@@ -24,6 +24,7 @@ import {CloudinaryService} from "./services/cloudinary.service";
       }),
       inject: [ConfigService],
     }),
+    CloudinaryModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -31,10 +32,9 @@ import {CloudinaryService} from "./services/cloudinary.service";
     GoogleAuthService,
     EmailService,
     TokenService,
-    CloudinaryService,
     JwtStrategy,
     GoogleStrategy,
   ],
-  exports: [AuthService, GoogleAuthService, TokenService, CloudinaryService],
+  exports: [AuthService, GoogleAuthService, TokenService],
 })
 export class AuthModule {}

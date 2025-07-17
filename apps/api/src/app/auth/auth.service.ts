@@ -4,7 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { TokenService } from './services/token.service';
-import { CloudinaryService } from "./services/cloudinary.service";
+import { CloudinaryService } from "../cloudinary/cloudinary.service";
 
 import {
   AUTH_ROLES, ForgotPasswordRequest,

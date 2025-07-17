@@ -13,6 +13,7 @@ import { LeadsModule } from './leads/leads.module';
 import { SystemSettingsModule } from './system-settings/system-settings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ClientsModule } from './clients/clients.module';
+import { ContentModule } from './content/content.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ClientsModule } from './clients/clients.module';
     SystemSettingsModule,
     PaymentsModule,
     ClientsModule,
+    ContentModule,
   ],
   providers: [
     {

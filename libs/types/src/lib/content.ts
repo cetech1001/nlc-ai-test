@@ -45,3 +45,71 @@ export interface ContentSuggestion {
   updatedAt?: Date | null;
   coach?: Coach;
 }
+
+export interface ContentCategory {
+  id: string;
+  name: string;
+  description: string;
+  videosCount: number;
+  lastUpdated: string;
+  totalViews: number;
+  avgEngagement: number;
+  coachID: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface VideoContent {
+  id: string;
+  categoryID: string;
+  coachID: string;
+  title?: string;
+  description?: string;
+  fileName: string;
+  fileUrl: string;
+  thumbnailUrl?: string;
+  duration: number; // in seconds
+  fileSize: number; // in bytes
+  mimeType: string;
+  views: number;
+  likes: number;
+  shares: number;
+  engagement: number;
+  uploadedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ContentStats {
+  totalCategories: number;
+  totalVideos: number;
+  totalViews: number;
+  avgEngagement: number;
+  totalStorage: number; // in bytes
+}
+
+export interface CreateCategoryData {
+  name: string;
+  description: string;
+}
+
+export interface UpdateCategoryData {
+  name?: string;
+  description?: string;
+}
+
+export interface UploadVideoData {
+  categoryID: string;
+  title?: string;
+  description?: string;
+  file: File;
+}
+
+export interface ContentQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  categoryID?: string;
+  sortBy?: 'createdAt' | 'views' | 'engagement' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
