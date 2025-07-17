@@ -16,8 +16,8 @@ import {
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
   { icon: HiEnvelope, label: "AI Email Agent", path: "/clients" },
-  { icon: HiCollection, label: "Client Retention", path: "/client-retention" },
-  { icon: TvMinimalPlay, label: "Content Management", path: "/content-management" },
+  { icon: HiCollection, label: "Client Retention", path: "/retention/templates" },
+  { icon: TvMinimalPlay, label: "Content Management", path: "/content/categories" },
   { icon: MailQuestion, label: "Content Suggestion", path: "/content-suggestion" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
   { icon: HiCourse, label: "Courses", path: "/courses" },
@@ -34,8 +34,11 @@ export const pageConfig = {
   'clients': {
     title: 'Clients',
   },
-  'client-retention': {
-    title: 'Client',
+  'retention': {
+    title: 'Client Retention',
+  },
+  'content': {
+    title: 'Content Management',
   },
   'settings': {
     title: 'Account Settings',

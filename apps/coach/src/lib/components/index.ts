@@ -1,3 +1,4 @@
 export * from './sidebar';
 export * from './clients';
-export * from './client-retention';
+export * from './retention';
+export * from './content';

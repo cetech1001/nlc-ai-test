@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { BackTo } from '@nlc-ai/shared';
-import { Send, Star, Calendar, ChevronDown } from 'lucide-react';
+import { Send, Star, /*Calendar, */ChevronDown } from 'lucide-react';
 
 interface TemplateData {
   id?: string;
@@ -139,8 +139,9 @@ const StarRating = ({ rating, onRatingChange }: { rating: number; onRatingChange
 export default function TemplateEditor() {
   const router = useRouter();
   const params = useParams();
-  const isEditing = params.id !== 'new';
-  const templateId = params.id as string;
+
+  const isEditing = params.templateID !== 'new';
+  const templateID = params.templateID as string;
 
   const [template, setTemplate] = useState<TemplateData>(defaultTemplate);
   const [isLoading, setIsLoading] = useState(false);
@@ -152,11 +153,11 @@ export default function TemplateEditor() {
       // Load existing template data
       setTemplate({
         ...defaultTemplate,
-        id: templateId,
+        id: templateID,
         title: 'Feedback Survey 01'
       });
     }
-  }, [isEditing, templateId]);
+  }, [isEditing, templateID]);
 
   const handleInputChange = (field: keyof TemplateData, value: string) => {
     setTemplate(prev => ({ ...prev, [field]: value }));
@@ -167,13 +168,13 @@ export default function TemplateEditor() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      router.push('/client-retention');
+      router.push('/retention/templates');
     }, 1000);
   };
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this template?')) {
-      router.push('/client-retention');
+      router.push('/retention/templates');
     }
   };
 
@@ -184,10 +185,10 @@ export default function TemplateEditor() {
     }
   };
 
-  const frequencyOptions = [
+  /*const frequencyOptions = [
     { value: 'weekly', label: 'Weekly' },
     { value: 'monthly', label: 'Monthly' }
-  ];
+  ];*/
 
   const dayOptions = [
     { value: 'monday', label: 'Monday' },
@@ -222,7 +223,7 @@ export default function TemplateEditor() {
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
       <BackTo
-        onClick={() => router.push('/client-retention')}
+        onClick={() => router.push('/retention/templates')}
         title={isEditing ? 'Client Retention Template Customization' : 'Create New Client Retention Survey Template'}
       />
 
@@ -403,7 +404,7 @@ export default function TemplateEditor() {
         )}
 
         <button
-          onClick={() => router.push('/client-retention')}
+          onClick={() => router.push('/retention/templates')}
           className="w-full sm:w-auto border border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors"
         >
           {isEditing ? 'Discard Template' : 'Cancel'}

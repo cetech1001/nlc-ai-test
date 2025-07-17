@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, Copy, Trash2, Plus } from "lucide-react";
 import { PageHeader } from "@nlc-ai/shared";
 import { AlertBanner } from '@nlc-ai/ui';
-import RetentionStats from "@/lib/components/client-retention/stats";
+import RetentionStats from "@/lib/components/retention/stats";
 
 interface EmailTemplate {
   id: string;
