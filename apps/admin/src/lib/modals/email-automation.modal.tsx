@@ -8,7 +8,7 @@ interface EmailAutomationModalProps {
   leadName: string;
   leadEmail: string;
   leadStatus: string;
-  leadId: string;
+  leadID: string;
 }
 
 const emailSequences = {
@@ -162,7 +162,7 @@ const emailSequences = {
   }
 };
 
-export const EmailAutomationModal = ({ isOpen, onClose, leadName, leadEmail, leadStatus, leadId }: EmailAutomationModalProps) => {
+export const EmailAutomationModal = ({ isOpen, onClose, leadName, leadEmail, leadStatus, leadID }: EmailAutomationModalProps) => {
   const [selectedEmail, setSelectedEmail] = useState<number | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
@@ -176,8 +176,8 @@ export const EmailAutomationModal = ({ isOpen, onClose, leadName, leadEmail, lea
     onClose();
   };
 
-  const handleSendSingleEmail = (emailId: number) => {
-    const email = sequence.emails.find(e => e.id === emailId);
+  const handleSendSingleEmail = (emailID: number) => {
+    const email = sequence.emails.find(e => e.id === emailID);
     console.log(`Sending single email: ${email?.subject} to ${leadName}`);
     onClose();
   };

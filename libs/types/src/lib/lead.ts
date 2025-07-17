@@ -90,3 +90,27 @@ export interface LeadFilters {
   dateRange?: { start: string | null; end: string | null };
   meetingDateRange?: { start: string | null; end: string | null };
 }
+
+export interface EditLeadFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  source: string;
+  status: string;
+  meetingDate: string;
+  meetingTime: string;
+  notes: string;
+}
+
+export interface CreateLeadFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  source: string;
+  status: string;
+  meetingDate: string;
+  meetingTime: string;
+  notes: string;
+}

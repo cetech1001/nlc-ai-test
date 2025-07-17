@@ -5,18 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@nlc-ai/ui';
 import { ArrowLeft, Save, Calendar, User, Mail, Phone, MapPin, FileText, Sparkles } from 'lucide-react';
 import { leadsAPI } from '@nlc-ai/api-client';
-
-interface CreateLeadFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  source: string;
-  status: string;
-  meetingDate: string;
-  meetingTime: string;
-  notes: string;
-}
+import { CreateLeadFormData } from '@nlc-ai/types';
 
 const initialFormData: CreateLeadFormData = {
   firstName: '',

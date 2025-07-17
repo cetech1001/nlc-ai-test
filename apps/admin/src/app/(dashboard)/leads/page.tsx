@@ -113,13 +113,13 @@ const Leads = () => {
     }
   };
 
-  const handleDeleteLead = async (leadId: string) => {
+  const handleDeleteLead = async (leadID: string) => {
     if (!confirm("Are you sure you want to delete this lead? This action cannot be undone.")) {
       return;
     }
 
     try {
-      await leadsAPI.deleteLead(leadId);
+      await leadsAPI.deleteLead(leadID);
       setSuccessMessage("Lead deleted successfully!");
       await fetchLeads();
       await fetchStats();
@@ -137,9 +137,9 @@ const Leads = () => {
 
   const handleRowAction = async (action: string, lead: any) => {
     if (action === 'edit') {
-      router.push(`/leads/edit?leadID=${lead.originalId}`);
+      router.push(`/leads/edit?leadID=${lead.originalID}`);
     } else if (action === 'delete') {
-      await handleDeleteLead(lead.originalId);
+      await handleDeleteLead(lead.originalID);
     } else if (action === 'email') {
       handleEmailLead(lead);
     }
@@ -299,7 +299,7 @@ const Leads = () => {
           leadName={selectedLead.name}
           leadEmail={selectedLead.email}
           leadStatus={selectedLead.rawStatus}
-          leadId={selectedLead.originalID}
+          leadID={selectedLead.originalID}
         />
       )}
     </div>

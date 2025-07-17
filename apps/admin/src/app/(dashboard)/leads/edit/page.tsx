@@ -5,35 +5,7 @@ import {useRouter, useSearchParams} from 'next/navigation';
 import { Button } from '@nlc-ai/ui';
 import { ArrowLeft, Save, Calendar, User, Mail, Phone, MapPin, FileText, Sparkles, AlertTriangle, CheckCircle } from 'lucide-react';
 import { leadsAPI } from '@nlc-ai/api-client';
-
-interface Lead {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  source?: string;
-  status: string;
-  meetingDate?: string;
-  meetingTime?: string;
-  notes?: string;
-  lastContactedAt?: string;
-  convertedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface EditLeadFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  source: string;
-  status: string;
-  meetingDate: string;
-  meetingTime: string;
-  notes: string;
-}
+import {EditLeadFormData, Lead} from "@nlc-ai/types";
 
 const statusOptions = [
   {
@@ -121,7 +93,7 @@ const EditLead = () => {
         phone: leadData.phone || '',
         source: leadData.source || '',
         status: leadData.status,
-        meetingDate: leadData.meetingDate ? leadData.meetingDate.split('T')[0] : '',
+        meetingDate: leadData.meetingDate ? leadData.meetingDate.toISOString().split('T')[0] : '',
         meetingTime: leadData.meetingTime || '',
         notes: leadData.notes || '',
       });

@@ -26,7 +26,7 @@ const transformCoachData = (coaches: CoachWithStatus[]): DataTableCoach[] => {
     plan: coach.currentPlan || 'No Plan',
     status: coach.status.charAt(0).toUpperCase() + coach.status.slice(1),
     rawStatus: coach.status,
-    originalId: coach.id,
+    originalID: coach.id,
   }));
 };
 
@@ -116,13 +116,13 @@ export const CoachesTable: FC<IProps> = (props) => {
 
   const handleRowAction = async (action: string, coach: DataTableCoach) => {
     if (action === 'make-payment' || action === 'send-mail') {
-      props.handleRouteClick(coach.originalId);
+      props.handleRouteClick(coach.originalID);
     } else if (action === 'toggle-status') {
-      await handleToggleStatus(coach.originalId);
+      await handleToggleStatus(coach.originalID);
     } else if (action === 'delete') {
-      await handleDeleteCoach(coach.originalId);
+      await handleDeleteCoach(coach.originalID);
     } else if (action === 'restore') {
-      await handleRestoreCoach(coach.originalId);
+      await handleRestoreCoach(coach.originalID);
     }
   };
 
