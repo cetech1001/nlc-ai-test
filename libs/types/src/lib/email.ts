@@ -78,3 +78,17 @@ export interface EmailThread {
   coach?: Coach;
   emailAccount?: EmailAccount;
 }
+
+export interface EmailItem {
+  id: string;
+  title: string;
+  recipient: {
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  date: string;
+  time: string;
+  preview: string;
+  status: 'pending' | 'approved';
+}

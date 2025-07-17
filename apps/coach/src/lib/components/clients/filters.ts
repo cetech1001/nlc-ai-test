@@ -1,6 +1,6 @@
-import {FilterValues} from "@nlc-ai/types";
+import {FilterConfig, FilterValues} from "@nlc-ai/types";
 
-export const clientFilters = [
+export const clientFilters: FilterConfig[] = [
   {
     key: 'status',
     label: 'Client Status',
@@ -44,4 +44,17 @@ export const emptyClientFilterValues: FilterValues = {
   coursesBought: '',
   dateJoined: { start: null, end: null },
   lastInteraction: { start: null, end: null },
+};
+
+export const emailFilters: FilterConfig[] = [
+  {
+    key: 'dateRange',
+    label: 'Email Date',
+    type: 'date-range',
+    defaultValue: { start: null, end: null },
+  },
+];
+
+export const emptyEmailFilterValues: FilterValues = {
+  dateRange: { start: null, end: null },
 };
