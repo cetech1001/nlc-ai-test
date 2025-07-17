@@ -50,8 +50,12 @@ out
 .env
 .env.production
 pgadmin/servers.json
-apps/api/src/generated/prisma
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
 .config/
+
+.github/
+
+build-docker.sh
+deploy-render.sh
