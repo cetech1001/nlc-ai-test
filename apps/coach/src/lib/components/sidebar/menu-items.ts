@@ -1,19 +1,30 @@
 import {
   CalendarIcon as HiCalendar,
   CurrencyDollarIcon as HiCurrencyDollar,
-  HomeIcon as HiHome, MoonIcon as HiMoon,
-  RectangleStackIcon as HiCollection, SpeakerWaveIcon as HiSpeakerphone,
-  UsersIcon as HiUsers
+  HomeIcon as HiHome,
+  RectangleStackIcon as HiCollection,
+  SpeakerWaveIcon as HiSpeakerphone,
+  UsersIcon as HiUsers,
+  EnvelopeIcon as HiEnvelope,
+  AcademicCapIcon as HiCourse,
 } from "@heroicons/react/24/outline";
+import {
+  Bot, MailQuestion, TvMinimalPlay
+} from "lucide-react";
+
 
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
-  { icon: HiUsers, label: "Coaches", path: "/coaches" },
-  { icon: HiCollection, label: "Subscription Plans", path: "/subscription-plans" },
-  { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
-  { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
+  { icon: HiEnvelope, label: "AI Email Agent", path: "/email-agent" },
+  { icon: HiCollection, label: "Client Retention", path: "/client-retention-agent" },
+  { icon: TvMinimalPlay, label: "Content Management", path: "/content-management" },
+  { icon: MailQuestion, label: "Content Suggestion", path: "/content-suggestion" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
-  { icon: HiSpeakerphone, label: "Leads", path: "/leads" },
+  { icon: HiCourse, label: "Courses", path: "/courses" },
+  { icon: HiSpeakerphone, label: "Lead Follow-up", path: "/leads" },
+  { icon: HiUsers, label: "Community", path: "/community" },
+  { icon: Bot, label: "Bot Training", path: "/bot-training" },
+  { icon: HiCurrencyDollar, label: "Payment Requests", path: "/payments" },
 ];
 
 export const pageConfig = {

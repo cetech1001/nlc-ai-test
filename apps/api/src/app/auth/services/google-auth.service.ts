@@ -41,12 +41,12 @@ export class GoogleAuthService {
   }
 
   async googleAuth(user: any) {
-    let existingUser = await this.prisma.coaches.findUnique({
+    let existingUser = await this.prisma.coach.findUnique({
       where: { email: user.email },
     });
 
     if (!existingUser) {
-      existingUser = await this.prisma.coaches.create({
+      existingUser = await this.prisma.coach.create({
         data: {
           email: user.email,
           firstName: user.firstName,
@@ -59,7 +59,7 @@ export class GoogleAuthService {
       throw new BadRequestException('Account is deactivated');
     }
 
-    await this.prisma.coaches.update({
+    await this.prisma.coach.update({
       where: { id: existingUser.id },
       data: { lastLoginAt: new Date() },
     });
@@ -91,7 +91,7 @@ export class GoogleAuthService {
   async registerWithGoogle(idToken: string) {
     const userData = await this.validateGoogleToken(idToken);
 
-    const existingUser = await this.prisma.coaches.findUnique({
+    const existingUser = await this.prisma.coach.findUnique({
       where: { email: userData.email },
     });
 

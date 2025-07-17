@@ -305,6 +305,7 @@ model Course {
   platformUrl            String?
   totalModules           Int?               @default(0)
   estimatedDurationHours Int?
+  thumbnailUrl           String
   totalEnrollments       Int?               @default(0)
   activeEnrollments      Int?               @default(0)
   completionRate         Decimal?           @default(0.00) @db.Decimal(5, 2)

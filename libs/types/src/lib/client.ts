@@ -1,9 +1,7 @@
-import {AiInteraction} from "./agent";
-import {Coach} from "./coach";
-import {Course, CourseEnrollment} from "./course";
+import {CourseEnrollment} from "./course";
 import {EmailThread} from "./email";
 
-export interface Client {
+/*export interface Client {
   id: string;
   coachID: string;
   email: string;
@@ -24,13 +22,74 @@ export interface Client {
   coach?: Coach;
   courseEnrollments?: CourseEnrollment[];
   emailThreads?: EmailThread[];
+}*/
+
+export interface Client {
+  id: string;
+  coachID: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  avatarUrl?: string;
+  status: string;
+  source?: string;
+  tags: string[];
+  lastInteractionAt?: Date;
+  totalInteractions: number;
+  engagementScore: number;
+  customFields?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export type CreateClient = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateClient = Partial<CreateClient>;
+export interface ClientWithDetails extends Client {
+  coursesBought: number;
+  coursesCompleted: number;
+  emailThreadsCount?: number;
+  courseEnrollments?: CourseEnrollment[];
+  emailThreads?: EmailThread[];
+}
 
-export interface ClientWithCourses extends Client {
-  courseEnrollments: (CourseEnrollment & {
-    course: Course;
-  })[];
+export interface ClientStats {
+  totalClients: number;
+  activeClients: number;
+  totalCoursesBought: number;
+  coursesCompleted: number;
+}
+
+export interface ClientQueryParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+  coursesBought?: string;
+  dateJoinedStart?: string;
+  dateJoinedEnd?: string;
+  lastInteractionStart?: string;
+  lastInteractionEnd?: string;
+}
+
+export interface CreateClient {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  avatarUrl?: string;
+  source?: string;
+  tags?: string[];
+}
+
+export interface UpdateClient extends Partial<CreateClient>{
+  status?: string;
+}
+
+export interface DataTableClient {
+  id: string;
+  name: string;
+  email: string;
+  firstCourseBoughtOn: string;
+  coursesBought: number;
+  coursesCompleted: number;
+  originalID: string;
 }
