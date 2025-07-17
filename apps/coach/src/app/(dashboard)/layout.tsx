@@ -65,7 +65,8 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
             key={`${user?.firstName}-${user?.lastName}`}
             user={user}
             isLoading={isLoading}
-            title={currentConfig.title}/>
+            title={currentConfig.title}
+          />
         </div>
 
         <main className="py-6 md:py-0">

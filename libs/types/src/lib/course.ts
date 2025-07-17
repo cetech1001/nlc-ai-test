@@ -34,6 +34,7 @@ export interface Course {
   platform?: string | null;
   platformCourseID?: string | null;
   platformUrl?: string | null;
+  thumbnailUrl?: string | null;
   totalModules?: number | null;
   estimatedDurationHours?: number | null;
   totalEnrollments?: number | null;

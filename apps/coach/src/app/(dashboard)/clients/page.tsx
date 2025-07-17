@@ -87,11 +87,17 @@ const Clients = () => {
     router.push(`/clients/${clientID}`);
   };
 
+  const handleViewEmails = (clientID: string) => {
+    router.push(`/clients/${clientID}/emails`);
+  };
+
   const transformedClients = transformClientData(clients);
 
   const handleRowAction = async (action: string, client: DataTableClient) => {
     if (action === 'view-details') {
       handleViewDetails(client.originalID);
+    } else if (action === 'view-emails') {
+      handleViewEmails(client.originalID);
     }
   };
 

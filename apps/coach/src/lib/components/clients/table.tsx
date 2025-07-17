@@ -1,5 +1,6 @@
 import { tableRenderers } from "@nlc-ai/shared";
 import {ClientWithDetails, DataTableClient, TableColumn} from "@nlc-ai/types";
+import {Mailbox} from "lucide-react";
 
 export const transformClientData = (clients: ClientWithDetails[]): DataTableClient[] => {
   return clients.map(client => ({
@@ -58,12 +59,20 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
     width: 'auto',
     render: (_: string, client: DataTableClient, onRowAction?: (action: string, row: any) => void) => {
       return (
-        <button
-          onClick={() => onRowAction?.('view-details', client)}
-          className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
-        >
-          View Details
-        </button>
+        <div className={"flex gap-3"}>
+          <button
+            onClick={() => onRowAction?.('view-emails', client)}
+            className="px-3 py-1 rounded text-sm bg-blue-600/20 text-pink-400 hover:bg-blue-600/30 transition-colors"
+          >
+            <Mailbox className={"w-4 h-4"}/>
+          </button>
+          <button
+            onClick={() => onRowAction?.('view-details', client)}
+            className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
+          >
+            View Details
+          </button>
+        </div>
       );
     },
   }
