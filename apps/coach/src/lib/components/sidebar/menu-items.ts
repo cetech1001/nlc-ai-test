@@ -15,8 +15,8 @@ import {
 
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
-  { icon: HiEnvelope, label: "AI Email Agent", path: "/email-agent" },
-  { icon: HiCollection, label: "Client Retention", path: "/client-retention-agent" },
+  { icon: HiEnvelope, label: "AI Email Agent", path: "/clients" },
+  { icon: HiCollection, label: "Client Retention", path: "/client-retention" },
   { icon: TvMinimalPlay, label: "Content Management", path: "/content-management" },
   { icon: MailQuestion, label: "Content Suggestion", path: "/content-suggestion" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
