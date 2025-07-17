@@ -44,44 +44,7 @@ export const Pagination: FC<IProps> = (props) => {
     return pages;
   };
 
-  const smoothScrollToTop = () => {
-    const startPosition = window.pageYOffset;
-    const duration = 500;
-    const startTime = performance.now();
-
-    const easeOutCubic = (t: number): number => {
-      return 1 - Math.pow(1 - t, 3);
-    };
-
-    const animateScroll = (currentTime: number) => {
-      const timeElapsed = currentTime - startTime;
-      const progress = Math.min(timeElapsed / duration, 1);
-      const easedProgress = easeOutCubic(progress);
-
-      const currentPosition = startPosition * (1 - easedProgress);
-      window.scrollTo(0, currentPosition);
-
-      if (progress < 1) {
-        requestAnimationFrame(animateScroll);
-      } else {
-        window.scrollTo(0, 0);
-      }
-    };
-
-    requestAnimationFrame(animateScroll);
-  };
-
-  const smoothScrollToTable = () => {
-    const tableElement = document.querySelector('[data-table-container]') ||
-      document.querySelector('.data-table') ||
-      document.querySelector('table') ||
-      document.querySelector('[role="table"]');
-
-    if (!tableElement) {
-      return smoothScrollToTop();
-    }
-
-    const targetPosition = tableElement.getBoundingClientRect().top + window.pageYOffset - 100; // 100px offset from top
+  const smoothScrollTo = (targetPosition: number) => {
     const startPosition = window.pageYOffset;
     const distance = targetPosition - startPosition;
     const duration = 500;
@@ -101,8 +64,6 @@ export const Pagination: FC<IProps> = (props) => {
 
       if (progress < 1) {
         requestAnimationFrame(animateScroll);
-      } else {
-        window.scrollTo(0, targetPosition);
       }
     };
 
@@ -111,8 +72,19 @@ export const Pagination: FC<IProps> = (props) => {
 
   const handlePageClick = (page: number) => {
     if (page === props.currentPage) return;
+
     props.setCurrentPage(page);
-    smoothScrollToTable();
+
+    const tableElement = document.querySelector('[data-table-container]') ||
+      document.querySelector('.data-table') ||
+      document.querySelector('table') ||
+      document.querySelector('[role="table"]');
+
+    const targetPosition = tableElement
+      ? tableElement.getBoundingClientRect().top + window.pageYOffset - 100
+      : 0;
+
+    smoothScrollTo(targetPosition);
   };
 
   return (
@@ -137,4 +109,4 @@ export const Pagination: FC<IProps> = (props) => {
       </div>
     </div>
   );
-}
+};
