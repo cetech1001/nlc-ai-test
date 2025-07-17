@@ -166,6 +166,7 @@ export const CoachesTable: FC<IProps> = (props) => {
       columns={coachColumns}
       data={transformedCoaches}
       onRowAction={handleRowAction}
+      showMobileCards={true}
       emptyMessage={props.emptyMessage || "No coaches found matching your criteria"}
       isLoading={props.isLoading}
     />

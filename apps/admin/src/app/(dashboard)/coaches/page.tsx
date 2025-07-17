@@ -12,7 +12,6 @@ import {
 import { coachesAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {
-  CoachesPageSkeleton,
   CoachesTable,
   coachFilters,
   emptyCoachFilterValues,
@@ -22,9 +21,9 @@ import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 const Coaches = () => {
   const router = useRouter();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [coaches, setCoaches] = useState<CoachWithStatus[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyCoachFilterValues);
   const [pagination, setPagination] = useState({
@@ -42,9 +41,7 @@ const Coaches = () => {
   const coachesPerPage = 10;
 
   useEffect(() => {
-    (async () => {
-      await fetchCoaches();
-    })();
+    (() => fetchCoaches())();
   }, [currentPage, searchQuery, filterValues]);
 
   const fetchCoaches = async () => {
@@ -110,9 +107,7 @@ const Coaches = () => {
           <AlertBanner type={"error"} message={error} onDismiss={clearMessages}/>
         )}
 
-        <PageHeader
-          title="Coaches List"
-        >
+        <PageHeader title="Coaches List">
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
@@ -135,27 +130,20 @@ const Coaches = () => {
           </>
         </PageHeader>
 
-        {isLoading && (
-          <CoachesPageSkeleton length={7}/>
-        )}
+        <CoachesTable
+          coaches={coaches}
+          handleActionSuccess={handleActionSuccess}
+          handleRouteClick={handleMakePayment}
+          setError={setError}
+          isLoading={isLoading}
+        />
 
-        {!isLoading && (
-          <>
-            <CoachesTable
-              coaches={coaches}
-              handleActionSuccess={handleActionSuccess}
-              handleRouteClick={handleMakePayment}
-              setError={setError}/>
-
-            {pagination.totalPages > 1 && (
-              <Pagination
-                totalPages={pagination.totalPages}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-              />
-            )}
-          </>
-        )}
+        <Pagination
+          totalPages={pagination.totalPages}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          isLoading={isLoading}
+        />
 
         {!isLoading && coaches.length > 0 && (
           <MobilePagination pagination={pagination}/>

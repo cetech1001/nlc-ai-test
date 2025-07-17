@@ -3,8 +3,8 @@ import {Coach} from "./coach";
 
 export interface Notification {
   id: string;
-  coachId?: string | null;
-  adminId?: string | null;
+  coachID?: string | null;
+  adminID?: string | null;
   type: string;
   title: string;
   message: string;

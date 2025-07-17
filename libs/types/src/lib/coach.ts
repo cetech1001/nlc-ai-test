@@ -105,3 +105,14 @@ export interface CoachStats {
   inactiveCoaches: number;
   inactiveCoachesGrowth: number;
 }
+
+export interface DataTableCoach {
+  id: string;
+  name: string;
+  email: string;
+  dateJoined: string;
+  plan: string;
+  status: string;
+  rawStatus: string;
+  originalID: string;
+}

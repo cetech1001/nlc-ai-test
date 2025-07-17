@@ -7,7 +7,6 @@ import { Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/sh
 import { coachesAPI } from "@nlc-ai/api-client";
 import {
   emptyInactiveCoachesFilterValues,
-  CoachesPageSkeleton,
   inactiveCoachFilters,
   CoachesTable
 } from "@/lib";
@@ -16,9 +15,10 @@ import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
 export default function InactiveCoaches() {
   const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [coaches, setCoaches] = useState<CoachWithStatus[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyInactiveCoachesFilterValues);
   const [pagination, setPagination] = useState({
@@ -107,9 +107,7 @@ export default function InactiveCoaches() {
           <AlertBanner type={"error"} message={error} onDismiss={clearMessages}/>
         )}
 
-        <PageHeader
-          title="Inactive Coaches"
-        >
+        <PageHeader title="Inactive Coaches">
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
@@ -132,30 +130,22 @@ export default function InactiveCoaches() {
           </>
         </PageHeader>
 
-        {isLoading && (
-          <CoachesPageSkeleton length={7}/>
-        )}
+        <CoachesTable
+          coaches={coaches}
+          handleRouteClick={handleSendEmail}
+          handleActionSuccess={handleActionSuccess}
+          setError={setError}
+          areInactiveCoaches={true}
+          emptyMessage={"No inactive coaches found matching your criteria"}
+          isLoading={isLoading}
+        />
 
-        {!isLoading && (
-          <>
-            <CoachesTable
-              coaches={coaches}
-              handleRouteClick={handleSendEmail}
-              handleActionSuccess={handleActionSuccess}
-              setError={setError}
-              areInactiveCoaches={true}
-              emptyMessage={"No inactive coaches found matching your criteria"}
-            />
-
-            {pagination.totalPages > 1 && (
-              <Pagination
-                totalPages={pagination.totalPages}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-              />
-            )}
-          </>
-        )}
+        <Pagination
+          totalPages={pagination.totalPages}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          isLoading={isLoading}
+        />
 
         {!isLoading && coaches.length > 0 && (
           <MobilePagination pagination={pagination}/>

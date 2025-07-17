@@ -242,6 +242,13 @@ export const DataTable = <T,>(props: TableProps<T>) => {
   );
 };
 
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+};
+
 export const tableRenderers = {
   status: (value: string) => {
     const statusColors: Record<string, string> = {
@@ -295,7 +302,7 @@ export const tableRenderers = {
 
   currencyText: (value: number) => (
     <span className="text-stone-50 font-normal leading-relaxed whitespace-nowrap">
-      ${value.toLocaleString()}
+      {formatCurrency(Number(value))}
     </span>
   ),
 };

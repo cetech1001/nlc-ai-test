@@ -47,3 +47,46 @@ export interface CreateLead extends Pick<Lead, 'firstName' | 'lastName' | 'email
   status?: LeadStatus;
 }
 export type UpdateLead = Partial<CreateLead>;
+
+export interface DataTableLead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  source: string;
+  status: string;
+  meetingDate: string;
+  lastContacted: string;
+  rawStatus: string;
+  originalID: string;
+}
+
+export interface LeadStats {
+  total: number;
+  contacted: number;
+  scheduled: number;
+  converted: number;
+  unresponsive: number;
+  conversionRate: number;
+}
+
+export interface CreateLeadRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  source?: string;
+  status?: string;
+  meetingDate?: string;
+  meetingTime?: string;
+  notes?: string;
+}
+
+export interface UpdateLeadRequest extends Partial<CreateLeadRequest> {}
+
+export interface LeadFilters {
+  status?: string;
+  source?: string[];
+  dateRange?: { start: string | null; end: string | null };
+  meetingDateRange?: { start: string | null; end: string | null };
+}

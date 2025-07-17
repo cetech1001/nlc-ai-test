@@ -26,14 +26,3 @@ export interface TableProps<T> {
   emptyMessage?: string;
   isLoading?: boolean;
 }
-
-export interface DataTableCoach {
-  id: string;
-  name: string;
-  email: string;
-  dateJoined: string;
-  plan: string;
-  status: string;
-  rawStatus: string;
-  originalId: string;
-}

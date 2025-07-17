@@ -11,7 +11,7 @@ import {TimePeriodRevenueData} from "@nlc-ai/types";
 import {RevenueGraphSkeleton} from "../skeletons";
 
 interface RevenueGraphProps {
-  revenueData: TimePeriodRevenueData | undefined;
+  revenueData?: TimePeriodRevenueData;
   isLoading: boolean;
 }
 

@@ -1,13 +1,19 @@
 /// <reference lib="dom"/>
-import {Dispatch, SetStateAction} from "react";
+import {Dispatch, FC, SetStateAction} from "react";
+import {PaginationSkeleton} from "../skeletons/pagination.skeleton";
 
 interface IProps {
   totalPages: number;
   currentPage: number;
   setCurrentPage: Dispatch<SetStateAction<number>>;
+  isLoading?: boolean;
 }
 
-export const Pagination = (props: IProps) => {
+export const Pagination: FC<IProps> = (props) => {
+  if (props.isLoading) {
+    return <PaginationSkeleton/>;
+  }
+
   const getPaginationPages = () => {
     const pages = [];
     const maxVisiblePages = 5;

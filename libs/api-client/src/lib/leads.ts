@@ -1,42 +1,5 @@
 import { BaseAPI } from './base';
-
-export interface Lead {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  source?: string;
-  status: 'contacted' | 'scheduled' | 'converted' | 'unresponsive';
-  meetingDate?: string;
-  meetingTime?: string;
-  notes?: string;
-  lastContactedAt?: string;
-  convertedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateLeadRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  source?: string;
-  status?: string;
-  meetingDate?: string;
-  meetingTime?: string;
-  notes?: string;
-}
-
-export interface UpdateLeadRequest extends Partial<CreateLeadRequest> {}
-
-export interface LeadFilters {
-  status?: string;
-  source?: string[];
-  dateRange?: { start: string | null; end: string | null };
-  meetingDateRange?: { start: string | null; end: string | null };
-}
+import {CreateLeadRequest, Lead, LeadFilters, UpdateLeadRequest} from "@nlc-ai/types";
 
 export interface PaginatedLeadsResponse {
   data: Lead[];
@@ -64,17 +27,14 @@ class LeadsAPI extends BaseAPI {
 
     if (search) params.append('search', search);
 
-    // Handle status filter
     if (filters.status && filters.status !== '') {
       params.append('status', filters.status);
     }
 
-    // Handle source filter (array to comma-separated string)
     if (filters.source && Array.isArray(filters.source) && filters.source.length > 0) {
       params.append('source', filters.source.join(','));
     }
 
-    // Handle date range filters
     if (filters.dateRange) {
       if (filters.dateRange.start) {
         params.append('startDate', filters.dateRange.start);
@@ -84,7 +44,6 @@ class LeadsAPI extends BaseAPI {
       }
     }
 
-    // Handle meeting date range filters
     if (filters.meetingDateRange) {
       if (filters.meetingDateRange.start) {
         params.append('meetingStartDate', filters.meetingDateRange.start);

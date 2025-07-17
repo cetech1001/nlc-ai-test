@@ -6,30 +6,21 @@ import {
   transactionColumns,
   transformTransactionData,
   transactionFilters,
-  convertTransactionFiltersToAPIFormat,
   TransactionAnalytics,
-  TransactionsPageSkeleton
+  emptyTransactionsFilterValues
 } from "@/lib";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/shared";
 import { transactionsAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {DataTableTransaction, FilterValues} from "@nlc-ai/types";
 
-
-const emptyFilterValues: FilterValues = {
-  status: '',
-  paymentMethod: [],
-  dateRange: { start: null, end: null },
-  amountRange: { min: '', max: '' },
-  planNames: [],
-};
-
 const Transactions = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [transactions, setTransactions] = useState<DataTableTransaction[]>([]);
-  const [filterValues, setFilterValues] = useState<FilterValues>(emptyFilterValues);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyTransactionsFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -53,12 +44,10 @@ const Transactions = () => {
       setIsLoading(true);
       setError("");
 
-      const apiFilters = convertTransactionFiltersToAPIFormat(filterValues);
-
       const response = await transactionsAPI.getTransactions(
         currentPage,
         transactionsPerPage,
-        apiFilters,
+        filterValues,
         searchQuery
       );
 
@@ -82,7 +71,7 @@ const Transactions = () => {
   };
 
   const handleResetFilters = () => {
-    setFilterValues(emptyFilterValues);
+    setFilterValues(emptyTransactionsFilterValues);
     setSearchQuery("");
     setCurrentPage(1);
   };
@@ -115,12 +104,9 @@ const Transactions = () => {
           <AlertBanner type={"error"} message={error} onDismiss={clearMessages}/>
         )}
 
-        {/* Analytics Section */}
         <TransactionAnalytics />
 
-        <PageHeader
-          title="All Transactions"
-        >
+        <PageHeader title="All Transactions">
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
@@ -143,28 +129,21 @@ const Transactions = () => {
           </>
         </PageHeader>
 
-        {isLoading && (
-          <TransactionsPageSkeleton length={transactionColumns.length}/>
-        )}
+        <DataTable
+          columns={transactionColumns}
+          data={transactions}
+          onRowAction={handleRowAction}
+          emptyMessage="No transactions found matching your criteria"
+          showMobileCards={true}
+          isLoading={isLoading}
+        />
 
-        {!isLoading && (
-          <>
-            <DataTable
-              columns={transactionColumns}
-              data={transactions}
-              onRowAction={handleRowAction}
-              emptyMessage="No transactions found matching your criteria"
-            />
-
-            {pagination.totalPages > 1 && (
-              <Pagination
-                totalPages={pagination.totalPages}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-              />
-            )}
-          </>
-        )}
+        <Pagination
+          totalPages={pagination.totalPages}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          isLoading={isLoading}
+        />
 
         {!isLoading && transactions.length > 0 && (
           <MobilePagination pagination={pagination}/>

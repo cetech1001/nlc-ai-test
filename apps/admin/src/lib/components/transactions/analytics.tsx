@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Download, TrendingUp, TrendingDown, DollarSign, CreditCard, Users, Activity } from 'lucide-react';
+import { Download, DollarSign, CreditCard, Users, Activity } from 'lucide-react';
 import { transactionsAPI } from '@nlc-ai/api-client';
-import { Button } from '@nlc-ai/ui';
+import {AlertBanner, Button } from '@nlc-ai/ui';
 import {RevenueComparison, TopCoach, TransactionStats} from "@nlc-ai/types";
+import { StatCard } from '@nlc-ai/shared';
 
 export const TransactionAnalytics: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<TransactionStats | null>(null);
   const [revenueComparison, setRevenueComparison] = useState<RevenueComparison | null>(null);
   const [topCoaches, setTopCoaches] = useState<TopCoach[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export const TransactionAnalytics: React.FC = () => {
     }).format(amount);
   };
 
-  if (isLoading) {
+  /*if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[...Array(4)].map((_, i) => (
@@ -75,104 +76,63 @@ export const TransactionAnalytics: React.FC = () => {
         </Button>
       </div>
     );
-  }
+  }*/
 
   return (
     <div className="space-y-8">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-stone-400 text-sm font-medium">Total Revenue</p>
-              <p className="text-white text-2xl font-bold mt-1">
-                {stats ? formatCurrency(stats.totalRevenue) : '$0'}
-              </p>
-            </div>
-            <div className="bg-green-500/20 p-3 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-400" />
-            </div>
-          </div>
-          {revenueComparison && (
-            <div className="flex items-center mt-4 text-sm">
-              {revenueComparison.trend === 'up' ? (
-                <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-              ) : revenueComparison.trend === 'down' ? (
-                <TrendingDown className="w-4 h-4 text-red-400 mr-1" />
-              ) : (
-                <Activity className="w-4 h-4 text-gray-400 mr-1" />
-              )}
-              <span className={`${
-                revenueComparison.trend === 'up'
-                  ? 'text-green-400'
-                  : revenueComparison.trend === 'down'
-                    ? 'text-red-400'
-                    : 'text-gray-400'
-              }`}>
-                {Math.abs(revenueComparison.percentageChange)}% vs last month
-              </span>
-            </div>
-          )}
-        </div>
+      {error && (
+        <AlertBanner type={'error'} message={error} onDismiss={() => setError('')}/>
+      )}
 
-        <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-stone-400 text-sm font-medium">Total Transactions</p>
-              <p className="text-white text-2xl font-bold mt-1">
-                {stats?.total.toLocaleString() || '0'}
-              </p>
-            </div>
-            <div className="bg-blue-500/20 p-3 rounded-lg">
-              <CreditCard className="w-6 h-6 text-blue-400" />
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title={'Total Revenue'}
+          value={formatCurrency(stats?.totalRevenue || 0)}
+          icon={DollarSign}
+          iconBgColor={'bg-green-500/20'}
+          iconTextColor={'text-green-400'}
+          growth={revenueComparison?.percentageChange || 0}
+          subtitle={'vs last month'}
+          isLoading={isLoading}
+        />
 
-        <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-stone-400 text-sm font-medium">Completed</p>
-              <p className="text-white text-2xl font-bold mt-1">
-                {stats?.completed.toLocaleString() || '0'}
-              </p>
-            </div>
-            <div className="bg-green-500/20 p-3 rounded-lg">
-              <Activity className="w-6 h-6 text-green-400" />
-            </div>
-          </div>
-          {stats && (
-            <div className="mt-4">
-              <div className="text-sm text-stone-400">
-                Success Rate: {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
-              </div>
-            </div>
-          )}
-        </div>
+        <StatCard
+          title={'Total Transactions'}
+          value={stats?.total.toLocaleString() || 0}
+          icon={CreditCard}
+          iconBgColor={'bg-blue-500/20'}
+          iconTextColor={'text-blue-400'}
+          isLoading={isLoading}
+        />
 
-        <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-lg border border-neutral-700 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-stone-400 text-sm font-medium">Pending/Failed</p>
-              <p className="text-white text-2xl font-bold mt-1">
-                {stats ? (stats.pending + stats.failed).toLocaleString() : '0'}
-              </p>
-            </div>
-            <div className="bg-orange-500/20 p-3 rounded-lg">
-              <Users className="w-6 h-6 text-orange-400" />
-            </div>
-          </div>
-          {stats && (
+        <StatCard
+          title={'Completed'}
+          value={stats?.completed.toLocaleString() || 0}
+          icon={Activity}
+          iconBgColor={'bg-green-500/20'}
+          iconTextColor={'text-green-400'}
+          subtitle={`Success Rate: ${stats && stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%`}
+          isLoading={isLoading}
+        />
+
+        <StatCard
+          title={'Pending/Failed'}
+          value={stats ? (stats.pending + stats.failed).toLocaleString() : 0}
+          icon={Users}
+          iconBgColor={'bg-orange-500/20'}
+          iconTextColor={'text-orange-400'}
+          subtitle={
             <div className="mt-4 space-y-1">
               <div className="text-xs text-stone-400">
-                Pending: {stats.pending.toLocaleString()}
+                Pending: {stats?.pending.toLocaleString()}
               </div>
               <div className="text-xs text-stone-400">
-                Failed: {stats.failed.toLocaleString()}
+                Failed: {stats?.failed.toLocaleString()}
               </div>
             </div>
-          )}
-        </div>
+          }
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Top Coaches and Export */}
