@@ -13,62 +13,68 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ContentService } from './content.service';
-import { CreateCategoryDto, UpdateCategoryDto, ContentQueryDto } from './dto';
+import {CreateCategoryDto, UpdateCategoryDto, ContentQueryDto, UpdateVideoDto, UploadVideoDto} from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import {UserType} from "@nlc-ai/types";
+import { UserType } from "@nlc-ai/types";
 
 @ApiTags('Content')
 @Controller('content')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserType.coach)
 @ApiBearerAuth()
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
-  // Categories
   @Get('categories')
-  @ApiOperation({ summary: 'Get all categories for authenticated coach' })
+  @ApiOperation({ summary: 'Get all categories' })
+  @Roles(UserType.coach, UserType.admin)
   getCategories(@Request() req: any) {
-    return this.contentService.getCategories(req.user.id);
+    const coachID = req.user.userType === UserType.coach ? req.user.id : undefined;
+    return this.contentService.getCategories(coachID);
   }
 
   @Get('categories/:id')
   @ApiOperation({ summary: 'Get category by ID' })
+  @Roles(UserType.coach, UserType.admin)
   getCategory(@Param('id') id: string, @Request() req: any) {
-    return this.contentService.getCategory(id, req.user.id);
+    const coachID = req.user.userType === UserType.coach ? req.user.id : undefined;
+    return this.contentService.getCategory(id, coachID);
   }
 
   @Post('categories')
   @ApiOperation({ summary: 'Create new category' })
+  @Roles(UserType.admin)
   createCategory(@Body() createCategoryDto: CreateCategoryDto, @Request() req: any) {
-    return this.contentService.createCategory(createCategoryDto, req.user.id);
+    return this.contentService.createCategory(createCategoryDto);
   }
 
   @Patch('categories/:id')
   @ApiOperation({ summary: 'Update category' })
+  @Roles(UserType.admin)
   updateCategory(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto, @Request() req: any) {
-    return this.contentService.updateCategory(id, updateCategoryDto, req.user.id);
+    return this.contentService.updateCategory(id, updateCategoryDto);
   }
 
   @Delete('categories/:id')
   @ApiOperation({ summary: 'Delete category' })
+  @Roles(UserType.admin)
   deleteCategory(@Param('id') id: string, @Request() req: any) {
-    return this.contentService.deleteCategory(id, req.user.id);
+    return this.contentService.deleteCategory(id);
   }
 
-  // Videos
   @Get('videos')
   @ApiOperation({ summary: 'Get videos with filtering and pagination' })
+  @Roles(UserType.coach)
   getVideos(@Query() query: ContentQueryDto, @Request() req: any) {
     return this.contentService.getVideos(query, req.user.id);
   }
 
   @Get('videos/:id')
   @ApiOperation({ summary: 'Get video by ID' })
+  @Roles(UserType.coach)
   getVideo(@Param('id') id: string, @Request() req: any) {
     return this.contentService.getVideo(id, req.user.id);
   }
@@ -76,9 +82,10 @@ export class ContentController {
   @Post('videos/upload')
   @ApiOperation({ summary: 'Upload new video' })
   @UseInterceptors(FileInterceptor('file'))
+  @Roles(UserType.coach)
   uploadVideo(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
+    @Body() body: UploadVideoDto,
     @Request() req: any
   ) {
     return this.contentService.uploadVideo(file, body, req.user.id);
@@ -86,32 +93,50 @@ export class ContentController {
 
   @Patch('videos/:id')
   @ApiOperation({ summary: 'Update video metadata' })
-  updateVideo(@Param('id') id: string, @Body() updateData: any, @Request() req: any) {
+  @Roles(UserType.coach)
+  updateVideo(@Param('id') id: string, @Body() updateData: UpdateVideoDto, @Request() req: any) {
     return this.contentService.updateVideo(id, updateData, req.user.id);
   }
 
   @Delete('videos/:id')
   @ApiOperation({ summary: 'Delete video' })
+  @Roles(UserType.coach)
   deleteVideo(@Param('id') id: string, @Request() req: any) {
     return this.contentService.deleteVideo(id, req.user.id);
   }
 
   @Post('videos/:id/view')
   @ApiOperation({ summary: 'Increment video view count' })
+  @Roles(UserType.coach)
   incrementViews(@Param('id') id: string, @Request() req: any) {
     return this.contentService.incrementViews(id, req.user.id);
   }
 
-  // Stats
   @Get('stats')
   @ApiOperation({ summary: 'Get content statistics' })
+  @Roles(UserType.coach)
   getStats(@Request() req: any) {
     return this.contentService.getStats(req.user.id);
   }
 
   @Get('categories/:id/stats')
   @ApiOperation({ summary: 'Get category statistics' })
+  @Roles(UserType.coach)
   getCategoryStats(@Param('id') id: string, @Request() req: any) {
     return this.contentService.getCategoryStats(id, req.user.id);
+  }
+
+  @Get('admin/all-content')
+  @ApiOperation({ summary: 'Get all content across all coaches (Admin only)' })
+  @Roles(UserType.admin)
+  getAllContent(@Query() query: ContentQueryDto) {
+    return this.contentService.getVideos(query, undefined as any);
+  }
+
+  @Get('admin/categories')
+  @ApiOperation({ summary: 'Get all categories (Admin only)' })
+  @Roles(UserType.admin)
+  getAllCategories() {
+    return this.contentService.getCategories();
   }
 }

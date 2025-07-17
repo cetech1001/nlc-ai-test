@@ -20,7 +20,7 @@ export class CloudinaryService {
     });
   }
 
-  async uploadImage(
+  async uploadAsset(
     file: Express.Multer.File,
     options: CloudinaryUploadOptions = {}
   ): Promise<any> {
@@ -47,7 +47,7 @@ export class CloudinaryService {
     });
   }
 
-  async deleteImage(publicId: string): Promise<any> {
+  async deleteAsset(publicId: string): Promise<any> {
     return cloudinary.uploader.destroy(publicId);
   }
 

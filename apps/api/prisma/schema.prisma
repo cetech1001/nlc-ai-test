@@ -204,6 +204,7 @@ model Coach {
   subscriptions       Subscription[]
   leads               Lead[]
   paymentLinks        PaymentLink[]
+  contentCategories   ContentCategory[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -214,13 +215,16 @@ model Coach {
 model ContentCategory {
   id          String   @id @default(uuid()) @db.Uuid
   name        String   @db.VarChar(100)
+  coachID     String?  @db.Uuid // Made optional for global categories
   description String?
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  coach       Coach?   @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
   contentPieces ContentPiece[]
 
-  @@unique([name])
+  @@unique([name, coachID])
+  @@index([coachID])
   @@map("content_categories")
 }
 
