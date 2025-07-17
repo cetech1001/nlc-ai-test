@@ -34,6 +34,9 @@ export const pageConfig = {
   'clients': {
     title: 'Clients',
   },
+  'client-retention': {
+    title: 'Client',
+  },
   'settings': {
     title: 'Account Settings',
   }
