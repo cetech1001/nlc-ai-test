@@ -1,5 +1,5 @@
 export const TemplatesSkeleton = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 px-2">
     {[...Array(6)].map((_, i) => (
       <div key={i} className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 animate-pulse">
         <div className="border-b border-neutral-700 pb-4 mb-4">

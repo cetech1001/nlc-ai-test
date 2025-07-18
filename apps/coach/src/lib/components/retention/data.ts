@@ -1,4 +1,4 @@
-import {EmailTemplate} from "@nlc-ai/types";
+import {Client, EmailTemplate} from "@nlc-ai/types";
 
 export const mockTemplates: EmailTemplate[] = [
   {
@@ -66,5 +66,62 @@ export const mockTemplates: EmailTemplate[] = [
     bodyTemplate: 'Hi Maria,\nThank you for reaching out! I\'m thrilled to hear that you\'re enjoying the course so far...',
     usageCount: 67,
     lastUsedAt: new Date('Mar 12, 2025')
+  }
+];
+
+export const mockClientData: Pick<Client, 'id' | 'firstName' | 'lastName' | 'email' | 'lastInteractionAt'>[] = [
+  {
+    id: '1',
+    firstName: 'Theresa',
+    lastName: 'Webb',
+    email: 'theresa.webb@email.com',
+    lastInteractionAt: new Date('Mar 26, 2025')
+  },
+  {
+    id: '2',
+    firstName: 'Darrell',
+    lastName: 'Steward',
+    email: 'darrell.steward@email.com',
+    lastInteractionAt: new Date('Feb 26, 2025')
+  },
+  {
+    id: '3',
+    firstName: 'Esther',
+    lastName: 'Howard',
+    email: 'esther.howard@email.com',
+    lastInteractionAt: new Date('Jan 26, 2025')
+  },
+  {
+    id: '4',
+    firstName: 'Guy',
+    lastName: 'Hawkins',
+    email: 'guy.hawkins@email.com',
+    lastInteractionAt: new Date('Dec 26, 2024')
+  },
+  {
+    id: '5',
+    firstName: 'Albert',
+    lastName: 'Flores',
+    email: 'albert.flores@email.com',
+    lastInteractionAt: new Date('Nov 26, 2024')
+  },
+  {
+    id: '6',
+    firstName: 'Kathryn',
+    lastName: 'Murphy',
+    email: 'kathryn.murphy@email.com',
+    lastInteractionAt: new Date('Oct 26, 2024')
+  },
+  {
+    id: '7',
+    firstName: 'Annette', lastName: 'Black', email: 'annette.black@email.com',
+    lastInteractionAt: new Date('Dec 26, 2024')
+  },
+  {
+    id: '8',
+    firstName: 'Ralph',
+    lastName: 'Edwards',
+    email: 'ralph.edwards@email.com',
+    lastInteractionAt: new Date('Nov 26, 2024')
   }
 ];
