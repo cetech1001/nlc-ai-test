@@ -22,11 +22,11 @@ export class CloudinaryService {
 
   async uploadAsset(
     file: Express.Multer.File,
-    options: CloudinaryUploadOptions = {}
+    options: CloudinaryUploadOptions & { resource_type?: 'image' | 'video' } = {}
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       const uploadOptions = {
-        resource_type: 'image' as const,
+        resource_type: options.resource_type || 'auto' as const,
         folder: options.folder || 'uploads',
         public_id: options.public_id,
         overwrite: options.overwrite || false,
@@ -47,8 +47,12 @@ export class CloudinaryService {
     });
   }
 
-  async deleteAsset(publicId: string): Promise<any> {
-    return cloudinary.uploader.destroy(publicId);
+  async deleteAsset(publicId: string, isVideo?: boolean): Promise<any> {
+    let options = {};
+    if (isVideo) {
+      options = { resource_type: 'video' }
+    }
+    return cloudinary.uploader.destroy(publicId, options);
   }
 
   getOptimizedUrl(publicId: string, transformations: any[] = []): string {

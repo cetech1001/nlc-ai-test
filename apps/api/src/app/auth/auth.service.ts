@@ -176,6 +176,7 @@ export class AuthService {
   async uploadAvatar(userID: string, userType: AUTH_ROLES, file: Express.Multer.File) {
     try {
       const result = await this.cloudinaryService.uploadAsset(file, {
+        resource_type: 'image',
         folder: `nlc-ai/avatars/${userType}s`,
         public_id: `${userID}_avatar`,
         overwrite: true,

@@ -209,7 +209,7 @@ export class ContentService {
     try {
       const uploadResult = await this.cloudinaryService.uploadAsset(file, {
         folder: `coaches/${coachID}/videos`,
-        resource_type: 'video' as any,
+        resource_type: 'video',
         public_id: `video_${Date.now()}`,
         overwrite: false
       });
@@ -282,7 +282,7 @@ export class ContentService {
 
     try {
       if (video.platformID && video.platform === 'cloudinary') {
-        await this.cloudinaryService.deleteAsset(video.platformID);
+        await this.cloudinaryService.deleteAsset(video.platformID, true);
       }
     } catch (error) {
       console.error('Failed to delete from Cloudinary:', error);
