@@ -151,9 +151,7 @@ const SubscriptionPlans = () => {
         <AlertBanner type="error" message={error} onDismiss={clearMessages} />
       )}
 
-      <PageHeader
-        title="Subscription Plans"
-      >
+      <PageHeader title="Subscription Plans">
         <div className="flex items-center gap-3">
           <Button
             onClick={handleCreateNewPlan}

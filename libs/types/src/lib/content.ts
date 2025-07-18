@@ -54,9 +54,9 @@ export interface ContentCategory {
   lastUpdated: string;
   totalViews: number;
   avgEngagement: number;
-  coachID: string;
+  coachID?: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface VideoContent {

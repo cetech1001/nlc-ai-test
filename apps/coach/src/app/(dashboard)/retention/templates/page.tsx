@@ -32,22 +32,22 @@ const RetentionTemplates = () => {
     setSearchQuery(query);
   };
 
-  const handleTemplateEdit = (templateId: string) => {
-    router.push(`/client-retention/template-editor`);
+  const handleTemplateEdit = (templateID: string) => {
+    router.push(`/retention/templates/editor/${templateID}`);
   };
 
-  const handleTemplateDuplicate = (templateId: string) => {
-    console.log('Duplicate template:', templateId);
+  const handleTemplateDuplicate = (templateID: string) => {
+    console.log('Duplicate template:', templateID);
   };
 
-  const handleTemplateDelete = (templateId: string) => {
+  const handleTemplateDelete = (templateID: string) => {
     if (confirm('Are you sure you want to delete this template?')) {
-      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      setTemplates(prev => prev.filter(t => t.id !== templateID));
     }
   };
 
   const handleCreateNew = () => {
-    router.push('/client-retention/template-editor');
+    router.push('/retention/templates/editor/new');
   };
 
   const handleFilterChange = (newFilters: FilterValues) => {

@@ -36,7 +36,7 @@ const EditPlan = () => {
       return;
     }
 
-    loadPlan(planID);
+    (() => loadPlan(planID))();
   }, [planID, router]);
 
   const loadPlan = async (id: string) => {
