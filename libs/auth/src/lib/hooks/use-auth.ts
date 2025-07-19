@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {LoginResponse} from "../types";
 import {authAPI} from "../api";
-import {AUTH_ROLES, UserType} from "@nlc-ai/types";
+import {AUTH_TYPES, UserType} from "@nlc-ai/types";
 
 interface AuthState {
   user: LoginResponse['user'] | null;
@@ -11,7 +11,7 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-export const useAuth = (role?: AUTH_ROLES) => {
+export const useAuth = (role?: AUTH_TYPES) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -22,7 +22,7 @@ export const useAuth = (role?: AUTH_ROLES) => {
     checkAuthStatus(role);
   }, [role]);
 
-  const checkAuthStatus = async (role?: AUTH_ROLES) => {
+  const checkAuthStatus = async (role?: AUTH_TYPES) => {
     try {
       if (!authState.isLoading) {
         setAuthState(prevState => ({
@@ -57,7 +57,7 @@ export const useAuth = (role?: AUTH_ROLES) => {
     email: string,
     password: string,
     rememberMe?: boolean,
-    userType?: AUTH_ROLES,
+    userType?: AUTH_TYPES,
   ) => {
     try {
       const response = await authAPI.login(email, password, rememberMe, userType);

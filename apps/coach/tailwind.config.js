@@ -9,6 +9,7 @@ module.exports = {
     '../../libs/auth/src/**/*.{ts,tsx}',
     '../../libs/ui/src/**/*.{ts,tsx}',
     '../../libs/shared/src/**/*.{ts,tsx}',
+    '../../libs/settings/src/**/*.{ts,tsx}',
   ],
   theme: {
     container: {

@@ -29,7 +29,7 @@ import {
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
-import {type AUTH_ROLES, UserType} from "@nlc-ai/types";
+import {type AUTH_TYPES, UserType} from "@nlc-ai/types";
 import type {Response, Request} from 'express';
 import {FileInterceptor} from "@nestjs/platform-express";
 
@@ -51,7 +51,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body() loginDto: LoginDto,
-    @Query('type') type: AUTH_ROLES = UserType.coach
+    @Query('type') type: AUTH_TYPES = UserType.coach
   ) {
     if (type === 'admin') {
       return this.authService.loginAdmin(loginDto);
@@ -109,7 +109,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Verification code sent' })
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
-    @Query('type') type: AUTH_ROLES = UserType.coach
+    @Query('type') type: AUTH_TYPES = UserType.coach
   ) {
     return this.authService.forgotPassword(forgotPasswordDto, type);
   }
@@ -143,7 +143,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
-    @Query('type') type: AUTH_ROLES = UserType.coach
+    @Query('type') type: AUTH_TYPES = UserType.coach
   ) {
     return this.authService.resetPassword(resetPasswordDto, type);
   }
@@ -170,7 +170,7 @@ export class AuthController {
       callback(null, true);
     },
   }))
-  async uploadAvatar(@Req() req: { user: { id: string; type: AUTH_ROLES } }, @UploadedFile() file: Express.Multer.File) {
+  async uploadAvatar(@Req() req: { user: { id: string; type: AUTH_TYPES } }, @UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
@@ -186,7 +186,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile(@Req() req: { user: { id: string; type: AUTH_ROLES } }) {
+  async getProfile(@Req() req: { user: { id: string; type: AUTH_TYPES } }) {
     const { id, type } = req.user;
     return this.authService.findUserByID(id, type);
   }
@@ -200,7 +200,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async updateProfile(
-    @Req() req: { user: { id: string; type: AUTH_ROLES } },
+    @Req() req: { user: { id: string; type: AUTH_TYPES } },
     @Body() updateProfileDto: UpdateProfileDto
   ) {
     const { id, type } = req.user;
@@ -215,7 +215,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid password format' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updatePassword(
-    @Req() req: { user: { id: string; type: AUTH_ROLES } },
+    @Req() req: { user: { id: string; type: AUTH_TYPES } },
     @Body() updatePasswordDto: UpdatePasswordDto
   ) {
     const { id, type } = req.user;

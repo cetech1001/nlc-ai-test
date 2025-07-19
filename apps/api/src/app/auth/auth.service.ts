@@ -7,7 +7,7 @@ import { TokenService } from './services/token.service';
 import { CloudinaryService } from "../cloudinary/cloudinary.service";
 
 import {
-  AUTH_ROLES, ForgotPasswordRequest,
+  AUTH_TYPES, ForgotPasswordRequest,
   LoginRequest,
   RegistrationRequest, ResetPasswordRequest,
   UpdatePasswordRequest,
@@ -173,7 +173,7 @@ export class AuthService {
     return admin;
   }
 
-  async uploadAvatar(userID: string, userType: AUTH_ROLES, file: Express.Multer.File) {
+  async uploadAvatar(userID: string, userType: AUTH_TYPES, file: Express.Multer.File) {
     try {
       const result = await this.cloudinaryService.uploadAsset(file, {
         resource_type: 'image',
@@ -209,7 +209,7 @@ export class AuthService {
     }
   }
 
-  async updateProfile(userID: string, userType: AUTH_ROLES, updateProfileDto: UpdateProfileRequest) {
+  async updateProfile(userID: string, userType: AUTH_TYPES, updateProfileDto: UpdateProfileRequest) {
     const { firstName, lastName, email } = updateProfileDto;
 
     if (userType === UserType.coach) {
@@ -284,7 +284,7 @@ export class AuthService {
     }
   }
 
-  async updatePassword(userID: string, userType: AUTH_ROLES, updatePasswordDto: UpdatePasswordRequest) {
+  async updatePassword(userID: string, userType: AUTH_TYPES, updatePasswordDto: UpdatePasswordRequest) {
     const { newPassword } = updatePasswordDto;
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
@@ -310,7 +310,7 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordRequest, userType: AUTH_ROLES) {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordRequest, userType: AUTH_TYPES) {
     const { email } = forgotPasswordDto;
 
     let user;
@@ -380,7 +380,7 @@ export class AuthService {
     }
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordRequest, userType: AUTH_ROLES) {
+  async resetPassword(resetPasswordDto: ResetPasswordRequest, userType: AUTH_TYPES) {
     const { token, password } = resetPasswordDto;
 
     const email = await this.tokenService.validateResetToken(token);
@@ -423,7 +423,7 @@ export class AuthService {
     }
   }
 
-  async findUserByID(id: string, type: AUTH_ROLES) {
+  async findUserByID(id: string, type: AUTH_TYPES) {
     if (type === UserType.coach) {
       return this.prisma.coach.findUnique({
         where: { id, isActive: true },

@@ -3,7 +3,7 @@ export enum UserType {
   coach = 'coach'
 }
 
-export type AUTH_ROLES = 'admin' | 'coach';
+export type AUTH_TYPES = 'admin' | 'coach';
 
 export interface LoginRequest {
   email: string;
