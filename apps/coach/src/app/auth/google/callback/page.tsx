@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@nlc-ai/auth';
 import {UserType} from "@nlc-ai/types";
 
-const AuthCallbackPage = () => {
+const GoogleAuthCallbackPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { checkAuthStatus } = useAuth();
@@ -36,4 +36,4 @@ const AuthCallbackPage = () => {
   );
 };
 
-export default AuthCallbackPage;
+export default GoogleAuthCallbackPage;

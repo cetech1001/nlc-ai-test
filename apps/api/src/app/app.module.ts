@@ -14,6 +14,8 @@ import { SystemSettingsModule } from './system-settings/system-settings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ClientsModule } from './clients/clients.module';
 import { ContentModule } from './content/content.module';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { OauthModule } from './oauth/oauth.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { ContentModule } from './content/content.module';
     PaymentsModule,
     ClientsModule,
     ContentModule,
+    IntegrationsModule,
+    OauthModule,
   ],
   providers: [
     {

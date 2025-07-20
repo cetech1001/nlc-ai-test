@@ -96,7 +96,7 @@ export class AuthController {
     const result = await this.googleAuthService.googleAuth(req.user);
 
     const frontendUrl = this.configService.get<string>('COACH_PLATFORM_URL');
-    const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}`;
+    const redirectUrl = `${frontendUrl}/auth/google/callback?token=${result.access_token}`;
 
     res.redirect(redirectUrl);
   }

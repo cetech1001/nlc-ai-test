@@ -6,6 +6,12 @@
       "path": "../types"
     },
     {
+      "path": "../ui"
+    },
+    {
+      "path": "../api-client"
+    },
+    {
       "path": "./tsconfig.lib.json"
     }
   ],

@@ -79,6 +79,7 @@ export class GoogleAuthService {
         lastName: existingUser.lastName,
         businessName: existingUser.businessName,
         isVerified: existingUser.isVerified,
+        avatarUrl: existingUser.avatarUrl,
       },
     };
   }

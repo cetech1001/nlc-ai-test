@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import {Integration} from "@nlc-ai/types";
 
 export interface BaseIntegration {
   id: string;
@@ -12,7 +13,7 @@ export interface BaseIntegration {
   updatedAt: Date;
 }
 
-export interface SocialIntegration extends BaseIntegration {
+export interface SocialIntegration extends Integration {
   accessToken?: string;
   refreshToken?: string;
   tokenExpiresAt?: Date;
@@ -112,15 +113,13 @@ export interface ProfileFormErrors {
   photo?: string;
 }
 
-export type SocialPlatform = 'facebook' | 'instagram' | 'youtube' | 'twitter' | 'tiktok' | 'linkedin';
+export type SocialPlatform = 'facebook' | 'instagram' | 'youtube' | 'twitter' | 'tiktok' | 'linkedin' | 'calendly';
 export type CoursePlatform = 'kajabi' | 'skool' | 'thinkific' | 'teachable';
 
 export interface SocialPlatformConfig {
   name: string;
   icon: ReactNode;
   color: string;
-  authUrl: string;
-  scopes: string[];
 }
 
 export interface CoursePlatformConfig {
