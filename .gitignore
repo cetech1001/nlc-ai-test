@@ -55,7 +55,7 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*
 .config/
 
-.github/
+#.github/
 
 build-docker.sh
 deploy-render.sh
