@@ -4,6 +4,7 @@ import { FC, useState, useEffect } from 'react';
 import { Camera, Eye, EyeOff, X, Upload } from 'lucide-react';
 import { useSettings } from '../context/settings.context';
 import { ProfileFormData, PasswordFormData, ProfileFormErrors } from '../types/settings.types';
+import {ProfileSectionSkeleton} from "./skeletons";
 
 interface ProfileSectionProps {
   onUpdateProfile: (data: ProfileFormData) => Promise<void>;
@@ -248,12 +249,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
   };
 
   if (isLoading) {
-    return (
-      <div className="animate-pulse">
-        <div className="bg-[#2A2A2A] h-64 rounded-2xl mb-8"></div>
-        <div className="bg-[#2A2A2A] h-96 rounded-2xl"></div>
-      </div>
-    );
+    return <ProfileSectionSkeleton/>;
   }
 
   return (

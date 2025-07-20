@@ -5,14 +5,12 @@ import {
   Settings,
   Trash2,
   Plus,
-  Calendar,
   LinkIcon,
 } from 'lucide-react';
 import { SocialIntegration, SocialPlatform, SocialPlatformConfig, CalendlyIntegration } from '../../types/settings.types';
 import { useSettings } from '../../context/settings.context';
 import { integrationsAPI } from '@nlc-ai/api-client';
-import {Skeleton} from "@nlc-ai/ui";
-
+import { SocialIntegrationsSkeleton } from '../skeletons';
 
 interface SocialIntegrationsProps {
   onConnectSocial: (platform: SocialPlatform, authData: any) => Promise<SocialIntegration>;
@@ -58,7 +56,7 @@ const socialPlatforms: Record<SocialPlatform, SocialPlatformConfig> = {
   },
   calendly: {
     name: 'Calendly',
-    icon: <Calendar className="w-6 h-6 text-white" />,
+    icon: <img src={"/images/icons/calendly-icon.png"} alt={"Calendly Icon"}/>,
     color: 'from-blue-700 to-blue-800',
   },
 };
@@ -72,7 +70,6 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
   const { setError, setSuccess } = useSettings();
 
   const [socialIntegrations, setSocialIntegrations] = useState<SocialIntegration[]>([]);
-
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -149,13 +146,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
   };
 
   if (isLoading && socialIntegrations.length === 0) {
-    return (
-      <div className="animate-pulse space-y-8">
-        <Skeleton className={"h-64 rounded-2xl"}/>
-        <Skeleton className={"h-64 rounded-2xl"}/>
-        <Skeleton className={"h-64 rounded-2xl"}/>
-      </div>
-    );
+    return <SocialIntegrationsSkeleton />;
   }
 
   return (
@@ -167,9 +158,13 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
       </div>
 
       {/* Social Media Integrations */}
-      <div className="relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-300"></div>
-        <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl p-8">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 lg:p-7 overflow-hidden">
+        {/* Background glow orb - matching stat-card.tsx exactly */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+        </div>
+
+        <div className="relative z-10">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between mb-6">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center">
@@ -177,7 +172,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-white mb-1">Apps & Integrations</h3>
-                <p className="text-[#A0A0A0] text-sm">
+                <p className="text-stone-400 text-sm">
                   Connect your social media and workflow accounts to sync content and analyze performance
                 </p>
               </div>
@@ -199,7 +194,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                   const platformConfig = socialPlatforms[integration.platformName as SocialPlatform];
                   const profileData = integration.config as any;
                   return (
-                    <div key={integration.id} className="bg-[#2A2A2A]/50 border border-[#3A3A3A] rounded-xl p-6">
+                    <div key={integration.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
                       <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 bg-gradient-to-br ${platformConfig?.color || 'from-gray-500 to-gray-600'} rounded-full flex items-center justify-center text-lg`}>
@@ -213,12 +208,12 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                                 <span className="text-green-400 text-xs font-medium">Connected</span>
                               </div>
                             </div>
-                            <div className="text-[#A0A0A0] text-sm">
+                            <div className="text-stone-400 text-sm">
                               @{profileData?.username || profileData?.name || 'Unknown'}
                               {profileData?.followerCount && ` • ${profileData.followerCount.toLocaleString()} followers`}
                             </div>
                             {integration.lastSyncAt && (
-                              <div className="text-[#666] text-xs">
+                              <div className="text-stone-500 text-xs">
                                 Last synced: {new Date(integration.lastSyncAt).toLocaleDateString()}
                               </div>
                             )}
@@ -234,7 +229,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                           <button
                             onClick={() => handleTestSocial(integration)}
                             disabled={isLoading}
-                            className="border border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-blue-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+                            className="border border-neutral-700 text-stone-300 hover:text-white hover:border-blue-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
                           >
                             <Settings className="w-4 h-4" />
                             Test
@@ -242,7 +237,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                           {profileData?.profileUrl && (
                             <button
                               onClick={() => window.open(profileData.profileUrl, '_blank')}
-                              className="border border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+                              className="border border-neutral-700 text-stone-300 hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
                             >
                               <ExternalLink className="w-4 h-4" />
                               View
@@ -272,26 +267,24 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
               {getAvailablePlatforms().map((platform) => {
                 const config = socialPlatforms[platform];
                 return (
-                  <div key={platform} className="relative group">
-                    <div className="bg-[#2A2A2A]/50 border border-[#3A3A3A] rounded-xl p-6 hover:border-violet-500/50 transition-colors">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className={`w-10 h-10 bg-gradient-to-br ${config.color} rounded-lg flex items-center justify-center text-lg`}>
-                          {config.icon}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-white font-medium text-sm">{config.name}</div>
-                          <div className="text-[#A0A0A0] text-xs">Not connected</div>
-                        </div>
+                  <div key={platform} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 hover:border-violet-500/50 transition-colors">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className={`w-10 h-10 bg-gradient-to-br ${config.color} rounded-lg flex items-center justify-center text-lg`}>
+                        {config.icon}
                       </div>
-                      <button
-                        onClick={() => handleSocialConnect(platform)}
-                        disabled={isLoading}
-                        className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Connect
-                      </button>
+                      <div className="flex-1">
+                        <div className="text-white font-medium text-sm">{config.name}</div>
+                        <div className="text-stone-400 text-xs">Not connected</div>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleSocialConnect(platform)}
+                      disabled={isLoading}
+                      className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Connect
+                    </button>
                   </div>
                 );
               })}
@@ -300,7 +293,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
               <div className="text-center py-8">
                 <div className="text-green-400 text-lg mb-2">🎉</div>
                 <p className="text-white font-medium">All platforms connected!</p>
-                <p className="text-[#A0A0A0] text-sm">You've connected all available social media platforms.</p>
+                <p className="text-stone-400 text-sm">You've connected all available social media platforms.</p>
               </div>
             )}
           </div>

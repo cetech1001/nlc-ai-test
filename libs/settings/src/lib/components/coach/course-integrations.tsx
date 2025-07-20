@@ -2,6 +2,7 @@ import { FC, useState, useEffect } from 'react';
 import { Check, Settings, Trash2, Plus, AlertCircle, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { CourseIntegration, CoursePlatform, CoursePlatformConfig } from '../../types/settings.types';
 import { useSettings } from '../../context/settings.context';
+import { CourseIntegrationsSkeleton } from '../skeletons';
 
 interface CourseIntegrationsProps {
   onConnectCourse: (platform: CoursePlatform, credentials: any) => Promise<CourseIntegration>;
@@ -174,11 +175,7 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
   };
 
   if (isLoading && courseIntegrations.length === 0) {
-    return (
-      <div className="animate-pulse">
-        <div className="bg-[#2A2A2A] h-64 rounded-2xl"></div>
-      </div>
-    );
+    return <CourseIntegrationsSkeleton />;
   }
 
   return (
@@ -186,13 +183,17 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Course Integrations</h1>
-        <p className="text-[#A0A0A0]">Connect your course platforms to sync student data and track engagement</p>
+        <p className="text-stone-400">Connect your course platforms to sync student data and track engagement</p>
       </div>
 
       {/* Main Integration Card */}
-      <div className="relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-300"></div>
-        <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl p-8">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 lg:p-7 overflow-hidden">
+        {/* Background glow orb - matching stat-card.tsx exactly */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+        </div>
+
+        <div className="relative z-10">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between mb-6">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center">
@@ -200,7 +201,7 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-white mb-1">Course Platform Integrations</h3>
-                <p className="text-[#A0A0A0] text-sm">
+                <p className="text-stone-400 text-sm">
                   Connect your course platforms to track student progress and automate engagement
                 </p>
               </div>
@@ -230,7 +231,7 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                 {courseIntegrations.map((integration) => {
                   const platformConfig = coursePlatforms[integration.platform as CoursePlatform];
                   return (
-                    <div key={integration.id} className="bg-[#2A2A2A]/50 border border-[#3A3A3A] rounded-xl p-6">
+                    <div key={integration.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
                       <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 bg-gradient-to-br ${platformConfig.color} rounded-full flex items-center justify-center text-lg`}>
@@ -246,13 +247,13 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                                 </div>
                               )}
                             </div>
-                            <div className="text-[#A0A0A0] text-sm">
+                            <div className="text-stone-400 text-sm">
                               {integration.config?.subdomain && `${integration.config.subdomain}.${integration.platform}.com`}
                               {integration.config?.schoolUrl && integration.config.schoolUrl}
                               {integration.config?.communityUrl && integration.config.communityUrl}
                             </div>
                             {integration.lastSyncAt && (
-                              <div className="text-[#666] text-xs">
+                              <div className="text-stone-500 text-xs">
                                 Last synced: {new Date(integration.lastSyncAt).toLocaleDateString()}
                               </div>
                             )}
@@ -268,14 +269,14 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                           <button
                             onClick={() => handleTestCourse(integration)}
                             disabled={isLoading}
-                            className="border border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-blue-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+                            className="border border-neutral-700 text-stone-300 hover:text-white hover:border-blue-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
                           >
                             <Settings className="w-4 h-4" />
                             Test
                           </button>
                           <button
                             onClick={() => startEdit(integration)}
-                            className="border border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm"
+                            className="border border-neutral-700 text-stone-300 hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm"
                           >
                             Edit
                           </button>
@@ -298,18 +299,18 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
 
           {/* Available Platforms Grid */}
           {courseIntegrations.length === 0 && (
-            <div>
+            <div className="mb-8">
               <h4 className="text-white font-medium mb-4">Available Platforms</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {Object.entries(coursePlatforms).map(([platform, config]) => (
-                  <div key={platform} className="bg-[#2A2A2A]/50 border border-[#3A3A3A] rounded-xl p-6 hover:border-violet-500/50 transition-colors">
+                  <div key={platform} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 hover:border-violet-500/50 transition-colors">
                     <div className="flex items-center gap-4 mb-4">
                       <div className={`w-12 h-12 bg-gradient-to-br ${config.color} rounded-xl flex items-center justify-center text-xl`}>
                         {config.icon}
                       </div>
                       <div className="flex-1">
                         <div className="text-white font-medium">{config.name}</div>
-                        <div className="text-[#A0A0A0] text-sm">Student management & analytics</div>
+                        <div className="text-stone-400 text-sm">Student management & analytics</div>
                       </div>
                     </div>
                     <button
@@ -329,24 +330,24 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
           )}
 
           {/* Benefits Section */}
-          <div className="mt-8 bg-[#2A2A2A]/30 border border-[#3A3A3A] rounded-xl p-6">
+          <div className="bg-neutral-800/30 border border-neutral-700 rounded-xl p-6">
             <h4 className="text-white font-medium mb-4">What you can do with course integrations:</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-violet-400 rounded-full"></div>
-                <span className="text-[#A0A0A0] text-sm">Track student progress automatically</span>
+                <span className="text-stone-400 text-sm">Track student progress automatically</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-violet-400 rounded-full"></div>
-                <span className="text-[#A0A0A0] text-sm">Send automated engagement emails</span>
+                <span className="text-stone-400 text-sm">Send automated engagement emails</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-violet-400 rounded-full"></div>
-                <span className="text-[#A0A0A0] text-sm">Identify at-risk students early</span>
+                <span className="text-stone-400 text-sm">Identify at-risk students early</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-violet-400 rounded-full"></div>
-                <span className="text-[#A0A0A0] text-sm">Generate completion certificates</span>
+                <span className="text-stone-400 text-sm">Generate completion certificates</span>
               </div>
             </div>
           </div>
@@ -356,12 +357,12 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
       {/* Add/Edit Integration Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1A1A1A] border border-[#3A3A3A] rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-white mb-2">
                 {editingIntegration ? `Edit ${coursePlatforms[selectedPlatform].name}` : `Connect ${coursePlatforms[selectedPlatform].name}`}
               </h3>
-              <p className="text-[#A0A0A0] text-sm">
+              <p className="text-stone-400 text-sm">
                 Enter your {coursePlatforms[selectedPlatform].name} credentials to connect your course platform.
               </p>
             </div>
@@ -379,7 +380,7 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                       setSelectedPlatform(e.target.value as CoursePlatform);
                       setFormData({});
                     }}
-                    className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                   >
                     {getAvailablePlatforms().map(platform => (
                       <option key={platform} value={platform}>
@@ -403,14 +404,14 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                       value={formData[field.name] || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
                       placeholder={field.placeholder}
-                      className="w-full px-4 py-3 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 pr-12"
+                      className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-violet-500 pr-12"
                       disabled={isLoading}
                     />
                     {field.type === 'password' && (
                       <button
                         type="button"
                         onClick={() => togglePasswordVisibility(field.name)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-white transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white transition-colors"
                         disabled={isLoading}
                       >
                         {showPassword[field.name] ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -421,12 +422,12 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
               ))}
 
               {/* Help Text */}
-              <div className="bg-[#2A2A2A]/50 border border-[#3A3A3A] rounded-lg p-4">
+              <div className="bg-neutral-800/50 border border-neutral-700 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="text-white font-medium mb-2 text-sm">How to get your {coursePlatforms[selectedPlatform].name} credentials:</h4>
-                    <div className="text-[#A0A0A0] text-xs space-y-1">
+                    <div className="text-stone-400 text-xs space-y-1">
                       {selectedPlatform === 'kajabi' && (
                         <>
                           <div>1. Go to Settings → Integrations in your Kajabi dashboard</div>
@@ -463,7 +464,7 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                 <button
                   onClick={resetForm}
                   disabled={isLoading}
-                  className="flex-1 border border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-[#555] py-3 px-4 rounded-lg transition-colors"
+                  className="flex-1 border border-neutral-700 text-stone-300 hover:text-white hover:border-neutral-500 py-3 px-4 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>

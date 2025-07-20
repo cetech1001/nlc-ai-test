@@ -3,7 +3,6 @@
 import { Settings } from "@nlc-ai/settings";
 import { authAPI } from "@nlc-ai/auth";
 import { integrationsAPI } from "@nlc-ai/api-client";
-import { coachCalendlyAPI } from "@nlc-ai/api-client";
 import { PasswordFormData, UpdateProfileRequest } from "@nlc-ai/types";
 
 const CoachSettings = () => {
@@ -38,23 +37,6 @@ const CoachSettings = () => {
 
   const getSocialIntegrations = () => {
     return integrationsAPI.getSocialIntegrations();
-  }
-
-  // Coach Calendly Handlers
-  const handleSaveCoachCalendly = async (accessToken: string) => {
-    return coachCalendlyAPI.saveCalendlySettings(accessToken);
-  }
-
-  const handleDeleteCoachCalendly = async () => {
-    await coachCalendlyAPI.deleteCalendlySettings();
-  }
-
-  const handleTestCoachCalendly = async () => {
-    await coachCalendlyAPI.testCalendlyConnection();
-  }
-
-  const getCoachCalendlySettings = () => {
-    return coachCalendlyAPI.getCalendlySettings();
   }
 
   // Mock handlers for course integrations (to be implemented later)
@@ -96,12 +78,6 @@ const CoachSettings = () => {
       disconnectSocial={handleDisconnectSocial}
       testSocial={handleTestSocial}
       getSocialIntegrations={getSocialIntegrations}
-
-      // Coach Calendly props
-      saveCoachCalendly={handleSaveCoachCalendly}
-      deleteCoachCalendly={handleDeleteCoachCalendly}
-      testCoachCalendly={handleTestCoachCalendly}
-      getCoachCalendlySettings={getCoachCalendlySettings}
 
       // Course integration props (placeholder)
       connectCourse={handleConnectCourse}
