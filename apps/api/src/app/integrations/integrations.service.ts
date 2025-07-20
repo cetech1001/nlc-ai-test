@@ -73,8 +73,8 @@ export class IntegrationsService {
         redirectUri: this.configService.get('TIKTOK_REDIRECT_URI', ''),
         scope: ['user.info.basic'],
         authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
-        tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token',
-        profileUrl: 'https://api.linkedin.com/v2/me',
+        tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
+        profileUrl: 'https://open.tiktokapis.com/v2/user/info/',
       },
       calendly: {
         clientID: this.configService.get('CALENDLY_CLIENT_ID', ''),
@@ -120,9 +120,19 @@ export class IntegrationsService {
     // Generate a unique state parameter for CSRF protection
     const state = `${coachID}$${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+    let param = {};
+    if (platform === 'tiktok') {
+      param = {
+        client_key: config.clientID,
+      };
+    } else {
+      param = {
+        client_id: config.clientID,
+      };
+    }
+
     const params = new URLSearchParams({
-      client_id: config.clientID,
-      client_key: config.clientID,
+      ...param,
       redirect_uri: config.redirectUri,
       scope: config.scope.join(' '),
       response_type: 'code',
