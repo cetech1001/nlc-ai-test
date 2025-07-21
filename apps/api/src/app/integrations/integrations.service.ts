@@ -525,8 +525,26 @@ export class IntegrationsService {
           profilePictureUrl: rawData.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier,
         };
 
+      case 'tiktok':
+        return {
+          id: rawData.user?.open_id,
+          username: rawData.user?.username,
+          name: rawData.user?.display_name,
+          profileUrl: rawData?.user?.profile_deep_link,
+          profilePictureUrl: rawData.user?.avatar_url,
+          followerCount: rawData.user?.follower_count,
+        };
+
       case 'calendly':
-        return rawData.resource;
+        return {
+          id: rawData.resource?.alexemerie7,
+          name: rawData.resource?.name,
+          profileUrl: rawData?.resource?.scheduling_url,
+          profilePictureUrl: rawData.resource?.avatar_url,
+          locale: rawData.resource?.locale,
+          timezone: rawData.resource?.timezone,
+          uri: rawData.resource?.uri,
+        };
 
       default:
         return rawData;
