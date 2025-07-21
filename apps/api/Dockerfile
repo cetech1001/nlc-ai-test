@@ -11,6 +11,7 @@ COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/api/prisma/schema.prisma ./apps/api/prisma/
+COPY libs ./libs
 
 # Install ALL dependencies (including devDependencies for building)
 RUN npm ci --only=production && npm cache clean --force
@@ -42,6 +43,7 @@ COPY package*.json ./
 COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
+COPY libs ./libs
 
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force
