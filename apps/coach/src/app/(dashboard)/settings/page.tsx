@@ -1,11 +1,39 @@
 'use client'
 
+import {useEffect, useState} from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Settings } from "@nlc-ai/settings";
 import { authAPI } from "@nlc-ai/auth";
 import { integrationsAPI } from "@nlc-ai/api-client";
 import { PasswordFormData, UpdateProfileRequest } from "@nlc-ai/types";
 
 const CoachSettings = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState('profile');
+
+  // Initialize active tab from URL parameters
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (tabID: string) => {
+    setActiveTab(tabID);
+
+    // Update URL parameters
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    current.set('tab', tabID);
+
+    // Use replace to avoid adding to history stack
+    const search = current.toString();
+    const query = search ? `?${search}` : '';
+    router.replace(`${window.location.pathname}${query}`, { scroll: false });
+  };
+
   const handleUpdateProfile = async (payload: UpdateProfileRequest) => {
     await authAPI.updateProfile(payload);
   }
@@ -68,6 +96,8 @@ const CoachSettings = () => {
   return (
     <Settings
       userType="coach"
+      activeTab={activeTab}
+      handleTabChange={handleTabChange}
       getProfile={getProfile}
       updateProfile={handleUpdateProfile}
       updatePassword={handleUpdatePassword}

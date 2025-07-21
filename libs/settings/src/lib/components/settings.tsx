@@ -1,5 +1,4 @@
-import { FC, useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { FC } from 'react';
 import { SettingsProvider, useSettings } from '../context/settings.context';
 import { SettingsTabs } from './settings-tabs';
 import { AlertMessages } from './alert-messages';
@@ -11,6 +10,8 @@ import { ProfileFormData, PasswordFormData } from '../types/settings.types';
 
 interface SettingsProps {
   userType: 'admin' | 'coach';
+  activeTab: string;
+  handleTabChange: (tabID: string) => void;
 
   // Profile functions
   getProfile: () => Promise<any>;
@@ -48,63 +49,40 @@ interface SettingsProps {
 }
 
 const SettingsContent: FC<SettingsProps> = ({
-                                              userType,
-                                              updateProfile,
-                                              updatePassword,
-                                              uploadAvatar,
+  userType,
+  activeTab,
+  handleTabChange,
+  updateProfile,
+  updatePassword,
+  uploadAvatar,
 
-                                              // Admin functions
-                                              saveCalendlySettings,
-                                              deleteCalendlySettings,
-                                              testCalendlyConnection,
-                                              saveEmailProvider,
-                                              deleteEmailProvider,
-                                              setDefaultEmailProvider,
-                                              testEmailProvider,
-                                              getCalendlySettings,
-                                              getEmailProviders,
+  // Admin functions
+  saveCalendlySettings,
+  deleteCalendlySettings,
+  testCalendlyConnection,
+  saveEmailProvider,
+  deleteEmailProvider,
+  setDefaultEmailProvider,
+  testEmailProvider,
+  getCalendlySettings,
+  getEmailProviders,
 
-                                              // Coach functions
-                                              connectSocial,
-                                              disconnectSocial,
-                                              testSocial,
-                                              connectCourse,
-                                              disconnectCourse,
-                                              testCourse,
-                                              updateCourse,
-                                              getSocialIntegrations,
-                                              getCourseIntegrations,
-                                              saveCoachCalendly,
-                                              deleteCoachCalendly,
-                                              testCoachCalendly,
-                                              getCoachCalendlySettings,
-                                            }) => {
+  // Coach functions
+  connectSocial,
+  disconnectSocial,
+  testSocial,
+  connectCourse,
+  disconnectCourse,
+  testCourse,
+  updateCourse,
+  getSocialIntegrations,
+  getCourseIntegrations,
+  saveCoachCalendly,
+  deleteCoachCalendly,
+  testCoachCalendly,
+  getCoachCalendlySettings,
+}) => {
   const { error, success, refreshProfile } = useSettings();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState('profile');
-
-  // Initialize active tab from URL parameters
-  useEffect(() => {
-    const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [searchParams]);
-
-  // Update URL when tab changes
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
-
-    // Update URL parameters
-    const current = new URLSearchParams(Array.from(searchParams.entries()));
-    current.set('tab', tabId);
-
-    // Use replace to avoid adding to history stack
-    const search = current.toString();
-    const query = search ? `?${search}` : '';
-    router.replace(`${window.location.pathname}${query}`, { scroll: false });
-  };
 
   const handleUpdateProfile = async (data: ProfileFormData) => {
     await updateProfile(data);

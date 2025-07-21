@@ -24,8 +24,8 @@ export class IntegrationsService {
   ) {
     this.platformConfigs = {
       facebook: {
-        clientID: this.configService.get('FACEBOOK_CLIENT_ID', ''),
-        clientSecret: this.configService.get('FACEBOOK_CLIENT_SECRET', ''),
+        clientID: this.configService.get('META_CLIENT_ID', ''),
+        clientSecret: this.configService.get('META_CLIENT_SECRET', ''),
         redirectUri: this.configService.get('FACEBOOK_REDIRECT_URI', ''),
         scope: ['pages_read_engagement', 'pages_show_list', 'instagram_basic'],
         authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
@@ -33,8 +33,8 @@ export class IntegrationsService {
         profileUrl: 'https://graph.facebook.com/v18.0/me',
       },
       instagram: {
-        clientID: this.configService.get('INSTAGRAM_CLIENT_ID', ''),
-        clientSecret: this.configService.get('INSTAGRAM_CLIENT_SECRET', ''),
+        clientID: this.configService.get('META_CLIENT_ID', ''),
+        clientSecret: this.configService.get('META_CLIENT_SECRET', ''),
         redirectUri: this.configService.get('INSTAGRAM_REDIRECT_URI', ''),
         scope: ['instagram_basic', 'instagram_content_publish'],
         authUrl: 'https://api.instagram.com/oauth/authorize',
@@ -63,7 +63,7 @@ export class IntegrationsService {
         clientID: this.configService.get('LINKEDIN_CLIENT_ID', ''),
         clientSecret: this.configService.get('LINKEDIN_CLIENT_SECRET', ''),
         redirectUri: this.configService.get('LINKEDIN_REDIRECT_URI', ''),
-        scope: ['r_liteprofile', 'r_organization_social'],
+        scope: ['r_liteprofile'],
         authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
         tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
         profileUrl: 'https://api.linkedin.com/v2/me',
@@ -122,22 +122,28 @@ export class IntegrationsService {
     const state = `${coachID}$${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     let param = {};
+
     if (platform === 'tiktok') {
       param = {
+        ...param,
         client_key: config.clientID,
-      };
-    } else {
-      param = {
-        client_id: config.clientID,
       };
     }
 
+    if (platform === 'linkedin') {
+      param = {
+        ...param,
+        scope: config.scope.join(' '),
+      }
+    }
+
     const params = new URLSearchParams({
-      ...param,
+      client_id: config.clientID,
+      scope: config.scope.join(','),
       redirect_uri: config.redirectUri,
-      scope: config.scope.join(' '),
       response_type: 'code',
       state,
+      ...param,
     });
 
     // Platform-specific parameters
@@ -148,7 +154,7 @@ export class IntegrationsService {
 
     const authUrl = `${config.authUrl}?${params.toString()}`;
 
-    this.logger.log("Auth URL: ", authUrl);
+    this.logger.log(`Auth URL: ${authUrl }`);
 
     return { authUrl, state };
   }
@@ -163,6 +169,9 @@ export class IntegrationsService {
     if (!config) {
       throw new BadRequestException(`Unsupported platform: ${platform}`);
     }
+
+    this.logger.log(`Platform: ${platform}`);
+    this.logger.log(`Code: ${code}`);
 
     // Verify state parameter for CSRF protection
     if (state && !state.startsWith(coachID)) {
@@ -399,12 +408,16 @@ export class IntegrationsService {
 
   private async exchangeCodeForToken(platform: string, code: string, config: SocialPlatformConfig): Promise<any> {
     let param = {};
+
     if (platform === 'tiktok') {
-      param = {client_key: config.clientID};
-    } else {
-      param = {client_id: config.clientID};
+      param = {
+        ...param,
+        client_key: config.clientID
+      };
     }
+
     const params = new URLSearchParams({
+      client_id: config.clientID,
       grant_type: 'authorization_code',
       client_secret: config.clientSecret,
       redirect_uri: config.redirectUri,
@@ -449,7 +462,7 @@ export class IntegrationsService {
       profileUrl += '?user.fields=username,name,public_metrics,profile_image_url';
     } else if (platform === 'linkedin') {
       // LinkedIn has a different API structure
-      headers['Authorization'] = `Bearer ${accessToken}`;
+      // headers['Authorization'] = `Bearer ${accessToken}`;
     } else if (platform === 'tiktok') {
       const fields = [
         'open_id', 'union_id', 'avatar_url', 'display_name',
@@ -460,6 +473,8 @@ export class IntegrationsService {
     }
 
     const response = await fetch(profileUrl, { headers });
+
+    console.log("Profile data: ", response);
 
     if (!response.ok) {
       const error = await response.text();
