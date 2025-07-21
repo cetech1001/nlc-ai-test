@@ -72,7 +72,7 @@ export class IntegrationsService {
         clientID: this.configService.get('TIKTOK_CLIENT_ID', ''),
         clientSecret: this.configService.get('TIKTOK_CLIENT_SECRET', ''),
         redirectUri: this.configService.get('TIKTOK_REDIRECT_URI', ''),
-        scope: ['user.info.basic'],
+        scope: ['user.info.basic', 'user.info.profile', 'user.info.stats'],
         authUrl: 'https://www.tiktok.com/v2/auth/authorize/',
         tokenUrl: 'https://open.tiktokapis.com/v2/oauth/token/',
         profileUrl: 'https://open.tiktokapis.com/v2/user/info/',
@@ -450,6 +450,13 @@ export class IntegrationsService {
     } else if (platform === 'linkedin') {
       // LinkedIn has a different API structure
       headers['Authorization'] = `Bearer ${accessToken}`;
+    } else if (platform === 'tiktok') {
+      const fields = [
+        'open_id', 'union_id', 'avatar_url', 'display_name',
+        'username', 'follower_count', 'following_count', 'likes_count',
+        'video_count'
+      ];
+      profileUrl += `?fields=${fields.join(',')}`;
     }
 
     const response = await fetch(profileUrl, { headers });

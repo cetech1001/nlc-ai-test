@@ -197,7 +197,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                     <div key={integration.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
                       <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 bg-gradient-to-br ${platformConfig?.color} rounded-full flex items-center justify-center text-lg`}>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg`}>
                             {platformConfig?.icon || '🔗'}
                           </div>
                           <div>
@@ -269,7 +269,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                 return (
                   <div key={platform} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 hover:border-violet-500/50 transition-colors">
                     <div className="flex items-center gap-4 mb-4">
-                      <div className={`w-10 h-10 bg-gradient-to-br ${config.color} rounded-lg flex items-center justify-center text-lg`}>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg`}>
                         {config.icon}
                       </div>
                       <div className="flex-1">
