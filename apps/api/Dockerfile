@@ -13,7 +13,8 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/api/prisma/schema.prisma ./apps/api/prisma/
 
 # Install ALL dependencies (including devDependencies for building)
-RUN npm ci --include=dev && npm cache clean --force
+RUN npm ci --only=production && npm cache clean --force
+RUN npm install nx@latest
 
 # Pre-install platform-specific packages to avoid build issues
 RUN npm install @rollup/rollup-linux-x64-musl --save-optional --no-save
