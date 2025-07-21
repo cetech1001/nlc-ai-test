@@ -13,7 +13,7 @@ COPY apps/coach/package.json ./apps/coach/
 COPY libs ./libs
 
 # Install ALL dependencies (including devDependencies for building)
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production
 RUN npm install nx@latest
 
 # Pre-install platform-specific packages
@@ -54,7 +54,7 @@ COPY tsconfig.base.json ./
 COPY apps/coach/package.json ./apps/coach/
 
 # Only install production dependencies for runtime
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production
 
 # Runtime stage
 FROM base AS runner

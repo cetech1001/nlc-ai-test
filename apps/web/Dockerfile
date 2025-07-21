@@ -11,7 +11,7 @@ COPY tsconfig.base.json ./
 COPY apps/web/package.json ./apps/web/
 COPY libs ./libs
 
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production
 
 FROM base AS builder
 WORKDIR /app

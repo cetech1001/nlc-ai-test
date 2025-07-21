@@ -13,7 +13,7 @@ COPY apps/admin/package.json ./apps/admin/
 COPY libs ./libs
 
 # Install ALL dependencies (including devDependencies for building)
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production
 RUN npm install nx@latest
 
 # Pre-install platform-specific packages
@@ -53,7 +53,7 @@ COPY tsconfig.base.json ./
 COPY apps/admin/package.json ./apps/admin/
 
 # Only install production dependencies for runtime
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production
 
 # Runtime stage
 FROM base AS runner
