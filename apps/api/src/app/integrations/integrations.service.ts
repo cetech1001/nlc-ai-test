@@ -395,11 +395,17 @@ export class IntegrationsService {
   }
 
   private async exchangeCodeForToken(platform: string, code: string, config: SocialPlatformConfig): Promise<any> {
+    let param = {};
+    if (platform === 'tiktok') {
+      param = {client_key: config.clientID};
+    } else {
+      param = {client_id: config.clientID};
+    }
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
-      client_id: config.clientID,
       client_secret: config.clientSecret,
       redirect_uri: config.redirectUri,
+      ...param,
       code,
     });
 
