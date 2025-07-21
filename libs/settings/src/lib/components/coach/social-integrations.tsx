@@ -26,38 +26,38 @@ interface SocialIntegrationsProps {
 const socialPlatforms: Record<SocialPlatform, SocialPlatformConfig> = {
   facebook: {
     name: 'Facebook',
-    icon: '📘',
-    color: 'from-blue-600 to-blue-700',
+    icon: <img src={"/images/icons/facebook-icon.png"} alt={"Facebook Icon"}/>,
+    color: '',
   },
   instagram: {
     name: 'Instagram',
-    icon: '📷',
-    color: 'from-pink-500 to-purple-600',
+    icon: <img src={"/images/icons/instagram-icon.png"} alt={"Instagram Icon"}/>,
+    color: '',
   },
   youtube: {
     name: 'YouTube',
-    icon: '📺',
-    color: 'from-red-500 to-red-600',
+    icon: <img src={"/images/icons/youtube-icon.svg"} alt={"YouTube Icon"}/>,
+    color: '',
   },
   twitter: {
     name: 'X (Twitter)',
-    icon: '🐦',
-    color: 'from-gray-800 to-black',
+    icon: <img src={"/images/icons/twitter-icon.svg"} alt={"X (Twitter) Icon"}/>,
+    color: '',
   },
   tiktok: {
     name: 'TikTok',
-    icon: '🎵',
-    color: 'from-pink-600 to-black',
+    icon: <img src={"/images/icons/tiktok-icon.png"} alt={"TikTok Icon"}/>,
+    color: '',
   },
   linkedin: {
     name: 'LinkedIn',
-    icon: '💼',
-    color: 'from-blue-700 to-blue-800',
+    icon: <img src={"/images/icons/linkedin-icon.svg"} alt={"Linkedin Icon"}/>,
+    color: '',
   },
   calendly: {
     name: 'Calendly',
     icon: <img src={"/images/icons/calendly-icon.png"} alt={"Calendly Icon"}/>,
-    color: 'from-blue-700 to-blue-800',
+    color: '',
   },
 };
 
@@ -197,7 +197,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                     <div key={integration.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
                       <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 bg-gradient-to-br ${platformConfig?.color || 'from-gray-500 to-gray-600'} rounded-full flex items-center justify-center text-lg`}>
+                          <div className={`w-10 h-10 bg-gradient-to-br ${platformConfig?.color} rounded-full flex items-center justify-center text-lg`}>
                             {platformConfig?.icon || '🔗'}
                           </div>
                           <div>

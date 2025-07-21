@@ -412,6 +412,7 @@ export class IntegrationsService {
       code,
     });
 
+    console.log("Params: " + JSON.stringify(params));
     this.logger.log("Params: ", params);
 
     const response = await fetch(config.tokenUrl, {
