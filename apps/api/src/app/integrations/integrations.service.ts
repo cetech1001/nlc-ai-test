@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
 import {PrismaService} from '../prisma/prisma.service';
 import {ConfigService} from '@nestjs/config';
 import {Integration} from '@nlc-ai/types';
@@ -16,6 +16,7 @@ interface SocialPlatformConfig {
 @Injectable()
 export class IntegrationsService {
   private readonly platformConfigs: Record<string, SocialPlatformConfig>;
+  private readonly logger = new Logger(IntegrationsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -146,6 +147,8 @@ export class IntegrationsService {
     }
 
     const authUrl = `${config.authUrl}?${params.toString()}`;
+
+    this.logger.log("Auth URL: ", authUrl);
 
     return { authUrl, state };
   }
@@ -408,6 +411,8 @@ export class IntegrationsService {
       ...param,
       code,
     });
+
+    this.logger.log("Params: ", params);
 
     const response = await fetch(config.tokenUrl, {
       method: 'POST',
