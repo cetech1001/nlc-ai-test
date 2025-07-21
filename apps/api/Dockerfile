@@ -43,7 +43,6 @@ COPY package*.json ./
 COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
-COPY libs ./libs
 
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force

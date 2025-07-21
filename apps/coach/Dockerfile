@@ -13,7 +13,7 @@ COPY apps/coach/package.json ./apps/coach/
 COPY libs ./libs
 
 # Install ALL dependencies (including devDependencies for building)
-RUN npm ci --include=dev && npm cache clean --force
+RUN npm ci --only=production && npm cache clean --force
 
 # Pre-install platform-specific packages
 RUN npm install @rollup/rollup-linux-x64-musl --save-optional --no-save
