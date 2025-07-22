@@ -124,7 +124,7 @@ export interface SocialPlatformConfig {
 
 export interface CoursePlatformConfig {
   name: string;
-  icon: string;
+  icon: ReactNode;
   color: string;
   fields: {
     name: string;

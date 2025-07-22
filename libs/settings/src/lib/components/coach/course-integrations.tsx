@@ -15,8 +15,8 @@ interface CourseIntegrationsProps {
 const coursePlatforms: Record<CoursePlatform, CoursePlatformConfig> = {
   kajabi: {
     name: 'Kajabi',
-    icon: '🎓',
-    color: 'from-orange-500 to-red-600',
+    icon: <img src={"/images/icons/kajabi-icon.png"} alt={"Kajabi Icon"}/>,
+    color: '',
     fields: [
       { name: 'subdomain', type: 'text', placeholder: 'yoursite', required: true },
       { name: 'apiKey', type: 'password', placeholder: 'Your Kajabi API key', required: true },
@@ -24,8 +24,8 @@ const coursePlatforms: Record<CoursePlatform, CoursePlatformConfig> = {
   },
   skool: {
     name: 'Skool',
-    icon: '🏫',
-    color: 'from-green-500 to-emerald-600',
+    icon: <img src={"/images/icons/skool-icon.png"} alt={"Skool Icon"}/>,
+    color: '',
     fields: [
       { name: 'communityUrl', type: 'url', placeholder: 'https://skool.com/your-community', required: true },
       { name: 'apiKey', type: 'password', placeholder: 'Your Skool API key', required: true },
@@ -33,8 +33,8 @@ const coursePlatforms: Record<CoursePlatform, CoursePlatformConfig> = {
   },
   thinkific: {
     name: 'Thinkific',
-    icon: '💡',
-    color: 'from-blue-500 to-purple-600',
+    icon: <img src={"/images/icons/thinkific-icon.png"} alt={"Thinkific Icon"}/>,
+    color: '',
     fields: [
       { name: 'subdomain', type: 'text', placeholder: 'yourschool', required: true },
       { name: 'apiKey', type: 'password', placeholder: 'Your Thinkific API key', required: true },
@@ -42,8 +42,8 @@ const coursePlatforms: Record<CoursePlatform, CoursePlatformConfig> = {
   },
   teachable: {
     name: 'Teachable',
-    icon: '📚',
-    color: 'from-purple-500 to-pink-600',
+    icon: <img src={"/images/icons/teachable-icon.png"} alt={"Teachable Icon"}/>,
+    color: '',
     fields: [
       { name: 'schoolUrl', type: 'url', placeholder: 'https://yourschool.teachable.com', required: true },
       { name: 'apiKey', type: 'password', placeholder: 'Your Teachable API key', required: true },
@@ -213,13 +213,6 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                   {courseIntegrations.length} Connected
                 </span>
               </div>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Integration
-              </button>
             </div>
           </div>
 
