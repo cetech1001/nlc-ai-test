@@ -1,7 +1,7 @@
 import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
 import {PrismaService} from '../prisma/prisma.service';
 import {ConfigService} from '@nestjs/config';
-import {Integration} from '@nlc-ai/types';
+import {Integration, PlatformConnectionRequest} from '@nlc-ai/types';
 
 interface SocialPlatformConfig {
   clientID: string;
@@ -13,9 +13,24 @@ interface SocialPlatformConfig {
   profileUrl: string;
 }
 
+interface CoursePlatformConfig {
+  name: string;
+  authType: 'api_key' | 'oauth' | 'webhook';
+  baseUrl: string;
+  authHeaders?: Record<string, string>;
+  requiredFields: string[];
+  endpoints: {
+    courses: string;
+    students: string;
+    enrollments: string;
+    profile?: string;
+  };
+}
+
 @Injectable()
 export class IntegrationsService {
   private readonly platformConfigs: Record<string, SocialPlatformConfig>;
+  private readonly coursePlatformConfigs: Record<string, CoursePlatformConfig>;
   private readonly logger = new Logger(IntegrationsService.name);
 
   constructor(
@@ -87,6 +102,411 @@ export class IntegrationsService {
         profileUrl: 'https://api.calendly.com/users/me',
       },
     };
+
+    this.coursePlatformConfigs = {
+      thinkific: {
+        name: 'Thinkific',
+        authType: 'api_key',
+        baseUrl: 'https://api.thinkific.com/api/public/v1',
+        requiredFields: ['subdomain', 'apiKey'],
+        endpoints: {
+          courses: '/courses',
+          students: '/users',
+          enrollments: '/enrollments',
+          profile: '/users/me',
+        },
+      },
+      teachable: {
+        name: 'Teachable',
+        authType: 'api_key',
+        baseUrl: 'https://developers.teachable.com/v1',
+        requiredFields: ['apiKey'],
+        endpoints: {
+          courses: '/courses',
+          students: '/users',
+          enrollments: '/enrollments',
+          profile: '/users/me',
+        },
+      },
+      kajabi: {
+        name: 'Kajabi',
+        authType: 'oauth', // Note: Currently in private beta
+        baseUrl: 'https://api.kajabi.com/v1',
+        requiredFields: ['clientId', 'clientSecret', 'apiKey'], // Hybrid approach
+        endpoints: {
+          courses: '/courses',
+          students: '/contacts',
+          enrollments: '/purchases',
+          profile: '/sites',
+        },
+      },
+      skool: {
+        name: 'Skool',
+        authType: 'webhook', // Limited to Zapier webhooks only
+        baseUrl: 'https://www.skool.com',
+        requiredFields: ['groupUrl', 'zapierApiKey'],
+        endpoints: {
+          courses: '/classroom', // Limited access
+          students: '/members', // Limited access
+          enrollments: '/invites', // Webhook only
+        },
+      },
+    };
+  }
+
+  async connectCoursePlatform(
+    coachID: string,
+    platform: string,
+    credentials: Record<string, string>,
+  ): Promise<Integration> {
+    const config = this.coursePlatformConfigs[platform];
+    if (!config) {
+      throw new BadRequestException(`Unsupported course platform: ${platform}`);
+    }
+
+    // Validate required fields
+    const missingFields = config.requiredFields.filter(field => !credentials[field]);
+    if (missingFields.length > 0) {
+      throw new BadRequestException(`Missing required fields: ${missingFields.join(', ')}`);
+    }
+
+    // Check if integration already exists
+    const existingIntegration = await this.prisma.integration.findFirst({
+      where: {
+        coachID,
+        platformName: platform,
+        integrationType: 'course',
+      },
+    });
+
+    if (existingIntegration) {
+      throw new BadRequestException(`${config.name} is already connected`);
+    }
+
+    try {
+      // Test the connection based on platform type
+      let profileData: any = {};
+      let accessToken = '';
+
+      switch (config.authType) {
+        case 'api_key':
+          const testResult = await this.testCoursePlatformConnection(platform, credentials);
+          profileData = testResult.data;
+          accessToken = credentials.apiKey;
+          break;
+
+        case 'oauth':
+          // For Kajabi OAuth (when available)
+          if (platform === 'kajabi') {
+            // For now, use API key approach since OAuth is in private beta
+            accessToken = credentials.apiKey;
+            profileData = await this.getKajabiProfile(credentials);
+          }
+          break;
+
+        case 'webhook':
+          // For Skool webhook integration
+          profileData = {
+            groupUrl: credentials.groupUrl,
+            zapierConnected: true,
+            name: this.extractGroupNameFromUrl(credentials.groupUrl),
+          };
+          accessToken = credentials.zapierApiKey;
+          break;
+      }
+
+      // Create integration
+      const integration = await this.prisma.integration.create({
+        data: {
+          coachID,
+          integrationType: 'course',
+          platformName: platform,
+          accessToken,
+          config: {
+            ...credentials,
+            ...profileData,
+            authType: config.authType,
+          },
+          syncSettings: {
+            autoSync: true,
+            syncFrequency: 'daily',
+            syncCourses: true,
+            syncStudents: true,
+            syncEnrollments: true,
+          },
+          isActive: true,
+          lastSyncAt: new Date(),
+        },
+      });
+
+      return {
+        ...integration,
+        accessToken: '***', // Don't expose the token
+      };
+    } catch (error: any) {
+      throw new BadRequestException(`Failed to connect ${config.name}: ${error.message}`);
+    }
+  }
+
+  // Test course platform connection
+  async testCoursePlatformConnection(platform: string, credentials: Record<string, string>): Promise<{ success: boolean; data?: any }> {
+    const config = this.coursePlatformConfigs[platform];
+    if (!config) {
+      throw new BadRequestException(`Unsupported course platform: ${platform}`);
+    }
+
+    try {
+      switch (platform) {
+        case 'thinkific':
+          return await this.testThinkificConnection(credentials);
+        case 'teachable':
+          return await this.testTeachableConnection(credentials);
+        case 'kajabi':
+          return await this.testKajabiConnection(credentials);
+        case 'skool':
+          return await this.testSkoolConnection(credentials);
+        default:
+          throw new Error(`Test not implemented for ${platform}`);
+      }
+    } catch (error: any) {
+      return { success: false };
+    }
+  }
+
+  // Thinkific API integration
+  private async testThinkificConnection(credentials: Record<string, string>) {
+    const headers = {
+      'X-Auth-API-Key': credentials.apiKey,
+      'X-Auth-Subdomain': credentials.subdomain,
+      'Content-Type': 'application/json',
+    };
+
+    const response = await fetch(`https://api.thinkific.com/api/public/v1/courses?limit=1`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Thinkific API error: ${response.statusText}`);
+    }
+
+    const data: any = await response.json();
+    return {
+      success: true,
+      data: {
+        subdomain: credentials.subdomain,
+        coursesCount: data?.meta?.total_count || 0,
+        name: `${credentials.subdomain}.thinkific.com`,
+      },
+    };
+  }
+
+  // Teachable API integration
+  private async testTeachableConnection(credentials: Record<string, string>) {
+    const headers = {
+      'apiKey': credentials.apiKey,
+      'Content-Type': 'application/json',
+    };
+
+    const response = await fetch(`https://developers.teachable.com/v1/courses?limit=1`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Teachable API error: ${response.statusText}`);
+    }
+
+    const data: any = await response.json();
+    return {
+      success: true,
+      data: {
+        schoolName: data?.courses?.[0]?.school?.name || 'Unknown School',
+        coursesCount: data?.courses?.length || 0,
+        name: data?.courses?.[0]?.school?.name || 'Teachable School',
+      },
+    };
+  }
+
+  // Kajabi API integration (limited due to private beta)
+  private async testKajabiConnection(credentials: Record<string, string>) {
+    // Since Kajabi API is in private beta, we'll do a basic validation
+    // In a real implementation, you'd use their OAuth flow when available
+
+    if (!credentials.apiKey) {
+      throw new Error('API key is required for Kajabi');
+    }
+
+    // For now, just validate the format and return basic info
+    return {
+      success: true,
+      data: {
+        name: 'Kajabi Site',
+        note: 'Kajabi API is in private beta - limited functionality',
+        hasAccess: !!credentials.apiKey,
+      },
+    };
+  }
+
+  private async getKajabiProfile(credentials: Record<string, string>) {
+    // Placeholder for when Kajabi OAuth becomes available
+    return {
+      name: 'Kajabi Site',
+      apiKeyProvided: true,
+      betaAccess: true,
+    };
+  }
+
+  // Skool webhook integration
+  private async testSkoolConnection(credentials: Record<string, string>) {
+    // Validate URL format
+    if (!credentials.groupUrl.includes('skool.com/')) {
+      throw new Error('Invalid Skool group URL');
+    }
+
+    if (!credentials.zapierApiKey) {
+      throw new Error('Zapier API key is required for Skool integration');
+    }
+
+    return {
+      success: true,
+      data: {
+        groupName: this.extractGroupNameFromUrl(credentials.groupUrl),
+        groupUrl: credentials.groupUrl,
+        integrationType: 'webhook',
+        note: 'Skool integration uses Zapier webhooks',
+      },
+    };
+  }
+
+  private extractGroupNameFromUrl(url: string): string {
+    const match = url.match(/skool\.com\/([^\/]+)/);
+    return match ? match[1].replace(/-/g, ' ') : 'Unknown Group';
+  }
+
+  // Sync course platform data
+  async syncCoursePlatformData(coachID: string, integrationID: string): Promise<{ success: boolean; message: string }> {
+    const integration = await this.findIntegrationByIDAndCoach(integrationID, coachID);
+    const config = this.coursePlatformConfigs[integration.platformName];
+
+    if (!config) {
+      throw new BadRequestException(`Unsupported course platform: ${integration.platformName}`);
+    }
+
+    try {
+      let syncData: any = {};
+
+      switch (integration.platformName) {
+        case 'thinkific':
+          syncData = await this.syncThinkificData(integration);
+          break;
+        case 'teachable':
+          syncData = await this.syncTeachableData(integration);
+          break;
+        case 'kajabi':
+          syncData = await this.syncKajabiData(integration);
+          break;
+        case 'skool':
+          syncData = await this.syncSkoolData(integration);
+          break;
+      }
+
+      await this.prisma.integration.update({
+        where: { id: integrationID },
+        data: {
+          config: { ...integration.config, ...syncData },
+          lastSyncAt: new Date(),
+          syncError: null,
+        },
+      });
+
+      return {
+        success: true,
+        message: `Successfully synced data from ${config.name}`,
+      };
+    } catch (error: any) {
+      await this.prisma.integration.update({
+        where: { id: integrationID },
+        data: { syncError: error.message },
+      });
+
+      throw new BadRequestException(`Failed to sync data: ${error.message}`);
+    }
+  }
+
+  private async syncThinkificData(integration: Integration) {
+    const headers = {
+      'X-Auth-API-Key': integration.config.apiKey,
+      'X-Auth-Subdomain': integration.config.subdomain,
+      'Content-Type': 'application/json',
+    };
+
+    // Fetch courses
+    const coursesResponse = await fetch(`https://api.thinkific.com/api/public/v1/courses`, { headers });
+    const coursesData: any = await coursesResponse.json();
+
+    // Fetch users (students)
+    const usersResponse = await fetch(`https://api.thinkific.com/api/public/v1/users?limit=50`, { headers });
+    const usersData: any = await usersResponse.json();
+
+    return {
+      courses: coursesData?.items || [],
+      students: usersData?.items || [],
+      lastSync: new Date().toISOString(),
+      stats: {
+        totalCourses: coursesData?.meta?.total_count || 0,
+        totalStudents: usersData?.meta?.total_count || 0,
+      },
+    };
+  }
+
+  private async syncTeachableData(integration: Integration) {
+    const headers = {
+      'apiKey': integration.config.apiKey,
+      'Content-Type': 'application/json',
+    };
+
+    // Fetch courses
+    const coursesResponse = await fetch(`https://developers.teachable.com/v1/courses`, { headers });
+    const coursesData: any = await coursesResponse.json();
+
+    // Fetch users
+    const usersResponse = await fetch(`https://developers.teachable.com/v1/users?limit=50`, { headers });
+    const usersData: any = await usersResponse.json();
+
+    return {
+      courses: coursesData?.courses || [],
+      students: usersData?.users || [],
+      lastSync: new Date().toISOString(),
+      stats: {
+        totalCourses: coursesData?.courses?.length || 0,
+        totalStudents: usersData?.users?.length || 0,
+      },
+    };
+  }
+
+  private async syncKajabiData(integration: Integration) {
+    // Limited sync for Kajabi due to private beta status
+    return {
+      note: 'Kajabi sync limited due to private beta API',
+      lastSync: new Date().toISOString(),
+      betaStatus: true,
+    };
+  }
+
+  private async syncSkoolData(integration: Integration) {
+    // Skool doesn't have a full API, so this would be webhook-based
+    return {
+      groupUrl: integration.config.groupUrl,
+      webhookStatus: 'active',
+      lastSync: new Date().toISOString(),
+      note: 'Skool uses webhook integration via Zapier',
+    };
+  }
+
+  private getIntegrationType(platform: string) {
+    if (Object.keys(this.coursePlatformConfigs).includes(platform)) {
+      return 'course';
+    }
+    return platform === 'calendly' ? 'app' : 'social';
   }
 
   async getIntegrations(coachID: string): Promise<Integration[]> {
@@ -108,7 +528,7 @@ export class IntegrationsService {
         refreshToken: integration.refreshToken ? '***' : null,
       }));
     } catch (error: any) {
-      throw new BadRequestException('Failed to retrieve social integrations');
+      throw new BadRequestException('Failed to retrieve integrations');
     }
   }
 
@@ -200,12 +620,7 @@ export class IntegrationsService {
   async connectPlatform(
     coachID: string,
     platform: string,
-    authData: {
-      accessToken: string;
-      refreshToken?: string;
-      profileData?: any;
-      tokenExpiresAt?: string;
-    },
+    authData: PlatformConnectionRequest,
   ): Promise<Integration> {
     const config = this.platformConfigs[platform];
     if (!config) {
@@ -229,7 +644,7 @@ export class IntegrationsService {
       // Verify the token by getting profile data
       let profileData = authData.profileData;
       if (!profileData) {
-        profileData = await this.getProfileData(platform, authData.accessToken, config);
+        profileData = await this.getProfileData(platform, authData.accessToken as string, config);
       }
 
       // Create integration
@@ -268,7 +683,7 @@ export class IntegrationsService {
     integrationID: string,
     updateData: { isActive?: boolean; syncSettings?: any },
   ): Promise<Integration> {
-    await this.findIntegrationByIdAndCoach(integrationID, coachID);
+    await this.findIntegrationByIDAndCoach(integrationID, coachID);
 
     try {
       const updatedIntegration = await this.prisma.integration.update({
@@ -291,7 +706,7 @@ export class IntegrationsService {
   }
 
   async testIntegration(coachID: string, integrationID: string): Promise<{ success: boolean; message: string }> {
-    const integration = await this.findIntegrationByIdAndCoach(integrationID, coachID);
+    const integration = await this.findIntegrationByIDAndCoach(integrationID, coachID);
     const config = this.platformConfigs[integration.platformName];
 
     if (!config) {
@@ -334,7 +749,7 @@ export class IntegrationsService {
   }
 
   async disconnectIntegration(coachID: string, integrationID: string): Promise<{ success: boolean; message: string }> {
-    const integration = await this.findIntegrationByIdAndCoach(integrationID, coachID);
+    const integration = await this.findIntegrationByIDAndCoach(integrationID, coachID);
 
     try {
       await this.prisma.integration.delete({
@@ -351,7 +766,7 @@ export class IntegrationsService {
   }
 
   async syncPlatformData(coachID: string, integrationID: string): Promise<{ success: boolean; message: string }> {
-    const integration = await this.findIntegrationByIdAndCoach(integrationID, coachID);
+    const integration = await this.findIntegrationByIDAndCoach(integrationID, coachID);
     const config = this.platformConfigs[integration.platformName];
 
     if (!config) {
@@ -390,7 +805,7 @@ export class IntegrationsService {
     }
   }
 
-  private async findIntegrationByIdAndCoach(integrationID: string, coachID: string): Promise<Integration> {
+  async findIntegrationByIDAndCoach(integrationID: string, coachID: string): Promise<Integration> {
     const integration = await this.prisma.integration.findFirst({
       where: {
         id: integrationID,
@@ -564,10 +979,6 @@ export class IntegrationsService {
       default:
         return rawData;
     }
-  }
-
-  private getIntegrationType(platform: string) {
-    return platform === 'calendly' ? 'app' : 'social';
   }
 
   private async saveIntegration(

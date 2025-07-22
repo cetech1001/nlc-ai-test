@@ -21,3 +21,18 @@ export interface Integration {
   coach?: Coach;
   webhookEvents?: WebhookEvent[];
 }
+
+export interface PlatformConnectionRequest {
+  accessToken?: string;
+  refreshToken?: string;
+  profileData?: any;
+  tokenExpiresAt?: string;
+  // Course platform specific fields
+  apiKey?: string;
+  subdomain?: string;
+  schoolUrl?: string;
+  groupUrl?: string;
+  zapierApiKey?: string;
+  clientId?: string;
+  clientSecret?: string;
+}

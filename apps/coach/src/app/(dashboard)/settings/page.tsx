@@ -52,46 +52,78 @@ const CoachSettings = () => {
 
   // Social Integration Handlers
   const handleConnectSocial = async (platform: string, authData: any) => {
-    return integrationsAPI.connectSocial(platform, authData);
+    return integrationsAPI.connectSocialPlatform(platform, authData);
   }
 
   const handleDisconnectSocial = async (integrationId: string) => {
-    await integrationsAPI.disconnectSocialIntegration(integrationId);
+    await integrationsAPI.disconnectIntegration(integrationId);
   }
 
   const handleTestSocial = async (integrationId: string) => {
-    await integrationsAPI.testSocialIntegration(integrationId);
+    await integrationsAPI.testIntegration(integrationId);
   }
 
   const getSocialIntegrations = () => {
     return integrationsAPI.getSocialIntegrations();
   }
 
-  // Mock handlers for course integrations (to be implemented later)
   const handleConnectCourse = async (platform: string, credentials: any) => {
-    // TODO: Implement course integrations API
-    throw new Error('Course integrations not yet implemented');
-  }
+    try {
+      const result = await integrationsAPI.connectCoursePlatform(platform, credentials);
+      // Add any custom logic here (analytics, notifications, etc.)
+      return result;
+    } catch (error) {
+      console.error('Failed to connect course platform:', error);
+      throw error;
+    }
+  };
 
   const handleDisconnectCourse = async (integrationId: string) => {
-    // TODO: Implement course integrations API
-    throw new Error('Course integrations not yet implemented');
-  }
+    try {
+      await integrationsAPI.disconnectIntegration(integrationId);
+      // Add any custom logic here
+    } catch (error) {
+      console.error('Failed to disconnect course platform:', error);
+      throw error;
+    }
+  };
 
   const handleTestCourse = async (integrationId: string) => {
-    // TODO: Implement course integrations API
-    throw new Error('Course integrations not yet implemented');
-  }
+    try {
+      await integrationsAPI.testIntegration(integrationId);
+      // Add any custom logic here
+    } catch (error) {
+      console.error('Failed to test course platform:', error);
+      throw error;
+    }
+  };
 
   const handleUpdateCourse = async (integrationId: string, data: any) => {
-    // TODO: Implement course integrations API
-    throw new Error('Course integrations not yet implemented');
-  }
+    try {
+      const result = await integrationsAPI.updateIntegration(integrationId, data);
+      // Add any custom logic here
+      return result;
+    } catch (error) {
+      console.error('Failed to update course platform:', error);
+      throw error;
+    }
+  };
 
   const getCourseIntegrations = async () => {
-    // TODO: Implement course integrations API
-    return [];
-  }
+    try {
+      const integrations = await integrationsAPI.getCourseIntegrations();
+      // Transform data if needed
+      return integrations.map(integration => ({
+        ...integration,
+        name: integration.config?.name || integration.platformName,
+        platform: integration.platformName,
+        isConnected: integration.isActive
+      }));
+    } catch (error) {
+      console.error('Failed to get course integrations:', error);
+      throw error;
+    }
+  };
 
   return (
     <Settings
