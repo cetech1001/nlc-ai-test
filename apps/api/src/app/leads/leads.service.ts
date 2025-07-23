@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {CreateLeadDto, LeadQueryDto, UpdateLeadDto} from "./dto";
+import {CreateLeadRequest, LeadQueryParams, UpdateLead} from "@nlc-ai/types";
 
 @Injectable()
 export class LeadsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: LeadQueryDto) {
+  async findAll(query: LeadQueryParams) {
     const {
       page = 1,
       limit = 10,
@@ -17,9 +17,14 @@ export class LeadsService {
       endDate,
       meetingStartDate,
       meetingEndDate,
+      coachID,
     } = query;
 
     const where: any = {};
+
+    if (coachID) {
+      where['coachID'] = coachID;
+    }
 
     if (status) {
       where.status = status;
@@ -78,7 +83,7 @@ export class LeadsService {
     return lead;
   }
 
-  async create(createLeadDto: CreateLeadDto) {
+  async create(createLeadDto: CreateLeadRequest) {
     return this.prisma.lead.create({
       data: {
         ...createLeadDto,
@@ -88,7 +93,7 @@ export class LeadsService {
     });
   }
 
-  async update(id: string, updateLeadDto: UpdateLeadDto) {
+  async update(id: string, updateLeadDto: UpdateLead) {
     await this.findOne(id);
 
     return this.prisma.lead.update({
@@ -131,13 +136,13 @@ export class LeadsService {
     });
   }
 
-  async getStats() {
+  async getStats(coachID?: string) {
     const [total, contacted, scheduled, converted, unresponsive] = await Promise.all([
-      this.prisma.lead.count(),
-      this.prisma.lead.count({ where: { status: 'contacted' } }),
-      this.prisma.lead.count({ where: { status: 'scheduled' } }),
-      this.prisma.lead.count({ where: { status: 'converted' } }),
-      this.prisma.lead.count({ where: { status: 'unresponsive' } }),
+      this.prisma.lead.count({ where: { coachID } }),
+      this.prisma.lead.count({ where: { coachID, status: 'contacted' } }),
+      this.prisma.lead.count({ where: { coachID, status: 'scheduled' } }),
+      this.prisma.lead.count({ where: { coachID, status: 'converted' } }),
+      this.prisma.lead.count({ where: { coachID, status: 'unresponsive' } }),
     ]);
 
     const conversionRate = total > 0 ? (converted / total) * 100 : 0;

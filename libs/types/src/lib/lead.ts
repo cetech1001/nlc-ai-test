@@ -40,6 +40,7 @@ export interface LeadQueryParams extends QueryParams{
   endDate?: string;
   meetingStartDate?: string;
   meetingEndDate?: string;
+  coachID?: string;
 }
 
 export interface CreateLead extends Pick<Lead, 'firstName' | 'lastName' | 'email' | 'phone' | 'source' | 'meetingTime' | 'notes'> {

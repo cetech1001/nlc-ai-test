@@ -205,6 +205,8 @@ model Coach {
   leads               Lead[]
   paymentLinks        PaymentLink[]
   contentCategories   ContentCategory[]
+  emailSequences      EmailSequence[]
+  scheduledEmails     ScheduledEmail[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -667,23 +669,25 @@ model Subscription {
 }
 
 model Lead {
-  id              String    @id @default(uuid()) @db.Uuid
-  coachID         String?   @db.Uuid // Made nullable to support admin leads
-  leadType        LeadType  @default(coach_lead)
-  firstName       String    @db.VarChar(100)
-  lastName        String    @db.VarChar(100)
-  email           String    @db.VarChar(255)
-  phone           String?   @db.VarChar(20)
-  source          String?   @db.VarChar(100)
-  status          String    @default("contacted") @db.VarChar(50) // contacted, scheduled, converted, unresponsive
-  meetingDate     DateTime? @db.Timestamptz(6)
-  meetingTime     String?   @db.VarChar(20)
+  id              String           @id @default(uuid()) @db.Uuid
+  coachID         String?          @db.Uuid // Made nullable to support admin leads
+  leadType        LeadType         @default(coach_lead)
+  firstName       String           @db.VarChar(100)
+  lastName        String           @db.VarChar(100)
+  email           String           @db.VarChar(255)
+  phone           String?          @db.VarChar(20)
+  source          String?          @db.VarChar(100)
+  status          String           @default("contacted") @db.VarChar(50) // contacted, scheduled, converted, unresponsive
+  meetingDate     DateTime?        @db.Timestamptz(6)
+  meetingTime     String?          @db.VarChar(20)
   notes           String?
-  lastContactedAt DateTime? @db.Timestamptz(6)
-  convertedAt     DateTime? @db.Timestamptz(6)
-  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
-  coach           Coach?    @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  lastContactedAt DateTime?        @db.Timestamptz(6)
+  convertedAt     DateTime?        @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(6)
+  coach           Coach?           @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  emailSequences  EmailSequence[]
+  scheduledEmails ScheduledEmail[]
 
   @@map("leads")
 }
@@ -740,4 +744,51 @@ model PaymentLink {
   plan                Plan      @relation(fields: [planID], references: [id], onDelete: Restrict)
 
   @@map("payment_links")
+}
+
+model EmailSequence {
+  id          String   @id @default(uuid()) @db.Uuid
+  leadID      String   @db.Uuid
+  coachID     String   @db.Uuid
+  status      String   @db.VarChar(50)
+  sequence    Json
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  lead            Lead             @relation(fields: [leadID], references: [id], onDelete: Cascade)
+  coach           Coach            @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  scheduledEmails ScheduledEmail[]
+
+  @@map("email_sequences")
+}
+
+model ScheduledEmail {
+  id                String    @id @default(uuid()) @db.Uuid
+  emailSequenceID   String?   @db.Uuid
+  leadID            String    @db.Uuid
+  coachID           String    @db.Uuid
+  subject           String    @db.VarChar(500)
+  body              String
+  sequenceOrder     Int
+  scheduledFor      DateTime  @db.Timestamptz(6)
+  sentAt            DateTime? @db.Timestamptz(6)
+  status            String    @default("scheduled") @db.VarChar(50) // scheduled, sent, failed, cancelled
+  errorMessage      String?
+  emailProvider     String?   @default("resend") @db.VarChar(50)
+  providerMessageID String?   @db.VarChar(255)
+  openedAt          DateTime? @db.Timestamptz(6)
+  clickedAt         DateTime? @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
+
+  emailSequence EmailSequence? @relation(fields: [emailSequenceID], references: [id], onDelete: SetNull)
+  lead          Lead           @relation(fields: [leadID], references: [id], onDelete: Cascade)
+  coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([scheduledFor, status])
+  @@index([leadID])
+  @@index([coachID])
+  @@map("scheduled_emails")
 }

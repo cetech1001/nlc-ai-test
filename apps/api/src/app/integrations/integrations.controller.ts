@@ -84,7 +84,7 @@ export class IntegrationsController {
       schoolUrl?: string;
       groupUrl?: string;
       zapierApiKey?: string;
-      clientId?: string;
+      clientID?: string;
       clientSecret?: string;
     }
   ) {
@@ -106,7 +106,7 @@ export class IntegrationsController {
       schoolUrl?: string;
       groupUrl?: string;
       zapierApiKey?: string;
-      clientId?: string;
+      clientID?: string;
       clientSecret?: string;
     }
   ) {

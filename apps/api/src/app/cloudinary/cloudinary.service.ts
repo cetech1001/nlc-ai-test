@@ -47,16 +47,16 @@ export class CloudinaryService {
     });
   }
 
-  async deleteAsset(publicId: string, isVideo?: boolean): Promise<any> {
+  async deleteAsset(publicID: string, isVideo?: boolean): Promise<any> {
     let options = {};
     if (isVideo) {
       options = { resource_type: 'video' }
     }
-    return cloudinary.uploader.destroy(publicId, options);
+    return cloudinary.uploader.destroy(publicID, options);
   }
 
-  getOptimizedUrl(publicId: string, transformations: any[] = []): string {
-    return cloudinary.url(publicId, {
+  getOptimizedUrl(publicID: string, transformations: any[] = []): string {
+    return cloudinary.url(publicID, {
       transformation: [
         { quality: 'auto', fetch_format: 'auto' },
         ...transformations,

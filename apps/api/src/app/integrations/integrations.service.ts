@@ -132,7 +132,7 @@ export class IntegrationsService {
         name: 'Kajabi',
         authType: 'oauth', // Note: Currently in private beta
         baseUrl: 'https://api.kajabi.com/v1',
-        requiredFields: ['clientId', 'clientSecret', 'apiKey'], // Hybrid approach
+        requiredFields: ['clientID', 'clientSecret', 'apiKey'], // Hybrid approach
         endpoints: {
           courses: '/courses',
           students: '/contacts',

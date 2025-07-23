@@ -16,6 +16,7 @@ import { ClientsModule } from './clients/clients.module';
 import { ContentModule } from './content/content.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { OauthModule } from './oauth/oauth.module';
+import {AiAgentsModule} from "./ai-agents/ai-agents.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { OauthModule } from './oauth/oauth.module';
     ContentModule,
     IntegrationsModule,
     OauthModule,
+    AiAgentsModule,
   ],
   providers: [
     {

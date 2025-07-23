@@ -7,7 +7,7 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
+  UseGuards, Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LeadsService} from './leads.service';
@@ -15,11 +15,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {CreateLeadDto, LeadQueryDto, UpdateLeadDto} from "./dto";
+import {AuthUser, UserType} from "@nlc-ai/types";
 
 @ApiTags('Leads')
 @Controller('leads')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles(UserType.coach, UserType.admin)
 @ApiBearerAuth()
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
@@ -27,15 +28,19 @@ export class LeadsController {
   @Get()
   @ApiOperation({ summary: 'Get all leads with filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Leads retrieved successfully' })
-  findAll(@Query() query: LeadQueryDto) {
+  findAll(@Query() query: LeadQueryDto, @Req() req: { user: AuthUser }) {
+    if (req.user.type === UserType.coach) {
+      query.coachID = req.user.id;
+    }
     return this.leadsService.findAll(query);
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get lead statistics' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  getStats() {
-    return this.leadsService.getStats();
+  getStats(@Req() req: { user: AuthUser }) {
+    let coachID = req.user.type === UserType.coach ? req.user.id : undefined;
+    return this.leadsService.getStats(coachID);
   }
 
   @Get(':id')

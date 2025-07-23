@@ -22,7 +22,7 @@ export class GoogleAuthService {
 
   async validateGoogleToken(idToken: string) {
     try {
-      const ticket = await this.client.verifyIdToken({
+      const ticket = await this.client.verifyIDToken({
         idToken,
         audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
       });

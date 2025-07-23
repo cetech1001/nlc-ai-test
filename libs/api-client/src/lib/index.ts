@@ -1,5 +1,6 @@
 export * from './types';
 
+export * from './ai-agents';
 export * from './base';
 export * from './calendly';
 export * from './clients';

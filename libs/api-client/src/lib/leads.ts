@@ -97,6 +97,79 @@ class LeadsAPI extends BaseAPI {
       body: JSON.stringify({ status }),
     });
   }
+
+  /*async getCoachLeads(
+    page = 1,
+    limit = 10,
+    filters: LeadFilters = {},
+    search = ''
+  ): Promise<PaginatedLeadsResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (search) params.append('search', search);
+
+    if (filters.status && filters.status !== '') {
+      params.append('status', filters.status);
+    }
+
+    if (filters.source && Array.isArray(filters.source) && filters.source.length > 0) {
+      params.append('source', filters.source.join(','));
+    }
+
+    if (filters.dateRange) {
+      if (filters.dateRange.start) {
+        params.append('startDate', filters.dateRange.start);
+      }
+      if (filters.dateRange.end) {
+        params.append('endDate', filters.dateRange.end);
+      }
+    }
+
+    if (filters.meetingDateRange) {
+      if (filters.meetingDateRange.start) {
+        params.append('meetingStartDate', filters.meetingDateRange.start);
+      }
+      if (filters.meetingDateRange.end) {
+        params.append('meetingEndDate', filters.meetingDateRange.end);
+      }
+    }
+
+    return this.makeRequest(`/coach/leads?${params.toString()}`);
+  }
+
+  async getCoachLeadStats(): Promise<{
+    total: number;
+    contacted: number;
+    scheduled: number;
+    converted: number;
+    unresponsive: number;
+    conversionRate: number;
+  }> {
+    return this.makeRequest('/coach/leads/stats');
+  }
+
+  async createCoachLead(data: CreateLeadRequest): Promise<Lead> {
+    return this.makeRequest('/coach/leads', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCoachLead(id: string, data: UpdateLeadRequest): Promise<Lead> {
+    return this.makeRequest(`/coach/leads/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCoachLead(id: string): Promise<{ message: string }> {
+    return this.makeRequest(`/coach/leads/${id}`, {
+      method: 'DELETE',
+    });
+  }*/
 }
 
 export const leadsAPI = new LeadsAPI();
