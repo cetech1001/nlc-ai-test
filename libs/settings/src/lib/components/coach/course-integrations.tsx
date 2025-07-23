@@ -15,7 +15,7 @@ type CoursePlatform = 'thinkific' | 'teachable' | 'kajabi' | 'skool';
 
 interface CoursePlatformConfig {
   name: string;
-  icon: string;
+  icon: ReactNode;
   color: string;
   fields: Array<{
     name: string;
@@ -39,7 +39,7 @@ interface CourseIntegrationsProps {
 export const CourseIntegrations: FC<CourseIntegrationsProps> = (props) => {
   const { setError, setSuccess } = useSettings();
 
-  const [courseIntegrations, setCourseIntegrations] = useState<CourseIntegration[]>([]);
+  const [courseIntegrations, setCourseIntegrations] = useState<any[]>([]);
   const [availablePlatforms, setAvailablePlatforms] = useState<Record<string, CoursePlatformInfo>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -169,7 +169,7 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = (props) => {
       setIsLoading(true);
       const credentials = { ...formData };
 
-      let integration: CourseIntegration;
+      let integration: any;
 
       if (editingIntegration) {
         // Update existing integration

@@ -1,41 +1,41 @@
 import { BaseAPI } from './base';
 
 class AiAgentsAPI extends BaseAPI {
-  async generateFollowupSequence(leadId: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadId}/generate`, {
+  async generateFollowupSequence(leadID: string) {
+    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/generate`, {
       method: 'POST',
     });
   }
 
-  async updateLeadStatus(leadId: string, status: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadId}/status`, {
+  async updateLeadStatus(leadID: string, status: string) {
+    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
   }
 
-  async getEmailHistory(leadId: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadId}/history`);
+  async getEmailHistory(leadID: string): Promise<any[]> {
+    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/history`);
   }
 
-  async getActiveSequences() {
+  async getActiveSequences(): Promise<any[]> {
     return this.makeRequest('/ai-agents/lead-followup/sequences');
   }
 
-  async pauseSequence(leadId: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadId}/pause`, {
+  async pauseSequence(leadID: string) {
+    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/pause`, {
       method: 'POST',
     });
   }
 
-  async resumeSequence(leadId: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadId}/resume`, {
+  async resumeSequence(leadID: string) {
+    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/resume`, {
       method: 'POST',
     });
   }
 
-  async cancelSequence(leadId: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadId}/cancel`, {
+  async cancelSequence(leadID: string) {
+    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/cancel`, {
       method: 'POST',
     });
   }
