@@ -2,14 +2,14 @@ import { Controller, Get, Post, Body, UseGuards, Request, Delete } from '@nestjs
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SystemSettingsService } from './system-settings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {UserType} from "@nlc-ai/types";
 
 @ApiTags('System Settings')
 @Controller('system-settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserType.admin)
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes(UserType.admin)
 @ApiBearerAuth()
 export class SystemSettingsController {
   constructor(private readonly systemSettingsService: SystemSettingsService) {}

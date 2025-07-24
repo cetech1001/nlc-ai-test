@@ -5,7 +5,8 @@
   "scripts": {
     "prisma:studio": "prisma studio",
     "prisma:generate": "prisma generate",
-    "prisma:db:push": "prisma db push"
+    "prisma:db:push": "prisma db push",
+    "prisma:format": "prisma format"
   },
   "nx": {
     "targets": {

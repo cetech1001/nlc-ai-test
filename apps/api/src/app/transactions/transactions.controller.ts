@@ -10,15 +10,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import type { Response } from 'express';
 import { TransactionsService } from './transactions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {TransactionsQueryParamsDto} from "./dto";
 import {TransactionStatus} from "@nlc-ai/types";
 
 @ApiTags('Transactions')
 @Controller('transactions')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes('admin')
 @ApiBearerAuth()
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}

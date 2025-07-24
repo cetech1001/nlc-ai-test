@@ -1,9 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {Injectable, BadRequestException, UnauthorizedException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
-import { OAuth2Client } from 'google-auth-library';
+import {OAuth2Client, TokenPayload} from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
-import {UserType} from "@nlc-ai/types";
+import {AuthenticatedUser, UserType, ValidatedGoogleUser} from "@nlc-ai/types";
 
 @Injectable()
 export class GoogleAuthService {
@@ -20,30 +20,49 @@ export class GoogleAuthService {
     );
   }
 
-  async validateGoogleToken(idToken: string) {
+
+  async validateGoogleToken(idToken: string): Promise<ValidatedGoogleUser> {
+    let payload: TokenPayload | undefined;
+
     try {
-      const ticket = await this.client.verifyIDToken({
+      const ticket = await this.client.verifyIdToken({
         idToken,
         audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
       });
-
-      const payload = ticket.getPayload();
-      return {
-        email: payload?.email,
-        firstName: payload?.given_name,
-        lastName: payload?.family_name,
-        picture: payload?.picture,
-        verified: payload?.email_verified,
-      };
-    } catch (error) {
-      throw new BadRequestException('Invalid Google token');
+      payload = ticket.getPayload();
+    } catch (err) {
+      throw new UnauthorizedException('Invalid Google token');
     }
+
+    if (!payload || !payload.sub || !payload.email) {
+      throw new BadRequestException('Google token payload is missing required fields');
+    }
+
+    return {
+      providerID: payload.sub,
+      email: payload.email!,
+      firstName: payload.given_name!,
+      lastName: payload.family_name!,
+      avatarUrl: payload.picture!,
+    };
   }
 
-  async googleAuth(user: any) {
+  async googleAuth(user: ValidatedGoogleUser): Promise<AuthenticatedUser> {
     let existingUser = await this.prisma.coach.findUnique({
       where: { email: user.email },
     });
+
+    if (existingUser) {
+      if (
+        existingUser.provider !== 'google'
+        || existingUser.providerID === user.providerID
+      ) {
+        throw new UnauthorizedException({
+          code: 'ACCOUNT_CONFLICT',
+          message: 'An account with this email already exists.'
+        });
+      }
+    }
 
     if (!existingUser) {
       existingUser = await this.prisma.coach.create({
@@ -51,8 +70,10 @@ export class GoogleAuthService {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          avatarUrl: user.avatarUrl,
           isVerified: true,
-          avatarUrl: user.picture,
+          provider: 'google',
+          providerID: user.providerID,
         },
       });
     } else if (existingUser.isDeleted || !existingUser.isActive) {

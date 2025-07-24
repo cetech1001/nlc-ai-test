@@ -2,14 +2,14 @@ import {Controller, Get, Post, Body, UseGuards, Request, Delete, Param, Put, Bad
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { IntegrationsService } from './integrations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {type PlatformConnectionRequest, UserType} from "@nlc-ai/types";
 
 @ApiTags('Integrations')
 @Controller('integrations')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserType.coach)
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes(UserType.coach)
 @ApiBearerAuth()
 export class IntegrationsController {
   constructor(private readonly integrationsService: IntegrationsService) {}

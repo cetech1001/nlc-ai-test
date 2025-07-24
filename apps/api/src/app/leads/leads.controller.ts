@@ -12,15 +12,15 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LeadsService} from './leads.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {CreateLeadDto, LeadQueryDto, UpdateLeadDto} from "./dto";
 import {AuthUser, UserType} from "@nlc-ai/types";
 
 @ApiTags('Leads')
 @Controller('leads')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserType.coach, UserType.admin)
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes(UserType.coach, UserType.admin)
 @ApiBearerAuth()
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}

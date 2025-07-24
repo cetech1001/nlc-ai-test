@@ -5,8 +5,30 @@ export enum UserType {
 
 export type AUTH_TYPES = 'admin' | 'coach';
 
+export interface ValidatedGoogleUser {
+  providerID: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string;
+}
+
+export interface AuthenticatedUser {
+  access_token: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    isVerified: boolean | null;
+    businessName: string | null;
+    avatarUrl: string | null;
+  };
+}
+
 export interface AuthUser {
   id: string;
+  email: string;
   type: AUTH_TYPES;
 }
 

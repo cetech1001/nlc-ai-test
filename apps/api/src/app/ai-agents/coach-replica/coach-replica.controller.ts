@@ -10,15 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
+import { UserTypesGuard } from '../../auth/guards/user-types.guard';
+import { UserTypes } from '../../auth/decorators/user-types.decorator';
 import { CoachReplicaService } from './coach-replica.service';
 import { AuthUser, UserType, type CoachReplicaRequest } from '@nlc-ai/types';
 
 @ApiTags('Coach Replica Agent')
 @Controller('ai-agents/coach-replica')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserType.coach, UserType.admin)
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes(UserType.coach, UserType.admin)
 @ApiBearerAuth()
 export class CoachReplicaController {
   constructor(private readonly coachReplicaService: CoachReplicaService) {}

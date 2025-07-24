@@ -14,13 +14,13 @@ import { CoachesService } from './coaches.service';
 import { CreateCoachDto, UpdateCoachDto } from './dto';
 import { CoachQueryDto } from './dto/coach-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 
 @ApiTags('Coaches')
 @Controller('coaches')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes('admin')
 @ApiBearerAuth()
 export class CoachesController {
   constructor(private readonly coachesService: CoachesService) {}

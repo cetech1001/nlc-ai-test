@@ -29,9 +29,10 @@ import {
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
-import {type AUTH_TYPES, UserType} from "@nlc-ai/types";
-import type {Response, Request} from 'express';
+import {type AUTH_TYPES, UserType, type ValidatedGoogleUser} from "@nlc-ai/types";
+import type {Response} from 'express';
 import {FileInterceptor} from "@nestjs/platform-express";
+import {CurrentUser} from "./decorators/current-user.decorator";
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -92,8 +93,8 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleOAuthGuard)
   @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const result = await this.googleAuthService.googleAuth(req.user);
+  async googleAuthRedirect(@CurrentUser() user: ValidatedGoogleUser, @Res() res: Response) {
+    const result = await this.googleAuthService.googleAuth(user);
 
     const frontendUrl = this.configService.get<string>('COACH_PLATFORM_URL');
     const redirectUrl = `${frontendUrl}/auth/google/callback?token=${result.access_token}`;

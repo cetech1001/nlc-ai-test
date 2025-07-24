@@ -2,13 +2,13 @@ import { Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CleanupService } from './cleanup.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 
 @ApiTags('Cleanup')
 @Controller('cleanup')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes('admin')
 @ApiBearerAuth()
 export class CleanupController {
   constructor(private readonly cleanupService: CleanupService) {}

@@ -11,8 +11,8 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import { Public } from '../auth/decorators/public.decorator';
 import {CreatePaymentIntentDto, CreateSetupIntentDto, ProcessPaymentRequestDto, SendPaymentRequestDto} from "./dto";
 
@@ -22,8 +22,8 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post('send-payment-request')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Send payment request email with Stripe payment link' })
   @ApiResponse({ status: 201, description: 'Payment request sent successfully' })
@@ -34,8 +34,8 @@ export class PaymentsController {
   }
 
   @Post('create-payment-link')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a Stripe payment link for coach payment' })
   @ApiResponse({ status: 201, description: 'Payment link created successfully' })
@@ -46,8 +46,8 @@ export class PaymentsController {
   }
 
   @Post('create-payment-intent')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a payment intent for coach payment' })
   @ApiResponse({ status: 201, description: 'Payment intent created successfully' })
@@ -58,8 +58,8 @@ export class PaymentsController {
   }
 
   @Post('process-payment')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Process a payment for a coach' })
   @ApiResponse({ status: 201, description: 'Payment processed successfully' })
@@ -70,8 +70,8 @@ export class PaymentsController {
   }
 
   @Get('customer/:customerID/payment-methods')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment methods for a customer' })
   @ApiResponse({ status: 200, description: 'Payment methods retrieved successfully' })
@@ -80,8 +80,8 @@ export class PaymentsController {
   }
 
   @Post('setup-intent')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a setup intent for saving payment methods' })
   @ApiResponse({ status: 201, description: 'Setup intent created successfully' })
@@ -90,8 +90,8 @@ export class PaymentsController {
   }
 
   @Get('payment-link/:linkID/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment link status' })
   @ApiResponse({ status: 200, description: 'Payment link status retrieved successfully' })
@@ -100,8 +100,8 @@ export class PaymentsController {
   }
 
   @Patch('payment-link/:linkID/deactivate')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate a payment link' })
   @ApiResponse({ status: 200, description: 'Payment link deactivated successfully' })

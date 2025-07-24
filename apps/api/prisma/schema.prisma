@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Providers {
+  google
+}
+
 enum LeadType {
   coach_lead
   admin_lead
@@ -173,6 +177,8 @@ model Coach {
   avatarUrl           String?
   bio                 String?
   websiteUrl          String?
+  provider            Providers?
+  providerID          String?
   timezone            String?             @default("UTC") @db.VarChar(50)
   subscriptionStatus  String?             @default("trial") @db.VarChar(50)
   subscriptionPlan    String?             @db.VarChar(50)
@@ -746,6 +752,36 @@ model PaymentLink {
   @@map("payment_links")
 }
 
+model ScheduledEmail {
+  id                String    @id @default(uuid()) @db.Uuid
+  emailSequenceID   String?   @db.Uuid // Add this field
+  leadID            String    @db.Uuid
+  coachID           String    @db.Uuid
+  subject           String    @db.VarChar(500)
+  body              String
+  sequenceOrder     Int
+  scheduledFor      DateTime  @db.Timestamptz(6)
+  sentAt            DateTime? @db.Timestamptz(6)
+  status            String    @default("scheduled") @db.VarChar(50)
+  errorMessage      String?
+  emailProvider     String?   @default("resend") @db.VarChar(50)
+  providerMessageID String?   @db.VarChar(255)
+  openedAt          DateTime? @db.Timestamptz(6)
+  clickedAt         DateTime? @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
+
+  emailSequence EmailSequence? @relation(fields: [emailSequenceID], references: [id], onDelete: SetNull)
+  lead          Lead           @relation(fields: [leadID], references: [id], onDelete: Cascade)
+  coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([scheduledFor, status])
+  @@index([leadID])
+  @@index([coachID])
+  @@index([emailSequenceID])
+  @@map("scheduled_emails")
+}
+
 model EmailSequence {
   id          String   @id @default(uuid()) @db.Uuid
   leadID      String   @db.Uuid
@@ -762,33 +798,4 @@ model EmailSequence {
   scheduledEmails ScheduledEmail[]
 
   @@map("email_sequences")
-}
-
-model ScheduledEmail {
-  id                String    @id @default(uuid()) @db.Uuid
-  emailSequenceID   String?   @db.Uuid
-  leadID            String    @db.Uuid
-  coachID           String    @db.Uuid
-  subject           String    @db.VarChar(500)
-  body              String
-  sequenceOrder     Int
-  scheduledFor      DateTime  @db.Timestamptz(6)
-  sentAt            DateTime? @db.Timestamptz(6)
-  status            String    @default("scheduled") @db.VarChar(50) // scheduled, sent, failed, cancelled
-  errorMessage      String?
-  emailProvider     String?   @default("resend") @db.VarChar(50)
-  providerMessageID String?   @db.VarChar(255)
-  openedAt          DateTime? @db.Timestamptz(6)
-  clickedAt         DateTime? @db.Timestamptz(6)
-  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
-
-  emailSequence EmailSequence? @relation(fields: [emailSequenceID], references: [id], onDelete: SetNull)
-  lead          Lead           @relation(fields: [leadID], references: [id], onDelete: Cascade)
-  coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([scheduledFor, status])
-  @@index([leadID])
-  @@index([coachID])
-  @@map("scheduled_emails")
 }

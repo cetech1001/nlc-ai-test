@@ -7,16 +7,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
+import { UserTypesGuard } from '../../auth/guards/user-types.guard';
+import { UserTypes } from '../../auth/decorators/user-types.decorator';
 import { EmailDeliverabilityService } from './email-deliverability.service';
 import { AuthUser, UserType } from '@nlc-ai/types';
 import {AnalyzeEmailDto, QuickCheckDto} from "./dto/analyze-email.dto";
 
 @ApiTags('Email Deliverability')
 @Controller('ai-agents/email-deliverability')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserType.coach, UserType.admin)
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes(UserType.coach, UserType.admin)
 @ApiBearerAuth()
 export class EmailDeliverabilityController {
   constructor(

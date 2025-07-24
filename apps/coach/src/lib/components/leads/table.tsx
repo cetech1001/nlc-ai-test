@@ -1,63 +1,53 @@
 import { tableRenderers } from "@nlc-ai/shared";
-import { DataTableLead, Lead } from "@nlc-ai/types";
-import { Mail, Sparkles, Pause, X, Loader2 } from "lucide-react";
-
-export const transformLeadData = (leads: Lead[]): DataTableLead[] => {
-  return leads.map(lead => ({
-    id: `#${lead.id.slice(-4)}`,
-    name: `${lead.firstName} ${lead.lastName}`,
-    email: lead.email,
-    phone: lead.phone || 'N/A',
-    source: lead.source || 'Unknown',
-    status: lead.status.charAt(0).toUpperCase() + lead.status.slice(1),
-    meetingDate: lead.meetingDate ? new Date(lead.meetingDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }) : 'Not scheduled',
-    lastContacted: lead.lastContactedAt ? new Date(lead.lastContactedAt).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    }) : 'Never',
-    rawStatus: lead.status,
-    originalID: lead.id,
-  }));
-};
-
-const colWidth = 100 / 8;
+import { EmailSequenceWithEmails } from "@nlc-ai/types";
+import {
+  Mail,
+  Pause,
+  X,
+  Loader2,
+  Settings,
+  Play,
+  Edit3,
+  Plus,
+  CheckCircle,
+  Clock,
+  AlertTriangle
+} from "lucide-react";
 
 export const coachLeadColumns = (
-  getSequenceForLead: (leadID: string) => any,
+  getSequenceForLead: (leadID: string) => EmailSequenceWithEmails | undefined,
   isGeneratingSequence: string
 ) => [
   {
     key: 'name',
     header: 'Name',
-    width: `${colWidth}%`,
-    render: (value: string) => value
+    width: '15%',
+    render: (value: string) => (
+      <div className="font-medium text-white">{value}</div>
+    )
   },
   {
     key: 'email',
     header: 'Email',
-    width: `${colWidth * (4 / 3)}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 22)
-  },
-  {
-    key: 'phone',
-    header: 'Phone',
-    width: `${colWidth}%`,
-    render: (value: string) => value
+    width: '20%',
+    render: (value: string) => (
+      <div className="text-[#A0A0A0]">{tableRenderers.truncateText(value, 25)}</div>
+    )
   },
   {
     key: 'source',
     header: 'Source',
-    width: `${colWidth * (2 / 3)}%`,
-    render: (value: string) => value
+    width: '10%',
+    render: (value: string) => (
+      <span className="px-2 py-1 rounded-full text-xs bg-gray-600/20 text-gray-300">
+        {value}
+      </span>
+    )
   },
   {
     key: 'status',
     header: 'Status',
-    width: `${colWidth * (2 / 3)}%`,
+    width: '12%',
     render: (value: string, row: any) => {
       const statusConfig = {
         contacted: { bg: 'bg-yellow-600/20', text: 'text-yellow-400', label: 'Not Converted' },
@@ -77,7 +67,7 @@ export const coachLeadColumns = (
   {
     key: 'aiSequence',
     header: 'AI Sequence',
-    width: `${colWidth}%`,
+    width: '20%',
     render: (value: any, row: any) => {
       const sequence = getSequenceForLead(row.originalID);
 
@@ -92,32 +82,46 @@ export const coachLeadColumns = (
 
       if (!sequence) {
         return (
-          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-600/20 text-gray-400">
-            No Sequence
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-600/20 text-gray-400 w-fit">
+              No Sequence
+            </span>
+            <span className="text-xs text-gray-500">Ready to create</span>
+          </div>
         );
       }
 
-      const scheduledCount = sequence.scheduledEmails?.filter(
-        (email: any) => email.status === 'scheduled'
-      ).length || 0;
-
-      console.log("Scheduled count", scheduledCount);
-
-      const sentCount = sequence.scheduledEmails?.filter(
-        (email: any) => email.status === 'sent'
-      ).length || 0;
-
-      console.log("Sent count", sentCount);
+      const sentEmails = sequence.emails?.filter(email => email.status === 'sent').length || 0;
+      const scheduledEmails = sequence.emails?.filter(email => email.status === 'scheduled').length || 0;
+      const failedEmails = sequence.emails?.filter(email => email.status === 'failed').length || 0;
 
       return (
-        <div className="flex flex-col gap-1">
-          <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-600/20 text-purple-400">
-            Active
-          </span>
-          <span className="text-xs text-gray-400">
-            {sentCount} sent, {scheduledCount} pending
-          </span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              sequence.isActive ?
+                'bg-purple-600/20 text-purple-400' :
+                'bg-gray-600/20 text-gray-400'
+            }`}>
+              {sequence.isActive ? 'Active' : 'Paused'}
+            </span>
+
+            {failedEmails > 0 && (
+              <AlertTriangle className="w-3 h-3 text-red-400" title={`${failedEmails} failed emails`} />
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1 text-green-400">
+              <CheckCircle className="w-3 h-3" />
+              <span>{sentEmails}</span>
+            </div>
+            <div className="flex items-center gap-1 text-blue-400">
+              <Clock className="w-3 h-3" />
+              <span>{scheduledEmails}</span>
+            </div>
+            <span className="text-gray-500">/{sequence.totalEmails}</span>
+          </div>
         </div>
       );
     }
@@ -125,68 +129,102 @@ export const coachLeadColumns = (
   {
     key: 'meetingDate',
     header: 'Meeting Date',
-    width: `${colWidth * (2 / 3)}%`,
-    render: (value: string) => value
+    width: '12%',
+    render: (value: string) => (
+      <div className="text-sm text-[#A0A0A0]">{value}</div>
+    )
   },
   {
     key: 'actions',
     header: 'Actions',
-    width: `${colWidth}%`,
+    width: '15%',
     render: (value: any, row: any, onRowAction?: (action: string, row: any) => void) => {
       const sequence = getSequenceForLead(row.originalID);
       const hasActiveSequence = !!sequence;
+      const isSequencePaused = sequence && !sequence.isActive;
 
       return (
         <div className="flex gap-1 flex-wrap">
+          {/* Edit Lead */}
           <button
             onClick={() => onRowAction?.('edit', row)}
-            className="px-2 py-1 rounded text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
+            className="p-1.5 rounded text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
+            title="Edit Lead"
           >
-            Edit
+            <Edit3 className="w-3 h-3" />
           </button>
 
+          {/* Sequence Actions */}
           {!hasActiveSequence ? (
             <button
-              onClick={() => onRowAction?.('generate-sequence', row)}
-              className="px-2 py-1 rounded text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center gap-1"
+              onClick={() => onRowAction?.('create-sequence', row)}
+              className="p-1.5 rounded text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center gap-1"
               disabled={isGeneratingSequence === row.originalID}
-              title="Generate AI Sequence"
+              title="Create AI Sequence"
             >
-              <Sparkles className="w-3 h-3" />
-              {isGeneratingSequence === row.originalID ? 'Gen...' : 'AI'}
+              {isGeneratingSequence === row.originalID ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Plus className="w-3 h-3" />
+              )}
             </button>
           ) : (
-            <>
+            <div className="flex gap-1">
+              {/* Sequence Settings */}
               <button
-                onClick={() => onRowAction?.('pause-sequence', row)}
-                className="px-2 py-1 rounded text-xs bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 transition-colors"
-                title="Pause Sequence"
+                onClick={() => onRowAction?.('email', row)}
+                className="p-1.5 rounded text-xs bg-violet-600/20 text-violet-400 hover:bg-violet-600/30 transition-colors"
+                title="Manage Sequence"
               >
-                <Pause className="w-3 h-3" />
+                <Settings className="w-3 h-3" />
               </button>
+
+              {/* Pause/Resume */}
+              {isSequencePaused ? (
+                <button
+                  onClick={() => onRowAction?.('resume-sequence', row)}
+                  className="p-1.5 rounded text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors"
+                  title="Resume Sequence"
+                >
+                  <Play className="w-3 h-3" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => onRowAction?.('pause-sequence', row)}
+                  className="p-1.5 rounded text-xs bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 transition-colors"
+                  title="Pause Sequence"
+                >
+                  <Pause className="w-3 h-3" />
+                </button>
+              )}
+
+              {/* Cancel */}
               <button
                 onClick={() => onRowAction?.('cancel-sequence', row)}
-                className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+                className="p-1.5 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
                 title="Cancel Sequence"
               >
                 <X className="w-3 h-3" />
               </button>
-            </>
+            </div>
           )}
 
+          {/* Send Manual Email */}
           <button
             onClick={() => onRowAction?.('email', row)}
-            className="px-2 py-1 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
-            title="Send Email"
+            className="p-1.5 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
+            title="Send Manual Email"
           >
             <Mail className="w-3 h-3" />
           </button>
 
+          {/* Delete */}
           <button
             onClick={() => onRowAction?.('delete', row)}
-            className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+            className="p-1.5 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+            title="Delete Lead"
           >
-            Del
+            <X className="w-3 h-3" />
           </button>
         </div>
       );

@@ -1,22 +1,24 @@
+// apps/coach/src/app/(dashboard)/leads/page.tsx ( version)
 'use client'
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Plus, Calendar, TrendingUp, AlertCircle, Sparkles } from "lucide-react";
+import { Search, Plus, Calendar, TrendingUp, AlertCircle, Sparkles, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/shared";
 import { AlertBanner, Button } from '@nlc-ai/ui';
 import { leadsAPI, aiAgentsAPI } from '@nlc-ai/api-client';
-import { DataTableLead, FilterValues, LeadStats } from "@nlc-ai/types";
+import { DataTableLead, FilterValues, LeadStats, EmailSequenceWithEmails } from "@nlc-ai/types";
 import {
   EmailAutomationModal,
+  CreateSequenceModal,
   emptyLeadsFilterValues,
   coachLeadColumns,
   leadFilters,
   transformLeadData
 } from '@/lib';
 
-const CoachLeads = () => {
+const Leads = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -40,9 +42,10 @@ const CoachLeads = () => {
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showCreateSequenceModal, setShowCreateSequenceModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<DataTableLead | null>(null);
   const [stats, setStats] = useState<LeadStats>();
-  const [activeSequences, setActiveSequences] = useState<any[]>([]);
+  const [activeSequences, setActiveSequences] = useState<EmailSequenceWithEmails[]>([]);
 
   const leadsPerPage = 10;
 
@@ -53,6 +56,9 @@ const CoachLeads = () => {
       setTimeout(() => setSuccessMessage(''), 3000);
     } else if (success === 'updated') {
       setSuccessMessage('Lead updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else if (success === 'email-updated') {
+      setSuccessMessage('Email updated successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     }
     if (success) {
@@ -113,17 +119,52 @@ const CoachLeads = () => {
 
   const fetchActiveSequences = async () => {
     try {
-      const sequences = await aiAgentsAPI.getActiveSequences();
-      setActiveSequences(sequences);
+      // Fetch sequences for all visible leads
+      const sequencePromises = leads.map(async (lead) => {
+        try {
+          const sequences = await aiAgentsAPI.getSequencesForLead(lead.originalID);
+          return sequences.length > 0 ? sequences[0] : null;
+        } catch (error) {
+          return null;
+        }
+      });
+
+      const sequenceResults = await Promise.all(sequencePromises);
+      const validSequences = sequenceResults.filter(seq => seq !== null) as EmailSequenceWithEmails[];
+      setActiveSequences(validSequences);
     } catch (error) {
       console.error('Failed to fetch active sequences:', error);
     }
   };
 
+  const handleCreateSequence = async (leadID: string) => {
+    const lead = leads.find(l => l.originalID === leadID);
+    if (lead) {
+      setSelectedLead(lead);
+      setShowCreateSequenceModal(true);
+    }
+  };
+
+  const handleSequenceCreated = async (sequence: EmailSequenceWithEmails) => {
+    setSuccessMessage('AI email sequence created successfully!');
+    setShowCreateSequenceModal(false);
+    await fetchActiveSequences();
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
   const handleGenerateSequence = async (leadID: string) => {
     try {
       setIsGeneratingSequence(leadID);
-      await aiAgentsAPI.generateFollowupSequence(leadID);
+
+      // Use flexible sequence creation with default settings
+      await aiAgentsAPI.createFlexibleSequence({
+        leadID,
+        sequenceConfig: {
+          emailCount: 4,
+          sequenceType: 'standard',
+        }
+      });
+
       setSuccessMessage('AI follow-up sequence generated successfully!');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -137,7 +178,7 @@ const CoachLeads = () => {
 
   const handlePauseSequence = async (leadID: string) => {
     try {
-      await aiAgentsAPI.pauseSequence(leadID);
+      await aiAgentsAPI.pauseSequenceForLead(leadID);
       setSuccessMessage('Email sequence paused');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -148,7 +189,7 @@ const CoachLeads = () => {
 
   const handleResumeSequence = async (leadID: string) => {
     try {
-      await aiAgentsAPI.resumeSequence(leadID);
+      await aiAgentsAPI.resumeSequenceForLead(leadID);
       setSuccessMessage('Email sequence resumed');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -161,7 +202,7 @@ const CoachLeads = () => {
     if (!confirm('Are you sure you want to cancel this email sequence?')) return;
 
     try {
-      await aiAgentsAPI.cancelSequence(leadID);
+      await aiAgentsAPI.cancelSequenceForLead(leadID);
       setSuccessMessage('Email sequence cancelled');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -197,6 +238,8 @@ const CoachLeads = () => {
       await handleDeleteLead(lead.originalID);
     } else if (action === 'email') {
       handleEmailLead(lead);
+    } else if (action === 'create-sequence') {
+      await handleCreateSequence(lead.originalID);
     } else if (action === 'generate-sequence') {
       await handleGenerateSequence(lead.originalID);
     } else if (action === 'pause-sequence') {
@@ -244,7 +287,7 @@ const CoachLeads = () => {
           <AlertBanner type={"error"} message={error} onDismiss={clearMessages}/>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <StatCard
             title="Total Leads"
             value={stats?.total}
@@ -353,6 +396,7 @@ const CoachLeads = () => {
         )}
       </div>
 
+      {/*  Email Automation Modal */}
       {showEmailModal && selectedLead && (
         <EmailAutomationModal
           isOpen={showEmailModal}
@@ -366,8 +410,24 @@ const CoachLeads = () => {
           leadID={selectedLead.originalID}
         />
       )}
+
+      {/* Create Sequence Modal */}
+      {showCreateSequenceModal && selectedLead && (
+        <CreateSequenceModal
+          isOpen={showCreateSequenceModal}
+          onClose={() => {
+            setShowCreateSequenceModal(false);
+            setSelectedLead(null);
+          }}
+          leadID={selectedLead.originalID}
+          leadName={selectedLead.name}
+          leadEmail={selectedLead.email}
+          leadStatus={selectedLead.rawStatus}
+          onSequenceCreated={handleSequenceCreated}
+        />
+      )}
     </div>
   );
 }
 
-export default CoachLeads;
+export default Leads;
