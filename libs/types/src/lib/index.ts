@@ -1,3 +1,5 @@
+export * from './agents';
+
 export * from './activity-log';
 export * from './admin';
 export * from './agent';

@@ -8,25 +8,66 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { LeadFollowupService } from './lead-followup/lead-followup.service';
-import { EmailSchedulerService } from '../email/email-scheduler.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { LeadFollowupService } from './lead-followup.service';
+import { EmailSchedulerService } from '../../email/email-scheduler.service';
 import {type AuthUser, UserType} from "@nlc-ai/types";
+import {EmailDeliverabilityService} from "../email-deliverability/email-deliverability.service";
 
-@ApiTags('AI Agents')
-@Controller('ai-agents')
+@ApiTags('Lead Followup Agent')
+@Controller('ai-agents/lead-followup')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
-export class AiAgentsController {
+export class LeadFollowupController {
   constructor(
     private leadFollowupService: LeadFollowupService,
     private emailSchedulerService: EmailSchedulerService,
+    private emailDeliverabilityService: EmailDeliverabilityService,
   ) {}
 
-  @Post('lead-followup/:leadID/generate')
+  @Post(':leadID/generate-enhanced')
+  @Roles(UserType.admin, UserType.coach)
+  @ApiOperation({ summary: 'Generate enhanced AI follow-up sequence with deliverability analysis' })
+  @ApiResponse({ status: 201, description: 'Enhanced follow-up sequence generated successfully' })
+  async generateEnhancedFollowupSequence(
+    @Param('leadID') leadID: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    const coachID = user.type === UserType.coach ? user.id : undefined;
+
+    // Generate the sequence using coach replica
+    const sequence = await this.leadFollowupService.scheduleFollowupEmails(leadID, coachID);
+
+    // Analyze deliverability for each email in the sequence
+    const analyzedSequence = await Promise.all(
+      sequence.sequence.map(async (email) => {
+        const analysis = await this.emailDeliverabilityService.quickDeliverabilityCheck(
+          email.subject,
+          email.body
+        );
+
+        return {
+          ...email,
+          deliverabilityScore: analysis.score,
+          deliverabilityIssues: analysis.issues
+        };
+      })
+    );
+
+    return {
+      ...sequence,
+      sequence: analyzedSequence,
+      overallDeliverability: {
+        averageScore: analyzedSequence.reduce((sum, email) => sum + email.deliverabilityScore, 0) / analyzedSequence.length,
+        totalIssues: analyzedSequence.reduce((sum, email) => sum + email.deliverabilityIssues.length, 0)
+      }
+    };
+  }
+
+  @Post(':leadID/generate')
   @Roles(UserType.admin, UserType.coach)
   @ApiOperation({ summary: 'Generate AI follow-up sequence for a lead' })
   @ApiResponse({ status: 201, description: 'Follow-up sequence generated successfully' })
@@ -38,7 +79,7 @@ export class AiAgentsController {
     return this.leadFollowupService.scheduleFollowupEmails(leadID, coachID);
   }
 
-  @Patch('lead-followup/:leadID/status')
+  @Patch(':leadID/status')
   @Roles(UserType.admin, UserType.coach)
   @ApiOperation({ summary: 'Update lead status and regenerate sequence' })
   @ApiResponse({ status: 200, description: 'Lead status updated and sequence regenerated' })
@@ -51,7 +92,7 @@ export class AiAgentsController {
     return this.leadFollowupService.updateLeadStatus(leadID, body.status, coachID);
   }
 
-  @Get('lead-followup/:leadID/history')
+  @Get(':leadID/history')
   @Roles(UserType.admin, UserType.coach)
   @ApiOperation({ summary: 'Get email history for a lead' })
   @ApiResponse({ status: 200, description: 'Email history retrieved successfully' })
@@ -59,7 +100,7 @@ export class AiAgentsController {
     return this.leadFollowupService.getLeadEmailHistory(leadID);
   }
 
-  @Get('lead-followup/sequences')
+  @Get('sequences')
   @Roles(UserType.admin, UserType.coach)
   @ApiOperation({ summary: 'Get active email sequences for coach' })
   @ApiResponse({ status: 200, description: 'Active sequences retrieved successfully' })
@@ -68,7 +109,7 @@ export class AiAgentsController {
     return this.leadFollowupService.getActiveSequences(coachID);
   }
 
-  @Post('lead-followup/:leadID/pause')
+  @Post(':leadID/pause')
   @Roles(UserType.admin, UserType.coach)
   @ApiOperation({ summary: 'Pause email sequence for a lead' })
   @ApiResponse({ status: 200, description: 'Email sequence paused' })
@@ -77,7 +118,7 @@ export class AiAgentsController {
     return { message: 'Email sequence paused successfully' };
   }
 
-  @Post('lead-followup/:leadID/resume')
+  @Post(':leadID/resume')
   @Roles(UserType.admin, UserType.coach)
   @ApiOperation({ summary: 'Resume email sequence for a lead' })
   @ApiResponse({ status: 200, description: 'Email sequence resumed' })
@@ -86,7 +127,7 @@ export class AiAgentsController {
     return { message: 'Email sequence resumed successfully' };
   }
 
-  @Post('lead-followup/:leadID/cancel')
+  @Post(':leadID/cancel')
   @Roles(UserType.admin, UserType.coach)
   @ApiOperation({ summary: 'Cancel email sequence for a lead' })
   @ApiResponse({ status: 200, description: 'Email sequence cancelled' })
