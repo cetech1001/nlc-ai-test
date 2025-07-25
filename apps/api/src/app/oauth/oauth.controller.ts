@@ -1,6 +1,9 @@
+// Update the existing oauth.controller.ts to handle email callbacks
+
 import {Controller, Get, Param, Query, Res} from '@nestjs/common';
 import type { Response } from 'express';
 import { IntegrationsService } from '../integrations/integrations.service';
+import { EmailAccountsService } from '../email-accounts/email-accounts.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 
@@ -10,11 +13,12 @@ import { Public } from '../auth/decorators/public.decorator';
 export class OAuthController {
   constructor(
     private readonly socialIntegrationsService: IntegrationsService,
+    private readonly emailAccountsService: EmailAccountsService,
   ) {}
 
   @Get(':platform/callback')
-  @ApiOperation({ summary: 'Handle {platform}\'s OAuth callback' })
-  async calendlyCallback(
+  @ApiOperation({ summary: 'Handle social platform OAuth callback' })
+  async socialPlatformCallback(
     @Res() res: Response,
     @Param('platform') platform: string,
     @Query('code') code: string,
@@ -22,6 +26,7 @@ export class OAuthController {
     @Query('error') error?: string,
     @Query('error_description') errorDescription?: string,
   ) {
+    console.log("Came into social");
     if (error) {
       return this.sendOAuthError(res, platform, errorDescription || error);
     }
@@ -40,16 +45,51 @@ export class OAuthController {
         state,
       );
 
-      this.sendOAuthSuccess(res, platform, integration);
+      this.sendOAuthSuccess(res, platform, integration, 'social');
     } catch (error: any) {
       this.sendOAuthError(res, platform, error.message);
     }
   }
 
+  @Get('email/:provider/callback')
+  @ApiOperation({ summary: 'Handle email provider OAuth callback' })
+  async emailProviderCallback(
+    @Param('provider') provider: string,
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+    @Query('error') error?: string,
+    @Query('error_description') errorDescription?: string,
+  ) {
+    console.log(code, state, error, provider);
+    if (error) {
+      return this.sendEmailOAuthError(res, provider, errorDescription || error);
+    }
+
+    if (!code || !state) {
+      return this.sendEmailOAuthError(res, provider, 'Missing authorization code or state parameter');
+    }
+
+    try {
+      const coachID = state.split('$')[0];
+
+      const emailAccount = await this.emailAccountsService.handleEmailOAuthCallback(
+        coachID,
+        provider,
+        code,
+        state,
+      );
+
+      this.sendEmailOAuthSuccess(res, provider, emailAccount);
+    } catch (error: any) {
+      this.sendEmailOAuthError(res, provider, error.message);
+    }
+  }
+
   /**
-   * Send successful OAuth response to the popup window
+   * Send successful OAuth response for social platforms
    */
-  private sendOAuthSuccess(res: Response, platform: string, integration: any) {
+  private sendOAuthSuccess(res: Response, platform: string, integration: any, type: 'social' | 'email' = 'social') {
     const html = `
       <!DOCTYPE html>
       <html>
@@ -57,58 +97,69 @@ export class OAuthController {
         <title>OAuth Success</title>
         <style>
           body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: white;
           }
           .container {
             text-align: center;
-            background: white;
+            background: linear-gradient(135deg, rgba(123, 33, 186, 0.1) 0%, rgba(179, 57, 212, 0.1) 100%);
+            border: 1px solid rgba(123, 33, 186, 0.3);
             padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 400px;
           }
           .success {
-            color: #22c55e;
+            color: #10b981;
             font-size: 18px;
             margin-bottom: 10px;
+            font-weight: 600;
           }
           .platform {
-            color: #6b7280;
+            color: #e5e7eb;
             text-transform: capitalize;
+            font-size: 16px;
+            margin-bottom: 16px;
+          }
+          .message {
+            color: #9ca3af;
+            font-size: 14px;
+          }
+          .checkmark {
+            font-size: 48px;
+            margin-bottom: 16px;
           }
         </style>
       </head>
       <body>
         <div class="container">
-          <div class="success">✓ Successfully connected!</div>
-          <div class="platform">${platform}</div>
-          <div style="margin-top: 20px; color: #6b7280; font-size: 14px;">
-            You can close this window.
-          </div>
+          <div class="checkmark">✅</div>
+          <div class="success">Successfully connected!</div>
+          <div class="platform">${platform} ${type}</div>
+          <div class="message">You can close this window.</div>
         </div>
         <script>
           try {
-            // Send success message to parent window
             if (window.opener) {
               window.opener.postMessage({
-                type: 'oauth_success',
+                type: '${type}_oauth_success',
                 platform: '${platform}',
-                integration: ${JSON.stringify(integration)}
+                data: ${JSON.stringify(integration)}
               }, '*');
             }
 
-            // Auto-close after 2 seconds
             setTimeout(() => {
               window.close();
             }, 2000);
           } catch (error) {
             console.error('OAuth callback error:', error);
-            // Fallback: just close the window
             setTimeout(() => {
               window.close();
             }, 3000);
@@ -123,7 +174,100 @@ export class OAuthController {
   }
 
   /**
-   * Send error OAuth response to the popup window
+   * Send successful email OAuth response
+   */
+  private sendEmailOAuthSuccess(res: Response, provider: string, emailAccount: any) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Email Account Connected</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: white;
+          }
+          .container {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 40px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 400px;
+          }
+          .success {
+            color: #10b981;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
+          }
+          .provider {
+            color: #e5e7eb;
+            text-transform: capitalize;
+            font-size: 16px;
+            margin-bottom: 8px;
+          }
+          .email {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-bottom: 16px;
+          }
+          .message {
+            color: #9ca3af;
+            font-size: 14px;
+          }
+          .envelope {
+            font-size: 48px;
+            margin-bottom: 16px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="envelope">📧</div>
+          <div class="success">Email account connected!</div>
+          <div class="provider">${provider}</div>
+          <div class="email">${emailAccount.emailAddress}</div>
+          <div class="message">You can close this window.</div>
+        </div>
+        <script>
+          try {
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'email_oauth_success',
+                provider: '${provider}',
+                emailAccount: ${JSON.stringify(emailAccount)}
+              }, '*');
+            }
+
+            setTimeout(() => {
+              window.close();
+            }, 2000);
+          } catch (error) {
+            console.error('Email OAuth callback error:', error);
+            setTimeout(() => {
+              window.close();
+            }, 3000);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
+  /**
+   * Send error OAuth response
    */
   private sendOAuthError(res: Response, platform: string, errorMessage: string) {
     const html = `
@@ -133,62 +277,71 @@ export class OAuthController {
         <title>OAuth Error</title>
         <style>
           body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: white;
           }
           .container {
             text-align: center;
-            background: white;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             max-width: 400px;
           }
           .error {
             color: #ef4444;
             font-size: 18px;
             margin-bottom: 10px;
+            font-weight: 600;
           }
           .platform {
-            color: #6b7280;
+            color: #e5e7eb;
             text-transform: capitalize;
             margin-bottom: 15px;
           }
           .message {
-            color: #374151;
+            color: #d1d5db;
             font-size: 14px;
             line-height: 1.5;
             margin-bottom: 20px;
           }
           .close-btn {
-            background: #6b7280;
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
             color: white;
             border: none;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.2s;
           }
           .close-btn:hover {
-            background: #4b5563;
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+          }
+          .cross {
+            font-size: 48px;
+            margin-bottom: 16px;
           }
         </style>
       </head>
       <body>
         <div class="container">
-          <div class="error">✗ Connection failed</div>
+          <div class="cross">❌</div>
+          <div class="error">Connection failed</div>
           <div class="platform">${platform}</div>
           <div class="message">${errorMessage}</div>
           <button class="close-btn" onclick="window.close()">Close Window</button>
         </div>
         <script>
           try {
-            // Send error message to parent window
             if (window.opener) {
               window.opener.postMessage({
                 type: 'oauth_error',
@@ -197,13 +350,113 @@ export class OAuthController {
               }, '*');
             }
 
-            // Auto-close after 5 seconds if user doesn't click
             setTimeout(() => {
               window.close();
             }, 5000);
           } catch (error) {
             console.error('OAuth error callback failed:', error);
-            // Fallback: just close the window
+            setTimeout(() => {
+              window.close();
+            }, 3000);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
+  /**
+   * Send error email OAuth response
+   */
+  private sendEmailOAuthError(res: Response, provider: string, errorMessage: string) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Email Connection Error</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: white;
+          }
+          .container {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 40px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 400px;
+          }
+          .error {
+            color: #ef4444;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
+          }
+          .provider {
+            color: #e5e7eb;
+            text-transform: capitalize;
+            margin-bottom: 15px;
+          }
+          .message {
+            color: #d1d5db;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+          }
+          .close-btn {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+          }
+          .close-btn:hover {
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+          }
+          .envelope {
+            font-size: 48px;
+            margin-bottom: 16px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="envelope">📧❌</div>
+          <div class="error">Email connection failed</div>
+          <div class="provider">${provider}</div>
+          <div class="message">${errorMessage}</div>
+          <button class="close-btn" onclick="window.close()">Close Window</button>
+        </div>
+        <script>
+          try {
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'email_oauth_error',
+                provider: '${provider}',
+                error: '${errorMessage.replace(/'/g, "\\'")}'
+              }, '*');
+            }
+
+            setTimeout(() => {
+              window.close();
+            }, 5000);
+          } catch (error) {
+            console.error('Email OAuth error callback failed:', error);
             setTimeout(() => {
               window.close();
             }, 3000);
