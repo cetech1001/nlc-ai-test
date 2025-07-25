@@ -1,18 +1,12 @@
-// apps/coach/src/app/(dashboard)/leads/edit-email/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Save,
   Eye,
-  Calendar,
-  Sparkles,
-  CheckCircle,
-  AlertTriangle,
   RotateCcw,
-  Zap,
   TrendingUp,
   Mail
 } from 'lucide-react';
@@ -20,6 +14,14 @@ import { toast } from 'sonner';
 import { Button } from '@nlc-ai/ui';
 import { aiAgentsAPI } from '@nlc-ai/api-client';
 import { EmailInSequence, DeliverabilityAnalysis, TIMING_OPTIONS } from '@nlc-ai/types';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@nlc-ai/ui';
+import {AiImprovements, DeliverabilityAnalysisStats, EmailStats, getScoreBg, getScoreColor} from "@/lib";
+
+const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
+  ssr: false,
+  loading: () => <Skeleton className="w-full h-96 rounded-lg" />
+});
 
 declare global {
   interface Window {
@@ -27,10 +29,13 @@ declare global {
   }
 }
 
+interface TinyMCEConfig {
+  apiKey: string;
+}
+
 const EditEmailPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const editorRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -38,11 +43,13 @@ const EditEmailPage = () => {
 
   // URL params
   const emailID = searchParams.get('emailID');
-  const leadID = searchParams.get('leadID');
   const leadName = searchParams.get('leadName');
   const leadEmail = searchParams.get('leadEmail');
   const sequenceID = searchParams.get('sequenceID');
   const returnUrl = searchParams.get('returnUrl');
+
+  const [tinyMCEConfig, setTinyMCEConfig] = useState<TinyMCEConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
 
   // Email data
   const [email, setEmail] = useState<EmailInSequence | null>(null);
@@ -50,6 +57,7 @@ const EditEmailPage = () => {
   const [scheduledFor, setScheduledFor] = useState('');
   const [selectedTiming, setSelectedTiming] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [emailContent, setEmailContent] = useState('');
 
   // Deliverability analysis
   const [deliverabilityAnalysis, setDeliverabilityAnalysis] = useState<DeliverabilityAnalysis | null>(null);
@@ -64,82 +72,43 @@ const EditEmailPage = () => {
       return;
     }
 
-    loadEmail();
-    loadTinyMCE();
-  }, [emailID]);
-
-  const loadTinyMCE = () => {
-    if (window.tinymce) {
-      initializeTinyMCE();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.tiny.cloud/1/YOUR_TINY_MCE_API_KEY/tinymce/6/tinymce.min.js';
-    script.onload = () => initializeTinyMCE();
-    document.head.appendChild(script);
-  };
-
-  const initializeTinyMCE = () => {
-    window.tinymce.init({
-      selector: '#email-editor',
-      height: 400,
-      menubar: false,
-      plugins: [
-        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-        'anchor', 'searchreplace', 'visualblocks', 'codesample', 'fullscreen',
-        'insertdatetime', 'media', 'table', 'help', 'wordcount'
-      ],
-      toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
-      content_style: `
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          font-size: 14px;
-          line-height: 1.6;
-          color: #333;
-          background: #fff;
-          padding: 20px;
+    const fetchTinyMCEConfig = async () => {
+      try {
+        const response = await fetch('/api/tinymce/config');
+        if (response.ok) {
+          const config = await response.json();
+          setTinyMCEConfig(config);
         }
-      `,
-      skin: 'oxide-dark',
-      content_css: 'dark',
-      setup: (editor: any) => {
-        editorRef.current = editor;
-        editor.on('change', () => {
-          setHasChanges(true);
-          // Trigger quick deliverability check on content change
-          debounceQuickCheck();
-        });
-      },
+      } catch (error) {
+        console.error('Failed to load TinyMCE config:', error);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+
+    Promise.all([
+      fetchTinyMCEConfig(),
+      loadEmail()
+    ]).finally(() => {
+      setIsLoading(false);
     });
-  };
+  }, [emailID]);
 
   const loadEmail = async () => {
     try {
-      setIsLoading(true);
-      const emailData = await aiAgentsAPI.getEmailById(emailID!);
-      setEmail(emailData);
-      setSubject(emailData.subject);
-      setScheduledFor(new Date(emailData.scheduledFor).toISOString().slice(0, 16));
-      setSelectedTiming(emailData.timing);
-
-      // Set initial content in editor when it's ready
-      const checkEditor = setInterval(() => {
-        if (editorRef.current) {
-          editorRef.current.setContent(emailData.body);
-          clearInterval(checkEditor);
-        }
-      }, 100);
+      const emailData = await aiAgentsAPI.getEmailByID(emailID!);
+      setEmail(emailData.email);
+      setSubject(emailData.email.subject);
+      setScheduledFor(new Date(emailData.email.scheduledFor || '').toISOString().slice(0, 16));
+      setSelectedTiming(emailData.email.timing);
+      setEmailContent(emailData.email.body);
 
       // Get initial deliverability analysis
-      await analyzeDeliverability(emailData.subject, emailData.body);
-
+      await analyzeDeliverability(emailData.email.subject, emailData.email.body);
     } catch (error) {
       console.error('Failed to load email:', error);
       toast.error('Failed to load email');
       router.push(returnUrl || '/leads');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -148,11 +117,8 @@ const EditEmailPage = () => {
     return () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(async () => {
-        if (editorRef.current) {
-          const body = editorRef.current.getContent();
-          const result = await aiAgentsAPI.quickDeliverabilityCheck(subject, body);
-          setQuickScore(result.score);
-        }
+        const result = await aiAgentsAPI.quickDeliverabilityCheck(subject, emailContent);
+        setQuickScore(result.score);
       }, 1000);
     };
   })();
@@ -175,15 +141,14 @@ const EditEmailPage = () => {
   };
 
   const handleSave = async () => {
-    if (!editorRef.current || !email) return;
+    if (!email) return;
 
     try {
       setIsSaving(true);
-      const body = editorRef.current.getContent();
 
       await aiAgentsAPI.updateEmail(emailID!, {
         subject,
-        body,
+        body: emailContent,
         scheduledFor,
         timing: selectedTiming
       });
@@ -195,7 +160,7 @@ const EditEmailPage = () => {
       setEmail(prev => prev ? {
         ...prev,
         subject,
-        body,
+        body: emailContent,
         scheduledFor: new Date(scheduledFor),
         timing: selectedTiming,
         isEdited: true
@@ -223,7 +188,7 @@ const EditEmailPage = () => {
       if (regeneratedEmails.length > 0) {
         const newEmail = regeneratedEmails[0];
         setSubject(newEmail.subject);
-        editorRef.current?.setContent(newEmail.body);
+        setEmailContent(newEmail.body);
         setHasChanges(true);
         toast.success('Content regenerated successfully!');
 
@@ -239,107 +204,163 @@ const EditEmailPage = () => {
   };
 
   const handleFullAnalysis = async () => {
-    if (!editorRef.current) return;
-
-    const body = editorRef.current.getContent();
-    await analyzeDeliverability(subject, body);
+    await analyzeDeliverability(subject, emailContent);
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    return 'text-red-400';
+  const handleEditorChange = (content: string) => {
+    setEmailContent(content);
+    setHasChanges(true);
+    debounceQuickCheck();
   };
 
-  const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-600/20 border-green-600/30';
-    if (score >= 60) return 'bg-yellow-600/20 border-yellow-600/30';
-    return 'bg-red-600/20 border-red-600/30';
-  };
-
-  if (isLoading) {
+  if (isLoading || configLoading || !tinyMCEConfig) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-violet-600/30 border-t-violet-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#A0A0A0]">Loading email editor...</p>
+      <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-32" />
+            <div>
+              <Skeleton className="h-8 w-32 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Editor Skeleton */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6">
+              <Skeleton className="h-6 w-32 mb-4" />
+              <div className="space-y-4">
+                <div>
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div>
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-8 w-40" />
+              </div>
+              <Skeleton className="h-96 w-full" />
+            </div>
+          </div>
+
+          {/* Sidebar Skeleton */}
+          <div className="space-y-6">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6">
+                <Skeleton className="h-6 w-24 mb-4" />
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-6 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A]">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={() => router.push(returnUrl || '/leads')}
-              className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-[#555]"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Sequence
-            </Button>
+    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
+      {/* Absolute background elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute w-64 h-64 -left-12 top-1/4 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
+        <div className="absolute w-64 h-64 right-1/4 -top-20 opacity-30 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+        <div className="absolute w-56 h-56 right-12 bottom-1/4 opacity-25 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-full blur-[112px]" />
+      </div>
 
-            <div>
-              <h1 className="text-2xl font-bold text-white">Edit Email</h1>
-              <p className="text-[#A0A0A0]">
-                Email {email?.sequenceOrder} for {leadName} ({leadEmail})
-              </p>
+      {/* Header - Buttons first */}
+      <div className="flex items-center justify-between relative z-10">
+        <Button
+          variant="outline"
+          onClick={() => router.push(returnUrl || '/leads')}
+          className="border-neutral-700 text-stone-300 hover:text-stone-50 hover:border-neutral-600"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Sequence
+        </Button>
+
+        <div className="flex items-center gap-3">
+          {quickScore !== null && (
+            <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getScoreBg(quickScore)}`}>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                <span className={getScoreColor(quickScore)}>{quickScore}% deliverability</span>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center gap-3">
-            {quickScore !== null && (
-              <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getScoreBg(quickScore)}`}>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className={getScoreColor(quickScore)}>{quickScore}% deliverability</span>
-                </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowPreview(!showPreview)}
+            className="border-neutral-700 text-stone-300 hover:text-stone-50 hover:border-neutral-600"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            {showPreview ? 'Edit' : 'Preview'}
+          </Button>
+
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !hasChanges}
+            className="bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-600 hover:from-purple-700 hover:via-fuchsia-700 hover:to-purple-700 text-white disabled:opacity-50"
+          >
+            {isSaving ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Saving...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Save className="w-4 h-4" />
+                Save Changes
               </div>
             )}
-
-            <Button
-              variant="outline"
-              onClick={() => setShowPreview(!showPreview)}
-              className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-[#555]"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              {showPreview ? 'Edit' : 'Preview'}
-            </Button>
-
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || !hasChanges}
-              className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white"
-            >
-              {isSaving ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Saving...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </div>
-              )}
-            </Button>
-          </div>
+          </Button>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Editor */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Email Settings */}
-            <div className="bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-xl p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Email Settings</h2>
+      {/* Page Title and Description */}
+      <div className="relative z-10">
+        <h1 className="text-stone-50 text-2xl sm:text-3xl font-semibold leading-relaxed">Edit Email</h1>
+        <p className="text-stone-300 text-base">
+          Email {email?.sequenceOrder} for {leadName} ({leadEmail})
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+        {/* Main Editor */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Email Settings */}
+          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
+            <div className="absolute w-56 h-56 -left-12 -top-20 opacity-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+            <div className="relative z-10">
+              <h2 className="text-stone-50 text-lg font-semibold mb-4">Email Settings</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+                  <label className="block text-sm font-medium text-stone-300 mb-2">
                     Subject Line
                   </label>
                   <input
@@ -350,14 +371,14 @@ const EditEmailPage = () => {
                       setHasChanges(true);
                       debounceQuickCheck();
                     }}
-                    className="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg px-3 py-2 text-white placeholder:text-[#666] focus:border-violet-600/50 focus:outline-none"
+                    className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg px-3 py-2 text-stone-50 placeholder:text-stone-400 focus:border-purple-500 focus:outline-none transition-colors"
                     placeholder="Enter email subject..."
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+                    <label className="block text-sm font-medium text-stone-300 mb-2">
                       Send Date & Time
                     </label>
                     <input
@@ -367,12 +388,12 @@ const EditEmailPage = () => {
                         setScheduledFor(e.target.value);
                         setHasChanges(true);
                       }}
-                      className="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg px-3 py-2 text-white focus:border-violet-600/50 focus:outline-none"
+                      className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg px-3 py-2 text-stone-50 focus:border-purple-500 focus:outline-none transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#A0A0A0] mb-2">
+                    <label className="block text-sm font-medium text-stone-300 mb-2">
                       Timing Description
                     </label>
                     <select
@@ -381,7 +402,7 @@ const EditEmailPage = () => {
                         setSelectedTiming(e.target.value);
                         setHasChanges(true);
                       }}
-                      className="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg px-3 py-2 text-white focus:border-violet-600/50 focus:outline-none"
+                      className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg px-3 py-2 text-stone-50 focus:border-purple-500 focus:outline-none transition-colors"
                     >
                       {TIMING_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -393,11 +414,14 @@ const EditEmailPage = () => {
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Email Content */}
-            <div className="bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-xl p-6">
+          {/* Email Content */}
+          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
+            <div className="absolute w-56 h-56 right-12 -top-20 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
+            <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Email Content</h2>
+                <h2 className="text-stone-50 text-lg font-semibold">Email Content</h2>
 
                 <div className="flex gap-2">
                   <Button
@@ -405,7 +429,7 @@ const EditEmailPage = () => {
                     size="sm"
                     onClick={handleRegenerateContent}
                     disabled={isRegenerating}
-                    className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-fuchsia-600/50"
+                    className="border-neutral-600 text-stone-300 hover:text-stone-50 hover:border-fuchsia-500"
                   >
                     {isRegenerating ? (
                       <div className="flex items-center gap-2">
@@ -423,178 +447,141 @@ const EditEmailPage = () => {
               </div>
 
               {showPreview ? (
-                <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-4 min-h-[400px]">
-                  <div className="border-b border-[#3A3A3A] pb-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-[#A0A0A0]">
+                <div className="bg-neutral-800/50 border border-neutral-600 rounded-lg p-4 min-h-[400px]">
+                  <div className="border-b border-neutral-600 pb-3 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-stone-400">
                       <Mail className="w-4 h-4" />
                       <span>To: {leadEmail}</span>
                     </div>
-                    <h3 className="text-white font-medium mt-2">{subject}</h3>
+                    <h3 className="text-stone-50 font-medium mt-2">{subject}</h3>
                   </div>
                   <div
-                    className="text-[#D0D0D0] prose prose-invert max-w-none"
+                    className="text-stone-200 prose prose-invert max-w-none"
                     dangerouslySetInnerHTML={{
-                      __html: editorRef.current?.getContent() || email?.body || ''
+                      __html: emailContent || ''
                     }}
                   />
                 </div>
               ) : (
-                <div>
-                  <textarea id="email-editor" />
+                <div className="tinymce-wrapper">
+                  <Editor
+                    apiKey={tinyMCEConfig.apiKey}
+                    value={emailContent}
+                    onEditorChange={handleEditorChange}
+                    init={{
+                      height: 400,
+                      menubar: false,
+                      elementpath: false,
+                      plugins: [
+                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+                      ],
+                      toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | link | forecolor backcolor | outdent indent',
+                      content_style: `
+                        body {
+                          font-family: Inter, sans-serif;
+                          font-size: 14px;
+                          color: #d6d3d1;
+                          background: rgb(0 0 0 / 1);
+                          line-height: 1.6;
+                          margin: 0;
+                          padding: 12px;
+                        }
+                        a { color: #9333ea; text-decoration: underline; }
+                        strong { color: #f5f5f4; }
+                      `,
+                      skin: 'oxide-dark',
+                      content_css: 'dark',
+                      resize: false,
+                      branding: false,
+                      setup: (editor: any) => {
+                        editor.on('init', () => {
+                          const container = editor.getContainer();
+                          if (container) {
+                            container.style.border = '1px solid rgb(64, 64, 64)';
+                            container.style.borderRadius = '8px';
+                            container.style.backgroundColor = 'rgba(23, 23, 23, 0.5)';
+                          }
+                        });
+                      }
+                    }}
+                  />
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Stats */}
-            <div className="bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Email Stats</h3>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#A0A0A0]">Status:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                    email?.status === 'scheduled' ? 'bg-blue-600/20 text-blue-400 border-blue-600/30' :
-                      email?.status === 'sent' ? 'bg-green-600/20 text-green-400 border-green-600/30' :
-                        'bg-gray-600/20 text-gray-400 border-gray-600/30'
-                  }`}>
-                    {email?.status?.charAt(0).toUpperCase() + email?.status?.slice(1)}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[#A0A0A0]">Sequence Position:</span>
-                  <span className="text-white">{email?.sequenceOrder}</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[#A0A0A0]">Manually Edited:</span>
-                  <span className={email?.isEdited ? 'text-yellow-400' : 'text-green-400'}>
-                    {email?.isEdited ? 'Yes' : 'No'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Deliverability Analysis */}
-            <div className="bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Deliverability</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleFullAnalysis}
-                  disabled={isAnalyzing}
-                  className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-violet-600/50"
-                >
-                  {isAnalyzing ? (
-                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Zap className="w-3 h-3" />
-                  )}
-                </Button>
-              </div>
-
-              {deliverabilityAnalysis ? (
-                <div className="space-y-4">
-                  {/* Overall Score */}
-                  <div className={`p-3 rounded-lg border ${getScoreBg(deliverabilityAnalysis.overallScore)}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Overall Score</span>
-                      <span className={`text-lg font-bold ${getScoreColor(deliverabilityAnalysis.overallScore)}`}>
-                        {deliverabilityAnalysis.overallScore}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Primary Inbox Probability */}
-                  <div className={`p-3 rounded-lg border ${getScoreBg(deliverabilityAnalysis.primaryInboxProbability)}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Primary Inbox</span>
-                      <span className={`text-lg font-bold ${getScoreColor(deliverabilityAnalysis.primaryInboxProbability)}`}>
-                        {deliverabilityAnalysis.primaryInboxProbability}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Top Recommendations */}
-                  {deliverabilityAnalysis.recommendations.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-white mb-2">Top Issues:</h4>
-                      <div className="space-y-2">
-                        {deliverabilityAnalysis.recommendations.slice(0, 3).map((rec, index) => (
-                          <div key={index} className="flex items-start gap-2 text-xs">
-                            <AlertTriangle className="w-3 h-3 text-yellow-400 mt-0.5 flex-shrink-0" />
-                            <span className="text-[#A0A0A0]">{rec.suggestion}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Spam Triggers */}
-                  {deliverabilityAnalysis.spamTriggers.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-white mb-2">Spam Triggers:</h4>
-                      <div className="space-y-1">
-                        {deliverabilityAnalysis.spamTriggers.slice(0, 2).map((trigger, index) => (
-                          <div key={index} className={`px-2 py-1 rounded text-xs ${
-                            trigger.severity === 'high' ? 'bg-red-600/20 text-red-400' :
-                              trigger.severity === 'medium' ? 'bg-yellow-600/20 text-yellow-400' :
-                                'bg-gray-600/20 text-gray-400'
-                          }`}>
-                            "{trigger.trigger}"
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : quickScore !== null ? (
-                <div className={`p-3 rounded-lg border ${getScoreBg(quickScore)}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Quick Score</span>
-                    <span className={`text-lg font-bold ${getScoreColor(quickScore)}`}>
-                      {quickScore}%
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#666] mt-1">Run full analysis for detailed insights</p>
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <div className="w-6 h-6 border-2 border-violet-600/30 border-t-violet-600 rounded-full animate-spin mx-auto mb-2"></div>
-                  <p className="text-xs text-[#666]">Analyzing deliverability...</p>
-                </div>
-              )}
-            </div>
-
-            {/* AI Improvements */}
-            {deliverabilityAnalysis?.improvements && deliverabilityAnalysis.improvements.length > 0 && (
-              <div className="bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-violet-400" />
-                  AI Suggestions
-                </h3>
-
-                <div className="space-y-3">
-                  {deliverabilityAnalysis.improvements.slice(0, 2).map((improvement, index) => (
-                    <div key={index} className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-3">
-                      <div className="text-xs text-[#666] mb-1">Suggestion #{index + 1}</div>
-                      <div className="text-sm text-[#A0A0A0] mb-2">{improvement.reason}</div>
-                      <div className="text-xs">
-                        <div className="text-red-400 mb-1">Before: "{improvement.original.substring(0, 50)}..."</div>
-                        <div className="text-green-400">After: "{improvement.improved.substring(0, 50)}..."</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        <div className="space-y-6">
+          <EmailStats email={email} />
+
+          <DeliverabilityAnalysisStats
+            isAnalyzing={isAnalyzing}
+            quickScore={quickScore}
+            deliverabilityAnalysis={deliverabilityAnalysis}
+            handleFullAnalysis={handleFullAnalysis} />
+
+          {deliverabilityAnalysis?.improvements
+            && deliverabilityAnalysis.improvements.length > 0
+            && (
+            <AiImprovements
+              improvements={deliverabilityAnalysis.improvements}
+              isLoading={isLoading} />
+          )}
+        </div>
       </div>
+
+      {/* TinyMCE Styles */}
+      <style jsx global>{`
+        .tox .tox-editor-header {
+          background-color: rgba(23, 23, 23, 0.8) !important;
+          border: 1px solid rgb(64, 64, 64) !important;
+          border-bottom: none !important;
+          border-radius: 8px 8px 0 0 !important;
+        }
+
+        .tox .tox-edit-area {
+          border: 1px solid rgb(64, 64, 64) !important;
+          border-top: none !important;
+          border-radius: 0 0 8px 8px !important;
+        }
+
+        .tox .tox-statusbar {
+          background-color: rgba(23, 23, 23, 0.8) !important;
+          border: 1px solid rgb(64, 64, 64) !important;
+          border-top: none !important;
+        }
+
+        .tox .tox-toolbar {
+          background-color: rgba(23, 23, 23, 0.8) !important;
+        }
+
+        .tox .tox-tbtn {
+          color: #d6d3d1 !important;
+        }
+
+        .tox .tox-tbtn:hover {
+          background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .tox .tox-tbtn--enabled {
+          background-color: rgba(147, 51, 234, 0.3) !important;
+          color: white !important;
+        }
+
+        .tox .tox-menubar {
+          background-color: rgba(23, 23, 23, 0.8) !important;
+        }
+
+        .tinymce-wrapper {
+          border-radius: 8px !important;
+        }
+
+        .tinymce-wrapper .tox-tinymce {
+          border-radius: 8px !important;
+        }
+      `}</style>
     </div>
   );
 };

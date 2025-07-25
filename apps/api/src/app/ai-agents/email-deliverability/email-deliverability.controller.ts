@@ -3,15 +3,15 @@ import {
   Post,
   Body,
   UseGuards,
-  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserTypesGuard } from '../../auth/guards/user-types.guard';
 import { UserTypes } from '../../auth/decorators/user-types.decorator';
 import { EmailDeliverabilityService } from './email-deliverability.service';
-import { AuthUser, UserType } from '@nlc-ai/types';
+import { type AuthUser, UserType } from '@nlc-ai/types';
 import {AnalyzeEmailDto, QuickCheckDto} from "./dto/analyze-email.dto";
+import {CurrentUser} from "../../auth/decorators/current-user.decorator";
 
 @ApiTags('Email Deliverability')
 @Controller('ai-agents/email-deliverability')
@@ -28,11 +28,10 @@ export class EmailDeliverabilityController {
   @ApiResponse({ status: 200, description: 'Email analysis completed successfully' })
   async analyzeEmail(
     @Body() body: AnalyzeEmailDto,
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
-    // If coach, set their ID automatically
-    if (req.user.type === UserType.coach) {
-      body.coachID = req.user.id;
+    if (user.type === UserType.coach) {
+      body.coachID = user.id;
     }
 
     return this.emailDeliverabilityService.analyzeEmailDeliverability(body);

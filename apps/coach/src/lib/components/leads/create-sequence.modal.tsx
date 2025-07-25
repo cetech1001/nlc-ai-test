@@ -1,4 +1,3 @@
-// apps/coach/src/lib/components/leads/create-sequence-modal.tsx
 'use client';
 
 import { useState } from 'react';
@@ -9,23 +8,23 @@ import { SEQUENCE_TEMPLATES, TIMING_OPTIONS, EmailSequenceWithEmails } from '@nl
 
 interface CreateSequenceModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onCloseAction: () => void;
   leadID: string;
   leadName: string;
   leadEmail: string;
   leadStatus: string;
-  onSequenceCreated: (sequence: EmailSequenceWithEmails) => void;
+  onSequenceCreatedAction: (sequence: EmailSequenceWithEmails) => void;
 }
 
 export const CreateSequenceModal = ({
-                                      isOpen,
-                                      onClose,
-                                      leadID,
-                                      leadName,
-                                      leadEmail,
-                                      leadStatus,
-                                      onSequenceCreated,
-                                    }: CreateSequenceModalProps) => {
+  isOpen,
+  onCloseAction,
+  leadID,
+  leadName,
+  leadEmail,
+  leadStatus,
+  onSequenceCreatedAction,
+}: CreateSequenceModalProps) => {
   const [step, setStep] = useState<'template' | 'customize' | 'confirm'>('template');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -52,7 +51,9 @@ export const CreateSequenceModal = ({
     try {
       setIsCreating(true);
 
-      const sequence = await aiAgentsAPI.createFlexibleSequence({
+      console.log("Lead ID: ", leadID);
+
+      const sequence = await aiAgentsAPI.generateFollowupSequence({
         leadID,
         sequenceConfig: {
           emailCount,
@@ -62,8 +63,8 @@ export const CreateSequenceModal = ({
         }
       });
 
-      onSequenceCreated(sequence);
-      onClose();
+      onSequenceCreatedAction(sequence);
+      onCloseAction();
 
       // Reset form
       setStep('template');
@@ -90,7 +91,7 @@ export const CreateSequenceModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="relative group max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="relative group max-w-4xl w-full max-h-[95vh] overflow-hidden">
         <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-fuchsia-600/20 to-violet-600/20 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
 
         <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl overflow-hidden">
@@ -107,7 +108,7 @@ export const CreateSequenceModal = ({
             </div>
 
             <button
-              onClick={onClose}
+              onClick={onCloseAction}
               className="w-8 h-8 rounded-lg bg-[#2A2A2A] border border-[#3A3A3A] flex items-center justify-center text-[#A0A0A0] hover:text-white hover:border-[#555] transition-colors"
             >
               <X className="w-4 h-4" />
@@ -370,7 +371,7 @@ export const CreateSequenceModal = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-[#3A3A3A]">
+          <div className="flex items-center justify-between p-3 border-t border-[#3A3A3A]">
             <div className="text-sm text-[#A0A0A0]">
               {step === 'template' && 'Choose a template to get started'}
               {step === 'customize' && 'Customize your sequence settings'}
@@ -393,7 +394,7 @@ export const CreateSequenceModal = ({
 
               <Button
                 variant="outline"
-                onClick={onClose}
+                onClick={onCloseAction}
                 className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-[#555]"
               >
                 Cancel

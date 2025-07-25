@@ -2,49 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OpenAI } from 'openai';
 import { CoachReplicaService } from '../coach-replica/coach-replica.service';
-
-export interface DeliverabilityAnalysis {
-  overallScore: number; // 0-100
-  primaryInboxProbability: number; // 0-100
-  recommendations: DeliverabilityRecommendation[];
-  spamTriggers: SpamTrigger[];
-  improvements: EmailImprovement[];
-}
-
-export interface DeliverabilityRecommendation {
-  category: 'subject' | 'content' | 'structure' | 'personalization' | 'technical';
-  priority: 'high' | 'medium' | 'low';
-  issue: string;
-  suggestion: string;
-  impact: string;
-}
-
-export interface SpamTrigger {
-  trigger: string;
-  severity: 'high' | 'medium' | 'low';
-  explanation: string;
-  fix: string;
-}
-
-export interface EmailImprovement {
-  original: string;
-  improved: string;
-  reason: string;
-}
-
-export interface AnalyzeEmailRequest {
-  subject: string;
-  body: string;
-  coachID?: string;
-  recipientType?: 'lead' | 'client' | 'general';
-}
+import {
+  AnalyzeEmailRequest,
+  DeliverabilityAnalysis,
+  DeliverabilityRecommendation, EmailAnalysis,
+  EmailImprovement,
+  SpamTrigger
+} from "@nlc-ai/types";
 
 @Injectable()
 export class EmailDeliverabilityService {
   private readonly logger = new Logger(EmailDeliverabilityService.name);
   private openai: OpenAI;
 
-  // Spam trigger words and phrases
   private readonly spamTriggers = {
     high: [
       'free money', 'make money fast', 'guaranteed income', 'get rich quick',
@@ -80,7 +50,6 @@ export class EmailDeliverabilityService {
    */
   async analyzeEmailDeliverability(request: AnalyzeEmailRequest): Promise<DeliverabilityAnalysis> {
     try {
-      // Get coach profile if available for personalized analysis
       let coachProfile = null;
       if (request.coachID) {
         try {
@@ -90,7 +59,6 @@ export class EmailDeliverabilityService {
         }
       }
 
-      // Run all analyses in parallel
       const [
         aiAnalysis,
         spamTriggers,
@@ -103,7 +71,6 @@ export class EmailDeliverabilityService {
         this.analyzePersonalization(request.subject, request.body, coachProfile)
       ]);
 
-      // Calculate overall score
       const overallScore = this.calculateOverallScore(
         aiAnalysis,
         spamTriggers,
@@ -111,7 +78,6 @@ export class EmailDeliverabilityService {
         personalizationAnalysis
       );
 
-      // Generate recommendations
       const recommendations = this.generateRecommendations(
         aiAnalysis,
         spamTriggers,
@@ -120,7 +86,6 @@ export class EmailDeliverabilityService {
         coachProfile
       );
 
-      // Generate improvements
       const improvements = await this.generateImprovements(request, coachProfile);
 
       return {
@@ -217,7 +182,6 @@ Please analyze and return JSON with:
     const fullText = (subject + ' ' + body).toLowerCase();
     const triggers: SpamTrigger[] = [];
 
-    // Check high-priority triggers
     this.spamTriggers.high.forEach(trigger => {
       if (fullText.includes(trigger.toLowerCase())) {
         triggers.push({
@@ -229,7 +193,6 @@ Please analyze and return JSON with:
       }
     });
 
-    // Check medium-priority triggers
     this.spamTriggers.medium.forEach(trigger => {
       if (fullText.includes(trigger.toLowerCase())) {
         triggers.push({
@@ -241,7 +204,6 @@ Please analyze and return JSON with:
       }
     });
 
-    // Check low-priority triggers (only flag if there are many)
     let lowPriorityCount = 0;
     this.spamTriggers.low.forEach(trigger => {
       if (fullText.includes(trigger.toLowerCase())) {
@@ -265,13 +227,12 @@ Please analyze and return JSON with:
    * Analyze email structure and formatting
    */
   private analyzeEmailStructure(subject: string, body: string): any {
-    const analysis = {
+    const analysis: EmailAnalysis = {
       score: 100,
       issues: [],
       strengths: []
     };
 
-    // Subject line analysis
     if (subject.length < 20) {
       analysis.issues.push('Subject line too short - may appear unprofessional');
       analysis.score -= 10;
@@ -282,14 +243,12 @@ Please analyze and return JSON with:
       analysis.strengths.push('Subject line length is optimal');
     }
 
-    // Excessive capitalization
     const capsPercentage = (subject.match(/[A-Z]/g) || []).length / subject.length;
     if (capsPercentage > 0.3) {
       analysis.issues.push('Too much capitalization in subject line');
       analysis.score -= 20;
     }
 
-    // Body structure
     const wordCount = body.split(/\s+/).length;
     if (wordCount < 50) {
       analysis.issues.push('Email body too short - may lack value');
@@ -301,8 +260,7 @@ Please analyze and return JSON with:
       analysis.strengths.push('Email length is appropriate');
     }
 
-    // Links analysis
-    const linkCount = (body.match(/https?:\/\/[^\s]+/g) || []).length;
+    const linkCount = (body.match(/https?:\/\/\S+/g) || []).length;
     if (linkCount > 5) {
       analysis.issues.push('Too many links - may trigger spam filters');
       analysis.score -= 15;
@@ -311,7 +269,6 @@ Please analyze and return JSON with:
       analysis.score -= 5;
     }
 
-    // Exclamation marks
     const exclamationCount = (subject + body).split('!').length - 1;
     if (exclamationCount > 3) {
       analysis.issues.push('Too many exclamation marks - appears overly promotional');
@@ -325,7 +282,7 @@ Please analyze and return JSON with:
    * Analyze personalization level
    */
   private analyzePersonalization(subject: string, body: string, coachProfile?: any): any {
-    const analysis = {
+    const analysis: EmailAnalysis = {
       score: 50, // Base score
       issues: [],
       strengths: []
@@ -348,7 +305,7 @@ Please analyze and return JSON with:
     // Coach-specific personalization
     if (coachProfile) {
       const commonPhrases = coachProfile.personality.commonPhrases || [];
-      const hasCoachVoice = commonPhrases.some(phrase => fullText.toLowerCase().includes(phrase.toLowerCase()));
+      const hasCoachVoice = commonPhrases.some((phrase: string) => fullText.toLowerCase().includes(phrase.toLowerCase()));
 
       if (hasCoachVoice) {
         analysis.strengths.push('Reflects coach\'s authentic voice');
@@ -380,12 +337,12 @@ Please analyze and return JSON with:
     structuralAnalysis: any,
     personalizationAnalysis: any
   ): number {
-    let score = 85; // Start with good base score
+    let score = 85; // Start with a good base score
 
     // AI analysis impact
     if (aiAnalysis.deliverabilityFactors) {
       const spamLikelihood = aiAnalysis.deliverabilityFactors.spamLikelihood || 0;
-      score -= spamLikelihood * 0.3; // Reduce score based on spam likelihood
+      score -= spamLikelihood * 0.3; // Reduce score based on a spam likelihood
 
       const personalization = aiAnalysis.deliverabilityFactors.personalization || 50;
       score += (personalization - 50) * 0.2; // Bonus for good personalization
@@ -445,7 +402,7 @@ Please analyze and return JSON with:
     }
 
     // Structural issues
-    structuralAnalysis.issues.forEach(issue => {
+    structuralAnalysis.issues.forEach((issue: string) => {
       recommendations.push({
         category: 'structure',
         priority: 'medium',

@@ -14,22 +14,24 @@ import {
   AlertTriangle
 } from "lucide-react";
 
+const colWidth = 100 / 7;
+
 export const coachLeadColumns = (
   getSequenceForLead: (leadID: string) => EmailSequenceWithEmails | undefined,
   isGeneratingSequence: string
 ) => [
   {
-    key: 'name',
+    key: 'firstName',
     header: 'Name',
-    width: '15%',
-    render: (value: string) => (
-      <div className="font-medium text-white">{value}</div>
+    width: `${colWidth}%`,
+    render: (value: string, row: any) => (
+      <div className="font-medium text-white">{`${value} ${row['lastName']}`}</div>
     )
   },
   {
     key: 'email',
     header: 'Email',
-    width: '20%',
+    width: `${colWidth * (4 / 3)}%`,
     render: (value: string) => (
       <div className="text-[#A0A0A0]">{tableRenderers.truncateText(value, 25)}</div>
     )
@@ -37,7 +39,7 @@ export const coachLeadColumns = (
   {
     key: 'source',
     header: 'Source',
-    width: '10%',
+    width: `${colWidth * (2 / 3)}%`,
     render: (value: string) => (
       <span className="px-2 py-1 rounded-full text-xs bg-gray-600/20 text-gray-300">
         {value}
@@ -47,7 +49,7 @@ export const coachLeadColumns = (
   {
     key: 'status',
     header: 'Status',
-    width: '12%',
+    width: `${colWidth * (2 / 3)}%`,
     render: (value: string, row: any) => {
       const statusConfig = {
         contacted: { bg: 'bg-yellow-600/20', text: 'text-yellow-400', label: 'Not Converted' },
@@ -55,7 +57,7 @@ export const coachLeadColumns = (
         converted: { bg: 'bg-green-600/20', text: 'text-green-400', label: 'Converted' },
         unresponsive: { bg: 'bg-red-600/20', text: 'text-red-400', label: 'No Show' }
       };
-      const config = statusConfig[row.rawStatus as keyof typeof statusConfig] || statusConfig.contacted;
+      const config = statusConfig[row.status as keyof typeof statusConfig] || statusConfig.contacted;
 
       return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
@@ -67,11 +69,11 @@ export const coachLeadColumns = (
   {
     key: 'aiSequence',
     header: 'AI Sequence',
-    width: '20%',
+    width: `${colWidth}%`,
     render: (value: any, row: any) => {
-      const sequence = getSequenceForLead(row.originalID);
+      const sequence = getSequenceForLead(row.id);
 
-      if (isGeneratingSequence === row.originalID) {
+      if (isGeneratingSequence === row.id) {
         return (
           <div className="flex items-center gap-2 text-purple-400">
             <Loader2 className="w-3 h-3 animate-spin" />
@@ -107,7 +109,7 @@ export const coachLeadColumns = (
             </span>
 
             {failedEmails > 0 && (
-              <AlertTriangle className="w-3 h-3 text-red-400" title={`${failedEmails} failed emails`} />
+              <AlertTriangle className="w-3 h-3 text-red-400"/>
             )}
           </div>
 
@@ -129,17 +131,23 @@ export const coachLeadColumns = (
   {
     key: 'meetingDate',
     header: 'Meeting Date',
-    width: '12%',
+    width: `${colWidth}%`,
     render: (value: string) => (
-      <div className="text-sm text-[#A0A0A0]">{value}</div>
+      <div className="text-sm text-[#A0A0A0]">
+        {value ? new Date(value).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }) : 'Not scheduled'}
+      </div>
     )
   },
   {
     key: 'actions',
     header: 'Actions',
-    width: '15%',
+    width: `${colWidth}%`,
     render: (value: any, row: any, onRowAction?: (action: string, row: any) => void) => {
-      const sequence = getSequenceForLead(row.originalID);
+      const sequence = getSequenceForLead(row.id);
       const hasActiveSequence = !!sequence;
       const isSequencePaused = sequence && !sequence.isActive;
 
@@ -159,10 +167,10 @@ export const coachLeadColumns = (
             <button
               onClick={() => onRowAction?.('create-sequence', row)}
               className="p-1.5 rounded text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 transition-colors flex items-center gap-1"
-              disabled={isGeneratingSequence === row.originalID}
+              disabled={isGeneratingSequence === row.id}
               title="Create AI Sequence"
             >
-              {isGeneratingSequence === row.originalID ? (
+              {isGeneratingSequence === row.id ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
                 <Plus className="w-3 h-3" />

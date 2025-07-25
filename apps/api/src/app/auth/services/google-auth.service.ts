@@ -55,7 +55,7 @@ export class GoogleAuthService {
     if (existingUser) {
       if (
         existingUser.provider !== 'google'
-        || existingUser.providerID === user.providerID
+        || existingUser.providerID !== user.providerID
       ) {
         throw new UnauthorizedException({
           code: 'ACCOUNT_CONFLICT',

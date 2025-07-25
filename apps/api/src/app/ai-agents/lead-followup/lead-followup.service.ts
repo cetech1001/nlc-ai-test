@@ -1,5 +1,4 @@
-// apps/api/src/app/ai-agents/lead-followup/flexible-lead-followup.service.ts
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {Injectable, NotFoundException, BadRequestException, Logger} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CoachReplicaService } from '../coach-replica/coach-replica.service';
 import { EmailDeliverabilityService } from '../email-deliverability/email-deliverability.service';
@@ -77,7 +76,7 @@ export class LeadFollowupService {
       emails.push(email);
     }
 
-    // Return complete sequence with emails
+    // Return a complete sequence with emails
     return {
       id: emailSequence.id,
       leadID: emailSequence.leadID,
@@ -110,7 +109,7 @@ export class LeadFollowupService {
     const sequence = await this.getSequenceWithEmails(sequenceID);
 
     // Update basic sequence info
-    const updatedSequence = await this.prisma.emailSequence.update({
+    await this.prisma.emailSequence.update({
       where: { id: sequenceID },
       data: {
         description: updates.description || sequence.description,
@@ -202,11 +201,11 @@ export class LeadFollowupService {
     const sequence = await this.getSequenceWithEmails(sequenceID);
     const [lead, coach] = await Promise.all([
       this.prisma.lead.findUnique({ where: { id: sequence.leadID } }),
-      this.prisma.coach.findUnique({ where: { id: sequence.coachID } })
+      sequence.coachID ? this.prisma.coach.findUnique({ where: { id: sequence.coachID } }) : null,
     ]);
 
-    if (!lead || !coach) {
-      throw new NotFoundException('Lead or coach not found');
+    if (!lead) {
+      throw new NotFoundException('Lead not found');
     }
 
     const regeneratedEmails: EmailInSequence[] = [];
@@ -244,7 +243,7 @@ export class LeadFollowupService {
   }
 
   /**
-   * Get sequence with all emails
+   * Get a sequence with all emails
    */
   async getSequenceWithEmails(sequenceID: string): Promise<EmailSequenceWithEmails> {
     const sequence = await this.prisma.emailSequence.findUnique({
@@ -290,6 +289,360 @@ export class LeadFollowupService {
     };
   }
 
+  // Add these methods to the existing LeadFollowupService class
+
+  /**
+   * Get all sequences for a specific coach
+   */
+  async getSequencesForCoach(coachID: string): Promise<{
+    sequences: EmailSequenceWithEmails[];
+    totalCount: number;
+    activeCount: number;
+    completedCount: number;
+  }> {
+    const sequences = await this.prisma.emailSequence.findMany({
+      where: { coachID },
+      include: {
+        lead: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            status: true,
+          }
+        },
+        scheduledEmails: {
+          orderBy: { sequenceOrder: 'asc' }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const sequencesWithEmails: EmailSequenceWithEmails[] = await Promise.all(
+      sequences.map(async (sequence) => {
+        const emails: EmailInSequence[] = await Promise.all(
+          sequence.scheduledEmails.map(email => this.mapToEmailInSequence(email))
+        );
+
+        return {
+          id: sequence.id,
+          leadID: sequence.leadID,
+          coachID: sequence.coachID,
+          status: sequence.status,
+          description: sequence.description,
+          isActive: sequence.isActive,
+          totalEmails: emails.length,
+          emailsSent: emails.filter(e => e.status === 'sent').length,
+          emailsPending: emails.filter(e => e.status === 'scheduled').length,
+          createdAt: sequence.createdAt,
+          updatedAt: sequence.updatedAt,
+          lead: sequence.lead,
+          emails
+        };
+      })
+    );
+
+    const totalCount = sequences.length;
+    const activeCount = sequences.filter(s => s.isActive).length;
+    const completedCount = sequences.filter(s =>
+      s.scheduledEmails.every(email => email.status === 'sent' || email.status === 'cancelled')
+    ).length;
+
+    return {
+      sequences: sequencesWithEmails,
+      totalCount,
+      activeCount,
+      completedCount
+    };
+  }
+
+  /**
+   * Get all sequences for a specific lead
+   */
+  async getSequencesForLead(leadID: string): Promise<{
+    sequences: EmailSequenceWithEmails[];
+    currentSequence: EmailSequenceWithEmails | null;
+    sequenceHistory: EmailSequenceWithEmails[];
+  }> {
+    const sequences = await this.prisma.emailSequence.findMany({
+      where: { leadID },
+      include: {
+        lead: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            status: true,
+          }
+        },
+        scheduledEmails: {
+          orderBy: { sequenceOrder: 'asc' }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const sequencesWithEmails: EmailSequenceWithEmails[] = await Promise.all(
+      sequences.map(async (sequence) => {
+        const emails: EmailInSequence[] = await Promise.all(
+          sequence.scheduledEmails.map(email => this.mapToEmailInSequence(email))
+        );
+
+        return {
+          id: sequence.id,
+          leadID: sequence.leadID,
+          coachID: sequence.coachID,
+          status: sequence.status,
+          description: sequence.description,
+          isActive: sequence.isActive,
+          totalEmails: emails.length,
+          emailsSent: emails.filter(e => e.status === 'sent').length,
+          emailsPending: emails.filter(e => e.status === 'scheduled').length,
+          createdAt: sequence.createdAt,
+          updatedAt: sequence.updatedAt,
+          lead: sequence.lead,
+          emails
+        };
+      })
+    );
+
+    // Current sequence is the most recent active one
+    const currentSequence = sequencesWithEmails.find(s => s.isActive) || null;
+
+    // History includes all completed sequences
+    const sequenceHistory = sequencesWithEmails.filter(s => !s.isActive);
+
+    return {
+      sequences: sequencesWithEmails,
+      currentSequence,
+      sequenceHistory
+    };
+  }
+
+  /**
+   * Pause all scheduled emails in a sequence
+   */
+  async pauseSequenceEmails(sequenceID: string): Promise<void> {
+    const sequence = await this.prisma.emailSequence.findUnique({
+      where: { id: sequenceID }
+    });
+
+    if (!sequence) {
+      throw new NotFoundException('Email sequence not found');
+    }
+
+    // Update all scheduled emails to paused status
+    await this.prisma.scheduledEmail.updateMany({
+      where: {
+        emailSequenceID: sequenceID,
+        status: 'scheduled'
+      },
+      data: {
+        status: 'paused',
+        updatedAt: new Date()
+      }
+    });
+
+    // Update sequence to inactive if it was active
+    if (sequence.isActive) {
+      await this.prisma.emailSequence.update({
+        where: { id: sequenceID },
+        data: {
+          isActive: false,
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    this.logger.log(`Paused sequence ${sequenceID} and all scheduled emails`);
+  }
+
+  /**
+   * Resume all paused emails in a sequence
+   */
+  async resumeSequenceEmails(sequenceID: string): Promise<void> {
+    const sequence = await this.prisma.emailSequence.findUnique({
+      where: { id: sequenceID }
+    });
+
+    if (!sequence) {
+      throw new NotFoundException('Email sequence not found');
+    }
+
+    // Update all paused emails back to scheduled status
+    const pausedEmails = await this.prisma.scheduledEmail.findMany({
+      where: {
+        emailSequenceID: sequenceID,
+        status: 'paused'
+      }
+    });
+
+    for (const email of pausedEmails) {
+      // Recalculate send time based on current time
+      const timing = this.inferTimingFromSchedule(email.scheduledFor);
+      const newScheduledFor = this.calculateSendTime(timing);
+
+      await this.prisma.scheduledEmail.update({
+        where: { id: email.id },
+        data: {
+          status: 'scheduled',
+          scheduledFor: newScheduledFor,
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    // Reactivate sequence
+    await this.prisma.emailSequence.update({
+      where: { id: sequenceID },
+      data: {
+        isActive: true,
+        updatedAt: new Date()
+      }
+    });
+
+    this.logger.log(`Resumed sequence ${sequenceID} and rescheduled ${pausedEmails.length} emails`);
+  }
+
+  /**
+   * Cancel all unsent emails in a sequence
+   */
+  async cancelSequenceEmails(sequenceID: string): Promise<void> {
+    const sequence = await this.prisma.emailSequence.findUnique({
+      where: { id: sequenceID }
+    });
+
+    if (!sequence) {
+      throw new NotFoundException('Email sequence not found');
+    }
+
+    // Cancel all emails that haven't been sent yet
+    const cancelledCount = await this.prisma.scheduledEmail.updateMany({
+      where: {
+        emailSequenceID: sequenceID,
+        status: { in: ['scheduled', 'paused'] }
+      },
+      data: {
+        status: 'cancelled',
+        updatedAt: new Date()
+      }
+    });
+
+    // Mark sequence as inactive
+    await this.prisma.emailSequence.update({
+      where: { id: sequenceID },
+      data: {
+        isActive: false,
+        updatedAt: new Date()
+      }
+    });
+
+    this.logger.log(`Cancelled sequence ${sequenceID} and ${cancelledCount.count} unsent emails`);
+  }
+
+  /**
+   * Get email preview with deliverability analysis
+   */
+  async getEmailPreview(emailID: string): Promise<{
+    email: EmailInSequence;
+    deliverabilityAnalysis: any;
+    suggestions: string[];
+  }> {
+    const scheduledEmail = await this.prisma.scheduledEmail.findUnique({
+      where: { id: emailID },
+      include: {
+        lead: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        coach: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            businessName: true
+          }
+        }
+      }
+    });
+
+    if (!scheduledEmail) {
+      throw new NotFoundException('Email not found');
+    }
+
+    // Get comprehensive deliverability analysis
+    const deliverabilityAnalysis = await this.emailDeliverabilityService.quickDeliverabilityCheck(
+      scheduledEmail.subject,
+      scheduledEmail.body
+    );
+
+    // Map to EmailInSequence
+    const email = await this.mapToEmailInSequence(scheduledEmail, deliverabilityAnalysis.score);
+
+    // Generate improvement suggestions based on deliverability analysis
+    const suggestions = this.generateImprovementSuggestions(
+      scheduledEmail,
+      deliverabilityAnalysis
+    );
+
+    return {
+      email,
+      deliverabilityAnalysis,
+      suggestions
+    };
+  }
+
+  /**
+   * Generate improvement suggestions for email content
+   */
+  private generateImprovementSuggestions(email: any, analysis: any): string[] {
+    const suggestions: string[] = [];
+
+    // Subject line suggestions
+    if (email.subject.length > 50) {
+      suggestions.push('Consider shortening the subject line to under 50 characters for better mobile display');
+    }
+
+    if (email.subject.includes('!')) {
+      suggestions.push('Avoid exclamation marks in subject lines as they may trigger spam filters');
+    }
+
+    // Content suggestions
+    if (email.body.length > 2000) {
+      suggestions.push('Consider shortening the email body for better engagement');
+    }
+
+    if (analysis.score < 70) {
+      suggestions.push('Low deliverability score detected. Review content for spam triggers');
+    }
+
+    // Personalization suggestions
+    if (!email.body.includes(email.lead?.firstName)) {
+      suggestions.push('Consider adding the recipient\'s first name for better personalization');
+    }
+
+    // Call-to-action suggestions
+    const ctaWords = ['click', 'call', 'schedule', 'book', 'download', 'register'];
+    const hasCTA = ctaWords.some(word => email.body.toLowerCase().includes(word));
+
+    if (!hasCTA) {
+      suggestions.push('Consider adding a clear call-to-action to guide the recipient');
+    }
+
+    // Link suggestions
+    const linkCount = (email.body.match(/https?:\/\/[^\s]+/g) || []).length;
+    if (linkCount > 3) {
+      suggestions.push('Reduce the number of links to improve deliverability');
+    }
+
+    return suggestions;
+  }
+
   /**
    * Cancel existing sequences for a lead
    */
@@ -319,7 +672,7 @@ export class LeadFollowupService {
       minimal: ['immediate', '1-week', '1-month']
     };
 
-    const template = timingTemplates[sequenceType] || timingTemplates.standard;
+    const template = timingTemplates[sequenceType as keyof typeof timingTemplates] || timingTemplates.standard;
     return template.slice(0, emailCount);
   }
 
@@ -349,7 +702,7 @@ export class LeadFollowupService {
     const context = this.buildEmailContext(lead, coach, emailNumber, config.emailCount, timing, config);
 
     const request: CoachReplicaRequest = {
-      coachID: coach.id,
+      coachID: coach?.id,
       context,
       requestType: 'lead_follow_up',
       additionalData: {
@@ -390,7 +743,7 @@ export class LeadFollowupService {
       sequenceOrder: emailNumber,
       scheduledFor,
       status: 'scheduled',
-      providerMessageID: JSON.stringify({
+      metadata: JSON.stringify({
         originalAI: response.response,
         confidence: response.confidence,
         deliverabilityScore: deliverabilityAnalysis.score
@@ -474,7 +827,7 @@ Generate an email that matches the coach's authentic voice and provides genuine 
       // Add new emails
       const [lead, coach] = await Promise.all([
         this.prisma.lead.findUnique({ where: { id: sequence.leadID } }),
-        this.prisma.coach.findUnique({ where: { id: sequence.coachID } })
+        sequence.coachID ? this.prisma.coach.findUnique({ where: { id: sequence.coachID } }) : null,
       ]);
 
       const timings = newTimings || this.generateDefaultTimings(newCount);
@@ -572,7 +925,7 @@ Generate an email that matches the coach's authentic voice and provides genuine 
             week: 7 * 24 * 60 * 60 * 1000,
             month: 30 * 24 * 60 * 60 * 1000,
           };
-          return new Date(now.getTime() + parseInt(num) * multipliers[unit]);
+          return new Date(now.getTime() + parseInt(num) * multipliers[unit as keyof typeof multipliers]);
         }
         return now; // Fallback to immediate
     }
@@ -616,7 +969,7 @@ Generate an email that matches the coach's authentic voice and provides genuine 
 
     let originalAIVersion;
     try {
-      const metadata = JSON.parse(email.providerMessageID || '{}');
+      const metadata = JSON.parse(email.metadata || '{}');
       originalAIVersion = metadata.originalAI;
     } catch {
       originalAIVersion = undefined;

@@ -1,9 +1,8 @@
-// apps/coach/src/app/(dashboard)/leads/page.tsx ( version)
 'use client'
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Plus, Calendar, TrendingUp, AlertCircle, Sparkles, Settings } from "lucide-react";
+import { Search, Plus, Calendar, TrendingUp, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/shared";
 import { AlertBanner, Button } from '@nlc-ai/ui';
@@ -15,10 +14,9 @@ import {
   emptyLeadsFilterValues,
   coachLeadColumns,
   leadFilters,
-  transformLeadData
 } from '@/lib';
 
-const Leads = () => {
+const CoachLeads = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -28,7 +26,7 @@ const Leads = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [leads, setLeads] = useState<DataTableLead[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyLeadsFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -73,7 +71,6 @@ const Leads = () => {
         await Promise.all([
           fetchLeads(),
           fetchStats(),
-          fetchActiveSequences(),
         ]);
       } catch (e: any) {
         const message = e.message || "Failed to load leads";
@@ -82,6 +79,12 @@ const Leads = () => {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (leads.length > 0) {
+      (() => fetchActiveSequences())();
+    }
+  }, [leads]);
 
   useEffect(() => {
     (() => fetchLeads())();
@@ -96,7 +99,7 @@ const Leads = () => {
         filterValues,
         searchQuery
       );
-      setLeads(transformLeadData(response.data));
+      setLeads(response.data);
       setPagination(response.pagination);
     } catch (e) {
       throw e;
@@ -122,7 +125,7 @@ const Leads = () => {
       // Fetch sequences for all visible leads
       const sequencePromises = leads.map(async (lead) => {
         try {
-          const sequences = await aiAgentsAPI.getSequencesForLead(lead.originalID);
+          const {sequences} = await aiAgentsAPI.getSequencesForLead(lead.id);
           return sequences.length > 0 ? sequences[0] : null;
         } catch (error) {
           return null;
@@ -138,7 +141,7 @@ const Leads = () => {
   };
 
   const handleCreateSequence = async (leadID: string) => {
-    const lead = leads.find(l => l.originalID === leadID);
+    const lead = leads.find(l => l.id === leadID);
     if (lead) {
       setSelectedLead(lead);
       setShowCreateSequenceModal(true);
@@ -157,7 +160,7 @@ const Leads = () => {
       setIsGeneratingSequence(leadID);
 
       // Use flexible sequence creation with default settings
-      await aiAgentsAPI.createFlexibleSequence({
+      await aiAgentsAPI.generateFollowupSequence({
         leadID,
         sequenceConfig: {
           emailCount: 4,
@@ -178,7 +181,7 @@ const Leads = () => {
 
   const handlePauseSequence = async (leadID: string) => {
     try {
-      await aiAgentsAPI.pauseSequenceForLead(leadID);
+      await aiAgentsAPI.pauseSequence(leadID);
       setSuccessMessage('Email sequence paused');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -189,7 +192,7 @@ const Leads = () => {
 
   const handleResumeSequence = async (leadID: string) => {
     try {
-      await aiAgentsAPI.resumeSequenceForLead(leadID);
+      await aiAgentsAPI.resumeSequence(leadID);
       setSuccessMessage('Email sequence resumed');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -202,7 +205,7 @@ const Leads = () => {
     if (!confirm('Are you sure you want to cancel this email sequence?')) return;
 
     try {
-      await aiAgentsAPI.cancelSequenceForLead(leadID);
+      await aiAgentsAPI.cancelSequence(leadID);
       setSuccessMessage('Email sequence cancelled');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -233,21 +236,21 @@ const Leads = () => {
 
   const handleRowAction = async (action: string, lead: any) => {
     if (action === 'edit') {
-      router.push(`/leads/edit?leadID=${lead.originalID}`);
+      router.push(`/leads/edit?leadID=${lead.id}`);
     } else if (action === 'delete') {
-      await handleDeleteLead(lead.originalID);
+      await handleDeleteLead(lead.id);
     } else if (action === 'email') {
       handleEmailLead(lead);
     } else if (action === 'create-sequence') {
-      await handleCreateSequence(lead.originalID);
+      await handleCreateSequence(lead.id);
     } else if (action === 'generate-sequence') {
-      await handleGenerateSequence(lead.originalID);
+      await handleGenerateSequence(lead.id);
     } else if (action === 'pause-sequence') {
-      await handlePauseSequence(lead.originalID);
+      await handlePauseSequence(lead.id);
     } else if (action === 'resume-sequence') {
-      await handleResumeSequence(lead.originalID);
+      await handleResumeSequence(lead.id);
     } else if (action === 'cancel-sequence') {
-      await handleCancelSequence(lead.originalID);
+      await handleCancelSequence(lead.id);
     }
   };
 
@@ -406,8 +409,8 @@ const Leads = () => {
           }}
           leadName={selectedLead.name}
           leadEmail={selectedLead.email}
-          leadStatus={selectedLead.rawStatus}
-          leadID={selectedLead.originalID}
+          leadStatus={selectedLead.status}
+          leadID={selectedLead.id}
         />
       )}
 
@@ -415,19 +418,19 @@ const Leads = () => {
       {showCreateSequenceModal && selectedLead && (
         <CreateSequenceModal
           isOpen={showCreateSequenceModal}
-          onClose={() => {
+          onCloseAction={() => {
             setShowCreateSequenceModal(false);
             setSelectedLead(null);
           }}
-          leadID={selectedLead.originalID}
+          leadID={selectedLead.id}
           leadName={selectedLead.name}
           leadEmail={selectedLead.email}
-          leadStatus={selectedLead.rawStatus}
-          onSequenceCreated={handleSequenceCreated}
+          leadStatus={selectedLead.status}
+          onSequenceCreatedAction={handleSequenceCreated}
         />
       )}
     </div>
   );
 }
 
-export default Leads;
+export default CoachLeads;

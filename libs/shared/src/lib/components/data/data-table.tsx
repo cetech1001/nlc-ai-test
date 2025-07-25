@@ -72,7 +72,7 @@ export const DataTable = <T,>(props: TableProps<T>) => {
                             )}
                           </h3>
                           {secondaryField && secondaryField.key !== primaryField?.key && (
-                            <p className="text-stone-300 text-sm leading-tight mt-0.5">
+                            <div className="text-stone-300 text-sm leading-tight mt-0.5">
                               {secondaryField.render ? (
                                 <span className="truncate">
                                   {/* @ts-ignore */}
@@ -82,7 +82,7 @@ export const DataTable = <T,>(props: TableProps<T>) => {
                                 /* @ts-ignore */
                                 row[secondaryField.key] || 'N/A'
                               )}
-                            </p>
+                            </div>
                           )}
                         </div>
 
@@ -118,7 +118,7 @@ export const DataTable = <T,>(props: TableProps<T>) => {
                           ))}
 
                           {detailFields.length > 1 && (
-                            <p className="text-xs">
+                            <div className="text-xs">
                               {detailFields.slice(1, 3).map((field, fieldIndex) => (
                                 <span key={field.key}>
                                   {fieldIndex > 0 && <span className="text-stone-500 mx-1">•</span>}
@@ -128,7 +128,7 @@ export const DataTable = <T,>(props: TableProps<T>) => {
                                   </span>
                                 </span>
                               ))}
-                            </p>
+                            </div>
                           )}
                         </div>
                       )}

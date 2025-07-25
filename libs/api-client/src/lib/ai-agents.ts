@@ -1,6 +1,7 @@
 import { BaseAPI } from './base';
 import {
-  CreateSequenceRequest, EmailInSequence,
+  AnalyzeEmailRequest, CoachKnowledgeProfile, CoachReplicaRequest, CoachReplicaResponse,
+  CreateSequenceRequest, DeliverabilityAnalysis, EmailAnalysis, EmailInSequence,
   EmailSequenceWithEmails,
   RegenerateEmailsRequest,
   UpdateEmailRequest,
@@ -8,126 +9,109 @@ import {
 } from "@nlc-ai/types";
 
 class AiAgentsAPI extends BaseAPI {
-  async generateFollowupSequence(leadID: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/generate`, {
-      method: 'POST',
-    });
-  }
-
-  async updateLeadStatus(leadID: string, status: string) {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  async getEmailHistory(leadID: string): Promise<any[]> {
-    return this.makeRequest(`/ai-agents/lead-followup/${leadID}/history`);
-  }
-
-  async getActiveSequences(): Promise<any[]> {
-    return this.makeRequest('/ai-agents/lead-followup/sequences');
-  }
-
-  async getEmailStats() {
-    return this.makeRequest('/ai-agents/email-stats');
-  }
-
-  async createFlexibleSequence(data: CreateSequenceRequest): Promise<EmailSequenceWithEmails> {
-    const response: any = await this.makeRequest('/ai-agents/lead-followup/flexible/create-sequence', {
+  async generateFollowupSequence(data: CreateSequenceRequest): Promise<EmailSequenceWithEmails> {
+    return this.makeRequest('/ai-agents/lead-followup/create-sequence', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return response.data;
   }
 
   async getSequenceWithEmails(sequenceID: string): Promise<EmailSequenceWithEmails> {
-    const response: any = await this.makeRequest(`/ai-agents/lead-followup/flexible/sequence/${sequenceID}`);
-    return response.data;
+    return this.makeRequest(`/ai-agents/lead-followup/sequence/${sequenceID}`);
   }
 
   async updateSequence(sequenceID: string, updates: Omit<UpdateSequenceRequest, 'sequenceID'>): Promise<EmailSequenceWithEmails> {
-    const response: any = await this.makeRequest(`/ai-agents/lead-followup/flexible/sequence/${sequenceID}`, {
+    return this.makeRequest(`/ai-agents/lead-followup/sequence/${sequenceID}`, {
       method: 'PATCH',
       body: JSON.stringify({ updates }),
     });
-    return response.data;
   }
 
-  async updateEmail(emailID: string, updates: Omit<UpdateEmailRequest, 'emailID'>): Promise<EmailInSequence> {
-    const response: any = await this.makeRequest(`/ai-agents/lead-followup/flexible/email/${emailID}`, {
+  async updateEmail(emailID: string, updates: UpdateEmailRequest['updates']): Promise<EmailInSequence> {
+    return this.makeRequest(`/ai-agents/lead-followup/email/${emailID}`, {
       method: 'PATCH',
-      body: JSON.stringify({ updates }),
+      body: JSON.stringify(updates),
     });
-    return response.data;
   }
 
   async regenerateEmails(data: RegenerateEmailsRequest): Promise<EmailInSequence[]> {
-    const response: any = await this.makeRequest(`/ai-agents/lead-followup/flexible/sequence/${data.sequenceID}/regenerate`, {
-      body: JSON.stringify(data),
+    return this.makeRequest(`/ai-agents/lead-followup/sequence/${data.sequenceID}/regenerate`, {
       method: 'POST',
+      body: JSON.stringify(data),
     });
-    return response.data;
   }
 
-  async getEmailById(emailID: string): Promise<EmailInSequence> {
-    const response: any = await this.makeRequest(`/ai-agents/lead-followup/flexible/email/${emailID}`);
-    return response.data;
+  async getEmailByID(emailID: string): Promise<{
+    email: EmailInSequence;
+    deliverabilityAnalysis: Omit<EmailAnalysis, 'strengths'>;
+    suggestions: string[];
+  }> {
+    return this.makeRequest(`/ai-agents/lead-followup/email/${emailID}/preview`);
   }
 
-  async getSequencesForLead(leadID: string): Promise<EmailSequenceWithEmails[]> {
-    const response: any = await this.makeRequest(`/ai-agents/lead-followup/flexible/sequences/lead/${leadID}`);
-    return response.data;
+  async getSequencesForLead(leadID: string): Promise<{
+    sequences: EmailSequenceWithEmails[],
+    currentSequence: EmailSequenceWithEmails,
+    sequenceHistory: EmailSequenceWithEmails[],
+  }> {
+    return this.makeRequest(`/ai-agents/lead-followup/sequences/lead/${leadID}`);
   }
 
   async pauseSequence(sequenceID: string): Promise<void> {
-    await this.makeRequest(`/ai-agents/lead-followup/flexible/sequence/${sequenceID}/pause`, {
+    await this.makeRequest(`/ai-agents/lead-followup/sequence/${sequenceID}/pause`, {
       method: 'POST',
     });
   }
 
   async resumeSequence(sequenceID: string): Promise<void> {
-    await this.makeRequest(`/ai-agents/lead-followup/flexible/sequence/${sequenceID}/resume`, {
+    await this.makeRequest(`/ai-agents/lead-followup/sequence/${sequenceID}/resume`, {
       method: 'POST',
     });
   }
 
   async cancelSequence(sequenceID: string): Promise<void> {
-    await this.makeRequest(`/ai-agents/lead-followup/flexible/sequence/${sequenceID}/cancel`, {
+    await this.makeRequest(`/ai-agents/lead-followup/sequence/${sequenceID}/cancel`, {
       method: 'POST',
     });
   }
 
   async analyzeEmailDeliverability(data: AnalyzeEmailRequest): Promise<DeliverabilityAnalysis> {
-    const response = await api.post('/ai-agents/email-deliverability/analyze', data);
-    return response.data;
+    return this.makeRequest('/ai-agents/email-deliverability/analyze', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async quickDeliverabilityCheck(subject: string, body: string): Promise<{ score: number; issues: string[] }> {
-    const response = await api.post('/ai-agents/email-deliverability/quick-check', { subject, body });
-    return response.data;
+    return this.makeRequest('/ai-agents/email-deliverability/quick-check', {
+      method: 'POST',
+      body: JSON.stringify({ subject, body }),
+    });
   }
 
   // Coach Replica Methods
   async getCoachProfile(coachID: string, refresh = false): Promise<CoachKnowledgeProfile> {
-    const response = await api.get(`/ai-agents/coach-replica/profile/${coachID}`, {
-      params: { refresh: refresh.toString() }
-    });
-    return response.data;
+    return this.makeRequest(`/ai-agents/coach-replica/profile/${coachID}?refresh=${refresh.toString()}`);
   }
 
   async generateCoachResponse(data: CoachReplicaRequest): Promise<CoachReplicaResponse> {
-    const response = await api.post('/ai-agents/coach-replica/generate-response', data);
-    return response.data;
+    return this.makeRequest('/ai-agents/coach-replica/generate-response', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async testCoachReplica(coachID: string, query: string): Promise<CoachReplicaResponse> {
-    const response = await api.post(`/ai-agents/coach-replica/test/${coachID}`, { query });
-    return response.data;
+    return this.makeRequest(`/ai-agents/coach-replica/test/${coachID}`, {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    });
   }
 
   async clearCoachCache(coachID: string): Promise<void> {
-    await api.post(`/ai-agents/coach-replica/clear-cache/${coachID}`);
+    await this.makeRequest(`/ai-agents/coach-replica/clear-cache/${coachID}`, {
+      method: 'POST',
+    });
   }
 }
 

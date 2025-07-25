@@ -6,7 +6,6 @@ import {
   Body,
   Param,
   UseGuards,
-  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -17,10 +16,11 @@ import {
   UpdateSequenceRequest,
   UpdateEmailRequest,
   RegenerateEmailsRequest,
-  AuthUser,
+  type AuthUser,
   UserType
 } from '@nlc-ai/types';
-import {CreateSequenceDto} from "./dto/sequence.dto";
+import {CreateSequenceDto, UpdateEmailDto, UpdateSequenceDto} from "./dto/sequence.dto";
+import {CurrentUser} from "../../auth/decorators/current-user.decorator";
 
 @ApiTags(' Lead Follow-up')
 @Controller('ai-agents/lead-followup')
@@ -37,11 +37,10 @@ export class LeadFollowupController {
   @ApiResponse({ status: 201, description: 'Email sequence created successfully' })
   async createSequence(
     @Body() body: CreateSequenceDto,
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
-    // Set coachID for coach users
-    if (req.user.type === UserType.coach) {
-      body.coachID = req.user.id;
+    if (user.type === UserType.coach) {
+      body.coachID = user.id;
     }
 
     return this.leadFollowupService.createSequence(body);
@@ -59,7 +58,7 @@ export class LeadFollowupController {
   @ApiResponse({ status: 200, description: 'Sequence updated successfully' })
   async updateSequence(
     @Param('sequenceID') sequenceID: string,
-    @Body() updates: Omit<UpdateSequenceRequest, 'sequenceID'>
+    @Body() updates: UpdateSequenceDto,
   ) {
     const request: UpdateSequenceRequest = {
       sequenceID,
@@ -73,7 +72,7 @@ export class LeadFollowupController {
   @ApiResponse({ status: 200, description: 'Email updated successfully' })
   async updateEmail(
     @Param('emailID') emailID: string,
-    @Body() updates: Omit<UpdateEmailRequest, 'emailID'>
+    @Body() updates: UpdateEmailDto,
   ) {
     const request: UpdateEmailRequest = {
       emailID,
@@ -101,28 +100,28 @@ export class LeadFollowupController {
   @ApiResponse({ status: 200, description: 'Sequences retrieved successfully' })
   async getCoachSequences(
     @Param('coachID') coachID: string,
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
     // Ensure coaches can only see their own sequences unless admin
-    if (req.user.type === UserType.coach && req.user.id !== coachID) {
-      coachID = req.user.id;
+    if (user.type === UserType.coach && user.id !== coachID) {
+      coachID = user.id;
     }
 
-    return this.getSequencesForCoach(coachID);
+    return this.leadFollowupService.getSequencesForCoach(coachID);
   }
 
   @Get('sequences/lead/:leadID')
   @ApiOperation({ summary: 'Get all sequences for a lead' })
   @ApiResponse({ status: 200, description: 'Lead sequences retrieved successfully' })
   async getLeadSequences(@Param('leadID') leadID: string) {
-    return this.getSequencesForLead(leadID);
+    return this.leadFollowupService.getSequencesForLead(leadID);
   }
 
   @Post('sequence/:sequenceID/pause')
   @ApiOperation({ summary: 'Pause email sequence' })
   @ApiResponse({ status: 200, description: 'Sequence paused successfully' })
   async pauseSequence(@Param('sequenceID') sequenceID: string) {
-    await this.pauseSequenceEmails(sequenceID);
+    await this.leadFollowupService.pauseSequenceEmails(sequenceID);
     return { message: 'Email sequence paused successfully' };
   }
 
@@ -130,7 +129,7 @@ export class LeadFollowupController {
   @ApiOperation({ summary: 'Resume email sequence' })
   @ApiResponse({ status: 200, description: 'Sequence resumed successfully' })
   async resumeSequence(@Param('sequenceID') sequenceID: string) {
-    await this.resumeSequenceEmails(sequenceID);
+    await this.leadFollowupService.resumeSequenceEmails(sequenceID);
     return { message: 'Email sequence resumed successfully' };
   }
 
@@ -138,7 +137,7 @@ export class LeadFollowupController {
   @ApiOperation({ summary: 'Cancel email sequence' })
   @ApiResponse({ status: 200, description: 'Sequence cancelled successfully' })
   async cancelSequence(@Param('sequenceID') sequenceID: string) {
-    await this.cancelSequenceEmails(sequenceID);
+    await this.leadFollowupService.cancelSequenceEmails(sequenceID);
     return { message: 'Email sequence cancelled successfully' };
   }
 
@@ -146,52 +145,6 @@ export class LeadFollowupController {
   @ApiOperation({ summary: 'Preview email with deliverability analysis' })
   @ApiResponse({ status: 200, description: 'Email preview generated successfully' })
   async previewEmail(@Param('emailID') emailID: string) {
-    return this.getEmailPreview(emailID);
-  }
-
-  // Helper methods for the controller
-  private async getSequencesForCoach(coachID: string) {
-    // Implementation would query sequences for coach
-    // This is a simplified version - you'd want to add pagination, filtering, etc.
-    return {
-      sequences: [], // Would contain actual sequences
-      totalCount: 0,
-      activeCount: 0,
-      completedCount: 0
-    };
-  }
-
-  private async getSequencesForLead(leadID: string) {
-    // Implementation would query sequences for lead
-    return {
-      sequences: [], // Would contain actual sequences
-      currentSequence: null,
-      sequenceHistory: []
-    };
-  }
-
-  private async pauseSequenceEmails(sequenceID: string) {
-    // Pause all scheduled emails in sequence
-    // Implementation would update email statuses to 'paused'
-  }
-
-  private async resumeSequenceEmails(sequenceID: string) {
-    // Resume all paused emails in sequence
-    // Implementation would update email statuses back to 'scheduled'
-  }
-
-  private async cancelSequenceEmails(sequenceID: string) {
-    // Cancel all unsent emails in sequence
-    // Implementation would update email statuses to 'cancelled'
-  }
-
-  private async getEmailPreview(emailID: string) {
-    // Get email with deliverability analysis
-    // Implementation would return email content + analysis
-    return {
-      email: null, // Would contain email data
-      deliverabilityAnalysis: null, // Would contain analysis
-      suggestions: [] // Would contain improvement suggestions
-    };
+    return this.leadFollowupService.getEmailPreview(emailID);
   }
 }

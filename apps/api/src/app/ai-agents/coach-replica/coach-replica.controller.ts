@@ -6,14 +6,14 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserTypesGuard } from '../../auth/guards/user-types.guard';
 import { UserTypes } from '../../auth/decorators/user-types.decorator';
 import { CoachReplicaService } from './coach-replica.service';
-import { AuthUser, UserType, type CoachReplicaRequest } from '@nlc-ai/types';
+import { type AuthUser, UserType, type CoachReplicaRequest } from '@nlc-ai/types';
+import {CurrentUser} from "../../auth/decorators/current-user.decorator";
 
 @ApiTags('Coach Replica Agent')
 @Controller('ai-agents/coach-replica')
@@ -27,13 +27,12 @@ export class CoachReplicaController {
   @ApiOperation({ summary: 'Get coach knowledge profile' })
   @ApiResponse({ status: 200, description: 'Coach knowledge profile retrieved successfully' })
   async getCoachProfile(
-    @Request() req: { user: AuthUser },
+    @CurrentUser() user: AuthUser,
     @Param('coachID') coachID: string,
     @Query('refresh') refresh?: string,
   ) {
-    // Ensure coaches can only access their own profile unless admin
-    if (req.user.type === UserType.coach && req.user.id !== coachID) {
-      coachID = req.user.id;
+    if (user.type === UserType.coach && user.id !== coachID) {
+      coachID = user.id;
     }
 
     const forceRefresh = refresh === 'true';
@@ -45,11 +44,10 @@ export class CoachReplicaController {
   @ApiResponse({ status: 200, description: 'Profile stats retrieved successfully' })
   async getProfileStats(
     @Param('coachID') coachID: string,
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
-    // Ensure coaches can only access their own stats unless admin
-    if (req.user.type === UserType.coach && req.user.id !== coachID) {
-      coachID = req.user.id;
+    if (user.type === UserType.coach && user.id !== coachID) {
+      coachID = user.id;
     }
 
     return this.coachReplicaService.getKnowledgeProfileStats(coachID);
@@ -60,11 +58,10 @@ export class CoachReplicaController {
   @ApiResponse({ status: 200, description: 'Response generated successfully' })
   async generateResponse(
     @Body() request: CoachReplicaRequest,
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
-    // Ensure coaches can only generate responses for themselves unless admin
-    if (req.user.type === UserType.coach && req.user.id !== request.coachID) {
-      request.coachID = req.user.id;
+    if (user.type === UserType.coach && user.id !== request.coachID) {
+      request.coachID = user.id;
     }
 
     return this.coachReplicaService.generateCoachResponse(request);
@@ -76,11 +73,10 @@ export class CoachReplicaController {
   async testReplica(
     @Param('coachID') coachID: string,
     @Body() body: { query: string },
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
-    // Ensure coaches can only test their own replica unless admin
-    if (req.user.type === UserType.coach && req.user.id !== coachID) {
-      coachID = req.user.id;
+    if (user.type === UserType.coach && user.id !== coachID) {
+      coachID = user.id;
     }
 
     return this.coachReplicaService.testCoachReplica(coachID, body.query);
@@ -91,29 +87,25 @@ export class CoachReplicaController {
   @ApiResponse({ status: 200, description: 'Cache cleared successfully' })
   async clearCache(
     @Param('coachID') coachID: string,
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
-    // Ensure coaches can only clear their own cache unless admin
-    if (req.user.type === UserType.coach && req.user.id !== coachID) {
-      coachID = req.user.id;
+    if (user.type === UserType.coach && user.id !== coachID) {
+      coachID = user.id;
     }
 
     this.coachReplicaService.clearCoachCache(coachID);
     return { message: 'Cache cleared successfully' };
   }
 
-  // Helper endpoint for other agents to get coach knowledge
   @Get('knowledge/:coachID')
   @ApiOperation({ summary: 'Get coach knowledge for other AI agents (internal use)' })
   @ApiResponse({ status: 200, description: 'Coach knowledge retrieved for agent use' })
   async getCoachKnowledge(
     @Param('coachID') coachID: string,
-    @Request() req: { user: AuthUser }
+    @CurrentUser() user: AuthUser,
   ) {
-    // This endpoint is for internal agent use
-    // Still enforce permissions
-    if (req.user.type === UserType.coach && req.user.id !== coachID) {
-      coachID = req.user.id;
+    if (user.type === UserType.coach && user.id !== coachID) {
+      coachID = user.id;
     }
 
     return this.coachReplicaService.getCoachKnowledgeProfile(coachID);

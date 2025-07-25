@@ -1,16 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import { OpenAI } from 'openai';
+import {Injectable, Logger} from '@nestjs/common';
+import {PrismaService} from '../../prisma/prisma.service';
+import {ConfigService} from '@nestjs/config';
+import {OpenAI} from 'openai';
 import {
+  CoachBusinessContext,
+  CoachClientInteractionStyle,
+  CoachContentPatterns,
   CoachKnowledgeProfile,
+  CoachPersonality,
   CoachReplicaRequest,
   CoachReplicaResponse,
-  CoachPersonality,
-  CoachBusinessContext,
-  CoachWritingStyle,
-  CoachContentPatterns,
-  CoachClientInteractionStyle
+  CoachWritingStyle, ContentPiece, Integration
 } from '@nlc-ai/types';
 
 @Injectable()
@@ -37,7 +37,6 @@ export class CoachReplicaService {
 
     if (!forceRefresh && this.knowledgeCache.has(cacheKey)) {
       const cached = this.knowledgeCache.get(cacheKey)!;
-      // Refresh if older than 1 hour
       if (Date.now() - cached.lastUpdated.getTime() < 3600000) {
         return cached;
       }
@@ -46,10 +45,8 @@ export class CoachReplicaService {
     this.logger.log(`Building knowledge profile for coach ${coachID}`);
     const profile = await this.buildCoachKnowledgeProfile(coachID);
 
-    // Cache the profile
     this.knowledgeCache.set(cacheKey, profile);
 
-    // Optionally store in database for persistence
     await this.storeKnowledgeProfile(profile);
 
     return profile;
@@ -105,7 +102,6 @@ export class CoachReplicaService {
    * Build comprehensive coach knowledge profile
    */
   private async buildCoachKnowledgeProfile(coachID: string): Promise<CoachKnowledgeProfile> {
-    // Fetch all relevant data in parallel
     const [
       coach,
       emailMessages,
@@ -127,7 +123,7 @@ export class CoachReplicaService {
     const aiAnalysis = await this.analyzeCoachPatterns(analysisPrompt);
 
     // Build the knowledge profile
-    const profile: CoachKnowledgeProfile = {
+    return {
       coachID,
       personality: this.extractPersonality(aiAnalysis, emailMessages, scheduledEmails),
       businessContext: this.extractBusinessContext(coach, contentPieces, integrations),
@@ -138,8 +134,6 @@ export class CoachReplicaService {
       confidenceScore: this.calculateConfidenceScore(coach, emailMessages, contentPieces, clients),
       dataSourcesUsed: this.getDataSources(coach, emailMessages, contentPieces, clients, integrations)
     };
-
-    return profile;
   }
 
   /**
@@ -189,7 +183,7 @@ export class CoachReplicaService {
   /**
    * Fetch content creation patterns
    */
-  private async fetchContentPatterns(coachID: string) {
+  private async fetchContentPatterns(coachID: string): Promise<Partial<ContentPiece>[]> {
     return this.prisma.contentPiece.findMany({
       where: { coachID },
       select: {
@@ -275,8 +269,7 @@ export class CoachReplicaService {
       select: { emailAddress: true }
     });
 
-    const emails = [coach?.email, ...emailAccounts.map(acc => acc.emailAddress)].filter(Boolean) as string[];
-    return emails;
+    return [coach?.email, ...emailAccounts.map(acc => acc.emailAddress)].filter(Boolean) as string[];
   }
 
   /**
@@ -422,14 +415,14 @@ Please analyze and return JSON with:
   /**
    * Extract content patterns
    */
-  private extractContentPatterns(content: any[], integrations: any[]): CoachContentPatterns {
+  private extractContentPatterns(content: Partial<ContentPiece>[], integrations: Partial<Integration>[]): CoachContentPatterns {
     const topicFrequency = content.reduce((acc, piece) => {
-      piece.topicCategories.forEach((topic: string) => {
+      piece.topicCategories?.forEach((topic: string) => {
         if (!acc[topic]) {
           acc[topic] = { count: 0, totalEngagement: 0 };
         }
         acc[topic].count++;
-        acc[topic].totalEngagement += piece.engagementRate || 0;
+        acc[topic].totalEngagement += Number(piece.engagementRate) || 0;
       });
       return acc;
     }, {} as Record<string, { count: number; totalEngagement: number }>);
@@ -542,9 +535,11 @@ Please analyze and return JSON with:
     return Array.from(foundMarkers);
   }
 
-  private analyzeContentTypes(content: any[]) {
+  private analyzeContentTypes(content: Partial<ContentPiece>[]) {
     const typeCount = content.reduce((acc, piece) => {
-      acc[piece.contentType] = (acc[piece.contentType] || 0) + 1;
+      if (piece.contentType) {
+        acc[piece.contentType] = (acc[piece.contentType] || 0) + 1;
+      }
       return acc;
     }, {} as Record<string, number>);
 
@@ -698,7 +693,6 @@ Always respond in character, maintaining the coach's authentic voice and experti
       });
 
       if (!coachAgent) {
-        // Create the AI agent first
         const aiAgent = await this.prisma.aiAgent.upsert({
           where: {
             name: 'Coach Replica Agent'
@@ -713,13 +707,12 @@ Always respond in character, maintaining the coach's authentic voice and experti
           }
         });
 
-        // Create coach-specific agent configuration
-        coachAgent = await this.prisma.coachAiAgent.create({
+        await this.prisma.coachAiAgent.create({
           data: {
             coachID: profile.coachID,
             agentID: aiAgent.id,
             isEnabled: true,
-            customConfig: profile,
+            customConfig: JSON.stringify(profile),
             lastUsedAt: new Date()
           },
           include: {
@@ -727,11 +720,10 @@ Always respond in character, maintaining the coach's authentic voice and experti
           }
         });
       } else {
-        // Update existing configuration
         await this.prisma.coachAiAgent.update({
           where: { id: coachAgent.id },
           data: {
-            customConfig: profile,
+            customConfig: JSON.stringify(profile),
             lastUsedAt: new Date()
           }
         });

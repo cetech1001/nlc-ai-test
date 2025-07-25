@@ -1,4 +1,3 @@
-// apps/coach/src/lib/components/leads/enhanced-email-automation.modal.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,6 @@ import {
   CheckCircle,
   AlertCircle,
   Edit3,
-  Settings,
   Plus,
   RotateCcw,
   Play,
@@ -44,7 +42,7 @@ export const EmailAutomationModal = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'sequence' | 'create' | 'preview'>('sequence');
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [_, setShowCreateForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Create sequence form state
@@ -55,15 +53,15 @@ export const EmailAutomationModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      fetchSequence();
+      (() => fetchSequence())();
     }
   }, [isOpen, leadID]);
 
   const fetchSequence = async () => {
     try {
       setIsLoading(true);
-      // Fetch existing sequence for this lead
-      const sequences = await aiAgentsAPI.getSequencesForLead(leadID);
+      // Fetch an existing sequence for this lead
+      const {sequences} = await aiAgentsAPI.getSequencesForLead(leadID);
       if (sequences.length > 0) {
         setSequence(sequences[0]);
       } else {
@@ -82,9 +80,9 @@ export const EmailAutomationModal = ({
   const handleCreateSequence = async () => {
     try {
       setIsGenerating(true);
-      const template = SEQUENCE_TEMPLATES.find(t => t.type === selectedTemplate);
+      // const template = SEQUENCE_TEMPLATES.find(t => t.type === selectedTemplate);
 
-      const newSequence = await aiAgentsAPI.createFlexibleSequence({
+      const newSequence = await aiAgentsAPI.generateFollowupSequence({
         leadID,
         sequenceConfig: {
           emailCount,
@@ -205,7 +203,7 @@ export const EmailAutomationModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="relative group max-w-6xl w-full max-h-[90vh] overflow-hidden">
+      <div className="relative group max-w-6xl w-full max-h-[95vh] overflow-hidden">
         <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-fuchsia-600/20 to-violet-600/20 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
 
         <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl overflow-hidden">
@@ -378,7 +376,7 @@ export const EmailAutomationModal = ({
                               <div className="flex items-center gap-3 text-sm text-[#A0A0A0]">
                                 <span>
                                   {email.status === 'sent'
-                                    ? `Sent ${formatDate(email.sentAt || email.scheduledFor.toString())}`
+                                    ? `Sent ${formatDate(email.sentAt?.toString() || email.scheduledFor.toString())}`
                                     : `Scheduled for ${formatDate(email.scheduledFor.toString())}`
                                   }
                                 </span>
