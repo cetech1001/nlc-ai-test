@@ -97,7 +97,7 @@ export class EmailService {
     return this.sendEmail(to, subject, html, text);
   }
 
-  private personalizeEmailBody(body: string, leadName: string, coachName: string): string {
+  /*private personalizeEmailBody(body: string, leadName: string, coachName: string): string {
     return body
       .replace(/{{leadName}}/g, leadName)
       .replace(/{{coachName}}/g, coachName)
@@ -164,7 +164,7 @@ export class EmailService {
   </div>
 </body>
 </html>`;
-  }
+  }*/
 
   private async sendEmail(to: string, subject: string, html: string, text: string) {
     if (!this.mailgun) {

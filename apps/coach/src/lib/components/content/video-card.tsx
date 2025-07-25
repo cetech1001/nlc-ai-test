@@ -79,7 +79,7 @@ export const VideoCard: FC<VideoCardProps> = ({ video, onPlay, onEdit, onDelete 
             <span>{video.views?.toLocaleString()} views</span>
           </div>
           <div className="text-right">
-            <span className="text-stone-300">{video.engagementRate}% engagement</span>
+            <span className="text-stone-300">{Number(video.engagementRate)}% engagement</span>
           </div>
         </div>
 
