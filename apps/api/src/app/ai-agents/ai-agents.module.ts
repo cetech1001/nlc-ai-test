@@ -8,25 +8,30 @@ import {CoachReplicaService} from "./coach-replica/coach-replica.service";
 import {EmailDeliverabilityController} from "./email-deliverability/email-deliverability.controller";
 import {EmailDeliverabilityService} from "./email-deliverability/email-deliverability.service";
 import {LeadFollowupController} from "./lead-followup/lead-followup.controller";
+import {ClientEmailController} from "./client-email/client-email.controller";
+import {ClientEmailService} from "./client-email/client-email.service";
 
 @Module({
   imports: [ScheduleModule.forRoot()],
   controllers: [
-    LeadFollowupController,
+    ClientEmailController,
     CoachReplicaController,
     EmailDeliverabilityController,
+    LeadFollowupController,
   ],
   providers: [
+    ClientEmailService,
+    CoachReplicaService,
+    EmailDeliverabilityService,
     EmailService,
     EmailSchedulerService,
-    CoachReplicaService,
     LeadFollowupService,
-    EmailDeliverabilityService,
   ],
   exports: [
+    ClientEmailService,
     CoachReplicaService,
-    LeadFollowupService,
     EmailDeliverabilityService,
+    LeadFollowupService,
   ],
 })
 export class AiAgentsModule {}

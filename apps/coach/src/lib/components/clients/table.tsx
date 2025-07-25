@@ -26,7 +26,7 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
   {
     key: 'name',
     header: 'Name',
-    width: `${colWidth * (2 / 3)}%`,
+    width: `${colWidth}%`,
     render: (value: string) => tableRenderers.truncateText(value, 18)
   },
   {
@@ -38,19 +38,19 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
   {
     key: 'firstCourseBoughtOn',
     header: 'First Course Bought On',
-    width: `${colWidth}%`,
+    width: `${colWidth * 0.6}%`,
     render: tableRenderers.dateText
   },
   {
     key: 'coursesBought',
     header: 'Courses Bought',
-    width: `${colWidth * 0.8}%`,
+    width: `${colWidth * 0.6}%`,
     render: tableRenderers.basicText
   },
   {
     key: 'coursesCompleted',
     header: 'Courses Completed',
-    width: `${colWidth * 0.8}%`,
+    width: `${colWidth * 0.6}%`,
     render: tableRenderers.basicText
   },
   {
