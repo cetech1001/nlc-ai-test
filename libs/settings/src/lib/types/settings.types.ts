@@ -91,8 +91,8 @@ export interface ProfileFormData {
   phone?: string;
   websiteUrl?: string;
   timezone?: string;
-  desktopNotifications?: boolean;
-  emailNotifications?: boolean;
+  // desktopNotifications?: boolean;
+  // emailNotifications?: boolean;
 }
 
 export interface PasswordFormData {

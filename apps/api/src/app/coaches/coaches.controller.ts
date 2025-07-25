@@ -7,7 +7,7 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
+  UseGuards, ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CoachesService } from './coaches.service';
@@ -16,15 +16,17 @@ import { CoachQueryDto } from './dto/coach-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserTypes } from '../auth/decorators/user-types.decorator';
 import { UserTypesGuard } from '../auth/guards/user-types.guard';
+import {type AuthUser, UserType} from "@nlc-ai/types";
+import {CurrentUser} from "../auth/decorators/current-user.decorator";
 
 @ApiTags('Coaches')
 @Controller('coaches')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
-@UserTypes('admin')
 @ApiBearerAuth()
 export class CoachesController {
   constructor(private readonly coachesService: CoachesService) {}
 
+  @UserTypes(UserType.admin)
   @Get()
   @ApiOperation({ summary: 'Get all coaches with advanced filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Coaches retrieved successfully' })
@@ -60,6 +62,7 @@ export class CoachesController {
     );
   }
 
+  @UserTypes(UserType.admin)
   @Post()
   @ApiOperation({ summary: 'Create a new coach' })
   @ApiResponse({ status: 201, description: 'Coach created successfully' })
@@ -71,7 +74,10 @@ export class CoachesController {
   @ApiOperation({ summary: 'Update a coach' })
   @ApiResponse({ status: 200, description: 'Coach updated successfully' })
   @ApiResponse({ status: 404, description: 'Coach not found' })
-  update(@Param('id') id: string, @Body() updateCoachDto: UpdateCoachDto) {
+  update(@Param('id') id: string, @Body() updateCoachDto: UpdateCoachDto, @CurrentUser() user: AuthUser) {
+    if (user.type === UserType.coach && user.id !== id) {
+      throw new ForbiddenException();
+    }
     return this.coachesService.update(id, updateCoachDto);
   }
 

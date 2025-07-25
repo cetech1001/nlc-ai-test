@@ -38,8 +38,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     phone: '',
     websiteUrl: '',
     timezone: '',
-    desktopNotifications: false,
-    emailNotifications: true,
+    // desktopNotifications: false,
+    // emailNotifications: true,
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordFormData>({
@@ -62,8 +62,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         phone: user.phone || '',
         websiteUrl: user.websiteUrl || '',
         timezone: user.timezone || '',
-        desktopNotifications: user.desktopNotifications || false,
-        emailNotifications: user.emailNotifications || true,
+        // desktopNotifications: user.desktopNotifications || false,
+        // emailNotifications: user.emailNotifications || true,
       });
       setDesktopNotifications(user.desktopNotifications || false);
       setEmailNotifications(user.emailNotifications || true);
@@ -195,8 +195,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     try {
       await onUpdateProfile({
         ...profileForm,
-        desktopNotifications,
-        emailNotifications,
+        // desktopNotifications,
+        // emailNotifications,
       });
     } catch (error: any) {
       setErrors({
@@ -218,8 +218,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         phone: user.phone || '',
         websiteUrl: user.websiteUrl || '',
         timezone: user.timezone || '',
-        desktopNotifications: user.desktopNotifications || false,
-        emailNotifications: user.emailNotifications || true,
+        // desktopNotifications: user.desktopNotifications || false,
+        // emailNotifications: user.emailNotifications || true,
       });
       setDesktopNotifications(user.desktopNotifications || false);
       setEmailNotifications(user.emailNotifications || true);

@@ -435,6 +435,10 @@ export class AuthService {
           businessName: true,
           isVerified: true,
           avatarUrl: true,
+          websiteUrl: true,
+          bio: true,
+          timezone: true,
+          phone: true,
         },
       });
     } else {

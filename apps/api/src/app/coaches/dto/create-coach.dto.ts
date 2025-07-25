@@ -1,6 +1,7 @@
-import { IsEmail, IsOptional, IsString, IsUrl } from 'class-validator';
+import {IsEmail, IsOptional, IsString, IsUrl} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { CreateCoach } from "@nlc-ai/types";
+import {Transform} from "class-transformer";
 
 export class CreateCoachDto implements CreateCoach {
   @ApiProperty({ example: 'coach@example.com' })
@@ -37,6 +38,7 @@ export class CreateCoachDto implements CreateCoach {
 
   @ApiProperty({ example: 'https://mycoaching.com', required: false })
   @IsOptional()
+  @Transform(v => v.value || undefined)
   @IsUrl()
   websiteUrl?: string;
 

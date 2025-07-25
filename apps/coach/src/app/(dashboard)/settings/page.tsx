@@ -3,13 +3,14 @@
 import {useEffect, useState} from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Settings } from "@nlc-ai/settings";
-import { authAPI } from "@nlc-ai/auth";
-import { integrationsAPI } from "@nlc-ai/api-client";
+import { authAPI, useAuth } from "@nlc-ai/auth";
+import {coachesAPI, integrationsAPI} from "@nlc-ai/api-client";
 import { PasswordFormData, UpdateProfileRequest } from "@nlc-ai/types";
 
 const CoachSettings = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
 
   // Initialize active tab from URL parameters
@@ -35,7 +36,7 @@ const CoachSettings = () => {
   };
 
   const handleUpdateProfile = async (payload: UpdateProfileRequest) => {
-    await authAPI.updateProfile(payload);
+    await coachesAPI.updateCoach(user?.id || '', payload);
   }
 
   const handleUpdatePassword = async (payload: PasswordFormData) => {
