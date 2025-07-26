@@ -1,6 +1,6 @@
 import { tableRenderers } from "@nlc-ai/shared";
 import {ClientWithDetails, DataTableClient, TableColumn} from "@nlc-ai/types";
-import {Mailbox} from "lucide-react";
+import {Edit3, Mailbox} from "lucide-react";
 
 export const transformClientData = (clients: ClientWithDetails[]): DataTableClient[] => {
   return clients.map(client => ({
@@ -60,6 +60,13 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
     render: (_: string, client: DataTableClient, onRowAction?: (action: string, row: any) => void) => {
       return (
         <div className={"flex gap-3"}>
+          <button
+            onClick={() => onRowAction?.('edit', client)}
+            className="p-1.5 rounded text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
+            title="Edit Client"
+          >
+            <Edit3 className="w-3 h-3" />
+          </button>
           <button
             onClick={() => onRowAction?.('view-emails', client)}
             className="px-3 py-1 rounded text-sm bg-blue-600/20 text-pink-400 hover:bg-blue-600/30 transition-colors"

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import {Plus, Search} from "lucide-react";
 import {
   Pagination,
   PageHeader,
@@ -11,7 +11,7 @@ import {
   DataTable,
 } from "@nlc-ai/shared";
 import { clientsAPI } from "@nlc-ai/api-client";
-import { AlertBanner } from '@nlc-ai/ui';
+import { AlertBanner, Button } from '@nlc-ai/ui';
 import { ClientWithDetails, FilterValues, DataTableClient } from "@nlc-ai/types";
 import {clientColumns, clientFilters, emptyClientFilterValues, transformClientData} from "@/lib";
 
@@ -98,6 +98,8 @@ const Clients = () => {
       handleViewDetails(client.originalID);
     } else if (action === 'view-emails') {
       handleViewEmails(client.originalID);
+    } else if (action === 'edit') {
+      router.push(`/clients/edit?clientID=${client.originalID}`);
     }
   };
 
@@ -132,6 +134,16 @@ const Clients = () => {
               onReset={handleResetFilters}
               setIsFilterOpen={setIsFilterOpen}
             />
+
+            <Button
+              onClick={() => router.push('/clients/create')}
+              className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex'}
+            >
+              <span className="w-4 h-4 mr-2">
+                <Plus className="w-4 h-4" />
+              </span>
+              Add New Client
+            </Button>
           </>
         </PageHeader>
 
