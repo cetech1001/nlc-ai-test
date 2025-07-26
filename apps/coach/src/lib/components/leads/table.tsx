@@ -153,7 +153,6 @@ export const coachLeadColumns = (
 
       return (
         <div className="flex gap-1 flex-wrap">
-          {/* Edit Lead */}
           <button
             onClick={() => onRowAction?.('edit', row)}
             className="p-1.5 rounded text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
@@ -162,7 +161,6 @@ export const coachLeadColumns = (
             <Edit3 className="w-3 h-3" />
           </button>
 
-          {/* Sequence Actions */}
           {!hasActiveSequence ? (
             <button
               onClick={() => onRowAction?.('create-sequence', row)}
@@ -178,7 +176,6 @@ export const coachLeadColumns = (
             </button>
           ) : (
             <div className="flex gap-1">
-              {/* Sequence Settings */}
               <button
                 onClick={() => onRowAction?.('email', row)}
                 className="p-1.5 rounded text-xs bg-violet-600/20 text-violet-400 hover:bg-violet-600/30 transition-colors"
@@ -187,7 +184,6 @@ export const coachLeadColumns = (
                 <Settings className="w-3 h-3" />
               </button>
 
-              {/* Pause/Resume */}
               {isSequencePaused ? (
                 <button
                   onClick={() => onRowAction?.('resume-sequence', row)}
@@ -206,7 +202,6 @@ export const coachLeadColumns = (
                 </button>
               )}
 
-              {/* Cancel */}
               <button
                 onClick={() => onRowAction?.('cancel-sequence', row)}
                 className="p-1.5 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
@@ -217,7 +212,6 @@ export const coachLeadColumns = (
             </div>
           )}
 
-          {/* Send Manual Email */}
           <button
             onClick={() => onRowAction?.('email', row)}
             className="p-1.5 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
@@ -226,7 +220,6 @@ export const coachLeadColumns = (
             <Mail className="w-3 h-3" />
           </button>
 
-          {/* Delete */}
           <button
             onClick={() => onRowAction?.('delete', row)}
             className="p-1.5 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"

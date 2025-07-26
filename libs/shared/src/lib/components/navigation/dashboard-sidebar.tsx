@@ -18,13 +18,14 @@ interface SidebarProps extends SidebarComponentProps{
   pathname: string;
   setSidebarOpenAction: (open: boolean) => void;
   navigateTo: (path: string) => void;
+  logoSize?: 'small' | 'large';
 }
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-const HeadlessUISidebar = (props: SidebarProps) => {
+const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
   const handleNavigation = (path: string) => {
     props.navigateTo(path);
     props.setSidebarOpenAction(false);
@@ -41,8 +42,14 @@ const HeadlessUISidebar = (props: SidebarProps) => {
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[#1A1A1A] bg-[#0A0A0A] px-6 pb-4">
       <div className="flex h-16 shrink-0 items-center border-b border-[#1A1A1A]">
         <div className="flex items-center gap-3">
-          <Logo height={40} width={48} type={props.sidebarOpen ? 'png' : 'svg'}/>
-          <span className="text-white font-semibold text-lg">{props.dashboardHeader}</span>
+          <Logo
+            height={logoSize === 'small' ? 40 : 100}
+            width={logoSize === 'small' ? 48 : 150}
+            type={props.sidebarOpen ? 'png' : 'svg'}
+            size={logoSize} />
+          {logoSize === 'small' && (
+            <span className="text-white font-semibold text-lg">{props.dashboardHeader}</span>
+          )}
         </div>
       </div>
 
@@ -193,6 +200,7 @@ interface SidebarComponentProps {
   logout: () => void;
   menuItems: MenuItem[];
   navigateTo: (path: string) => void;
+  logoSize?: 'small' | 'large';
 }
 
 export const DashboardSidebarWrapper = () => {
