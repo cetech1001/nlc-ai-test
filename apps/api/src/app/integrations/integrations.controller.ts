@@ -234,47 +234,12 @@ export class IntegrationsController {
   @ApiResponse({ status: 200, description: 'Available course platforms' })
   getAvailableCoursePlatforms() {
     return {
-      thinkific: {
-        name: 'Thinkific',
-        authType: 'api_key',
-        requiredFields: ['subdomain', 'apiKey'],
-        description: 'Connect your Thinkific school to sync courses and students',
-        setupInstructions: [
-          'Go to Settings → Code & Analytics in your Thinkific dashboard',
-          'Scroll down to the API section',
-          'Click "Reveal Key" to get your API key',
-          'Your subdomain is the part before .thinkific.com in your URL'
-        ]
-      },
-      teachable: {
-        name: 'Teachable',
-        authType: 'api_key',
-        requiredFields: ['apiKey'],
-        description: 'Connect your Teachable school to sync courses and students',
-        setupInstructions: [
-          'Go to Settings → API in your Teachable dashboard',
-          'Click "Create API Key"',
-          'Enter a name for your API key',
-          'Copy the generated API key'
-        ]
-      },
-      kajabi: {
-        name: 'Kajabi',
-        authType: 'api_key',
-        requiredFields: ['apiKey'],
-        description: 'Connect your Kajabi site (Limited - API in private beta)',
-        setupInstructions: [
-          'Go to Settings → Sign-in & Security in your Kajabi account',
-          'Click "Request Token" to generate an API token',
-          'Copy and securely store the token',
-          'Note: Kajabi API is currently in private beta'
-        ]
-      },
       skool: {
         name: 'Skool',
         authType: 'webhook',
         requiredFields: ['groupUrl', 'zapierApiKey'],
         description: 'Connect your Skool community via Zapier webhooks',
+        isActive: true,
         setupInstructions: [
           'Go to your Skool group settings',
           'Click on Plugins → Zapier',
@@ -282,7 +247,46 @@ export class IntegrationsController {
           'Set up Zapier integration for automated workflows',
           'Note: Limited to webhook-based integration'
         ]
-      }
+      },
+      kajabi: {
+        name: 'Kajabi',
+        authType: 'api_key',
+        requiredFields: ['apiKey'],
+        description: 'Connect your Kajabi site (Limited - API in private beta)',
+        isActive: true,
+        setupInstructions: [
+          'Go to Settings → Sign-in & Security in your Kajabi account',
+          'Click "Request Token" to generate an API token',
+          'Copy and securely store the token',
+          'Note: Kajabi API is currently in private beta'
+        ]
+      },
+      teachable: {
+        name: 'Teachable',
+        authType: 'api_key',
+        requiredFields: ['apiKey'],
+        description: 'Connect your Teachable school to sync courses and students',
+        isActive: false,
+        setupInstructions: [
+          'Go to Settings → API in your Teachable dashboard',
+          'Click "Create API Key"',
+          'Enter a name for your API key',
+          'Copy the generated API key'
+        ]
+      },
+      thinkific: {
+        name: 'Thinkific',
+        authType: 'api_key',
+        requiredFields: ['subdomain', 'apiKey'],
+        description: 'Connect your Thinkific school to sync courses and students',
+        isActive: false,
+        setupInstructions: [
+          'Go to Settings → Code & Analytics in your Thinkific dashboard',
+          'Scroll down to the API section',
+          'Click "Reveal Key" to get your API key',
+          'Your subdomain is the part before .thinkific.com in your URL'
+        ]
+      },
     };
   }
 }

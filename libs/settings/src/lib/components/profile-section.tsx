@@ -2,6 +2,7 @@
 
 import { FC, useState, useEffect } from 'react';
 import { Camera, Eye, EyeOff, X, Upload } from 'lucide-react';
+import {toast} from 'sonner';
 import { useSettings } from '../context/settings.context';
 import { ProfileFormData, PasswordFormData, ProfileFormErrors } from '../types/settings.types';
 import {ProfileSectionSkeleton} from "./skeletons";
@@ -234,6 +235,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     try {
       await onUpdatePassword(passwordForm);
       setPasswordForm({ newPassword: '', confirmPassword: '' });
+      toast.success('Password updated successfully!');
     } catch (error: any) {
       setErrors({
         newPassword: error.message || "Failed to update password"
@@ -594,7 +596,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="w-6 h-6 text-stone-50 ml-2"
               >
-                {showNewPassword ? <Eye className="w-5 h-4"/> : <EyeOff className="w-5 h-4"/>}
+                {showNewPassword ? <EyeOff className="w-5 h-4"/> : <Eye className="w-5 h-4"/>}
               </button>
             </div>
             {errors.newPassword && (
@@ -622,7 +624,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="w-6 h-6 text-stone-50 ml-2"
               >
-                {showConfirmPassword ? <Eye className="w-5 h-4"/> : <EyeOff className="w-5 h-4"/>}
+                {showConfirmPassword ? <EyeOff className="w-5 h-4"/> : <Eye className="w-5 h-4"/>}
               </button>
             </div>
             {errors.confirmPassword && (

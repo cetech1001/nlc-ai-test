@@ -40,7 +40,7 @@ const CoachSettings = () => {
   }
 
   const handleUpdatePassword = async (payload: PasswordFormData) => {
-    await authAPI.updatePassword(payload);
+    await authAPI.updatePassword({ newPassword: payload.newPassword });
   }
 
   const handleAvatarUpload = async (payload: FormData) => {

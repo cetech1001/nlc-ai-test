@@ -126,6 +126,7 @@ export interface CoursePlatformConfig {
   name: string;
   icon: ReactNode;
   color: string;
+  isActive: boolean;
   fields: {
     name: string;
     type: 'text' | 'password' | 'url';
