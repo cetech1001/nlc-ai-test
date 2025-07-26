@@ -2,9 +2,9 @@
 
 import { StatCard } from "@nlc-ai/shared";
 import {
-  CourseCompletionRate,
+  LeadsFollowUpWidget,
   TaskList,
-  ResponseTimeSaved,
+  TimeSavedWidget,
   RevenueChart,
   TestimonialOpportunity,
   TopPerformingContent,
@@ -116,12 +116,12 @@ const CoachHome = () => {
         <TaskList title={"Agent Stats"} tasks={agentStats} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        <div className="lg:col-span-2 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        <div className="h-full">
           <RevenueChart />
         </div>
-        <div className="lg:col-span-1 h-full">
-          <ResponseTimeSaved />
+        <div className="h-full">
+          <TimeSavedWidget />
         </div>
       </div>
 
@@ -129,11 +129,10 @@ const CoachHome = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <TestimonialOpportunity />
           <div className={"flex flex-col gap-3"}>
-            <CourseCompletionRate />
+            <LeadsFollowUpWidget />
             <StatCard
               title="Leads Captured Weekly"
               value="32"
-              description=""
             />
           </div>
         </div>

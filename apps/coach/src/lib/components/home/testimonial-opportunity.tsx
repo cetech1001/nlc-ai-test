@@ -8,17 +8,17 @@ export const TestimonialOpportunity = () => {
       </div>
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 sm:h-10 bg-yellow-500 rounded-full flex items-center justify-center">
             <Star className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-stone-50 text-xl font-medium leading-relaxed">
+          <h3 className="text-stone-50 text-md font-medium leading-relaxed">
             New Testimonial Opportunity
           </h3>
         </div>
 
         <div className="mb-6">
           <p className="text-stone-300 text-sm mb-4">
-            Rachel: "This changed everything for me."
+            Rachel: "You've boosted my confidence, helping me achieve goals I once thought were out of reach."
           </p>
         </div>
 
@@ -28,7 +28,7 @@ export const TestimonialOpportunity = () => {
           </button>
           <div className="flex gap-3">
             <button className="flex-1 bg-neutral-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-neutral-600 transition-colors">
-              Edit
+              View
             </button>
             <button className="flex-1 bg-neutral-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-neutral-600 transition-colors">
               Save for Later

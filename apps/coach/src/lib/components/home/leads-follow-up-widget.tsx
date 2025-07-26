@@ -1,6 +1,6 @@
 import {Phone} from "lucide-react";
 
-export const CourseCompletionRate = () => {
+export const LeadsFollowUpWidget = () => {
   return (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -8,10 +8,10 @@ export const CourseCompletionRate = () => {
       </div>
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+          <div className="w-12 sm:w-8 h-12 sm:h-8 bg-green-500 rounded-full flex items-center justify-center">
             <Phone className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-stone-50 text-xl font-medium leading-relaxed">
+          <h3 className="text-stone-50 text-md font-medium leading-relaxed">
             Leads to Follow Up
           </h3>
         </div>

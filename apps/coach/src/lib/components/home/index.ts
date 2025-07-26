@@ -1,6 +1,6 @@
 export * from './client-email-widget';
 export * from './coach-confidence-score';
-export * from './course-completion-rate';
+export * from './leads-follow-up-widget';
 export * from './task-list';
 export * from './response-time-saved';
 export * from './revenue-chart';
