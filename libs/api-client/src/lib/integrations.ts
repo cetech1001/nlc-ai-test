@@ -14,11 +14,62 @@ export interface SocialIntegrationResponse extends Omit<Integration, 'coach' | '
   };
 }
 
+export interface CourseIntegrationResponse extends Omit<Integration, 'coach' | 'webhookEvents'> {
+  courses?: CourseData[];
+  students?: StudentData[];
+  stats?: {
+    totalCourses?: number;
+    totalStudents?: number;
+    totalEnrollments?: number;
+  };
+}
+
+export interface CourseData {
+  id: string;
+  title: string;
+  description?: string;
+  slug?: string;
+  status?: string;
+  enrollmentCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StudentData {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  enrollments?: EnrollmentData[];
+  createdAt?: string;
+}
+
+export interface EnrollmentData {
+  id: string;
+  courseId: string;
+  courseName?: string;
+  status: string;
+  progress?: number;
+  enrolledAt: string;
+  completedAt?: string;
+}
+
 export interface ConnectSocialRequest {
   accessToken: string;
   refreshToken?: string;
   profileData?: any;
   tokenExpiresAt?: string;
+}
+
+export interface ConnectCourseRequest {
+  apiKey?: string;
+  subdomain?: string;
+  schoolUrl?: string;
+  groupUrl?: string;
+  zapierApiKey?: string;
+  clientId?: string;
+  clientSecret?: string;
 }
 
 export interface AuthUrlResponse {
@@ -29,18 +80,82 @@ export interface AuthUrlResponse {
 export interface TestResponse {
   success: boolean;
   message: string;
+  data?: any;
+}
+
+export interface CoursePlatformInfo {
+  name: string;
+  authType: 'api_key' | 'oauth' | 'webhook';
+  requiredFields: string[];
+  description: string;
+  setupInstructions: string[];
 }
 
 class IntegrationsAPI extends BaseAPI {
+  // ==================== GENERAL INTEGRATION METHODS ====================
+
   /**
-   * Get all social integrations for the authenticated coach
+   * Get all integrations for the authenticated coach
    */
-  async getSocialIntegrations(): Promise<SocialIntegrationResponse[]> {
+  async getAllIntegrations(): Promise<(SocialIntegrationResponse | CourseIntegrationResponse)[]> {
     return this.makeRequest('/integrations');
   }
 
   /**
-   * Get OAuth authorization URL for a platform
+   * Update integration settings
+   */
+  async updateIntegration(
+    integrationId: string,
+    updateData: {
+      isActive?: boolean;
+      syncSettings?: any;
+      config?: any;
+    }
+  ): Promise<SocialIntegrationResponse | CourseIntegrationResponse> {
+    return this.makeRequest(`/integrations/${integrationId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  /**
+   * Test integration connection
+   */
+  async testIntegration(integrationId: string): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/${integrationId}/test`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Disconnect integration
+   */
+  async disconnectIntegration(integrationId: string): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/${integrationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
+   * Manually sync data from platform
+   */
+  async syncIntegration(integrationId: string): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/${integrationId}/sync`, {
+      method: 'POST',
+    });
+  }
+
+  // ==================== SOCIAL MEDIA INTEGRATION METHODS ====================
+
+  /**
+   * Get social media integrations only
+   */
+  async getSocialIntegrations(): Promise<SocialIntegrationResponse[]> {
+    return this.makeRequest('/integrations/social');
+  }
+
+  /**
+   * Get OAuth authorization URL for a social platform
    */
   async getAuthUrl(platform: string): Promise<AuthUrlResponse> {
     return this.makeRequest(`/integrations/auth/${platform}/url`);
@@ -70,47 +185,7 @@ class IntegrationsAPI extends BaseAPI {
   }
 
   /**
-   * Update social integration settings
-   */
-  async updateSocialIntegration(
-    integrationID: string,
-    updateData: { isActive?: boolean; syncSettings?: any }
-  ): Promise<SocialIntegrationResponse> {
-    return this.makeRequest(`/integrations/${integrationID}`, {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    });
-  }
-
-  /**
-   * Test social integration connection
-   */
-  async testSocialIntegration(integrationID: string): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/${integrationID}/test`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Disconnect social integration
-   */
-  async disconnectSocialIntegration(integrationID: string): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/${integrationID}`, {
-      method: 'DELETE',
-    });
-  }
-
-  /**
-   * Manually sync data from social platform
-   */
-  async syncSocialData(integrationID: string): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/${integrationID}/sync`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Helper method to initiate OAuth flow
+   * Helper method to initiate OAuth flow for social platforms
    */
   async initiateOAuthFlow(platform: string): Promise<void> {
     try {
@@ -191,26 +266,71 @@ class IntegrationsAPI extends BaseAPI {
     }
   }
 
-  /**
-   * Helper method to connect social platform with transformed data
-   */
-  async connectSocial(platform: string, authData: any): Promise<SocialIntegrationResponse> {
-    // Transform authData to match the expected format
-    const transformedData: ConnectSocialRequest = {
-      accessToken: authData.accessToken,
-      refreshToken: authData.refreshToken,
-      profileData: authData.profileData,
-      tokenExpiresAt: authData.tokenExpiresAt,
-    };
+  // ==================== COURSE PLATFORM INTEGRATION METHODS ====================
 
-    return this.connectSocialPlatform(platform, transformedData);
+  /**
+   * Get course platform integrations only
+   */
+  async getCourseIntegrations(): Promise<CourseIntegrationResponse[]> {
+    return this.makeRequest('/integrations/courses');
   }
+
+  /**
+   * Get available course platforms and their requirements
+   */
+  async getAvailableCoursePlatforms(): Promise<Record<string, CoursePlatformInfo>> {
+    return this.makeRequest('/integrations/courses/platforms');
+  }
+
+  /**
+   * Test course platform credentials before connecting
+   */
+  async testCoursePlatformCredentials(platform: string, credentials: ConnectCourseRequest): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/courses/test/${platform}`, {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+
+  /**
+   * Connect a course platform with credentials
+   */
+  async connectCoursePlatform(platform: string, credentials: ConnectCourseRequest): Promise<CourseIntegrationResponse> {
+    return this.makeRequest(`/integrations/courses/connect/${platform}`, {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+
+  /**
+   * Sync course platform data
+   */
+  async syncCoursePlatformData(integrationId: string): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/courses/${integrationId}/sync`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Get courses and students data from connected course platform
+   */
+  async getCoursePlatformData(integrationId: string): Promise<{
+    platform: string;
+    courses: CourseData[];
+    students: StudentData[];
+    stats: any;
+    lastSync: string;
+  }> {
+    return this.makeRequest(`/integrations/courses/${integrationId}/data`);
+  }
+
+  // ==================== HELPER METHODS ====================
 
   /**
    * Helper method to get integration by platform
    */
-  async getIntegrationByPlatform(platform: string): Promise<SocialIntegrationResponse | null> {
-    const integrations = await this.getSocialIntegrations();
+  async getIntegrationByPlatform(platform: string): Promise<SocialIntegrationResponse | CourseIntegrationResponse | null> {
+    const integrations = await this.getAllIntegrations();
     return integrations.find(integration => integration.platformName === platform) || null;
   }
 
@@ -226,10 +346,133 @@ class IntegrationsAPI extends BaseAPI {
    * Helper method to get all connected platforms
    */
   async getConnectedPlatforms(): Promise<string[]> {
+    const integrations = await this.getAllIntegrations();
+    return integrations
+      .filter(integration => integration.isActive)
+      .map(integration => integration.platformName);
+  }
+
+  /**
+   * Helper method to get connected social platforms
+   */
+  async getConnectedSocialPlatforms(): Promise<string[]> {
     const integrations = await this.getSocialIntegrations();
     return integrations
       .filter(integration => integration.isActive)
       .map(integration => integration.platformName);
+  }
+
+  /**
+   * Helper method to get connected course platforms
+   */
+  async getConnectedCoursePlatforms(): Promise<string[]> {
+    const integrations = await this.getCourseIntegrations();
+    return integrations
+      .filter(integration => integration.isActive)
+      .map(integration => integration.platformName);
+  }
+
+  /**
+   * Helper method to get course platform by name with data
+   */
+  async getCoursePlatform(platform: string): Promise<CourseIntegrationResponse | null> {
+    const integrations = await this.getCourseIntegrations();
+    return integrations.find(integration => integration.platformName === platform) || null;
+  }
+
+  /**
+   * Helper method to get all courses from all connected platforms
+   */
+  async getAllCourses(): Promise<Array<CourseData & { platform: string; integrationId: string }>> {
+    const courseIntegrations = await this.getCourseIntegrations();
+    const allCourses: Array<CourseData & { platform: string; integrationId: string }> = [];
+
+    for (const integration of courseIntegrations) {
+      if (integration.isActive && integration.config?.courses) {
+        const courses = integration.config.courses.map((course: CourseData) => ({
+          ...course,
+          platform: integration.platformName,
+          integrationId: integration.id,
+        }));
+        allCourses.push(...courses);
+      }
+    }
+
+    return allCourses;
+  }
+
+  /**
+   * Helper method to get all students from all connected platforms
+   */
+  async getAllStudents(): Promise<Array<StudentData & { platform: string; integrationId: string }>> {
+    const courseIntegrations = await this.getCourseIntegrations();
+    const allStudents: Array<StudentData & { platform: string; integrationId: string }> = [];
+
+    for (const integration of courseIntegrations) {
+      if (integration.isActive && integration.config?.students) {
+        const students = integration.config.students.map((student: StudentData) => ({
+          ...student,
+          platform: integration.platformName,
+          integrationId: integration.id,
+        }));
+        allStudents.push(...students);
+      }
+    }
+
+    return allStudents;
+  }
+
+  /**
+   * Helper method to get aggregated stats from all course platforms
+   */
+  async getCoursePlatformStats(): Promise<{
+    totalCourses: number;
+    totalStudents: number;
+    totalEnrollments: number;
+    platformBreakdown: Array<{
+      platform: string;
+      courses: number;
+      students: number;
+      lastSync: string;
+    }>;
+  }> {
+    const courseIntegrations = await this.getCourseIntegrations();
+
+    let totalCourses = 0;
+    let totalStudents = 0;
+    let totalEnrollments = 0;
+    const platformBreakdown: Array<{
+      platform: string;
+      courses: number;
+      students: number;
+      lastSync: string;
+    }> = [];
+
+    for (const integration of courseIntegrations) {
+      if (integration.isActive) {
+        const stats = integration.config?.stats || {};
+        const courses = stats.totalCourses || 0;
+        const students = stats.totalStudents || 0;
+
+        totalCourses += courses;
+        totalStudents += students;
+        totalEnrollments += stats.totalEnrollments || 0;
+
+        platformBreakdown.push({
+          platform: integration.platformName,
+          courses,
+          students,
+          lastSync: integration.lastSyncAt?.toLocaleDateString() || '',
+        });
+      }
+    }
+
+    return {
+      totalCourses,
+      totalStudents,
+      totalEnrollments,
+      platformBreakdown,
+    };
   }
 }
 
