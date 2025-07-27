@@ -5,7 +5,7 @@ export const transactionFilters: FilterConfig[] = [
     key: 'status',
     label: 'Transaction Status',
     type: 'select',
-    placeholder: 'All Statuses',
+    placeholder: 'All',
     options: [
       { label: 'Completed', value: 'completed' },
       { label: 'Pending', value: 'pending' },

@@ -16,6 +16,7 @@ export class UserTypesGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest();
+
     return requiredUserTypes.some((type) => user.type === type);
   }
 }

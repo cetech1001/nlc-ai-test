@@ -13,12 +13,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserTypes } from '../auth/decorators/user-types.decorator';
 import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {TransactionsQueryParamsDto} from "./dto";
-import {TransactionStatus} from "@nlc-ai/types";
+import {TransactionStatus, UserType} from "@nlc-ai/types";
 
 @ApiTags('Transactions')
 @Controller('transactions')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
-@UserTypes('admin')
+@UserTypes(UserType.admin)
 @ApiBearerAuth()
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
@@ -60,17 +60,20 @@ export class TransactionsController {
     return this.transactionsService.findOne(id);
   }
 
-  @Get(':id/export')
-  @ApiOperation({ summary: 'Export transaction data' })
-  @ApiResponse({ status: 200, description: 'Transaction data exported successfully' })
-  async exportTransaction(@Param('id') id: string, @Res() res: Response) {
-    const transactionData = await this.transactionsService.getTransactionExport(id);
+  @Get(':id/invoice')
+  @ApiOperation({ summary: 'Download invoice PDF for transaction' })
+  @ApiResponse({ status: 200, description: 'Invoice PDF generated successfully' })
+  async downloadInvoice(@Param('id') id: string, @Res() res: Response) {
+    console.log('Came in here');
+    const pdfBuffer = await this.transactionsService.generateInvoicePDF(id);
+    const transaction = await this.transactionsService.findOne(id);
 
-    // Set headers for JSON download
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="transaction-${id}.json"`);
+    // Set headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-${transaction.invoiceNumber || id}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
 
-    return res.json(transactionData);
+    res.end(pdfBuffer);
   }
 
   @Get('export/bulk')

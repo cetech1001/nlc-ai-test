@@ -79,11 +79,22 @@ const Transactions = () => {
   const handleRowAction = async (action: string, transaction: DataTableTransaction) => {
     if (action === 'download') {
       try {
-        await transactionsAPI.downloadTransaction(transaction.id);
-        setSuccessMessage("Transaction data downloaded successfully!");
+        // Create a temporary link to download the PDF
+        const link = document.createElement('a');
+        link.href = `${process.env.NEXT_PUBLIC_API_URL}/transactions/${transaction.id}/invoice`;
+        link.download = `invoice-${transaction.invoiceNumber || transaction.id}.pdf`;
+
+        // Add the link to the DOM and click it
+        document.body.appendChild(link);
+        link.click();
+
+        // Clean up
+        document.body.removeChild(link);
+
+        setSuccessMessage("Invoice PDF downloaded successfully!");
         setTimeout(() => setSuccessMessage(""), 3000);
       } catch (error: any) {
-        setError(error.message || "Failed to download transaction");
+        setError(error.message || "Failed to download invoice");
       }
     }
   };
