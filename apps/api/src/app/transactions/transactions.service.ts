@@ -489,15 +489,6 @@ export class TransactionsService {
         doc.on('data', (chunk) => chunks.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
 
-        // Add watermark for unpaid invoices FIRST (behind other content)
-        if (transaction.status !== 'completed') {
-          doc.fontSize(60)
-            .fillColor('#ff0000', 0.1)
-            .rotate(-45, { origin: [300, 400] })
-            .text('UNPAID', 150, 350)
-            .rotate(45, { origin: [300, 400] });
-        }
-
         // Company header
         doc.fontSize(20)
           .fillColor('#7B21BA')
@@ -638,6 +629,15 @@ export class TransactionsService {
           .text('Thank you for choosing NLC AI Platform for your coaching needs.', 50, footerY)
           .text('For support, please contact us at support@nextlevelcoach.ai', 50, footerY + 12)
           .text('This invoice was generated automatically by the NLC AI Platform.', 50, footerY + 24);
+
+        // Add watermark for unpaid invoices FIRST (behind other content)
+        if (transaction.status !== 'completed') {
+          doc.fontSize(60)
+            .fillColor('#ff0000', 0.1)
+            .rotate(-45, { origin: [300, 400] })
+            .text('UNPAID', 150, 350)
+            .rotate(45, { origin: [300, 400] });
+        }
 
         doc.end();
       } catch (error) {
