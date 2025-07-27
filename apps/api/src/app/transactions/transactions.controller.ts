@@ -64,7 +64,6 @@ export class TransactionsController {
   @ApiOperation({ summary: 'Download invoice PDF for transaction' })
   @ApiResponse({ status: 200, description: 'Invoice PDF generated successfully' })
   async downloadInvoice(@Param('id') id: string, @Res() res: Response) {
-    console.log('Came in here');
     const pdfBuffer = await this.transactionsService.generateInvoicePDF(id);
     const transaction = await this.transactionsService.findOne(id);
 

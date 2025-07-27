@@ -65,28 +65,38 @@ export class TransactionsAPI extends BaseAPI {
   }
 
   async downloadTransaction(id: string): Promise<void> {
-    const response = await fetch(`${this.baseURL}/transactions/${id}/export`, {
-      headers: {
-        'Authorization': `Bearer ${this.getToken()}`,
-      },
-    });
+    try {
+      const response = await fetch(`${this.baseURL}/transactions/${id}/invoice`, {
+        headers: {
+          'Authorization': `Bearer ${this.getToken()}`,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to download transaction');
+      if (!response.ok) {
+        throw new Error('Failed to download invoice PDF');
+      }
+
+      // Get the blob data from the response
+      const blob = await response.blob();
+
+      // Create download URL and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${id}.pdf`;
+
+      // Append to body, click, and cleanup
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(url);
+
+    } catch (error: any) {
+      console.error('Download error:', error);
+      throw new Error(error.message || "Failed to download invoice PDF");
     }
-
-    const data = await response.json();
-
-    // Create and download file
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `transaction-${id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
   }
 
   async bulkExportTransactions(filters: Record<string, any> = {}): Promise<void> {

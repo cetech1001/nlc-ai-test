@@ -480,11 +480,23 @@ export class TransactionsService {
 
     return new Promise((resolve, reject) => {
       try {
-        const doc = new PDFDocument({ margin: 50 });
+        const doc = new PDFDocument({
+          margin: 50,
+          size: 'A4'
+        });
         const chunks: Buffer[] = [];
 
         doc.on('data', (chunk) => chunks.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+        // Add watermark for unpaid invoices FIRST (behind other content)
+        if (transaction.status !== 'completed') {
+          doc.fontSize(60)
+            .fillColor('#ff0000', 0.1)
+            .rotate(-45, { origin: [300, 400] })
+            .text('UNPAID', 150, 350)
+            .rotate(45, { origin: [300, 400] });
+        }
 
         // Company header
         doc.fontSize(20)
@@ -494,8 +506,8 @@ export class TransactionsService {
         doc.fontSize(10)
           .fillColor('#666666')
           .text('AI-Powered Coaching Solutions', 50, 75)
-          .text('support@nlcai.com', 50, 90)
-          .text('www.nlcai.com', 50, 105);
+          .text('support@nextlevelcoach.ai', 50, 90)
+          .text('nextlevelcoach.ai', 50, 105);
 
         // Invoice title and number
         doc.fontSize(24)
@@ -562,14 +574,18 @@ export class TransactionsService {
           .text(`$${(transaction.amount / 100).toFixed(2)}`, priceX, itemY)
           .text(`$${(transaction.amount / 100).toFixed(2)}`, amountX, itemY);
 
+        let nextY = itemY + 15;
         if (transaction.plan.description) {
           doc.fontSize(8)
             .fillColor('#666666')
-            .text(transaction.plan.description, descriptionX, itemY + 15, { width: 180 });
+            .text(transaction.plan.description, descriptionX, nextY, { width: 180 });
+          nextY += 25;
+        } else {
+          nextY += 10;
         }
 
         // Totals section
-        const subtotalY = itemY + 60;
+        const subtotalY = nextY + 30;
         const totalX = 450;
 
         doc.fontSize(11)
@@ -595,39 +611,33 @@ export class TransactionsService {
           .text(`$${(transaction.amount / 100).toFixed(2)}`, totalX, totalY);
 
         // Payment information
-        const paymentY = totalY + 60;
+        const paymentY = totalY + 50;
         doc.fontSize(12)
           .fillColor('#7B21BA')
           .text('PAYMENT INFORMATION:', 50, paymentY);
 
+        let paymentInfoY = paymentY + 20;
         doc.fontSize(10)
           .fillColor('#000000')
-          .text(`Payment Method: ${transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`, 50, paymentY + 20);
+          .text(`Payment Method: ${transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`, 50, paymentInfoY);
 
         if (transaction.paidAt) {
-          doc.text(`Paid On: ${new Date(transaction.paidAt).toLocaleDateString()}`, 50, paymentY + 35);
+          paymentInfoY += 15;
+          doc.text(`Paid On: ${new Date(transaction.paidAt).toLocaleDateString()}`, 50, paymentInfoY);
         }
 
         if (transaction.stripePaymentID) {
-          doc.text(`Transaction ID: ${transaction.stripePaymentID}`, 50, paymentY + 50);
+          paymentInfoY += 15;
+          doc.text(`Transaction ID: ${transaction.stripePaymentID}`, 50, paymentInfoY);
         }
 
-        // Footer
-        const footerY = 720;
+        // Footer - positioned to fit on the same page
+        const footerY = Math.max(paymentInfoY + 40, 650); // Ensure footer starts at reasonable position
         doc.fontSize(8)
           .fillColor('#666666')
           .text('Thank you for choosing NLC AI Platform for your coaching needs.', 50, footerY)
-          .text('For support, please contact us at support@nlcai.com', 50, footerY + 15)
-          .text('This invoice was generated automatically by the NLC AI Platform.', 50, footerY + 30);
-
-        // Add watermark for unpaid invoices
-        if (transaction.status !== 'completed') {
-          doc.fontSize(60)
-            .fillColor('#ff0000', 0.1)
-            .rotate(-45, { origin: [300, 400] })
-            .text('UNPAID', 150, 350)
-            .rotate(45, { origin: [300, 400] });
-        }
+          .text('For support, please contact us at support@nextlevelcoach.ai', 50, footerY + 12)
+          .text('This invoice was generated automatically by the NLC AI Platform.', 50, footerY + 24);
 
         doc.end();
       } catch (error) {
