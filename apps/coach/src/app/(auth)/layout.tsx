@@ -3,7 +3,6 @@
 import {ReactNode, useEffect} from "react";
 import { AuthLayout, AuthLayoutProvider, useAuth, AuthSkeleton } from '@nlc-ai/auth';
 import {useRouter} from "next/navigation";
-import {CookiesProvider} from "react-cookie";
 
 const CoachAuthLayout = ({ children }: {
   children: ReactNode;
@@ -26,13 +25,11 @@ const CoachAuthLayout = ({ children }: {
   }
 
   return (
-    <CookiesProvider defaultSetOptions={{ path: '/' }}>
-      <AuthLayoutProvider>
-        <AuthLayout>
-          {children}
-        </AuthLayout>
-      </AuthLayoutProvider>
-    </CookiesProvider>
+    <AuthLayoutProvider>
+      <AuthLayout>
+        {children}
+      </AuthLayout>
+    </AuthLayoutProvider>
   );
 }
 

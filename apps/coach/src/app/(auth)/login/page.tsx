@@ -3,7 +3,6 @@
 import { LoginForm, useAuthPage } from "@nlc-ai/auth";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
-import {CookiesProvider} from "react-cookie";
 
 const CoachLoginPage = () => {
   const router = useRouter();
@@ -42,19 +41,17 @@ const CoachLoginPage = () => {
   }
 
   return (
-    <CookiesProvider defaultSetOptions={{ path: '/' }}>
-      <LoginForm
-        handleHome={handleHome}
-        handleSignUp={handleSignUp}
-        handleForgotPassword={handleForgotPassword}
-        handleAccountVerification={handleAccountVerification}
-        successMessage={successMessage}
-        setSuccessMessage={(message: string) => setSuccessMessage(message)}
-        showSignUp={true}
-        showGoogleAuth={true}
-        showRememberMe={true}
-      />
-    </CookiesProvider>
+    <LoginForm
+      handleHome={handleHome}
+      handleSignUp={handleSignUp}
+      handleForgotPassword={handleForgotPassword}
+      handleAccountVerification={handleAccountVerification}
+      successMessage={successMessage}
+      setSuccessMessage={(message: string) => setSuccessMessage(message)}
+      showSignUp={true}
+      showGoogleAuth={true}
+      showRememberMe={true}
+    />
   );
 }
 
