@@ -4,7 +4,7 @@ import {ReactNode, useEffect} from 'react';
 import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/shared';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/auth";
-import {menuItems, pageConfig} from "@/lib";
+import {menuItems, pageConfig, settingsItems} from "@/lib";
 import {UserType} from "@nlc-ai/types";
 
 
@@ -53,6 +53,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
         pathname={pathname}
         navigateTo={navigateTo}
         menuItems={menuItems}
+        settingsItems={settingsItems}
         logout={handleLogout}
         logoSize={'large'}
       />
