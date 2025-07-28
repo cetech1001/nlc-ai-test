@@ -22,15 +22,14 @@ interface UseGoogleOAuthProps {
 
 export const useGoogleOAuth = ({ onSuccess, onError }: UseGoogleOAuthProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  // const [_, __, removeCookie] = useCookies<string>(['cookie-name']);
+  const [mounted, setMounted] = useState(false);
+  const [_, __, removeCookieHook] = useCookies<string>(['g_state']);
 
-  let removeCookie: (name: string) => void;
-  try {
-    const [, , removeCookieHook] = useCookies<string>(['g_state']);
-    removeCookie = removeCookieHook;
-  } catch (e) {
-    removeCookie = () => {}; // No-op fallback
-  }
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const removeCookie = mounted ? removeCookieHook : () => {};
 
   useEffect(() => {
     const script = document.createElement('script');
