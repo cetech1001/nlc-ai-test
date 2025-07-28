@@ -20,15 +20,17 @@ import {MenuItemType} from "@nlc-ai/types";
 export const menuItems: MenuItemType[] = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
   { icon: Users, label: "Clients", path: "/clients" },
+  { icon: TvMinimalPlay, label: "Content Management", path: "/content/categories" },
+  { icon: HiCourse, label: "Courses", path: "/courses" },
+  { icon: HiSpeakerphone, label: "Lead Follow-up", path: "/leads" },
   {
     icon: HiSparkles,
     label: 'AI Agents',
     dropdown: [
-      { icon: HiEnvelope, label: "AI Email Agent", path: "/agents/emails" },
-      { icon: HiCollection, label: "Client Retention", path: "/agents/retention/templates" },
-      { icon: TvMinimalPlay, label: "Content Management", path: "/agents/content/categories" },
-      { icon: MailQuestion, label: "Content Suggestion", path: "/agents/suggestions" },
-      { icon: Bot, label: "Bot Training", path: "/agents/bot-training" },
+      { icon: HiEnvelope, label: "Email Management", path: "/emails" },
+      { icon: HiCollection, label: "Client Retention", path: "/retention/templates" },
+      { icon: MailQuestion, label: "Content Suggestion", path: "/suggestions" },
+      { icon: Bot, label: "Bot Training", path: "/bot-training" },
     ]
   },
   {
@@ -43,8 +45,6 @@ export const menuItems: MenuItemType[] = [
     ]
   },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
-  { icon: HiCourse, label: "Courses", path: "/courses" },
-  { icon: HiSpeakerphone, label: "Lead Follow-up", path: "/leads" },
   { icon: HiUsers, label: "Community", path: "/community" },
   { icon: HiCurrencyDollar, label: "Payment Requests", path: "/payments" },
 ];
