@@ -3,13 +3,16 @@
   "include": [],
   "references": [
     {
+      "path": "../auth"
+    },
+    {
       "path": "../types"
     },
     {
-      "path": "../ui"
+      "path": "../api-client"
     },
     {
-      "path": "../api-client"
+      "path": "../ui"
     },
     {
       "path": "./tsconfig.lib.json"
