@@ -3,6 +3,7 @@
 import { FC, ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthLayout, AuthLayoutProvider, useAuth, AuthSkeleton } from '@nlc-ai/auth';
+import {CookiesProvider} from "react-cookie";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -27,11 +28,13 @@ const AdminAuthLayout: FC<AuthLayoutProps> = ({ children }) => {
   }
 
   return (
-    <AuthLayoutProvider>
-      <AuthLayout>
-        {children}
-      </AuthLayout>
-    </AuthLayoutProvider>
+    <CookiesProvider defaultSetOptions={{ path: '/' }}>
+      <AuthLayoutProvider>
+        <AuthLayout>
+          {children}
+        </AuthLayout>
+      </AuthLayoutProvider>
+    </CookiesProvider>
   );
 }
 
