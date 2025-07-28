@@ -9,16 +9,17 @@ import {
   AcademicCapIcon as HiCourse,
 } from "@heroicons/react/24/outline";
 import {
-  Bot, MailQuestion, TvMinimalPlay
+  Bot, MailQuestion, TvMinimalPlay, Users
 } from "lucide-react";
 
 
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
-  { icon: HiEnvelope, label: "AI Email Agent", path: "/clients" },
+  { icon: Users, label: "Clients", path: "/clients" },
+  { icon: HiEnvelope, label: "AI Email Agent", path: "/emails" },
   { icon: HiCollection, label: "Client Retention", path: "/retention/templates" },
   { icon: TvMinimalPlay, label: "Content Management", path: "/content/categories" },
-  { icon: MailQuestion, label: "Content Suggestion", path: "/content-suggestion" },
+  { icon: MailQuestion, label: "Content Suggestion", path: "/suggestions" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
   { icon: HiCourse, label: "Courses", path: "/courses" },
   { icon: HiSpeakerphone, label: "Lead Follow-up", path: "/leads" },

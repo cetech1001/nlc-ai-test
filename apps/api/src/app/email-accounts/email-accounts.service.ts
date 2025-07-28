@@ -71,7 +71,6 @@ export class EmailAccountsService {
 
       return emailAccounts.map(account => ({
         ...account,
-        // Don't expose sensitive tokens
         accessToken: account.accessToken ? '***' : null,
         refreshToken: account.refreshToken ? '***' : null,
       }));
@@ -86,7 +85,6 @@ export class EmailAccountsService {
       throw new BadRequestException(`Unsupported email provider: ${provider}`);
     }
 
-    // Generate unique state for CSRF protection
     const state = `${coachID}$${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const params = new URLSearchParams({
@@ -95,13 +93,11 @@ export class EmailAccountsService {
       redirect_uri: config.redirectUri,
       response_type: 'code',
       state,
-      access_type: 'offline', // For Google refresh tokens
-      prompt: 'consent', // Force consent screen for refresh token
+      access_type: 'offline',
+      prompt: 'consent',
     });
 
     const authUrl = `${config.authUrl}?${params.toString()}`;
-
-    console.log(authUrl);
 
     return { authUrl, state };
   }
@@ -117,19 +113,15 @@ export class EmailAccountsService {
       throw new BadRequestException(`Unsupported email provider: ${provider}`);
     }
 
-    // Verify state parameter
     if (state && !state.startsWith(coachID)) {
       throw new BadRequestException('Invalid state parameter');
     }
 
     try {
-      // Exchange code for tokens
       const tokenResponse = await this.exchangeCodeForToken(provider, code, config);
 
-      // Get user profile
       const profileData = await this.getEmailProfile(provider, tokenResponse.access_token, config);
 
-      // Save email account
       return this.saveEmailAccount(coachID, provider, tokenResponse, profileData);
     } catch (error: any) {
       throw new BadRequestException(`Failed to connect ${provider}: ${error.message}`);
@@ -140,9 +132,7 @@ export class EmailAccountsService {
     const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
 
     try {
-      // Use transaction to ensure consistency
       await this.prisma.$transaction(async (prisma) => {
-        // Remove primary from all other accounts
         await prisma.emailAccount.updateMany({
           where: {
             coachID,
@@ -151,7 +141,6 @@ export class EmailAccountsService {
           data: { isPrimary: false },
         });
 
-        // Set this account as primary
         await prisma.emailAccount.update({
           where: { id: accountID },
           data: { isPrimary: true },
@@ -171,17 +160,12 @@ export class EmailAccountsService {
     const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
 
     try {
-      // Refresh token if needed
       await this.refreshTokenIfNeeded(emailAccount);
 
-      // Update last sync time
       await this.prisma.emailAccount.update({
         where: { id: accountID },
         data: { lastSyncAt: new Date() },
       });
-
-      // TODO: Implement actual email syncing logic here
-      // This would fetch recent emails and store them in EmailThread/EmailMessage tables
 
       return {
         success: true,
@@ -196,7 +180,6 @@ export class EmailAccountsService {
     const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
 
     try {
-      // Test connection by getting user profile
       const config = this.emailProviderConfigs[emailAccount.provider];
       const profileData = await this.getEmailProfile(
         emailAccount.provider,
@@ -394,12 +377,17 @@ export class EmailAccountsService {
   ): Promise<EmailAccount> {
     const emailAddress = profileData.email;
 
-    // Check if account already exists
     const existingAccount = await this.prisma.emailAccount.findFirst({
       where: {
         coachID,
         emailAddress,
       },
+    });
+
+    const anyConnectedAccount = await this.prisma.emailAccount.findFirst({
+      where: {
+        coachID,
+      }
     });
 
     const accountData = {
@@ -411,14 +399,13 @@ export class EmailAccountsService {
       tokenExpiresAt: tokenData.expires_in
         ? new Date(Date.now() + tokenData.expires_in * 1000)
         : null,
-      isPrimary: false, // Will be set manually by user
+      isPrimary: !anyConnectedAccount,
       isActive: true,
       syncEnabled: true,
       lastSyncAt: new Date(),
     };
 
     if (existingAccount) {
-      // Update existing account
       const updatedAccount = await this.prisma.emailAccount.update({
         where: { id: existingAccount.id },
         data: {
@@ -433,7 +420,6 @@ export class EmailAccountsService {
         refreshToken: updatedAccount.refreshToken ? '***' : null,
       };
     } else {
-      // Create new account
       const newAccount = await this.prisma.emailAccount.create({
         data: accountData,
       });
@@ -451,37 +437,35 @@ export class EmailAccountsService {
       return;
     }
 
-    // Check if token expires within next 5 minutes
     const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
     if (emailAccount.tokenExpiresAt > fiveMinutesFromNow) {
       return;
     }
 
+    const config = this.emailProviderConfigs[emailAccount.provider];
+    const params = new URLSearchParams({
+      client_id: config.clientID,
+      client_secret: config.clientSecret,
+      refresh_token: emailAccount.refreshToken,
+      grant_type: 'refresh_token',
+    });
+
+    const response = await fetch(config.tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to refresh token for ${emailAccount.emailAddress}:`);
+    }
+
     try {
-      const config = this.emailProviderConfigs[emailAccount.provider];
-      const params = new URLSearchParams({
-        client_id: config.clientID,
-        client_secret: config.clientSecret,
-        refresh_token: emailAccount.refreshToken,
-        grant_type: 'refresh_token',
-      });
-
-      const response = await fetch(config.tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-        },
-        body: params.toString(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to refresh token');
-      }
-
       const tokenData: any = await response.json();
 
-      // Update tokens in database
       await this.prisma.emailAccount.update({
         where: { id: emailAccount.id },
         data: {
@@ -492,8 +476,6 @@ export class EmailAccountsService {
             : null,
         },
       });
-
-      this.logger.log(`Refreshed token for ${emailAccount.emailAddress}`);
     } catch (error: any) {
       this.logger.error(`Failed to refresh token for ${emailAccount.emailAddress}:`, error);
       throw error;

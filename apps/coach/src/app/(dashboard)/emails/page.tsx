@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, FC } from 'react';
-import {useParams, useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import { Search, RefreshCw, Clock, AlertCircle, CheckCircle, Mail, Zap, TrendingUp } from "lucide-react";
 import { AlertBanner } from '@nlc-ai/ui';
 import { Pagination } from '@nlc-ai/shared';
@@ -144,9 +144,9 @@ const EmailsSkeleton = () => (
 
 const ClientEmailsList = () => {
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
 
-  const clientID = params.clientID as string;
+  const clientID = searchParams.get('clientID');
 
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [searchQuery, setSearchQuery] = useState("");

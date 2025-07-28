@@ -88,7 +88,7 @@ const Clients = () => {
   };
 
   const handleViewEmails = (clientID: string) => {
-    router.push(`/clients/${clientID}/emails`);
+    router.push(`/emails?clientID=${clientID}`);
   };
 
   const transformedClients = transformClientData(clients);
