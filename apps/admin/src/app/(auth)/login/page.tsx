@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LoginForm, useAuthPage } from '@nlc-ai/auth';
 import { UserType } from '@nlc-ai/types';
+import {CookiesProvider} from "react-cookie";
 
 
 const AdminLoginPage = () => {
@@ -39,17 +40,19 @@ const AdminLoginPage = () => {
   }
 
   return (
-    <LoginForm
-      handleHome={handleHome}
-      handleSignUp={handleSignUp}
-      handleForgotPassword={handleForgotPassword}
-      successMessage={successMessage}
-      setSuccessMessage={(message: string) => setSuccessMessage(message)}
-      userType={UserType.admin}
-      showSignUp={false}
-      showGoogleAuth={false}
-      showRememberMe={true}
-    />
+    <CookiesProvider defaultSetOptions={{ path: '/' }}>
+      <LoginForm
+        handleHome={handleHome}
+        handleSignUp={handleSignUp}
+        handleForgotPassword={handleForgotPassword}
+        successMessage={successMessage}
+        setSuccessMessage={(message: string) => setSuccessMessage(message)}
+        userType={UserType.admin}
+        showSignUp={false}
+        showGoogleAuth={false}
+        showRememberMe={true}
+      />
+    </CookiesProvider>
   );
 }
 
