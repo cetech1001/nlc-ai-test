@@ -1,5 +1,3 @@
-/// <reference lib="dom"/>
-
 import { FC, useState, useEffect } from 'react';
 import {
   Camera,
@@ -9,11 +7,11 @@ import {
   Upload,
   RotateCw,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import { useSettings } from '../context/settings.context';
 import { ProfileFormData, PasswordFormData, ProfileFormErrors } from '../types/settings.types';
 import { ProfileSectionSkeleton } from "./skeletons";
 import { ImageCropper } from "./partials/image-cropper";
+import {UserType} from "@nlc-ai/types";
 
 interface ProfileSectionProps {
   onUpdateProfile: (data: ProfileFormData) => Promise<void>;
@@ -22,17 +20,15 @@ interface ProfileSectionProps {
 }
 
 export const ProfileSection: FC<ProfileSectionProps> = ({
-                                                          onUpdateProfile,
-                                                          onUpdatePassword,
-                                                          onUploadAvatar,
-                                                        }) => {
-  const { user, userType, isLoading } = useSettings();
+  onUpdateProfile,
+  onUpdatePassword,
+  onUploadAvatar,
+}) => {
+  const { user, userType, isLoading, setSuccess, setError } = useSettings();
 
-  // State for password visibility
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // State for upload modal and cropping
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -41,11 +37,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [croppedImageBlob, setCroppedImageBlob] = useState<Blob | null>(null);
 
-  // State for notifications
   const [desktopNotifications, setDesktopNotifications] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
 
-  // Form states
   const [profileForm, setProfileForm] = useState<ProfileFormData>({
     firstName: '',
     lastName: '',
@@ -62,30 +56,16 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     confirmPassword: '',
   });
 
-  // Loading and error states
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [errors, setErrors] = useState<ProfileFormErrors>({});
 
-  // Initialize form data when user data loads
   useEffect(() => {
     if (user) {
-      setProfileForm({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        bio: user.bio || '',
-        businessName: user.businessName || '',
-        phone: user.phone || '',
-        websiteUrl: user.websiteUrl || '',
-        timezone: user.timezone || '',
-      });
-      setDesktopNotifications(user.desktopNotifications || false);
-      setEmailNotifications(user.emailNotifications || true);
+      resetFormState();
     }
   }, [user]);
 
-  // Form validation functions
   const validateProfileForm = (): boolean => {
     const newErrors: ProfileFormErrors = {};
 
@@ -140,7 +120,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Input change handlers
   const handleProfileInputChange = (field: keyof ProfileFormData, value: string) => {
     setProfileForm(prev => ({ ...prev, [field]: value }));
     if (errors[field as keyof ProfileFormErrors]) {
@@ -155,7 +134,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     }
   };
 
-  // File handling functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -165,7 +143,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    if (file.size > 10 * 1024 * 1024) {
       setErrors(prev => ({ ...prev, photo: 'Image size must be less than 10MB' }));
       return;
     }
@@ -175,7 +153,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
-      setOriginalImageUrl(result); // Store original image URL
+      setOriginalImageUrl(result);
       setPreviewUrl(result);
       setShowUploadModal(false);
       setShowCropModal(true);
@@ -190,7 +168,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setShowCropModal(false);
     setShowUploadModal(true);
 
-    // Create preview URL for cropped image
     const croppedUrl = URL.createObjectURL(croppedBlob);
     setPreviewUrl(croppedUrl);
   };
@@ -204,12 +181,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setErrors(prev => ({ ...prev, photo: undefined }));
   };
 
-  // New function to handle re-cropping
   const handleReCrop = () => {
     if (originalImageUrl) {
       setShowUploadModal(false);
       setShowCropModal(true);
-      // Use the original image URL for re-cropping
       setPreviewUrl(originalImageUrl);
     }
   };
@@ -220,7 +195,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setUploadingPhoto(true);
     try {
       const formData = new FormData();
-      // Create a file from the blob
       const croppedFile = new File([croppedImageBlob], 'avatar.jpg', {
         type: 'image/jpeg',
       });
@@ -228,7 +202,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
       await onUploadAvatar(formData);
       closeUploadModal();
-      toast.success('Profile photo updated successfully!');
+      setSuccess('Profile photo updated successfully!');
     } catch (error: any) {
       setErrors(prev => ({ ...prev, photo: error.message || "Failed to upload photo" }));
     } finally {
@@ -245,20 +219,33 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setErrors(prev => ({ ...prev, photo: undefined }));
   };
 
-  // Form submission handlers
   const handleSaveProfile = async () => {
     if (!validateProfileForm()) return;
 
     setProfileLoading(true);
     try {
-      await onUpdateProfile({
-        ...profileForm,
-      });
-      toast.success('Profile updated successfully!');
+      let payload = {
+        email: profileForm.email,
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+      }
+
+      if (userType === UserType.coach) {
+        payload = {
+          ...profileForm,
+        }
+      }
+
+      await onUpdateProfile(payload);
+      setSuccess('Profile updated successfully!');
     } catch (error: any) {
-      setErrors({
-        email: error.message === "Email already exists" ? "This email is already in use" : "Failed to update profile"
-      });
+      if (error.message === 'Email already exists') {
+        setErrors({
+          email: 'This email is already in use',
+        });
+      } else {
+        setError('Failed to update profile');
+      }
     } finally {
       setProfileLoading(false);
     }
@@ -266,18 +253,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
   const handleResetProfile = () => {
     if (user) {
-      setProfileForm({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        bio: user.bio || '',
-        businessName: user.businessName || '',
-        phone: user.phone || '',
-        websiteUrl: user.websiteUrl || '',
-        timezone: user.timezone || '',
-      });
-      setDesktopNotifications(user.desktopNotifications || false);
-      setEmailNotifications(user.emailNotifications || true);
+      resetFormState();
       setErrors({});
     }
   };
@@ -289,11 +265,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     try {
       await onUpdatePassword(passwordForm);
       setPasswordForm({ newPassword: '', confirmPassword: '' });
-      toast.success('Password updated successfully!');
+      setSuccess('Password updated successfully!');
     } catch (error: any) {
-      setErrors({
-        newPassword: error.message || "Failed to update password"
-      });
+      setError('Failed to update password');
     } finally {
       setPasswordLoading(false);
     }
@@ -304,15 +278,28 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setErrors({});
   };
 
+  const resetFormState = () => {
+    setProfileForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      bio: user.bio || '',
+      businessName: user.businessName || '',
+      phone: user.phone || '',
+      websiteUrl: user.websiteUrl || '',
+      timezone: user.timezone || '',
+    });
+    setDesktopNotifications(user.desktopNotifications || false);
+    setEmailNotifications(user.emailNotifications || true);
+  }
+
   if (isLoading) {
     return <ProfileSectionSkeleton />;
   }
 
   return (
     <div>
-      {/* Profile Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-7 mb-8 lg:mb-16">
-        {/* Profile Picture */}
         <div className="relative group mx-auto lg:mx-0">
           <img
             className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] object-cover"
@@ -327,7 +314,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           </div>
         </div>
 
-        {/* User Info */}
         <div className="w-full lg:w-60 flex flex-col gap-3 text-center lg:text-left">
           <div className="text-stone-50 text-2xl sm:text-3xl font-semibold font-['Inter'] leading-relaxed">
             {user?.firstName} {user?.lastName}
@@ -337,10 +323,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           </div>
         </div>
 
-        {/* Divider */}
         <div className="hidden lg:block w-32 h-0 rotate-90 border-t border-neutral-700" />
 
-        {/* Notification Settings */}
         <div className="w-full lg:w-80 flex flex-col gap-5">
           <div className="flex justify-between items-center">
             <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">
@@ -390,7 +374,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         </div>
       </div>
 
-      {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-md">
@@ -405,7 +388,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             </div>
 
             <div className="space-y-4">
-              {/* File Upload Area - Only show if no cropped image */}
               {!croppedImageBlob && (
                 <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
                   <input
@@ -430,7 +412,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 </div>
               )}
 
-              {/* Preview with Re-crop Option */}
               {previewUrl && croppedImageBlob && (
                 <div className="space-y-4">
                   <div className="flex justify-center">
@@ -441,7 +422,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                     />
                   </div>
 
-                  {/* Re-crop Button */}
                   <button
                     onClick={handleReCrop}
                     className="w-full px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
@@ -452,12 +432,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 </div>
               )}
 
-              {/* Error Message */}
               {errors.photo && (
                 <p className="text-red-400 text-sm">{errors.photo}</p>
               )}
 
-              {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={closeUploadModal}
@@ -479,7 +457,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         </div>
       )}
 
-      {/* Image Cropper Modal */}
       {showCropModal && originalImageUrl && (
         <ImageCropper
           imageSrc={originalImageUrl}
@@ -488,15 +465,12 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         />
       )}
 
-      {/* Basic Details Section */}
       <div className="mb-8">
         <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">
           Basic Details
         </div>
 
-        {/* Form Fields Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          {/* First Name */}
           <div className="flex flex-col gap-3">
             <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               First name<span className="text-red-600">*</span>
@@ -517,7 +491,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Last Name */}
           <div className="flex flex-col gap-3">
             <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               Last name<span className="text-red-600">*</span>
@@ -538,7 +511,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Email */}
           <div className="flex flex-col gap-3">
             <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               Email<span className="text-red-600">*</span>
@@ -559,10 +531,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Coach-specific fields */}
           {userType === 'coach' && (
             <>
-              {/* Business Name */}
               <div className="flex flex-col gap-3">
                 <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
                   Business Name
@@ -578,7 +548,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 </div>
               </div>
 
-              {/* Phone */}
               <div className="flex flex-col gap-3">
                 <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
                   Phone
@@ -594,7 +563,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 </div>
               </div>
 
-              {/* Website URL */}
               <div className="flex flex-col gap-3">
                 <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
                   Website URL
@@ -618,7 +586,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           )}
         </div>
 
-        {/* Bio Section (Coach only) */}
         {userType === 'coach' && (
           <div className="mb-6 lg:mb-8">
             <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed mb-3 block">
@@ -638,7 +605,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           </div>
         )}
 
-        {/* Profile Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5">
           <button
             onClick={handleSaveProfile}
@@ -659,18 +625,14 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         </div>
       </div>
 
-      {/* Section Divider */}
       <div className="w-full max-w-[1094px] h-0 border-t border-neutral-700 mb-6 lg:mb-8" />
 
-      {/* Change Password Section */}
       <div>
         <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">
           Change Password
         </div>
 
-        {/* Password Fields Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          {/* New Password */}
           <div className="flex flex-col gap-3">
             <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               New Password<span className="text-red-600">*</span>
@@ -698,7 +660,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Confirm Password */}
           <div className="flex flex-col gap-3">
             <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               Confirm New Password<span className="text-red-600">*</span>
@@ -727,7 +688,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           </div>
         </div>
 
-        {/* Password Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5">
           <button
             onClick={handleUpdatePassword}

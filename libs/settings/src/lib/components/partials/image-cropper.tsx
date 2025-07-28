@@ -251,22 +251,24 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
     cropCanvas.width = CROP_SIZE;
     cropCanvas.height = CROP_SIZE;
 
-    // Calculate crop area coordinates
-    const cropX = (CANVAS_SIZE - CROP_SIZE) / 2;
-    const cropY = (CANVAS_SIZE - CROP_SIZE) / 2;
+    // Draw only the image without overlays
+    cropCtx.save();
+    cropCtx.translate(CROP_SIZE / 2, CROP_SIZE / 2);
 
-    // Draw the main canvas first
-    drawCanvas();
+    // Calculate offset from crop area center to image center
+    const offsetX = position.x;
+    const offsetY = position.y;
 
-    // Extract the crop area from the main canvas
-    const mainCanvas = canvasRef.current;
-    if (!mainCanvas) return;
+    cropCtx.translate(offsetX, offsetY);
+    cropCtx.rotate((rotation * Math.PI) / 180);
+    cropCtx.scale(scale, scale);
 
-    cropCtx.drawImage(
-      mainCanvas,
-      cropX, cropY, CROP_SIZE, CROP_SIZE,  // Source
-      0, 0, CROP_SIZE, CROP_SIZE           // Destination
-    );
+    // Draw image centered
+    const imgWidth = imageElement.naturalWidth;
+    const imgHeight = imageElement.naturalHeight;
+    cropCtx.drawImage(imageElement, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+
+    cropCtx.restore();
 
     // Convert to blob
     cropCanvas.toBlob((blob) => {

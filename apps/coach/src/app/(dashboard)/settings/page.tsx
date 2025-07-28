@@ -1,11 +1,11 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Settings } from "@nlc-ai/settings";
-import { authAPI, useAuth } from "@nlc-ai/auth";
+import {useRouter, useSearchParams} from 'next/navigation';
+import {Settings} from "@nlc-ai/settings";
+import {authAPI, useAuth} from "@nlc-ai/auth";
 import {coachesAPI, integrationsAPI} from "@nlc-ai/api-client";
-import { PasswordFormData, UpdateProfileRequest } from "@nlc-ai/types";
+import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
 
 const CoachSettings = () => {
   const router = useRouter();
@@ -13,7 +13,6 @@ const CoachSettings = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
 
-  // Initialize active tab from URL parameters
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
     if (tabFromUrl) {
@@ -21,15 +20,12 @@ const CoachSettings = () => {
     }
   }, [searchParams]);
 
-  // Update URL when tab changes
   const handleTabChange = (tabID: string) => {
     setActiveTab(tabID);
 
-    // Update URL parameters
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     current.set('tab', tabID);
 
-    // Use replace to avoid adding to history stack
     const search = current.toString();
     const query = search ? `?${search}` : '';
     router.replace(`${window.location.pathname}${query}`, { scroll: false });
@@ -70,9 +66,7 @@ const CoachSettings = () => {
 
   const handleConnectCourse = async (platform: string, credentials: any) => {
     try {
-      const result = await integrationsAPI.connectCoursePlatform(platform, credentials);
-      // Add any custom logic here (analytics, notifications, etc.)
-      return result;
+      return integrationsAPI.connectCoursePlatform(platform, credentials);
     } catch (error) {
       console.error('Failed to connect course platform:', error);
       throw error;
@@ -82,7 +76,6 @@ const CoachSettings = () => {
   const handleDisconnectCourse = async (integrationId: string) => {
     try {
       await integrationsAPI.disconnectIntegration(integrationId);
-      // Add any custom logic here
     } catch (error) {
       console.error('Failed to disconnect course platform:', error);
       throw error;
@@ -92,7 +85,6 @@ const CoachSettings = () => {
   const handleTestCourse = async (integrationId: string) => {
     try {
       await integrationsAPI.testIntegration(integrationId);
-      // Add any custom logic here
     } catch (error) {
       console.error('Failed to test course platform:', error);
       throw error;
@@ -101,9 +93,7 @@ const CoachSettings = () => {
 
   const handleUpdateCourse = async (integrationId: string, data: any) => {
     try {
-      const result = await integrationsAPI.updateIntegration(integrationId, data);
-      // Add any custom logic here
-      return result;
+      return integrationsAPI.updateIntegration(integrationId, data);
     } catch (error) {
       console.error('Failed to update course platform:', error);
       throw error;
@@ -113,7 +103,6 @@ const CoachSettings = () => {
   const getCourseIntegrations = async () => {
     try {
       const integrations = await integrationsAPI.getCourseIntegrations();
-      // Transform data if needed
       return integrations.map(integration => ({
         ...integration,
         name: integration.config?.name || integration.platformName,
@@ -128,7 +117,7 @@ const CoachSettings = () => {
 
   return (
     <Settings
-      userType="coach"
+      userType={UserType.coach}
       activeTab={activeTab}
       handleTabChange={handleTabChange}
       getProfile={getProfile}
@@ -136,13 +125,11 @@ const CoachSettings = () => {
       updatePassword={handleUpdatePassword}
       uploadAvatar={handleAvatarUpload}
 
-      // Social integration props
       connectSocial={handleConnectSocial}
       disconnectSocial={handleDisconnectSocial}
       testSocial={handleTestSocial}
       getSocialIntegrations={getSocialIntegrations}
 
-      // Course integration props (placeholder)
       connectCourse={handleConnectCourse}
       disconnectCourse={handleDisconnectCourse}
       testCourse={handleTestCourse}
