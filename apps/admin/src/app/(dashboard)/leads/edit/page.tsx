@@ -93,7 +93,7 @@ const EditLead = () => {
         phone: leadData.phone || '',
         source: leadData.source || '',
         status: leadData.status,
-        meetingDate: leadData.meetingDate ? leadData.meetingDate.toISOString().split('T')[0] : '',
+        meetingDate: leadData.meetingDate ? new Date(leadData.meetingDate).toISOString().split('T')[0] : '',
         meetingTime: leadData.meetingTime || '',
         notes: leadData.notes || '',
       });
