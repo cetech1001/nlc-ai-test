@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useRef } from 'react';
+import { FC, useState, useEffect, useRef, useCallback } from 'react';
 import {
   X,
   RotateCw,
@@ -16,7 +16,7 @@ interface ImageCropperProps {
 }
 
 export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, onCancel }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -27,25 +27,27 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageElement, setImageElement] = useState<HTMLImageElement | null>(null);
 
-  const CROP_SIZE = 300; // Square crop area
-  const CONTAINER_SIZE = 400;
+  const CROP_SIZE = 300;
+  const CANVAS_SIZE = 400;
 
-  // Load and setup image
+  // Load image
   useEffect(() => {
     const img = new Image();
-    img.crossOrigin = "anonymous"; // For CORS if needed
+    img.crossOrigin = "anonymous";
 
     img.onload = () => {
       setImageElement(img);
-      setIsLoading(false);
+      imageRef.current = img;
 
-      const initialScale = Math.max(
-        CROP_SIZE / img.naturalWidth,
-        CROP_SIZE / img.naturalHeight
-      ) * 1.2; // 20% larger than minimum fit
+      // Calculate initial scale to fit nicely in crop area
+      const scaleX = CROP_SIZE / img.naturalWidth;
+      const scaleY = CROP_SIZE / img.naturalHeight;
+      const initialScale = Math.max(scaleX, scaleY) * 1.2;
 
       setScale(initialScale);
       setPosition({ x: 0, y: 0 });
+      setRotation(0);
+      setIsLoading(false);
     };
 
     img.onerror = () => {
@@ -56,24 +58,153 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
     img.src = imageSrc;
   }, [imageSrc]);
 
-  // Mouse event handlers
+  // Draw on canvas
+  const drawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imageRef.current;
+    if (!canvas || !img) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    // Save context state
+    ctx.save();
+
+    // Move to canvas center
+    ctx.translate(CANVAS_SIZE / 2, CANVAS_SIZE / 2);
+
+    // Apply user transformations
+    ctx.translate(position.x, position.y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(scale, scale);
+
+    // Draw image centered
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+    ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+
+    // Restore context
+    ctx.restore();
+
+    // Draw crop overlay (but not over the crop area)
+    const cropX = (CANVAS_SIZE - CROP_SIZE) / 2;
+    const cropY = (CANVAS_SIZE - CROP_SIZE) / 2;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    // Top
+    ctx.fillRect(0, 0, CANVAS_SIZE, cropY);
+    // Bottom
+    ctx.fillRect(0, cropY + CROP_SIZE, CANVAS_SIZE, CANVAS_SIZE - cropY - CROP_SIZE);
+    // Left
+    ctx.fillRect(0, cropY, cropX, CROP_SIZE);
+    // Right
+    ctx.fillRect(cropX + CROP_SIZE, cropY, CANVAS_SIZE - cropX - CROP_SIZE, CROP_SIZE);
+
+    // Draw crop border
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cropX, cropY, CROP_SIZE, CROP_SIZE);
+
+    // Draw corner handles
+    const handleSize = 20;
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 3;
+
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(cropX, cropY + handleSize);
+    ctx.lineTo(cropX, cropY);
+    ctx.lineTo(cropX + handleSize, cropY);
+    ctx.stroke();
+
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(cropX + CROP_SIZE - handleSize, cropY);
+    ctx.lineTo(cropX + CROP_SIZE, cropY);
+    ctx.lineTo(cropX + CROP_SIZE, cropY + handleSize);
+    ctx.stroke();
+
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(cropX, cropY + CROP_SIZE - handleSize);
+    ctx.lineTo(cropX, cropY + CROP_SIZE);
+    ctx.lineTo(cropX + handleSize, cropY + CROP_SIZE);
+    ctx.stroke();
+
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(cropX + CROP_SIZE - handleSize, cropY + CROP_SIZE);
+    ctx.lineTo(cropX + CROP_SIZE, cropY + CROP_SIZE);
+    ctx.lineTo(cropX + CROP_SIZE, cropY + CROP_SIZE - handleSize);
+    ctx.stroke();
+
+    // Grid lines
+    ctx.strokeStyle = '#8B5CF6';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+
+    // Vertical lines
+    ctx.beginPath();
+    ctx.moveTo(cropX + CROP_SIZE / 3, cropY);
+    ctx.lineTo(cropX + CROP_SIZE / 3, cropY + CROP_SIZE);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cropX + (CROP_SIZE * 2) / 3, cropY);
+    ctx.lineTo(cropX + (CROP_SIZE * 2) / 3, cropY + CROP_SIZE);
+    ctx.stroke();
+
+    // Horizontal lines
+    ctx.beginPath();
+    ctx.moveTo(cropX, cropY + CROP_SIZE / 3);
+    ctx.lineTo(cropX + CROP_SIZE, cropY + CROP_SIZE / 3);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cropX, cropY + (CROP_SIZE * 2) / 3);
+    ctx.lineTo(cropX + CROP_SIZE, cropY + (CROP_SIZE * 2) / 3);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+  }, [scale, rotation, position]);
+
+  // Redraw canvas when values change
+  useEffect(() => {
+    if (!isLoading && imageElement) {
+      drawCanvas();
+    }
+  }, [drawCanvas, isLoading, imageElement]);
+
+  // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!imageElement) return;
     setIsDragging(true);
-    setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
-    });
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragStart({
+        x: e.clientX - rect.left - position.x,
+        y: e.clientY - rect.top - position.y
+      });
+    }
     e.preventDefault();
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !imageElement) return;
+    if (!isDragging) return;
 
-    setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      setPosition({
+        x: e.clientX - rect.left - dragStart.x,
+        y: e.clientY - rect.top - dragStart.y
+      });
+    }
   };
 
   const handleMouseUp = () => {
@@ -86,7 +217,7 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
   };
 
   const handleZoomOut = () => {
-    setScale(prev => Math.max(prev / 1.2, 0.1));
+    setScale(prev => Math.max(prev / 1.2, 0.2));
   };
 
   const handleRotateLeft = () => {
@@ -100,67 +231,45 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
   const handleReset = () => {
     if (!imageElement) return;
 
-    const initialScale = Math.max(
-      CROP_SIZE / imageElement.naturalWidth,
-      CROP_SIZE / imageElement.naturalHeight
-    ) * 1.2;
+    const scaleX = CROP_SIZE / imageElement.naturalWidth;
+    const scaleY = CROP_SIZE / imageElement.naturalHeight;
+    const initialScale = Math.max(scaleX, scaleY) * 1.2;
 
     setScale(initialScale);
-    setRotation(0);
     setPosition({ x: 0, y: 0 });
+    setRotation(0);
   };
 
   const handleCrop = async () => {
     if (!imageElement) return;
 
-    // Create canvas for cropping
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    // Create final crop canvas
+    const cropCanvas = document.createElement('canvas');
+    const cropCtx = cropCanvas.getContext('2d');
+    if (!cropCtx) return;
 
-    canvas.width = CROP_SIZE;
-    canvas.height = CROP_SIZE;
+    cropCanvas.width = CROP_SIZE;
+    cropCanvas.height = CROP_SIZE;
 
-    // Calculate the center of the container
-    const centerX = CONTAINER_SIZE / 2;
-    const centerY = CONTAINER_SIZE / 2;
+    // Calculate crop area coordinates
+    const cropX = (CANVAS_SIZE - CROP_SIZE) / 2;
+    const cropY = (CANVAS_SIZE - CROP_SIZE) / 2;
 
-    // Calculate crop area offset
-    const cropX = centerX - CROP_SIZE / 2;
-    const cropY = centerY - CROP_SIZE / 2;
+    // Draw the main canvas first
+    drawCanvas();
 
-    // Apply transformations and draw image
-    ctx.save();
+    // Extract the crop area from the main canvas
+    const mainCanvas = canvasRef.current;
+    if (!mainCanvas) return;
 
-    // Translate to crop center
-    ctx.translate(CROP_SIZE / 2, CROP_SIZE / 2);
-
-    // Apply rotation
-    ctx.rotate((rotation * Math.PI) / 180);
-
-    // Apply scale
-    ctx.scale(scale, scale);
-
-    // Apply position offset (adjust for crop area)
-    const adjustedX = position.x - cropX;
-    const adjustedY = position.y - cropY;
-    ctx.translate(adjustedX / scale, adjustedY / scale);
-
-    // Draw image centered
-    const drawWidth = imageElement.naturalWidth;
-    const drawHeight = imageElement.naturalHeight;
-    ctx.drawImage(
-      imageElement,
-      -drawWidth / 2,
-      -drawHeight / 2,
-      drawWidth,
-      drawHeight
+    cropCtx.drawImage(
+      mainCanvas,
+      cropX, cropY, CROP_SIZE, CROP_SIZE,  // Source
+      0, 0, CROP_SIZE, CROP_SIZE           // Destination
     );
 
-    ctx.restore();
-
     // Convert to blob
-    canvas.toBlob((blob) => {
+    cropCanvas.toBlob((blob) => {
       if (blob) {
         onCropComplete(blob);
       }
@@ -194,72 +303,18 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
         </div>
 
         <div className="space-y-6">
-          {/* Image Cropper Container */}
+          {/* Canvas Container */}
           <div className="flex justify-center">
-            <div
-              ref={containerRef}
-              className="relative bg-neutral-800 rounded-lg overflow-hidden border-2 border-neutral-600"
-              style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-            >
-              {/* Image */}
-              {imageElement && (
-                <div
-                  className="absolute cursor-move select-none"
-                  style={{
-                    left: CONTAINER_SIZE / 2 + position.x,
-                    top: CONTAINER_SIZE / 2 + position.y,
-                    transform: `translate(-50%, -50%) scale(${scale}) rotate(${rotation}deg)`,
-                    transformOrigin: 'center center',
-                  }}
-                >
-                  <img
-                    ref={imageRef}
-                    src={imageSrc}
-                    alt="Crop preview"
-                    className="block max-w-none pointer-events-none"
-                    style={{
-                      width: imageElement.naturalWidth,
-                      height: imageElement.naturalHeight,
-                      maxWidth: 'none',
-                    }}
-                    draggable={false}
-                  />
-                </div>
-              )}
-
-              {/* Crop Overlay */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Dark overlay */}
-                <div className="absolute inset-0 bg-black/60"></div>
-
-                {/* Clear crop area */}
-                <div
-                  className="absolute bg-transparent border-2 border-violet-500"
-                  style={{
-                    left: (CONTAINER_SIZE - CROP_SIZE) / 2,
-                    top: (CONTAINER_SIZE - CROP_SIZE) / 2,
-                    width: CROP_SIZE,
-                    height: CROP_SIZE,
-                    boxShadow: `0 0 0 ${CONTAINER_SIZE}px rgba(0, 0, 0, 0.6)`,
-                  }}
-                >
-                  {/* Corner indicators */}
-                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-violet-500"></div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-violet-500"></div>
-                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-2 border-l-2 border-violet-500"></div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-2 border-r-2 border-violet-500"></div>
-
-                  {/* Grid lines */}
-                  <div className="absolute top-1/3 left-0 right-0 h-px bg-violet-500/30"></div>
-                  <div className="absolute top-2/3 left-0 right-0 h-px bg-violet-500/30"></div>
-                  <div className="absolute left-1/3 top-0 bottom-0 w-px bg-violet-500/30"></div>
-                  <div className="absolute left-2/3 top-0 bottom-0 w-px bg-violet-500/30"></div>
-                </div>
-              </div>
+            <div className="relative">
+              <canvas
+                ref={canvasRef}
+                className="border-2 border-neutral-600 rounded-lg cursor-move bg-neutral-800"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}
+              />
             </div>
           </div>
 

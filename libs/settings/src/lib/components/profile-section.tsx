@@ -7,12 +7,13 @@ import {
   EyeOff,
   X,
   Upload,
+  RotateCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSettings } from '../context/settings.context';
 import { ProfileFormData, PasswordFormData, ProfileFormErrors } from '../types/settings.types';
 import { ProfileSectionSkeleton } from "./skeletons";
-import {ImageCropper} from "./partials/image-cropper";
+import { ImageCropper } from "./partials/image-cropper";
 
 interface ProfileSectionProps {
   onUpdateProfile: (data: ProfileFormData) => Promise<void>;
@@ -21,10 +22,10 @@ interface ProfileSectionProps {
 }
 
 export const ProfileSection: FC<ProfileSectionProps> = ({
-  onUpdateProfile,
-  onUpdatePassword,
-  onUploadAvatar,
-}) => {
+                                                          onUpdateProfile,
+                                                          onUpdatePassword,
+                                                          onUploadAvatar,
+                                                        }) => {
   const { user, userType, isLoading } = useSettings();
 
   // State for password visibility
@@ -36,6 +37,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
   const [showCropModal, setShowCropModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [_, setSelectedFile] = useState<File | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null); // Store original image
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [croppedImageBlob, setCroppedImageBlob] = useState<Blob | null>(null);
 
@@ -173,6 +175,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
+      setOriginalImageUrl(result); // Store original image URL
       setPreviewUrl(result);
       setShowUploadModal(false);
       setShowCropModal(true);
@@ -197,7 +200,18 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setSelectedFile(null);
     setPreviewUrl(null);
     setCroppedImageBlob(null);
+    setOriginalImageUrl(null);
     setErrors(prev => ({ ...prev, photo: undefined }));
+  };
+
+  // New function to handle re-cropping
+  const handleReCrop = () => {
+    if (originalImageUrl) {
+      setShowUploadModal(false);
+      setShowCropModal(true);
+      // Use the original image URL for re-cropping
+      setPreviewUrl(originalImageUrl);
+    }
   };
 
   const handlePhotoUpload = async () => {
@@ -227,6 +241,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setSelectedFile(null);
     setPreviewUrl(null);
     setCroppedImageBlob(null);
+    setOriginalImageUrl(null);
     setErrors(prev => ({ ...prev, photo: undefined }));
   };
 
@@ -390,37 +405,50 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             </div>
 
             <div className="space-y-4">
-              {/* File Upload Area */}
-              <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label
-                  htmlFor="photo-upload"
-                  className="cursor-pointer flex flex-col items-center gap-2"
-                >
-                  <Upload className="w-8 h-8 text-gray-400" />
-                  <span className="text-sm text-gray-400">
-                    Click to select an image
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Max file size: 10MB
-                  </span>
-                </label>
-              </div>
-
-              {/* Preview */}
-              {previewUrl && (
-                <div className="flex justify-center">
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="w-24 h-24 rounded-[20px] object-cover"
+              {/* File Upload Area - Only show if no cropped image */}
+              {!croppedImageBlob && (
+                <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="photo-upload"
                   />
+                  <label
+                    htmlFor="photo-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Upload className="w-8 h-8 text-gray-400" />
+                    <span className="text-sm text-gray-400">
+                      Click to select an image
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Max file size: 10MB
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {/* Preview with Re-crop Option */}
+              {previewUrl && croppedImageBlob && (
+                <div className="space-y-4">
+                  <div className="flex justify-center">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-32 h-32 rounded-[20px] object-cover"
+                    />
+                  </div>
+
+                  {/* Re-crop Button */}
+                  <button
+                    onClick={handleReCrop}
+                    className="w-full px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RotateCw className="w-4 h-4" />
+                    Crop Again
+                  </button>
                 </div>
               )}
 
@@ -452,9 +480,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
       )}
 
       {/* Image Cropper Modal */}
-      {showCropModal && previewUrl && (
+      {showCropModal && originalImageUrl && (
         <ImageCropper
-          imageSrc={previewUrl}
+          imageSrc={originalImageUrl}
           onCropComplete={handleCropComplete}
           onCancel={handleCropCancel}
         />
