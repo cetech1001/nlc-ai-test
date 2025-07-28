@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {useCookies} from "react-cookie";
+
 
 declare global {
   interface Window {
@@ -20,6 +22,7 @@ interface UseGoogleOAuthProps {
 
 export const useGoogleOAuth = ({ onSuccess, onError }: UseGoogleOAuthProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [_, __, removeCookie] = useCookies<string>(['cookie-name']);
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -50,6 +53,7 @@ export const useGoogleOAuth = ({ onSuccess, onError }: UseGoogleOAuthProps) => {
   }, [onSuccess]);
 
   const signIn = () => {
+    removeCookie('g_state')
     if (window.google && isLoaded) {
       window.google.accounts.id.prompt();
     }

@@ -177,7 +177,7 @@ export class AuthService {
     try {
       const result = await this.cloudinaryService.uploadAsset(file, {
         resource_type: 'image',
-        folder: `nlc-ai/avatars/${userType}s`,
+        folder: `nlc-ai/avatars/${userType === 'coach' ? 'coaches' : userType + 's'}`,
         public_id: `${userID}_avatar`,
         overwrite: true,
         transformation: [

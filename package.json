@@ -58,6 +58,7 @@
     "pdfkit": "^0.17.1",
     "react": "19.0.0",
     "react-calendly": "^4.4.0",
+    "react-cookie": "^8.0.1",
     "react-day-picker": "^9.7.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.58.1",

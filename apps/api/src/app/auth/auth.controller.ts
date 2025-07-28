@@ -179,7 +179,7 @@ export class AuthController {
       throw new BadRequestException('File size must be less than 5MB');
     }
 
-    return this.authService.uploadAvatar(user?.id, user?.type, file);
+    return this.authService.uploadAvatar(user.id, user.type, file);
   }
 
   @Get('profile')
