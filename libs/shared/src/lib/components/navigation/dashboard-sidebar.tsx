@@ -31,8 +31,6 @@ const hasDropdown = (item: MenuItem | MenuItemWithDropdown): item is MenuItemWit
 };
 
 const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
-  console.log(props.settingsItems);
-
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
   const handleNavigation = (path: string) => {

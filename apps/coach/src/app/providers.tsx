@@ -2,10 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {ReactNode, useState} from 'react';
-import {CookiesProvider} from "react-cookie";
-
 import { Sonner, TooltipProvider } from '@nlc-ai/ui';
-
 
 interface IProps {
   children: ReactNode;
@@ -21,13 +18,11 @@ export function Providers({ children }: IProps) {
   }));
 
   return (
-    <CookiesProvider defaultSetOptions={{ path: '/' }}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          {children}
-          <Sonner />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </CookiesProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        {children}
+        <Sonner />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
