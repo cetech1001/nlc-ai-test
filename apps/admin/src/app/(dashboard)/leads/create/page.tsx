@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@nlc-ai/ui';
 import { ArrowLeft, Save, Calendar, User, Mail, Phone, MapPin, FileText, Sparkles } from 'lucide-react';
 import { leadsAPI } from '@nlc-ai/api-client';
-import { CreateLeadFormData } from '@nlc-ai/types';
+import { LeadFormData } from '@nlc-ai/types';
 
-const initialFormData: CreateLeadFormData = {
+const initialFormData: LeadFormData = {
   firstName: '',
   lastName: '',
   email: '',
@@ -39,11 +39,11 @@ const sourceOptions = [
 
 const CreateLead = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState<CreateLeadFormData>(initialFormData);
+  const [formData, setFormData] = useState<LeadFormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (field: keyof CreateLeadFormData, value: string) => {
+  const handleInputChange = (field: keyof LeadFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));

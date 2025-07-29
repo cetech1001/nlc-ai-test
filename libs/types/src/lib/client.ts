@@ -93,3 +93,14 @@ export interface DataTableClient {
   coursesCompleted: number;
   originalID: string;
 }
+
+export interface ClientFormErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  avatarUrl?: string;
+  source?: string;
+  tags?: string;
+  general?: string;
+}

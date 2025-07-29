@@ -92,7 +92,7 @@ export interface LeadFilters {
   meetingDateRange?: { start: string | null; end: string | null };
 }
 
-export interface EditLeadFormData {
+export interface LeadFormData {
   firstName: string;
   lastName: string;
   email: string;
@@ -104,14 +104,15 @@ export interface EditLeadFormData {
   notes: string;
 }
 
-export interface CreateLeadFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  source: string;
-  status: string;
-  meetingDate: string;
-  meetingTime: string;
-  notes: string;
+export interface LeadFormErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  source?: string;
+  status?: string;
+  meetingDate?: string;
+  meetingTime?: string;
+  notes?: string;
+  general?: string;
 }

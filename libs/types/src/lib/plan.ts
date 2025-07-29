@@ -41,9 +41,9 @@ export interface TransformedPlan {
 
 export interface CreatePlanRequest {
   name: string;
-  description?: string;
   monthlyPrice: number;
   annualPrice: number;
+  description?: string;
   color?: string;
   maxClients?: number;
   maxAiAgents?: number;
@@ -64,19 +64,19 @@ export interface PlanAnalytics {
 }
 
 export interface PlanFormData {
-  planTitle: string;
+  name: string;
   description: string;
   monthlyPrice: string;
   annualPrice: string;
   maxClients: string;
   maxAiAgents: string;
   features: string[];
-  color: string; // Add color field
+  color: string;
   isActive: boolean;
 }
 
 export interface PlanFormErrors {
-  planTitle?: string;
+  name?: string;
   monthlyPrice?: string;
   annualPrice?: string;
   maxClients?: string;
