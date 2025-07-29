@@ -84,6 +84,8 @@ export interface UpdateClient extends Partial<CreateClient>{
   status?: string;
 }
 
+export type ClientFormData = CreateClient | UpdateClient;
+
 export interface DataTableClient {
   id: string;
   name: string;
