@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@nlc-ai/ui';
-import { ArrowLeft, Save, User, Mail, Phone, Tag, Globe, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, Save, User, Mail, Phone, Tag, Sparkles, Users } from 'lucide-react';
 import { clientsAPI } from '@nlc-ai/api-client';
 import type { CreateClient } from '@nlc-ai/types';
 
@@ -222,20 +222,6 @@ const CreateClient = () => {
                         placeholder="Enter phone number"
                       />
                     </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-white text-sm font-medium mb-2">Avatar URL</label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]" />
-                    <input
-                      type="url"
-                      value={formData.avatarUrl}
-                      onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      placeholder="https://example.com/avatar.jpg"
-                    />
                   </div>
                 </div>
               </div>
