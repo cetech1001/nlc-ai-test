@@ -17,9 +17,10 @@ interface GoogleCredentialResponse {
 interface UseGoogleOAuthProps {
   onSuccess: (credentialResponse: GoogleCredentialResponse) => void;
   onError?: () => void;
+  removeCookie?: (value: string) => void;
 }
 
-export const useGoogleOAuth = ({ onSuccess }: UseGoogleOAuthProps) => {
+export const useGoogleOAuth = ({ onSuccess, removeCookie }: UseGoogleOAuthProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -51,8 +52,9 @@ export const useGoogleOAuth = ({ onSuccess }: UseGoogleOAuthProps) => {
   }, [onSuccess]);
 
   const signIn = () => {
-    document.cookie = 'g_state=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=' + window.location.hostname;
-
+    if (removeCookie) {
+      removeCookie('g_state');
+    }
     if (window.google && isLoaded) {
       window.google.accounts.id.prompt();
     }

@@ -57,6 +57,7 @@ export const LoginForm = (props: LoginFormProps) => {
   const { isLoaded, signIn } = useGoogleOAuth({
     onSuccess: handleGoogleSuccess,
     onError: handleGoogleError,
+    removeCookie: props.removeCookie,
   });
 
   const handleFormSubmit = async (data: LoginFormData) => {

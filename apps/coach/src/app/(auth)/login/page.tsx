@@ -3,10 +3,12 @@
 import { LoginForm, useAuthPage } from "@nlc-ai/auth";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
+import {useCookies} from "react-cookie";
 
 const CoachLoginPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [_, __, removeCookie] = useCookies<string>(['g_state']);
 
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -51,6 +53,7 @@ const CoachLoginPage = () => {
       showSignUp={true}
       showGoogleAuth={true}
       showRememberMe={true}
+      removeCookie={removeCookie}
     />
   );
 }
