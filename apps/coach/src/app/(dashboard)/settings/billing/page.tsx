@@ -1,13 +1,22 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import {PlanCard} from "@nlc-ai/shared";
+import {PlanCard, DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/shared";
 import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/auth";
-import { Search, MoreVertical, Download } from "lucide-react";
-
+import { Search } from "lucide-react";
+import {
+  paymentHistoryColumns,
+  transformPaymentHistoryData,
+  paymentHistoryFilters,
+  emptyPaymentHistoryFilterValues,
+  PaymentHistoryData,
+  PaymentHistoryFilterValues,
+  CurrentPlanCard,
+  CurrentPlanCardSkeleton
+} from "@/lib";
 
 // Mock payment history - replace with real API calls
 const mockPaymentHistory = [
@@ -67,17 +76,7 @@ const BillingSkeleton = () => {
       <div className="h-8 bg-white/10 rounded animate-pulse"></div>
 
       {/* Current Plan Skeleton */}
-      <div className="bg-[linear-gradient(202deg,rgba(38,38,38,0.30)_11.62%,rgba(19,19,19,0.30)_87.57%)] rounded-[30px] border border-neutral-700 p-6">
-        <div className="h-6 bg-neutral-700 rounded mb-6 w-1/4"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <div className="h-4 bg-neutral-700 rounded w-1/3"></div>
-              <div className="h-5 bg-neutral-700 rounded w-2/3"></div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <CurrentPlanCardSkeleton />
 
       {/* Plans Skeleton */}
       <div className="space-y-6">
@@ -108,11 +107,27 @@ export default function Billing() {
   const [plans, setPlans] = useState<Plan[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isPaymentHistoryLoading, setIsPaymentHistoryLoading] = useState(false);
 
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
 
+  // Payment History state
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryData[]>([]);
+  const [filterValues, setFilterValues] = useState<PaymentHistoryFilterValues>(emptyPaymentHistoryFilterValues);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const paymentsPerPage = 10;
 
   useEffect(() => {
     (async () => {
@@ -141,14 +156,85 @@ export default function Billing() {
     })();
   }, [user?.id]);
 
+  useEffect(() => {
+    if (activeTab === 'history') {
+      fetchPaymentHistory();
+    }
+  }, [activeTab, currentPage, searchQuery, filterValues]);
+
+  const fetchPaymentHistory = async () => {
+    try {
+      setIsPaymentHistoryLoading(true);
+      setError("");
+
+      // Mock pagination logic - replace with real API call
+      const filteredHistory = mockPaymentHistory.filter(payment => {
+        const matchesSearch = payment.id.includes(searchQuery) ||
+          payment.planType.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesStatus = !filterValues.status ||
+          payment.status.toLowerCase() === filterValues.status.toLowerCase();
+
+        const matchesPlan = !filterValues.planType ||
+          payment.planType.toLowerCase() === filterValues.planType.toLowerCase();
+
+        return matchesSearch && matchesStatus && matchesPlan;
+      });
+
+      const startIndex = (currentPage - 1) * paymentsPerPage;
+      const endIndex = startIndex + paymentsPerPage;
+      const paginatedHistory = filteredHistory.slice(startIndex, endIndex);
+
+      setPaymentHistory(transformPaymentHistoryData(paginatedHistory));
+      setPagination({
+        page: currentPage,
+        limit: paymentsPerPage,
+        total: filteredHistory.length,
+        totalPages: Math.ceil(filteredHistory.length / paymentsPerPage),
+        hasNext: endIndex < filteredHistory.length,
+        hasPrev: startIndex > 0,
+      });
+    } catch (error: any) {
+      setError(error.message || "Failed to load payment history");
+    } finally {
+      setIsPaymentHistoryLoading(false);
+    }
+  };
+
   const handleUpgrade = (plan: Plan) => {
     console.log('Upgrading to:', plan.name);
   };
 
-  const handlePaymentAction = async (action: string, payment: any) => {
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (newFilters: PaymentHistoryFilterValues) => {
+    setFilterValues(newFilters);
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilterValues(emptyPaymentHistoryFilterValues);
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
+
+  const handlePaymentAction = async (action: string, payment: PaymentHistoryData) => {
     if (action === 'download') {
-      await transactionsAPI.downloadTransaction(payment.id);
+      try {
+        await transactionsAPI.downloadTransaction(payment.id);
+        setSuccessMessage("Invoice downloaded successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } catch (error: any) {
+        setError(error.message || "Failed to download invoice");
+      }
     }
+  };
+
+  const handleChangePlan = () => {
+    setActiveTab('subscription');
   };
 
   const clearError = () => {
@@ -159,16 +245,11 @@ export default function Billing() {
     setSuccessMessage("");
   };
 
-  const filteredHistory = mockPaymentHistory.filter(payment =>
-    payment.id.includes(searchQuery) ||
-    payment.planType.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   if (isLoading) {
     return <BillingSkeleton/>;
   }
 
-  if (error) {
+  if (error && !coach) {
     return (
       <div className="py-8">
         <AlertBanner type="error" message={error} onDismiss={clearError} />
@@ -184,175 +265,139 @@ export default function Billing() {
     );
   }
 
+  // Current plan data
+  const currentPlanData = {
+    plan: coach.subscriptions?.[0]?.plan?.name || 'No Plan',
+    amount: coach.subscriptions?.[0]?.plan?.annualPrice || 0,
+    nextBilling: coach.subscriptions?.[0]?.nextBillingDate
+      ? new Date(coach.subscriptions[0].nextBillingDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+      : 'N/A',
+    billingCycle: 'Monthly'
+  };
+
   return (
-    <div>
-      {successMessage && (
-        <div className="mb-6">
+    <div className={`flex flex-col ${ isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' }`}>
+      <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
+        {successMessage && (
           <AlertBanner type="success" message={successMessage} onDismiss={clearSuccessMessage} />
+        )}
+
+        {error && (
+          <AlertBanner type="error" message={error} onDismiss={clearError} />
+        )}
+
+        <div className="flex justify-center items-center gap-8">
+          <button
+            onClick={() => setActiveTab('subscription')}
+            className={`text-lg font-medium transition-colors ${
+              activeTab === 'subscription'
+                ? 'text-fuchsia-400'
+                : 'text-stone-300 hover:text-stone-50'
+            }`}
+          >
+            Subscription Plans
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`text-lg font-medium transition-colors ${
+              activeTab === 'history'
+                ? 'text-fuchsia-400'
+                : 'text-stone-300 hover:text-stone-50'
+            }`}
+          >
+            Payment History
+          </button>
         </div>
-      )}
 
-      <div className="flex justify-center items-center gap-8 mb-8">
-        <button
-          onClick={() => setActiveTab('subscription')}
-          className={`text-lg font-medium transition-colors ${
-            activeTab === 'subscription'
-              ? 'text-fuchsia-400'
-              : 'text-stone-300 hover:text-stone-50'
-          }`}
-        >
-          Subscription Plans
-        </button>
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`text-lg font-medium transition-colors ${
-            activeTab === 'history'
-              ? 'text-fuchsia-400'
-              : 'text-stone-300 hover:text-stone-50'
-          }`}
-        >
-          Payment History
-        </button>
-      </div>
+        {activeTab === 'subscription' && (
+          <>
+            {/* Current Plan Card */}
+            <CurrentPlanCard
+              currentPlan={currentPlanData}
+              onChangePlan={handleChangePlan}
+            />
 
-      {activeTab === 'subscription' && (
-        <>
-          {plans.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-stone-400 text-lg mb-4">No subscription plans available</div>
-            </div>
-          ) : (
-            <div className="gap-4 grid grid-cols-1 mb-2 sm:grid-cols-2 xl:grid-cols-4">
-              {plans.map((plan) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  currentPlan={coach.subscriptions?.[0]?.plan}
-                  action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
-                  onActionClick={coach.subscriptions?.[0]?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === 'history' && (
-        <>
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center mb-6">
-            <h3 className="text-stone-50 text-2xl font-semibold font-['Inter'] leading-relaxed">Billing History</h3>
-
-            <div className="flex gap-2">
-              <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
-                <input
-                  type="text"
-                  placeholder="Search invoices by plan name"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent text-white placeholder:text-white/50 text-base font-normal leading-tight outline-none"
-                />
-                <Search className="w-5 h-5 text-white" />
-              </div>
-
-              <button className="bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2">
-                <div className="w-6 h-6 rounded border border-white flex items-center justify-center">
-                  <div className="w-3 h-3 bg-white rounded-full"></div>
-                </div>
-                <span>Filter Options</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Payment History Table */}
-          <div className="bg-[linear-gradient(202deg,rgba(38,38,38,0.30)_11.62%,rgba(19,19,19,0.30)_87.57%)] rounded-[30px] border border-neutral-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600">
-                <tr>
-                  <th className="py-4 px-4 text-left text-white font-medium">Invoice No.</th>
-                  <th className="py-4 px-4 text-left text-white font-medium">Invoice Date</th>
-                  <th className="py-4 px-4 text-left text-white font-medium">Plan Type</th>
-                  <th className="py-4 px-4 text-left text-white font-medium">Amount</th>
-                  <th className="py-4 px-4 text-left text-white font-medium">Paid On</th>
-                  <th className="py-4 px-4 text-left text-white font-medium">Status</th>
-                  <th className="py-4 px-4 text-left text-white font-medium">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {filteredHistory.map((payment) => (
-                  <tr key={payment.id} className="border-b border-neutral-700 hover:bg-white/5 transition-colors">
-                    <td className="py-4 px-4 text-stone-50 font-medium">#{payment.id}</td>
-                    <td className="py-4 px-4 text-stone-300">{payment.invoiceDate}</td>
-                    <td className="py-4 px-4 text-stone-300">{payment.planType}</td>
-                    <td className="py-4 px-4 text-stone-50 font-medium">${payment.amount}</td>
-                    <td className="py-4 px-4 text-stone-300">{payment.paidOn}</td>
-                    <td className="py-4 px-4">
-                        <span className={`font-medium flex items-center gap-1 ${
-                          payment.status === 'Paid' ? 'text-green-400' :
-                            payment.status === 'Cancelled' ? 'text-red-400' :
-                              'text-stone-300'
-                        }`}>
-                          {payment.status}
-                          <MoreVertical className="w-4 h-4 cursor-pointer hover:bg-white/10 rounded" />
-                        </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <button
-                        onClick={() => handlePaymentAction('download', payment)}
-                        className="p-2 text-stone-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                        title="Download Invoice"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredHistory.length === 0 && (
+            {/* Subscription Plans */}
+            {plans.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-stone-400 text-lg mb-2">
-                  No payment history found
-                </div>
-                <div className="text-stone-500 text-sm">
-                  {searchQuery
-                    ? `No payments match your search for "${searchQuery}"`
-                    : "You don't have any payment history yet"
-                  }
-                </div>
+                <div className="text-stone-400 text-lg mb-4">No subscription plans available</div>
+              </div>
+            ) : (
+              <div className="gap-4 grid grid-cols-1 mb-2 sm:grid-cols-2 xl:grid-cols-4">
+                {plans.map((plan) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    currentPlan={coach.subscriptions?.[0]?.plan}
+                    action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
+                    onActionClick={coach.subscriptions?.[0]?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
+                  />
+                ))}
               </div>
             )}
-          </div>
+          </>
+        )}
 
-          {/* Pagination */}
-          {filteredHistory.length > 0 && (
-            <div className="flex justify-center items-center gap-2 mt-8">
-              <button className="w-10 h-10 rounded-lg bg-neutral-700 text-stone-300 hover:bg-neutral-600 flex items-center justify-center transition-colors">
-                1
-              </button>
-              <button className="w-10 h-10 rounded-lg bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-white flex items-center justify-center">
-                2
-              </button>
-              <button className="w-10 h-10 rounded-lg bg-neutral-700 text-stone-300 hover:bg-neutral-600 flex items-center justify-center transition-colors">
-                3
-              </button>
-              <button className="w-10 h-10 rounded-lg bg-neutral-700 text-stone-300 hover:bg-neutral-600 flex items-center justify-center transition-colors">
-                4
-              </button>
-              <button className="w-10 h-10 rounded-lg bg-neutral-700 text-stone-300 hover:bg-neutral-600 flex items-center justify-center transition-colors">
-                5
-              </button>
-              <span className="text-stone-400 mx-2">...</span>
-              <button className="w-10 h-10 rounded-lg bg-neutral-700 text-stone-300 hover:bg-neutral-600 flex items-center justify-center transition-colors">
-                20
-              </button>
-            </div>
-          )}
-        </>
-      )}
+        {activeTab === 'history' && (
+          <>
+            {/* Current Plan Card */}
+            <CurrentPlanCard
+              currentPlan={currentPlanData}
+              onChangePlan={handleChangePlan}
+            />
+
+            {/* Payment History Header with Search and Filter */}
+            <PageHeader title="Billing History">
+              <>
+                <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Search invoices by plan name"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="flex-1 bg-transparent text-white placeholder:text-white/50 text-base font-normal leading-tight outline-none"
+                  />
+                  <Search className="w-5 h-5 text-white" />
+                </div>
+
+                <DataFilter
+                  filters={paymentHistoryFilters}
+                  values={filterValues}
+                  onChange={handleFilterChange}
+                  onReset={handleResetFilters}
+                  setIsFilterOpen={setIsFilterOpen}
+                />
+              </>
+            </PageHeader>
+
+            {/* Payment History Table */}
+            <DataTable
+              columns={paymentHistoryColumns}
+              data={paymentHistory}
+              onRowAction={handlePaymentAction}
+              emptyMessage="No payment history found matching your criteria"
+              showMobileCards={true}
+              isLoading={isPaymentHistoryLoading}
+            />
+
+            {/* Pagination */}
+            <Pagination
+              totalPages={pagination.totalPages}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              isLoading={isPaymentHistoryLoading}
+            />
+
+            {!isPaymentHistoryLoading && paymentHistory.length > 0 && (
+              <MobilePagination pagination={pagination}/>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
