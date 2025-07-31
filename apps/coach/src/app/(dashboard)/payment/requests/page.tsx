@@ -1,84 +1,29 @@
 'use client'
 
-import {useState, useEffect, useMemo} from 'react';
-import { Search } from "lucide-react";
-import { StatCard } from "@nlc-ai/shared";
-import { AlertBanner } from '@nlc-ai/ui';
-import { coachesAPI } from "@nlc-ai/api-client";
-import { useAuth } from "@nlc-ai/auth";
-import {
-  CoachPaymentRequest,
-  CoachPaymentRequestStats,
-} from "@nlc-ai/types";
+import {useEffect, useMemo, useState} from 'react';
+import {Search} from "lucide-react";
+import {StatCard} from "@nlc-ai/shared";
+import {AlertBanner} from '@nlc-ai/ui';
+import {coachesAPI} from "@nlc-ai/api-client";
+import {useAuth} from "@nlc-ai/auth";
+import {CoachPaymentRequest, CoachPaymentRequestStats,} from "@nlc-ai/types";
 import {PaymentRequestCard} from "@/lib";
-
-const PaymentRequestStats = () => {
-  const { user } = useAuth();
-  const [stats, setStats] = useState<CoachPaymentRequestStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!user?.id) {
-        return;
-      }
-
-      try {
-        const data = await coachesAPI.getCoachPaymentRequestStats(user.id);
-        setStats(data);
-      } catch (error) {
-        console.error('Failed to fetch payment request stats:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    (() => fetchStats())();
-  }, [user?.id]);
-
-  if (!stats && !isLoading) return null;
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <StatCard title={"Total Requests"} value={stats?.total} isLoading={isLoading}/>
-      <StatCard title={"Pending Payment"} value={stats?.pending} isLoading={isLoading}/>
-      <StatCard title={"Completed"} value={stats?.paid} isLoading={isLoading}/>
-      <StatCard title={"Total Paid"} value={`$${stats?.totalAmountPaid.toLocaleString()}`} isLoading={isLoading}/>
-    </div>
-  );
-};
-
-
-
-const PaymentRequestsSkeleton = () => {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 px-2">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-[linear-gradient(202deg,rgba(38,38,38,0.30)_11.62%,rgba(19,19,19,0.30)_87.57%)] rounded-[30px] border border-neutral-700 p-6 h-80 animate-pulse">
-          <div className="h-6 bg-neutral-700 rounded mb-2"></div>
-          <div className="h-4 bg-neutral-700 rounded mb-4 w-2/3"></div>
-          <div className="space-y-3">
-            <div className="h-4 bg-neutral-700 rounded"></div>
-            <div className="h-4 bg-neutral-700 rounded w-3/4"></div>
-            <div className="h-4 bg-neutral-700 rounded w-1/2"></div>
-          </div>
-          <div className="mt-auto pt-6">
-            <div className="h-10 bg-neutral-700 rounded"></div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 
 const PaymentRequests = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'stats'>('active');
-  const [searchQuery, setSearchQuery] = useState("");
+
+  const [stats, setStats] = useState<CoachPaymentRequestStats | null>(null);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
+
   const [paymentRequests, setPaymentRequests] = useState<CoachPaymentRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isRequestsLoading, setIsRequestsLoading] = useState(true);
   const [error, setError] = useState<string>("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -91,21 +36,42 @@ const PaymentRequests = () => {
 
   useEffect(() => {
     if (user?.id) {
-      fetchPaymentRequests();
+      (() => fetchPaymentRequests())();
     }
   }, [user?.id, currentPage, searchQuery, activeTab]);
+
+  useEffect(() => {
+    if (user?.id) {
+      (() => fetchStats())();
+    }
+  }, [user?.id]);
+
+  const fetchStats = async () => {
+    if (!user?.id) {
+      return;
+    }
+
+    try {
+      const data = await coachesAPI.getCoachPaymentRequestStats(user.id);
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to fetch payment request stats:', error);
+    } finally {
+      setIsStatsLoading(false);
+    }
+  };
 
   const fetchPaymentRequests = async () => {
     if (!user?.id) return;
 
     try {
-      setIsLoading(true);
       setError("");
 
       const response = await coachesAPI.getCoachPaymentRequests(
         user.id,
         currentPage,
         pagination.limit,
+        { status: activeTab },
         searchQuery
       );
 
@@ -114,7 +80,7 @@ const PaymentRequests = () => {
     } catch (error: any) {
       setError(error.message || "Failed to load payment requests");
     } finally {
-      setIsLoading(false);
+      setIsRequestsLoading(false);
     }
   };
 
@@ -129,15 +95,9 @@ const PaymentRequests = () => {
 
   const filteredRequests = useMemo(() => {
     return paymentRequests.filter(request => {
-      const matchesTab = activeTab === 'active'
-        ? request.status === 'pending'
-        : request.status === 'paid' || request.status === 'expired';
-
-      const matchesSearch = searchQuery === "" ||
+      return searchQuery === "" ||
         request.planName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (request.description && request.description.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      return matchesTab && matchesSearch;
     });
   }, [paymentRequests, activeTab, searchQuery]);
 
@@ -148,7 +108,12 @@ const PaymentRequests = () => {
           <AlertBanner type={"error"} message={error} onDismiss={() => setError('')}/>
         )}
 
-        <PaymentRequestStats />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard title={"Total Requests"} value={stats?.total} isLoading={isStatsLoading}/>
+          <StatCard title={"Pending Payment"} value={stats?.pending} isLoading={isStatsLoading}/>
+          <StatCard title={"Completed"} value={stats?.paid} isLoading={isStatsLoading}/>
+          <StatCard title={"Total Paid"} value={`$${stats?.totalAmountPaid.toLocaleString()}`} isLoading={isStatsLoading}/>
+        </div>
 
         <div className={"flex flex-col xl:flex-row justify-between gap-3 xl:gap-0"}>
           <div className="flex justify-center xl:justify-start items-center gap-8 w-full xl:w-2/5 order-3 xl:order-1">
@@ -163,9 +128,9 @@ const PaymentRequests = () => {
               Active Requests
             </button>
             <button
-              onClick={() => setActiveTab('archived')}
+              onClick={() => setActiveTab('inactive')}
               className={`text-lg font-medium transition-colors ${
-                activeTab === 'archived'
+                activeTab === 'inactive'
                   ? 'text-fuchsia-400'
                   : 'text-stone-300 hover:text-stone-50'
               }`}
@@ -187,11 +152,13 @@ const PaymentRequests = () => {
           </div>
         </div>
 
-        {isLoading ? (
-          <PaymentRequestsSkeleton />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 px-2">
-            {filteredRequests.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 px-2">
+          {isRequestsLoading ? (
+            [1, 2, 3].map((_, index) => (
+              <PaymentRequestCard key={index} isLoading={true}/>
+            ))
+          ) : (
+            filteredRequests.length > 0 ? (
               filteredRequests.map((request) => (
                 <PaymentRequestCard
                   key={request.id}
@@ -211,9 +178,9 @@ const PaymentRequests = () => {
                   }
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            )
+          )}
+        </div>
       </div>
     </div>
   );

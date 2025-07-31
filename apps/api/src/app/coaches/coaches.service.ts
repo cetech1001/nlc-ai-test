@@ -514,20 +514,17 @@ export class CoachesService {
 
     if (status) {
       switch (status) {
-        case 'pending':
+        case 'active':
           where.isActive = true;
           where.paymentsReceived = 0;
           where.expiresAt = { gt: new Date() };
           break;
-        case 'paid':
-          where.paymentsReceived = { gt: 0 };
-          break;
-        case 'expired':
+        case 'inactive':
           where.OR = [
+            { paymentsReceived: { gt: 0 } },
             { isActive: false },
             { expiresAt: { lte: new Date() } }
           ];
-          where.paymentsReceived = 0;
           break;
       }
     }

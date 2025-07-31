@@ -103,6 +103,7 @@ class CoachesAPI extends BaseAPI {
     coachID: string,
     page = 1,
     limit = 10,
+    filters: Record<string, any> = {},
     search?: string
   ): Promise<Paginated<CoachPaymentRequest>> {
     const params = new URLSearchParams({
@@ -111,6 +112,10 @@ class CoachesAPI extends BaseAPI {
     });
 
     if (search) params.append('search', search);
+
+    if (filters.status && filters.status !== '') {
+      params.append('status', filters.status);
+    }
 
     return this.makeRequest(`/coaches/${coachID}/payment-requests?${params.toString()}`);
   }
