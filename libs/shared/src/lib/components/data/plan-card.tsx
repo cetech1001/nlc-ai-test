@@ -1,14 +1,19 @@
 import { Button } from "@nlc-ai/ui";
 import {Check} from "lucide-react";
-import {TransformedPlan} from "@nlc-ai/types";
+import {Plan, TransformedPlan} from "@nlc-ai/types";
+import {transformPlan} from "@nlc-ai/utils";
+
 
 interface IProps {
-  plan: TransformedPlan;
-  action: string;
-  onActionClick: (planId: string) => void;
+  plan: Plan;
+  currentPlan?: Plan;
+  action: (plan: TransformedPlan) => string;
+  onActionClick: (plan: Plan) => void;
 }
 
-export const PlanCard = ({ plan, action, onActionClick }: IProps) => {
+export const PlanCard = ({ plan: rawPlan, currentPlan, action, onActionClick }: IProps) => {
+  let plan = transformPlan(rawPlan, currentPlan);
+
   const renderActionButton = () => {
     if (plan.isCurrentPlan) {
       return (
@@ -18,10 +23,10 @@ export const PlanCard = ({ plan, action, onActionClick }: IProps) => {
       );
     }
 
-    if (action === 'Edit Plan') {
+    if (action(plan) === 'Edit Plan') {
       return (
         <Button
-          onClick={() => onActionClick(plan.title)}
+          onClick={() => onActionClick(rawPlan)}
           className={'w-full p-2.5 rounded-[10px] flex justify-center items-center border border-fuchsia-400'}
         >
           <div
@@ -32,11 +37,11 @@ export const PlanCard = ({ plan, action, onActionClick }: IProps) => {
 
     return (
       <Button
-        onClick={() => onActionClick(plan.title)}
+        onClick={() => onActionClick(rawPlan)}
         className={'w-full p-2.5 rounded-[10px] flex justify-center items-center bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600'}
       >
         <div
-          className={"text-stone-50 text-base font-semibold font-['Inter'] leading-normal"}>{action}</div>
+          className={"text-stone-50 text-base font-semibold font-['Inter'] leading-normal"}>{action(plan)}</div>
       </Button>
     );
   }

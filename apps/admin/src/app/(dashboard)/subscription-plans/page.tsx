@@ -7,8 +7,8 @@ import { useEffect, useState } from "react";
 import { plansAPI } from "@nlc-ai/api-client";
 import { PageHeader, DataFilter, PlanCard } from "@nlc-ai/shared";
 import { AlertBanner } from '@nlc-ai/ui';
-import {FilterValues, Plan} from "@nlc-ai/types";
-import {emptyPlanFilterValues, planFilters, PlansPageSkeleton, transformPlan} from "@/lib";
+import {FilterValues, Plan, TransformedPlan} from "@nlc-ai/types";
+import {emptyPlanFilterValues, planFilters, PlansPageSkeleton} from "@/lib";
 
 const SubscriptionPlans = () => {
   const router = useRouter();
@@ -86,8 +86,8 @@ const SubscriptionPlans = () => {
     await fetchPlans();
   };
 
-  const handleEditPlan = (planID: string) => {
-    router.push(`/subscription-plans/edit?id=${planID}`);
+  const handleEditPlan = (plan: Plan) => {
+    router.push(`/subscription-plans/edit?id=${plan.id}`);
   };
 
   const handleCreateNewPlan = () => {
@@ -236,9 +236,9 @@ const SubscriptionPlans = () => {
               </div>
 
               <PlanCard
-                plan={transformPlan(plan)}
-                action={plan.isDeleted ? "Deleted" : "Edit Plan"}
-                onActionClick={plan.isDeleted ? () => {} : () => handleEditPlan(plan.id)}
+                plan={plan}
+                action={(plan: TransformedPlan) => plan.isDeleted ? "Deleted" : "Edit Plan"}
+                onActionClick={plan.isDeleted ? () => {} : handleEditPlan}
               />
 
               {plan._count && (

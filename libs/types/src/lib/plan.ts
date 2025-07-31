@@ -37,6 +37,7 @@ export interface TransformedPlan {
   features: string[];
   isCurrentPlan: boolean;
   colorClass: string;
+  isDeleted: boolean;
 }
 
 export interface CreatePlanRequest {

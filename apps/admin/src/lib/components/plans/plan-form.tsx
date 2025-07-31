@@ -6,7 +6,7 @@ import {
 } from "@nlc-ai/ui";
 import { X, Plus, Palette } from "lucide-react";
 import {useEffect, useState} from "react";
-import {PLAN_COLORS} from "@/lib";
+import {PLAN_COLORS} from "@nlc-ai/utils";
 import {CreatePlanRequest, Plan, PlanFormData, PlanFormErrors} from "@nlc-ai/types";
 
 interface IProps {

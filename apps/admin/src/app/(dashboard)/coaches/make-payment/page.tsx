@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {BackTo, PlanCard} from "@nlc-ai/shared";
 import { coachesAPI, plansAPI } from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
-import {CoachWithStatus, TransformedPlan} from "@nlc-ai/types";
-import {transformPlan, MakePaymentSkeleton, PaymentModal} from "@/lib";
+import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
+import {MakePaymentSkeleton, PaymentModal} from "@/lib";
 
 export default function MakePayment() {
   const router = useRouter();
@@ -14,7 +14,7 @@ export default function MakePayment() {
   const coachID = searchParams.get('coachID');
 
   const [coach, setCoach] = useState<CoachWithStatus | null>(null);
-  const [plans, setPlans] = useState<TransformedPlan[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -39,14 +39,7 @@ export default function MakePayment() {
         ]);
 
         setCoach(coachData);
-
-        const currentPlanName = coachData.subscriptions?.[0]?.plan?.name;
-
-        const transformedPlans = plansData.map(plan =>
-          transformPlan(plan, currentPlanName)
-        );
-
-        setPlans(transformedPlans);
+        setPlans(plansData);
       } catch (err: any) {
         setError(err.message || "Failed to load coach and plan data");
       } finally {
@@ -55,8 +48,8 @@ export default function MakePayment() {
     })();
   }, [coachID]);
 
-  const handleUpgrade = (planTitle: string) => {
-    setSelectedPlanForPayment(planTitle);
+  const handleUpgrade = (plan: Plan) => {
+    setSelectedPlanForPayment(plan.name);
     setIsPaymentModalOpen(true);
   };
 
@@ -205,8 +198,9 @@ export default function MakePayment() {
               <PlanCard
                 key={plan.id}
                 plan={plan}
-                action={plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
-                onActionClick={plan.isCurrentPlan ? () => {} : () => handleUpgrade(plan.title)}
+                currentPlan={coach.subscriptions?.[0]?.plan}
+                action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
+                onActionClick={handleUpgrade}
               />
             ))}
           </div>

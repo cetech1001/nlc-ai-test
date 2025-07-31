@@ -2,20 +2,12 @@
 
 import {useEffect, useState} from "react";
 import {PlanCard} from "@nlc-ai/shared";
-import { coachesAPI, plansAPI } from "@nlc-ai/api-client";
+import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
 import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/auth";
 import { Search, MoreVertical, Download } from "lucide-react";
 
-// Mock subscription data - replace with real API calls
-const mockCurrentSubscription = {
-  plan: { name: 'Growth Pro' },
-  status: 'active',
-  billingCycle: 'monthly',
-  currentPeriodEnd: new Date('2025-06-26'),
-  nextBillingDate: new Date('2025-06-26')
-};
 
 // Mock payment history - replace with real API calls
 const mockPaymentHistory = [
@@ -107,29 +99,19 @@ const BillingSkeleton = () => {
   );
 };
 
-const transformPlan = (plan: Plan, currentPlanName?: string): TransformedPlan => {
-  return {
-    id: plan.id,
-    title: plan.name,
-    subtitle: plan.description || `Access to ${plan.name} features`,
-    monthlyPrice: plan.monthlyPrice,
-    price: plan.annualPrice,
-    billingCycle: 'per month billed annually',
-    monthlyBilling: 'per month',
-    colorClass: plan.color || "#7B21BA",
-    features: plan.features || [],
-    isCurrentPlan: currentPlanName === plan.name,
-  };
-};
-
 export default function Billing() {
   const { user } = useAuth();
+
   const [activeTab, setActiveTab] = useState<'subscription' | 'history'>('subscription');
+
   const [coach, setCoach] = useState<CoachWithStatus | null>(null);
-  const [plans, setPlans] = useState<TransformedPlan[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
+
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
+
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -150,14 +132,7 @@ export default function Billing() {
         ]);
 
         setCoach(coachData);
-
-        const currentPlanName = coachData.subscriptions?.[0]?.plan?.name;
-
-        const transformedPlans = plansData.map(plan =>
-          transformPlan(plan, currentPlanName)
-        );
-
-        setPlans(transformedPlans);
+        setPlans(plansData);
       } catch (err: any) {
         setError(err.message || "Failed to load billing data");
       } finally {
@@ -166,15 +141,13 @@ export default function Billing() {
     })();
   }, [user?.id]);
 
-  const handleUpgrade = (planTitle: string) => {
-    console.log('Upgrading to:', planTitle);
-    // Implement upgrade logic
+  const handleUpgrade = (plan: Plan) => {
+    console.log('Upgrading to:', plan.name);
   };
 
-  const handlePaymentAction = (action: string, payment: any) => {
+  const handlePaymentAction = async (action: string, payment: any) => {
     if (action === 'download') {
-      console.log('Downloading invoice for:', payment.id);
-      // Implement download logic
+      await transactionsAPI.downloadTransaction(payment.id);
     }
   };
 
@@ -211,29 +184,6 @@ export default function Billing() {
     );
   }
 
-  const currentSubscription = coach.subscriptions?.[0] || mockCurrentSubscription;
-  const subscriptionStatus = currentSubscription?.status || 'none';
-  const billingCycle = currentSubscription?.billingCycle || 'Monthly';
-
-  const getStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'active':
-        return { text: 'Active', color: 'text-green-600' };
-      case 'canceled':
-        return { text: 'Canceled', color: 'text-red-600' };
-      case 'past_due':
-        return { text: 'Past Due', color: 'text-yellow-600' };
-      case 'trialing':
-        return { text: 'Trial', color: 'text-blue-600' };
-      case 'none':
-        return { text: 'No Subscription', color: 'text-gray-600' };
-      default:
-        return { text: status, color: 'text-gray-600' };
-    }
-  };
-
-  const statusDisplay = getStatusDisplay(subscriptionStatus);
-
   return (
     <div>
       {successMessage && (
@@ -242,7 +192,6 @@ export default function Billing() {
         </div>
       )}
 
-      {/* Tab Navigation */}
       <div className="flex justify-center items-center gap-8 mb-8">
         <button
           onClick={() => setActiveTab('subscription')}
@@ -268,48 +217,6 @@ export default function Billing() {
 
       {activeTab === 'subscription' && (
         <>
-          {/* Current Plan Info */}
-          <div className="mb-8">
-            <div className="flex flex-col px-4 gap-4 justify-center w-full h-72 sm:h-44 bg-[linear-gradient(202deg,rgba(38,38,38,0.30)_11.62%,rgba(19,19,19,0.30)_87.57%)] rounded-[30px] border border-neutral-700">
-              <div>
-                <h3 className="text-stone-50 text-2xl font-semibold font-['Inter'] leading-relaxed">
-                  Current Subscription
-                </h3>
-              </div>
-
-              <div className="w-full flex flex-col gap-2 sm:grid sm:grid-cols-7 sm:gap-0">
-                <div className="flex sm:flex-col gap-3 sm:gap-1.5">
-                  <div className="text-stone-300 text-sm font-normal font-['Inter'] leading-relaxed">Billing Cycle</div>
-                  <div className="text-stone-50 text-base font-medium font-['Inter']">
-                    {billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)}
-                  </div>
-                </div>
-                <div className="flex sm:flex-col gap-3 sm:gap-1.5">
-                  <div className="text-stone-300 text-sm font-normal font-['Inter'] leading-relaxed">Status</div>
-                  <div className="flex items-center gap-2">
-                    <div className={`text-base font-medium font-['Inter'] ${statusDisplay.color}`}>
-                      {statusDisplay.text}
-                    </div>
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7 10L12 15L17 10" stroke="rgb(245 245 245)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-                <div className="flex sm:flex-col gap-3 sm:gap-1.5">
-                  <div className="text-stone-300 text-sm font-normal font-['Inter'] leading-relaxed">Actions</div>
-                  <button className="bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity text-sm">
-                    Change Plan
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Available Plans */}
-          <div className="mb-6">
-            <h3 className="text-stone-50 text-2xl font-semibold font-['Inter'] leading-relaxed mb-6">Select Plan</h3>
-          </div>
-
           {plans.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-stone-400 text-lg mb-4">No subscription plans available</div>
@@ -320,8 +227,9 @@ export default function Billing() {
                 <PlanCard
                   key={plan.id}
                   plan={plan}
-                  action={plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
-                  onActionClick={plan.isCurrentPlan ? () => {} : () => handleUpgrade(plan.title)}
+                  currentPlan={coach.subscriptions?.[0]?.plan}
+                  action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
+                  onActionClick={coach.subscriptions?.[0]?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
                 />
               ))}
             </div>

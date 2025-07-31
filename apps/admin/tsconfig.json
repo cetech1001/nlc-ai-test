@@ -50,6 +50,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/utils"
+    },
+    {
       "path": "../../libs/settings"
     },
     {
