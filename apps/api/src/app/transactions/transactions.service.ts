@@ -2,19 +2,20 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  AuthUser,
   Coach,
   RevenueGrowthData,
   Transaction,
   TransactionsQueryParams,
   TransactionStatus,
-  TransactionWithDetails
+  TransactionWithDetails, UserType
 } from "@nlc-ai/types";
 
 @Injectable()
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: TransactionsQueryParams) {
+  async findAll(query: TransactionsQueryParams, user: AuthUser) {
     const {
       page = 1,
       limit = 10,
@@ -29,6 +30,10 @@ export class TransactionsService {
     } = query;
 
     const where: any = {};
+
+    if (user.type === UserType.coach) {
+      where.coachID = user.id;
+    }
 
     if (status) {
       where.status = status;

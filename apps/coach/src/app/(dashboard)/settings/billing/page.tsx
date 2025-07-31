@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {PlanCard, DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/shared";
 import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
-import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
+import {CoachWithStatus, FilterValues, Plan, TransformedPlan} from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/auth";
 import { Search } from "lucide-react";
 import {
@@ -13,62 +13,10 @@ import {
   paymentHistoryFilters,
   emptyPaymentHistoryFilterValues,
   PaymentHistoryData,
-  PaymentHistoryFilterValues,
   CurrentPlanCard,
-  CurrentPlanCardSkeleton
+  CurrentPlanCardSkeleton, BillingTabs
 } from "@/lib";
-
-// Mock payment history - replace with real API calls
-const mockPaymentHistory = [
-  {
-    id: "1234",
-    invoiceDate: "Mar 25, 2025",
-    planType: "Growth",
-    amount: 1200,
-    paidOn: "Mar 26, 2025",
-    status: "Cancelled"
-  },
-  {
-    id: "1233",
-    invoiceDate: "Feb 25, 2025",
-    planType: "Premium",
-    amount: 2000,
-    paidOn: "Feb 26, 2025",
-    status: "Paid"
-  },
-  {
-    id: "1232",
-    invoiceDate: "Jan 25, 2025",
-    planType: "Growth",
-    amount: 1200,
-    paidOn: "Jan 26, 2025",
-    status: "Paid"
-  },
-  {
-    id: "1231",
-    invoiceDate: "Dec 25, 2024",
-    planType: "Premium",
-    amount: 2000,
-    paidOn: "Dec 26, 2024",
-    status: "Paid"
-  },
-  {
-    id: "1230",
-    invoiceDate: "Nov 25, 2024",
-    planType: "Growth",
-    amount: 1200,
-    paidOn: "Nov 26, 2024",
-    status: "Paid"
-  },
-  {
-    id: "1229",
-    invoiceDate: "Oct 25, 2024",
-    planType: "Starter",
-    amount: 400,
-    paidOn: "Oct 26, 2024",
-    status: "Paid"
-  }
-];
+import {useRouter, useSearchParams} from "next/navigation";
 
 const BillingSkeleton = () => {
   return (
@@ -101,6 +49,9 @@ const BillingSkeleton = () => {
 export default function Billing() {
   const { user } = useAuth();
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [activeTab, setActiveTab] = useState<'subscription' | 'history'>('subscription');
 
   const [coach, setCoach] = useState<CoachWithStatus | null>(null);
@@ -112,11 +63,10 @@ export default function Billing() {
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
 
-  // Payment History state
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryData[]>([]);
-  const [filterValues, setFilterValues] = useState<PaymentHistoryFilterValues>(emptyPaymentHistoryFilterValues);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyPaymentHistoryFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -128,6 +78,24 @@ export default function Billing() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const paymentsPerPage = 10;
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl as 'subscription' | 'history');
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabID: 'subscription' | 'history') => {
+    setActiveTab(tabID);
+
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    current.set('tab', tabID);
+
+    const search = current.toString();
+    const query = search ? `?${search}` : '';
+    router.replace(`${window.location.pathname}${query}`, { scroll: false });
+  };
 
   useEffect(() => {
     (async () => {
@@ -158,44 +126,26 @@ export default function Billing() {
 
   useEffect(() => {
     if (activeTab === 'history') {
-      fetchPaymentHistory();
+      (() => fetchTransactions())();
     }
   }, [activeTab, currentPage, searchQuery, filterValues]);
 
-  const fetchPaymentHistory = async () => {
+  const fetchTransactions = async () => {
     try {
       setIsPaymentHistoryLoading(true);
       setError("");
 
-      // Mock pagination logic - replace with real API call
-      const filteredHistory = mockPaymentHistory.filter(payment => {
-        const matchesSearch = payment.id.includes(searchQuery) ||
-          payment.planType.toLowerCase().includes(searchQuery.toLowerCase());
+      const response = await transactionsAPI.getTransactions(
+        currentPage,
+        paymentsPerPage,
+        filterValues,
+        searchQuery
+      );
 
-        const matchesStatus = !filterValues.status ||
-          payment.status.toLowerCase() === filterValues.status.toLowerCase();
-
-        const matchesPlan = !filterValues.planType ||
-          payment.planType.toLowerCase() === filterValues.planType.toLowerCase();
-
-        return matchesSearch && matchesStatus && matchesPlan;
-      });
-
-      const startIndex = (currentPage - 1) * paymentsPerPage;
-      const endIndex = startIndex + paymentsPerPage;
-      const paginatedHistory = filteredHistory.slice(startIndex, endIndex);
-
-      setPaymentHistory(transformPaymentHistoryData(paginatedHistory));
-      setPagination({
-        page: currentPage,
-        limit: paymentsPerPage,
-        total: filteredHistory.length,
-        totalPages: Math.ceil(filteredHistory.length / paymentsPerPage),
-        hasNext: endIndex < filteredHistory.length,
-        hasPrev: startIndex > 0,
-      });
+      setPaymentHistory(transformPaymentHistoryData(response.data));
+      setPagination(response.pagination);
     } catch (error: any) {
-      setError(error.message || "Failed to load payment history");
+      setError(error.message || "Failed to load transactions");
     } finally {
       setIsPaymentHistoryLoading(false);
     }
@@ -210,7 +160,7 @@ export default function Billing() {
     setCurrentPage(1);
   };
 
-  const handleFilterChange = (newFilters: PaymentHistoryFilterValues) => {
+  const handleFilterChange = (newFilters: FilterValues) => {
     setFilterValues(newFilters);
     setCurrentPage(1);
   };
@@ -265,20 +215,6 @@ export default function Billing() {
     );
   }
 
-  // Current plan data
-  const currentPlanData = {
-    plan: coach.subscriptions?.[0]?.plan?.name || 'No Plan',
-    amount: coach.subscriptions?.[0]?.plan?.annualPrice || 0,
-    nextBilling: coach.subscriptions?.[0]?.nextBillingDate
-      ? new Date(coach.subscriptions[0].nextBillingDate).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      })
-      : 'N/A',
-    billingCycle: 'Monthly'
-  };
-
   return (
     <div className={`flex flex-col ${ isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' }`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
@@ -290,67 +226,35 @@ export default function Billing() {
           <AlertBanner type="error" message={error} onDismiss={clearError} />
         )}
 
-        <div className="flex justify-center items-center gap-8">
-          <button
-            onClick={() => setActiveTab('subscription')}
-            className={`text-lg font-medium transition-colors ${
-              activeTab === 'subscription'
-                ? 'text-fuchsia-400'
-                : 'text-stone-300 hover:text-stone-50'
-            }`}
-          >
-            Subscription Plans
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`text-lg font-medium transition-colors ${
-              activeTab === 'history'
-                ? 'text-fuchsia-400'
-                : 'text-stone-300 hover:text-stone-50'
-            }`}
-          >
-            Payment History
-          </button>
-        </div>
+        <BillingTabs activeTab={activeTab} setActiveTab={handleTabChange}/>
 
         {activeTab === 'subscription' && (
-          <>
-            {/* Current Plan Card */}
-            <CurrentPlanCard
-              currentPlan={currentPlanData}
-              onChangePlan={handleChangePlan}
-            />
-
-            {/* Subscription Plans */}
-            {plans.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-stone-400 text-lg mb-4">No subscription plans available</div>
-              </div>
-            ) : (
-              <div className="gap-4 grid grid-cols-1 mb-2 sm:grid-cols-2 xl:grid-cols-4">
-                {plans.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    currentPlan={coach.subscriptions?.[0]?.plan}
-                    action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
-                    onActionClick={coach.subscriptions?.[0]?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+          plans.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-stone-400 text-lg mb-4">No subscription plans available</div>
+            </div>
+          ) : (
+            <div className="gap-4 grid grid-cols-1 mb-2 sm:grid-cols-2 xl:grid-cols-4">
+              {plans.map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  currentPlan={coach.subscriptions?.[0]?.plan}
+                  action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
+                  onActionClick={coach.subscriptions?.[0]?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
+                />
+              ))}
+            </div>
+          )
         )}
 
         {activeTab === 'history' && (
           <>
-            {/* Current Plan Card */}
             <CurrentPlanCard
-              currentPlan={currentPlanData}
+              subscription={coach.subscriptions?.[0]}
               onChangePlan={handleChangePlan}
             />
 
-            {/* Payment History Header with Search and Filter */}
             <PageHeader title="Billing History">
               <>
                 <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
@@ -374,7 +278,6 @@ export default function Billing() {
               </>
             </PageHeader>
 
-            {/* Payment History Table */}
             <DataTable
               columns={paymentHistoryColumns}
               data={paymentHistory}
@@ -384,7 +287,6 @@ export default function Billing() {
               isLoading={isPaymentHistoryLoading}
             />
 
-            {/* Pagination */}
             <Pagination
               totalPages={pagination.totalPages}
               currentPage={currentPage}

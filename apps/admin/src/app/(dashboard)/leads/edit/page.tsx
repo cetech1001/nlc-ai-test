@@ -5,7 +5,7 @@ import {useRouter, useSearchParams} from 'next/navigation';
 import { Button } from '@nlc-ai/ui';
 import { ArrowLeft, Save, Calendar, User, Mail, Phone, MapPin, FileText, Sparkles, AlertTriangle, CheckCircle } from 'lucide-react';
 import { leadsAPI } from '@nlc-ai/api-client';
-import {EditLeadFormData, Lead} from "@nlc-ai/types";
+import {Lead, LeadFormData} from "@nlc-ai/types";
 
 const statusOptions = [
   {
@@ -52,7 +52,7 @@ const EditLead = () => {
   const leadID = searchParams.get('leadID');
 
   const [lead, setLead] = useState<Lead | null>(null);
-  const [formData, setFormData] = useState<EditLeadFormData>({
+  const [formData, setFormData] = useState<LeadFormData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -104,7 +104,7 @@ const EditLead = () => {
     }
   };
 
-  const handleInputChange = (field: keyof EditLeadFormData, value: string) => {
+  const handleInputChange = (field: keyof LeadFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
     // Show status change warning if status changed

@@ -13,7 +13,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserTypes } from '../auth/decorators/user-types.decorator';
 import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {TransactionsQueryParamsDto} from "./dto";
-import {TransactionStatus, UserType} from "@nlc-ai/types";
+import {type AuthUser, TransactionStatus, UserType} from "@nlc-ai/types";
+import {CurrentUser} from "../auth/decorators/current-user.decorator";
 
 @ApiTags('Transactions')
 @Controller('transactions')
@@ -23,11 +24,12 @@ import {TransactionStatus, UserType} from "@nlc-ai/types";
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
+  @UserTypes(UserType.coach)
   @Get()
   @ApiOperation({ summary: 'Get all transactions with pagination and filters' })
   @ApiResponse({ status: 200, description: 'Transactions retrieved successfully' })
-  findAll(@Query() query: TransactionsQueryParamsDto) {
-    return this.transactionsService.findAll(query);
+  findAll(@Query() query: TransactionsQueryParamsDto, @CurrentUser() user: AuthUser) {
+    return this.transactionsService.findAll(query, user);
   }
 
   @Get('stats')

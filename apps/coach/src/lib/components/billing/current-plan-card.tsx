@@ -1,17 +1,7 @@
-import { FC } from 'react';
-
-interface CurrentPlanData {
-  plan: string;
-  amount: number;
-  nextBilling: string;
-  billingCycle: string;
-}
-
-interface IProps {
-  currentPlan: CurrentPlanData;
-  onChangePlan?: () => void;
-  showChangeButton?: boolean;
-}
+import {FC} from 'react';
+import {BillingCycle, Subscription} from "@nlc-ai/types";
+import {Button} from "@nlc-ai/ui";
+import { formatCurrency, toTitleCase } from '@nlc-ai/utils';
 
 export const CurrentPlanCardSkeleton: FC = () => {
   return (
@@ -39,52 +29,65 @@ export const CurrentPlanCardSkeleton: FC = () => {
   );
 };
 
+interface IProps {
+  subscription?: Subscription;
+  onChangePlan?: () => void;
+}
+
 export const CurrentPlanCard: FC<IProps> = ({
-  currentPlan,
+  subscription,
   onChangePlan,
-  showChangeButton = true
 }) => {
   return (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
-      {/* Glow orb background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
-      </div>
+      <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
+      <div className="absolute w-64 h-64 right-20 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
 
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-stone-50 text-xl font-semibold leading-relaxed">
+        <div className="mb-6">
+          <h2 className="text-stone-50 text-2xl font-semibold leading-relaxed">
             Current Plan
           </h2>
-          {showChangeButton && onChangePlan && (
-            <button
-              onClick={onChangePlan}
-              className="bg-gradient-to-r from-fuchsia-600 via-purple-700 to-violet-600 text-white px-4 py-2 rounded-xl hover:opacity-90 transition-opacity font-medium text-sm"
-            >
-              Change Plan
-            </button>
-          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-          <div className="space-y-1">
-            <div className="text-stone-400 text-sm font-medium leading-tight">Plan</div>
-            <div className="text-stone-50 text-base font-semibold">{currentPlan.plan}</div>
-          </div>
+        <div className={"flex justify-between"}>
+          <div className="grid grid-cols-1 sm:grid-cols-7 w-full gap-4">
+            <div className="space-y-1">
+              <div className="text-stone-300 text-sm font-normal leading-relaxed">Plan</div>
+              <div className="text-stone-50 text-base font-medium">{subscription?.plan?.name}</div>
+            </div>
 
-          <div className="space-y-1">
-            <div className="text-stone-400 text-sm font-medium leading-tight">Amount</div>
-            <div className="text-stone-50 text-base font-semibold">${currentPlan.amount}</div>
-          </div>
+            <div className="space-y-1">
+              <div className="text-stone-300 text-sm font-normal leading-relaxed">Next Billing</div>
+              <div className="text-stone-50 text-base font-medium">
+                {new Date(subscription?.currentPeriodStart || '').toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </div>
+            </div>
 
-          <div className="space-y-1">
-            <div className="text-stone-400 text-sm font-medium leading-tight">Next Billing</div>
-            <div className="text-stone-50 text-base font-semibold">{currentPlan.nextBilling}</div>
-          </div>
+            <div className="space-y-1">
+              <div className="text-stone-300 text-sm font-normal leading-relaxed">Amount</div>
+              <div className="text-stone-50 text-base font-medium">
+                {formatCurrency(subscription?.billingCycle === BillingCycle.MONTHLY
+                  ? subscription?.plan?.monthlyPrice
+                  : subscription?.plan?.annualPrice)}
+              </div>
+            </div>
 
+            <div className="space-y-1">
+              <div className="text-stone-300 text-sm font-normal leading-relaxed">Billing Cycle</div>
+              <div className="text-stone-50 text-base font-medium">{toTitleCase(subscription?.billingCycle)}</div>
+            </div>
+          </div>
           <div className="space-y-1">
-            <div className="text-stone-400 text-sm font-medium leading-tight">Billing Cycle</div>
-            <div className="text-stone-50 text-base font-semibold">{currentPlan.billingCycle}</div>
+            <Button
+              className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex'}
+            >
+              Change Plan
+            </Button>
           </div>
         </div>
       </div>

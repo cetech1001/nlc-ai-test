@@ -50,13 +50,16 @@
   ],
   "references": [
     {
+      "path": "../../libs/utils"
+    },
+    {
       "path": "../../libs/settings"
     },
     {
-      "path": "../../libs/api-client"
+      "path": "../../libs/ui"
     },
     {
-      "path": "../../libs/ui"
+      "path": "../../libs/api-client"
     },
     {
       "path": "../../libs/shared"
