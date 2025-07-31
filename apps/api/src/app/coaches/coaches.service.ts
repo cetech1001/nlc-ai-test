@@ -497,4 +497,153 @@ export class CoachesService {
 
     return { deletedCount: expiredCoaches.length };
   }
+
+  async getCoachPaymentRequests(coachID: string, query: any) {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+      startDate,
+      endDate,
+    } = query;
+
+    const where: any = {
+      coachID,
+    };
+
+    if (status) {
+      switch (status) {
+        case 'pending':
+          where.isActive = true;
+          where.paymentsReceived = 0;
+          where.expiresAt = { gt: new Date() };
+          break;
+        case 'paid':
+          where.paymentsReceived = { gt: 0 };
+          break;
+        case 'expired':
+          where.OR = [
+            { isActive: false },
+            { expiresAt: { lte: new Date() } }
+          ];
+          where.paymentsReceived = 0;
+          break;
+      }
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    if (search) {
+      where.OR = [
+        { description: { contains: search, mode: 'insensitive' } },
+        { plan: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const result = await this.prisma.paginate(this.prisma.paymentLink, {
+      page,
+      limit,
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          }
+        }
+      }
+    });
+
+    const paymentRequestsWithDetails = result.data.map((link: any) => ({
+      id: link.id,
+      coachID: link.coachID,
+      planName: link.plan?.name,
+      amount: link.amount,
+      currency: link.currency,
+      description: link.description,
+      paymentLinkUrl: link.paymentLinkUrl,
+      isActive: link.isActive,
+      paymentsReceived: link.paymentsReceived,
+      totalAmountReceived: link.totalAmountReceived,
+      expiresAt: link.expiresAt,
+      createdAt: link.createdAt,
+      status: this.getPaymentRequestStatus(link),
+    }));
+
+    return {
+      data: paymentRequestsWithDetails,
+      pagination: result.pagination,
+    };
+  }
+
+  async getCoachPaymentRequestStats(coachID: string) {
+    const now = new Date();
+
+    const [total, pending, paid, expired] = await Promise.all([
+      this.prisma.paymentLink.count({ where: { coachID } }),
+      this.prisma.paymentLink.count({
+        where: {
+          coachID,
+          isActive: true,
+          paymentsReceived: 0,
+          expiresAt: { gt: now }
+        }
+      }),
+      this.prisma.paymentLink.count({
+        where: {
+          coachID,
+          paymentsReceived: { gt: 0 }
+        }
+      }),
+      this.prisma.paymentLink.count({
+        where: {
+          coachID,
+          OR: [
+            { isActive: false },
+            { expiresAt: { lte: now } }
+          ],
+          paymentsReceived: 0
+        }
+      })
+    ]);
+
+    const totalAmountPaid = await this.prisma.paymentLink.aggregate({
+      where: {
+        coachID,
+        paymentsReceived: { gt: 0 }
+      },
+      _sum: { totalAmountReceived: true }
+    });
+
+    return {
+      total,
+      pending,
+      paid,
+      expired,
+      totalAmountPaid: Math.round((totalAmountPaid._sum.totalAmountReceived || 0) / 100),
+    };
+  }
+
+  private getPaymentRequestStatus(paymentLink: any): string {
+    if (paymentLink.paymentsReceived > 0) {
+      return 'paid';
+    }
+
+    if (!paymentLink.isActive || (paymentLink.expiresAt && new Date() > paymentLink.expiresAt)) {
+      return 'expired';
+    }
+
+    return 'pending';
+  }
 }

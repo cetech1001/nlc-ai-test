@@ -46,7 +46,7 @@ export const menuItems: MenuItemType[] = [
   },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
   { icon: HiUsers, label: "Community", path: "/community" },
-  { icon: HiCurrencyDollar, label: "Payment Requests", path: "/payments" },
+  { icon: HiCurrencyDollar, label: "Payment Requests", path: "/payment/requests" },
 ];
 
 export const settingsItems = [
