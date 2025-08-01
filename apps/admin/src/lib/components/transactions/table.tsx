@@ -1,5 +1,6 @@
 import { tableRenderers } from "@nlc-ai/shared";
 import {DataTableTransaction, TableColumn, TransactionWithDetails} from "@nlc-ai/types";
+import { formatCurrency } from "@nlc-ai/utils";
 
 export const transformTransactionData = (transactions: TransactionWithDetails[]): DataTableTransaction[] => {
   return transactions.map((transaction: TransactionWithDetails) => ({
@@ -7,7 +8,7 @@ export const transformTransactionData = (transactions: TransactionWithDetails[])
     coachName: transaction.coachName,
     coachEmail: transaction.coachEmail,
     planName: transaction.planName,
-    amount: transaction.amount,
+    amount: formatCurrency(transaction.amount),
     status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1),
     paymentMethod: transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
     transactionDate: new Date(transaction.transactionDate).toLocaleDateString('en-US', {
@@ -49,7 +50,7 @@ export const transactionColumns: TableColumn<DataTableTransaction>[] = [
     key: 'amount',
     header: 'Amount',
     width: `${colWidth * 0.7}%`,
-    render: (value: number) => tableRenderers.currencyText(value)
+    // render: (value: number) => tableRenderers.currencyText(value)
   },
   {
     key: 'status',

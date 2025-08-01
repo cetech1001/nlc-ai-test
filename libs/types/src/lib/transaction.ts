@@ -105,7 +105,7 @@ export interface DataTableTransaction {
   coachName?: string;
   coachEmail?: string;
   planName: string;
-  amount: number;
+  amount: string;
   status: string;
   paymentMethod: string;
   transactionDate: string;

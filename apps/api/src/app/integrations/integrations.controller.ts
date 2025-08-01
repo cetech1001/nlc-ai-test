@@ -4,7 +4,8 @@ import { IntegrationsService } from './integrations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserTypes } from '../auth/decorators/user-types.decorator';
 import { UserTypesGuard } from '../auth/guards/user-types.guard';
-import {type PlatformConnectionRequest, UserType} from "@nlc-ai/types";
+import {type AuthUser, type PlatformConnectionRequest, UserType} from "@nlc-ai/types";
+import {CurrentUser} from "../auth/decorators/current-user.decorator";
 
 @ApiTags('Integrations')
 @Controller('integrations')
@@ -18,22 +19,21 @@ export class IntegrationsController {
   @ApiOperation({ summary: 'Get all integrations for the authenticated coach' })
   @ApiResponse({ status: 200, description: 'Integrations retrieved successfully' })
   getIntegrations(@Request() req: { user: { id: string } }) {
-    return this.integrationsService.getIntegrations(req.user.id);
+    return this.integrationsService.getIntegrations(req.user.id, ['social', 'app', 'course']);
   }
 
   @Get('social')
   @ApiOperation({ summary: 'Get social media integrations only' })
   @ApiResponse({ status: 200, description: 'Social integrations retrieved successfully' })
   async getSocialIntegrations(@Request() req: { user: { id: string } }) {
-    const allIntegrations = await this.integrationsService.getIntegrations(req.user.id);
-    return allIntegrations.filter(integration => integration.integrationType === 'social');
+    return this.integrationsService.getIntegrations(req.user.id, ['social', 'app']);
   }
 
   @Get('courses')
   @ApiOperation({ summary: 'Get course platform integrations only' })
   @ApiResponse({ status: 200, description: 'Course integrations retrieved successfully' })
   async getCourseIntegrations(@Request() req: { user: { id: string } }) {
-    const allIntegrations = await this.integrationsService.getIntegrations(req.user.id);
+    const allIntegrations = await this.integrationsService.getIntegrations(req.user.id, ['course']);
     return allIntegrations.filter(integration => integration.integrationType === 'course');
   }
 
@@ -41,8 +41,7 @@ export class IntegrationsController {
   @ApiOperation({ summary: 'Get app integrations only (like Calendly)' })
   @ApiResponse({ status: 200, description: 'App integrations retrieved successfully' })
   async getAppIntegrations(@Request() req: { user: { id: string } }) {
-    const allIntegrations = await this.integrationsService.getIntegrations(req.user.id);
-    return allIntegrations.filter(integration => integration.integrationType === 'app');
+    return this.integrationsService.getIntegrations(req.user.id, ['app']);
   }
 
   @Post('connect/:platform')
@@ -288,5 +287,26 @@ export class IntegrationsController {
         ]
       },
     };
+  }
+
+  @Get('calendly')
+  @ApiOperation({ summary: 'Get Calendly integration for coach' })
+  @ApiResponse({ status: 200, description: 'Calendly integration retrieved successfully' })
+  async getCalendlyIntegration(@Request() req: { user: { id: string } }) {
+    return this.integrationsService.getCalendlyIntegration(req.user.id);
+  }
+
+  @Post('calendly/events')
+  @ApiOperation({ summary: 'Load Calendly events for coach' })
+  @ApiResponse({ status: 200, description: 'Calendly events loaded successfully' })
+  loadCalendlyEvents(
+    @CurrentUser() user: AuthUser,
+    @Body() body: { startDate: string; endDate: string }
+  ) {
+    return this.integrationsService.loadCalendlyEvents(
+      user.id,
+      new Date(body.startDate),
+      new Date(body.endDate)
+    );
   }
 }

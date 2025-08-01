@@ -509,12 +509,14 @@ export class IntegrationsService {
     return platform === 'calendly' ? 'app' : 'social';
   }
 
-  async getIntegrations(coachID: string): Promise<Integration[]> {
+  async getIntegrations(coachID: string, types: string[]): Promise<Integration[]> {
     try {
       const integrations = await this.prisma.integration.findMany({
         where: {
           coachID,
-          // integrationType: 'social',
+          integrationType: {
+            in: types,
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -523,7 +525,6 @@ export class IntegrationsService {
 
       return integrations.map(integration => ({
         ...integration,
-        // Don't expose sensitive tokens in the response
         accessToken: integration.accessToken ? '***' : null,
         refreshToken: integration.refreshToken ? '***' : null,
       }));
@@ -821,6 +822,124 @@ export class IntegrationsService {
     return integration;
   }
 
+  async getCalendlyIntegration(coachID: string) {
+    try {
+      const integration = await this.prisma.integration.findFirst({
+        where: {
+          coachID,
+          platformName: 'calendly',
+          integrationType: 'app',
+        },
+      });
+
+      if (!integration) {
+        return { isConnected: false };
+      }
+
+      // console.log("Integration: ", integration);
+
+      return {
+        isConnected: integration.isActive,
+        accessToken: integration.accessToken,
+        userUri: (integration.config as any)?.uri,
+        // organizationUri: (integration.config as any)?.organizationUri,
+        schedulingUrl: (integration.config as any)?.profileUrl,
+        userName: (integration.config as any)?.name,
+        // userEmail: (integration.config as any)?.userEmail,
+        lastSyncAt: integration.lastSyncAt,
+      };
+    } catch (error) {
+      return { isConnected: false };
+    }
+  }
+
+  async loadCalendlyEvents(coachID: string, startDate: Date, endDate: Date) {
+    const integration = await this.prisma.integration.findFirst({
+      where: {
+        coachID,
+        platformName: 'calendly',
+        integrationType: 'app',
+        isActive: true,
+      },
+    });
+
+    if (!integration || !integration.accessToken) {
+      throw new BadRequestException('Calendly not connected');
+    }
+
+    try {
+      const params = new URLSearchParams({
+        user: (integration.config as any)?.userUri,
+        status: 'active',
+        min_start_time: startDate.toISOString(),
+        max_start_time: endDate.toISOString(),
+      });
+
+      const response = await fetch(`https://api.calendly.com/scheduled_events?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${integration.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Calendly API error: ${response.statusText}`);
+      }
+
+      const data: any = await response.json();
+      const events = data.collection || [];
+
+      // Convert to calendar events format
+      const eventsByDay: Record<number, any[]> = {};
+
+      events.forEach((event: any) => {
+        const startDate = new Date(event.start_time);
+        const endDate = new Date(event.end_time);
+        const day = startDate.getDate();
+
+        const calendarEvent = {
+          title: event.name,
+          time: `${startDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })} - ${endDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })}`,
+          color: 'bg-fuchsia-600',
+          type: 'calendly',
+          calendlyUri: event.uri,
+          attendees: event.event_memberships?.map((m: any) => ({
+            name: m.user_name,
+            email: m.user_email
+          })) || [],
+          location: event.location?.location || event.location?.join_url || 'TBD',
+          status: event.status
+        };
+
+        if (!eventsByDay[day]) {
+          eventsByDay[day] = [];
+        }
+        eventsByDay[day].push(calendarEvent);
+      });
+
+      // Update last sync time
+      await this.prisma.integration.update({
+        where: { id: integration.id },
+        data: { lastSyncAt: new Date() },
+      });
+
+      return {
+        success: true,
+        events: eventsByDay,
+      };
+    } catch (error: any) {
+      throw new BadRequestException(`Failed to load Calendly events: ${error.message}`);
+    }
+  }
+
   private async exchangeCodeForToken(platform: string, code: string, config: SocialPlatformConfig): Promise<any> {
     let param = {};
 
@@ -840,7 +959,6 @@ export class IntegrationsService {
       code,
     });
 
-    console.log("Params: " + JSON.stringify(params));
     this.logger.log("Params: ", params);
 
     const response = await fetch(config.tokenUrl, {
@@ -889,7 +1007,6 @@ export class IntegrationsService {
 
     const response = await fetch(profileUrl, { headers });
 
-    console.log("Profile data: ", response);
 
     if (!response.ok) {
       const error = await response.text();

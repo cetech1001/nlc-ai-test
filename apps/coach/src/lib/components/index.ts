@@ -1,4 +1,5 @@
 export * from './billing';
+export * from './calendar';
 export * from './clients';
 export * from './content';
 export * from './home';
