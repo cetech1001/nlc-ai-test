@@ -1,10 +1,10 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import {PlanCard, DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/shared";
+import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/shared";
 import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
-import {CoachWithStatus, FilterValues, Plan, TransformedPlan} from "@nlc-ai/types";
+import {CoachWithStatus, FilterValues, Plan} from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/auth";
 import { Search } from "lucide-react";
 import {
@@ -14,37 +14,9 @@ import {
   emptyPaymentHistoryFilterValues,
   PaymentHistoryData,
   CurrentPlanCard,
-  CurrentPlanCardSkeleton, BillingTabs
+  BillingTabs, SubscriptionPlans
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
-
-const BillingSkeleton = () => {
-  return (
-    <div className="py-8 space-y-8">
-      <div className="h-8 bg-white/10 rounded animate-pulse"></div>
-
-      {/* Current Plan Skeleton */}
-      <CurrentPlanCardSkeleton />
-
-      {/* Plans Skeleton */}
-      <div className="space-y-6">
-        <div className="h-6 bg-white/10 rounded w-1/3 mx-auto"></div>
-        <div className="gap-4 grid grid-cols-1 mb-2 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-[linear-gradient(202deg,rgba(38,38,38,0.30)_11.62%,rgba(19,19,19,0.30)_87.57%)] rounded-[30px] border border-neutral-700 p-6 h-80 animate-pulse">
-              <div className="space-y-4">
-                <div className="h-6 bg-neutral-700 rounded"></div>
-                <div className="h-4 bg-neutral-700 rounded w-2/3"></div>
-                <div className="h-8 bg-neutral-700 rounded"></div>
-                <div className="h-10 bg-neutral-700 rounded"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function Billing() {
   const { user } = useAuth();
@@ -57,8 +29,9 @@ export default function Billing() {
   const [coach, setCoach] = useState<CoachWithStatus | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isPaymentHistoryLoading, setIsPaymentHistoryLoading] = useState(false);
+  const [isPlansLoading, setIsPlansLoading] = useState(true);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [isCoachLoading, setIsCoachLoading] = useState(true);
 
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
@@ -98,41 +71,55 @@ export default function Billing() {
   };
 
   useEffect(() => {
-    (async () => {
-      if (!user?.id) {
-        setError("User not found");
-        setIsLoading(false);
-        return;
+    if (user?.id) {
+      if (activeTab === 'history') {
+        (async () => {
+          await Promise.all([
+            fetchCoachData(),
+            fetchTransactions(),
+          ]);
+        })();
+      } else {
+        (() => fetchPlans())();
       }
-
-      try {
-        setIsLoading(true);
-        setError("");
-
-        const [coachData, plansData] = await Promise.all([
-          coachesAPI.getCoach(user.id),
-          plansAPI.getPlans(false)
-        ]);
-
-        setCoach(coachData);
-        setPlans(plansData);
-      } catch (err: any) {
-        setError(err.message || "Failed to load billing data");
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [user?.id]);
+    }
+  }, [user?.id, activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'history') {
-      (() => fetchTransactions())();
+    (() => fetchTransactions())();
+  }, [currentPage, searchQuery, filterValues]);
+
+  const fetchPlans = async () => {
+    try {
+      setIsPlansLoading(true);
+      setError("");
+
+      const plansData = await plansAPI.getPlans();
+      setPlans(plansData);
+    } catch (e: any) {
+      setError(e.message || 'Failed to fetch plans');
+    } finally {
+      setIsPlansLoading(false);
     }
-  }, [activeTab, currentPage, searchQuery, filterValues]);
+  }
+
+  const fetchCoachData = async () => {
+    try {
+      setIsCoachLoading(true);
+      setError("");
+
+      const coachData = await coachesAPI.getCoach(user?.id!);
+      setCoach(coachData);
+    } catch (e: any) {
+      setError(e.message || 'Failed to fetch coach subscription data');
+    } finally {
+      setIsCoachLoading(false);
+    }
+  }
 
   const fetchTransactions = async () => {
     try {
-      setIsPaymentHistoryLoading(true);
+      setIsHistoryLoading(true);
       setError("");
 
       const response = await transactionsAPI.getTransactions(
@@ -147,7 +134,7 @@ export default function Billing() {
     } catch (error: any) {
       setError(error.message || "Failed to load transactions");
     } finally {
-      setIsPaymentHistoryLoading(false);
+      setIsHistoryLoading(false);
     }
   };
 
@@ -195,26 +182,6 @@ export default function Billing() {
     setSuccessMessage("");
   };
 
-  if (isLoading) {
-    return <BillingSkeleton/>;
-  }
-
-  if (error && !coach) {
-    return (
-      <div className="py-8">
-        <AlertBanner type="error" message={error} onDismiss={clearError} />
-      </div>
-    );
-  }
-
-  if (!coach) {
-    return (
-      <div className="py-8">
-        <AlertBanner type="error" message="Coach data not found" onDismiss={clearError} />
-      </div>
-    );
-  }
-
   return (
     <div className={`flex flex-col ${ isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' }`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
@@ -229,30 +196,15 @@ export default function Billing() {
         <BillingTabs activeTab={activeTab} setActiveTab={handleTabChange}/>
 
         {activeTab === 'subscription' && (
-          plans.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-stone-400 text-lg mb-4">No subscription plans available</div>
-            </div>
-          ) : (
-            <div className="gap-4 grid grid-cols-1 mb-2 sm:grid-cols-2 xl:grid-cols-4">
-              {plans.map((plan) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  currentPlan={coach.subscriptions?.[0]?.plan}
-                  action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
-                  onActionClick={coach.subscriptions?.[0]?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
-                />
-              ))}
-            </div>
-          )
+          <SubscriptionPlans plans={plans} handleUpgrade={handleUpgrade} coach={coach} isLoading={isPlansLoading}/>
         )}
 
         {activeTab === 'history' && (
           <>
             <CurrentPlanCard
-              subscription={coach.subscriptions?.[0]}
+              subscription={coach?.subscriptions?.[0]}
               onChangePlan={handleChangePlan}
+              isLoading={isCoachLoading}
             />
 
             <PageHeader title="Billing History">
@@ -284,17 +236,17 @@ export default function Billing() {
               onRowAction={handlePaymentAction}
               emptyMessage="No payment history found matching your criteria"
               showMobileCards={true}
-              isLoading={isPaymentHistoryLoading}
+              isLoading={isHistoryLoading}
             />
 
             <Pagination
               totalPages={pagination.totalPages}
               currentPage={currentPage}
               setCurrentPage={setCurrentPage}
-              isLoading={isPaymentHistoryLoading}
+              isLoading={isHistoryLoading}
             />
 
-            {!isPaymentHistoryLoading && paymentHistory.length > 0 && (
+            {!isHistoryLoading && paymentHistory.length > 0 && (
               <MobilePagination pagination={pagination}/>
             )}
           </>

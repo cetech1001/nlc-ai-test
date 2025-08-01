@@ -1,28 +1,31 @@
 import {FC} from 'react';
 import {BillingCycle, Subscription} from "@nlc-ai/types";
-import {Button} from "@nlc-ai/ui";
+import {Button, Skeleton} from "@nlc-ai/ui";
 import { formatCurrency, toTitleCase } from '@nlc-ai/utils';
 
-export const CurrentPlanCardSkeleton: FC = () => {
+const CurrentPlanCardSkeleton: FC = () => {
   return (
-    <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden animate-pulse">
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
-      </div>
+    <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
+      <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
+      <div className="absolute w-64 h-64 right-20 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
 
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="h-6 bg-neutral-700 rounded w-32"></div>
-          <div className="h-10 bg-neutral-700 rounded w-28"></div>
+        <div className="mb-6">
+          <Skeleton className="h-8 w-32" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <div className="h-4 bg-neutral-700 rounded w-20"></div>
-              <div className="h-5 bg-neutral-700 rounded w-24"></div>
-            </div>
-          ))}
+        <div className="flex justify-between">
+          <div className="grid grid-cols-1 sm:grid-cols-7 w-full gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-1">
+            <Skeleton className="h-10 w-28 rounded-lg hidden sm:block" />
+          </div>
         </div>
       </div>
     </div>
@@ -32,12 +35,18 @@ export const CurrentPlanCardSkeleton: FC = () => {
 interface IProps {
   subscription?: Subscription;
   onChangePlan?: () => void;
+  isLoading?: boolean;
 }
 
 export const CurrentPlanCard: FC<IProps> = ({
   subscription,
   onChangePlan,
+  isLoading,
 }) => {
+  if (isLoading) {
+    return <CurrentPlanCardSkeleton/>
+  }
+
   return (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
       <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
@@ -84,6 +93,7 @@ export const CurrentPlanCard: FC<IProps> = ({
           </div>
           <div className="space-y-1">
             <Button
+              onClick={onChangePlan}
               className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex'}
             >
               Change Plan

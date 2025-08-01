@@ -24,7 +24,7 @@ import {CurrentUser} from "../auth/decorators/current-user.decorator";
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
-  @UserTypes(UserType.coach)
+  @UserTypes(UserType.admin, UserType.coach)
   @Get()
   @ApiOperation({ summary: 'Get all transactions with pagination and filters' })
   @ApiResponse({ status: 200, description: 'Transactions retrieved successfully' })
