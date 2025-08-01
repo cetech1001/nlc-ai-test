@@ -3,3 +3,4 @@ export * from './current-plan-card';
 export * from './filters';
 export * from './payment-request-card';
 export * from './subscription-plans';
+export * from './table';

@@ -1,5 +1,6 @@
 import {TableProps} from "@nlc-ai/types";
 import {DataTableSkeleton} from "../skeletons";
+import { formatCurrency } from "@nlc-ai/utils";
 
 export const DataTable = <T,>(props: TableProps<T>) => {
   if (props.isLoading) {
@@ -240,13 +241,6 @@ export const DataTable = <T,>(props: TableProps<T>) => {
       </div>
     </div>
   );
-};
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
 };
 
 export const tableRenderers = {

@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/shared";
 import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/api-client";
 import { AlertBanner } from '@nlc-ai/ui';
-import {CoachWithStatus, FilterValues, Plan} from "@nlc-ai/types";
+import {CoachWithStatus, FilterValues, Plan, TransactionWithDetails} from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/auth";
 import { Search } from "lucide-react";
 import {
@@ -38,7 +38,7 @@ export default function Billing() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryData[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<TransactionWithDetails[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyPaymentHistoryFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -129,7 +129,7 @@ export default function Billing() {
         searchQuery
       );
 
-      setPaymentHistory(transformPaymentHistoryData(response.data));
+      setPaymentHistory(response.data);
       setPagination(response.pagination);
     } catch (error: any) {
       setError(error.message || "Failed to load transactions");
@@ -232,7 +232,7 @@ export default function Billing() {
 
             <DataTable
               columns={paymentHistoryColumns}
-              data={paymentHistory}
+              data={transformPaymentHistoryData(paymentHistory)}
               onRowAction={handlePaymentAction}
               emptyMessage="No payment history found matching your criteria"
               showMobileCards={true}

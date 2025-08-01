@@ -1,5 +1,4 @@
-import { tableRenderers } from "@nlc-ai/shared";
-import {TableColumn, FilterConfig} from "@nlc-ai/types";
+import {FilterConfig} from "@nlc-ai/types";
 
 export interface PaymentHistoryData {
   id: string;
@@ -23,7 +22,7 @@ export const emptyPaymentHistoryFilterValues: PaymentHistoryFilterValues = {
   dateRange: ''
 };
 
-export const transformPaymentHistoryData = (payments: any[]): PaymentHistoryData[] => {
+/*export const transformPaymentHistoryData = (payments: any[]): PaymentHistoryData[] => {
   return payments.map((payment: any) => ({
     id: payment.id,
     invoiceNumber: `#${payment.id}`,
@@ -81,7 +80,7 @@ export const paymentHistoryColumns: TableColumn<PaymentHistoryData>[] = [
       return tableRenderers.actions('Download', row, 'download', onAction);
     }
   }
-];
+];*/
 
 export const paymentHistoryFilters: FilterConfig[] = [
   {

@@ -1,11 +1,10 @@
 import { tableRenderers } from "@nlc-ai/shared";
 import {DataTableTransaction, TableColumn, TransactionWithDetails} from "@nlc-ai/types";
 
-export const transformTransactionData = (transactions: TransactionWithDetails[]): DataTableTransaction[] => {
+export const transformPaymentHistoryData = (transactions: TransactionWithDetails[]): DataTableTransaction[] => {
   return transactions.map((transaction: TransactionWithDetails) => ({
     id: transaction.id,
-    coachName: transaction.coachName,
-    coachEmail: transaction.coachEmail,
+    invoiceNumber: transaction.invoiceNumber,
     planName: transaction.planName,
     amount: transaction.amount,
     status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1),
@@ -15,29 +14,22 @@ export const transformTransactionData = (transactions: TransactionWithDetails[])
       day: 'numeric',
       year: 'numeric'
     }),
-    invoiceNumber: transaction.invoiceNumber,
   }));
 };
 
-const colWidth = 100 / 8;
-export const transactionColumns: TableColumn<DataTableTransaction>[] = [
+const colWidth = 100 / 7;
+export const paymentHistoryColumns: TableColumn<DataTableTransaction>[] = [
   {
     key: 'id',
     header: 'Transaction ID',
-    width: `${colWidth * 0.8}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 12)
-  },
-  {
-    key: 'coachName',
-    header: 'Coach Name',
     width: `${colWidth}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 18)
+    // render: (value: string) => tableRenderers.truncateText(value, 12)
   },
   {
-    key: 'coachEmail',
-    header: 'Email',
-    width: `${colWidth * 1.2}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 22)
+    key: 'invoiceNumber',
+    header: 'Invoice #',
+    width: `${colWidth}%`,
+    render: (value: string) => tableRenderers.truncateText(value, 12)
   },
   {
     key: 'planName',
