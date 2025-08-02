@@ -1,3 +1,4 @@
+/*
 import {Controller, Get, Post, Body, UseGuards, Request, Delete, Param, Put, BadRequestException} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { IntegrationsService } from './integrations.service';
@@ -308,5 +309,149 @@ export class IntegrationsController {
       new Date(body.startDate),
       new Date(body.endDate)
     );
+  }
+}
+*/
+
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Post, Query, Res,
+  UseGuards
+} from "@nestjs/common";
+import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
+import {IntegrationFactory} from "./factories/integration.factory";
+import {PrismaService} from "../prisma/prisma.service";
+import {CurrentUser} from "../auth/decorators/current-user.decorator";
+import type {AuthUser, Integration} from "@nlc-ai/types";
+import type {Response} from "express"
+import {oauthError} from "./templates/oauth-error";
+import {oauthSuccess} from "./templates/oauth-success";
+import { Public } from "../auth/decorators/public.decorator";
+import {StateTokenService} from "./services/state-token.service";
+
+@Controller('integrations')
+@UseGuards(JwtAuthGuard)
+export class IntegrationsController {
+  constructor(
+    private readonly integrationFactory: IntegrationFactory,
+    private readonly prisma: PrismaService,
+    private readonly stateTokenService: StateTokenService,
+  ) {}
+
+  @Post('connect/:platform')
+  async connectPlatform(
+    @CurrentUser() user: AuthUser,
+    @Param('platform') platform: string,
+    @Body() credentials: any,
+  ) {
+    const provider = this.integrationFactory.getProvider(platform);
+    return provider.connect(user.id, credentials);
+  }
+
+  @Get('auth/:platform/url')
+  async getAuthUrl(
+    @CurrentUser() user: AuthUser,
+    @Param('platform') platform: string,
+  ) {
+    const provider = this.integrationFactory.getProvider(platform);
+
+    if (!provider.getAuthUrl) {
+      throw new BadRequestException(`${platform} doesn't support OAuth flow`);
+    }
+
+    return provider.getAuthUrl(user.id);
+  }
+
+  @Post(':id/test')
+  async testIntegration(
+    @CurrentUser() user: AuthUser,
+    @Param('id') integrationID: string,
+  ) {
+    const integration = await this.findUserIntegration(user.id, integrationID);
+    const provider = this.integrationFactory.getProvider(integration.platformName);
+    return provider.test(integration);
+  }
+
+  @Post(':id/sync')
+  async syncIntegration(
+    @CurrentUser() user: AuthUser,
+    @Param('id') integrationID: string,
+  ) {
+    const integration = await this.findUserIntegration(user.id, integrationID);
+    const provider = this.integrationFactory.getProvider(integration.platformName);
+    return provider.sync(integration);
+  }
+
+  @Delete(':id')
+  async disconnectIntegration(
+    @CurrentUser() user: AuthUser,
+    @Param('id') integrationID: string,
+  ) {
+    const integration = await this.findUserIntegration(user.id, integrationID);
+    const provider = this.integrationFactory.getProvider(integration.platformName);
+    await provider.disconnect(integration);
+    return { success: true, message: 'Integration disconnected' };
+  }
+
+  @Get('auth/:platform/callback')
+  @Public()
+  async handlePlatformCallback(
+    @Res() res: Response,
+    @Param('platform') platform: string,
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error?: string,
+    @Query('error_description') errorDescription?: string,
+  ) {
+    if (error) {
+      return this.sendOAuthError(res, platform, errorDescription || error);
+    }
+
+    if (!code || !state) {
+      return this.sendOAuthError(res, platform, 'Missing authorization code or state parameter');
+    }
+
+    try {
+      const { coachID, platform: statePlatform } = this.stateTokenService.verifyState(state);
+
+      if (statePlatform !== platform) {
+        throw new Error('Platform mismatch in state verification');
+      }
+
+      const provider = this.integrationFactory.getProvider(platform);
+      const integration = await provider.handleCallback?.(coachID, code, state);
+
+      this.sendOAuthSuccess(res, platform, integration!);
+    } catch (error: any) {
+      this.sendOAuthError(res, platform, error.message);
+    }
+  }
+
+  private sendOAuthSuccess(res: Response, platform: string, integration: Integration) {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(oauthSuccess(platform, integration));
+  }
+
+  private sendOAuthError(res: Response, platform: string, errorMessage: string) {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(oauthError(errorMessage, platform));
+  }
+
+  private async findUserIntegration(coachID: string, integrationID: string) {
+    const integration = await this.prisma.integration.findFirst({
+      where: { id: integrationID, coachID },
+    });
+
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
+    }
+
+    return integration;
   }
 }

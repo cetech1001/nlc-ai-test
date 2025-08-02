@@ -27,7 +27,6 @@ export interface PlatformConnectionRequest {
   refreshToken?: string;
   profileData?: any;
   tokenExpiresAt?: string;
-  // Course platform specific fields
   apiKey?: string;
   subdomain?: string;
   schoolUrl?: string;
@@ -35,4 +34,54 @@ export interface PlatformConnectionRequest {
   zapierApiKey?: string;
   clientId?: string;
   clientSecret?: string;
+}
+
+export interface IntegrationProvider {
+  platformName: string;
+  integrationType: 'social' | 'course' | 'app';
+  authType: 'oauth' | 'api_key' | 'webhook';
+
+  connect(coachID: string, credentials: any): Promise<Integration>;
+  test(integration: Integration): Promise<TestResult>;
+  sync(integration: Integration): Promise<SyncResult>;
+  disconnect(integration: Integration): Promise<void>;
+  refreshToken?(integration: Integration): Promise<string>;
+  getAuthUrl?(coachID: string): Promise<{ authUrl: string; state: string }>;
+  handleCallback?(coachID: string, code: string, state: string): Promise<Integration>;
+}
+
+export interface CreateIntegrationData {
+  coachID: string;
+  integrationType: string;
+  platformName: string;
+  accessToken: string;
+  refreshToken?: string;
+  tokenExpiresAt?: Date;
+  config: any;
+  syncSettings: any;
+  isActive: boolean;
+}
+
+export interface TestResult {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+export interface SyncResult {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+export enum INTEGRATION_TYPE {
+  social = 'social',
+  course = 'course',
+  app = 'app',
+}
+
+export interface OAuthCredentials {
+  accessToken: string;
+  refreshToken?: string;
+  tokenExpiresAt?: Date;
 }
