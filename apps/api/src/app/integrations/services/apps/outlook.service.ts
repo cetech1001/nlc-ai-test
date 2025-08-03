@@ -1,10 +1,10 @@
 import {Injectable} from "@nestjs/common";
+import {BaseIntegrationService} from "../base-integration.service";
 import {Integration, OAuthCredentials, SyncResult, TestResult} from "@nlc-ai/types";
-import {BaseIntegrationService} from "./base-integration.service";
 
 @Injectable()
-export class GmailService extends BaseIntegrationService {
-  platformName = 'gmail';
+export class OutlookService extends BaseIntegrationService {
+  platformName = 'outlook';
   integrationType = 'app' as const;
   authType = 'oauth' as const;
 
@@ -19,16 +19,15 @@ export class GmailService extends BaseIntegrationService {
       refreshToken: credentials.refreshToken,
       tokenExpiresAt: credentials.tokenExpiresAt,
       config: {
-        emailAddress: profile.email,
-        name: profile.name,
-        picture: profile.picture,
+        emailAddress: profile.mail || profile.userPrincipalName,
+        name: profile.displayName,
         isPrimary: await this.isFirstEmailAccount(coachID),
       },
       syncSettings: {
         autoSync: true,
         syncFrequency: 'hourly',
         syncEmails: true,
-        syncSent: true,
+        syncCalendar: true,
       },
       isActive: true,
     });
@@ -37,22 +36,17 @@ export class GmailService extends BaseIntegrationService {
   async test(integration: Integration): Promise<TestResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      const validToken = await this.tokenService.ensureValidToken(integration, accessToken);
-
-      await this.getEmailProfile(validToken);
-      return { success: true, message: 'Gmail connection working' };
+      await this.getEmailProfile(accessToken);
+      return { success: true, message: 'Outlook connection working' };
     } catch (error: any) {
-      return { success: false, message: `Gmail test failed: ${error.message}` };
+      return { success: false, message: `Outlook test failed: ${error.message}` };
     }
   }
 
   async sync(integration: Integration): Promise<SyncResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      const validToken = await this.tokenService.ensureValidToken(integration, accessToken);
-
-      const emails = await this.fetchRecentEmails(validToken);
-      const threads = await this.fetchEmailThreads(validToken);
+      const emails = await this.fetchRecentEmails(accessToken);
 
       await this.prisma.integration.update({
         where: { id: integration.id },
@@ -60,7 +54,6 @@ export class GmailService extends BaseIntegrationService {
           config: {
             ...integration.config,
             emailCount: emails.length,
-            threadCount: threads.length,
             lastSync: new Date().toISOString(),
           },
           lastSyncAt: new Date(),
@@ -69,11 +62,11 @@ export class GmailService extends BaseIntegrationService {
 
       return {
         success: true,
-        message: 'Gmail synced successfully',
-        data: { emailCount: emails.length, threadCount: threads.length },
+        message: 'Outlook synced successfully',
+        data: { emailCount: emails.length },
       };
     } catch (error: any) {
-      return { success: false, message: `Gmail sync failed: ${error.message}` };
+      return { success: false, message: `Outlook sync failed: ${error.message}` };
     }
   }
 
@@ -81,22 +74,19 @@ export class GmailService extends BaseIntegrationService {
     const state = this.stateTokenService.generateState(coachID, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
+      client_id: this.configService.get('MICROSOFT_CLIENT_ID', ''),
       scope: [
-        'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/gmail.send',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile'
+        'https://graph.microsoft.com/Mail.Read',
+        'https://graph.microsoft.com/Mail.Send',
+        'https://graph.microsoft.com/User.Read'
       ].join(' '),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/gmail/callback`,
+      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/outlook/callback`,
       response_type: 'code',
-      access_type: 'offline',
-      prompt: 'consent',
       state,
     });
 
     return {
-      authUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+      authUrl: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}`,
       state,
     };
   }
@@ -108,14 +98,15 @@ export class GmailService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
-      client_secret: this.configService.get('GOOGLE_CLIENT_SECRET', ''),
+      client_id: this.configService.get('MICROSOFT_CLIENT_ID', ''),
+      client_secret: this.configService.get('MICROSOFT_CLIENT_SECRET', ''),
+      scope: 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read',
       code,
+      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/outlook/callback`,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/gmail/callback`,
     });
 
-    const response = await fetch('https://oauth2.googleapis.com/token', {
+    const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
@@ -131,26 +122,18 @@ export class GmailService extends BaseIntegrationService {
   }
 
   private async getEmailProfile(accessToken: string): Promise<any> {
-    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    const response = await fetch('https://graph.microsoft.com/v1.0/me', {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
     return response.json();
   }
 
   private async fetchRecentEmails(accessToken: string) {
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50', {
+    const response = await fetch('https://graph.microsoft.com/v1.0/me/messages?$top=50', {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
     const data: any = await response.json();
-    return data.messages || [];
-  }
-
-  private async fetchEmailThreads(accessToken: string) {
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/threads?maxResults=50', {
-      headers: { 'Authorization': `Bearer ${accessToken}` },
-    });
-    const data: any = await response.json();
-    return data.threads || [];
+    return data.value || [];
   }
 
   private async isFirstEmailAccount(coachID: string): Promise<boolean> {

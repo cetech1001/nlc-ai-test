@@ -1,6 +1,15 @@
-import {YoutubeService} from "../services/youtube.service";
 import {BadRequestException, Injectable} from "@nestjs/common";
 import {INTEGRATION_TYPE, IntegrationProvider} from "@nlc-ai/types";
+
+import {YoutubeService} from "../services/social/youtube.service";
+import {FacebookService} from "../services/social/facebook.service";
+import {InstagramService} from "../services/social/instagram.service";
+import {TwitterService} from "../services/social/twitter.service";
+import {TiktokService} from "../services/social/tiktok.service";
+import {LinkedinService} from "../services/social/linkedin.service";
+import {CalendlyService} from "../services/apps/calendly.service";
+import {GmailService} from "../services/apps/gmail.service";
+import {OutlookService} from "../services/apps/outlook.service";
 
 @Injectable()
 export class IntegrationFactory {
@@ -8,16 +17,29 @@ export class IntegrationFactory {
 
   constructor(
     private readonly youtubeService: YoutubeService,
-    // private readonly facebookService: FacebookIntegrationService,
-    // private readonly skoolService: SkoolIntegrationService,
+    private readonly facebookService: FacebookService,
+    private readonly instagramService: InstagramService,
+    private readonly twitterService: TwitterService,
+    private readonly tiktokService: TiktokService,
+    private readonly linkedinService: LinkedinService,
+    private readonly calendlyService: CalendlyService,
+    private readonly gmailService: GmailService,
+    private readonly outlookService: OutlookService,
   ) {
     this.registerProviders();
   }
 
   private registerProviders() {
     this.providers.set('youtube', this.youtubeService);
-    // this.providers.set('facebook', this.facebookService);
-    // this.providers.set('skool', this.skoolService);
+    this.providers.set('facebook', this.facebookService);
+    this.providers.set('instagram', this.instagramService);
+    this.providers.set('twitter', this.twitterService);
+    this.providers.set('tiktok', this.tiktokService);
+    this.providers.set('linkedin', this.linkedinService);
+
+    this.providers.set('calendly', this.calendlyService);
+    this.providers.set('gmail', this.gmailService);
+    this.providers.set('outlook', this.outlookService);
   }
 
   getProvider(platform: string): IntegrationProvider {
@@ -35,5 +57,17 @@ export class IntegrationFactory {
 
   getSupportedPlatforms(): string[] {
     return Array.from(this.providers.keys());
+  }
+
+  getSocialPlatforms(): string[] {
+    return this.getProvidersByType(INTEGRATION_TYPE.social).map(provider => provider.platformName);
+  }
+
+  getAppPlatforms(): string[] {
+    return this.getProvidersByType(INTEGRATION_TYPE.app).map(provider => provider.platformName);
+  }
+
+  getCoursePlatforms(): string[] {
+    return this.getProvidersByType(INTEGRATION_TYPE.course).map(provider => provider.platformName);
   }
 }

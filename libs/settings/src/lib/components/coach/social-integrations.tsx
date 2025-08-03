@@ -7,100 +7,121 @@ import {
   Plus,
   LinkIcon,
   Mail,
-  Star,
   RefreshCw,
-  AlertCircle,
 } from 'lucide-react';
-import { SocialIntegration, SocialPlatform, SocialPlatformConfig, CalendlyIntegration } from '../../types/settings.types';
 import { useSettings } from '../../context/settings.context';
-import { integrationsAPI, emailAccountsAPI, EmailAccountResponse } from '@nlc-ai/api-client';
+import { integrationsAPI } from '@nlc-ai/api-client';
 import { SocialIntegrationsSkeleton } from '../skeletons';
 
-interface SocialIntegrationsProps {
-  onConnectSocial: (platform: SocialPlatform, authData: any) => Promise<SocialIntegration>;
-  onDisconnectSocial: (integrationID: string) => Promise<void>;
-  onTestSocial: (integrationID: string) => Promise<void>;
-  onSaveCalendly: (accessToken: string) => Promise<any>;
-  onDeleteCalendly: () => Promise<any>;
-  onTestCalendly: () => Promise<void>;
-  getSocialIntegrations: () => Promise<SocialIntegration[]>;
-  getCalendlySettings: () => Promise<CalendlyIntegration>;
+interface IntegrationData {
+  id: string;
+  platformName: string;
+  integrationType: 'social' | 'app' | 'course';
+  isActive: boolean;
+  config?: any;
+  lastSyncAt?: Date;
+  syncError?: string;
+  createdAt: Date;
 }
 
-const socialPlatforms: Record<SocialPlatform, SocialPlatformConfig> = {
+interface SocialIntegrationsProps {
+  // Keep these for backward compatibility, but they won't be used much
+  onConnectSocial?: (platform: string, authData: any) => Promise<any>;
+  onDisconnectSocial?: (integrationID: string) => Promise<void>;
+  onTestSocial?: (integrationID: string) => Promise<void>;
+  getSocialIntegrations?: () => Promise<any[]>;
+}
+
+const socialPlatforms = {
   facebook: {
     name: 'Facebook',
-    icon: <img src={"/images/icons/facebook-icon.png"} alt={"Facebook Icon"} className="w-full h-full object-contain"/>,
-    color: '',
+    icon: <img src="/images/icons/facebook-icon.png" alt="Facebook Icon" className="w-full h-full object-contain"/>,
+    type: 'social' as const,
   },
   instagram: {
     name: 'Instagram',
-    icon: <img src={"/images/icons/instagram-icon.png"} alt={"Instagram Icon"} className="w-full h-full object-contain"/>,
-    color: '',
+    icon: <img src="/images/icons/instagram-icon.png" alt="Instagram Icon" className="w-full h-full object-contain"/>,
+    type: 'social' as const,
   },
   youtube: {
     name: 'YouTube',
-    icon: <img src={"/images/icons/youtube-icon.svg"} alt={"YouTube Icon"} className="w-full h-full object-contain"/>,
-    color: '',
+    icon: <img src="/images/icons/youtube-icon.svg" alt="YouTube Icon" className="w-full h-full object-contain"/>,
+    type: 'social' as const,
   },
   twitter: {
     name: 'X (Twitter)',
-    icon: <img src={"/images/icons/twitter-icon.svg"} alt={"X (Twitter) Icon"} className="w-full h-full object-contain"/>,
-    color: '',
+    icon: <img src="/images/icons/twitter-icon.svg" alt="X Icon" className="w-full h-full object-contain"/>,
+    type: 'social' as const,
   },
   tiktok: {
     name: 'TikTok',
-    icon: <img src={"/images/icons/tiktok-icon.png"} alt={"TikTok Icon"} className="w-full h-full object-contain"/>,
-    color: '',
+    icon: <img src="/images/icons/tiktok-icon.png" alt="TikTok Icon" className="w-full h-full object-contain"/>,
+    type: 'social' as const,
   },
   linkedin: {
     name: 'LinkedIn',
-    icon: <img src={"/images/icons/linkedin-icon.svg"} alt={"Linkedin Icon"} className="w-full h-full object-contain"/>,
-    color: '',
+    icon: <img src="/images/icons/linkedin-icon.svg" alt="LinkedIn Icon" className="w-full h-full object-contain"/>,
+    type: 'social' as const,
   },
+};
+
+const appPlatforms = {
   calendly: {
     name: 'Calendly',
-    icon: <img src={"/images/icons/calendly-icon.png"} alt={"Calendly Icon"} className="w-full h-full object-contain"/>,
-    color: '',
+    icon: <img src="/images/icons/calendly-icon.png" alt="Calendly Icon" className="w-full h-full object-contain"/>,
+    description: 'Schedule meetings and sync calendar events',
+    type: 'app' as const,
   },
-};
-
-const emailProviders = {
-  google: {
+  gmail: {
     name: 'Gmail',
-    icon: <img src={"/images/icons/gmail-icon.png"} alt={"Gmail Icon"} className="w-full h-full object-contain"/>,
+    icon: <img src="/images/icons/gmail-icon.png" alt="Gmail Icon" className="w-full h-full object-contain"/>,
     description: 'Connect your Gmail account to read and send emails',
+    type: 'app' as const,
   },
-  microsoft: {
+  outlook: {
     name: 'Outlook',
-    icon: <img src={"/images/icons/outlook-icon.png"} alt={"Outlook Icon"} className="w-full h-full object-contain"/>,
+    icon: <img src="/images/icons/outlook-icon.png" alt="Outlook Icon" className="w-full h-full object-contain"/>,
     description: 'Connect your Outlook account to read and send emails',
+    type: 'app' as const,
   },
 };
 
-export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
-  onConnectSocial,
-  onDisconnectSocial,
-  onTestSocial,
-  getSocialIntegrations,
-}) => {
+export const SocialIntegrations: React.FC<SocialIntegrationsProps> = () => {
   const { setError, setSuccess } = useSettings();
 
-  const [socialIntegrations, setSocialIntegrations] = useState<SocialIntegration[]>([]);
-  const [emailAccounts, setEmailAccounts] = useState<EmailAccountResponse[]>([]);
+  const [socialIntegrations, setSocialIntegrations] = useState<IntegrationData[]>([]);
+  const [appIntegrations, setAppIntegrations] = useState<IntegrationData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [supportedPlatforms, setSupportedPlatforms] = useState<{
+    social: string[];
+    app: string[];
+    course: string[];
+    all: string[];
+  }>({ social: [], app: [], course: [], all: [] });
 
   useEffect(() => {
     loadIntegrations();
-    loadEmailAccounts();
+    loadSupportedPlatforms();
   }, []);
+
+  const loadSupportedPlatforms = async () => {
+    try {
+      const platforms = await integrationsAPI.getSupportedPlatforms();
+      setSupportedPlatforms(platforms);
+    } catch (error: any) {
+      console.error('Failed to load supported platforms:', error);
+    }
+  };
 
   const loadIntegrations = async () => {
     try {
       setIsLoading(true);
-      const socialData = await getSocialIntegrations();
+      const [socialData, appData] = await Promise.all([
+        integrationsAPI.getSocialIntegrations(),
+        integrationsAPI.getAppIntegrations(),
+      ]);
       setSocialIntegrations(socialData);
+      setAppIntegrations(appData);
     } catch (error: any) {
       setError('Failed to load integrations');
     } finally {
@@ -108,95 +129,63 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
     }
   };
 
-  const loadEmailAccounts = async () => {
-    try {
-      setIsEmailLoading(true);
-      const emailData = await emailAccountsAPI.getEmailAccounts();
-      setEmailAccounts(emailData);
-    } catch (error: any) {
-      setError('Failed to load email accounts');
-    } finally {
-      setIsEmailLoading(false);
-    }
-  };
-
-  const handleSocialConnect = async (platform: SocialPlatform) => {
+  const handleConnect = async (platform: string, type: 'social' | 'app') => {
     try {
       setIsLoading(true);
 
-      // Use the real OAuth flow
+      // Use the OAuth flow for most platforms
       await integrationsAPI.initiateOAuthFlow(platform);
 
       // Refresh integrations after successful connection
-      const updatedIntegrations = await getSocialIntegrations();
-      setSocialIntegrations(updatedIntegrations);
+      await loadIntegrations();
 
-      setSuccess(`${socialPlatforms[platform].name} connected successfully!`);
+      const platformConfig = type === 'social' ? socialPlatforms[platform as keyof typeof socialPlatforms] : appPlatforms[platform as keyof typeof appPlatforms];
+      setSuccess(`${platformConfig?.name || platform} connected successfully!`);
     } catch (error: any) {
-      setError(`Failed to connect ${socialPlatforms[platform].name}: ${error.message}`);
+      const platformConfig = type === 'social' ? socialPlatforms[platform as keyof typeof socialPlatforms] : appPlatforms[platform as keyof typeof appPlatforms];
+      setError(`Failed to connect ${platformConfig?.name || platform}: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEmailConnect = async (provider: string) => {
-    try {
-      setIsEmailLoading(true);
+  const handleDisconnect = async (integration: IntegrationData) => {
+    const platformConfig = integration.integrationType === 'social'
+      ? socialPlatforms[integration.platformName as keyof typeof socialPlatforms]
+      : appPlatforms[integration.platformName as keyof typeof appPlatforms];
 
-      // Use the email OAuth flow
-      await emailAccountsAPI.initiateEmailOAuthFlow(provider);
-
-      // Refresh email accounts after successful connection
-      const updatedEmailAccounts = await emailAccountsAPI.getEmailAccounts();
-      setEmailAccounts(updatedEmailAccounts);
-
-      setSuccess(`${emailProviders[provider as keyof typeof emailProviders].name} connected successfully!`);
-    } catch (error: any) {
-      setError(`Failed to connect ${emailProviders[provider as keyof typeof emailProviders].name}: ${error.message}`);
-    } finally {
-      setIsEmailLoading(false);
-    }
-  };
-
-  const handleSocialDisconnect = async (integration: SocialIntegration) => {
-    if (!confirm(`Are you sure you want to disconnect ${integration.platformName}? This will stop content syncing.`)) {
+    if (!confirm(`Are you sure you want to disconnect ${platformConfig?.name || integration.platformName}? This will stop data syncing.`)) {
       return;
     }
 
     try {
       setIsLoading(true);
-      await onDisconnectSocial(integration.id);
-      setSocialIntegrations(prev => prev.filter(i => i.id !== integration.id));
-      setSuccess(`${integration.platformName} disconnected successfully`);
+      await integrationsAPI.disconnectIntegration(integration.id);
+
+      if (integration.integrationType === 'social') {
+        setSocialIntegrations(prev => prev.filter(i => i.id !== integration.id));
+      } else {
+        setAppIntegrations(prev => prev.filter(i => i.id !== integration.id));
+      }
+
+      setSuccess(`${platformConfig?.name || integration.platformName} disconnected successfully`);
     } catch (error: any) {
-      setError(`Failed to disconnect ${integration.platformName}: ${error.message}`);
+      setError(`Failed to disconnect ${platformConfig?.name || integration.platformName}: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEmailDisconnect = async (emailAccount: EmailAccountResponse) => {
-    if (!confirm(`Are you sure you want to disconnect ${emailAccount.emailAddress}? This will stop email syncing.`)) {
-      return;
-    }
-
-    try {
-      setIsEmailLoading(true);
-      await emailAccountsAPI.disconnectEmailAccount(emailAccount.id);
-      setEmailAccounts(prev => prev.filter(acc => acc.id !== emailAccount.id));
-      setSuccess(`${emailAccount.emailAddress} disconnected successfully`);
-    } catch (error: any) {
-      setError(`Failed to disconnect ${emailAccount.emailAddress}: ${error.message}`);
-    } finally {
-      setIsEmailLoading(false);
-    }
-  };
-
-  const handleTestSocial = async (integration: SocialIntegration) => {
+  const handleTest = async (integration: IntegrationData) => {
     try {
       setIsLoading(true);
-      await onTestSocial(integration.id);
-      setSuccess(`${integration.platformName} connection test successful!`);
+      const result = await integrationsAPI.testIntegration(integration.id);
+
+      if (result.success) {
+        setSuccess(`${integration.platformName} connection test successful!`);
+      } else {
+        setError(`${integration.platformName} connection test failed: ${result.message}`);
+      }
     } catch (error: any) {
       setError(`${integration.platformName} connection test failed: ${error.message}`);
     } finally {
@@ -204,78 +193,150 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
     }
   };
 
-  const handleTestEmail = async (emailAccount: EmailAccountResponse) => {
+  const handleSync = async (integration: IntegrationData) => {
     try {
-      setIsEmailLoading(true);
-      const result = await emailAccountsAPI.testEmailAccount(emailAccount.id);
+      setIsLoading(true);
+      const result = await integrationsAPI.syncIntegration(integration.id);
+
       if (result.success) {
-        setSuccess(`${emailAccount.emailAddress} connection test successful!`);
+        setSuccess(`${integration.platformName} synced successfully!`);
+        await loadIntegrations(); // Refresh to get updated sync time
       } else {
-        setError(`${emailAccount.emailAddress} connection test failed: ${result.message}`);
+        setError(`Failed to sync ${integration.platformName}: ${result.message}`);
       }
     } catch (error: any) {
-      setError(`${emailAccount.emailAddress} connection test failed: ${error.message}`);
+      setError(`Failed to sync ${integration.platformName}: ${error.message}`);
     } finally {
-      setIsEmailLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSetPrimaryEmail = async (emailAccount: EmailAccountResponse) => {
-    try {
-      setIsEmailLoading(true);
-      await emailAccountsAPI.setPrimaryEmailAccount(emailAccount.id);
-
-      // Update local state
-      setEmailAccounts(prev => prev.map(acc => ({
-        ...acc,
-        isPrimary: acc.id === emailAccount.id
-      })));
-
-      setSuccess(`${emailAccount.emailAddress} set as primary email account`);
-    } catch (error: any) {
-      setError(`Failed to set primary email: ${error.message}`);
-    } finally {
-      setIsEmailLoading(false);
-    }
+  const getConnectedPlatforms = (type: 'social' | 'app') => {
+    const integrations = type === 'social' ? socialIntegrations : appIntegrations;
+    return integrations.map(integration => integration.platformName);
   };
 
-  const handleSyncEmail = async (emailAccount: EmailAccountResponse) => {
-    try {
-      setIsEmailLoading(true);
-      const result = await emailAccountsAPI.syncEmailAccount(emailAccount.id);
-      if (result.success) {
-        setSuccess(`${emailAccount.emailAddress} synced successfully!`);
-        // Refresh email accounts to get updated sync time
-        await loadEmailAccounts();
-      } else {
-        setError(`Failed to sync ${emailAccount.emailAddress}: ${result.message}`);
-      }
-    } catch (error: any) {
-      setError(`Failed to sync ${emailAccount.emailAddress}: ${error.message}`);
-    } finally {
-      setIsEmailLoading(false);
-    }
+  const getAvailablePlatforms = (type: 'social' | 'app') => {
+    const connected = getConnectedPlatforms(type);
+    const platforms = type === 'social' ? socialPlatforms : appPlatforms;
+    return Object.keys(platforms).filter(platform => !connected.includes(platform));
   };
 
-  const getConnectedPlatforms = () => {
-    return socialIntegrations.map(integration => integration.platformName);
+  const renderIntegrationCard = (integration: IntegrationData) => {
+    const platformConfig = integration.integrationType === 'social'
+      ? socialPlatforms[integration.platformName as keyof typeof socialPlatforms]
+      : appPlatforms[integration.platformName as keyof typeof appPlatforms];
+
+    const profileData = integration.config || {};
+
+    return (
+      <div key={integration.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center">
+              {platformConfig?.icon || '🔗'}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-white font-medium">{platformConfig?.name || integration.platformName}</span>
+                <div className="flex items-center gap-2 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                  <Check className="w-3 h-3 text-green-400" />
+                  <span className="text-green-400 text-xs font-medium">Connected</span>
+                </div>
+              </div>
+              <div className="text-stone-400 text-sm mb-1">
+                {profileData?.username || profileData?.name || profileData?.emailAddress || 'Connected'}
+                {profileData?.followerCount && ` • ${profileData.followerCount.toLocaleString()} followers`}
+              </div>
+              {integration.lastSyncAt && (
+                <div className="text-stone-500 text-xs">
+                  Last synced: {new Date(integration.lastSyncAt).toLocaleDateString()}
+                </div>
+              )}
+              {integration.syncError && (
+                <div className="text-red-400 text-xs">
+                  Sync error: {integration.syncError}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <button
+              onClick={() => handleSync(integration)}
+              disabled={isLoading}
+              className="border border-blue-600/50 text-blue-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Sync
+            </button>
+            <button
+              onClick={() => handleTest(integration)}
+              disabled={isLoading}
+              className="border border-neutral-700 text-stone-300 hover:text-white hover:border-green-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Test
+            </button>
+            {profileData?.profileUrl && (
+              <button
+                onClick={() => window.open(profileData.profileUrl, '_blank')}
+                className="border border-neutral-700 text-stone-300 hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View
+              </button>
+            )}
+            <button
+              onClick={() => handleDisconnect(integration)}
+              disabled={isLoading}
+              className="border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Disconnect
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
-  const getAvailablePlatforms = () => {
-    const connected = getConnectedPlatforms();
-    return Object.keys(socialPlatforms).filter(platform => !connected.includes(platform)) as SocialPlatform[];
+  const renderAvailablePlatformCard = (platform: string, type: 'social' | 'app') => {
+    const config = type === 'social'
+      ? socialPlatforms[platform as keyof typeof socialPlatforms]
+      : appPlatforms[platform as keyof typeof appPlatforms];
+
+    return (
+      <div key={platform} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 hover:border-violet-500/50 transition-colors">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+            {config.icon}
+          </div>
+          <div className="flex-1">
+            <div className="text-white font-medium text-sm">{config.name}</div>
+            <div className="text-stone-400 text-xs">Not connected</div>
+          </div>
+        </div>
+        {type === 'app' && 'description' in config && (
+          <p className="text-stone-400 text-xs mb-4">{config.description}</p>
+        )}
+        <button
+          onClick={() => handleConnect(platform, type)}
+          disabled={isLoading}
+          className={`w-full font-medium py-2 px-4 rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-2 ${
+            type === 'social'
+              ? 'bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white'
+              : 'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 text-white'
+          }`}
+        >
+          <Plus className="w-4 h-4" />
+          Connect
+        </button>
+      </div>
+    );
   };
 
-  const getConnectedEmailProviders = () => {
-    return emailAccounts.map(account => account.provider);
-  };
-
-  const getAvailableEmailProviders = () => {
-    const connected = getConnectedEmailProviders();
-    return Object.keys(emailProviders).filter(provider => !connected.includes(provider));
-  };
-
-  if ((isLoading && socialIntegrations.length === 0) || (isEmailLoading && emailAccounts.length === 0)) {
+  if (isLoading && socialIntegrations.length === 0 && appIntegrations.length === 0) {
     return <SocialIntegrationsSkeleton />;
   }
 
@@ -283,11 +344,11 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
     <div className="space-y-8">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Apps & Email Accounts</h1>
-        <p className="text-[#A0A0A0]">Connect your social media accounts, email accounts, and essential apps to sync content and automate workflows</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Apps & Social Media</h1>
+        <p className="text-[#A0A0A0]">Connect your social media accounts and essential apps to sync content and automate workflows</p>
       </div>
 
-      {/* Email Accounts Section */}
+      {/* App Integrations Section */}
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 lg:p-7 overflow-hidden">
         {/* Background glow orb */}
         <div className="absolute inset-0 opacity-20">
@@ -301,144 +362,41 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                 <Mail className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-white mb-1">Email Accounts</h3>
+                <h3 className="text-xl font-semibold text-white mb-1">Essential Apps</h3>
                 <p className="text-stone-400 text-sm">
-                  Connect your email accounts to enable automatic email responses and client communication
+                  Connect your email, calendar, and other essential apps
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full">
               <span className="text-blue-400 text-sm font-medium">
-                {emailAccounts.length} Connected
+                {appIntegrations.length} Connected
               </span>
             </div>
           </div>
 
-          {/* Connected Email Accounts */}
-          {emailAccounts.length > 0 && (
+          {/* Connected App Integrations */}
+          {appIntegrations.length > 0 && (
             <div className="mb-6">
-              <h4 className="text-white font-medium mb-4">Connected Email Accounts</h4>
+              <h4 className="text-white font-medium mb-4">Connected Apps</h4>
               <div className="space-y-4">
-                {emailAccounts.map((emailAccount) => {
-                  const providerConfig = emailProviders[emailAccount.provider as keyof typeof emailProviders];
-                  return (
-                    <div key={emailAccount.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
-                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center">
-                            {providerConfig?.icon || <Mail className="w-5 h-5 text-white" />}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-white font-medium">{providerConfig?.name || emailAccount.provider}</span>
-                              {emailAccount.isPrimary && (
-                                <div className="flex items-center gap-1 px-2 py-0.5 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
-                                  <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                                  <span className="text-yellow-400 text-xs font-medium">Primary</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                                <Check className="w-3 h-3 text-green-400" />
-                                <span className="text-green-400 text-xs font-medium">Connected</span>
-                              </div>
-                            </div>
-                            <div className="text-stone-400 text-sm mb-1">
-                              {emailAccount.emailAddress}
-                            </div>
-                            {emailAccount.lastSyncAt && (
-                              <div className="text-stone-500 text-xs">
-                                Last synced: {new Date(emailAccount.lastSyncAt).toLocaleString()}
-                              </div>
-                            )}
-                            {!emailAccount.syncEnabled && (
-                              <div className="flex items-center gap-1 text-orange-400 text-xs mt-1">
-                                <AlertCircle className="w-3 h-3" />
-                                Sync disabled
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                          {!emailAccount.isPrimary && (
-                            <button
-                              onClick={() => handleSetPrimaryEmail(emailAccount)}
-                              disabled={isEmailLoading}
-                              className="border border-yellow-600/50 text-yellow-400 hover:bg-yellow-600 hover:text-white hover:border-yellow-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-                            >
-                              <Star className="w-4 h-4" />
-                              Set Primary
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleSyncEmail(emailAccount)}
-                            disabled={isEmailLoading}
-                            className="border border-blue-600/50 text-blue-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                            Sync
-                          </button>
-                          <button
-                            onClick={() => handleTestEmail(emailAccount)}
-                            disabled={isEmailLoading}
-                            className="border border-neutral-700 text-stone-300 hover:text-white hover:border-green-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-                          >
-                            <Settings className="w-4 h-4" />
-                            Test
-                          </button>
-                          <button
-                            onClick={() => handleEmailDisconnect(emailAccount)}
-                            disabled={isEmailLoading}
-                            className="border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Disconnect
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {appIntegrations.map(renderIntegrationCard)}
               </div>
             </div>
           )}
 
-          {/* Available Email Providers */}
+          {/* Available App Platforms */}
           <div>
-            <h4 className="text-white font-medium mb-4">Available Email Providers</h4>
+            <h4 className="text-white font-medium mb-4">Available Apps</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getAvailableEmailProviders().map((provider) => {
-                const config = emailProviders[provider as keyof typeof emailProviders];
-                return (
-                  <div key={provider} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 hover:border-blue-500/50 transition-colors">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                        {config.icon}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-white font-medium text-sm">{config.name}</div>
-                        <div className="text-stone-400 text-xs">Not connected</div>
-                      </div>
-                    </div>
-                    <p className="text-stone-400 text-xs mb-4">{config.description}</p>
-                    <button
-                      onClick={() => handleEmailConnect(provider)}
-                      disabled={isEmailLoading}
-                      className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 hover:from-blue-700 hover:via-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Connect
-                    </button>
-                  </div>
-                );
-              })}
+              {getAvailablePlatforms('app').map((platform) => renderAvailablePlatformCard(platform, 'app'))}
             </div>
-            {getAvailableEmailProviders().length === 0 && (
+            {getAvailablePlatforms('app').length === 0 && (
               <div className="text-center py-8">
                 <div className="text-green-400 text-lg mb-2">📧</div>
-                <p className="text-white font-medium">All email providers connected!</p>
-                <p className="text-stone-400 text-sm">You've connected all available email providers.</p>
+                <p className="text-white font-medium">All apps connected!</p>
+                <p className="text-stone-400 text-sm">You've connected all available apps.</p>
               </div>
             )}
           </div>
@@ -459,7 +417,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
                 <LinkIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-white mb-1">Social Media & Apps</h3>
+                <h3 className="text-xl font-semibold text-white mb-1">Social Media</h3>
                 <p className="text-stone-400 text-sm">
                   Connect your social media accounts to sync content and analyze performance
                 </p>
@@ -473,111 +431,23 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = ({
             </div>
           </div>
 
-          {/* Connected Accounts */}
+          {/* Connected Social Integrations */}
           {socialIntegrations.length > 0 && (
             <div className="mb-6">
               <h4 className="text-white font-medium mb-4">Connected Accounts</h4>
               <div className="space-y-4">
-                {socialIntegrations.map((integration) => {
-                  const platformConfig = socialPlatforms[integration.platformName as SocialPlatform];
-                  const profileData = integration.config as any;
-                  return (
-                    <div key={integration.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
-                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center">
-                            {platformConfig?.icon || '🔗'}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-white font-medium">{platformConfig?.name || integration.platformName}</span>
-                              <div className="flex items-center gap-2 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                                <Check className="w-3 h-3 text-green-400" />
-                                <span className="text-green-400 text-xs font-medium">Connected</span>
-                              </div>
-                            </div>
-                            <div className="text-stone-400 text-sm mb-1">
-                              @{profileData?.username || profileData?.name || 'Unknown'}
-                              {profileData?.followerCount && ` • ${profileData.followerCount.toLocaleString()} followers`}
-                            </div>
-                            {integration.lastSyncAt && (
-                              <div className="text-stone-500 text-xs">
-                                Last synced: {new Date(integration.lastSyncAt).toLocaleDateString()}
-                              </div>
-                            )}
-                            {integration.syncError && (
-                              <div className="text-red-400 text-xs">
-                                Sync error: {integration.syncError}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                          <button
-                            onClick={() => handleTestSocial(integration)}
-                            disabled={isLoading}
-                            className="border border-neutral-700 text-stone-300 hover:text-white hover:border-blue-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-                          >
-                            <Settings className="w-4 h-4" />
-                            Test
-                          </button>
-                          {profileData?.profileUrl && (
-                            <button
-                              onClick={() => window.open(profileData.profileUrl, '_blank')}
-                              className="border border-neutral-700 text-stone-300 hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                              View
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleSocialDisconnect(integration)}
-                            disabled={isLoading}
-                            className="border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Disconnect
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {socialIntegrations.map(renderIntegrationCard)}
               </div>
             </div>
           )}
 
-          {/* Available Platforms */}
+          {/* Available Social Platforms */}
           <div>
             <h4 className="text-white font-medium mb-4">Available Platforms</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {getAvailablePlatforms().map((platform) => {
-                const config = socialPlatforms[platform];
-                return (
-                  <div key={platform} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 hover:border-violet-500/50 transition-colors">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                        {config.icon}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-white font-medium text-sm">{config.name}</div>
-                        <div className="text-stone-400 text-xs">Not connected</div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleSocialConnect(platform)}
-                      disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 text-sm flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Connect
-                    </button>
-                  </div>
-                );
-              })}
+              {getAvailablePlatforms('social').map((platform) => renderAvailablePlatformCard(platform, 'social'))}
             </div>
-            {getAvailablePlatforms().length === 0 && (
+            {getAvailablePlatforms('social').length === 0 && (
               <div className="text-center py-8">
                 <div className="text-green-400 text-lg mb-2">🎉</div>
                 <p className="text-white font-medium">All platforms connected!</p>

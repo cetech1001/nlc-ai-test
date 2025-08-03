@@ -1,10 +1,10 @@
-import {Injectable} from "@nestjs/common";
-import {CreateIntegrationData, Integration, IntegrationProvider, SyncResult, TestResult} from "@nlc-ai/types";
-import {PrismaService} from "../../prisma/prisma.service";
-import {TokenManagementService} from "./token-management.service";
-import {EncryptionService} from "./encryption.service";
-import {ConfigService} from "@nestjs/config";
-import {StateTokenService} from "./state-token.service";
+import { Injectable } from "@nestjs/common";
+import { CreateIntegrationData, Integration, IntegrationProvider, SyncResult, TestResult } from "@nlc-ai/types";
+import { PrismaService } from "../../prisma/prisma.service";
+import { TokenManagementService } from "./token-management.service";
+import { EncryptionService } from "./encryption.service";
+import { ConfigService } from "@nestjs/config";
+import { StateTokenService } from "./state-token.service";
 
 @Injectable()
 export abstract class BaseIntegrationService implements IntegrationProvider {
@@ -26,6 +26,10 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
 
   abstract getAuthUrl?(coachID: string): Promise<{ authUrl: string; state: string }>;
   abstract handleCallback?(coachID: string, code: string, state: string): Promise<Integration>;
+
+  async refreshToken?(integration: Integration): Promise<string> {
+    return this.tokenService.ensureValidToken(integration, '');
+  }
 
   async disconnect(integration: Integration): Promise<void> {
     await this.prisma.integration.delete({
@@ -58,5 +62,36 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
       : undefined;
 
     return { accessToken, refreshToken };
+  }
+
+  protected async updateIntegrationConfig(integrationID: string, config: any): Promise<void> {
+    await this.prisma.integration.update({
+      where: { id: integrationID },
+      data: {
+        config,
+        lastSyncAt: new Date(),
+      },
+    });
+  }
+
+  protected async updateIntegrationTokens(
+    integrationID: string,
+    accessToken: string,
+    refreshToken?: string,
+    expiresAt?: Date
+  ): Promise<void> {
+    const encryptedAccessToken = await this.encryptionService.encrypt(accessToken);
+    const encryptedRefreshToken = refreshToken
+      ? await this.encryptionService.encrypt(refreshToken)
+      : undefined;
+
+    await this.prisma.integration.update({
+      where: { id: integrationID },
+      data: {
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
+        tokenExpiresAt: expiresAt,
+      },
+    });
   }
 }

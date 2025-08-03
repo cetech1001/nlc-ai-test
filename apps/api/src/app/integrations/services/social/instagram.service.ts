@@ -1,6 +1,6 @@
 import {Integration, OAuthCredentials, SyncResult, TestResult} from "@nlc-ai/types";
 import {Injectable} from "@nestjs/common";
-import {BaseIntegrationService} from "./base-integration.service";
+import {BaseIntegrationService} from "../base-integration.service";
 
 @Injectable()
 export class InstagramService extends BaseIntegrationService {

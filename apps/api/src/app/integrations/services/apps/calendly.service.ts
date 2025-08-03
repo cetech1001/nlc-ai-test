@@ -1,15 +1,15 @@
 import {Injectable} from "@nestjs/common";
-import {BaseIntegrationService} from "./base-integration.service";
+import {BaseIntegrationService} from "../base-integration.service";
 import {Integration, OAuthCredentials, SyncResult, TestResult} from "@nlc-ai/types";
 
 @Injectable()
-export class OutlookService extends BaseIntegrationService {
-  platformName = 'outlook';
+export class CalendlyService extends BaseIntegrationService {
+  platformName = 'calendly';
   integrationType = 'app' as const;
   authType = 'oauth' as const;
 
   async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
-    const profile = await this.getEmailProfile(credentials.accessToken);
+    const profile = await this.getCalendlyProfile(credentials.accessToken);
 
     return this.saveIntegration({
       coachID,
@@ -19,15 +19,17 @@ export class OutlookService extends BaseIntegrationService {
       refreshToken: credentials.refreshToken,
       tokenExpiresAt: credentials.tokenExpiresAt,
       config: {
-        emailAddress: profile.mail || profile.userPrincipalName,
-        name: profile.displayName,
-        isPrimary: await this.isFirstEmailAccount(coachID),
+        userUri: profile.uri,
+        name: profile.name,
+        email: profile.email,
+        schedulingUrl: profile.scheduling_url,
+        timezone: profile.timezone,
+        avatarUrl: profile.avatar_url,
       },
       syncSettings: {
         autoSync: true,
-        syncFrequency: 'hourly',
-        syncEmails: true,
-        syncCalendar: true,
+        syncFrequency: 'daily',
+        syncEvents: true,
       },
       isActive: true,
     });
@@ -36,24 +38,24 @@ export class OutlookService extends BaseIntegrationService {
   async test(integration: Integration): Promise<TestResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      await this.getEmailProfile(accessToken);
-      return { success: true, message: 'Outlook connection working' };
+      await this.getCalendlyProfile(accessToken);
+      return { success: true, message: 'Calendly connection working' };
     } catch (error: any) {
-      return { success: false, message: `Outlook test failed: ${error.message}` };
+      return { success: false, message: `Calendly test failed: ${error.message}` };
     }
   }
 
   async sync(integration: Integration): Promise<SyncResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      const emails = await this.fetchRecentEmails(accessToken);
+      const events = await this.fetchScheduledEvents(accessToken, integration.config.userUri);
 
       await this.prisma.integration.update({
         where: { id: integration.id },
         data: {
           config: {
             ...integration.config,
-            emailCount: emails.length,
+            eventCount: events.length,
             lastSync: new Date().toISOString(),
           },
           lastSyncAt: new Date(),
@@ -62,11 +64,11 @@ export class OutlookService extends BaseIntegrationService {
 
       return {
         success: true,
-        message: 'Outlook synced successfully',
-        data: { emailCount: emails.length },
+        message: 'Calendly synced successfully',
+        data: { eventCount: events.length },
       };
     } catch (error: any) {
-      return { success: false, message: `Outlook sync failed: ${error.message}` };
+      return { success: false, message: `Calendly sync failed: ${error.message}` };
     }
   }
 
@@ -74,19 +76,14 @@ export class OutlookService extends BaseIntegrationService {
     const state = this.stateTokenService.generateState(coachID, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('MICROSOFT_CLIENT_ID', ''),
-      scope: [
-        'https://graph.microsoft.com/Mail.Read',
-        'https://graph.microsoft.com/Mail.Send',
-        'https://graph.microsoft.com/User.Read'
-      ].join(' '),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/outlook/callback`,
+      client_id: this.configService.get('CALENDLY_CLIENT_ID', ''),
+      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/calendly/callback`,
       response_type: 'code',
       state,
     });
 
     return {
-      authUrl: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}`,
+      authUrl: `https://auth.calendly.com/oauth/authorize?${params}`,
       state,
     };
   }
@@ -96,17 +93,36 @@ export class OutlookService extends BaseIntegrationService {
     return this.connect(coachID, tokenData);
   }
 
+  async fetchScheduledEvents(
+    accessToken: string,
+    userUri: string,
+    startDate?: string,
+    endDate?: string,
+    status?: string,
+  ) {
+    const params = new URLSearchParams({
+      user: userUri,
+      min_start_time: startDate || '',
+      max_start_time: endDate || '',
+      status: status || '',
+    });
+    const response = await fetch(`https://api.calendly.com/scheduled_events?${params}`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    });
+    const data: any = await response.json();
+    return data.collection || [];
+  }
+
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('MICROSOFT_CLIENT_ID', ''),
-      client_secret: this.configService.get('MICROSOFT_CLIENT_SECRET', ''),
-      scope: 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read',
+      client_id: this.configService.get('CALENDLY_CLIENT_ID', ''),
+      client_secret: this.configService.get('CALENDLY_CLIENT_SECRET', ''),
       code,
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/outlook/callback`,
       grant_type: 'authorization_code',
+      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/calendly/callback`,
     });
 
-    const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+    const response = await fetch('https://auth.calendly.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
@@ -121,25 +137,11 @@ export class OutlookService extends BaseIntegrationService {
     };
   }
 
-  private async getEmailProfile(accessToken: string): Promise<any> {
-    const response = await fetch('https://graph.microsoft.com/v1.0/me', {
-      headers: { 'Authorization': `Bearer ${accessToken}` },
-    });
-    return response.json();
-  }
-
-  private async fetchRecentEmails(accessToken: string) {
-    const response = await fetch('https://graph.microsoft.com/v1.0/me/messages?$top=50', {
+  private async getCalendlyProfile(accessToken: string) {
+    const response = await fetch('https://api.calendly.com/users/me', {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
     const data: any = await response.json();
-    return data.value || [];
-  }
-
-  private async isFirstEmailAccount(coachID: string): Promise<boolean> {
-    const existingAccounts = await this.prisma.integration.count({
-      where: { coachID, integrationType: 'app', platformName: { in: ['gmail', 'outlook'] } },
-    });
-    return existingAccounts === 0;
+    return data.resource;
   }
 }

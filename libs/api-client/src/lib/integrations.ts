@@ -1,75 +1,19 @@
 import { BaseAPI } from './base';
 import { Integration } from '@nlc-ai/types';
 
-export interface SocialIntegrationResponse extends Omit<Integration, 'coach' | 'webhookEvents'> {
-  profileData?: {
-    username?: string;
-    name?: string;
-    email?: string;
-    profileUrl?: string;
-    profilePictureUrl?: string;
-    followerCount?: number;
-    mediaCount?: number;
-    subscriberCount?: number;
-  };
+export interface IntegrationResponse extends Omit<Integration, 'coach' | 'webhookEvents'> {
+  config?: any;
 }
 
-export interface CourseIntegrationResponse extends Omit<Integration, 'coach' | 'webhookEvents'> {
-  courses?: CourseData[];
-  students?: StudentData[];
-  stats?: {
-    totalCourses?: number;
-    totalStudents?: number;
-    totalEnrollments?: number;
-  };
-}
-
-export interface CourseData {
-  id: string;
-  title: string;
-  description?: string;
-  slug?: string;
-  status?: string;
-  enrollmentCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface StudentData {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  fullName?: string;
-  enrollments?: EnrollmentData[];
-  createdAt?: string;
-}
-
-export interface EnrollmentData {
-  id: string;
-  courseId: string;
-  courseName?: string;
-  status: string;
-  progress?: number;
-  enrolledAt: string;
-  completedAt?: string;
-}
-
-export interface ConnectSocialRequest {
-  accessToken: string;
+export interface ConnectRequest {
+  accessToken?: string;
   refreshToken?: string;
-  profileData?: any;
-  tokenExpiresAt?: string;
-}
-
-export interface ConnectCourseRequest {
   apiKey?: string;
   subdomain?: string;
   schoolUrl?: string;
-  groupUrl?: string;
-  zapierApiKey?: string;
-  clientId?: string;
+  clientID?: string;
   clientSecret?: string;
+  [key: string]: any;
 }
 
 export interface AuthUrlResponse {
@@ -83,109 +27,73 @@ export interface TestResponse {
   data?: any;
 }
 
-export interface CoursePlatformInfo {
-  name: string;
-  authType: 'api_key' | 'oauth' | 'webhook';
-  requiredFields: string[];
-  description: string;
-  setupInstructions: string[];
+export interface SupportedPlatforms {
+  social: string[];
+  app: string[];
+  course: string[];
+  all: string[];
 }
 
 class IntegrationsAPI extends BaseAPI {
+
   // ==================== GENERAL INTEGRATION METHODS ====================
 
   /**
    * Get all integrations for the authenticated coach
    */
-  async getAllIntegrations(): Promise<(SocialIntegrationResponse | CourseIntegrationResponse)[]> {
+  async getAllIntegrations(): Promise<IntegrationResponse[]> {
     return this.makeRequest('/integrations');
   }
 
   /**
-   * Update integration settings
-   */
-  async updateIntegration(
-    integrationId: string,
-    updateData: {
-      isActive?: boolean;
-      syncSettings?: any;
-      config?: any;
-    }
-  ): Promise<SocialIntegrationResponse | CourseIntegrationResponse> {
-    return this.makeRequest(`/integrations/${integrationId}`, {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    });
-  }
-
-  /**
-   * Test integration connection
-   */
-  async testIntegration(integrationId: string): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/${integrationId}/test`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Disconnect integration
-   */
-  async disconnectIntegration(integrationId: string): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/${integrationId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  /**
-   * Manually sync data from platform
-   */
-  async syncIntegration(integrationId: string): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/${integrationId}/sync`, {
-      method: 'POST',
-    });
-  }
-
-  // ==================== SOCIAL MEDIA INTEGRATION METHODS ====================
-
-  /**
    * Get social media integrations only
    */
-  async getSocialIntegrations(): Promise<SocialIntegrationResponse[]> {
+  async getSocialIntegrations(): Promise<IntegrationResponse[]> {
     return this.makeRequest('/integrations/social');
   }
 
   /**
-   * Get OAuth authorization URL for a social platform
+   * Get app integrations only (Calendly, Gmail, Outlook)
+   */
+  async getAppIntegrations(): Promise<IntegrationResponse[]> {
+    return this.makeRequest('/integrations/apps');
+  }
+
+  /**
+   * Get course platform integrations only
+   */
+  async getCourseIntegrations(): Promise<IntegrationResponse[]> {
+    return this.makeRequest('/integrations/courses');
+  }
+
+  /**
+   * Get all supported platforms organized by type
+   */
+  async getSupportedPlatforms(): Promise<SupportedPlatforms> {
+    return this.makeRequest('/integrations/platforms');
+  }
+
+  // ==================== CONNECTION METHODS ====================
+
+  /**
+   * Connect a platform with credentials
+   */
+  async connectPlatform(platform: string, credentials: ConnectRequest): Promise<IntegrationResponse> {
+    return this.makeRequest(`/integrations/connect/${platform}`, {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+
+  /**
+   * Get OAuth authorization URL for a platform
    */
   async getAuthUrl(platform: string): Promise<AuthUrlResponse> {
     return this.makeRequest(`/integrations/auth/${platform}/url`);
   }
 
   /**
-   * Handle OAuth callback from social platform
-   */
-  async handleOAuthCallback(
-    platform: string,
-    code: string,
-    state?: string,
-    error?: string,
-    errorDescription?: string): Promise<SocialIntegrationResponse> {
-    const params = `code=${code}&state=${state}&error=${error}&errorDescription=${errorDescription}`
-    return this.makeRequest(`/oauth/${platform}/callback?${params}`);
-  }
-
-  /**
-   * Connect a social media platform manually (for testing or direct token input)
-   */
-  async connectSocialPlatform(platform: string, authData: ConnectSocialRequest): Promise<SocialIntegrationResponse> {
-    return this.makeRequest(`/integrations/connect/${platform}`, {
-      method: 'POST',
-      body: JSON.stringify(authData),
-    });
-  }
-
-  /**
-   * Helper method to initiate OAuth flow for social platforms
+   * Helper method to initiate OAuth flow for platforms
    */
   async initiateOAuthFlow(platform: string): Promise<void> {
     try {
@@ -216,10 +124,9 @@ class IntegrationsAPI extends BaseAPI {
         const newTabWindow = window.open(authUrl, '_blank');
 
         if (!newTabWindow) {
-          throw new Error('Both popup and new tab were blocked. Please allow popups for this site or manually navigate to the authorization URL.');
+          throw new Error('Both popup and new tab were blocked. Please allow popups for this site.');
         }
 
-        // For new tab, we can't reliably detect when OAuth completes
         return Promise.resolve();
       }
 
@@ -235,9 +142,27 @@ class IntegrationsAPI extends BaseAPI {
       authWindow.location.href = authUrl;
 
       return new Promise((resolve, reject) => {
+        // Listen for messages from the OAuth callback
+        const messageHandler = (event: MessageEvent) => {
+          if (event.data?.type === 'integration_success' && event.data?.platform === platform) {
+            window.removeEventListener('message', messageHandler);
+            authWindow?.close();
+            resolve();
+          } else if (event.data?.type === 'integration_error' && event.data?.platform === platform) {
+            window.removeEventListener('message', messageHandler);
+            authWindow?.close();
+            reject(new Error(event.data.error || 'OAuth flow failed'));
+          }
+        };
+
+        window.addEventListener('message', messageHandler);
+
+        // Also check if window is closed manually
         const checkClosed = setInterval(() => {
           if (authWindow?.closed) {
             clearInterval(checkClosed);
+            window.removeEventListener('message', messageHandler);
+
             // Check if OAuth was successful by looking for integration
             this.getSocialIntegrations()
               .then(integrations => {
@@ -257,6 +182,7 @@ class IntegrationsAPI extends BaseAPI {
           if (!authWindow?.closed) {
             authWindow?.close();
             clearInterval(checkClosed);
+            window.removeEventListener('message', messageHandler);
             reject(new Error('OAuth flow timed out'));
           }
         }, 300000);
@@ -266,62 +192,61 @@ class IntegrationsAPI extends BaseAPI {
     }
   }
 
-  // ==================== COURSE PLATFORM INTEGRATION METHODS ====================
+  // ==================== MANAGEMENT METHODS ====================
 
   /**
-   * Get course platform integrations only
+   * Test integration connection
    */
-  async getCourseIntegrations(): Promise<CourseIntegrationResponse[]> {
-    return this.makeRequest('/integrations/courses');
-  }
-
-  /**
-   * Get available course platforms and their requirements
-   */
-  async getAvailableCoursePlatforms(): Promise<Record<string, CoursePlatformInfo>> {
-    return this.makeRequest('/integrations/courses/platforms');
-  }
-
-  /**
-   * Test course platform credentials before connecting
-   */
-  async testCoursePlatformCredentials(platform: string, credentials: ConnectCourseRequest): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/courses/test/${platform}`, {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-  }
-
-  /**
-   * Connect a course platform with credentials
-   */
-  async connectCoursePlatform(platform: string, credentials: ConnectCourseRequest): Promise<CourseIntegrationResponse> {
-    return this.makeRequest(`/integrations/courses/connect/${platform}`, {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-  }
-
-  /**
-   * Sync course platform data
-   */
-  async syncCoursePlatformData(integrationId: string): Promise<TestResponse> {
-    return this.makeRequest(`/integrations/courses/${integrationId}/sync`, {
+  async testIntegration(integrationID: string): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/${integrationID}/test`, {
       method: 'POST',
     });
   }
 
   /**
-   * Get courses and students data from connected course platform
+   * Manually sync data from platform
    */
-  async getCoursePlatformData(integrationId: string): Promise<{
-    platform: string;
-    courses: CourseData[];
-    students: StudentData[];
-    stats: any;
-    lastSync: string;
+  async syncIntegration(integrationID: string): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/${integrationID}/sync`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Disconnect integration
+   */
+  async disconnectIntegration(integrationID: string): Promise<TestResponse> {
+    return this.makeRequest(`/integrations/${integrationID}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== CALENDLY SPECIFIC METHODS ====================
+
+  /**
+   * Get Calendly integration status
+   */
+  async getCalendlyIntegration(): Promise<{
+    isConnected: boolean;
+    schedulingUrl?: string;
+    userUri?: string;
+    lastSync?: Date;
   }> {
-    return this.makeRequest(`/integrations/courses/${integrationId}/data`);
+    return this.makeRequest('/integrations/calendly');
+  }
+
+  /**
+   * Load Calendly events for date range
+   */
+  async loadCalendlyEvents(startDate: Date, endDate: Date, status: string): Promise<any> {
+    return this.makeRequest('/integrations/calendly/events', {
+      method: 'POST',
+      body: JSON.stringify({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        status,
+      }),
+    });
   }
 
   // ==================== HELPER METHODS ====================
@@ -329,9 +254,8 @@ class IntegrationsAPI extends BaseAPI {
   /**
    * Helper method to get integration by platform
    */
-  async getIntegrationByPlatform(platform: string): Promise<SocialIntegrationResponse | CourseIntegrationResponse | null> {
-    const integrations = await this.getAllIntegrations();
-    return integrations.find(integration => integration.platformName === platform) || null;
+  async getIntegrationByPlatform(platform: string): Promise<IntegrationResponse | null> {
+    return this.makeRequest(`/integrations/platform/${platform}`);
   }
 
   /**
@@ -353,126 +277,28 @@ class IntegrationsAPI extends BaseAPI {
   }
 
   /**
-   * Helper method to get connected social platforms
+   * Helper method to get connected platforms by type
    */
-  async getConnectedSocialPlatforms(): Promise<string[]> {
-    const integrations = await this.getSocialIntegrations();
+  async getConnectedPlatformsByType(type: 'social' | 'app' | 'course'): Promise<string[]> {
+    let integrations: IntegrationResponse[];
+
+    switch (type) {
+      case 'social':
+        integrations = await this.getSocialIntegrations();
+        break;
+      case 'app':
+        integrations = await this.getAppIntegrations();
+        break;
+      case 'course':
+        integrations = await this.getCourseIntegrations();
+        break;
+      default:
+        integrations = [];
+    }
+
     return integrations
       .filter(integration => integration.isActive)
       .map(integration => integration.platformName);
-  }
-
-  /**
-   * Helper method to get connected course platforms
-   */
-  async getConnectedCoursePlatforms(): Promise<string[]> {
-    const integrations = await this.getCourseIntegrations();
-    return integrations
-      .filter(integration => integration.isActive)
-      .map(integration => integration.platformName);
-  }
-
-  /**
-   * Helper method to get course platform by name with data
-   */
-  async getCoursePlatform(platform: string): Promise<CourseIntegrationResponse | null> {
-    const integrations = await this.getCourseIntegrations();
-    return integrations.find(integration => integration.platformName === platform) || null;
-  }
-
-  /**
-   * Helper method to get all courses from all connected platforms
-   */
-  async getAllCourses(): Promise<Array<CourseData & { platform: string; integrationId: string }>> {
-    const courseIntegrations = await this.getCourseIntegrations();
-    const allCourses: Array<CourseData & { platform: string; integrationId: string }> = [];
-
-    for (const integration of courseIntegrations) {
-      if (integration.isActive && integration.config?.courses) {
-        const courses = integration.config.courses.map((course: CourseData) => ({
-          ...course,
-          platform: integration.platformName,
-          integrationId: integration.id,
-        }));
-        allCourses.push(...courses);
-      }
-    }
-
-    return allCourses;
-  }
-
-  /**
-   * Helper method to get all students from all connected platforms
-   */
-  async getAllStudents(): Promise<Array<StudentData & { platform: string; integrationId: string }>> {
-    const courseIntegrations = await this.getCourseIntegrations();
-    const allStudents: Array<StudentData & { platform: string; integrationId: string }> = [];
-
-    for (const integration of courseIntegrations) {
-      if (integration.isActive && integration.config?.students) {
-        const students = integration.config.students.map((student: StudentData) => ({
-          ...student,
-          platform: integration.platformName,
-          integrationId: integration.id,
-        }));
-        allStudents.push(...students);
-      }
-    }
-
-    return allStudents;
-  }
-
-  /**
-   * Helper method to get aggregated stats from all course platforms
-   */
-  async getCoursePlatformStats(): Promise<{
-    totalCourses: number;
-    totalStudents: number;
-    totalEnrollments: number;
-    platformBreakdown: Array<{
-      platform: string;
-      courses: number;
-      students: number;
-      lastSync: string;
-    }>;
-  }> {
-    const courseIntegrations = await this.getCourseIntegrations();
-
-    let totalCourses = 0;
-    let totalStudents = 0;
-    let totalEnrollments = 0;
-    const platformBreakdown: Array<{
-      platform: string;
-      courses: number;
-      students: number;
-      lastSync: string;
-    }> = [];
-
-    for (const integration of courseIntegrations) {
-      if (integration.isActive) {
-        const stats = integration.config?.stats || {};
-        const courses = stats.totalCourses || 0;
-        const students = stats.totalStudents || 0;
-
-        totalCourses += courses;
-        totalStudents += students;
-        totalEnrollments += stats.totalEnrollments || 0;
-
-        platformBreakdown.push({
-          platform: integration.platformName,
-          courses,
-          students,
-          lastSync: integration.lastSyncAt?.toLocaleDateString() || '',
-        });
-      }
-    }
-
-    return {
-      totalCourses,
-      totalStudents,
-      totalEnrollments,
-      platformBreakdown,
-    };
   }
 }
 

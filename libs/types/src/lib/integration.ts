@@ -45,9 +45,13 @@ export interface IntegrationProvider {
   test(integration: Integration): Promise<TestResult>;
   sync(integration: Integration): Promise<SyncResult>;
   disconnect(integration: Integration): Promise<void>;
+
   refreshToken?(integration: Integration): Promise<string>;
   getAuthUrl?(coachID: string): Promise<{ authUrl: string; state: string }>;
   handleCallback?(coachID: string, code: string, state: string): Promise<Integration>;
+
+  fetchScheduledEvents?(accessToken: string, userUri: string, startDate?: string, endDate?: string, status?: string):
+    Promise<any>;
 }
 
 export interface CreateIntegrationData {

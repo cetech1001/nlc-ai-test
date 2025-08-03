@@ -18,7 +18,9 @@ export class StateTokenService {
     };
 
     const secret = this.configService.get('JWT_SECRET');
-    return this.jwt.sign(payload, secret);
+    return this.jwt.sign(payload, {
+      secret,
+    });
   }
 
   verifyState(state: string): { coachID: string; platform: string } {

@@ -1,31 +1,41 @@
 import { Module } from '@nestjs/common';
+import {JwtModule} from "@nestjs/jwt";
 import { IntegrationsController } from './integrations.controller';
-import {CalendlyService} from "./services/calendly.service";
+import {CalendlyService} from "./services/apps/calendly.service";
 import {EncryptionService} from "./services/encryption.service";
-import {FacebookService} from "./services/facebook.service";
-import {GmailService} from "./services/gmail.service";
-import {InstagramService} from "./services/instagram.service";
-import {LinkedinService} from "./services/linkedin.service";
-import {OutlookService} from "./services/outlook.service";
-import {TiktokService} from "./services/tiktok.service";
+import {FacebookService} from "./services/social/facebook.service";
+import {GmailService} from "./services/apps/gmail.service";
+import {InstagramService} from "./services/social/instagram.service";
+import {LinkedinService} from "./services/social/linkedin.service";
+import {OutlookService} from "./services/apps/outlook.service";
+import {TiktokService} from "./services/social/tiktok.service";
 import {TokenManagementService} from "./services/token-management.service";
-import {TwitterService} from "./services/twitter.service";
-import {YoutubeService} from "./services/youtube.service";
+import {TwitterService} from "./services/social/twitter.service";
+import {YoutubeService} from "./services/social/youtube.service";
+import {StateTokenService} from "./services/state-token.service";
+import {IntegrationFactory} from "./factories/integration.factory";
 
 @Module({
+  imports: [
+    JwtModule.register({
+      global: true,
+    }),
+  ],
   controllers: [IntegrationsController],
   providers: [
-    CalendlyService,
     EncryptionService,
+    StateTokenService,
+    TokenManagementService,
+    CalendlyService,
     FacebookService,
     GmailService,
     InstagramService,
     LinkedinService,
     OutlookService,
     TiktokService,
-    TokenManagementService,
     TwitterService,
     YoutubeService,
+    IntegrationFactory,
   ],
 })
 export class IntegrationsModule {}

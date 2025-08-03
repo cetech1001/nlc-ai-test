@@ -1,8 +1,8 @@
 import {Injectable} from "@nestjs/common";
-import {BaseIntegrationService} from "./base-integration.service";
+import {BaseIntegrationService} from "../base-integration.service";
 import {Integration, TestResult, SyncResult, OAuthCredentials} from "@nlc-ai/types";
 import {google} from "googleapis";
-import {IntegrationError} from "../errors/integration.error";
+import {IntegrationError} from "../../errors/integration.error";
 
 
 @Injectable()
@@ -117,29 +117,45 @@ export class YoutubeService extends BaseIntegrationService {
     }
   }
 
-  async refreshToken(integration: Integration): Promise<string> {
+  // Override the refreshToken method for YouTube-specific logic
+  override async refreshToken(integration: Integration): Promise<string> {
     const { refreshToken } = await this.getDecryptedTokens(integration);
 
+    if (!refreshToken) {
+      throw new Error('No refresh token available for YouTube integration');
+    }
+
     const auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
+      this.configService.get('GOOGLE_CLIENT_ID'),
+      this.configService.get('GOOGLE_CLIENT_SECRET')
     );
 
     auth.setCredentials({ refresh_token: refreshToken });
 
     const { credentials } = await auth.refreshAccessToken();
 
-    const encryptedToken = await this.encryptionService.encrypt(credentials.access_token || '');
-    await this.prisma.integration.update({
-      where: { id: integration.id },
-      data: {
-        accessToken: encryptedToken,
-        tokenExpiresAt: new Date(Date.now() + 3600000),
-      },
-    });
+    if (!credentials.access_token) {
+      throw new Error('Failed to refresh YouTube access token');
+    }
 
-    return credentials.access_token || '';
+    // Update the integration with new token
+    await this.updateIntegrationTokens(
+      integration.id,
+      credentials.access_token,
+      refreshToken,
+      new Date(Date.now() + 3600000) // 1 hour from now
+    );
+
+    return credentials.access_token;
   }
+
+  /*private async ensureValidToken(integration: Integration, currentToken: string): Promise<string> {
+    // Use our own token management instead of the service to avoid circular dependency
+    if (this.isTokenExpired(integration)) {
+      return this.refreshToken(integration);
+    }
+    return currentToken;
+  }*/
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
