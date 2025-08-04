@@ -26,7 +26,9 @@ export class StateTokenService {
   verifyState(state: string): { coachID: string; platform: string } {
     try {
       const secret = this.configService.get('JWT_SECRET');
-      const payload = this.jwt.verify(state, secret) as any;
+      const payload = this.jwt.verify(state, {
+        secret,
+      }) as any;
 
       if (payload.exp < Date.now()) {
         throw new Error('State token expired');

@@ -49,7 +49,7 @@ const CoachSettings = () => {
 
   // Social Integration Handlers
   const handleConnectSocial = async (platform: string, authData: any) => {
-    return integrationsAPI.connectSocialPlatform(platform, authData);
+    return integrationsAPI.connectPlatform(platform, authData);
   }
 
   const handleDisconnectSocial = async (integrationId: string) => {
@@ -66,7 +66,7 @@ const CoachSettings = () => {
 
   const handleConnectCourse = async (platform: string, credentials: any) => {
     try {
-      return integrationsAPI.connectCoursePlatform(platform, credentials);
+      return integrationsAPI.connectPlatform(platform, credentials);
     } catch (error) {
       console.error('Failed to connect course platform:', error);
       throw error;
@@ -93,7 +93,7 @@ const CoachSettings = () => {
 
   const handleUpdateCourse = async (integrationId: string, data: any) => {
     try {
-      return integrationsAPI.updateIntegration(integrationId, data);
+      // return integrationsAPI.updateIntegration(integrationId, data);
     } catch (error) {
       console.error('Failed to update course platform:', error);
       throw error;

@@ -38,10 +38,15 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
   }
 
   protected async saveIntegration(data: CreateIntegrationData): Promise<Integration> {
-    const encryptedToken = await this.encryptionService.encrypt(data.accessToken);
-    const encryptedRefreshToken = data.refreshToken
-      ? await this.encryptionService.encrypt(data.refreshToken)
-      : null;
+    let encryptedToken, encryptedRefreshToken;
+    try {
+      encryptedToken = await this.encryptionService.encrypt(data.accessToken);
+      encryptedRefreshToken = data.refreshToken
+        ? await this.encryptionService.encrypt(data.refreshToken)
+        : null;
+    } catch (e: any) {
+      throw e;
+    }
 
     return this.prisma.integration.create({
       data: {

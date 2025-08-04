@@ -17,11 +17,11 @@ interface IntegrationData {
   id: string;
   platformName: string;
   integrationType: 'social' | 'app' | 'course';
-  isActive: boolean;
+  isActive?: boolean | null;
   config?: any;
-  lastSyncAt?: Date;
-  syncError?: string;
-  createdAt: Date;
+  lastSyncAt?: Date | null;
+  syncError?: string | null;
+  createdAt?: Date | null;
 }
 
 interface SocialIntegrationsProps {
@@ -92,26 +92,26 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = () => {
   const [socialIntegrations, setSocialIntegrations] = useState<IntegrationData[]>([]);
   const [appIntegrations, setAppIntegrations] = useState<IntegrationData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [supportedPlatforms, setSupportedPlatforms] = useState<{
+  /*const [supportedPlatforms, setSupportedPlatforms] = useState<{
     social: string[];
     app: string[];
     course: string[];
     all: string[];
-  }>({ social: [], app: [], course: [], all: [] });
+  }>({ social: [], app: [], course: [], all: [] });*/
 
   useEffect(() => {
-    loadIntegrations();
-    loadSupportedPlatforms();
+    (() => loadIntegrations())();
+    // loadSupportedPlatforms();
   }, []);
 
-  const loadSupportedPlatforms = async () => {
+  /*const loadSupportedPlatforms = async () => {
     try {
       const platforms = await integrationsAPI.getSupportedPlatforms();
       setSupportedPlatforms(platforms);
     } catch (error: any) {
       console.error('Failed to load supported platforms:', error);
     }
-  };
+  };*/
 
   const loadIntegrations = async () => {
     try {

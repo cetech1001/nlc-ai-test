@@ -4,7 +4,7 @@ import {WebhookEvent} from "./webhook";
 export interface Integration {
   id: string;
   coachID: string;
-  integrationType: string;
+  integrationType: 'social' | 'app' | 'course';
   platformName: string;
   accessToken?: string | null;
   refreshToken?: string | null;
