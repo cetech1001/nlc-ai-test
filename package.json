@@ -2,10 +2,6 @@
   "name": "@nlc-ai/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {
-    "docker:build": "./build-docker.sh",
-    "render:deploy": "./deploy-render.sh"
-  },
   "private": true,
   "dependencies": {
     "@headlessui/react": "^2.2.4",

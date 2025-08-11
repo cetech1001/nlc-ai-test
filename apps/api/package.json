@@ -7,7 +7,8 @@
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push",
     "prisma:format": "prisma format",
-    "prisma:deploy": "prisma migrate deploy",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate deploy",
     "prisma:baseline": "prisma migrate resolve --applied 000000000000_init_baseline"
   },
   "nx": {

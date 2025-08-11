@@ -85,6 +85,27 @@ Nx Console is an editor extension that enriches your developer experience. It le
 
 [Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
+## Prisma: generating migrations (API)
+
+When you change apps/api/prisma/schema.prisma, generate a migration and update the Prisma Client:
+
+- Install deps (first time):
+  - npm i
+- Generate Prisma Client (optional but useful to catch schema issues):
+  - npm run prisma:generate
+- Create a new migration (dev):
+  - npm run prisma:migrate:dev -- -n your_migration_name
+    - Example: npm run prisma:migrate:dev -- -n add_landing_fields_to_lead
+- Apply migrations in prod/CI:
+  - npm run prisma:migrate:deploy
+- Open Prisma Studio (DB browser):
+  - npm run prisma:studio
+
+Notes
+- The scripts are already configured to use the schema at apps/api/prisma/schema.prisma.
+- Ensure DATABASE_URL is set in apps/api/.env (or your shell) before running the commands.
+- migrate dev will prompt to create the migration and apply it to your dev database.
+
 ## Useful links
 
 Learn more:

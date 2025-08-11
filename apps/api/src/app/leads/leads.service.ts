@@ -6,6 +6,25 @@ import {CreateLeadRequest, LeadQueryParams, UpdateLead} from "@nlc-ai/types";
 export class LeadsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async createFromLanding(dto: { lead: { name: string; email: string; phone?: string }; answers: Record<string, unknown>; qualified: boolean; submittedAt: string; }) {
+    const { lead, answers, qualified, submittedAt } = dto;
+
+    return this.prisma.lead.create({
+      data: {
+        leadType: 'admin_lead', // ensure stored as admin_lead
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone ?? null,
+        source: 'landing',
+        status: 'contacted',
+        notes: null,
+        answers: answers as any,
+        qualified,
+        submittedAt: submittedAt ? new Date(submittedAt) : null,
+      },
+    });
+  }
+
   async findAll(query: LeadQueryParams) {
     const {
       page = 1,

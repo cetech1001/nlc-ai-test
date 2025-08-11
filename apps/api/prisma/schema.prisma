@@ -687,6 +687,9 @@ model Lead {
   meetingDate     DateTime?        @db.Timestamptz(6)
   meetingTime     String?          @db.VarChar(20)
   notes           String?
+  answers         Json?
+  qualified       Boolean?         @default(false)
+  submittedAt     DateTime?        @db.Timestamptz(6)
   lastContactedAt DateTime?        @db.Timestamptz(6)
   convertedAt     DateTime?        @db.Timestamptz(6)
   createdAt       DateTime         @default(now()) @db.Timestamptz(6)
