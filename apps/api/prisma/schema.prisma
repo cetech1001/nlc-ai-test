@@ -677,10 +677,9 @@ model Subscription {
 
 model Lead {
   id              String           @id @default(uuid()) @db.Uuid
-  coachID         String?          @db.Uuid // Made nullable to support admin leads
+  coachID         String?          @db.Uuid
   leadType        LeadType         @default(coach_lead)
-  firstName       String           @db.VarChar(100)
-  lastName        String           @db.VarChar(100)
+  name            String           @db.VarChar(100)
   email           String           @db.VarChar(255)
   phone           String?          @db.VarChar(20)
   source          String?          @db.VarChar(100)

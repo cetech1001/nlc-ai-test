@@ -21,11 +21,11 @@ export const coachLeadColumns = (
   isGeneratingSequence: string
 ) => [
   {
-    key: 'firstName',
+    key: 'name',
     header: 'Name',
     width: `${colWidth}%`,
-    render: (value: string, row: any) => (
-      <div className="font-medium text-white">{`${value} ${row['lastName']}`}</div>
+    render: (value: string, _: any) => (
+      <div className="font-medium text-white">{value}</div>
     )
   },
   {
@@ -50,7 +50,7 @@ export const coachLeadColumns = (
     key: 'status',
     header: 'Status',
     width: `${colWidth * (2 / 3)}%`,
-    render: (value: string, row: any) => {
+    render: (_: string, row: any) => {
       const statusConfig = {
         contacted: { bg: 'bg-yellow-600/20', text: 'text-yellow-400', label: 'Not Converted' },
         scheduled: { bg: 'bg-blue-600/20', text: 'text-blue-400', label: 'Scheduled' },
@@ -70,7 +70,7 @@ export const coachLeadColumns = (
     key: 'aiSequence',
     header: 'AI Sequence',
     width: `${colWidth}%`,
-    render: (value: any, row: any) => {
+    render: (_: any, row: any) => {
       const sequence = getSequenceForLead(row.id);
 
       if (isGeneratingSequence === row.id) {
@@ -146,7 +146,7 @@ export const coachLeadColumns = (
     key: 'actions',
     header: 'Actions',
     width: `${colWidth}%`,
-    render: (value: any, row: any, onRowAction?: (action: string, row: any) => void) => {
+    render: (_: any, row: any, onRowAction?: (action: string, row: any) => void) => {
       const sequence = getSequenceForLead(row.id);
       const hasActiveSequence = !!sequence;
       const isSequencePaused = sequence && !sequence.isActive;

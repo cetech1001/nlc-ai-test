@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import { Heart, MessageCircle, Share2, Send, ArrowLeft, MoreHorizontal, Search, Camera, Image, Smile } from 'lucide-react';
 
 const CommunityPage = () => {
-  const [activeChat, setActiveChat] = useState(null);
+  const [activeChat, setActiveChat] = useState<any>(null);
   const [newPost, setNewPost] = useState('');
-  const [showComments, setShowComments] = useState({});
+  const [showComments, setShowComments] = useState<any>({});
   const [newComment, setNewComment] = useState('');
 
   const posts = [
@@ -69,14 +69,14 @@ const CommunityPage = () => {
     { id: 2, author: "Cameron Williamson", avatar: "CW", content: "I would be really interested to know your approach to fitness.", time: "5 min ago", likes: 40 }
   ];
 
-  const toggleComments = (postId) => {
-    setShowComments(prev => ({
+  const toggleComments = (postId: any) => {
+    setShowComments((prev: any) => ({
       ...prev,
       [postId]: !prev[postId]
     }));
   };
 
-  const PostCard = ({ post }) => (
+  const PostCard = ({ post }: any) => (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden mb-6">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
@@ -186,7 +186,7 @@ const CommunityPage = () => {
     </div>
   );
 
-  const ChatWindow = ({ chat }) => (
+  const ChatWindow = ({ chat }: any) => (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md h-[600px] bg-gradient-to-b from-neutral-800 to-neutral-900 rounded-[20px] border border-neutral-700 overflow-hidden">
         {/* Chat Header */}

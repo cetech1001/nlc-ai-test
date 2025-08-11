@@ -56,42 +56,22 @@ export const LeadForm = (props: IProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-white text-sm">
+              <Label htmlFor="name" className="text-white text-sm">
                 First Name <span className="text-red-400">*</span>
               </Label>
               <Input
-                id="firstName"
+                id="name"
                 type="text"
-                value={props.formData.firstName}
-                onChange={(e) => props.handleInputChange("firstName", e.target.value)}
+                value={props.formData.name}
+                onChange={(e) => props.handleInputChange("name", e.target.value)}
                 className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
-                  props.errors?.firstName ? 'border-red-500' : ''
+                  props.errors?.name ? 'border-red-500' : ''
                 }`}
                 placeholder="Enter first name"
                 disabled={props.isLoading}
               />
-              {props.errors?.firstName && (
-                <p className="text-red-400 text-sm">{props.errors.firstName}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-white text-sm">
-                Last Name <span className="text-red-400">*</span>
-              </Label>
-              <Input
-                id="lastName"
-                type="text"
-                value={props.formData.lastName}
-                onChange={(e) => props.handleInputChange("lastName", e.target.value)}
-                className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
-                  props.errors?.lastName ? 'border-red-500' : ''
-                }`}
-                placeholder="Enter last name"
-                disabled={props.isLoading}
-              />
-              {props.errors?.lastName && (
-                <p className="text-red-400 text-sm">{props.errors.lastName}</p>
+              {props.errors?.name && (
+                <p className="text-red-400 text-sm">{props.errors.name}</p>
               )}
             </div>
           </div>

@@ -53,8 +53,7 @@ const EditLead = () => {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [formData, setFormData] = useState<LeadFormData>({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     phone: '',
     source: '',
@@ -87,8 +86,7 @@ const EditLead = () => {
       setOriginalStatus(leadData.status);
 
       setFormData({
-        firstName: leadData.firstName,
-        lastName: leadData.lastName,
+        name: leadData.name,
         email: leadData.email,
         phone: leadData.phone || '',
         source: leadData.source || '',
@@ -122,8 +120,7 @@ const EditLead = () => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -277,34 +274,18 @@ const EditLead = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      First Name <span className="text-red-400">*</span>
+                      Name <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
                       className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                        errors.firstName ? 'border-red-500' : 'border-[#3A3A3A]'
+                        errors.name ? 'border-red-500' : 'border-[#3A3A3A]'
                       }`}
                       placeholder="Enter first name"
                     />
-                    {errors.firstName && <p className="text-red-400 text-sm mt-1">{errors.firstName}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm font-medium mb-2">
-                      Last Name <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      className={`w-full px-4 py-3 bg-[#2A2A2A] border rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                        errors.lastName ? 'border-red-500' : 'border-[#3A3A3A]'
-                      }`}
-                      placeholder="Enter last name"
-                    />
-                    {errors.lastName && <p className="text-red-400 text-sm mt-1">{errors.lastName}</p>}
+                    {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
                   </div>
                 </div>
 

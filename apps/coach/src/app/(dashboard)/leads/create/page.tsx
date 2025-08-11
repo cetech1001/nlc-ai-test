@@ -14,8 +14,7 @@ const CreateNewLead = () => {
   const [errors, setErrors] = useState<LeadFormErrors>({});
 
   const [formData, setFormData] = useState<LeadFormData>({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     phone: "",
     source: "",
@@ -29,18 +28,11 @@ const CreateNewLead = () => {
   const validateForm = (): boolean => {
     const newErrors: LeadFormErrors = {};
 
-    // First name validation
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = "First name must be at least 2 characters";
-    }
-
-    // Last name validation
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = "Last name must be at least 2 characters";
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
     }
 
     // Email validation

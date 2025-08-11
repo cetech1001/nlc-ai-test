@@ -17,8 +17,7 @@ export interface Lead {
   id: string;
   coachID?: string | null;
   leadType: LeadType;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone?: string | null;
   source?: string | null;
@@ -43,7 +42,7 @@ export interface LeadQueryParams extends QueryParams{
   coachID?: string;
 }
 
-export interface CreateLead extends Pick<Lead, 'firstName' | 'lastName' | 'email' | 'phone' | 'source' | 'meetingTime' | 'notes'> {
+export interface CreateLead extends Pick<Lead, 'name' | 'email' | 'phone' | 'source' | 'meetingTime' | 'notes'> {
   meetingDate?: string;
   status?: LeadStatus;
 }
@@ -72,8 +71,7 @@ export interface LeadStats {
 }
 
 export interface CreateLeadRequest {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone?: string;
   source?: string;
@@ -93,8 +91,7 @@ export interface LeadFilters {
 }
 
 export interface LeadFormData {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
   source: string;
@@ -105,8 +102,7 @@ export interface LeadFormData {
 }
 
 export interface LeadFormErrors {
-  firstName?: string;
-  lastName?: string;
+  name?: string;
   email?: string;
   phone?: string;
   source?: string;
