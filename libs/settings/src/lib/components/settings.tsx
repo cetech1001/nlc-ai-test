@@ -135,11 +135,7 @@ const SettingsContent: FC<SettingsProps> = ({
           onConnectSocial={connectSocial!}
           onDisconnectSocial={disconnectSocial!}
           onTestSocial={testSocial!}
-          onSaveCalendly={saveCoachCalendly!}
-          onDeleteCalendly={deleteCoachCalendly!}
-          onTestCalendly={testCoachCalendly!}
           getSocialIntegrations={getSocialIntegrations!}
-          getCalendlySettings={getCoachCalendlySettings!}
         />
       )}
 

@@ -69,10 +69,10 @@ const CommunityPage = () => {
     { id: 2, author: "Cameron Williamson", avatar: "CW", content: "I would be really interested to know your approach to fitness.", time: "5 min ago", likes: 40 }
   ];
 
-  const toggleComments = (postId: any) => {
+  const toggleComments = (postID: string) => {
     setShowComments((prev: any) => ({
       ...prev,
-      [postId]: !prev[postId]
+      [postID]: !prev[postID]
     }));
   };
 
@@ -186,7 +186,7 @@ const CommunityPage = () => {
     </div>
   );
 
-  const ChatWindow = ({ chat }: any) => (
+  const ChatWindow = ({ chat } : any) => (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md h-[600px] bg-gradient-to-b from-neutral-800 to-neutral-900 rounded-[20px] border border-neutral-700 overflow-hidden">
         {/* Chat Header */}

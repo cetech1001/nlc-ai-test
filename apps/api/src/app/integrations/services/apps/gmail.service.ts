@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {BadRequestException, Injectable} from "@nestjs/common";
 import {Integration, OAuthCredentials, SyncResult, TestResult} from "@nlc-ai/types";
 import {BaseIntegrationService} from "../base-integration.service";
 
@@ -10,28 +10,31 @@ export class GmailService extends BaseIntegrationService {
 
   async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getEmailProfile(credentials.accessToken);
-
-    return this.saveIntegration({
-      coachID,
-      integrationType: this.integrationType,
-      platformName: this.platformName,
-      accessToken: credentials.accessToken,
-      refreshToken: credentials.refreshToken,
-      tokenExpiresAt: credentials.tokenExpiresAt,
-      config: {
-        emailAddress: profile.email,
-        name: profile.name,
-        picture: profile.picture,
-        isPrimary: await this.isFirstEmailAccount(coachID),
-      },
-      syncSettings: {
-        autoSync: true,
-        syncFrequency: 'hourly',
-        syncEmails: true,
-        syncSent: true,
-      },
-      isActive: true,
-    });
+    try {
+      return this.saveIntegration({
+        coachID,
+        integrationType: this.integrationType,
+        platformName: this.platformName,
+        accessToken: credentials.accessToken,
+        refreshToken: credentials.refreshToken,
+        tokenExpiresAt: credentials.tokenExpiresAt,
+        config: {
+          emailAddress: profile.email,
+          name: profile.name,
+          picture: profile.picture,
+          isPrimary: await this.isFirstEmailAccount(coachID),
+        },
+        syncSettings: {
+          autoSync: true,
+          syncFrequency: 'hourly',
+          syncEmails: true,
+          syncSent: true,
+        },
+        isActive: true,
+      });
+    } catch (error: any) {
+      throw new BadRequestException(error.message || 'Failed to save gmail integration');
+    }
   }
 
   async test(integration: Integration): Promise<TestResult> {
