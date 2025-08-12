@@ -54,8 +54,6 @@ export class LeadsController {
   }
 
   @Post()
-  @Public()
-  @UseGuards(LandingTokenGuard)
   @ApiOperation({ summary: 'Create a new lead (simple shape)' })
   @ApiHeader({ name: 'X-Landing-Token', required: true, description: 'Shared secret token for landing page submissions' })
   @ApiHeader({ name: 'X-Landing-Timestamp', required: true, description: 'Unix epoch milliseconds when the request was signed' })

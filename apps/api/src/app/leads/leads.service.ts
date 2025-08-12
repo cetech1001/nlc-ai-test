@@ -11,11 +11,11 @@ export class LeadsService {
 
     return this.prisma.lead.create({
       data: {
-        leadType: 'admin_lead', // ensure stored as admin_lead
+        leadType: 'admin_lead',
         name: lead.name,
         email: lead.email,
         phone: lead.phone ?? null,
-        source: 'landing',
+        source: 'Website',
         status: 'contacted',
         notes: null,
         answers: answers as any,

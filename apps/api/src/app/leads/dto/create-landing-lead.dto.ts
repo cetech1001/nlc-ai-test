@@ -3,16 +3,16 @@ import { IsBoolean, IsDateString, IsEmail, IsObject, IsOptional, IsString, MinLe
 import { Type } from 'class-transformer';
 
 class LandingLeadInfoDto {
-  @ApiProperty({ example: 'Okwudili Ezeoke' })
+  @ApiProperty({ example: 'John Doe' })
   @IsString()
   @MinLength(2)
   name!: string;
 
-  @ApiProperty({ example: 'alexemerie7@gmail.com' })
+  @ApiProperty({ example: 'johndoe@mail.com' })
   @IsEmail()
   email!: string;
 
-  @ApiPropertyOptional({ example: '+447535887415' })
+  @ApiPropertyOptional({ example: '+15558938234' })
   @IsOptional()
   @IsString()
   phone?: string;
