@@ -1,4 +1,4 @@
-import { PaymentMethodType } from '@prisma/client';
+import {PaymentMethodType} from "@prisma/client";
 
 export interface CreatePaymentMethodRequest {
   coachID: string;
@@ -30,25 +30,4 @@ export interface PaymentMethodFilters {
   isActive?: boolean;
   cardBrand?: string;
   expiringBefore?: Date;
-}
-
-export interface PaymentMethodWithDetails {
-  id: string;
-  coachID: string;
-  type: PaymentMethodType;
-  isDefault: boolean;
-  isActive: boolean;
-  cardLast4?: string;
-  cardBrand?: string;
-  cardExpMonth?: number;
-  cardExpYear?: number;
-  stripePaymentMethodID?: string;
-  paypalEmail?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  coach: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
 }

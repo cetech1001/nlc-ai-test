@@ -1,52 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentMethod, PaymentMethodType } from '@prisma/client';
-
-export interface CreatePaymentMethodDto {
-  coachID: string;
-  type: PaymentMethodType;
-  isDefault?: boolean;
-  cardLast4?: string;
-  cardBrand?: string;
-  cardExpMonth?: number;
-  cardExpYear?: number;
-  stripePaymentMethodID?: string;
-  paypalEmail?: string;
-}
-
-export interface UpdatePaymentMethodDto {
-  isDefault?: boolean;
-  isActive?: boolean;
-  cardLast4?: string;
-  cardBrand?: string;
-  cardExpMonth?: number;
-  cardExpYear?: number;
-  stripePaymentMethodID?: string;
-  paypalEmail?: string;
-}
-
-export interface PaymentMethodFilters {
-  coachID?: string;
-  type?: PaymentMethodType;
-  isDefault?: boolean;
-  isActive?: boolean;
-  cardBrand?: string;
-  expiringBefore?: Date;
-}
-
-export interface PaymentMethodWithDetails extends PaymentMethod {
-  coach: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-}
+import {
+  CreatePaymentMethodRequest,
+  PaymentMethodFilters,
+  PaymentMethodWithDetails,
+  UpdatePaymentMethodRequest
+} from "@nlc-ai/api-types";
 
 @Injectable()
 export class PaymentMethodsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createPaymentMethod(data: CreatePaymentMethodDto): Promise<PaymentMethod> {
+  async createPaymentMethod(data: CreatePaymentMethodRequest): Promise<PaymentMethod> {
     // Validate coach exists
     const coach = await this.prisma.coach.findUnique({
       where: { id: data.coachID },
@@ -194,7 +160,7 @@ export class PaymentMethodsService {
     });
   }
 
-  async updatePaymentMethod(id: string, data: UpdatePaymentMethodDto): Promise<PaymentMethod> {
+  async updatePaymentMethod(id: string, data: UpdatePaymentMethodRequest): Promise<PaymentMethod> {
     const existingPaymentMethod = await this.findPaymentMethodById(id);
 
     // Validate card expiration if updating

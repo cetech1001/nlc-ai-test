@@ -231,15 +231,13 @@ export class InvoicesService {
     }
 
     try {
-      const updatedInvoice = await this.prisma.invoice.update({
+      return this.prisma.invoice.update({
         where: { id },
         data: {
           ...data,
           updatedAt: new Date(),
         },
       });
-
-      return updatedInvoice;
     } catch (error: any) {
       throw new BadRequestException(`Failed to update invoice: ${error.message}`);
     }
