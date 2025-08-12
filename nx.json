@@ -32,7 +32,8 @@
       "exclude": [
         "libs/web/api-client/*",
         "libs/types/*",
-        "libs/api/types/*"
+        "libs/api/types/*",
+        "libs/api/database/*"
       ]
     },
     {
@@ -86,7 +87,8 @@
       "include": [
         "libs/web/api-client/*",
         "libs/types/*",
-        "libs/api/types/*"
+        "libs/api/types/*",
+        "libs/api/database/*"
       ],
       "options": {
         "typecheck": {
