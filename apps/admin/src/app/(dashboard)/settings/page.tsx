@@ -1,11 +1,11 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import { authAPI } from "@nlc-ai/auth";
+import { authAPI } from "@nlc-ai/web-auth";
 import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
-import {Settings} from "@nlc-ai/settings";
+import {Settings} from "@nlc-ai/web-settings";
 import {useRouter, useSearchParams} from "next/navigation";
-import {calendlyAPI} from "@nlc-ai/api-client";
+import {calendlyAPI} from "@nlc-ai/web-api-client";
 
 
 const AdminSettings = () => {

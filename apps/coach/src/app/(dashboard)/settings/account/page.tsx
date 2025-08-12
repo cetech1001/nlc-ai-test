@@ -2,9 +2,9 @@
 
 import {useEffect, useState} from "react";
 import {useRouter, useSearchParams} from 'next/navigation';
-import {Settings} from "@nlc-ai/settings";
-import {authAPI, useAuth} from "@nlc-ai/auth";
-import {coachesAPI, integrationsAPI} from "@nlc-ai/api-client";
+import {Settings} from "@nlc-ai/web-settings";
+import {authAPI, useAuth} from "@nlc-ai/web-auth";
+import {coachesAPI, integrationsAPI} from "@nlc-ai/web-api-client";
 import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
 
 const CoachSettings = () => {

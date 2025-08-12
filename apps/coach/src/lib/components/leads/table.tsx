@@ -1,4 +1,4 @@
-import { tableRenderers } from "@nlc-ai/shared";
+import { tableRenderers } from "@nlc-ai/web-shared";
 import { EmailSequenceWithEmails } from "@nlc-ai/types";
 import {
   Mail,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@nlc-ai/ui';
+import { Button } from '@nlc-ai/web-ui';
 import { X, Mail, Send, Clock, Sparkles, Eye } from 'lucide-react';
 
 interface EmailAutomationModalProps {

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LoginForm, useAuthPage } from '@nlc-ai/auth';
+import { LoginForm, useAuthPage } from '@nlc-ai/web-auth';
 import { UserType } from '@nlc-ai/types';
 
 

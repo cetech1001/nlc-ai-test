@@ -1,11 +1,11 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/shared";
-import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/api-client";
-import { AlertBanner } from '@nlc-ai/ui';
+import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/web-shared";
+import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/web-api-client";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import {CoachWithStatus, FilterValues, Plan, TransactionWithDetails} from "@nlc-ai/types";
-import { useAuth } from "@nlc-ai/auth";
+import { useAuth } from "@nlc-ai/web-auth";
 import { Search } from "lucide-react";
 import {
   paymentHistoryColumns,

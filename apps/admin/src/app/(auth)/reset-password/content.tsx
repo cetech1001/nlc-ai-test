@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ResetPasswordForm, useAuthPage } from '@nlc-ai/auth';
+import { ResetPasswordForm, useAuthPage } from '@nlc-ai/web-auth';
 import { UserType } from "@nlc-ai/types";
 
 export const AdminResetPasswordContent = () => {

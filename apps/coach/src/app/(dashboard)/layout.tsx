@@ -1,9 +1,9 @@
 'use client'
 
 import {ReactNode, useEffect} from 'react';
-import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/shared';
+import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
 import {usePathname, useRouter} from "next/navigation";
-import {useAuth} from "@nlc-ai/auth";
+import {useAuth} from "@nlc-ai/web-auth";
 import {menuItems, pageConfig, settingsItems} from "@/lib";
 import {UserType} from "@nlc-ai/types";
 

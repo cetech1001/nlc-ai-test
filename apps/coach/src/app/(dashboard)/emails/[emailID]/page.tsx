@@ -12,10 +12,10 @@ import {
   Calendar,
   TrendingUp
 } from "lucide-react";
-import { BackTo } from "@nlc-ai/shared";
-import { EmailEditor } from "@nlc-ai/shared";
-import { AlertBanner } from '@nlc-ai/ui';
-import { aiAgentsAPI } from '@nlc-ai/api-client';
+import { BackTo } from "@nlc-ai/web-shared";
+import { EmailEditor } from "@nlc-ai/web-shared";
+import { AlertBanner } from '@nlc-ai/web-ui';
+import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { ClientEmailResponse, EmailThreadDetail } from '@nlc-ai/types';
 
 export default function ClientEmailDetails() {

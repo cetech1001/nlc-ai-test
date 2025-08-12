@@ -1,0 +1,22 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../auth"
+    },
+    {
+      "path": "../../types"
+    },
+    {
+      "path": "../api-client"
+    },
+    {
+      "path": "../ui"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react";
-import { Skeleton } from "@nlc-ai/ui";
+import { Skeleton } from "@nlc-ai/web-ui";
 import { Info } from "lucide-react";
 
 interface DayData {

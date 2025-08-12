@@ -1,4 +1,4 @@
-import { Skeleton } from "@nlc-ai/ui";
+import { Skeleton } from "@nlc-ai/web-ui";
 
 export const PaymentModalSkeleton = () => {
   return (

@@ -12,7 +12,7 @@ import {
   Zap,
   TrendingUp
 } from 'lucide-react';
-import { aiAgentsAPI } from '@nlc-ai/api-client';
+import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { ClientEmailStats/*, ClientEmailThread*/ } from '@nlc-ai/types';
 import {ClientEmailWidgetSkeleton} from "./skeletons";
 

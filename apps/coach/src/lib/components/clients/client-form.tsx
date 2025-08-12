@@ -2,7 +2,7 @@ import {
   Button,
   Input,
   Label
-} from "@nlc-ai/ui";
+} from "@nlc-ai/web-ui";
 import { X, Plus, User, Mail, Phone, Tag, Users } from "lucide-react";
 import {useEffect, useState} from "react";
 import {ClientFormData, ClientFormErrors, ClientWithDetails} from "@nlc-ai/types";

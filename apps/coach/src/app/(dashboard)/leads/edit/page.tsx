@@ -4,9 +4,9 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LeadForm } from "@/lib/components/leads/lead-form";
 import { LeadFormSkeleton } from "@/lib";
-import { leadsAPI } from "@nlc-ai/api-client";
+import { leadsAPI } from "@nlc-ai/web-api-client";
 import { Lead, LeadFormData, LeadFormErrors } from "@nlc-ai/types";
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 import { Sparkles, CheckCircle, AlertTriangle } from "lucide-react";
 
 const EditLead = () => {

@@ -1,7 +1,7 @@
 import {Sparkles} from "lucide-react";
 import {EmailImprovement} from "@nlc-ai/types";
 import {FC} from "react";
-import { Skeleton } from "@nlc-ai/ui";
+import { Skeleton } from "@nlc-ai/web-ui";
 
 interface IProps {
   improvements: EmailImprovement[];

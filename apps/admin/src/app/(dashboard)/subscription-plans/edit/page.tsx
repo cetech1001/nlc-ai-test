@@ -4,9 +4,9 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlanForm } from "@/lib/components/plans/plan-form";
 import { PlanFormSkeleton } from "@/lib/skeletons/plan-form.skeleton";
-import { plansAPI } from "@nlc-ai/api-client";
+import { plansAPI } from "@nlc-ai/web-api-client";
 import {Plan, UpdatePlanRequest} from "@nlc-ai/types";
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 
 const EditPlan = () => {
   const router = useRouter();

@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Plus, Calendar, TrendingUp, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/shared";
-import { AlertBanner, Button } from '@nlc-ai/ui';
-import { leadsAPI, aiAgentsAPI } from '@nlc-ai/api-client';
+import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/web-shared";
+import { AlertBanner, Button } from '@nlc-ai/web-ui';
+import { leadsAPI, aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { DataTableLead, FilterValues, LeadStats, EmailSequenceWithEmails } from "@nlc-ai/types";
 import {
   EmailAutomationModal,

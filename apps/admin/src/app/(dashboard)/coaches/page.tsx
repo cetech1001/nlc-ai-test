@@ -8,9 +8,9 @@ import {
   PageHeader,
   DataFilter,
   MobilePagination,
-} from "@nlc-ai/shared";
-import { coachesAPI } from "@nlc-ai/api-client";
-import { AlertBanner } from '@nlc-ai/ui';
+} from "@nlc-ai/web-shared";
+import { coachesAPI } from "@nlc-ai/web-api-client";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import {
   CoachesTable,
   coachFilters,

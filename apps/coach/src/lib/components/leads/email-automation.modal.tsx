@@ -16,8 +16,8 @@ import {
   Pause,
   StopCircle
 } from 'lucide-react';
-import { Button } from '@nlc-ai/ui';
-import { aiAgentsAPI } from '@nlc-ai/api-client';
+import { Button } from '@nlc-ai/web-ui';
+import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { EmailSequenceWithEmails, SEQUENCE_TEMPLATES } from '@nlc-ai/types';
 
 interface EmailAutomationModalProps {

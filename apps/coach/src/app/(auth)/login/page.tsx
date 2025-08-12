@@ -1,6 +1,6 @@
 'use client';
 
-import { LoginForm, useAuthPage } from "@nlc-ai/auth";
+import { LoginForm, useAuthPage } from "@nlc-ai/web-auth";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {useCookies} from "react-cookie";

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { BackTo } from '@nlc-ai/shared';
+import { BackTo } from '@nlc-ai/web-shared';
 import { Send, Star, /*Calendar, */ChevronDown } from 'lucide-react';
 
 interface TemplateData {

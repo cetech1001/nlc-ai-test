@@ -2,7 +2,7 @@
 
 import {useState, useEffect} from 'react';
 import {mockClientData, RetentionStatsTableContainer} from "@/lib";
-import { StatCard } from '@nlc-ai/shared';
+import { StatCard } from '@nlc-ai/web-shared';
 
 interface RetentionStats {
   retentionClients: number;

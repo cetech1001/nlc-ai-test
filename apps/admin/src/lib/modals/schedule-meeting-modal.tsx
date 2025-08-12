@@ -2,7 +2,7 @@
 
 import { FC, useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { Button } from "@nlc-ai/ui";
+import { Button } from "@nlc-ai/web-ui";
 
 interface ScheduleMeetingModalProps {
   isOpen: boolean;

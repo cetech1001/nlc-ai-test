@@ -2,7 +2,7 @@
 
 import {useState, useEffect} from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { PageHeader } from '@nlc-ai/shared';
+import { PageHeader } from '@nlc-ai/web-shared';
 import {Plus} from 'lucide-react';
 import {ContentPiece} from "@nlc-ai/types";
 import {mockVideos, VideoCard, VideosSkeleton} from "@/lib";

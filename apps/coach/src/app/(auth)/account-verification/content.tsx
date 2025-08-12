@@ -2,7 +2,7 @@
 
 import {useMemo} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
-import { AccountVerificationForm, useAuthPage } from '@nlc-ai/auth';
+import { AccountVerificationForm, useAuthPage } from '@nlc-ai/web-auth';
 
 export const CoachAccountVerificationContent = () => {
   const router = useRouter();

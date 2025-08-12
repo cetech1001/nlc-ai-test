@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from "next/navigation";
-import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/auth';
+import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/web-auth';
 import { UserType } from "@nlc-ai/types";
 
 const AdminForgotPasswordPage = () => {

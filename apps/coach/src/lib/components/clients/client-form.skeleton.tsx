@@ -1,4 +1,4 @@
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 
 export const ClientFormSkeleton = ({ title, onBack }: { title: string; onBack: () => void }) => {
   return (

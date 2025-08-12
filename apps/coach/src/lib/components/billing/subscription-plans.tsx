@@ -1,4 +1,4 @@
-import { PlanCard } from "@nlc-ai/shared";
+import { PlanCard } from "@nlc-ai/web-shared";
 import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
 import {FC} from "react";
 

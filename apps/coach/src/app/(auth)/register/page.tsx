@@ -1,6 +1,6 @@
 'use client';
 
-import { RegisterForm, useAuthPage } from '@nlc-ai/auth';
+import { RegisterForm, useAuthPage } from '@nlc-ai/web-auth';
 import {useRouter} from "next/navigation";
 
 const CoachRegisterPage = () => {

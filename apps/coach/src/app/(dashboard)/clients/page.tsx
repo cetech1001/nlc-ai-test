@@ -9,9 +9,9 @@ import {
   DataFilter,
   MobilePagination,
   DataTable,
-} from "@nlc-ai/shared";
-import { clientsAPI } from "@nlc-ai/api-client";
-import { AlertBanner, Button } from '@nlc-ai/ui';
+} from "@nlc-ai/web-shared";
+import { clientsAPI } from "@nlc-ai/web-api-client";
+import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import { ClientWithDetails, FilterValues, DataTableClient } from "@nlc-ai/types";
 import {clientColumns, clientFilters, emptyClientFilterValues, transformClientData} from "@/lib";
 

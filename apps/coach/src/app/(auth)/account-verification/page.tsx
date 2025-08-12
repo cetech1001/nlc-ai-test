@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { CoachAccountVerificationContent } from './content';
-import { AccountVerificationSkeleton } from '@nlc-ai/auth';
+import { AccountVerificationSkeleton } from '@nlc-ai/web-auth';
 
 const CoachAccountVerificationPage = () => {
   return (

@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LeadForm } from "@/lib/components/leads/lead-form";
-import { leadsAPI } from "@nlc-ai/api-client";
+import { leadsAPI } from "@nlc-ai/web-api-client";
 import { LeadFormData, LeadFormErrors } from "@nlc-ai/types";
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 import { Sparkles } from "lucide-react";
 
 const CreateNewLead = () => {

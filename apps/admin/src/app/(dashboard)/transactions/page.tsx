@@ -9,9 +9,9 @@ import {
   TransactionAnalytics,
   emptyTransactionsFilterValues
 } from "@/lib";
-import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/shared";
-import { transactionsAPI } from "@nlc-ai/api-client";
-import { AlertBanner } from '@nlc-ai/ui';
+import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/web-shared";
+import { transactionsAPI } from "@nlc-ai/web-api-client";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import {DataTableTransaction, FilterValues} from "@nlc-ai/types";
 
 const Transactions = () => {

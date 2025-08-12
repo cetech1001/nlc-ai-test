@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, DollarSign, CreditCard, Users, Activity } from 'lucide-react';
-import { transactionsAPI } from '@nlc-ai/api-client';
-import {AlertBanner, Button } from '@nlc-ai/ui';
+import { transactionsAPI } from '@nlc-ai/web-api-client';
+import {AlertBanner, Button } from '@nlc-ai/web-ui';
 import {RevenueComparison, TopCoach, TransactionStats} from "@nlc-ai/types";
-import { StatCard } from '@nlc-ai/shared';
+import { StatCard } from '@nlc-ai/web-shared';
 
 export const TransactionAnalytics: React.FC = () => {
   // Separate loading states for each section

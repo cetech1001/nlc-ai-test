@@ -2,12 +2,12 @@
 
 import React, {useEffect, useState} from "react";
 import {AlertCircle, ChevronLeft, ChevronRight, Plus,} from "lucide-react";
-import {Button} from "@nlc-ai/ui";
+import {Button} from "@nlc-ai/web-ui";
 import {Appointment, CalendarDay, CalendarEvent, UserType} from "@nlc-ai/types";
-import {calendlyAPI} from "@nlc-ai/api-client";
+import {calendlyAPI} from "@nlc-ai/web-api-client";
 import {CalendarPageSkeleton, CalendlyEmbedModal} from "@/lib";
 import {useRouter} from "next/navigation";
-import { getInitials } from "@nlc-ai/utils";
+import { getInitials } from "@nlc-ai/web-utils";
 
 const MiniCalendarCell = ({ day, isCurrentMonth, isToday, hasEvents, onClick }: {
   day: number;

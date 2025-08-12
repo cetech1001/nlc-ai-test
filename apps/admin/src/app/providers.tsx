@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Sonner, TooltipProvider } from '@nlc-ai/ui';
+import { Sonner, TooltipProvider } from '@nlc-ai/web-ui';
 import {ReactNode, useState} from 'react';
 
 interface IProps {

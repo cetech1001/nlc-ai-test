@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { CoachResetPasswordContent } from './content';
-import { ResetPasswordSkeleton } from '@nlc-ai/auth';
+import { ResetPasswordSkeleton } from '@nlc-ai/web-auth';
 
 const CoachResetPasswordPage = () => {
   return (

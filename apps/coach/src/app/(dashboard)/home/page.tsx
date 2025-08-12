@@ -1,6 +1,6 @@
 'use client'
 
-import { StatCard } from "@nlc-ai/shared";
+import { StatCard } from "@nlc-ai/web-shared";
 import {
   LeadsFollowUpWidget,
   TaskList,

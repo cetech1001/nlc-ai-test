@@ -3,7 +3,7 @@ import {
   Input,
   Textarea,
   Label
-} from "@nlc-ai/ui";
+} from "@nlc-ai/web-ui";
 import { Calendar, User, Mail, Phone, MapPin, FileText } from "lucide-react";
 import { LeadFormData, LeadFormErrors } from "@nlc-ai/types";
 

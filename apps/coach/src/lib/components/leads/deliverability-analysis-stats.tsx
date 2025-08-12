@@ -1,5 +1,5 @@
 import {AlertTriangle, Zap} from "lucide-react";
-import {Button} from "@nlc-ai/ui";
+import {Button} from "@nlc-ai/web-ui";
 import {DeliverabilityAnalysis} from "@nlc-ai/types";
 import {FC} from "react";
 import {getScoreBg, getScoreColor} from "@/lib";

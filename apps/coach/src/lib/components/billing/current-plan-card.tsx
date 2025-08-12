@@ -1,7 +1,7 @@
 import {FC} from 'react';
 import {BillingCycle, Subscription} from "@nlc-ai/types";
-import {Button, Skeleton} from "@nlc-ai/ui";
-import { formatCurrency, toTitleCase } from '@nlc-ai/utils';
+import {Button, Skeleton} from "@nlc-ai/web-ui";
+import { formatCurrency, toTitleCase } from '@nlc-ai/web-utils';
 
 const CurrentPlanCardSkeleton: FC = () => {
   return (

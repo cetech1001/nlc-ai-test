@@ -2,9 +2,9 @@
 
 import {useEffect, useState} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import {BackTo, PlanCard} from "@nlc-ai/shared";
-import { coachesAPI, plansAPI } from "@nlc-ai/api-client";
-import { AlertBanner } from '@nlc-ai/ui';
+import {BackTo, PlanCard} from "@nlc-ai/web-shared";
+import { coachesAPI, plansAPI } from "@nlc-ai/web-api-client";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
 import {MakePaymentSkeleton, PaymentModal} from "@/lib";
 

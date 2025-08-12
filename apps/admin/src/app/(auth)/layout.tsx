@@ -2,7 +2,7 @@
 
 import { FC, ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AuthLayout, AuthLayoutProvider, useAuth, AuthSkeleton } from '@nlc-ai/auth';
+import { AuthLayout, AuthLayoutProvider, useAuth, AuthSkeleton } from '@nlc-ai/web-auth';
 
 interface AuthLayoutProps {
   children: ReactNode;

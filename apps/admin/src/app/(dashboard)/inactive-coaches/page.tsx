@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/shared";
-import { coachesAPI } from "@nlc-ai/api-client";
+import { Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/web-shared";
+import { coachesAPI } from "@nlc-ai/web-api-client";
 import {
   emptyInactiveCoachesFilterValues,
   inactiveCoachFilters,
   CoachesTable
 } from "@/lib";
-import { AlertBanner } from '@nlc-ai/ui';
+import { AlertBanner } from '@nlc-ai/web-ui';
 import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
 export default function InactiveCoaches() {

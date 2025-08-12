@@ -2,11 +2,11 @@
 
 import { Plus, Trash2, ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@nlc-ai/ui";
+import { Button } from "@nlc-ai/web-ui";
 import { useEffect, useState } from "react";
-import { plansAPI } from "@nlc-ai/api-client";
-import { PageHeader, DataFilter, PlanCard } from "@nlc-ai/shared";
-import { AlertBanner } from '@nlc-ai/ui';
+import { plansAPI } from "@nlc-ai/web-api-client";
+import { PageHeader, DataFilter, PlanCard } from "@nlc-ai/web-shared";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import {FilterValues, Plan, TransformedPlan} from "@nlc-ai/types";
 import {emptyPlanFilterValues, planFilters, PlansPageSkeleton} from "@/lib";
 

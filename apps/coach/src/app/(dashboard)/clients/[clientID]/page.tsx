@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { BackTo } from "@nlc-ai/shared";
-import { clientsAPI } from "@nlc-ai/api-client";
-import { AlertBanner } from '@nlc-ai/ui';
+import { BackTo } from "@nlc-ai/web-shared";
+import { clientsAPI } from "@nlc-ai/web-api-client";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import { ClientWithDetails, Course } from "@nlc-ai/types";
 
 interface CourseCardProps {

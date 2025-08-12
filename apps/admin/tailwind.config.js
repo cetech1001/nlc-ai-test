@@ -6,9 +6,9 @@ module.exports = {
   content: [
     join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'),
     ...createGlobPatternsForDependencies(__dirname),
-    '../../libs/auth/src/**/*.{ts,tsx}',
-    '../../libs/ui/src/**/*.{ts,tsx}',
-    '../../libs/shared/src/**/*.{ts,tsx}',
+    '../../libs/web/auth/src/**/*.{ts,tsx}',
+    '../../libs/web/ui/src/**/*.{ts,tsx}',
+    '../../libs/web/shared/src/**/*.{ts,tsx}',
   ],
   safelist: [
     // Gradient backgrounds

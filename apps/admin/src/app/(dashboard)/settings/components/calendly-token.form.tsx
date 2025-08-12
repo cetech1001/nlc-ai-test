@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@nlc-ai/ui";
+import { Button } from "@nlc-ai/web-ui";
 import { Eye, EyeOff, AlertCircle, ExternalLink } from "lucide-react";
 
 interface CalendlyTokenFormProps {

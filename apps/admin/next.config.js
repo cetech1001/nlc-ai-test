@@ -37,7 +37,7 @@ const nextConfig = {
       }
     ],
   },
-  transpilePackages: ['@nlc-ai/ui', '@nlc-ai/auth', '@nlc-ai/shared'],
+  transpilePackages: ['@nlc-ai/web-ui', '@nlc-ai/web-auth', '@nlc-ai/web-shared'],
   env: {},
   webpack: (config, { isServer }) => {
     if (!isServer) {

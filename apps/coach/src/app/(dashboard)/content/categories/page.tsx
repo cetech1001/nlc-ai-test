@@ -3,8 +3,8 @@
 import {useState, useEffect, ComponentType} from 'react';
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { PageHeader } from "@nlc-ai/shared";
-import { AlertBanner } from '@nlc-ai/ui';
+import { PageHeader } from "@nlc-ai/web-shared";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import {ContentCategory} from "@nlc-ai/types";
 import {CategoriesSkeleton, CategoryCard, mockCategories} from '@/lib';
 

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@nlc-ai/auth';
+import { useAuth } from '@nlc-ai/web-auth';
 import {UserType} from "@nlc-ai/types";
 
 const GoogleAuthCallbackPage = () => {

@@ -3,10 +3,10 @@ import {
   Input,
   Textarea,
   Label
-} from "@nlc-ai/ui";
+} from "@nlc-ai/web-ui";
 import { X, Plus, Palette } from "lucide-react";
 import {useEffect, useState} from "react";
-import {PLAN_COLORS} from "@nlc-ai/utils";
+import {PLAN_COLORS} from "@nlc-ai/web-utils";
 import {CreatePlanRequest, Plan, PlanFormData, PlanFormErrors} from "@nlc-ai/types";
 
 interface IProps {

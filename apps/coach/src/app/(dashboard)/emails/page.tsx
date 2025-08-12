@@ -3,9 +3,9 @@
 import { useState, useEffect, FC } from 'react';
 import {useRouter, useSearchParams} from "next/navigation";
 import { Search, RefreshCw, Clock, AlertCircle, CheckCircle, Mail, Zap, TrendingUp } from "lucide-react";
-import { AlertBanner } from '@nlc-ai/ui';
-import { Pagination } from '@nlc-ai/shared';
-import { aiAgentsAPI } from '@nlc-ai/api-client';
+import { AlertBanner } from '@nlc-ai/web-ui';
+import { Pagination } from '@nlc-ai/web-shared';
+import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { ClientEmailResponse, ClientEmailThread, ClientEmailStats } from '@nlc-ai/types';
 
 interface EmailCardProps {

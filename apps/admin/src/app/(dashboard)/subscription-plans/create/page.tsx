@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { PlanForm } from "@/lib/components/plans/plan-form";
-import { plansAPI } from "@nlc-ai/api-client";
+import { plansAPI } from "@nlc-ai/web-api-client";
 import {CreatePlanRequest} from "@nlc-ai/types";
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 
 const CreateNewPlan = () => {
   const router = useRouter();

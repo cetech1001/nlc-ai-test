@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { ClientForm } from "@/lib";
-import { clientsAPI } from "@nlc-ai/api-client";
+import { clientsAPI } from "@nlc-ai/web-api-client";
 import {ClientFormData, CreateClient} from "@nlc-ai/types";
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 
 const CreateNewClient = () => {
   const router = useRouter();

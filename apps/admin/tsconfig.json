@@ -50,25 +50,25 @@
   ],
   "references": [
     {
-      "path": "../../libs/utils"
+      "path": "../../libs/web/utils"
     },
     {
-      "path": "../../libs/settings"
+      "path": "../../libs/web/settings"
     },
     {
-      "path": "../../libs/api-client"
+      "path": "../../libs/web/api-client"
     },
     {
       "path": "../../libs/types"
     },
     {
-      "path": "../../libs/shared"
+      "path": "../../libs/web/shared"
     },
     {
-      "path": "../../libs/ui"
+      "path": "../../libs/web/ui"
     },
     {
-      "path": "../../libs/auth"
+      "path": "../../libs/web/auth"
     }
   ]
 }

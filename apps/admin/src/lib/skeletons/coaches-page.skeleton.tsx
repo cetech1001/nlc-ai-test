@@ -1,5 +1,5 @@
-import { DataTableSkeleton } from "@nlc-ai/shared";
-import { Skeleton } from "@nlc-ai/ui";
+import { DataTableSkeleton } from "@nlc-ai/web-shared";
+import { Skeleton } from "@nlc-ai/web-ui";
 
 interface IProps {
   length: number;

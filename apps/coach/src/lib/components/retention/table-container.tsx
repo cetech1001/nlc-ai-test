@@ -1,7 +1,7 @@
 import {FC, useState} from "react";
-import {DataTable, tableRenderers} from "@nlc-ai/shared";
+import {DataTable, tableRenderers} from "@nlc-ai/web-shared";
 import {Client} from "@nlc-ai/types";
-import { Skeleton } from "@nlc-ai/ui";
+import { Skeleton } from "@nlc-ai/web-ui";
 
 type ClientData = Pick<Client, 'id' | 'firstName' | 'lastName' | 'email' | 'lastInteractionAt'>;
 

@@ -124,7 +124,8 @@
   },
   "workspaces": [
     "apps/*",
+    "apps/services/*",
     "libs/*",
-    "apps/services/*"
+    "libs/web/*"
   ]
 }

@@ -11,11 +11,11 @@ import {
   Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@nlc-ai/ui';
-import { aiAgentsAPI } from '@nlc-ai/api-client';
+import { Button } from '@nlc-ai/web-ui';
+import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { EmailInSequence, DeliverabilityAnalysis, TIMING_OPTIONS } from '@nlc-ai/types';
 import dynamic from 'next/dynamic';
-import { Skeleton } from '@nlc-ai/ui';
+import { Skeleton } from '@nlc-ai/web-ui';
 import {AiImprovements, DeliverabilityAnalysisStats, EmailStats, getScoreBg, getScoreColor} from "@/lib";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {

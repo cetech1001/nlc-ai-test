@@ -9,7 +9,7 @@ import {useEffect, useState} from "react";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import {SendMailPageSkeleton} from "@/lib/skeletons/send-mail-page.skeleton";
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,

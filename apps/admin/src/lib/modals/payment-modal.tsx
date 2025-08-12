@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { Dialog, Transition, Listbox, RadioGroup } from "@headlessui/react";
 import { Copy, ChevronDown, CheckIcon, CreditCard, Loader2 } from "lucide-react";
-import { Button } from "@nlc-ai/ui";
+import { Button } from "@nlc-ai/web-ui";
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
 import {
   Elements,
@@ -9,7 +9,7 @@ import {
   useStripe,
   useElements
 } from '@stripe/react-stripe-js';
-import { paymentsAPI, plansAPI } from "@nlc-ai/api-client";
+import { paymentsAPI, plansAPI } from "@nlc-ai/web-api-client";
 import {PaymentModalSkeleton} from "@/lib";
 
 interface PaymentModalProps {

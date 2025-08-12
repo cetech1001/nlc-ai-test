@@ -7,9 +7,9 @@ import {
   Plus,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "@nlc-ai/ui";
+import { Button } from "@nlc-ai/web-ui";
 import {Appointment, CalendarDay, CalendarEvent} from "@nlc-ai/types";
-import {calendlyAPI} from "@nlc-ai/api-client";
+import {calendlyAPI} from "@nlc-ai/web-api-client";
 import {
   CalendarCell,
   DayHeader,

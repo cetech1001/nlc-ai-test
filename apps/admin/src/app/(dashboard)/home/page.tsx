@@ -1,11 +1,11 @@
 'use client'
 
-import { RevenueGraph, StatCard } from "@nlc-ai/shared";
+import { RevenueGraph, StatCard } from "@nlc-ai/web-shared";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {toast} from 'sonner';
-import {coachesAPI, transactionsAPI} from "@nlc-ai/api-client";
-import { AlertBanner } from "@nlc-ai/ui";
+import {coachesAPI, transactionsAPI} from "@nlc-ai/web-api-client";
+import { AlertBanner } from "@nlc-ai/web-ui";
 import {CoachStats, CoachWithStatus, RevenueStats, TimePeriodRevenueData} from "@nlc-ai/types";
 import {CoachesTable} from "@/lib";
 

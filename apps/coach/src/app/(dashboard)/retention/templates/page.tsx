@@ -3,8 +3,8 @@
 import {useState, useEffect, useMemo} from 'react';
 import { useRouter } from "next/navigation";
 import { Search, Plus } from "lucide-react";
-import { DataFilter } from "@nlc-ai/shared";
-import { AlertBanner } from '@nlc-ai/ui';
+import { DataFilter } from "@nlc-ai/web-shared";
+import { AlertBanner } from '@nlc-ai/web-ui';
 import RetentionStats from "@/lib/components/retention/stats";
 import {emptyTemplateFilterValues, mockTemplates, TemplateCard, templateFilters, TemplatesSkeleton} from "@/lib";
 import {EmailTemplate, FilterValues} from "@nlc-ai/types";

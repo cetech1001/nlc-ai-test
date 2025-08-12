@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
-import { Button } from '@nlc-ai/ui';
+import { Button } from '@nlc-ai/web-ui';
 import { ArrowLeft, Save, Calendar, User, Mail, Phone, MapPin, FileText, Sparkles, AlertTriangle, CheckCircle } from 'lucide-react';
-import { leadsAPI } from '@nlc-ai/api-client';
+import { leadsAPI } from '@nlc-ai/web-api-client';
 import {Lead, LeadFormData} from "@nlc-ai/types";
 
 const statusOptions = [

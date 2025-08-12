@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from "react";
-import { Button } from "@nlc-ai/ui";
+import { Button } from "@nlc-ai/web-ui";
 import { Check, ExternalLink, Settings, Trash2, Plus, AlertCircle } from "lucide-react";
-import { calendlyAPI } from "@nlc-ai/api-client";
+import { calendlyAPI } from "@nlc-ai/web-api-client";
 import {CalendlySettings} from "@nlc-ai/types";
 import {CalendlyTokenForm} from "@/app/(dashboard)/settings/components/calendly-token.form";
 

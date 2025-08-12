@@ -4,9 +4,9 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClientForm } from "@/lib/components/clients/client-form";
 import { ClientFormSkeleton } from "@/lib";
-import { clientsAPI } from "@nlc-ai/api-client";
+import { clientsAPI } from "@nlc-ai/web-api-client";
 import {ClientFormData, ClientWithDetails} from "@nlc-ai/types";
-import { BackTo } from "@nlc-ai/shared";
+import { BackTo } from "@nlc-ai/web-shared";
 import { User, CheckCircle } from "lucide-react";
 
 const EditClient = () => {

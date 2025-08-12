@@ -16,28 +16,28 @@
       "path": "./apps/api"
     },
     {
-      "path": "./libs/ui"
-    },
-    {
-      "path": "./libs/auth"
-    },
-    {
-      "path": "./libs/shared"
-    },
-    {
-      "path": "./libs/api-client"
-    },
-    {
       "path": "./libs/types"
     },
     {
-      "path": "./libs/settings"
-    },
-    {
-      "path": "./libs/utils"
-    },
-    {
       "path": "./apps/services/billing"
+    },
+    {
+      "path": "./libs/web/api-client"
+    },
+    {
+      "path": "./libs/web/settings"
+    },
+    {
+      "path": "./libs/web/shared"
+    },
+    {
+      "path": "./libs/web/utils"
+    },
+    {
+      "path": "./libs/web/auth"
+    },
+    {
+      "path": "./libs/web/ui"
     }
   ]
 }

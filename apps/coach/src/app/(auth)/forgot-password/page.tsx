@@ -1,6 +1,6 @@
 'use client';
 
-import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/auth';
+import { ForgotPasswordForm, useAuthPage } from '@nlc-ai/web-auth';
 import {UserType} from "@nlc-ai/types";
 import {useRouter} from "next/navigation";
 

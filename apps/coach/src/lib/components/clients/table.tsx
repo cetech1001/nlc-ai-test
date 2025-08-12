@@ -1,4 +1,4 @@
-import { tableRenderers } from "@nlc-ai/shared";
+import { tableRenderers } from "@nlc-ai/web-shared";
 import {ClientWithDetails, DataTableClient, TableColumn} from "@nlc-ai/types";
 import {Edit3, Mailbox} from "lucide-react";
 

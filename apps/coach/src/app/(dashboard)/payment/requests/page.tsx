@@ -2,10 +2,10 @@
 
 import {useEffect, useMemo, useState} from 'react';
 import {Search} from "lucide-react";
-import {StatCard} from "@nlc-ai/shared";
-import {AlertBanner} from '@nlc-ai/ui';
-import {coachesAPI} from "@nlc-ai/api-client";
-import {useAuth} from "@nlc-ai/auth";
+import {StatCard} from "@nlc-ai/web-shared";
+import {AlertBanner} from '@nlc-ai/web-ui';
+import {coachesAPI} from "@nlc-ai/web-api-client";
+import {useAuth} from "@nlc-ai/web-auth";
 import {CoachPaymentRequest, CoachPaymentRequestStats,} from "@nlc-ai/types";
 import {PaymentRequestCard} from "@/lib";
 
