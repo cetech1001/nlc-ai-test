@@ -126,6 +126,7 @@
     "apps/api/*",
     "apps/web/*",
     "libs/*",
-    "libs/web/*"
+    "libs/web/*",
+    "libs/api/*"
   ]
 }

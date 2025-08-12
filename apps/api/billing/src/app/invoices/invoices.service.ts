@@ -6,7 +6,7 @@ import {
   InvoiceFilters,
   InvoiceWithDetails,
   UpdateInvoiceRequest
-} from "./types/invoice.interfaces";
+} from "@nlc-ai/api-types";
 
 @Injectable()
 export class InvoicesService {

@@ -31,7 +31,8 @@
       },
       "exclude": [
         "libs/web/api-client/*",
-        "libs/types/*"
+        "libs/types/*",
+        "libs/api/types/*"
       ]
     },
     {
@@ -84,7 +85,8 @@
       "plugin": "@nx/js/typescript",
       "include": [
         "libs/web/api-client/*",
-        "libs/types/*"
+        "libs/types/*",
+        "libs/api/types/*"
       ],
       "options": {
         "typecheck": {

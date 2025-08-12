@@ -35,6 +35,9 @@
     },
     {
       "path": "./libs/web/ui"
+    },
+    {
+      "path": "./libs/api/types"
     }
   ]
 }
