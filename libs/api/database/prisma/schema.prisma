@@ -672,7 +672,7 @@ model Subscription {
   transactions       Transaction[]
   invoices           Invoice[]
 
-  @@map("subscriptions")
+  @@map("subscription")
 }
 
 model Lead {

@@ -1,76 +1,19 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Transaction, TransactionStatus, PaymentMethodType, Prisma } from '@prisma/client';
-
-export interface CreateTransactionDto {
-  coachID: string;
-  planID: string;
-  subscriptionID?: string;
-  amount: number;
-  currency?: string;
-  paymentMethod: PaymentMethodType;
-  stripePaymentID?: string;
-  paypalOrderID?: string;
-  description?: string;
-  metadata?: Record<string, any>;
-  invoiceDate?: Date;
-  dueDate?: Date;
-}
-
-export interface UpdateTransactionDto {
-  status?: TransactionStatus;
-  paidAt?: Date;
-  failureReason?: string;
-  refundReason?: string;
-  refundedAmount?: number;
-  metadata?: Record<string, any>;
-}
-
-export interface TransactionFilters {
-  coachID?: string;
-  planID?: string;
-  subscriptionID?: string;
-  status?: TransactionStatus;
-  paymentMethod?: PaymentMethodType;
-  amountRange?: {
-    min?: number;
-    max?: number;
-  };
-  dateRange?: {
-    start?: Date;
-    end?: Date;
-  };
-  currency?: string;
-}
-
-export interface TransactionWithDetails extends Transaction {
-  coach: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  plan: {
-    name: string;
-    monthlyPrice: number;
-    annualPrice: number;
-  };
-  subscription?: {
-    status: string;
-    billingCycle: string;
-  };
-}
-
-export interface RefundDto {
-  amount?: number; // Partial refund amount, if not provided, full refund
-  reason: string;
-  refundToOriginalPaymentMethod?: boolean;
-}
+import {
+  CreateTransactionRequest,
+  RefundRequest,
+  TransactionFilters,
+  UpdateTransactionRequest,
+  TransactionWithDetails
+} from "@nlc-ai/api-types";
 
 @Injectable()
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createTransaction(data: CreateTransactionDto): Promise<Transaction> {
+  async createTransaction(data: CreateTransactionRequest): Promise<Transaction> {
     // Validate coach exists
     const coach = await this.prisma.coach.findUnique({
       where: { id: data.coachID },
@@ -244,19 +187,17 @@ export class TransactionsService {
     return transaction;
   }
 
-  async updateTransaction(id: string, data: UpdateTransactionDto): Promise<Transaction> {
-    const existingTransaction = await this.findTransactionById(id);
+  async updateTransaction(id: string, data: UpdateTransactionRequest): Promise<Transaction> {
+    await this.findTransactionById(id);
 
     try {
-      const updatedTransaction = await this.prisma.transaction.update({
+      return this.prisma.transaction.update({
         where: { id },
         data: {
           ...data,
           updatedAt: new Date(),
         },
       });
-
-      return updatedTransaction;
     } catch (error: any) {
       throw new BadRequestException(`Failed to update transaction: ${error.message}`);
     }
@@ -276,7 +217,7 @@ export class TransactionsService {
     });
   }
 
-  async processRefund(id: string, refundData: RefundDto): Promise<Transaction> {
+  async processRefund(id: string, refundData: RefundRequest): Promise<Transaction> {
     const transaction = await this.findTransactionById(id);
 
     if (transaction.status !== TransactionStatus.completed) {

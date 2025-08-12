@@ -126,7 +126,7 @@ export class PlansService {
     });
 
     if (activeSubscriptions > 0) {
-      throw new ConflictException('Cannot delete plan with active subscriptions. Deactivate it instead.');
+      throw new ConflictException('Cannot delete plan with active subscription. Deactivate it instead.');
     }
 
     return this.prisma.plan.update({

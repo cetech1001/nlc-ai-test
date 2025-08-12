@@ -52,7 +52,7 @@ export class PaymentsController {
     return this.paymentsService.processPayment(data);
   }
 
-  @Get('customer/:customerID/payment-methods')
+  @Get('customer/:customerID/payment-method')
   @ApiOperation({ summary: 'Get payment methods for a customer' })
   @ApiResponse({ status: 200, description: 'Payment methods retrieved successfully' })
   async getPaymentMethods(@Param('customerID') customerID: string) {

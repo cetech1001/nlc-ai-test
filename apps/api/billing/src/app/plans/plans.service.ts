@@ -115,7 +115,7 @@ export class PlansService {
   async deactivatePlan(id: string): Promise<Plan> {
     const plan = await this.findPlanById(id);
 
-    // Check if plan has active subscriptions
+    // Check if plan has active subscription
     const activeSubscriptions = await this.prisma.subscription.count({
       where: {
         planID: id,
@@ -124,7 +124,7 @@ export class PlansService {
     });
 
     if (activeSubscriptions > 0) {
-      throw new BadRequestException('Cannot deactivate plan with active subscriptions');
+      throw new BadRequestException('Cannot deactivate plan with active subscription');
     }
 
     return this.prisma.plan.update({
@@ -139,7 +139,7 @@ export class PlansService {
   async softDeletePlan(id: string): Promise<Plan> {
     const plan = await this.findPlanById(id);
 
-    // Check if plan has any subscriptions or transactions
+    // Check if plan has any subscription or transactions
     const hasRelatedRecords = await this.prisma.plan.findUnique({
       where: { id },
       select: {
@@ -153,7 +153,7 @@ export class PlansService {
     });
 
     if (hasRelatedRecords?._count.subscriptions > 0 || hasRelatedRecords?._count.transactions > 0) {
-      throw new BadRequestException('Cannot delete plan with existing subscriptions or transactions');
+      throw new BadRequestException('Cannot delete plan with existing subscription or transactions');
     }
 
     return this.prisma.plan.update({
@@ -193,7 +193,7 @@ export class PlansService {
     const totalSubscriptions = subscriptionStats.reduce((sum, stat) => sum + stat._count.id, 0);
     const activeSubscriptions = subscriptionStats.find(stat => stat.status === 'active')?._count.id || 0;
 
-    // Calculate monthly revenue based on active subscriptions
+    // Calculate monthly revenue based on active subscription
     const monthlyRevenue = activeSubscriptions * plan.monthlyPrice;
 
     return {

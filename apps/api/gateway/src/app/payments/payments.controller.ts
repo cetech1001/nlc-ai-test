@@ -69,7 +69,7 @@ export class PaymentsController {
     return this.paymentsService.processPayment(data);
   }
 
-  @Get('customer/:customerID/payment-methods')
+  @Get('customer/:customerID/payment-method')
   @UseGuards(JwtAuthGuard, UserTypesGuard)
   @UserTypes('admin')
   @ApiBearerAuth()

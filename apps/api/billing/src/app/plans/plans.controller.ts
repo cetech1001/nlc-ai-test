@@ -51,7 +51,7 @@ export class PlansController {
   @Put(':id/deactivate')
   @ApiOperation({ summary: 'Deactivate a plan' })
   @ApiResponse({ status: 200, description: 'Plan deactivated successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot deactivate plan with active subscriptions' })
+  @ApiResponse({ status: 400, description: 'Cannot deactivate plan with active subscription' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
   async deactivatePlan(@Param('id') id: string) {
     return this.plansService.deactivatePlan(id);
@@ -60,7 +60,7 @@ export class PlansController {
   @Delete(':id')
   @ApiOperation({ summary: 'Soft delete a plan' })
   @ApiResponse({ status: 200, description: 'Plan deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot delete plan with existing subscriptions or transactions' })
+  @ApiResponse({ status: 400, description: 'Cannot delete plan with existing subscription or transactions' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
   async softDeletePlan(@Param('id') id: string) {
     return this.plansService.softDeletePlan(id);

@@ -99,7 +99,7 @@ export class PlansController {
   @ApiOperation({ summary: 'Soft delete a subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan marked for deletion successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
-  @ApiResponse({ status: 409, description: 'Cannot delete plan with active subscriptions' })
+  @ApiResponse({ status: 409, description: 'Cannot delete plan with active subscription' })
   remove(@Param('id') id: string) {
     return this.plansService.remove(id);
   }

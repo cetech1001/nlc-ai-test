@@ -17,15 +17,15 @@ export class SubscriptionsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all subscriptions with filtering' })
+  @ApiOperation({ summary: 'Get all subscription with filtering' })
   @ApiResponse({ status: 200, description: 'Subscriptions retrieved successfully' })
   async findAllSubscriptions(@Query() filters: SubscriptionFilters) {
     return this.subscriptionsService.findAllSubscriptions(filters);
   }
 
   @Get('expiring')
-  @ApiOperation({ summary: 'Get expiring subscriptions' })
-  @ApiResponse({ status: 200, description: 'Expiring subscriptions retrieved successfully' })
+  @ApiOperation({ summary: 'Get expiring subscription' })
+  @ApiResponse({ status: 200, description: 'Expiring subscription retrieved successfully' })
   async getExpiringSubscriptions(@Query('daysAhead') daysAhead: number = 7) {
     return this.subscriptionsService.getExpiringSubscriptions(daysAhead);
   }
@@ -86,7 +86,7 @@ export class SubscriptionsController {
   @Put(':id/renew')
   @ApiOperation({ summary: 'Renew a subscription' })
   @ApiResponse({ status: 200, description: 'Subscription renewed successfully' })
-  @ApiResponse({ status: 400, description: 'Only active subscriptions can be renewed' })
+  @ApiResponse({ status: 400, description: 'Only active subscription can be renewed' })
   @ApiResponse({ status: 404, description: 'Subscription not found' })
   async renewSubscription(@Param('id') id: string) {
     return this.subscriptionsService.renewSubscription(id);

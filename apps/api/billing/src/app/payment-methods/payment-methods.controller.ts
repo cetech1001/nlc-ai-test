@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PaymentMethodsService, CreatePaymentMethodDto, UpdatePaymentMethodDto, PaymentMethodFilters } from './payment-methods.service';
 
 @ApiTags('Payment Methods')
-@Controller('payment-methods')
+@Controller('payment-method')
 export class PaymentMethodsController {
   constructor(private readonly paymentMethodsService: PaymentMethodsService) {}
 

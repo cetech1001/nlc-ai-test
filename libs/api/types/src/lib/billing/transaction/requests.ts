@@ -1,4 +1,4 @@
-import { TransactionStatus, PaymentMethodType } from '@prisma/client';
+import {PaymentMethodType, TransactionStatus} from "@prisma/client";
 
 export interface CreateTransactionRequest {
   coachID: string;
@@ -41,46 +41,8 @@ export interface TransactionFilters {
   currency?: string;
 }
 
-export interface TransactionWithDetails {
-  id: string;
-  coachID: string;
-  subscriptionID?: string;
-  planID: string;
-  amount: number;
-  currency: string;
-  status: TransactionStatus;
-  paymentMethod: PaymentMethodType;
-  stripePaymentID?: string;
-  paypalOrderID?: string;
-  invoiceNumber?: string;
-  invoiceDate: Date;
-  dueDate?: Date;
-  paidAt?: Date;
-  description?: string;
-  metadata?: any;
-  failureReason?: string;
-  refundReason?: string;
-  refundedAmount?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  coach: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  plan: {
-    name: string;
-    monthlyPrice: number;
-    annualPrice: number;
-  };
-  subscription?: {
-    status: string;
-    billingCycle: string;
-  };
-}
-
 export interface RefundRequest {
-  amount?: number; // Partial refund amount, if not provided, full refund
+  amount?: number;
   reason: string;
   refundToOriginalPaymentMethod?: boolean;
 }

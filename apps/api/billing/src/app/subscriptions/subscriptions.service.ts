@@ -1,51 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Subscription, SubscriptionStatus, BillingCycle, Prisma } from '@prisma/client';
-
-export interface CreateSubscriptionDto {
-  coachID: string;
-  planID: string;
-  billingCycle: BillingCycle;
-  trialDays?: number;
-  currentPeriodStart?: Date;
-  currentPeriodEnd?: Date;
-}
-
-export interface UpdateSubscriptionDto {
-  planID?: string;
-  billingCycle?: BillingCycle;
-  status?: SubscriptionStatus;
-  cancelReason?: string;
-  nextBillingDate?: Date;
-}
-
-export interface SubscriptionFilters {
-  coachID?: string;
-  planID?: string;
-  status?: SubscriptionStatus;
-  billingCycle?: BillingCycle;
-  expiringBefore?: Date;
-  createdAfter?: Date;
-}
-
-export interface SubscriptionWithDetails extends Subscription {
-  coach: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  plan: {
-    name: string;
-    monthlyPrice: number;
-    annualPrice: number;
-  };
-}
+import { Subscription, SubscriptionStatus, Prisma } from '@prisma/client';
+import {
+  CreateSubscriptionRequest,
+  SubscriptionFilters,
+  SubscriptionWithDetails,
+  UpdateSubscriptionRequest
+} from "@nlc-ai/api-types";
 
 @Injectable()
 export class SubscriptionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createSubscription(data: CreateSubscriptionDto): Promise<Subscription> {
+  async createSubscription(data: CreateSubscriptionRequest): Promise<Subscription> {
     // Validate coach exists
     const coach = await this.prisma.coach.findUnique({
       where: { id: data.coachID },
@@ -217,7 +184,7 @@ export class SubscriptionsService {
     });
   }
 
-  async updateSubscription(id: string, data: UpdateSubscriptionDto): Promise<Subscription> {
+  async updateSubscription(id: string, data: UpdateSubscriptionRequest): Promise<Subscription> {
     const existingSubscription = await this.findSubscriptionById(id);
 
     // Validate plan if changing
@@ -305,7 +272,7 @@ export class SubscriptionsService {
     const subscription = await this.findSubscriptionById(id);
 
     if (subscription.status !== 'active') {
-      throw new BadRequestException('Only active subscriptions can be renewed');
+      throw new BadRequestException('Only active subscription can be renewed');
     }
 
     const currentPeriodEnd = subscription.currentPeriodEnd;
