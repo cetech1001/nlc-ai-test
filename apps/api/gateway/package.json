@@ -1,7 +1,16 @@
 {
-  "name": "@nlc-ai/billing",
+  "name": "@nlc-ai/api-gateway",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "prisma:studio": "prisma studio",
+    "prisma:generate": "prisma generate",
+    "prisma:db:push": "prisma db push",
+    "prisma:format": "prisma format",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate deploy",
+    "prisma:baseline": "prisma migrate resolve --applied 000000000000_init_baseline"
+  },
   "nx": {
     "targets": {
       "build": {
@@ -28,18 +37,24 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@nlc-ai/billing:build",
+          "buildTarget": "@nlc-ai/api-gateway:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@nlc-ai/billing:build:development"
+            "buildTarget": "@nlc-ai/api-gateway:build:development"
           },
           "production": {
-            "buildTarget": "@nlc-ai/billing:build:production"
+            "buildTarget": "@nlc-ai/api-gateway:build:production"
           }
         }
       }
     }
+  },
+  "devDependencies": {
+    "prisma": "^6.12.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.12.0"
   }
 }

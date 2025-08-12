@@ -4,22 +4,19 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/admin"
+      "path": "./apps/api/billing"
     },
     {
-      "path": "./apps/web"
+      "path": "./apps/api/gateway"
     },
     {
-      "path": "./apps/coach"
+      "path": "./apps/web/admin"
     },
     {
-      "path": "./apps/api"
+      "path": "./apps/web/coach"
     },
     {
       "path": "./libs/types"
-    },
-    {
-      "path": "./apps/services/billing"
     },
     {
       "path": "./libs/web/api-client"

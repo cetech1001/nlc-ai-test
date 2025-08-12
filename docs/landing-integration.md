@@ -48,7 +48,7 @@ Example form submit handler (vanilla JS):
     e.preventDefault();
 
     const apiBase = 'https://your-api-domain.com'; // e.g., https://api.nextlevelcoach.ai
-    const path = '/api/leads'; // or '/api/leads/landing' when sending the structured payload
+    const path = '/gateway/leads'; // or '/gateway/leads/landing' when sending the structured payload
     const url = apiBase + path;
 
     const bodyObj = {
@@ -266,11 +266,11 @@ Example form submit handler (vanilla JS):
     e.preventDefault();
 
     const apiBase = 'https://your-api-domain.com'; // e.g., https://api.nextlevelcoach.ai
-    const path = '/api/leads'; // or '/api/leads/landing' when sending the structured payload
+    const path = '/gateway/leads'; // or '/gateway/leads/landing' when sending the structured payload
     const url = apiBase + path;
 
-    // For '/api/leads' use the simple shape;
-    // For '/api/leads/landing' use the structured payload shown above.
+    // For '/gateway/leads' use the simple shape;
+    // For '/gateway/leads/landing' use the structured payload shown above.
     const bodyObj = {
       name: document.querySelector('#name').value,
       email: document.querySelector('#email').value,

@@ -123,8 +123,8 @@
     "webpack-cli": "^5.1.4"
   },
   "workspaces": [
-    "apps/*",
-    "apps/services/*",
+    "apps/api/*",
+    "apps/web/*",
     "libs/*",
     "libs/web/*"
   ]

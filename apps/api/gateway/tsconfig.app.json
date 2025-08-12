@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
     "module": "nodenext",
@@ -20,7 +20,7 @@
   "exclude": [],
   "references": [
     {
-      "path": "../../libs/types/tsconfig.lib.json"
+      "path": "../../../libs/types/tsconfig.lib.json"
     }
   ]
 }

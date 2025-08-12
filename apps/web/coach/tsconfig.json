@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "preserve",
     "noEmit": true,
@@ -50,25 +50,25 @@
   ],
   "references": [
     {
-      "path": "../../libs/web/utils"
+      "path": "../../../libs/web/settings"
     },
     {
-      "path": "../../libs/web/settings"
+      "path": "../../../libs/web/shared"
     },
     {
-      "path": "../../libs/web/ui"
+      "path": "../../../libs/web/utils"
     },
     {
-      "path": "../../libs/web/api-client"
+      "path": "../../../libs/web/api-client"
     },
     {
-      "path": "../../libs/web/shared"
+      "path": "../../../libs/web/ui"
     },
     {
-      "path": "../../libs/types"
+      "path": "../../../libs/types"
     },
     {
-      "path": "../../libs/web/auth"
+      "path": "../../../libs/web/auth"
     }
   ]
 }

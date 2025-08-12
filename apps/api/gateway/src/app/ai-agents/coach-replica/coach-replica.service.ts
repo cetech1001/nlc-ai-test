@@ -493,7 +493,7 @@ Please analyze and return JSON with:
   }
 
   private inferServices(coach: any, content: any[]): string[] {
-    // Extract services from bio and content
+    // Extract api from bio and content
     const services = ['1-on-1 Coaching', 'Group Programs', 'Online Courses'];
     return services;
   }

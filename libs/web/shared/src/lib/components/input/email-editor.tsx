@@ -137,12 +137,12 @@ export const EmailEditor: FC<EmailEditorProps> = ({
           setTinyMCEConfig(config);
         } else {
           // Fallback config if API fails
-          setTinyMCEConfig({ apiKey: 'no-api-key' });
+          setTinyMCEConfig({ apiKey: 'no-gateway-key' });
         }
       } catch (error) {
         console.error('Failed to load TinyMCE config:', error);
         // Fallback config
-        setTinyMCEConfig({ apiKey: 'no-api-key' });
+        setTinyMCEConfig({ apiKey: 'no-gateway-key' });
       } finally {
         setConfigLoading(false);
       }

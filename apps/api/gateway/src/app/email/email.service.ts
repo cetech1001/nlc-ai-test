@@ -159,7 +159,7 @@ export class EmailService {
   <div class="email-footer">
     <p>Best regards,<br>
     <strong>Your Coach</strong></p>
-    <p><small>You're receiving this email because you expressed interest in coaching services.
+    <p><small>You're receiving this email because you expressed interest in coaching api.
     <a href="#" style="color: #666;">Unsubscribe</a></small></p>
   </div>
 </body>

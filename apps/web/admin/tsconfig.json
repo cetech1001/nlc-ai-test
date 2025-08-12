@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "preserve",
     "noEmit": true,
@@ -30,8 +30,8 @@
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
   "include": [
-    "../../apps/web/.next/types/**/*.ts",
-    "../../dist/apps/web/.next/types/**/*.ts",
+    "../../apps/web/admin/.next/types/**/*.ts",
+    "../../dist/apps/web/admin/.next/types/**/*.ts",
     "next-env.d.ts",
     "src/**/*.js",
     "src/**/*.jsx",
@@ -47,5 +47,28 @@
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     ".next"
+  ],
+  "references": [
+    {
+      "path": "../../../libs/web/utils"
+    },
+    {
+      "path": "../../../libs/web/settings"
+    },
+    {
+      "path": "../../../libs/web/shared"
+    },
+    {
+      "path": "../../../libs/web/api-client"
+    },
+    {
+      "path": "../../../libs/web/ui"
+    },
+    {
+      "path": "../../../libs/types"
+    },
+    {
+      "path": "../../../libs/web/auth"
+    }
   ]
 }

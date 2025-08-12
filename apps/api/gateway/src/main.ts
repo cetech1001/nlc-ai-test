@@ -31,7 +31,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Landing-Token', 'X-Landing-Timestamp', 'X-Landing-Signature'],
   });
 
-  app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+  app.use('/gateway/payments/webhook', express.raw({ type: 'application/json' }));
 
   app.use(express.json());
 

@@ -1,5 +1,5 @@
 {
-  "name": "@nlc-ai/coach",
+  "name": "@nlc-ai/web-coach",
   "version": "0.0.1",
   "private": true,
   "dependencies": {

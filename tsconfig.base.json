@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "composite": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
@@ -21,29 +20,6 @@
     "target": "es2022",
     "customConditions": [
       "development"
-    ],
-    "paths": {
-      "@nlc-ai/types": [
-        "libs/types/src/index.ts"
-      ],
-      "@nlc-ai/web-api-client": [
-        "libs/web/api-client/src/index.ts"
-      ],
-      "@nlc-ai/web-auth": [
-        "libs/web/auth/src/index.ts"
-      ],
-      "@nlc-ai/web-settings": [
-        "libs/web/settings/src/index.ts"
-      ],
-      "@nlc-ai/web-shared": [
-        "libs/web/shared/src/index.ts"
-      ],
-      "@nlc-ai/web-ui": [
-        "libs/web/ui/src/index.ts"
-      ],
-      "@nlc-ai/web-utils": [
-        "libs/web/utils/src/index.ts"
-      ]
-    }
+    ]
   }
 }
