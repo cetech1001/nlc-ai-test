@@ -1,44 +1,57 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import {PrismaService} from "@nlc-ai/api-database";
-import {BaseEvent, EventBusService} from "@nlc-ai/api-messaging";
+import { PrismaService } from '@nlc-ai/api-database';
+import {EventBusService} from "./event-bus.service";
+import {BaseEvent, type OutboxConfig} from "../types";
 
 @Injectable()
 export class OutboxService {
   private readonly logger = new Logger(OutboxService.name);
   private readonly batchSize: number;
   private readonly maxRetries: number;
+  private readonly retentionDays: number;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    config?: OutboxConfig
   ) {
-    this.batchSize = this.configService.get<number>('billing.performance.outboxBatchSize', 100);
-    this.maxRetries = this.configService.get<number>('billing.performance.maxRetries', 3);
+    this.batchSize = config?.batchSize ?? this.configService.get<number>('OUTBOX_BATCH_SIZE', 100);
+    this.maxRetries = config?.maxRetries ?? this.configService.get<number>('OUTBOX_MAX_RETRIES', 3);
+    this.retentionDays = config?.retentionDays ?? this.configService.get<number>('OUTBOX_RETENTION_DAYS', 7);
   }
 
   async saveAndPublishEvent<T extends BaseEvent>(
-    event: T,
+    event: Omit<T, 'eventID' | 'occurredAt' | 'producer' | 'source'>,
     routingKey: string,
     scheduledFor?: Date
   ): Promise<void> {
+    const eventID = this.generateEventID();
+    const fullEvent: T = {
+      ...event,
+      eventID,
+      occurredAt: new Date().toISOString(),
+      producer: this.configService.get<string>('SERVICE_NAME', 'unknown'),
+      source: `${this.configService.get<string>('SERVICE_NAME')}.${process.env.NODE_ENV}`,
+    } as T;
+
     try {
       // Save to outbox in transaction
       await this.prisma.eventOutbox.create({
         data: {
-          eventID: event.eventID,
-          eventType: event.eventType,
+          eventID: fullEvent.eventID,
+          eventType: fullEvent.eventType,
           routingKey,
-          payload: JSON.stringify(event),
+          payload: JSON.stringify(fullEvent),
           scheduledFor: scheduledFor || new Date(),
           status: 'pending',
         },
       });
 
-      this.logger.log(`Event saved to outbox: ${event.eventType}`, {
-        eventID: event.eventID,
+      this.logger.log(`Event saved to outbox: ${fullEvent.eventType}`, {
+        eventID: fullEvent.eventID,
         routingKey,
       });
 
@@ -47,7 +60,7 @@ export class OutboxService {
         await this.processOutboxEvents();
       }
     } catch (error) {
-      this.logger.error(`Failed to save event to outbox: ${event.eventType}`, error);
+      this.logger.error(`Failed to save event to outbox: ${fullEvent.eventType}`, error);
       throw error;
     }
   }
@@ -59,14 +72,14 @@ export class OutboxService {
       const pendingEvents = await this.prisma.eventOutbox.findMany({
         where: {
           status: 'pending',
-          retryCount: {lt: this.maxRetries},
+          retryCount: { lt: this.maxRetries },
           OR: [
-            {scheduledFor: null},
-            {scheduledFor: {lte: now}}
+            { scheduledFor: null },
+            { scheduledFor: { lte: now } }
           ]
         },
         take: this.batchSize,
-        orderBy: {createdAt: 'asc'},
+        orderBy: { createdAt: 'asc' },
       });
 
       if (pendingEvents.length === 0) {
@@ -79,11 +92,11 @@ export class OutboxService {
         try {
           await this.eventBus.publish(
             outboxEvent.routingKey,
-            outboxEvent.payload as any
+            JSON.parse(outboxEvent.payload as string)
           );
 
           await this.prisma.eventOutbox.update({
-            where: {id: outboxEvent.id},
+            where: { id: outboxEvent.id },
             data: {
               status: 'published',
               publishedAt: new Date(),
@@ -100,7 +113,7 @@ export class OutboxService {
           const status = newRetryCount >= this.maxRetries ? 'failed' : 'pending';
 
           await this.prisma.eventOutbox.update({
-            where: {id: outboxEvent.id},
+            where: { id: outboxEvent.id },
             data: {
               status,
               retryCount: newRetryCount,
@@ -121,7 +134,21 @@ export class OutboxService {
     }
   }
 
-  // Method to manually retry failed events
+  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  async cleanupOldEvents(): Promise<void> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
+
+    const result = await this.prisma.eventOutbox.deleteMany({
+      where: {
+        status: 'published',
+        publishedAt: { lte: cutoffDate },
+      },
+    });
+
+    this.logger.log(`Cleaned up ${result.count} old outbox events`);
+  }
+
   async retryFailedEvents(eventIDs?: string[]): Promise<void> {
     const where: any = { status: 'failed' };
     if (eventIDs && eventIDs.length > 0) {
@@ -141,20 +168,7 @@ export class OutboxService {
     this.logger.log(`Reset failed events for retry`, { eventIDs });
   }
 
-  // Clean up old processed events
-  @Cron(CronExpression.EVERY_DAY_AT_2AM)
-  async cleanupOldEvents(): Promise<void> {
-    const retentionDays = 7;
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-
-    const result = await this.prisma.eventOutbox.deleteMany({
-      where: {
-        status: 'published',
-        publishedAt: { lte: cutoffDate },
-      },
-    });
-
-    this.logger.log(`Cleaned up ${result.count} old outbox events`);
+  private generateEventID(): string {
+    return `${Date.now()}-${Math.random().toString(36).substring(2)}`;
   }
 }

@@ -14,8 +14,8 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 import { EmailService } from './email/email.service';
 import {HealthModule} from "./health/health.module";
-import {EventsModule} from "./events/events.module";
 import billingConfig from "./config/billing.config";
+import {MessagingModule} from "@nlc-ai/api-messaging";
 
 @Module({
   imports: [
@@ -38,7 +38,7 @@ import billingConfig from "./config/billing.config";
     }),
     ScheduleModule.forRoot(),
     DatabaseModule.forFeature(),
-    EventsModule,
+    MessagingModule.forRoot(),
     HealthModule,
     InvoicesModule,
     PaymentMethodsModule,

@@ -1,6 +1,7 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import {PaymentMethodType, Prisma, Transaction, TransactionStatus} from '@prisma/client';
 import {v4 as uuid} from "uuid";
+import {ConfigService} from "@nestjs/config";
 import {
   CreateTransactionRequest,
   RefundRequest,
@@ -10,8 +11,7 @@ import {
   BillingPaymentCompletedEvent
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
-import {ConfigService} from "@nestjs/config";
-import {OutboxService} from "../events/outbox.service";
+import {OutboxService} from "@nlc-ai/api-messaging";
 
 
 @Injectable()
