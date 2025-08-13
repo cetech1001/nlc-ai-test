@@ -38,27 +38,34 @@ export class PaymentMethodsController {
     return this.paymentMethodsService.getPaymentMethodStats(filters);
   }
 
-  @Get('coach/:coachId')
-  @ApiOperation({ summary: 'Get payment methods for a specific coach' })
-  @ApiResponse({ status: 200, description: 'Coach payment methods retrieved successfully' })
-  async findCoachPaymentMethods(@Param('coachId') coachId: string) {
-    return this.paymentMethodsService.findCoachPaymentMethods(coachId);
+  @Get(':paymentMethodID/usage')
+  @ApiOperation({ summary: 'Get payment method usage statistics' })
+  @ApiResponse({ status: 200, description: 'Payment method usage statistics retrieved successfully' })
+  async getPaymentMethodUsageStats(@Param('paymentMethodID') paymentMethodID: string) {
+    return this.paymentMethodsService.getPaymentMethodUsageStats(paymentMethodID);
   }
 
-  @Get('coach/:coachId/default')
+  @Get('coach/:coachID')
+  @ApiOperation({ summary: 'Get payment methods for a specific coach' })
+  @ApiResponse({ status: 200, description: 'Coach payment methods retrieved successfully' })
+  async findCoachPaymentMethods(@Param('coachID') coachID: string) {
+    return this.paymentMethodsService.findCoachPaymentMethods(coachID);
+  }
+
+  @Get('coach/:coachID/default')
   @ApiOperation({ summary: 'Get default payment method for a coach' })
   @ApiResponse({ status: 200, description: 'Default payment method retrieved successfully' })
   @ApiResponse({ status: 404, description: 'No payment method found' })
-  async getCoachDefaultPaymentMethod(@Param('coachId') coachId: string) {
-    return this.paymentMethodsService.getCoachDefaultPaymentMethod(coachId);
+  async getCoachDefaultPaymentMethod(@Param('coachID') coachID: string) {
+    return this.paymentMethodsService.getCoachDefaultPaymentMethod(coachID);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get payment method by ID' })
   @ApiResponse({ status: 200, description: 'Payment method retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Payment method not found' })
-  async findPaymentMethodById(@Param('id') id: string) {
-    return this.paymentMethodsService.findPaymentMethodById(id);
+  async findPaymentMethodByID(@Param('id') id: string) {
+    return this.paymentMethodsService.findPaymentMethodByID(id);
   }
 
   @Put(':id')

@@ -122,7 +122,7 @@ export class PaymentMethodsService {
     });
   }
 
-  async findPaymentMethodById(id: string): Promise<PaymentMethodWithDetails> {
+  async findPaymentMethodByID(id: string): Promise<PaymentMethodWithDetails> {
     const paymentMethod = await this.prisma.paymentMethod.findUnique({
       where: { id },
       include: {
@@ -159,7 +159,7 @@ export class PaymentMethodsService {
   }
 
   async updatePaymentMethod(id: string, data: UpdatePaymentMethodRequest): Promise<PaymentMethod> {
-    const existingPaymentMethod = await this.findPaymentMethodById(id);
+    const existingPaymentMethod = await this.findPaymentMethodByID(id);
 
     // Validate card expiration if updating
     if (data.cardExpMonth && data.cardExpYear) {
@@ -201,7 +201,7 @@ export class PaymentMethodsService {
   }
 
   async setDefaultPaymentMethod(id: string): Promise<PaymentMethod> {
-    const paymentMethod = await this.findPaymentMethodById(id);
+    const paymentMethod = await this.findPaymentMethodByID(id);
 
     if (!paymentMethod.isActive) {
       throw new BadRequestException('Cannot set inactive payment method as default');
@@ -211,7 +211,7 @@ export class PaymentMethodsService {
   }
 
   async deactivatePaymentMethod(id: string): Promise<PaymentMethod> {
-    const paymentMethod = await this.findPaymentMethodById(id);
+    const paymentMethod = await this.findPaymentMethodByID(id);
 
     // If this is the default payment method, find another active one to set as default
     if (paymentMethod.isDefault) {
@@ -236,15 +236,13 @@ export class PaymentMethodsService {
   }
 
   async deletePaymentMethod(id: string): Promise<void> {
-    const paymentMethod = await this.findPaymentMethodById(id);
+    const paymentMethod = await this.findPaymentMethodByID(id);
 
     // Check if this payment method is being used in any pending transactions
     const activeTransactions = await this.prisma.transaction.count({
       where: {
-        coachID: paymentMethod.coachID,
+        paymentMethodID: paymentMethod.id,
         status: { in: ['pending', 'processing'] },
-        // Note: We don't have a direct relationship between Transaction and PaymentMethod
-        // This would need to be implemented based on your business logic
       },
     });
 
@@ -386,12 +384,48 @@ export class PaymentMethodsService {
     };
   }
 
+  async getPaymentMethodUsageStats(id: string): Promise<{
+    totalTransactions: number;
+    totalAmount: number;
+    successfulTransactions: number;
+    failedTransactions: number;
+    lastUsed?: Date;
+  }> {
+    const stats = await this.prisma.transaction.aggregate({
+      where: { paymentMethodID: id },
+      _count: { id: true },
+      _sum: { amount: true },
+    });
+
+    const [successfulCount, failedCount, lastTransaction] = await Promise.all([
+      this.prisma.transaction.count({
+        where: { paymentMethodID: id, status: 'completed' },
+      }),
+      this.prisma.transaction.count({
+        where: { paymentMethodID: id, status: 'failed' },
+      }),
+      this.prisma.transaction.findFirst({
+        where: { paymentMethodID: id },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      }),
+    ]);
+
+    return {
+      totalTransactions: stats._count.id,
+      totalAmount: stats._sum.amount || 0,
+      successfulTransactions: successfulCount,
+      failedTransactions: failedCount,
+      lastUsed: lastTransaction?.createdAt,
+    };
+  }
+
   async validatePaymentMethod(id: string): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
   }> {
-    const paymentMethod = await this.findPaymentMethodById(id);
+    const paymentMethod = await this.findPaymentMethodByID(id);
     const errors: string[] = [];
     const warnings: string[] = [];
 

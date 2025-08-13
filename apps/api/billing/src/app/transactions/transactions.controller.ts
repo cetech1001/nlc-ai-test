@@ -56,11 +56,18 @@ export class TransactionsController {
     return this.transactionsService.getRevenueReport(filters);
   }
 
-  @Get('coach/:coachId')
+  @Get('coach/:coachID')
   @ApiOperation({ summary: 'Get transactions for a specific coach' })
   @ApiResponse({ status: 200, description: 'Coach transactions retrieved successfully' })
-  async getTransactionsByCoach(@Param('coachId') coachId: string, @Query('limit') limit: number = 50) {
-    return this.transactionsService.getTransactionsByCoach(coachId, limit);
+  async getTransactionsByCoach(@Param('coachID') coachID: string, @Query('limit') limit: number = 50) {
+    return this.transactionsService.getTransactionsByCoach(coachID, limit);
+  }
+
+  @Get('payment-method/:paymentMethodID')
+  @ApiOperation({ summary: 'Get transactions for a specific payment method' })
+  @ApiResponse({ status: 200, description: 'Payment method transactions retrieved successfully' })
+  async getTransactionsByPaymentMethod(@Param('paymentMethodID') paymentMethodID: string, @Query('limit') limit: number = 50) {
+    return this.transactionsService.getTransactionsByPaymentMethod(paymentMethodID, limit);
   }
 
   @Get('invoice/:invoiceNumber')
@@ -75,8 +82,8 @@ export class TransactionsController {
   @ApiOperation({ summary: 'Get transaction by ID' })
   @ApiResponse({ status: 200, description: 'Transaction retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
-  async findTransactionById(@Param('id') id: string) {
-    return this.transactionsService.findTransactionById(id);
+  async findTransactionByID(@Param('id') id: string) {
+    return this.transactionsService.findTransactionByID(id);
   }
 
   @Put(':id')

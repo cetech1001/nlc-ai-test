@@ -4,9 +4,10 @@ export interface CreateTransactionRequest {
   coachID: string;
   planID: string;
   subscriptionID?: string;
+  paymentMethodID?: string;
   amount: number;
   currency?: string;
-  paymentMethod: PaymentMethodType;
+  paymentMethodType: PaymentMethodType;
   stripePaymentID?: string;
   paypalOrderID?: string;
   description?: string;
@@ -28,8 +29,9 @@ export interface TransactionFilters {
   coachID?: string;
   planID?: string;
   subscriptionID?: string;
+  paymentMethodID?: string;
   status?: TransactionStatus;
-  paymentMethod?: PaymentMethodType;
+  paymentMethodType?: PaymentMethodType;
   amountRange?: {
     min?: number;
     max?: number;

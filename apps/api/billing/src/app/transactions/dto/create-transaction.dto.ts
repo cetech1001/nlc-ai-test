@@ -21,6 +21,12 @@ export class CreateTransactionDto implements CreateTransactionRequest {
   @IsUUID()
   subscriptionID?: string;
 
+  @ApiProperty({ example: 'pm_123456789', required: false, description: 'Saved payment method ID' })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  paymentMethodID?: string;
+
   @ApiProperty({ example: 5000, description: 'Amount in cents' })
   @IsNumber()
   @Type(() => Number)
@@ -33,7 +39,7 @@ export class CreateTransactionDto implements CreateTransactionRequest {
 
   @ApiProperty({ enum: PaymentMethodType })
   @IsEnum(PaymentMethodType)
-  paymentMethod: PaymentMethodType;
+  paymentMethodType: PaymentMethodType;
 
   @ApiProperty({ example: 'pi_1234567890abcdef', required: false })
   @IsOptional()

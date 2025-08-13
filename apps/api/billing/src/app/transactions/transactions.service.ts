@@ -49,6 +49,20 @@ export class TransactionsService {
       }
     }
 
+    if (data.paymentMethodID) {
+      const paymentMethod = await this.prisma.paymentMethod.findUnique({
+        where: { id: data.paymentMethodID },
+      });
+
+      if (!paymentMethod || paymentMethod.coachID !== data.coachID) {
+        throw new NotFoundException('Payment method not found or does not belong to coach');
+      }
+
+      if (!paymentMethod.isActive) {
+        throw new BadRequestException('Payment method is not active');
+      }
+    }
+
     const invoiceNumber = this.generateInvoiceNumber();
 
     try {
@@ -57,10 +71,11 @@ export class TransactionsService {
           coachID: data.coachID,
           planID: data.planID,
           subscriptionID: data.subscriptionID,
+          paymentMethodID: data.paymentMethodID,
           amount: data.amount,
           currency: data.currency || 'USD',
           status: TransactionStatus.pending,
-          paymentMethod: data.paymentMethod,
+          paymentMethodType: data.paymentMethodType,
           stripePaymentID: data.stripePaymentID,
           paypalOrderID: data.paypalOrderID,
           invoiceNumber,
@@ -105,8 +120,12 @@ export class TransactionsService {
       where.status = filters.status;
     }
 
-    if (filters.paymentMethod) {
-      where.paymentMethod = filters.paymentMethod;
+    if (filters.paymentMethodType) {
+      where.paymentMethodType = filters.paymentMethodType;
+    }
+
+    if (filters.paymentMethodID) {
+      where.paymentMethodID = filters.paymentMethodID;
     }
 
     if (filters.currency) {
@@ -139,12 +158,21 @@ export class TransactionsService {
         subscription: {
           select: { status: true, billingCycle: true },
         },
+        paymentMethod: {
+          select: {
+            id: true,
+            type: true,
+            cardLast4: true,
+            cardBrand: true,
+            isDefault: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findTransactionById(id: string): Promise<TransactionWithDetails> {
+  async findTransactionByID(id: string): Promise<TransactionWithDetails> {
     const transaction = await this.prisma.transaction.findUnique({
       where: { id },
       include: {
@@ -192,7 +220,7 @@ export class TransactionsService {
   }
 
   async updateTransaction(id: string, data: UpdateTransactionRequest): Promise<Transaction> {
-    await this.findTransactionById(id);
+    await this.findTransactionByID(id);
 
     try {
       return this.prisma.transaction.update({
@@ -241,7 +269,7 @@ export class TransactionsService {
   }
 
   async processRefund(id: string, refundData: RefundRequest): Promise<Transaction> {
-    const transaction = await this.findTransactionById(id);
+    const transaction = await this.findTransactionByID(id);
 
     if (transaction.status !== TransactionStatus.completed) {
       throw new BadRequestException('Only completed transactions can be refunded');
@@ -360,7 +388,7 @@ export class TransactionsService {
         _count: { id: true },
       }),
       this.prisma.transaction.groupBy({
-        by: ['paymentMethod'],
+        by: ['paymentMethodType'],
         where,
         _count: { id: true },
       }),
@@ -389,7 +417,7 @@ export class TransactionsService {
     }, {} as Record<TransactionStatus, number>);
 
     const paymentMethodBreakdown = paymentMethodStats.reduce((acc, stat) => {
-      acc[stat.paymentMethod] = stat._count.id;
+      acc[stat.paymentMethodType] = stat._count.id;
       return acc;
     }, {} as Record<PaymentMethodType, number>);
 
@@ -457,5 +485,9 @@ export class TransactionsService {
       transactionCount: Number(result.transactionCount),
       averageOrderValue: Number(result.averageOrderValue),
     }));
+  }
+
+  async getTransactionsByPaymentMethod(paymentMethodID: string, limit = 50): Promise<TransactionWithDetails[]> {
+    return this.findAllTransactions({ paymentMethodID });
   }
 }

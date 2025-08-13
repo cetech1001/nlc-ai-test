@@ -23,6 +23,12 @@ export class TransactionFiltersDto implements TransactionFilters {
   @IsUUID()
   subscriptionID?: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  paymentMethodID?: string;
+
   @ApiProperty({ enum: TransactionStatus, required: false })
   @IsOptional()
   @IsEnum(TransactionStatus)
@@ -31,7 +37,7 @@ export class TransactionFiltersDto implements TransactionFilters {
   @ApiProperty({ enum: PaymentMethodType, required: false })
   @IsOptional()
   @IsEnum(PaymentMethodType)
-  paymentMethod?: PaymentMethodType;
+  paymentMethodType?: PaymentMethodType;
 
   @ApiProperty({ type: AmountRangeDto, required: false })
   @IsOptional()
