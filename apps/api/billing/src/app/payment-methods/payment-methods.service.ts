@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { PaymentMethod, PaymentMethodType } from '@prisma/client';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {PaymentMethod, PaymentMethodType} from '@prisma/client';
 import {
   CreatePaymentMethodRequest,
   PaymentMethodFilters,
   PaymentMethodWithDetails,
   UpdatePaymentMethodRequest
 } from "@nlc-ai/api-types";
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class PaymentMethodsService {
@@ -48,7 +48,7 @@ export class PaymentMethodsService {
     }
 
     try {
-      const paymentMethod = await this.prisma.paymentMethod.create({
+      return this.prisma.paymentMethod.create({
         data: {
           coachID: data.coachID,
           type: data.type,
@@ -67,8 +67,6 @@ export class PaymentMethodsService {
           },
         },
       });
-
-      return paymentMethod;
     } catch (error: any) {
       throw new BadRequestException(`Failed to create payment method: ${error.message}`);
     }
@@ -190,15 +188,13 @@ export class PaymentMethodsService {
     }
 
     try {
-      const updatedPaymentMethod = await this.prisma.paymentMethod.update({
+      return this.prisma.paymentMethod.update({
         where: { id },
         data: {
           ...data,
           updatedAt: new Date(),
         },
       });
-
-      return updatedPaymentMethod;
     } catch (error: any) {
       throw new BadRequestException(`Failed to update payment method: ${error.message}`);
     }
@@ -503,20 +499,18 @@ export class PaymentMethodsService {
 
     if (!defaultMethod) {
       // If no default method, try to find any active payment method
-      const anyActiveMethod = await this.prisma.paymentMethod.findFirst({
+      return this.prisma.paymentMethod.findFirst({
         where: {
           coachID,
           isActive: true,
         },
         include: {
           coach: {
-            select: { firstName: true, lastName: true, email: true },
+            select: {firstName: true, lastName: true, email: true},
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: {createdAt: 'desc'},
       });
-
-      return anyActiveMethod;
     }
 
     return defaultMethod;

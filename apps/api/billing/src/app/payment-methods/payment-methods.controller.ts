@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PaymentMethodsService, CreatePaymentMethodDto, UpdatePaymentMethodDto, PaymentMethodFilters } from './payment-methods.service';
+import { PaymentMethodsService } from './payment-methods.service';
+import {CreatePaymentMethodDto, PaymentMethodFiltersDto, UpdatePaymentMethodDto} from "./dto";
 
 @ApiTags('Payment Methods')
 @Controller('payment-method')
@@ -19,7 +20,7 @@ export class PaymentMethodsController {
   @Get()
   @ApiOperation({ summary: 'Get all payment methods with filtering' })
   @ApiResponse({ status: 200, description: 'Payment methods retrieved successfully' })
-  async findAllPaymentMethods(@Query() filters: PaymentMethodFilters) {
+  async findAllPaymentMethods(@Query() filters: PaymentMethodFiltersDto) {
     return this.paymentMethodsService.findAllPaymentMethods(filters);
   }
 
