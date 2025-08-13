@@ -1,0 +1,30 @@
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+
+@Injectable()
+export class UserTypesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
+    const requiredUserTypes = this.reflector.getAllAndOverride<string[]>('userTypes', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (!requiredUserTypes) {
+      return true;
+    }
+
+    const { user } = context.switchToHttp().getRequest();
+
+    return requiredUserTypes.some((type) => user && user.type === type);
+  }
+}

@@ -10,7 +10,7 @@ import { AppModule } from './app/app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const globalPrefix = 'api/billing';
+  const globalPrefix = 'api/users';
   app.setGlobalPrefix(globalPrefix);
 
   const port = process.env.PORT || 3000;

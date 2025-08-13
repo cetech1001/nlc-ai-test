@@ -125,34 +125,93 @@ model AiInteraction {
 }
 
 model Client {
-  id                String             @id @default(uuid()) @db.Uuid
-  coachID           String             @db.Uuid
-  email             String             @db.VarChar(255)
-  firstName         String             @db.VarChar(100)
-  lastName          String             @db.VarChar(100)
-  phone             String?            @db.VarChar(20)
+  id                String     @id @default(uuid()) @db.Uuid
+  passwordHash      String?    @db.VarChar(255)
+  email             String     @unique @db.VarChar(255)
+  provider          Providers?
+  providerID        String?
+  firstName         String     @db.VarChar(100)
+  lastName          String     @db.VarChar(100)
+  phone             String?    @db.VarChar(20)
   avatarUrl         String?
-  status            String?            @default("active") @db.VarChar(50)
-  source            String?            @db.VarChar(100)
+  source            String?    @db.VarChar(100)
   tags              String[]
-  lastInteractionAt DateTime?          @db.Timestamptz(6)
-  totalInteractions Int?               @default(0)
-  engagementScore   Decimal?           @default(0.00) @db.Decimal(3, 2)
-  customFields      Json?              @default("{}")
-  createdAt         DateTime?          @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime?          @default(now()) @db.Timestamptz(6)
+  lastInteractionAt DateTime?  @db.Timestamptz(6)
+  totalInteractions Int?       @default(0)
+  engagementScore   Decimal?   @default(0.00) @db.Decimal(3, 2)
+  customFields      Json?      @default("{}")
+  isActive          Boolean?   @default(true)
+  isVerified        Boolean?   @default(false)
+  isDeleted         Boolean?   @default(false)
+  deletedAt         DateTime?  @db.Timestamptz(6)
+  lastLoginAt       DateTime?  @db.Timestamptz(6)
+  createdAt         DateTime?  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?  @default(now()) @db.Timestamptz(6)
+
   aiInteractions    AiInteraction[]
-  coach             Coach              @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
   courseEnrollments CourseEnrollment[]
   emailThreads      EmailThread[]
   scheduledEmails   ScheduledEmail[]
+  clientCoaches     ClientCoach[]
 
-  @@unique([coachID, email])
-  @@index([coachID], map: "idx_clients_coach_id")
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
-  @@index([status], map: "idx_clients_status")
   @@map("clients")
+}
+
+enum ClientCoachStatus {
+  active
+  inactive
+  pending
+}
+
+enum ClientCoachRole {
+  client
+  lead
+  prospect
+}
+
+model ClientCoach {
+  id         String            @id @default(uuid()) @db.Uuid
+  clientID   String            @db.Uuid
+  coachID    String            @db.Uuid
+  status     ClientCoachStatus @default(active)
+  role       ClientCoachRole?  @default(client)
+  assignedAt DateTime          @default(now()) @db.Timestamptz(6)
+  assignedBy String?           @db.Uuid // Which coach/admin assigned this relationship
+  notes      String? // Coach-specific notes about this client
+  isPrimary  Boolean           @default(false) // Which coach is the primary coach
+  createdAt  DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime          @updatedAt @db.Timestamptz(6)
+
+  client Client @relation(fields: [clientID], references: [id], onDelete: Cascade)
+  coach  Coach  @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@unique([clientID, coachID]) // Prevent duplicate relationships
+  @@index([clientID])
+  @@index([coachID])
+  @@index([status])
+  @@map("client_coaches")
+}
+
+model ClientInvite {
+  id        String    @id @default(uuid()) @db.Uuid
+  coachID   String    @db.Uuid
+  email     String    @db.VarChar(255)
+  token     String    @unique @db.VarChar(255)
+  role      String?   @default("client") @db.VarChar(50)
+  message   String? // Personal message from coach
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  usedBy    String?   @db.Uuid // Which client used this invite
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([coachID])
+  @@index([email])
+  @@index([token])
+  @@map("client_invites")
 }
 
 model CoachAiAgent {
@@ -175,52 +234,56 @@ model CoachAiAgent {
 }
 
 model Coach {
-  id                  String              @id @default(uuid()) @db.Uuid
-  email               String              @unique @db.VarChar(255)
-  passwordHash        String?             @db.VarChar(255)
-  firstName           String              @db.VarChar(100)
-  lastName            String              @db.VarChar(100)
-  businessName        String?             @db.VarChar(255)
-  phone               String?             @db.VarChar(20)
+  id                  String     @id @default(uuid()) @db.Uuid
+  email               String     @unique @db.VarChar(255)
+  passwordHash        String?    @db.VarChar(255)
+  provider            Providers?
+  providerID          String?
+  firstName           String     @db.VarChar(100)
+  lastName            String     @db.VarChar(100)
+  businessName        String?    @db.VarChar(255)
+  phone               String?    @db.VarChar(20)
   avatarUrl           String?
   bio                 String?
   websiteUrl          String?
-  provider            Providers?
-  providerID          String?
-  timezone            String?             @default("UTC") @db.VarChar(50)
-  subscriptionStatus  String?             @default("trial") @db.VarChar(50)
-  subscriptionPlan    String?             @db.VarChar(50)
-  subscriptionEndsAt  DateTime?           @db.Timestamptz(6)
-  stripeCustomerID    String?             @db.VarChar(255)
-  isActive            Boolean?            @default(true)
-  isVerified          Boolean?            @default(false)
-  isDeleted           Boolean?            @default(false)
-  deletedAt           DateTime?           @db.Timestamptz(6)
-  lastLoginAt         DateTime?           @db.Timestamptz(6)
-  onboardingCompleted Boolean?            @default(false)
-  createdAt           DateTime?           @default(now()) @db.Timestamptz(6)
-  updatedAt           DateTime?           @default(now()) @db.Timestamptz(6)
-  aiInteractions      AiInteraction[]
-  clients             Client[]
-  coachAiAgents       CoachAiAgent[]
-  contentPieces       ContentPiece[]
-  contentSuggestions  ContentSuggestion[]
-  courses             Course[]
-  dailyKPIs           DailyKPI[]
-  emailAccounts       EmailAccount[]
-  emailTemplates      EmailTemplate[]
-  emailThreads        EmailThread[]
-  integrations        Integration[]
-  notifications       Notification[]
-  paymentMethods      PaymentMethod[]
-  transactions        Transaction[]
-  invoices            Invoice[]
-  subscriptions       Subscription[]
-  leads               Lead[]
-  paymentLinks        PaymentLink[]
-  contentCategories   ContentCategory[]
-  emailSequences      EmailSequence[]
-  scheduledEmails     ScheduledEmail[]
+  customDomain        String?    @db.VarChar(255)
+  timezone            String?    @default("UTC") @db.VarChar(50)
+  subscriptionStatus  String?    @default("trial") @db.VarChar(50)
+  subscriptionPlan    String?    @db.VarChar(50)
+  subscriptionEndsAt  DateTime?  @db.Timestamptz(6)
+  stripeCustomerID    String?    @db.VarChar(255)
+  isActive            Boolean?   @default(true)
+  isVerified          Boolean?   @default(false)
+  isDeleted           Boolean?   @default(false)
+  deletedAt           DateTime?  @db.Timestamptz(6)
+  lastLoginAt         DateTime?  @db.Timestamptz(6)
+  onboardingCompleted Boolean?   @default(false)
+  createdAt           DateTime?  @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime?  @default(now()) @db.Timestamptz(6)
+
+  aiInteractions     AiInteraction[]
+  coachAiAgents      CoachAiAgent[]
+  contentPieces      ContentPiece[]
+  contentSuggestions ContentSuggestion[]
+  courses            Course[]
+  dailyKPIs          DailyKPI[]
+  emailAccounts      EmailAccount[]
+  emailTemplates     EmailTemplate[]
+  emailThreads       EmailThread[]
+  integrations       Integration[]
+  notifications      Notification[]
+  paymentMethods     PaymentMethod[]
+  transactions       Transaction[]
+  invoices           Invoice[]
+  subscriptions      Subscription[]
+  leads              Lead[]
+  paymentLinks       PaymentLink[]
+  contentCategories  ContentCategory[]
+  emailSequences     EmailSequence[]
+  scheduledEmails    ScheduledEmail[]
+
+  clientCoaches ClientCoach[]
+  clientInvites ClientInvite[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -303,6 +366,7 @@ model CourseEnrollment {
   id                    String    @id @default(uuid()) @db.Uuid
   courseID              String    @db.Uuid
   clientID              String    @db.Uuid
+  enrolledByCoachID     String?   @db.Uuid // Which coach enrolled this client
   enrolledAt            DateTime? @default(now()) @db.Timestamptz(6)
   startedAt             DateTime? @db.Timestamptz(6)
   completedAt           DateTime? @db.Timestamptz(6)
@@ -318,8 +382,9 @@ model CourseEnrollment {
   recommendedActions    Json?     @default("[]")
   createdAt             DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
-  client                Client    @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  course                Course    @relation(fields: [courseID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  client Client @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  course Course @relation(fields: [courseID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([courseID, clientID])
   @@index([clientID], map: "idx_course_enrollments_client_id")

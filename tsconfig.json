@@ -53,6 +53,9 @@
     },
     {
       "path": "./apps/api/auth"
+    },
+    {
+      "path": "./apps/api/users"
     }
   ]
 }
