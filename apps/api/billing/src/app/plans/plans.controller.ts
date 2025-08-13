@@ -1,8 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PlansService } from './plans.service';
-import { CreatePlanDto, UpdatePlanDto } from './dto';
-import { PlanFilters } from './types/plan.interfaces';
+import {CreatePlanDto, PlanFiltersDto, UpdatePlanDto} from './dto';
 
 @ApiTags('Plans')
 @Controller('plans')
@@ -20,7 +19,7 @@ export class PlansController {
   @Get()
   @ApiOperation({ summary: 'Get all plans with filtering' })
   @ApiResponse({ status: 200, description: 'Plans retrieved successfully' })
-  async findAllPlans(@Query() filters: PlanFilters) {
+  async findAllPlans(@Query() filters: PlanFiltersDto) {
     return this.plansService.findAllPlans(filters);
   }
 

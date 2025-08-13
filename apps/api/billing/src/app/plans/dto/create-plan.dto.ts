@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, IsObject, Min, MaxLength } from 'class-validator';
-import { CreatePlanRequest } from '../types/plan.interfaces';
+import { CreatePlanRequest } from '@nlc-ai/api-types';
 
 export class CreatePlanDto implements CreatePlanRequest {
   @ApiProperty({ example: 'Premium Plan' })

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, IsObject, IsBoolean, Min, MaxLength } from 'class-validator';
-import { UpdatePlanRequest } from '../types/plan.interfaces';
+import { UpdatePlanRequest } from '@nlc-ai/api-types';
 
 export class UpdatePlanDto implements UpdatePlanRequest {
   @ApiProperty({ example: 'Premium Plan', required: false })

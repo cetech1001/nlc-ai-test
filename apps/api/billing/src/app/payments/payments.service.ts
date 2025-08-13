@@ -1,6 +1,5 @@
 import {Injectable, BadRequestException, NotFoundException, Logger} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import Stripe from 'stripe';
 import {
@@ -9,6 +8,7 @@ import {
   PaymentMethodType,
   ProcessPaymentRequest, SendPaymentRequest
 } from "@nlc-ai/types";
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class PaymentsService {

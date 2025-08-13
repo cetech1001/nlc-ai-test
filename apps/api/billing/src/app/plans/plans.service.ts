@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Plan, Prisma } from '@prisma/client';
-import { CreatePlanRequest, UpdatePlanRequest, PlanFilters } from './types/plan.interfaces';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {Plan, Prisma} from '@prisma/client';
+import {CreatePlanRequest, PlanFilters, UpdatePlanRequest} from '@nlc-ai/api-types';
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class PlansService {
@@ -9,7 +9,7 @@ export class PlansService {
 
   async createPlan(data: CreatePlanRequest): Promise<Plan> {
     try {
-      const plan = await this.prisma.plan.create({
+      return this.prisma.plan.create({
         data: {
           name: data.name,
           description: data.description,
@@ -22,8 +22,6 @@ export class PlansService {
           isActive: true,
         },
       });
-
-      return plan;
     } catch (error: any) {
       if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
         throw new BadRequestException('Plan name already exists');
@@ -92,18 +90,16 @@ export class PlansService {
   }
 
   async updatePlan(id: string, data: UpdatePlanRequest): Promise<Plan> {
-    const existingPlan = await this.findPlanById(id);
+    await this.findPlanById(id);
 
     try {
-      const updatedPlan = await this.prisma.plan.update({
-        where: { id },
+      return this.prisma.plan.update({
+        where: {id},
         data: {
           ...data,
           updatedAt: new Date(),
         },
       });
-
-      return updatedPlan;
     } catch (error: any) {
       if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
         throw new BadRequestException('Plan name already exists');
@@ -113,7 +109,7 @@ export class PlansService {
   }
 
   async deactivatePlan(id: string): Promise<Plan> {
-    const plan = await this.findPlanById(id);
+    await this.findPlanById(id);
 
     // Check if plan has active subscription
     const activeSubscriptions = await this.prisma.subscription.count({
@@ -137,7 +133,7 @@ export class PlansService {
   }
 
   async softDeletePlan(id: string): Promise<Plan> {
-    const plan = await this.findPlanById(id);
+    await this.findPlanById(id);
 
     // Check if plan has any subscription or transactions
     const hasRelatedRecords = await this.prisma.plan.findUnique({
@@ -152,8 +148,10 @@ export class PlansService {
       },
     });
 
-    if (hasRelatedRecords?._count.subscriptions > 0 || hasRelatedRecords?._count.transactions > 0) {
-      throw new BadRequestException('Cannot delete plan with existing subscription or transactions');
+    if (hasRelatedRecords) {
+      if (hasRelatedRecords._count.subscriptions > 0 || hasRelatedRecords._count.transactions > 0) {
+        throw new BadRequestException('Cannot delete plan with existing subscription or transactions');
+      }
     }
 
     return this.prisma.plan.update({
