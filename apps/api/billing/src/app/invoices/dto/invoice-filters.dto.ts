@@ -4,13 +4,12 @@ import {
   IsString,
   IsUUID,
   IsEnum,
-  IsNumber,
-  IsDateString,
   IsBoolean,
+  ValidateNested,
 } from 'class-validator';
 import {Type, Transform} from "class-transformer";
 import { InvoiceStatus } from '@prisma/client';
-import { InvoiceFilters } from '@nlc-ai/api-types';
+import {AmountRangeDto, DateRangeDto, InvoiceFilters} from '@nlc-ai/api-types';
 
 export class InvoiceFiltersDto implements InvoiceFilters {
   @ApiProperty({ required: false })
@@ -36,41 +35,32 @@ export class InvoiceFiltersDto implements InvoiceFilters {
   @IsEnum(InvoiceStatus)
   status?: InvoiceStatus;
 
-  @ApiProperty({ example: 1000, required: false })
+  @ApiProperty({ type: AmountRangeDto, required: false })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  minAmount?: number;
+  @ValidateNested()
+  @Type(() => AmountRangeDto)
+  amountRange?: {
+    min?: number;
+    max?: number;
+  };
 
-  @ApiProperty({ example: 10000, required: false })
+  @ApiProperty({ type: DateRangeDto, required: false })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  maxAmount?: number;
+  @ValidateNested()
+  @Type(() => DateRangeDto)
+  dateRange?: {
+    start?: Date;
+    end?: Date;
+  };
 
-  @ApiProperty({ example: '2025-08-01T00:00:00.000Z', required: false })
+  @ApiProperty({ type: DateRangeDto, required: false })
   @IsOptional()
-  @IsDateString()
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  startDate?: Date;
-
-  @ApiProperty({ example: '2025-08-31T00:00:00.000Z', required: false })
-  @IsOptional()
-  @IsDateString()
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  endDate?: Date;
-
-  @ApiProperty({ example: '2025-09-01T00:00:00.000Z', required: false })
-  @IsOptional()
-  @IsDateString()
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  dueDateStart?: Date;
-
-  @ApiProperty({ example: '2025-09-30T00:00:00.000Z', required: false })
-  @IsOptional()
-  @IsDateString()
-  @Transform(({ value }) => value ? new Date(value) : undefined)
-  dueDateEnd?: Date;
+  @ValidateNested()
+  @Type(() => DateRangeDto)
+  dueDateRange?: {
+    start?: Date;
+    end?: Date;
+  };
 
   @ApiProperty({ example: 'USD', required: false })
   @IsOptional()

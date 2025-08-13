@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsBoolean, IsString, IsNumber } from 'class-validator';
+import {IsOptional, IsBoolean, IsString, ValidateNested} from 'class-validator';
 import {Type, Transform} from "class-transformer";
-import { PlanFilters } from '@nlc-ai/api-types';
+import {AmountRangeDto, PlanFilters} from '@nlc-ai/api-types';
 
 export class PlanFiltersDto implements PlanFilters {
   @ApiProperty({ required: false })
@@ -15,15 +15,12 @@ export class PlanFiltersDto implements PlanFilters {
   @IsString()
   name?: string;
 
-  @ApiProperty({ example: 1000, required: false })
+  @ApiProperty({ type: AmountRangeDto, required: false })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  minPrice?: number;
-
-  @ApiProperty({ example: 10000, required: false })
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  maxPrice?: number;
+  @ValidateNested()
+  @Type(() => AmountRangeDto)
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
 }
