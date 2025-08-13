@@ -1,5 +1,5 @@
 {
-  "name": "@nlc-ai/api-gateway",
+  "name": "@nlc-ai/gateway-service",
   "version": "0.0.1",
   "private": true,
   "nx": {
@@ -28,15 +28,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@nlc-ai/api-gateway:build",
+          "buildTarget": "@nlc-ai/gateway-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@nlc-ai/api-gateway:build:development"
+            "buildTarget": "@nlc-ai/gateway-service:build:development"
           },
           "production": {
-            "buildTarget": "@nlc-ai/api-gateway:build:production"
+            "buildTarget": "@nlc-ai/gateway-service:build:production"
           }
         }
       }

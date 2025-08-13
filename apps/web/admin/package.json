@@ -1,5 +1,5 @@
 {
-  "name": "@nlc-ai/web-admin",
+  "name": "@nlc-ai/admin-dashboard",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
