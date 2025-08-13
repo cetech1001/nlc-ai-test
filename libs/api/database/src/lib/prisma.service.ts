@@ -1,22 +1,38 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import {Prisma, PrismaClient} from '@prisma/client';
+import { Injectable, OnModuleInit, OnModuleDestroy, Inject, Optional } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
+
+export interface DatabaseOptions {
+  schema?: string;
+  connectionUrl?: string;
+  enableLogging?: boolean;
+}
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    @Optional() @Inject('DATABASE_OPTIONS') private options: DatabaseOptions = {}
+  ) {
+    const connectionUrl = options.connectionUrl || configService.get('DATABASE_URL');
+
     super({
       datasources: {
         db: {
-          url: configService.get('DATABASE_URL'),
+          url: connectionUrl,
         },
       },
-      log: ['warn', 'error'],
+      log: options.enableLogging ? ['query', 'info', 'warn', 'error'] : ['warn', 'error'],
     });
   }
 
   async onModuleInit() {
     await this.$connect();
+
+    // Set search_path for PostgreSQL schema isolation
+    if (this.options.schema) {
+      await this.$executeRaw`SET search_path TO ${Prisma.sql([this.options.schema])}, public`;
+    }
   }
 
   async onModuleDestroy() {

@@ -5,20 +5,25 @@ import { PrismaService } from './prisma.service';
 export interface DatabaseModuleOptions {
   schema?: string;
   connectionUrl?: string;
+  enableLogging?: boolean;
 }
 
 @Global()
 @Module({})
 export class DatabaseModule {
-  static forRoot(): DynamicModule {
+  static forRoot(options: DatabaseModuleOptions = {}): DynamicModule {
     return {
       module: DatabaseModule,
       imports: [ConfigModule],
       providers: [
         {
+          provide: 'DATABASE_OPTIONS',
+          useValue: options,
+        },
+        {
           provide: PrismaService,
           useFactory: (configService: ConfigService) => {
-            return new PrismaService(configService);
+            return new PrismaService(configService, options);
           },
           inject: [ConfigService],
         },
@@ -27,6 +32,7 @@ export class DatabaseModule {
     };
   }
 
+  // For services that don't need custom options
   static forFeature(): DynamicModule {
     return {
       module: DatabaseModule,
