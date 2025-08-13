@@ -33,7 +33,8 @@
         "libs/web/api-client/*",
         "libs/types/*",
         "libs/api/types/*",
-        "libs/api/database/*"
+        "libs/api/database/*",
+        "libs/api/messaging/*"
       ]
     },
     {
@@ -88,7 +89,8 @@
         "libs/web/api-client/*",
         "libs/types/*",
         "libs/api/types/*",
-        "libs/api/database/*"
+        "libs/api/database/*",
+        "libs/api/messaging/*"
       ],
       "options": {
         "typecheck": {
