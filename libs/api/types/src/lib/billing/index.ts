@@ -3,3 +3,5 @@ export * from './payment-method';
 export * from './plan';
 export * from './subscription';
 export * from './transaction';
+
+export * from './events';

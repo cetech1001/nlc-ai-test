@@ -5,13 +5,19 @@ import {
   RefundRequest,
   TransactionFilters,
   TransactionWithDetails,
-  UpdateTransactionRequest
+  UpdateTransactionRequest,
+  BillingPaymentCompletedEvent
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
+import {EventBusService} from "@nlc-ai/api-messaging";
+
 
 @Injectable()
 export class TransactionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBusService,
+  ) {}
 
   async createTransaction(data: CreateTransactionRequest): Promise<Transaction> {
     // Validate coach exists
@@ -202,10 +208,29 @@ export class TransactionsService {
   }
 
   async markTransactionCompleted(id: string, paidAt?: Date): Promise<Transaction> {
-    return this.updateTransaction(id, {
+    const transaction = await this.updateTransaction(id, {
       status: TransactionStatus.completed,
       paidAt: paidAt || new Date(),
     });
+
+    await this.eventBus.publish<BillingPaymentCompletedEvent>(
+      'billing.payment.completed',
+      {
+        eventType: 'billing.payment.completed',
+        schemaVersion: 1,
+        payload: {
+          transactionID: transaction.id,
+          coachID: transaction.coachID,
+          planID: transaction.planID,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          externalPaymentID: transaction.stripePaymentID || '',
+          status: 'completed',
+        },
+      }
+    );
+
+    return transaction;
   }
 
   async markTransactionFailed(id: string, failureReason: string): Promise<Transaction> {
