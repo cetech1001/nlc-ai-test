@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { SubscriptionsService, CreateSubscriptionDto, UpdateSubscriptionDto, SubscriptionFilters } from './subscriptions.service';
+import { SubscriptionsService } from './subscriptions.service';
+import {CreateSubscriptionDto, SubscriptionFiltersDto, UpdateSubscriptionDto} from "./dto";
 
 @ApiTags('Subscriptions')
 @Controller('subscriptions')
@@ -19,7 +20,7 @@ export class SubscriptionsController {
   @Get()
   @ApiOperation({ summary: 'Get all subscription with filtering' })
   @ApiResponse({ status: 200, description: 'Subscriptions retrieved successfully' })
-  async findAllSubscriptions(@Query() filters: SubscriptionFilters) {
+  async findAllSubscriptions(@Query() filters: SubscriptionFiltersDto) {
     return this.subscriptionsService.findAllSubscriptions(filters);
   }
 

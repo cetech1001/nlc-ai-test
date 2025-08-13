@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Subscription, SubscriptionStatus, Prisma } from '@prisma/client';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {Prisma, Subscription, SubscriptionStatus} from '@prisma/client';
 import {
   CreateSubscriptionRequest,
   SubscriptionFilters,
   SubscriptionWithDetails,
   UpdateSubscriptionRequest
 } from "@nlc-ai/api-types";
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class SubscriptionsService {
@@ -70,7 +70,7 @@ export class SubscriptionsService {
     const nextBillingDate = new Date(periodEnd);
 
     try {
-      const subscription = await this.prisma.subscription.create({
+      return this.prisma.subscription.create({
         data: {
           coachID: data.coachID,
           planID: data.planID,
@@ -84,15 +84,13 @@ export class SubscriptionsService {
         },
         include: {
           coach: {
-            select: { firstName: true, lastName: true, email: true },
+            select: {firstName: true, lastName: true, email: true},
           },
           plan: {
-            select: { name: true, monthlyPrice: true, annualPrice: true },
+            select: {name: true, monthlyPrice: true, annualPrice: true},
           },
         },
       });
-
-      return subscription;
     } catch (error: any) {
       throw new BadRequestException(`Failed to create subscription: ${error.message}`);
     }
@@ -199,15 +197,13 @@ export class SubscriptionsService {
     }
 
     try {
-      const updatedSubscription = await this.prisma.subscription.update({
-        where: { id },
+      return this.prisma.subscription.update({
+        where: {id},
         data: {
           ...data,
           updatedAt: new Date(),
         },
       });
-
-      return updatedSubscription;
     } catch (error: any) {
       throw new BadRequestException(`Failed to update subscription: ${error.message}`);
     }

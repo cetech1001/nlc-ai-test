@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Transaction, TransactionStatus, PaymentMethodType, Prisma } from '@prisma/client';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {PaymentMethodType, Prisma, Transaction, TransactionStatus} from '@prisma/client';
 import {
   CreateTransactionRequest,
   RefundRequest,
   TransactionFilters,
-  UpdateTransactionRequest,
-  TransactionWithDetails
+  TransactionWithDetails,
+  UpdateTransactionRequest
 } from "@nlc-ai/api-types";
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class TransactionsService {
@@ -46,7 +46,7 @@ export class TransactionsService {
     const invoiceNumber = this.generateInvoiceNumber();
 
     try {
-      const transaction = await this.prisma.transaction.create({
+      return this.prisma.transaction.create({
         data: {
           coachID: data.coachID,
           planID: data.planID,
@@ -65,18 +65,16 @@ export class TransactionsService {
         },
         include: {
           coach: {
-            select: { firstName: true, lastName: true, email: true },
+            select: {firstName: true, lastName: true, email: true},
           },
           plan: {
-            select: { name: true, monthlyPrice: true, annualPrice: true },
+            select: {name: true, monthlyPrice: true, annualPrice: true},
           },
           subscription: {
-            select: { status: true, billingCycle: true },
+            select: {status: true, billingCycle: true},
           },
         },
       });
-
-      return transaction;
     } catch (error: any) {
       throw new BadRequestException(`Failed to create transaction: ${error.message}`);
     }
