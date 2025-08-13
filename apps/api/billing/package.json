@@ -2,6 +2,16 @@
   "name": "@nlc-ai/api-billing",
   "version": "0.0.1",
   "private": true,
+  "dependencies": {
+    "@nestjs/jwt": "^10.0.0",
+    "@nestjs/schedule": "^4.0.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.0"
+  },
   "nx": {
     "targets": {
       "build": {

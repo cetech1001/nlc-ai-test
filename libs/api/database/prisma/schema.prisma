@@ -476,7 +476,7 @@ model EmailThread {
 
 model EventOutbox {
   id           String            @id @default(uuid()) @db.Uuid
-  eventId      String            @unique @db.Uuid
+  eventID      String            @unique @db.Uuid
   eventType    String            @db.VarChar(100)
   routingKey   String            @db.VarChar(100)
   payload      Json

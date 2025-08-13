@@ -1,23 +1,41 @@
-import {CanActivate, ExecutionContext, Injectable} from '@nestjs/common';
+import {CanActivate, ExecutionContext, Injectable, UnauthorizedException} from '@nestjs/common';
+import {ConfigService} from '@nestjs/config';
 import {JwtService} from '@nestjs/jwt';
+import {Reflector} from '@nestjs/core';
 
 @Injectable()
 export class ServiceAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService,
+    private reflector: Reflector
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // Check if route is marked as public
+    const isPublic = this.reflector.get<boolean>('isPublic', context.getHandler()) ||
+      this.reflector.get<boolean>('isPublic', context.getClass());
+
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
-      return false;
+      throw new UnauthorizedException('Missing authentication token');
     }
 
     try {
-      request['user'] = this.jwtService.verify(token);
+      const secret = this.configService.get<string>('billing.jwt.secret');
+      // Add user info to request
+      request['user'] = this.jwtService.verify(token, {secret});
+      request['token'] = token;
+
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid authentication token');
     }
   }
 

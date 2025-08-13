@@ -1,5 +1,6 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import {PaymentMethodType, Prisma, Transaction, TransactionStatus} from '@prisma/client';
+import {v4 as uuid} from "uuid";
 import {
   CreateTransactionRequest,
   RefundRequest,
@@ -9,14 +10,16 @@ import {
   BillingPaymentCompletedEvent
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
-import {EventBusService} from "@nlc-ai/api-messaging";
+import {ConfigService} from "@nestjs/config";
+import {OutboxService} from "../events/outbox.service";
 
 
 @Injectable()
 export class TransactionsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventBus: EventBusService,
+    private readonly configService: ConfigService,
+    private readonly outboxService: OutboxService,
   ) {}
 
   async createTransaction(data: CreateTransactionRequest): Promise<Transaction> {
@@ -241,21 +244,28 @@ export class TransactionsService {
       paidAt: paidAt || new Date(),
     });
 
-    await this.eventBus.publish<BillingPaymentCompletedEvent>(
-      'billing.payment.completed',
-      {
-        eventType: 'billing.payment.completed',
-        schemaVersion: 1,
-        payload: {
-          transactionID: transaction.id,
-          coachID: transaction.coachID,
-          planID: transaction.planID,
-          amount: transaction.amount,
-          currency: transaction.currency,
-          externalPaymentID: transaction.stripePaymentID || '',
-          status: 'completed',
-        },
-      }
+    const event: BillingPaymentCompletedEvent = {
+      eventID: uuid(),
+      eventType: 'billing.payment.completed',
+      occurredAt: new Date().toISOString(),
+      producer: this.configService.get<string>('billing.service.name', 'billing-service'),
+      schemaVersion: 1,
+      source: `${this.configService.get('billing.service.name')}.${this.configService.get('billing.service.environment')}`,
+      payload: {
+        transactionID: transaction.id,
+        coachID: transaction.coachID,
+        planID: transaction.planID,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        externalPaymentID: transaction.stripePaymentID || '',
+        status: 'completed',
+      },
+    };
+
+    // Save event to outbox (will be published asynchronously)
+    await this.outboxService.saveAndPublishEvent(
+      event,
+      'billing.payment.completed'
     );
 
     return transaction;

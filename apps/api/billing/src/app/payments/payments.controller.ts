@@ -8,6 +8,7 @@ import {
   Param, BadRequestException, Patch,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {Public} from "@nlc-ai/api-auth";
 import { PaymentsService } from './payments.service';
 import {CreatePaymentIntentDto, CreateSetupIntentDto, ProcessPaymentRequestDto, SendPaymentRequestDto} from "./dto";
 
@@ -81,6 +82,7 @@ export class PaymentsController {
     return { message: 'Payment link deactivated successfully' };
   }
 
+  @Public()
   @Post('webhook')
   async handleWebhook(
     @Headers('stripe-signature') signature: string,
