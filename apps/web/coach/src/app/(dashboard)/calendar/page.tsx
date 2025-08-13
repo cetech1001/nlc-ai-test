@@ -241,7 +241,7 @@ const Calendar = () => {
         const convertedEvents = await calendlyAPI.loadEventsForMonth(currentDate, UserType.coach);
         setCalendarEvents(convertedEvents);
       } catch (error: any) {
-        setError(error.message || 'Failed to load calendar events');
+        setError(error.message || 'Failed to load calendar types');
         setCalendarEvents({});
       }
     };
@@ -420,7 +420,7 @@ const Calendar = () => {
           if (isCalendlyConnected) {
             calendlyAPI.loadEventsForMonth(currentDate, UserType.coach)
               .then(events => setCalendarEvents(events))
-              .catch(error => console.error('Failed to refresh events:', error));
+              .catch(error => console.error('Failed to refresh types:', error));
           }
         }}
         url={calendlyUrl}

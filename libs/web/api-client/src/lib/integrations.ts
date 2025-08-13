@@ -236,7 +236,7 @@ class IntegrationsAPI extends BaseAPI {
   }
 
   /**
-   * Load Calendly events for date range
+   * Load Calendly types for date range
    */
   async loadCalendlyEvents(startDate: Date, endDate: Date, status: string): Promise<any> {
     return this.makeRequest('/integrations/calendly/events', {

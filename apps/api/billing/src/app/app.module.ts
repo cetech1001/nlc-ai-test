@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import {DatabaseModule} from "@nlc-ai/api-database";
+import {MessagingModule} from "@nlc-ai/api-messaging";
 import { PaymentsModule } from './payments/payments.module';
 import { PlansModule } from './plans/plans.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
@@ -14,6 +15,7 @@ import {HealthModule} from "./health/health.module";
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule.forRoot(),
+    MessagingModule,
     HealthModule,
     InvoicesModule,
     PaymentMethodsModule,

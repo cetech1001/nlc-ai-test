@@ -69,7 +69,7 @@ const appPlatforms = {
   calendly: {
     name: 'Calendly',
     icon: <img src="/images/icons/calendly-icon.png" alt="Calendly Icon" className="w-full h-full object-contain"/>,
-    description: 'Schedule meetings and sync calendar events',
+    description: 'Schedule meetings and sync calendar types',
     type: 'app' as const,
   },
   gmail: {

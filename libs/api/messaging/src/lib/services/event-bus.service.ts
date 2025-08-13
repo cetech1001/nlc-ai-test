@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
-import { BaseEvent } from './events';
+import { BaseEvent } from '../types';
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class EventBusService {
       this.channel = await this.connection.createChannel();
 
       // Setup exchanges
-      await this.channel.assertExchange('nlc.domain.events', 'topic', {
+      await this.channel.assertExchange('nlc.domain.types', 'topic', {
         durable: true,
       });
 
@@ -45,7 +45,7 @@ export class EventBusService {
 
     try {
       const published = this.channel?.publish(
-        'nlc.domain.events',
+        'nlc.domain.types',
         routingKey,
         Buffer.from(JSON.stringify(fullEvent)),
         {
@@ -82,7 +82,7 @@ export class EventBusService {
 
       // Bind queue to routing keys
       for (const routingKey of routingKeys) {
-        await this.channel?.bindQueue(queueName, 'nlc.domain.events', routingKey);
+        await this.channel?.bindQueue(queueName, 'nlc.domain.types', routingKey);
       }
 
       await this.channel?.consume(

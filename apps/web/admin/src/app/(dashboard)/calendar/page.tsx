@@ -150,7 +150,7 @@ const Calendar = () =>{
     checkCalendlyConnection();
   }, []);
 
-  // Update calendar events when month changes or Calendly connects
+  // Update calendar types when month changes or Calendly connects
   useEffect(() => {
     const loadCalendlyEvents = async () => {
       if (!isCalendlyConnected || isLoading) {
@@ -162,8 +162,8 @@ const Calendar = () =>{
         const convertedEvents = await calendlyAPI.loadEventsForMonth(currentDate);
         setCalendarEvents(convertedEvents);
       } catch (error: any) {
-        console.error('Failed to load Calendly events:', error);
-        setError(error.message || 'Failed to load calendar events');
+        console.error('Failed to load Calendly types:', error);
+        setError(error.message || 'Failed to load calendar types');
         setCalendarEvents({});
       }
     };
@@ -171,7 +171,7 @@ const Calendar = () =>{
     loadCalendlyEvents();
   }, [isLoading, currentDate, isCalendlyConnected]);
 
-  // Update selected day appointments when calendar events change or selected day changes
+  // Update selected day appointments when calendar types change or selected day changes
   useEffect(() => {
     const updateSelectedDayAppointments = () => {
       if (!selectedDay) return;
@@ -183,7 +183,7 @@ const Calendar = () =>{
     updateSelectedDayAppointments();
   }, [calendarEvents, selectedDay, currentDate]);
 
-  // Initialize selected day to today ONLY once when calendar events are first loaded
+  // Initialize selected day to today ONLY once when calendar types are first loaded
   useEffect(() => {
     if (!hasInitializedSelectedDay && !isLoading && Object.keys(calendarEvents).length > 0 && isCalendlyConnected) {
       // Only auto-select today if we're viewing the current month
@@ -507,7 +507,7 @@ const Calendar = () =>{
           if (isCalendlyConnected) {
             calendlyAPI.loadEventsForMonth(currentDate)
               .then(events => setCalendarEvents(events))
-              .catch(error => console.error('Failed to refresh events:', error));
+              .catch(error => console.error('Failed to refresh types:', error));
           }
         }}
         url={calendlyUrl}

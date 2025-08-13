@@ -523,7 +523,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                               `${active ? "ring-2 ring-[#7B21BA]/50" : ""}
                               ${checked ? "text-white" : "text-white"}
                               relative flex cursor-pointer items-center space-x-2 focus:outline-none ${
-                                isProcessing || paymentSuccess ? 'opacity-50 pointer-events-none' : ''
+                                isProcessing || paymentSuccess ? 'opacity-50 pointer-types-none' : ''
                               }`
                             }
                           >

@@ -158,7 +158,7 @@ class CalendlyAPI extends BaseAPI {
 
     });*/
 
-    // Sort events by time for each day
+    // Sort types by time for each day
     Object.keys(eventsByDay).forEach(day => {
       eventsByDay[parseInt(day)].sort((a, b) => {
         const timeA = new Date(`1970/01/01 ${a.time.split(' - ')[0]}`);
@@ -239,7 +239,7 @@ class CalendlyAPI extends BaseAPI {
 
       return this.convertToCalendarEvents(calendlyEvents, userType);
     } catch (error) {
-      console.error('Failed to load Calendly events:', error);
+      console.error('Failed to load Calendly types:', error);
       throw error;
     }
   }

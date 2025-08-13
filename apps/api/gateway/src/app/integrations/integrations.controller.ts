@@ -228,9 +228,9 @@ export class IntegrationsController {
 
   // ==================== SPECIFIC PLATFORM ENDPOINTS ====================
 
-  @Post('calendly/events')
-  @ApiOperation({ summary: 'Load Calendly events for coach' })
-  @ApiResponse({ status: 200, description: 'Calendly events loaded successfully' })
+  @Post('calendly/types')
+  @ApiOperation({ summary: 'Load Calendly types for coach' })
+  @ApiResponse({ status: 200, description: 'Calendly types loaded successfully' })
   async loadCalendlyEvents(
     @CurrentUser() user: AuthUser,
     @Body() body: { startDate: string; endDate: string }
