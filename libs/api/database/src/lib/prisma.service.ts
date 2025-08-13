@@ -2,11 +2,6 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import {Prisma, PrismaClient} from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 
-export interface DatabaseOptions {
-  schema?: string;
-  connectionUrl?: string;
-}
-
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor(configService: ConfigService) {

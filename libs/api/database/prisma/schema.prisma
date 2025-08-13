@@ -3,8 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum EventOutboxStatus {
+  pending
+  published
+  failed
 }
 
 enum Providers {
@@ -467,6 +474,27 @@ model EmailThread {
   @@map("email_threads")
 }
 
+model EventOutbox {
+  id           String            @id @default(uuid()) @db.Uuid
+  eventId      String            @unique @db.Uuid
+  eventType    String            @db.VarChar(100)
+  routingKey   String            @db.VarChar(100)
+  payload      Json
+  status       EventOutboxStatus @default(pending)
+  retryCount   Int               @default(0)
+  maxRetries   Int               @default(3)
+  lastError    String?
+  publishedAt  DateTime?         @db.Timestamptz(6)
+  scheduledFor DateTime?         @db.Timestamptz(6) // For delayed events
+  createdAt    DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime          @updatedAt @db.Timestamptz(6)
+
+  @@index([status, scheduledFor])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("event_outbox")
+}
+
 model Integration {
   id              String         @id @default(uuid()) @db.Uuid
   coachID         String         @db.Uuid
@@ -553,32 +581,36 @@ model WebhookEvent {
 }
 
 model Transaction {
-  id              String            @id @default(uuid()) @db.Uuid
-  coachID         String            @db.Uuid
-  subscriptionID  String?           @db.Uuid
-  planID          String            @db.Uuid
-  amount          Int
-  currency        String            @default("USD")
-  status          TransactionStatus @default(pending)
-  paymentMethod   PaymentMethodType @default(stripe)
-  stripePaymentID String?
-  paypalOrderID   String?
-  invoiceNumber   String?           @unique
-  invoiceDate     DateTime
-  dueDate         DateTime?
-  paidAt          DateTime?
-  description     String?
-  metadata        Json?
-  failureReason   String?
-  refundReason    String?
-  refundedAmount  Int?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  coach           Coach             @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  subscription    Subscription?     @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
-  plan            Plan              @relation(fields: [planID], references: [id], onDelete: Restrict)
-  invoices        Invoice[]
+  id                String            @id @default(uuid()) @db.Uuid
+  coachID           String            @db.Uuid
+  subscriptionID    String?           @db.Uuid
+  planID            String            @db.Uuid
+  paymentMethodID   String?           @db.Uuid // NEW FIELD
+  amount            Int
+  currency          String            @default("USD")
+  status            TransactionStatus @default(pending)
+  paymentMethodType PaymentMethodType @default(stripe) // Keep for backward compatibility
+  stripePaymentID   String?
+  paypalOrderID     String?
+  invoiceNumber     String?           @unique
+  invoiceDate       DateTime
+  dueDate           DateTime?
+  paidAt            DateTime?
+  description       String?
+  metadata          Json?
+  failureReason     String?
+  refundReason      String?
+  refundedAmount    Int?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
+  coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  subscription  Subscription?  @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
+  plan          Plan           @relation(fields: [planID], references: [id], onDelete: Restrict)
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodID], references: [id], onDelete: SetNull) // NEW RELATION
+  invoices      Invoice[]
+
+  @@index([paymentMethodID], map: "idx_transactions_payment_method_id")
   @@map("transactions")
 }
 
@@ -596,7 +628,9 @@ model PaymentMethod {
   paypalEmail           String?
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
-  coach                 Coach             @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  coach        Coach         @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  transactions Transaction[] // NEW RELATION
 
   @@map("payment_methods")
 }
