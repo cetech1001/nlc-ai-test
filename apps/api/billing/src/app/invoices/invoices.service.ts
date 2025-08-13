@@ -1,12 +1,12 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
-import {PrismaService} from '../prisma/prisma.service';
 import {Invoice, InvoiceStatus, Prisma} from '@prisma/client';
 import {
   CreateInvoiceRequest,
-  InvoiceFilters,
+  InvoiceFilters, InvoiceLineItem,
   InvoiceWithDetails,
   UpdateInvoiceRequest
 } from "@nlc-ai/api-types";
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class InvoicesService {
@@ -58,7 +58,7 @@ export class InvoicesService {
           status: InvoiceStatus.draft,
           issueDate: new Date(),
           dueDate: data.dueDate,
-          lineItems: data.lineItems,
+          lineItems: JSON.stringify(data.lineItems),
           subtotal: data.subtotal,
           taxRate: data.taxRate,
           taxAmount: data.taxAmount,
@@ -235,6 +235,7 @@ export class InvoicesService {
         where: { id },
         data: {
           ...data,
+          lineItems: data.lineItems ? JSON.stringify(data.lineItems) : undefined,
           updatedAt: new Date(),
         },
       });

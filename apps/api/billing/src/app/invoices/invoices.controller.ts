@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { InvoicesService, CreateInvoiceDto, UpdateInvoiceDto, InvoiceFilters } from './invoices.service';
+import { InvoicesService } from './invoices.service';
+import {CreateInvoiceDto, InvoiceFiltersDto, UpdateInvoiceDto} from "./dto";
 
 @ApiTags('Invoices')
 @Controller('invoices')
@@ -30,7 +31,7 @@ export class InvoicesController {
   @Get()
   @ApiOperation({ summary: 'Get all invoices with filtering' })
   @ApiResponse({ status: 200, description: 'Invoices retrieved successfully' })
-  async findAllInvoices(@Query() filters: InvoiceFilters) {
+  async findAllInvoices(@Query() filters: InvoiceFiltersDto) {
     return this.invoicesService.findAllInvoices(filters);
   }
 
