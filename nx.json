@@ -34,7 +34,8 @@
         "libs/types/*",
         "libs/api/types/*",
         "libs/api/database/*",
-        "libs/api/messaging/*"
+        "libs/api/messaging/*",
+        "libs/api/validation/*"
       ]
     },
     {
@@ -90,7 +91,8 @@
         "libs/types/*",
         "libs/api/types/*",
         "libs/api/database/*",
-        "libs/api/messaging/*"
+        "libs/api/messaging/*",
+        "libs/api/validation/*"
       ],
       "options": {
         "typecheck": {
