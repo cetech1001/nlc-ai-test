@@ -1,59 +1,27 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { EmailTemplatesService } from '../services/email-templates.service';
+import { TemplatesService } from './templates.service';
 import { JwtAuthGuard } from '@nlc-ai/api-auth';
 import { UserTypes } from '@nlc-ai/api-auth';
 import { UserTypesGuard } from '@nlc-ai/api-auth';
 import { UserType } from '@nlc-ai/api-types';
 import { CurrentUser } from '@nlc-ai/api-auth';
-
-interface CreateTemplateRequest {
-  name: string;
-  category: string;
-  subjectTemplate: string;
-  bodyTemplate: string;
-  description?: string;
-  tags?: string[];
-  isAiGenerated?: boolean;
-  generationPrompt?: string;
-}
-
-interface UpdateTemplateRequest {
-  name?: string;
-  category?: string;
-  subjectTemplate?: string;
-  bodyTemplate?: string;
-  description?: string;
-  tags?: string[];
-  isActive?: boolean;
-}
-
-interface TemplateFilters {
-  category?: string;
-  search?: string;
-  tags?: string[];
-  isAiGenerated?: boolean;
-  isActive?: boolean;
-  sortBy?: 'name' | 'category' | 'usageCount' | 'createdAt' | 'lastUsedAt';
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
+import {CreateTemplateDto, TemplateFiltersDto, UpdateTemplateDto} from "./dto";
 
 @ApiTags('Email Templates')
 @Controller('templates')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
 @UserTypes(UserType.coach)
 @ApiBearerAuth()
-export class EmailTemplatesController {
-  constructor(private readonly emailTemplatesService: EmailTemplatesService) {}
+export class TemplatesController {
+  constructor(private readonly emailTemplatesService: TemplatesService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get email templates for coach' })
   @ApiResponse({ status: 200, description: 'Templates retrieved successfully' })
   async getTemplates(
     @CurrentUser('id') coachID: string,
-    @Query() filters: TemplateFilters,
+    @Query() filters: TemplateFiltersDto,
   ) {
     return this.emailTemplatesService.getTemplates(coachID, filters);
   }
@@ -80,7 +48,7 @@ export class EmailTemplatesController {
   @ApiResponse({ status: 201, description: 'Template created successfully' })
   async createTemplate(
     @CurrentUser('id') coachID: string,
-    @Body() createRequest: CreateTemplateRequest,
+    @Body() createRequest: CreateTemplateDto,
   ) {
     return this.emailTemplatesService.createTemplate(coachID, createRequest);
   }
@@ -91,7 +59,7 @@ export class EmailTemplatesController {
   async updateTemplate(
     @CurrentUser('id') coachID: string,
     @Param('templateID') templateID: string,
-    @Body() updateRequest: UpdateTemplateRequest,
+    @Body() updateRequest: UpdateTemplateDto,
   ) {
     return this.emailTemplatesService.updateTemplate(coachID, templateID, updateRequest);
   }

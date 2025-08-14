@@ -72,7 +72,7 @@ export interface RegenerateEmailsRequest {
   customInstructions?: string;
 }
 
-// libs/types/src/lib/lead-followup.ts
+// libs/types/src/lib/lead.ts
 export interface CreateSequenceRequest {
   leadID: string;
   coachID?: string; // Optional - will be set from auth if coach role

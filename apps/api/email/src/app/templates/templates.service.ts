@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
+import {CreateTemplateRequest, TemplateFilters, UpdateTemplateRequest} from "@nlc-ai/api-types";
 
 @Injectable()
-export class EmailTemplatesService {
+export class TemplatesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getTemplates(coachID: string, filters: TemplateFilters) {

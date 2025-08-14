@@ -4,9 +4,9 @@ import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import FormData from 'form-data';
 import Mailgun from 'mailgun.js';
-import { getPasswordResetEmailTemplate, getVerificationEmailTemplate, getWelcomeEmailTemplate } from "../templates/auth";
-import { getPaymentRequestEmailTemplate } from "../templates/payment";
-import { getLeadFollowupEmailTemplate, getClientResponseEmailTemplate, getEmailSequenceCompleteTemplate } from "../templates/lead-followup";
+import { getPasswordResetEmailTemplate, getVerificationEmailTemplate, getWelcomeEmailTemplate } from "./templates/auth";
+import { getPaymentRequestEmailTemplate } from "./templates/payment";
+import { getLeadFollowupEmailTemplate, getClientResponseEmailTemplate, getEmailSequenceCompleteTemplate } from "./templates/lead";
 
 export interface SendEmailRequest {
   to: string;

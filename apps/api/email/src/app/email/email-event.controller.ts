@@ -1,6 +1,6 @@
 import {Body, Controller, Logger, Post} from "@nestjs/common";
 import {ApiOperation} from "@nestjs/swagger";
-import {EmailService} from "../services/email.service";
+import {EmailService} from "./email.service";
 
 @Controller('internal/email-events')
 export class EmailEventController {

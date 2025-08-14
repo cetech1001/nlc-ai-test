@@ -1,5 +1,7 @@
-import {createHmac} from "crypto";
+import { Injectable } from '@nestjs/common';
+import { createHmac } from 'crypto';
 
+@Injectable()
 export class WebhookVerificationService {
   static verifyMailgunWebhook(token: string, timestamp: string, signature: string, signingKey: string): boolean {
     const value = timestamp + token;
@@ -9,9 +11,7 @@ export class WebhookVerificationService {
 
   static verifySendGridWebhook(payload: string, signature: string, publicKey: string): boolean {
     // Implementation for SendGrid webhook verification
-    // This would use the SendGrid EventWebhook verification library
-    // For now, returning true as placeholder
-    return true;
+    return true; // Placeholder
   }
 
   static verifyPostmarkWebhook(payload: string, signature: string, secret: string): boolean {

@@ -2,8 +2,8 @@ import {Body, Controller, Get, Param, Post, Query, UseGuards} from '@nestjs/comm
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType } from '@nlc-ai/api-types';
-import {EmailService} from "../services/email.service";
-import {EmailSchedulerService} from "../services/email-scheduler.service";
+import {EmailService} from "./email.service";
+import {EmailSchedulerService} from "./email-scheduler.service";
 import {PrismaService} from "@nlc-ai/api-database";
 
 @ApiTags('Email Statistics')

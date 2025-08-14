@@ -12,6 +12,8 @@ import { SequencesModule } from './sequences/sequences.module';
 import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
 import emailConfig from './config/email.config';
+import {WebhooksModule} from "./webhooks/webhooks.module";
+import {AnalyticsModule} from "./analytics/analytics.module";
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import emailConfig from './config/email.config';
     TemplatesModule,
     SequencesModule,
     EventHandlersModule,
+    WebhooksModule,
+    AnalyticsModule
   ],
   providers: [
     {
