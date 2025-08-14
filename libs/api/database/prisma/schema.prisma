@@ -153,6 +153,7 @@ model Client {
   emailThreads      EmailThread[]
   scheduledEmails   ScheduledEmail[]
   clientCoaches     ClientCoach[]
+  EmailSequence     EmailSequence[]
 
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
@@ -448,6 +449,26 @@ model DailyKPI {
   @@map("daily_kpis")
 }
 
+enum EmailStatus {
+  pending
+  scheduled
+  processing
+  sent
+  delivered
+  opened
+  clicked
+  failed
+  bounced
+  simulated
+}
+
+enum SequenceStatus {
+  active
+  paused
+  completed
+  cancelled
+}
+
 model EmailAccount {
   id             String        @id @default(uuid()) @db.Uuid
   coachID        String        @db.Uuid
@@ -470,26 +491,36 @@ model EmailAccount {
 }
 
 model EmailMessage {
-  id               String      @id @default(uuid()) @db.Uuid
-  threadID         String      @db.Uuid
-  messageID        String      @db.VarChar(255)
-  senderEmail      String      @db.VarChar(255)
-  recipientEmails  String[]
-  ccEmails         String[]
-  bccEmails        String[]
-  subject          String?     @db.VarChar(500)
-  bodyText         String?
-  bodyHtml         String?
-  attachments      Json?       @default("[]")
-  aiProcessed      Boolean?    @default(false)
-  sentimentScore   Decimal?    @db.Decimal(3, 2)
-  intentCategory   String?     @db.VarChar(100)
-  suggestedActions Json?       @default("[]")
-  sentAt           DateTime    @db.Timestamptz(6)
-  receivedAt       DateTime?   @default(now()) @db.Timestamptz(6)
-  createdAt        DateTime?   @default(now()) @db.Timestamptz(6)
-  emailThread      EmailThread @relation(fields: [threadID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                String      @id @default(uuid()) @db.Uuid
+  threadID          String      @db.Uuid
+  emailTemplateID   String?     @db.Uuid
+  providerMessageID String      @unique @db.VarChar(255)
+  to                String      @db.VarChar(255)
+  from              String      @db.VarChar(255)
+  // recipientEmails  String[]
+  // ccEmails         String[]
+  // bccEmails        String[]
+  subject           String?     @db.VarChar(500)
+  text              String?
+  html              String?
+  attachments       Json?       @default("[]")
+  aiProcessed       Boolean?    @default(false)
+  sentimentScore    Decimal?    @db.Decimal(3, 2)
+  intentCategory    String?     @db.VarChar(100)
+  suggestedActions  Json?       @default("[]")
+  status            EmailStatus @default(pending)
+  errorMessage      String?
+  metadata          Json?       @default("{}")
+  openedAt          DateTime?   @db.Timestamptz(6)
+  clickedAt         DateTime?   @db.Timestamptz(6)
+  sentAt            DateTime    @db.Timestamptz(6)
+  receivedAt        DateTime?   @default(now()) @db.Timestamptz(6)
+  createdAt         DateTime?   @default(now()) @db.Timestamptz(6)
 
+  emailThread   EmailThread    @relation(fields: [threadID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailTemplate EmailTemplate? @relation(fields: [emailTemplateID], references: [id])
+
+  @@index([status])
   @@index([sentAt], map: "idx_email_messages_sent_at")
   @@index([threadID], map: "idx_email_messages_thread_id")
   @@map("email_messages")
@@ -510,6 +541,8 @@ model EmailTemplate {
   createdAt        DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
   coach            Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  emailMessages EmailMessage[]
 
   @@map("email_templates")
 }
@@ -860,6 +893,7 @@ model ScheduledEmail {
   leadID            String?   @db.Uuid
   coachID           String?   @db.Uuid
   clientID          String?   @db.Uuid
+  to                String    @db.VarChar(255)
   subject           String    @db.VarChar(500)
   body              String    @db.Text
   sequenceOrder     Int
@@ -883,24 +917,32 @@ model ScheduledEmail {
   @@index([scheduledFor, status])
   @@index([leadID])
   @@index([coachID])
+  @@index([clientID])
   @@index([emailSequenceID])
   @@map("scheduled_emails")
 }
 
 model EmailSequence {
   id          String   @id @default(uuid()) @db.Uuid
-  leadID      String   @db.Uuid
+  leadID      String?  @db.Uuid
   coachID     String?  @db.Uuid
+  clientID    String?  @db.Uuid
+  name        String   @db.VarChar(255)
   status      String   @db.VarChar(50)
   sequence    Json
   description String?
+  triggerType String   @db.VarChar(50)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
-  lead            Lead             @relation(fields: [leadID], references: [id], onDelete: Cascade)
+  lead            Lead?            @relation(fields: [leadID], references: [id], onDelete: Cascade)
   coach           Coach?           @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  client          Client?          @relation(fields: [clientID], references: [id], onDelete: Cascade)
   scheduledEmails ScheduledEmail[]
 
+  @@index([coachID])
+  @@index([leadID])
+  @@index([clientID])
   @@map("email_sequences")
 }

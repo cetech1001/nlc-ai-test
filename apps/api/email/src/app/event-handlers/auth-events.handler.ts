@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
-import { EmailService } from '../email/email.service';
+import { EmailService } from '../email/services/email.service';
 import {getWelcomeEmailTemplate} from "../email/templates/auth";
 
 @Injectable()
