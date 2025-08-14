@@ -1,6 +1,4 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -18,13 +16,15 @@ import {
   UpdateProfileRequest,
   UpdatePasswordRequest,
   VerifyCodeRequest,
+  ClientRegistrationRequest,
 } from '@nlc-ai/api-types';
+import * as bcrypt from 'bcryptjs';
+import {Admin, Client, Coach} from "@prisma/client";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
     private readonly outbox: OutboxService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly tokenService: TokenService,
@@ -33,27 +33,32 @@ export class AuthService {
     private readonly clientAuthService: ClientAuthService,
   ) {}
 
+  // ========== DELEGATED AUTH METHODS ==========
   async loginAdmin(loginDto: LoginRequest) {
-    return this.adminAuthService.loginAdmin(loginDto);
+    return this.adminAuthService.login(loginDto);
   }
 
   async registerCoach(registerDto: RegistrationRequest) {
-    return this.coachAuthService.registerCoach(registerDto);
+    return this.coachAuthService.register(registerDto);
   }
 
   async loginCoach(loginDto: LoginRequest) {
-    return this.coachAuthService.loginCoach(loginDto);
+    return this.coachAuthService.login(loginDto);
   }
 
-  async registerClient(registerDto: any) {
-    return this.clientAuthService.registerClient(registerDto);
+  async registerClient(registerDto: ClientRegistrationRequest) {
+    return this.clientAuthService.register(registerDto);
   }
 
-  async loginClient(loginDto: any) {
-    return this.clientAuthService.loginClient(loginDto);
+  async loginClient(loginDto: LoginRequest) {
+    return this.clientAuthService.login(loginDto);
   }
 
-  // Common Auth Methods
+  async switchCoachContext(clientID: string, newCoachID: string) {
+    return this.clientAuthService.switchCoachContext(clientID, newCoachID);
+  }
+
+  // ========== COMMON METHODS ==========
   async uploadAvatar(userID: string, userType: UserType, file: Express.Multer.File) {
     try {
       const { secure_url: avatarUrl } = await this.cloudinaryService.uploadAsset(file, {
@@ -67,19 +72,13 @@ export class AuthService {
         ]
       });
 
-      // Update user record based on type
+      // Delegate to specific service for database update
       if (userType === UserType.coach) {
-        await this.prisma.coach.update({
-          where: { id: userID },
-          data: { avatarUrl, updatedAt: new Date() },
-        });
+        await this.coachAuthService.uploadAvatar(userID, avatarUrl);
       } else if (userType === UserType.admin) {
-        await this.adminAuthService.uploadAvatar(avatarUrl, userID);
+        await this.adminAuthService.uploadAvatar(userID, avatarUrl);
       } else if (userType === UserType.client) {
-        await this.prisma.client.update({
-          where: { id: userID },
-          data: { avatarUrl, updatedAt: new Date() },
-        });
+        await this.clientAuthService.uploadAvatar(userID, avatarUrl);
       }
 
       // Emit avatar updated event
@@ -106,183 +105,54 @@ export class AuthService {
   }
 
   async updateProfile(userID: string, userType: UserType, updateProfileDto: UpdateProfileRequest) {
-    const { firstName, lastName, email } = updateProfileDto;
+    let result;
 
+    // Delegate to specific service
     if (userType === UserType.coach) {
-      const existingCoach = await this.prisma.coach.findFirst({
-        where: {
-          email,
-          id: { not: userID },
-          isActive: true,
-        },
-      });
-
-      if (existingCoach) {
-        throw new ConflictException('Email already exists');
-      }
-
-      const updatedCoach = await this.prisma.coach.update({
-        where: { id: userID },
-        data: {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim(),
-          updatedAt: new Date(),
-        },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          businessName: true,
-          isVerified: true,
-          avatarUrl: true,
-          websiteUrl: true,
-          bio: true,
-          timezone: true,
-          phone: true,
-        },
-      });
-
-      // Emit profile updated event
-      await this.outbox.saveAndPublishEvent<AuthEvent>(
-        {
-          eventType: 'auth.coach.profile.updated',
-          schemaVersion: 1,
-          payload: {
-            coachID: userID,
-            email: updatedCoach.email,
-            firstName: updatedCoach.firstName,
-            lastName: updatedCoach.lastName,
-          },
-        },
-        'auth.coach.profile.updated'
-      );
-
-      return {
-        message: 'Profile updated successfully',
-        user: updatedCoach,
-      };
+      result = await this.coachAuthService.updateProfile(userID, updateProfileDto);
     } else if (userType === UserType.admin) {
-      const existingAdmin = await this.prisma.admin.findFirst({
-        where: {
-          email,
-          id: { not: userID },
-          isActive: true,
-        },
-      });
-
-      if (existingAdmin) {
-        throw new ConflictException('Email already exists');
-      }
-
-      const updatedAdmin = await this.prisma.admin.update({
-        where: { id: userID },
-        data: {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim(),
-          updatedAt: new Date(),
-        },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          avatarUrl: true,
-        },
-      });
-
-      // Emit profile updated event
-      await this.outbox.saveAndPublishEvent<AuthEvent>(
-        {
-          eventType: 'auth.admin.profile.updated',
-          schemaVersion: 1,
-          payload: {
-            userID,
-            email: updatedAdmin.email,
-            firstName: updatedAdmin.firstName,
-            lastName: updatedAdmin.lastName,
-            role: updatedAdmin.role,
-          },
-        },
-        'auth.admin.profile.updated'
-      );
-
-      return {
-        message: 'Profile updated successfully',
-        user: updatedAdmin,
-      };
+      result = await this.adminAuthService.updateProfile(userID, updateProfileDto);
     } else if (userType === UserType.client) {
-      const existingClient = await this.prisma.client.findFirst({
-        where: {
-          email,
-          id: { not: userID },
-          isActive: true,
-        },
-      });
-
-      if (existingClient) {
-        throw new ConflictException('Email already exists');
-      }
-
-      const updatedClient = await this.prisma.client.update({
-        where: { id: userID },
-        data: {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim(),
-          updatedAt: new Date(),
-        },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          avatarUrl: true,
-          phone: true,
-        },
-      });
-
-      return {
-        message: 'Profile updated successfully',
-        user: updatedClient,
-      };
+      result = await this.clientAuthService.updateProfile(userID, updateProfileDto);
+    } else {
+      throw new BadRequestException('Invalid user type');
     }
 
-    throw new BadRequestException('Invalid user type');
+    // Emit profile updated event
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
+      {
+        eventType: userType === UserType.coach ? 'auth.coach.profile.updated' :
+          userType === UserType.admin ? 'auth.admin.profile.updated' :
+            'auth.client.profile.updated',
+        schemaVersion: 1,
+        payload: {
+          userID,
+          email: result.user.email,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
+          ...(userType === UserType.admin && { role: (result.user as Admin).role }),
+        },
+      },
+      `auth.${userType}.profile.updated`
+    );
+
+    return result;
   }
 
   async updatePassword(userID: string, userType: UserType, updatePasswordDto: UpdatePasswordRequest) {
-    const { newPassword } = updatePasswordDto;
+    let result;
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const passwordHash = await bcrypt.hash(updatePasswordDto.newPassword, 12);
 
+    // Delegate to specific service
     if (userType === UserType.coach) {
-      await this.prisma.coach.update({
-        where: { id: userID },
-        data: {
-          passwordHash,
-          updatedAt: new Date(),
-        },
-      });
+      result = await this.coachAuthService.updatePassword(passwordHash, userID);
     } else if (userType === UserType.admin) {
-      await this.prisma.admin.update({
-        where: { id: userID },
-        data: {
-          passwordHash,
-          updatedAt: new Date(),
-        },
-      });
+      result = await this.adminAuthService.updatePassword(passwordHash, userID);
     } else if (userType === UserType.client) {
-      await this.prisma.client.update({
-        where: { id: userID },
-        data: {
-          passwordHash,
-          updatedAt: new Date(),
-        },
-      });
+      result = await this.clientAuthService.updatePassword(passwordHash, userID);
+    } else {
+      throw new BadRequestException('Invalid user type');
     }
 
     // Emit password updated event (without sensitive data)
@@ -299,7 +169,7 @@ export class AuthService {
       'auth.password.updated'
     );
 
-    return { message: 'Password updated successfully' };
+    return result;
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordRequest, userType: UserType) {
@@ -344,84 +214,7 @@ export class AuthService {
     // Check for email verification first
     const isEmailVerification = await this.tokenService.verifyToken(email, code, 'verification');
     if (isEmailVerification) {
-      // Try coach first
-      let user: any = await this.prisma.coach.findUnique({ where: { email } });
-      if (user && !user.isVerified) {
-        await this.prisma.coach.update({
-          where: { email },
-          data: {
-            isVerified: true,
-            lastLoginAt: new Date(),
-          },
-        });
-
-        // Emit verification completed event
-        await this.outbox.saveAndPublishEvent<AuthEvent>(
-          {
-            eventType: 'auth.coach.verified',
-            schemaVersion: 1,
-            payload: {
-              coachID: user.id,
-              email: user.email,
-              verifiedAt: new Date().toISOString(),
-            },
-          },
-          'auth.coach.verified'
-        );
-
-        const payload = {
-          sub: user.id,
-          email: user.email,
-          type: UserType.coach,
-        };
-
-        return {
-          access_token: this.jwtService.sign(payload),
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            businessName: user.businessName,
-            avatarUrl: user.avatarUrl,
-            isVerified: true,
-          },
-          verified: true,
-          message: 'Email verified successfully',
-        };
-      }
-
-      // Try client
-      user = await this.prisma.client.findUnique({ where: { email } });
-      if (user && !user.isVerified) {
-        await this.prisma.client.update({
-          where: { email },
-          data: {
-            isVerified: true,
-            lastLoginAt: new Date(),
-          },
-        });
-
-        const payload = {
-          sub: user.id,
-          email: user.email,
-          type: UserType.client,
-        };
-
-        return {
-          access_token: this.jwtService.sign(payload),
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            avatarUrl: user.avatarUrl,
-            isVerified: true,
-          },
-          verified: true,
-          message: 'Email verified successfully',
-        };
-      }
+      return this.handleEmailVerification(email);
     }
 
     // Check for password reset
@@ -449,20 +242,11 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, 12);
 
     if (userType === UserType.coach) {
-      await this.prisma.coach.update({
-        where: { email },
-        data: { passwordHash },
-      });
+      await this.coachAuthService.updatePassword(passwordHash, undefined, email);
     } else if (userType === UserType.admin) {
-      await this.prisma.admin.update({
-        where: { email },
-        data: { passwordHash },
-      });
+      await this.adminAuthService.updatePassword(passwordHash, undefined, email);
     } else if (userType === UserType.client) {
-      await this.prisma.client.update({
-        where: { email },
-        data: { passwordHash },
-      });
+      await this.clientAuthService.updatePassword(passwordHash, undefined, email);
     }
 
     await this.tokenService.invalidateTokens(email);
@@ -506,48 +290,30 @@ export class AuthService {
 
   async findUserByID(id: string, type: UserType) {
     if (type === UserType.coach) {
-      return this.prisma.coach.findUnique({
-        where: { id, isActive: true },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          businessName: true,
-          isVerified: true,
-          avatarUrl: true,
-          websiteUrl: true,
-          bio: true,
-          timezone: true,
-          phone: true,
-        },
-      });
+      return this.coachAuthService.findByUserID(id);
     } else if (type === UserType.admin) {
-      return this.prisma.admin.findUnique({
-        where: { id, isActive: true },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          avatarUrl: true,
-        },
-      });
+      return this.adminAuthService.findByUserID(id);
     } else if (type === UserType.client) {
-      return this.prisma.client.findUnique({
-        where: { id, isActive: true },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          avatarUrl: true,
-          phone: true,
-        },
-      });
+      return this.clientAuthService.findByUserID(id);
     }
 
     return null;
+  }
+
+  // ========== PRIVATE HELPER METHODS ==========
+  private async handleEmailVerification(email: string) {
+    // Try coach first
+    let user: Coach | Client | null = await this.prisma.coach.findUnique({ where: { email } });
+    if (user && !user.isVerified) {
+      return this.coachAuthService.verifyEmail(user);
+    }
+
+    // Try client
+    user = await this.prisma.client.findUnique({ where: { email } });
+    if (user && !user.isVerified) {
+      return this.clientAuthService.verifyEmail(user);
+    }
+
+    throw new BadRequestException('Invalid verification request');
   }
 }

@@ -15,7 +15,7 @@ import {
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { type AuthUser, UserType } from '@nlc-ai/api-types';
-import {CurrentUser, JwtAuthGuard, Public} from "@nlc-ai/api-auth";
+import {CurrentUser, JwtAuthGuard, Public, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
 import { AuthService } from './auth.service';
 import { GoogleAuthService } from './services/google-auth.service';
 import {
@@ -115,7 +115,8 @@ export class AuthController {
   }
 
   @Post('client/switch-coach')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes(UserType.client)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Switch coach context for client' })
   @ApiResponse({ status: 200, description: 'Coach context switched successfully' })
@@ -129,8 +130,7 @@ export class AuthController {
     }
 
     // This would be implemented in ClientAuthService
-    // return this.clientAuthService.switchCoachContext(user.id, switchCoachDto.coachID);
-    throw new BadRequestException('Not implemented yet');
+    return this.authService.switchCoachContext(user.id, switchCoachDto.coachID);
   }
 
   // ========== COMMON AUTH ENDPOINTS ==========

@@ -23,5 +23,9 @@
   "include": [
     "src/**/*.ts"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../database/tsconfig.lib.json"
+    }
+  ]
 }

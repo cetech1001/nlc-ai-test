@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "email-service",
+    "name": "@nlc-ai/email-service",
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -29,15 +29,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "email-service:build",
+          "buildTarget": "@nlc-ai/email-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "email-service:build:development"
+            "buildTarget": "@nlc-ai/email-service:build:development"
           },
           "production": {
-            "buildTarget": "email-service:build:production"
+            "buildTarget": "@nlc-ai/email-service:build:production"
           }
         }
       }

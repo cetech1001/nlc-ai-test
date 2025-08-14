@@ -1,10 +1,10 @@
-import {Injectable, UnauthorizedException} from "@nestjs/common";
+import {BadRequestException, ConflictException, Injectable, UnauthorizedException} from "@nestjs/common";
 import {LoginRequest, UserType} from "@nlc-ai/types";
 import * as bcrypt from "bcryptjs";
 import {PrismaService} from "@nlc-ai/api-database";
 import {OutboxService} from "@nlc-ai/api-messaging";
 import {JwtService} from "@nestjs/jwt";
-import {AuthEvent} from "@nlc-ai/api-types";
+import {AuthEvent, UpdateProfileRequest} from "@nlc-ai/api-types";
 
 @Injectable()
 export class AdminAuthService {
@@ -14,7 +14,7 @@ export class AdminAuthService {
     private readonly jwtService: JwtService) {
   }
 
-  async loginAdmin(adminLoginDto: LoginRequest) {
+  async login(adminLoginDto: LoginRequest) {
     const { email, password } = adminLoginDto;
 
     const admin = await this.validateAdmin(email, password);
@@ -75,10 +75,78 @@ export class AdminAuthService {
     return admin;
   }
 
-  async uploadAvatar(avatarUrl: string, adminID: string) {
+  async updateProfile(adminID: string, updateProfileDto: UpdateProfileRequest) {
+    const { firstName, lastName, email } = updateProfileDto;
+
+    const existingAdmin = await this.prisma.admin.findFirst({
+      where: {
+        email,
+        id: { not: adminID },
+        isActive: true,
+      },
+    });
+
+    if (existingAdmin) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const updatedAdmin = await this.prisma.admin.update({
+      where: { id: adminID },
+      data: {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        avatarUrl: true,
+      },
+    });
+
+    return {
+      message: 'Profile updated successfully',
+      user: updatedAdmin,
+    };
+  }
+
+  async updatePassword(passwordHash: string, adminID?: string, email?: string) {
+    if (adminID || email) {
+      await this.prisma.admin.update({
+        where: { id: adminID, email },
+        data: {
+          passwordHash,
+          updatedAt: new Date(),
+        },
+      });
+
+      return { message: 'Password updated successfully' };
+    }
+    throw new BadRequestException('Could not identify user');
+  }
+
+  async uploadAvatar(adminID: string, avatarUrl: string) {
     await this.prisma.admin.update({
       where: { id: adminID },
       data: { avatarUrl, updatedAt: new Date() },
+    });
+  }
+
+  async findByUserID(id: string) {
+    return this.prisma.admin.findUnique({
+      where: { id, isActive: true },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        avatarUrl: true,
+      },
     });
   }
 }

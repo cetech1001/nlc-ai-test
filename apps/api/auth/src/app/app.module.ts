@@ -8,8 +8,6 @@ import { ServiceAuthGuard } from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import {MessagingModule} from "@nlc-ai/api-messaging";
 import { AuthModule } from './auth/auth.module';
-import { AdminsModule } from './admins/admins.module';
-import { CoachesModule } from './coaches/coaches.module';
 import { HealthModule } from './health/health.module';
 import authConfig from './config/auth.config';
 
@@ -37,8 +35,6 @@ import authConfig from './config/auth.config';
     MessagingModule.forRoot(),
     HealthModule,
     AuthModule,
-    AdminsModule,
-    CoachesModule,
   ],
   providers: [
     {

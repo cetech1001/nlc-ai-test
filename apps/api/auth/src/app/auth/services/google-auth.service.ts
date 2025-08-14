@@ -3,7 +3,7 @@ import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
 import { ValidatedGoogleUser } from '@nlc-ai/types';
 import { ClientAuthService } from './client-auth.service';
-import {CoachAuthService} from "./coach-auth.service";
+import { CoachAuthService } from './coach-auth.service';
 
 @Injectable()
 export class GoogleAuthService {
@@ -26,7 +26,7 @@ export class GoogleAuthService {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken,
-        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
+        audience: this.configService.get<string>('auth.google.clientID'),
       });
       payload = ticket.getPayload();
     } catch (err) {
@@ -46,14 +46,15 @@ export class GoogleAuthService {
     };
   }
 
+  // Coach Google auth - unified login/register
   async coachGoogleAuth(idToken: string) {
     const userData = await this.validateGoogleToken(idToken);
-    return this.coachAuthService.googleCoachAuth(userData);
+    return this.coachAuthService.googleAuth(userData);
   }
 
-  // Client Google OAuth with invite token
+  // Client Google auth - with invite token
   async clientGoogleAuth(idToken: string, inviteToken: string) {
     const userData = await this.validateGoogleToken(idToken);
-    return this.clientAuthService.googleClientAuth(userData, inviteToken);
+    return this.clientAuthService.googleAuth(userData, inviteToken);
   }
 }

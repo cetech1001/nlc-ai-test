@@ -71,7 +71,7 @@ export interface AuthClientLoginEvent extends BaseEvent {
 }
 
 export interface AuthProfileUpdatedEvent extends BaseEvent {
-  eventType: 'auth.coach.profile.updated' | 'auth.admin.profile.updated';
+  eventType: 'auth.coach.profile.updated' | 'auth.admin.profile.updated' | 'auth.client.profile.updated';
   payload: {
     userID: string;
     email: string;
@@ -133,6 +133,19 @@ export interface AuthClientConnectedEvent extends BaseEvent {
   };
 }
 
+export interface AuthClientCoachContextSwitchedEvent extends BaseEvent {
+  eventType: 'auth.client.coach.context.switched';
+  payload: {
+    clientID: string;
+    previousCoachID?: string;
+    newCoachID: string;
+    clientEmail: string;
+    newCoachName: string;
+    newCoachBusinessName?: string | null;
+    switchedAt: string;
+  };
+}
+
 export interface AuthClientRelationshipUpdatedEvent extends BaseEvent {
   eventType: 'auth.client.relationship.updated';
   payload: {
@@ -166,6 +179,7 @@ export type AuthEvent =
   | AuthClientConnectedEvent
   | AuthClientRelationshipUpdatedEvent
   | AuthClientRelationshipRemovedEvent
+  | AuthClientCoachContextSwitchedEvent
   | AuthProfileUpdatedEvent
   | AuthPasswordUpdatedEvent
   | AuthPasswordResetEvent

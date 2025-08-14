@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "users-service",
+    "name": "@nlc-ai/users-service",
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -29,15 +29,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "users-service:build",
+          "buildTarget": "@nlc-ai/users-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "users-service:build:development"
+            "buildTarget": "@nlc-ai/users-service:build:development"
           },
           "production": {
-            "buildTarget": "users-service:build:production"
+            "buildTarget": "@nlc-ai/users-service:build:production"
           }
         }
       }

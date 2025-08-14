@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../messaging"
+    },
+    {
       "path": "./tsconfig.lib.json"
     }
   ]
