@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ReplayCacheService } from './replay-cache.service';
+import { ReplayCacheService } from '../services';
 import { createHmac } from 'crypto';
 
 /**

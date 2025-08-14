@@ -1,5 +1,5 @@
 import {BaseEvent} from "@nlc-ai/api-messaging";
-import {AUTH_TYPES} from "./user.types";
+import {UserType} from "./user.types";
 
 export interface AuthCoachRegisteredEvent extends BaseEvent {
   eventType: 'auth.coach.registered';
@@ -43,7 +43,7 @@ export interface AuthAdminLoginEvent extends BaseEvent {
   payload: {
     adminID: string;
     email: string;
-    role: string;
+    role: string | null;
     loginAt: string;
   };
 }
@@ -56,6 +56,7 @@ export interface AuthClientRegisteredEvent extends BaseEvent {
     email: string;
     firstName: string;
     lastName: string;
+    provider?: 'google';
   };
 }
 
@@ -76,7 +77,7 @@ export interface AuthProfileUpdatedEvent extends BaseEvent {
     email: string;
     firstName: string;
     lastName: string;
-    role?: string; // For admin
+    role?: string | null; // For admin
   };
 }
 
@@ -84,7 +85,7 @@ export interface AuthPasswordUpdatedEvent extends BaseEvent {
   eventType: 'auth.password.updated';
   payload: {
     userID: string;
-    userType: AUTH_TYPES;
+    userType: UserType;
     updatedAt: string;
   };
 }
@@ -93,7 +94,7 @@ export interface AuthPasswordResetEvent extends BaseEvent {
   eventType: 'auth.password.reset';
   payload: {
     email: string;
-    userType: AUTH_TYPES;
+    userType: UserType;
     resetAt: string;
   };
 }
@@ -102,7 +103,7 @@ export interface AuthAvatarUpdatedEvent extends BaseEvent {
   eventType: 'auth.avatar.updated';
   payload: {
     userID: string;
-    userType: AUTH_TYPES;
+    userType: UserType;
     avatarUrl: string;
   };
 }

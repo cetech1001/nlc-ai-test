@@ -1,54 +1,42 @@
-import {BadRequestException, ConflictException, UnauthorizedException} from "@nestjs/common";
+import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import {PrismaService} from "@nlc-ai/api-database";
-import {OutboxService} from "@nlc-ai/api-messaging";
-import {ValidatedGoogleUser} from "@nlc-ai/types";
-import {JwtService} from "@nestjs/jwt";
+import { PrismaService } from '@nlc-ai/api-database';
+import { OutboxService } from '@nlc-ai/api-messaging';
+import { ValidatedGoogleUser, UserType } from '@nlc-ai/types';
+import {AuthEvent, ClientRegistrationRequest, LoginRequest} from "@nlc-ai/api-types";
 
+@Injectable()
 export class ClientAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outbox: OutboxService,
-    private readonly jwtService: JwtService) {}
+    private readonly jwtService: JwtService,
+  ) {}
 
-  async registerClient(registerDto: {
-    email: string;
-    password?: string;
-    firstName: string;
-    lastName: string;
-    coachID: string;
-    inviteToken?: string;
-    provider?: 'google';
-    providerID?: string;
-    avatarUrl?: string;
-  }) {
-    const { email, password, firstName, lastName, coachID, inviteToken, provider, providerID, avatarUrl } = registerDto;
+  async registerClient(registerDto: ClientRegistrationRequest) {
+    const { email, password, firstName, lastName, inviteToken, provider, providerID, avatarUrl } = registerDto;
 
-    // Verify coach exists
-    const coach = await this.prisma.coach.findFirst({
-      where: { id: coachID, isActive: true, isDeleted: false },
+    // Verify invite token
+    const invite = await this.prisma.clientInvite.findFirst({
+      where: {
+        token: inviteToken,
+        email,
+        expiresAt: { gt: new Date() },
+        usedAt: null,
+      },
+      include: {
+        coach: {
+          select: { id: true, firstName: true, lastName: true, isActive: true, isDeleted: true }
+        }
+      }
     });
 
-    if (!coach) {
-      throw new BadRequestException('Invalid coach or registration not allowed');
+    if (!invite || !invite.coach.isActive || invite.coach.isDeleted) {
+      throw new UnauthorizedException('Invalid or expired invitation');
     }
 
-    // Verify invite token if provided
-    if (inviteToken) {
-      const invite = await this.prisma.clientInvite.findFirst({
-        where: {
-          token: inviteToken,
-          email,
-          coachID,
-          expiresAt: { gt: new Date() },
-          usedAt: null,
-        },
-      });
-
-      if (!invite) {
-        throw new UnauthorizedException('Invalid or expired invitation');
-      }
-    }
+    const coachID = invite.coachID;
 
     // Check if client already exists globally
     const existingClient = await this.prisma.client.findUnique({
@@ -66,7 +54,7 @@ export class ClientAuthService {
       const existingRelationship = existingClient.clientCoaches.find(cc => cc.coachID === coachID);
 
       if (existingRelationship) {
-        throw new ConflictException(`Client is already connected to coach ${coach.firstName} ${coach.lastName}`);
+        throw new ConflictException(`Client is already connected to coach ${invite.coach.firstName} ${invite.coach.lastName}`);
       }
 
       // Client exists but not connected to this coach - create relationship
@@ -76,6 +64,15 @@ export class ClientAuthService {
           coachID: coachID,
           status: 'active',
           assignedBy: coachID, // Coach invited them
+        },
+      });
+
+      // Mark invite as used
+      await this.prisma.clientInvite.update({
+        where: { id: invite.id },
+        data: {
+          usedAt: new Date(),
+          usedBy: existingClient.id,
         },
       });
 
@@ -100,7 +97,7 @@ export class ClientAuthService {
           firstName,
           lastName,
           avatarUrl,
-          source: inviteToken ? 'invitation' : 'registration',
+          source: 'invitation',
           isVerified: provider === 'google',
         },
       });
@@ -117,18 +114,16 @@ export class ClientAuthService {
       });
 
       // Mark invite as used
-      if (inviteToken) {
-        await tx.clientInvite.update({
-          where: { token: inviteToken },
-          data: {
-            usedAt: new Date(),
-            usedBy: client.id,
-          },
-        });
-      }
+      await tx.clientInvite.update({
+        where: { id: invite.id },
+        data: {
+          usedAt: new Date(),
+          usedBy: client.id,
+        },
+      });
 
       // Emit client registered event
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<AuthEvent>(
         {
           eventType: 'auth.client.registered',
           schemaVersion: 1,
@@ -138,7 +133,7 @@ export class ClientAuthService {
             email: client.email,
             firstName: client.firstName,
             lastName: client.lastName,
-            provider: provider || 'email',
+            provider,
           },
         },
         'auth.client.registered'
@@ -152,19 +147,14 @@ export class ClientAuthService {
     });
   }
 
-  // Updated client login with coach context
-  async loginClient(loginDto: {
-    email: string;
-    password?: string;
-    coachID?: string;
-  }) {
-    const { email, password, coachID } = loginDto;
+  async loginClient(loginDto: LoginRequest) {
+    const { email, password } = loginDto;
 
     const client = await this.prisma.client.findUnique({
       where: { email, isActive: true },
       include: {
         clientCoaches: {
-          where: coachID ? { coachID, status: 'active' } : { status: 'active' },
+          where: { status: 'active' },
           include: {
             coach: {
               select: {
@@ -182,7 +172,7 @@ export class ClientAuthService {
     });
 
     if (!client || client.clientCoaches.length === 0) {
-      throw new UnauthorizedException('Invalid credentials or no access to specified coach');
+      throw new UnauthorizedException('Invalid credentials or no access to any coach');
     }
 
     // Validate password for email/password auth
@@ -206,16 +196,12 @@ export class ClientAuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    // Find primary coach or use specified/first coach
-    let selectedCoach = client.clientCoaches.find(cc => cc.isPrimary)?.coach;
-    if (!selectedCoach) {
-      selectedCoach = coachID
-        ? client.clientCoaches.find(cc => cc.coachID === coachID)?.coach
-        : client.clientCoaches[0]?.coach;
-    }
+    // Find primary coach or use first coach
+    const primaryCoach = client.clientCoaches.find(cc => cc.isPrimary)?.coach;
+    const selectedCoach = primaryCoach || client.clientCoaches[0]?.coach;
 
     // Emit client login event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.client.login',
         schemaVersion: 1,
@@ -232,7 +218,7 @@ export class ClientAuthService {
     const payload = {
       sub: client.id,
       email: client.email,
-      type: 'client',
+      type: UserType.client,
       coachID: selectedCoach?.id,
       tenant: selectedCoach?.id,
       coaches: client.clientCoaches.map(cc => cc.coachID), // All accessible coaches
@@ -266,12 +252,26 @@ export class ClientAuthService {
   }
 
   // Google OAuth for clients
-  async googleClientAuth(googleUser: ValidatedGoogleUser, coachID?: string) {
+  async googleClientAuth(googleUser: ValidatedGoogleUser, inviteToken: string) {
+    // Verify invite token first
+    const invite = await this.prisma.clientInvite.findFirst({
+      where: {
+        token: inviteToken,
+        email: googleUser.email,
+        expiresAt: { gt: new Date() },
+        usedAt: null,
+      },
+    });
+
+    if (!invite) {
+      throw new UnauthorizedException('Invalid or expired invitation');
+    }
+
     let client = await this.prisma.client.findUnique({
       where: { email: googleUser.email },
       include: {
         clientCoaches: {
-          where: coachID ? { coachID } : {},
+          where: { coachID: invite.coachID },
           include: { coach: true },
         },
       },
@@ -283,30 +283,27 @@ export class ClientAuthService {
         throw new UnauthorizedException('Account exists with different authentication method');
       }
 
-      // If coachID specified and no relationship exists, create it
-      if (coachID && !client.clientCoaches.some(cc => cc.coachID === coachID)) {
+      // If no relationship exists with this coach, create it
+      if (!client.clientCoaches.some(cc => cc.coachID === invite.coachID)) {
         await this.prisma.clientCoach.create({
           data: {
             clientID: client.id,
-            coachID: coachID,
+            coachID: invite.coachID,
             status: 'active',
           },
         });
       }
 
-      return this.loginClient({ email: client.email, coachID });
+      return this.loginClient({ email: client.email, password: '' });
     }
 
     // New client via Google OAuth
-    if (!coachID) {
-      throw new BadRequestException('Coach ID required for new client registration via Google');
-    }
-
     return this.registerClient({
       email: googleUser.email,
       firstName: googleUser.firstName,
       lastName: googleUser.lastName,
-      coachID,
+      password: '',
+      inviteToken,
       provider: 'google',
       providerID: googleUser.providerID,
       avatarUrl: googleUser.avatarUrl,
@@ -336,7 +333,7 @@ export class ClientAuthService {
     const payload = {
       sub: clientID,
       email: relationship.client.email,
-      type: 'client',
+      type: UserType.client,
       coachID: newCoachID,
       tenant: newCoachID,
     };

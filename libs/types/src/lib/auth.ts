@@ -1,9 +1,10 @@
 export enum UserType {
   admin = 'admin',
-  coach = 'coach'
+  coach = 'coach',
+  client = 'client'
 }
 
-export type AUTH_TYPES = 'admin' | 'coach';
+export type AUTH_TYPES = 'admin' | 'coach' | 'client';
 
 export interface ValidatedGoogleUser {
   providerID: string;

@@ -9,7 +9,6 @@ export interface RegistrationRequest {
   lastName: string;
   email: string;
   password: string;
-  inviteToken?: string;
 }
 
 export interface GoogleAuthRequest {
@@ -34,6 +33,7 @@ export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
   email: string;
+  timezone: string;
   desktopNotifications?: boolean;
   emailNotifications?: boolean;
 }

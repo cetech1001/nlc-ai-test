@@ -4,6 +4,7 @@ import * as bcrypt from "bcryptjs";
 import {PrismaService} from "@nlc-ai/api-database";
 import {OutboxService} from "@nlc-ai/api-messaging";
 import {JwtService} from "@nestjs/jwt";
+import {AuthEvent} from "@nlc-ai/api-types";
 
 @Injectable()
 export class AdminAuthService {
@@ -23,8 +24,7 @@ export class AdminAuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    // Emit login event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.admin.login',
         schemaVersion: 1,
@@ -73,5 +73,12 @@ export class AdminAuthService {
     }
 
     return admin;
+  }
+
+  async uploadAvatar(avatarUrl: string, adminID: string) {
+    await this.prisma.admin.update({
+      where: { id: adminID },
+      data: { avatarUrl, updatedAt: new Date() },
+    });
   }
 }

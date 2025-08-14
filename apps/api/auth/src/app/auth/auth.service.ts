@@ -1,19 +1,24 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { TokenService } from './services/token.service';
+import { AdminAuthService } from './services/admin-auth.service';
+import { CoachAuthService } from './services/coach-auth.service';
+import { ClientAuthService } from './services/client-auth.service';
 import {
-  AUTH_TYPES,
+  AuthEvent,
   UserType,
+  LoginRequest,
+  RegistrationRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
   UpdateProfileRequest,
   UpdatePasswordRequest,
   VerifyCodeRequest,
-} from '@nlc-ai/types';
+} from '@nlc-ai/api-types';
 
 @Injectable()
 export class AuthService {
@@ -23,9 +28,33 @@ export class AuthService {
     private readonly outbox: OutboxService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly tokenService: TokenService,
+    private readonly adminAuthService: AdminAuthService,
+    private readonly coachAuthService: CoachAuthService,
+    private readonly clientAuthService: ClientAuthService,
   ) {}
 
-  async uploadAvatar(userID: string, userType: AUTH_TYPES, file: Express.Multer.File) {
+  async loginAdmin(loginDto: LoginRequest) {
+    return this.adminAuthService.loginAdmin(loginDto);
+  }
+
+  async registerCoach(registerDto: RegistrationRequest) {
+    return this.coachAuthService.registerCoach(registerDto);
+  }
+
+  async loginCoach(loginDto: LoginRequest) {
+    return this.coachAuthService.loginCoach(loginDto);
+  }
+
+  async registerClient(registerDto: any) {
+    return this.clientAuthService.registerClient(registerDto);
+  }
+
+  async loginClient(loginDto: any) {
+    return this.clientAuthService.loginClient(loginDto);
+  }
+
+  // Common Auth Methods
+  async uploadAvatar(userID: string, userType: UserType, file: Express.Multer.File) {
     try {
       const { secure_url: avatarUrl } = await this.cloudinaryService.uploadAsset(file, {
         resource_type: 'image',
@@ -38,20 +67,23 @@ export class AuthService {
         ]
       });
 
+      // Update user record based on type
       if (userType === UserType.coach) {
         await this.prisma.coach.update({
           where: { id: userID },
           data: { avatarUrl, updatedAt: new Date() },
         });
-      } else {
-        await this.prisma.admin.update({
+      } else if (userType === UserType.admin) {
+        await this.adminAuthService.uploadAvatar(avatarUrl, userID);
+      } else if (userType === UserType.client) {
+        await this.prisma.client.update({
           where: { id: userID },
           data: { avatarUrl, updatedAt: new Date() },
         });
       }
 
       // Emit avatar updated event
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<AuthEvent>(
         {
           eventType: 'auth.avatar.updated',
           schemaVersion: 1,
@@ -73,7 +105,7 @@ export class AuthService {
     }
   }
 
-  async updateProfile(userID: string, userType: AUTH_TYPES, updateProfileDto: UpdateProfileRequest) {
+  async updateProfile(userID: string, userType: UserType, updateProfileDto: UpdateProfileRequest) {
     const { firstName, lastName, email } = updateProfileDto;
 
     if (userType === UserType.coach) {
@@ -104,11 +136,16 @@ export class AuthService {
           lastName: true,
           businessName: true,
           isVerified: true,
+          avatarUrl: true,
+          websiteUrl: true,
+          bio: true,
+          timezone: true,
+          phone: true,
         },
       });
 
       // Emit profile updated event
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<AuthEvent>(
         {
           eventType: 'auth.coach.profile.updated',
           schemaVersion: 1,
@@ -126,7 +163,7 @@ export class AuthService {
         message: 'Profile updated successfully',
         user: updatedCoach,
       };
-    } else {
+    } else if (userType === UserType.admin) {
       const existingAdmin = await this.prisma.admin.findFirst({
         where: {
           email,
@@ -153,16 +190,17 @@ export class AuthService {
           firstName: true,
           lastName: true,
           role: true,
+          avatarUrl: true,
         },
       });
 
       // Emit profile updated event
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<AuthEvent>(
         {
           eventType: 'auth.admin.profile.updated',
           schemaVersion: 1,
           payload: {
-            adminID: userID,
+            userID,
             email: updatedAdmin.email,
             firstName: updatedAdmin.firstName,
             lastName: updatedAdmin.lastName,
@@ -176,10 +214,47 @@ export class AuthService {
         message: 'Profile updated successfully',
         user: updatedAdmin,
       };
+    } else if (userType === UserType.client) {
+      const existingClient = await this.prisma.client.findFirst({
+        where: {
+          email,
+          id: { not: userID },
+          isActive: true,
+        },
+      });
+
+      if (existingClient) {
+        throw new ConflictException('Email already exists');
+      }
+
+      const updatedClient = await this.prisma.client.update({
+        where: { id: userID },
+        data: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          updatedAt: new Date(),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          phone: true,
+        },
+      });
+
+      return {
+        message: 'Profile updated successfully',
+        user: updatedClient,
+      };
     }
+
+    throw new BadRequestException('Invalid user type');
   }
 
-  async updatePassword(userID: string, userType: AUTH_TYPES, updatePasswordDto: UpdatePasswordRequest) {
+  async updatePassword(userID: string, userType: UserType, updatePasswordDto: UpdatePasswordRequest) {
     const { newPassword } = updatePasswordDto;
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
@@ -192,8 +267,16 @@ export class AuthService {
           updatedAt: new Date(),
         },
       });
-    } else {
+    } else if (userType === UserType.admin) {
       await this.prisma.admin.update({
+        where: { id: userID },
+        data: {
+          passwordHash,
+          updatedAt: new Date(),
+        },
+      });
+    } else if (userType === UserType.client) {
+      await this.prisma.client.update({
         where: { id: userID },
         data: {
           passwordHash,
@@ -203,7 +286,7 @@ export class AuthService {
     }
 
     // Emit password updated event (without sensitive data)
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.password.updated',
         schemaVersion: 1,
@@ -219,14 +302,16 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordRequest, userType: AUTH_TYPES) {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordRequest, userType: UserType) {
     const { email } = forgotPasswordDto;
 
     let user;
     if (userType === UserType.coach) {
       user = await this.prisma.coach.findUnique({ where: { email } });
-    } else {
+    } else if (userType === UserType.admin) {
       user = await this.prisma.admin.findUnique({ where: { email } });
+    } else if (userType === UserType.client) {
+      user = await this.prisma.client.findUnique({ where: { email } });
     }
 
     if (!user) {
@@ -237,7 +322,7 @@ export class AuthService {
     const code = this.tokenService.generateVerificationCode();
     await this.tokenService.storeVerificationToken(email, code, 'reset');
 
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.verification.requested',
         schemaVersion: 1,
@@ -256,61 +341,92 @@ export class AuthService {
   async verifyCode(verifyCodeDto: VerifyCodeRequest) {
     const { email, code } = verifyCodeDto;
 
-    const isValid = await this.tokenService.verifyToken(email, code, 'verification');
-    if (!isValid) {
-      throw new BadRequestException('Invalid or expired verification code');
+    // Check for email verification first
+    const isEmailVerification = await this.tokenService.verifyToken(email, code, 'verification');
+    if (isEmailVerification) {
+      // Try coach first
+      let user: any = await this.prisma.coach.findUnique({ where: { email } });
+      if (user && !user.isVerified) {
+        await this.prisma.coach.update({
+          where: { email },
+          data: {
+            isVerified: true,
+            lastLoginAt: new Date(),
+          },
+        });
+
+        // Emit verification completed event
+        await this.outbox.saveAndPublishEvent<AuthEvent>(
+          {
+            eventType: 'auth.coach.verified',
+            schemaVersion: 1,
+            payload: {
+              coachID: user.id,
+              email: user.email,
+              verifiedAt: new Date().toISOString(),
+            },
+          },
+          'auth.coach.verified'
+        );
+
+        const payload = {
+          sub: user.id,
+          email: user.email,
+          type: UserType.coach,
+        };
+
+        return {
+          access_token: this.jwtService.sign(payload),
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            businessName: user.businessName,
+            avatarUrl: user.avatarUrl,
+            isVerified: true,
+          },
+          verified: true,
+          message: 'Email verified successfully',
+        };
+      }
+
+      // Try client
+      user = await this.prisma.client.findUnique({ where: { email } });
+      if (user && !user.isVerified) {
+        await this.prisma.client.update({
+          where: { email },
+          data: {
+            isVerified: true,
+            lastLoginAt: new Date(),
+          },
+        });
+
+        const payload = {
+          sub: user.id,
+          email: user.email,
+          type: UserType.client,
+        };
+
+        return {
+          access_token: this.jwtService.sign(payload),
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            avatarUrl: user.avatarUrl,
+            isVerified: true,
+          },
+          verified: true,
+          message: 'Email verified successfully',
+        };
+      }
     }
 
-    const user = await this.prisma.coach.findUnique({
-      where: { email },
-    });
-
-    if (user && !user.isVerified) {
-      // Email verification
-      await this.prisma.coach.update({
-        where: { email },
-        data: {
-          isVerified: true,
-          lastLoginAt: new Date(),
-        },
-      });
-
-      // Emit verification completed event
-      await this.outbox.saveAndPublishEvent(
-        {
-          eventType: 'auth.coach.verified',
-          schemaVersion: 1,
-          payload: {
-            coachID: user.id,
-            email: user.email,
-            verifiedAt: new Date().toISOString(),
-          },
-        },
-        'auth.coach.verified'
-      );
-
-      const payload = {
-        sub: user.id,
-        email: user.email,
-        type: UserType.coach,
-      };
-
-      return {
-        access_token: this.jwtService.sign(payload),
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          businessName: user.businessName,
-          avatarUrl: user.avatarUrl,
-          isVerified: true,
-        },
-        verified: true,
-        message: 'Email verified successfully',
-      };
-    } else {
-      // Password reset verification
+    // Check for password reset
+    const isPasswordReset = await this.tokenService.verifyToken(email, code, 'reset');
+    if (isPasswordReset) {
       const resetToken = await this.tokenService.generateResetToken(email);
       return {
         resetToken,
@@ -318,9 +434,11 @@ export class AuthService {
         message: 'Code verified successfully',
       };
     }
+
+    throw new BadRequestException('Invalid or expired verification code');
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordRequest, userType: AUTH_TYPES) {
+  async resetPassword(resetPasswordDto: ResetPasswordRequest, userType: UserType) {
     const { token, password } = resetPasswordDto;
 
     const email = await this.tokenService.validateResetToken(token);
@@ -335,8 +453,13 @@ export class AuthService {
         where: { email },
         data: { passwordHash },
       });
-    } else {
+    } else if (userType === UserType.admin) {
       await this.prisma.admin.update({
+        where: { email },
+        data: { passwordHash },
+      });
+    } else if (userType === UserType.client) {
+      await this.prisma.client.update({
         where: { email },
         data: { passwordHash },
       });
@@ -345,7 +468,7 @@ export class AuthService {
     await this.tokenService.invalidateTokens(email);
 
     // Emit password reset event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.password.reset',
         schemaVersion: 1,
@@ -365,7 +488,7 @@ export class AuthService {
     const code = this.tokenService.generateVerificationCode();
     await this.tokenService.storeVerificationToken(email, code, type);
 
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.verification.requested',
         schemaVersion: 1,
@@ -381,7 +504,7 @@ export class AuthService {
     return { message: 'Verification code sent' };
   }
 
-  async findUserByID(id: string, type: AUTH_TYPES) {
+  async findUserByID(id: string, type: UserType) {
     if (type === UserType.coach) {
       return this.prisma.coach.findUnique({
         where: { id, isActive: true },
@@ -399,7 +522,7 @@ export class AuthService {
           phone: true,
         },
       });
-    } else {
+    } else if (type === UserType.admin) {
       return this.prisma.admin.findUnique({
         where: { id, isActive: true },
         select: {
@@ -411,6 +534,20 @@ export class AuthService {
           avatarUrl: true,
         },
       });
+    } else if (type === UserType.client) {
+      return this.prisma.client.findUnique({
+        where: { id, isActive: true },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          phone: true,
+        },
+      });
     }
+
+    return null;
   }
 }

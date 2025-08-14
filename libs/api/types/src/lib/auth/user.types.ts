@@ -1,15 +1,13 @@
-export const UserType = {
-  coach: 'coach',
-  admin: 'admin',
-  client: 'client',
-} as const;
-
-export type AUTH_TYPES = keyof typeof UserType;
+export enum UserType {
+  coach = 'coach',
+  admin = 'admin',
+  client = 'client',
+}
 
 export interface AuthUser {
   id: string;
   email: string;
-  type: AUTH_TYPES;
+  type: UserType;
   firstName?: string;
   lastName?: string;
   role?: string; // For admins

@@ -8,30 +8,29 @@ import {
   Patch,
   UseGuards,
   Query,
-  Res,
-  UseInterceptors, BadRequestException, UploadedFile
+  UseInterceptors,
+  BadRequestException,
+  UploadedFile
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
-import type {Response} from 'express';
-import {FileInterceptor} from "@nestjs/platform-express";
-import {type AUTH_TYPES, type AuthUser, UserType, type ValidatedGoogleUser} from "@nlc-ai/types";
+import { FileInterceptor } from '@nestjs/platform-express';
+import { type AuthUser, UserType } from '@nlc-ai/api-types';
+import {CurrentUser, JwtAuthGuard, Public} from "@nlc-ai/api-auth";
 import { AuthService } from './auth.service';
 import { GoogleAuthService } from './services/google-auth.service';
 import {
   LoginDto,
-  RegisterDto,
+  CoachRegisterDto,
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyCodeDto,
   UpdateProfileDto,
   UpdatePasswordDto,
-  GoogleAuthDto
+  ClientRegisterDto,
+  ClientGoogleAuthDto,
+  SwitchCoachContextDto,
+  GoogleAuthDto,
 } from './dto';
-import { Public } from './decorators/public.decorator';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { GoogleOAuthGuard } from './guards/google-oauth.guard';
-import {CurrentUser} from "./decorators/current-user.decorator";
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -39,94 +38,111 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleAuthService: GoogleAuthService,
-    private readonly configService: ConfigService
   ) {}
 
-  @Post('login')
+  // ========== ADMIN AUTHENTICATION ==========
+  @Post('admin/login')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login (supports both coach and admin)' })
-  @ApiQuery({ name: 'type', enum: ['coach', 'admin'], required: false, description: 'User type - defaults to coach' })
+  @ApiOperation({ summary: 'Admin login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(
-    @Body() loginDto: LoginDto,
-    @Query('type') type: AUTH_TYPES = UserType.coach
-  ) {
-    if (type === 'admin') {
-      return this.authService.loginAdmin(loginDto);
-    }
-    return this.authService.loginCoach(loginDto);
+  async loginAdmin(@Body() loginDto: LoginDto) {
+    return this.authService.loginAdmin(loginDto);
   }
 
-  @Post('register')
+  // ========== COACH AUTHENTICATION ==========
+  @Post('coaches/register')
   @Public()
   @ApiOperation({ summary: 'Register new coach' })
   @ApiResponse({ status: 201, description: 'Registration successful' })
   @ApiResponse({ status: 400, description: 'Invalid input or email already exists' })
-  async register(@Body() registerDto: RegisterDto) {
+  async registerCoach(@Body() registerDto: CoachRegisterDto) {
     return this.authService.registerCoach(registerDto);
   }
 
-  @Post('clients/register')
+  @Post('coaches/login')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Coach login' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials or email not verified' })
+  async loginCoach(@Body() loginDto: LoginDto) {
+    return this.authService.loginCoach(loginDto);
+  }
+
+  @Post('coaches/google/auth')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Coach Google OAuth (login or register)' })
+  @ApiResponse({ status: 200, description: 'Authentication successful' })
+  @ApiResponse({ status: 400, description: 'Invalid Google token' })
+  async coachGoogleAuth(@Body() googleAuthDto: GoogleAuthDto) {
+    return this.googleAuthService.coachGoogleAuth(googleAuthDto.idToken);
+  }
+
+  // ========== CLIENT AUTHENTICATION ==========
+  @Post('client/register')
   @Public()
   @ApiOperation({ summary: 'Client registration (coach-invited)' })
   @ApiResponse({ status: 201, description: 'Registration successful' })
-  async registerClient(@Body() registerDto: any) { // Create proper DTO
+  @ApiResponse({ status: 400, description: 'Invalid invite token or input' })
+  async registerClient(@Body() registerDto: ClientRegisterDto) {
     return this.authService.registerClient(registerDto);
   }
 
-  @Post('clients/login')
+  @Post('client/login')
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Client login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
-  async loginClient(@Body() loginDto: any) { // Create proper DTO
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async loginClient(@Body() loginDto: LoginDto) {
     return this.authService.loginClient(loginDto);
   }
 
-  @Post('google/login')
+  @Post('client/google/auth')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with Google ID token' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 400, description: 'Invalid Google token' })
-  async googleLogin(@Body() googleAuthDto: GoogleAuthDto) {
-    return this.googleAuthService.loginWithGoogleToken(googleAuthDto.idToken);
+  @ApiOperation({ summary: 'Client Google OAuth with invite token' })
+  @ApiResponse({ status: 200, description: 'Authentication successful' })
+  @ApiResponse({ status: 400, description: 'Invalid Google token or invite token' })
+  async clientGoogleAuth(@Body() clientGoogleAuthDto: ClientGoogleAuthDto) {
+    return this.googleAuthService.clientGoogleAuth(
+      clientGoogleAuthDto.idToken,
+      clientGoogleAuthDto.inviteToken
+    );
   }
 
-  @Post('google/register')
-  @Public()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register with Google ID token' })
-  @ApiResponse({ status: 201, description: 'Registration successful' })
-  @ApiResponse({ status: 400, description: 'Invalid Google token or user exists' })
-  async googleRegister(@Body() googleAuthDto: GoogleAuthDto) {
-    return this.googleAuthService.registerWithGoogle(googleAuthDto.idToken);
+  @Post('client/switch-coach')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Switch coach context for client' })
+  @ApiResponse({ status: 200, description: 'Coach context switched successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized or no access to coach' })
+  async switchCoachContext(
+    @CurrentUser() user: AuthUser,
+    @Body() switchCoachDto: SwitchCoachContextDto
+  ) {
+    if (user.type !== UserType.client) {
+      throw new BadRequestException('Only clients can switch coach context');
+    }
+
+    // This would be implemented in ClientAuthService
+    // return this.clientAuthService.switchCoachContext(user.id, switchCoachDto.coachID);
+    throw new BadRequestException('Not implemented yet');
   }
 
-  @Get('google/callback')
-  @Public()
-  @UseGuards(GoogleOAuthGuard)
-  @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleAuthRedirect(@CurrentUser() user: ValidatedGoogleUser, @Res() res: Response) {
-    const result = await this.googleAuthService.googleAuth(user);
-
-    const frontendUrl = this.configService.get<string>('COACH_PLATFORM_URL');
-    const redirectUrl = `${frontendUrl}/auth/google/callback?token=${result.access_token}`;
-
-    res.redirect(redirectUrl);
-  }
-
+  // ========== COMMON AUTH ENDPOINTS ==========
   @Post('forgot-password')
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset' })
-  @ApiQuery({ name: 'type', enum: ['coach', 'admin'], required: false, description: 'User type - defaults to coach' })
+  @ApiQuery({ name: 'type', enum: ['coach', 'admin', 'client'], required: false, description: 'User type - defaults to coach' })
   @ApiResponse({ status: 200, description: 'Verification code sent' })
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
-    @Query('type') type: AUTH_TYPES = UserType.coach
+    @Query('type') type: UserType = UserType.coach
   ) {
     return this.authService.forgotPassword(forgotPasswordDto, type);
   }
@@ -145,6 +161,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resend verification code' })
+  @ApiResponse({ status: 200, description: 'Verification code sent' })
   async resendCode(
     @Body() body: { email: string; type?: 'verification' | 'reset' }
   ) {
@@ -155,12 +172,12 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password' })
-  @ApiQuery({ name: 'type', enum: ['coach', 'admin'], required: false, description: 'User type - defaults to coach' })
+  @ApiQuery({ name: 'type', enum: ['coach', 'admin', 'client'], required: false, description: 'User type - defaults to coach' })
   @ApiResponse({ status: 200, description: 'Password reset successful' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
-    @Query('type') type: AUTH_TYPES = UserType.coach
+    @Query('type') type: UserType = UserType.coach
   ) {
     return this.authService.resetPassword(resetPasswordDto, type);
   }
@@ -173,8 +190,10 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
-  @UseGuards(JwtAuthGuard)
+  // ========== PROTECTED ENDPOINTS ==========
   @Post('upload-avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('avatar', {
     limits: {
@@ -187,6 +206,9 @@ export class AuthController {
       callback(null, true);
     },
   }))
+  @ApiOperation({ summary: 'Upload user avatar' })
+  @ApiResponse({ status: 200, description: 'Avatar uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid file or file too large' })
   async uploadAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
@@ -203,6 +225,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@CurrentUser() user: AuthUser) {
     const { id, type } = user;
     return this.authService.findUserByID(id, type);

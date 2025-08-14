@@ -8,6 +8,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleAuthService } from './services/google-auth.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { TokenService } from './services/token.service';
+import { AdminAuthService } from './services/admin-auth.service';
+import { CoachAuthService } from './services/coach-auth.service';
+import { ClientAuthService } from './services/client-auth.service';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
@@ -32,9 +35,20 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
     AuthService,
     GoogleAuthService,
     TokenService,
+    AdminAuthService,
+    CoachAuthService,
+    ClientAuthService,
     JwtStrategy,
     GoogleStrategy,
   ],
-  exports: [AuthService, GoogleAuthService, TokenService, JwtModule],
+  exports: [
+    AuthService,
+    GoogleAuthService,
+    TokenService,
+    AdminAuthService,
+    CoachAuthService,
+    ClientAuthService,
+    JwtModule,
+  ],
 })
 export class AuthModule {}
