@@ -74,7 +74,17 @@ export const TransactionAnalytics: React.FC = () => {
 
   const handleBulkExport = async () => {
     try {
-      await transactionsAPI.bulkExportTransactions();
+      // Create a temporary link to download the bulk export
+      const link = document.createElement('a');
+      link.href = `${process.env.NEXT_PUBLIC_API_URL}/transactions/export/bulk`;
+      link.download = `transactions-export-${new Date().toISOString().split('T')[0]}.json`;
+
+      // Add the link to the DOM and click it
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
     } catch (error: any) {
       setError(error.message || 'Failed to export transactions');
     }

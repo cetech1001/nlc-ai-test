@@ -21,6 +21,7 @@ interface PageHeaderProps {
     variant?: 'primary' | 'secondary';
   };
   className?: string;
+  showActionOnMobile?: boolean;
 }
 
 export const PageHeader = ({
@@ -35,21 +36,39 @@ export const PageHeader = ({
   onFilterClick,
   actionButton,
   className = "",
+  showActionOnMobile = false
 }: PageHeaderProps) => {
   return (
     <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 ${className}`}>
-      <div className="min-w-0 flex-1 w-full sm:w-1/3">
-        <h2 className="text-stone-50 text-2xl font-medium leading-relaxed mb-2">
-          {title}
-        </h2>
-        {subtitle && (
-          <p className="text-stone-300 text-sm leading-tight">
-            {subtitle}
-          </p>
+      <div className={"flex"}>
+        <div className="min-w-0 flex-1 w-full sm:w-1/3">
+          <h2 className="text-stone-50 text-2xl font-medium leading-relaxed mb-2">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-stone-300 text-sm leading-tight">
+              {subtitle}
+            </p>
+          )}
+        </div>
+        {actionButton && children && showActionOnMobile && (
+          <Button
+            onClick={actionButton.onClick}
+            className={`${
+              actionButton.variant === 'secondary'
+                ? 'bg-transparent border border-white/50 text-white hover:bg-white/10'
+                : 'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white'
+            } rounded-lg transition-colors flex sm:hidden`}
+          >
+            {actionButton.icon && (
+              <span className="w-4 h-4 mr-2">{actionButton.icon}</span>
+            )}
+            {actionButton.label}
+          </Button>
         )}
       </div>
 
-      <div className="flex items-center gap-3 w-full sm:w-2/3 justify-end">
+      <div className="flex items-center gap-3 w-full sm:w-2/3 justify-start sm:justify-end">
         {children ? (
           children
         ) : (

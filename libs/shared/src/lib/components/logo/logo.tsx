@@ -8,9 +8,10 @@ interface IProps {
   width?: number;
   className?: string;
   type?: 'png' | 'svg';
+  size?: 'small' | 'large';
 }
 
-export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: IProps) => {
+export const Logo = ({ width = 94, height = 80, className = "", type = 'svg', size = 'small'}: IProps) => {
   const [imageError, setImageError] = useState(false);
 
   const shouldUseSvg = type === 'svg' || imageError;
@@ -20,7 +21,7 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
       className={`relative flex items-center justify-center ${className}`}
       style={{ width: `${width}px`, height: `${height}px` }}
     >
-      {shouldUseSvg ? (
+      {shouldUseSvg && size === 'small' ? (
         <>
           <svg
             width="100%"
@@ -134,23 +135,43 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg'}: I
           </svg>
         </>
       ) : (
-        <Image
-          src="/images/logo.png"
-          alt="Logo"
-          width={width}
-          height={height}
-          priority
-          quality={100}
-          onError={() => setImageError(true)}
-          style={{
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden',
-            maxWidth: '100%',
-            height: 'auto',
-            imageRendering: 'crisp-edges'
-          }}
-          sizes={`${width}px`}
-        />
+        size === 'small' ? (
+          <Image
+            src={`/images/logo.png`}
+            alt="Logo"
+            width={width}
+            height={height}
+            priority
+            quality={100}
+            onError={() => setImageError(true)}
+            style={{
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden',
+              maxWidth: '100%',
+              height: 'auto',
+              imageRendering: 'crisp-edges'
+            }}
+            sizes={`${width}px`}
+          />
+        ) : (
+          <Image
+            src={`/images/logo-large.png`}
+            alt="Logo"
+            width={width}
+            height={height}
+            priority
+            quality={100}
+            onError={() => setImageError(true)}
+            style={{
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden',
+              maxWidth: '100%',
+              height: 'auto',
+              imageRendering: 'crisp-edges'
+            }}
+            sizes={`${width}px`}
+          />
+        )
       )}
     </div>
   );

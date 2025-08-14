@@ -1,10 +1,17 @@
-/// <reference lib="dom"/>
-
 import { FC, useState, useEffect } from 'react';
-import { Camera, Eye, EyeOff, X, Upload } from 'lucide-react';
+import {
+  Camera,
+  Eye,
+  EyeOff,
+  X,
+  Upload,
+  RotateCw,
+} from 'lucide-react';
 import { useSettings } from '../context/settings.context';
 import { ProfileFormData, PasswordFormData, ProfileFormErrors } from '../types/settings.types';
-import {ProfileSectionSkeleton} from "./skeletons";
+import { ProfileSectionSkeleton } from "./skeletons";
+import { ImageCropper } from "./partials/image-cropper";
+import {UserType} from "@nlc-ai/types";
 
 interface ProfileSectionProps {
   onUpdateProfile: (data: ProfileFormData) => Promise<void>;
@@ -17,14 +24,18 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
   onUpdatePassword,
   onUploadAvatar,
 }) => {
-  const { user, userType, isLoading } = useSettings();
+  const { user, userType, isLoading, setSuccess, setError } = useSettings();
 
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [_, setSelectedFile] = useState<File | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null); // Store original image
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [croppedImageBlob, setCroppedImageBlob] = useState<Blob | null>(null);
 
   const [desktopNotifications, setDesktopNotifications] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -38,8 +49,6 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     phone: '',
     websiteUrl: '',
     timezone: '',
-    desktopNotifications: false,
-    emailNotifications: true,
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordFormData>({
@@ -53,20 +62,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
   useEffect(() => {
     if (user) {
-      setProfileForm({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        bio: user.bio || '',
-        businessName: user.businessName || '',
-        phone: user.phone || '',
-        websiteUrl: user.websiteUrl || '',
-        timezone: user.timezone || '',
-        desktopNotifications: user.desktopNotifications || false,
-        emailNotifications: user.emailNotifications || true,
-      });
-      setDesktopNotifications(user.desktopNotifications || false);
-      setEmailNotifications(user.emailNotifications || true);
+      resetFormState();
     }
   }, [user]);
 
@@ -140,40 +136,73 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({ ...prev, photo: 'Please select a valid image file' }));
-        return;
-      }
+    if (!file) return;
 
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, photo: 'Image size must be less than 5MB' }));
-        return;
-      }
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, photo: 'Please select a valid image file' }));
+      return;
+    }
 
-      setSelectedFile(file);
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, photo: 'Image size must be less than 10MB' }));
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    setSelectedFile(file);
 
-      setErrors(prev => ({ ...prev, photo: undefined }));
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setOriginalImageUrl(result);
+      setPreviewUrl(result);
+      setShowUploadModal(false);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
+
+    setErrors(prev => ({ ...prev, photo: undefined }));
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    setCroppedImageBlob(croppedBlob);
+    setShowCropModal(false);
+    setShowUploadModal(true);
+
+    const croppedUrl = URL.createObjectURL(croppedBlob);
+    setPreviewUrl(croppedUrl);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setCroppedImageBlob(null);
+    setOriginalImageUrl(null);
+    setErrors(prev => ({ ...prev, photo: undefined }));
+  };
+
+  const handleReCrop = () => {
+    if (originalImageUrl) {
+      setShowUploadModal(false);
+      setShowCropModal(true);
+      setPreviewUrl(originalImageUrl);
     }
   };
 
   const handlePhotoUpload = async () => {
-    if (!selectedFile) return;
+    if (!croppedImageBlob) return;
 
     setUploadingPhoto(true);
     try {
       const formData = new FormData();
-      formData.append('avatar', selectedFile);
+      const croppedFile = new File([croppedImageBlob], 'avatar.jpg', {
+        type: 'image/jpeg',
+      });
+      formData.append('avatar', croppedFile);
+
       await onUploadAvatar(formData);
-      setShowUploadModal(false);
-      setSelectedFile(null);
-      setPreviewUrl(null);
+      closeUploadModal();
+      setSuccess('Profile photo updated successfully!');
     } catch (error: any) {
       setErrors(prev => ({ ...prev, photo: error.message || "Failed to upload photo" }));
     } finally {
@@ -185,6 +214,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setShowUploadModal(false);
     setSelectedFile(null);
     setPreviewUrl(null);
+    setCroppedImageBlob(null);
+    setOriginalImageUrl(null);
     setErrors(prev => ({ ...prev, photo: undefined }));
   };
 
@@ -193,15 +224,28 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
     setProfileLoading(true);
     try {
-      await onUpdateProfile({
-        ...profileForm,
-        desktopNotifications,
-        emailNotifications,
-      });
+      let payload = {
+        email: profileForm.email,
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+      }
+
+      if (userType === UserType.coach) {
+        payload = {
+          ...profileForm,
+        }
+      }
+
+      await onUpdateProfile(payload);
+      setSuccess('Profile updated successfully!');
     } catch (error: any) {
-      setErrors({
-        email: error.message === "Email already exists" ? "This email is already in use" : "Failed to update profile"
-      });
+      if (error.message === 'Email already exists') {
+        setErrors({
+          email: 'This email is already in use',
+        });
+      } else {
+        setError('Failed to update profile');
+      }
     } finally {
       setProfileLoading(false);
     }
@@ -209,20 +253,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
   const handleResetProfile = () => {
     if (user) {
-      setProfileForm({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        bio: user.bio || '',
-        businessName: user.businessName || '',
-        phone: user.phone || '',
-        websiteUrl: user.websiteUrl || '',
-        timezone: user.timezone || '',
-        desktopNotifications: user.desktopNotifications || false,
-        emailNotifications: user.emailNotifications || true,
-      });
-      setDesktopNotifications(user.desktopNotifications || false);
-      setEmailNotifications(user.emailNotifications || true);
+      resetFormState();
       setErrors({});
     }
   };
@@ -234,10 +265,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     try {
       await onUpdatePassword(passwordForm);
       setPasswordForm({ newPassword: '', confirmPassword: '' });
+      setSuccess('Password updated successfully!');
     } catch (error: any) {
-      setErrors({
-        newPassword: error.message || "Failed to update password"
-      });
+      setError('Failed to update password');
     } finally {
       setPasswordLoading(false);
     }
@@ -248,8 +278,23 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     setErrors({});
   };
 
+  const resetFormState = () => {
+    setProfileForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      bio: user.bio || '',
+      businessName: user.businessName || '',
+      phone: user.phone || '',
+      websiteUrl: user.websiteUrl || '',
+      timezone: user.timezone || '',
+    });
+    setDesktopNotifications(user.desktopNotifications || false);
+    setEmailNotifications(user.emailNotifications || true);
+  }
+
   if (isLoading) {
-    return <ProfileSectionSkeleton/>;
+    return <ProfileSectionSkeleton />;
   }
 
   return (
@@ -277,7 +322,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             {user?.email}
           </div>
         </div>
-        <div className="hidden lg:block w-32 h-0 rotate-90 border-t border-neutral-700"/>
+
+        <div className="hidden lg:block w-32 h-0 rotate-90 border-t border-neutral-700" />
+
         <div className="w-full lg:w-80 flex flex-col gap-5">
           <div className="flex justify-between items-center">
             <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">
@@ -292,7 +339,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                     : "bg-stone-300 border-stone-300 justify-start"
                 } flex items-center`}
               >
-                <div className="w-6 h-6 bg-white rounded-full"/>
+                <div className="w-6 h-6 bg-white rounded-full" />
               </button>
               <div className={`text-sm sm:text-base font-normal font-['Inter'] ${
                 desktopNotifications ? "text-white" : "text-zinc-500"
@@ -301,6 +348,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
               </div>
             </div>
           </div>
+
           <div className="flex justify-between items-center">
             <div className="text-stone-50 text-sm sm:text-base font-normal font-['Inter']">
               Email Notifications
@@ -314,7 +362,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                     : "bg-stone-300 border-stone-300 justify-start"
                 } flex items-center`}
               >
-                <div className="w-6 h-6 bg-white rounded-full"/>
+                <div className="w-6 h-6 bg-white rounded-full" />
               </button>
               <div className={`text-sm sm:text-base font-normal font-['Inter'] ${
                 emailNotifications ? "text-white" : "text-zinc-500"
@@ -326,10 +374,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         </div>
       </div>
 
-      {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 rounded-lg border border-neutral-700 p-6 w-full max-w-md">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-white">Upload Profile Photo</h3>
               <button
@@ -341,35 +388,47 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             </div>
 
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <label
-                  htmlFor="photo-upload"
-                  className="cursor-pointer flex flex-col items-center gap-2"
-                >
-                  <Upload className="w-8 h-8 text-gray-400" />
-                  <span className="text-sm text-gray-400">
-                    Click to select an image
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Max file size: 5MB
-                  </span>
-                </label>
-              </div>
-
-              {previewUrl && (
-                <div className="flex justify-center">
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="w-24 h-24 rounded-[20px] object-cover"
+              {!croppedImageBlob && (
+                <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="photo-upload"
                   />
+                  <label
+                    htmlFor="photo-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Upload className="w-8 h-8 text-gray-400" />
+                    <span className="text-sm text-gray-400">
+                      Click to select an image
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Max file size: 10MB
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {previewUrl && croppedImageBlob && (
+                <div className="space-y-4">
+                  <div className="flex justify-center">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-32 h-32 rounded-[20px] object-cover"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleReCrop}
+                    className="w-full px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RotateCw className="w-4 h-4" />
+                    Crop Again
+                  </button>
                 </div>
               )}
 
@@ -387,7 +446,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 </button>
                 <button
                   onClick={handlePhotoUpload}
-                  disabled={!selectedFile || uploadingPhoto}
+                  disabled={!croppedImageBlob || uploadingPhoto}
                   className="flex-1 px-4 py-3 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-lg flex justify-center items-center disabled:opacity-50 text-white text-sm font-semibold"
                 >
                   {uploadingPhoto ? "Uploading..." : "Upload"}
@@ -398,17 +457,24 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         </div>
       )}
 
-      {/* Basic Details Section */}
+      {showCropModal && originalImageUrl && (
+        <ImageCropper
+          imageSrc={originalImageUrl}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       <div className="mb-8">
         <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">
           Basic Details
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          {/* First Name */}
           <div className="flex flex-col gap-3">
-            <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+            <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               First name<span className="text-red-600">*</span>
-            </div>
+            </label>
             <div className={`h-12 px-5 py-2.5 rounded-[10px] border ${
               errors.firstName ? "border-red-500" : "border-white/30"
             } flex justify-between items-center`}>
@@ -425,11 +491,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Last Name */}
           <div className="flex flex-col gap-3">
-            <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+            <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               Last name<span className="text-red-600">*</span>
-            </div>
+            </label>
             <div className={`h-12 px-5 py-2.5 rounded-[10px] border ${
               errors.lastName ? "border-red-500" : "border-white/30"
             } flex justify-between items-center`}>
@@ -446,11 +511,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Email */}
           <div className="flex flex-col gap-3">
-            <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+            <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               Email<span className="text-red-600">*</span>
-            </div>
+            </label>
             <div className={`h-12 px-5 py-2.5 rounded-[10px] border ${
               errors.email ? "border-red-500" : "border-white/30"
             } flex justify-between items-center`}>
@@ -467,14 +531,12 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Coach-specific fields */}
           {userType === 'coach' && (
             <>
-              {/* Business Name */}
               <div className="flex flex-col gap-3">
-                <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+                <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
                   Business Name
-                </div>
+                </label>
                 <div className="h-12 px-5 py-2.5 rounded-[10px] border border-white/30 flex justify-between items-center">
                   <input
                     type="text"
@@ -486,11 +548,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 </div>
               </div>
 
-              {/* Phone */}
               <div className="flex flex-col gap-3">
-                <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+                <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
                   Phone
-                </div>
+                </label>
                 <div className="h-12 px-5 py-2.5 rounded-[10px] border border-white/30 flex justify-between items-center">
                   <input
                     type="tel"
@@ -502,11 +563,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 </div>
               </div>
 
-              {/* Website URL */}
               <div className="flex flex-col gap-3">
-                <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+                <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
                   Website URL
-                </div>
+                </label>
                 <div className={`h-12 px-5 py-2.5 rounded-[10px] border ${
                   errors.websiteUrl ? "border-red-500" : "border-white/30"
                 } flex justify-between items-center`}>
@@ -526,12 +586,11 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           )}
         </div>
 
-        {/* Bio Section (Coach only) */}
         {userType === 'coach' && (
           <div className="mb-6 lg:mb-8">
-            <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed mb-3">
+            <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed mb-3 block">
               Bio
-            </div>
+            </label>
             <div className="rounded-[10px] border border-white/30 p-4">
               <textarea
                 value={profileForm.bio || ''}
@@ -550,7 +609,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           <button
             onClick={handleSaveProfile}
             disabled={profileLoading}
-            className="w-full sm:w-44 px-4 py-3 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-lg flex justify-center items-center disabled:opacity-50"
+            className="w-full sm:w-44 px-4 py-3 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-lg flex justify-center items-center disabled:opacity-50 transition-opacity"
           >
             <div className="text-white text-base font-semibold font-['Inter'] leading-normal">
               {profileLoading ? "Saving..." : "Save Changes"}
@@ -559,26 +618,25 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           <button
             onClick={handleResetProfile}
             disabled={profileLoading}
-            className="w-full sm:w-auto px-4 py-3 rounded-lg border border-white flex justify-center items-center disabled:opacity-50"
+            className="w-full sm:w-auto px-4 py-3 rounded-lg border border-white flex justify-center items-center disabled:opacity-50 transition-opacity hover:bg-white/5"
           >
             <div className="text-white text-base font-medium font-['Inter'] leading-normal">Reset</div>
           </button>
         </div>
       </div>
 
-      <div className="w-full max-w-[1094px] h-0 border-t border-neutral-700 mb-6 lg:mb-8"/>
+      <div className="w-full max-w-[1094px] h-0 border-t border-neutral-700 mb-6 lg:mb-8" />
 
-      {/* Change Password Section */}
       <div>
         <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">
           Change Password
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          {/* New Password */}
           <div className="flex flex-col gap-3">
-            <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+            <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               New Password<span className="text-red-600">*</span>
-            </div>
+            </label>
             <div className={`h-12 px-5 py-2.5 rounded-[10px] border ${
               errors.newPassword ? "border-red-500" : "border-white/30"
             } flex justify-between items-center`}>
@@ -592,9 +650,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
               <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
-                className="w-6 h-6 text-stone-50 ml-2"
+                className="w-6 h-6 text-stone-50 ml-2 hover:text-stone-300 transition-colors"
               >
-                {showNewPassword ? <Eye className="w-5 h-4"/> : <EyeOff className="w-5 h-4"/>}
+                {showNewPassword ? <EyeOff className="w-5 h-4" /> : <Eye className="w-5 h-4" />}
               </button>
             </div>
             {errors.newPassword && (
@@ -602,11 +660,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
 
-          {/* Confirm Password */}
           <div className="flex flex-col gap-3">
-            <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+            <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
               Confirm New Password<span className="text-red-600">*</span>
-            </div>
+            </label>
             <div className={`h-12 px-5 py-2.5 rounded-[10px] border ${
               errors.confirmPassword ? "border-red-500" : "border-white/30"
             } flex justify-between items-center`}>
@@ -620,9 +677,9 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="w-6 h-6 text-stone-50 ml-2"
+                className="w-6 h-6 text-stone-50 ml-2 hover:text-stone-300 transition-colors"
               >
-                {showConfirmPassword ? <Eye className="w-5 h-4"/> : <EyeOff className="w-5 h-4"/>}
+                {showConfirmPassword ? <EyeOff className="w-5 h-4" /> : <Eye className="w-5 h-4" />}
               </button>
             </div>
             {errors.confirmPassword && (
@@ -630,11 +687,12 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
             )}
           </div>
         </div>
+
         <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5">
           <button
             onClick={handleUpdatePassword}
             disabled={passwordLoading}
-            className="w-full sm:w-auto px-4 py-3 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-lg flex justify-center items-center disabled:opacity-50"
+            className="w-full sm:w-auto px-4 py-3 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-lg flex justify-center items-center disabled:opacity-50 transition-opacity"
           >
             <div className="text-white text-base font-semibold font-['Inter'] leading-normal">
               {passwordLoading ? "Updating..." : "Update Password"}
@@ -643,7 +701,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           <button
             onClick={handleResetPassword}
             disabled={passwordLoading}
-            className="w-full sm:w-auto px-4 py-3 rounded-lg border border-white flex justify-center items-center disabled:opacity-50"
+            className="w-full sm:w-auto px-4 py-3 rounded-lg border border-white flex justify-center items-center disabled:opacity-50 transition-opacity hover:bg-white/5"
           >
             <div className="text-white text-base font-medium font-['Inter'] leading-normal">Reset</div>
           </button>

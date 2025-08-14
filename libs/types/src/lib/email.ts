@@ -12,7 +12,7 @@ export interface EmailAccount {
   isPrimary?: boolean | null;
   isActive?: boolean | null;
   syncEnabled?: boolean | null;
-  lastSyncAt?: Date | null;
+  lastSyncAt: Date | null;
   createdAt?: Date | null;
   updatedAt?: Date | null;
   coach?: Coach;

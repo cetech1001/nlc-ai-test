@@ -15,7 +15,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { ClientsModule } from './clients/clients.module';
 import { ContentModule } from './content/content.module';
 import { IntegrationsModule } from './integrations/integrations.module';
-import { OauthModule } from './oauth/oauth.module';
+import {AiAgentsModule} from "./ai-agents/ai-agents.module";
+import { EmailAccountsModule } from './email-accounts/email-accounts.module';
 
 @Module({
   imports: [
@@ -36,7 +37,8 @@ import { OauthModule } from './oauth/oauth.module';
     ClientsModule,
     ContentModule,
     IntegrationsModule,
-    OauthModule,
+    AiAgentsModule,
+    EmailAccountsModule,
   ],
   providers: [
     {

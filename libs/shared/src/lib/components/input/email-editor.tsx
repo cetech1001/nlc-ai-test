@@ -32,6 +32,8 @@ interface EmailEditorProps {
   sendButtonText?: string;
   discardButtonText?: string;
   isLoading?: boolean;
+  showDeliverabilityScore?: boolean;
+  deliverabilityScore?: number;
 }
 
 const EmailEditorSkeleton = () => (

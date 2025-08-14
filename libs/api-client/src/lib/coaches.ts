@@ -1,6 +1,6 @@
 import { BaseAPI } from './base';
 import {
-  Coach, CoachStats,
+  Coach, CoachPaymentRequest, CoachPaymentRequestStats, CoachStats,
   CoachWithStatus, Paginated,
 } from "@nlc-ai/types";
 
@@ -97,6 +97,31 @@ class CoachesAPI extends BaseAPI {
     return this.makeRequest(`/coaches/${id}/restore`, {
       method: 'PATCH',
     });
+  }
+
+  async getCoachPaymentRequests(
+    coachID: string,
+    page = 1,
+    limit = 10,
+    filters: Record<string, any> = {},
+    search?: string
+  ): Promise<Paginated<CoachPaymentRequest>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (search) params.append('search', search);
+
+    if (filters.status && filters.status !== '') {
+      params.append('status', filters.status);
+    }
+
+    return this.makeRequest(`/coaches/${coachID}/payment-requests?${params.toString()}`);
+  }
+
+  async getCoachPaymentRequestStats(coachID: string): Promise<CoachPaymentRequestStats> {
+    return this.makeRequest(`/coaches/${coachID}/payment-requests/stats`);
   }
 }
 

@@ -52,4 +52,9 @@ export class LeadQueryDto implements LeadQueryParams{
   @IsOptional()
   @IsDateString()
   meetingEndDate?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by coach' })
+  @IsOptional()
+  @IsString()
+  coachID?: string;
 }

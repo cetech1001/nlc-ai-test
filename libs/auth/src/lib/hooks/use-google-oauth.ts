@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+
 declare global {
   interface Window {
     google: any;
@@ -16,9 +17,10 @@ interface GoogleCredentialResponse {
 interface UseGoogleOAuthProps {
   onSuccess: (credentialResponse: GoogleCredentialResponse) => void;
   onError?: () => void;
+  removeCookie?: (value: string) => void;
 }
 
-export const useGoogleOAuth = ({ onSuccess, onError }: UseGoogleOAuthProps) => {
+export const useGoogleOAuth = ({ onSuccess, removeCookie }: UseGoogleOAuthProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -50,6 +52,9 @@ export const useGoogleOAuth = ({ onSuccess, onError }: UseGoogleOAuthProps) => {
   }, [onSuccess]);
 
   const signIn = () => {
+    if (removeCookie) {
+      removeCookie('g_state');
+    }
     if (window.google && isLoaded) {
       window.google.accounts.id.prompt();
     }

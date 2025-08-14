@@ -14,14 +14,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ClientsService } from './clients.service';
 import { CreateClientDto, UpdateClientDto, ClientQueryDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {UserType} from "@nlc-ai/types";
 
 @ApiTags('Clients')
 @Controller('clients')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserType.coach)
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes(UserType.coach)
 @ApiBearerAuth()
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}

@@ -91,8 +91,8 @@ export interface ProfileFormData {
   phone?: string;
   websiteUrl?: string;
   timezone?: string;
-  desktopNotifications?: boolean;
-  emailNotifications?: boolean;
+  // desktopNotifications?: boolean;
+  // emailNotifications?: boolean;
 }
 
 export interface PasswordFormData {
@@ -124,8 +124,9 @@ export interface SocialPlatformConfig {
 
 export interface CoursePlatformConfig {
   name: string;
-  icon: string;
+  icon: ReactNode;
   color: string;
+  isActive: boolean;
   fields: {
     name: string;
     type: 'text' | 'password' | 'url';

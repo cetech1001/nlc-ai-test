@@ -9,7 +9,6 @@ import {
   UseGuards,
   Query,
   Res,
-  Req,
   UseInterceptors, BadRequestException, UploadedFile
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
@@ -29,9 +28,10 @@ import {
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
-import {type AUTH_TYPES, UserType} from "@nlc-ai/types";
-import type {Response, Request} from 'express';
+import {type AUTH_TYPES, type AuthUser, UserType, type ValidatedGoogleUser} from "@nlc-ai/types";
+import type {Response} from 'express';
 import {FileInterceptor} from "@nestjs/platform-express";
+import {CurrentUser} from "./decorators/current-user.decorator";
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -92,8 +92,8 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleOAuthGuard)
   @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const result = await this.googleAuthService.googleAuth(req.user);
+  async googleAuthRedirect(@CurrentUser() user: ValidatedGoogleUser, @Res() res: Response) {
+    const result = await this.googleAuthService.googleAuth(user);
 
     const frontendUrl = this.configService.get<string>('COACH_PLATFORM_URL');
     const redirectUrl = `${frontendUrl}/auth/google/callback?token=${result.access_token}`;
@@ -170,7 +170,7 @@ export class AuthController {
       callback(null, true);
     },
   }))
-  async uploadAvatar(@Req() req: { user: { id: string; type: AUTH_TYPES } }, @UploadedFile() file: Express.Multer.File) {
+  async uploadAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
@@ -179,15 +179,15 @@ export class AuthController {
       throw new BadRequestException('File size must be less than 5MB');
     }
 
-    return this.authService.uploadAvatar(req.user?.id, req.user?.type, file);
+    return this.authService.uploadAvatar(user.id, user.type, file);
   }
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  async getProfile(@Req() req: { user: { id: string; type: AUTH_TYPES } }) {
-    const { id, type } = req.user;
+  async getProfile(@CurrentUser() user: AuthUser) {
+    const { id, type } = user;
     return this.authService.findUserByID(id, type);
   }
 
@@ -200,10 +200,10 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async updateProfile(
-    @Req() req: { user: { id: string; type: AUTH_TYPES } },
+    @CurrentUser() user: AuthUser,
     @Body() updateProfileDto: UpdateProfileDto
   ) {
-    const { id, type } = req.user;
+    const { id, type } = user;
     return this.authService.updateProfile(id, type, updateProfileDto);
   }
 
@@ -215,10 +215,10 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid password format' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updatePassword(
-    @Req() req: { user: { id: string; type: AUTH_TYPES } },
+    @CurrentUser() user: AuthUser,
     @Body() updatePasswordDto: UpdatePasswordDto
   ) {
-    const { id, type } = req.user;
+    const { id, type } = user;
     return this.authService.updatePassword(id, type, updatePasswordDto);
   }
 }

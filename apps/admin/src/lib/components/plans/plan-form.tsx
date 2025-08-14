@@ -5,35 +5,116 @@ import {
   Label
 } from "@nlc-ai/ui";
 import { X, Plus, Palette } from "lucide-react";
-import { useState } from "react";
-import {PLAN_COLORS} from "@/lib";
-import {PlanFormData, PlanFormErrors} from "@nlc-ai/types";
+import {useEffect, useState} from "react";
+import {PLAN_COLORS} from "@nlc-ai/utils";
+import {CreatePlanRequest, Plan, PlanFormData, PlanFormErrors} from "@nlc-ai/types";
 
 interface IProps {
   type: "create" | "edit";
-  formData: PlanFormData;
-  handleInputChange: (field: string, value: string | boolean | string[]) => void;
-  onAction: () => void;
+  onAction: (requestData: CreatePlanRequest) => Promise<void>;
   onDiscard: () => void;
-  isLoading?: boolean;
-  errors?: PlanFormErrors;
+  originalPlan?: Plan | null;
 }
 
 export const PlanForm = (props: IProps) => {
   const [newFeature, setNewFeature] = useState("");
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [errors, setErrors] = useState<PlanFormErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [formData, setFormData] = useState<PlanFormData>({
+    name: "",
+    color: "",
+    description: "",
+    monthlyPrice: "",
+    annualPrice: "",
+    maxClients: "",
+    maxAiAgents: "",
+    features: [],
+    isActive: true,
+  });
+
+  useEffect(() => {
+    if (props.originalPlan) {
+      const plan = props.originalPlan;
+      setFormData({
+        name: plan.name,
+        description: plan.description || "",
+        color: plan.color || "",
+        monthlyPrice: (plan.monthlyPrice / 100).toString(),
+        annualPrice: (plan.annualPrice / 100).toString(),
+        maxClients: plan.maxClients?.toString() || "",
+        maxAiAgents: plan.maxAiAgents?.toString() || "",
+        features: plan.features || [],
+        isActive: plan.isActive,
+      });
+    }
+  }, [props.originalPlan]);
+
+  const validateForm = (): boolean => {
+    const newErrors: PlanFormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Plan title is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Plan title must be at least 2 characters";
+    }
+
+    if (!formData.monthlyPrice.trim()) {
+      newErrors.monthlyPrice = "Monthly price is required";
+    } else {
+      const price = parseFloat(formData.monthlyPrice);
+      if (isNaN(price) || price < 0) {
+        newErrors.monthlyPrice = "Monthly price must be a valid positive number";
+      }
+    }
+
+    if (!formData.annualPrice.trim()) {
+      newErrors.annualPrice = "Annual price is required";
+    } else {
+      const price = parseFloat(formData.annualPrice);
+      if (isNaN(price) || price < 0) {
+        newErrors.annualPrice = "Annual price must be a valid positive number";
+      }
+    }
+
+    if (formData.maxClients.trim()) {
+      const maxClients = parseInt(formData.maxClients);
+      if (isNaN(maxClients) || maxClients < 0) {
+        newErrors.maxClients = "Max clients must be a valid positive number";
+      }
+    }
+
+    if (formData.maxAiAgents.trim()) {
+      const maxAgents = parseInt(formData.maxAiAgents);
+      if (isNaN(maxAgents) || maxAgents < 0) {
+        newErrors.maxAiAgents = "Max AI agents must be a valid positive number";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+
+    if (errors[field as keyof PlanFormErrors]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
 
   const addFeature = () => {
-    if (newFeature.trim() && !props.formData.features.includes(newFeature.trim())) {
-      const updatedFeatures = [...props.formData.features, newFeature.trim()];
-      props.handleInputChange("features", updatedFeatures);
+    if (newFeature.trim() && !formData.features.includes(newFeature.trim())) {
+      const updatedFeatures = [...formData.features, newFeature.trim()];
+      handleInputChange("features", updatedFeatures);
       setNewFeature("");
     }
   };
 
   const removeFeature = (index: number) => {
-    const updatedFeatures = props.formData.features.filter((_, i) => i !== index);
-    props.handleInputChange("features", updatedFeatures);
+    const updatedFeatures = formData.features.filter((_, i) => i !== index);
+    handleInputChange("features", updatedFeatures);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -43,34 +124,82 @@ export const PlanForm = (props: IProps) => {
     }
   };
 
-  const selectedColor = PLAN_COLORS.find(color => color.value === props.formData.color) || PLAN_COLORS[0];
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const requestData: CreatePlanRequest = {
+        name: formData.name.trim(),
+        color: formData.color,
+        description: formData.description.trim() || undefined,
+        monthlyPrice: Math.round(parseFloat(formData.monthlyPrice) * 100),
+        annualPrice: Math.round(parseFloat(formData.annualPrice) * 100),
+        maxClients: formData.maxClients.trim() ? parseInt(formData.maxClients) : undefined,
+        maxAiAgents: formData.maxAiAgents.trim() ? parseInt(formData.maxAiAgents) : undefined,
+        features: formData.features.length > 0 ? formData.features : undefined,
+        isActive: formData.isActive,
+      };
+
+      await props.onAction(requestData);
+    } catch (error: any) {
+      if (error.statusCode === 409) {
+        setErrors({ name: "A plan with this name already exists" });
+      } else {
+        setErrors({ general: error.message || `Failed to ${props.type} plan` });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    if (isLoading) return;
+
+    const hasChanges = Object.values(formData).some((value, index) => {
+      const initialValues = ["", "", "", "", "", "", [], true];
+      return JSON.stringify(value) !== JSON.stringify(initialValues[index]);
+    });
+
+    if (hasChanges && !confirm("Are you sure you want to discard your changes?")) {
+      return;
+    }
+
+    props.onDiscard();
+  };
+
+  const selectedColor = PLAN_COLORS.find(color => color.value === formData.color) || PLAN_COLORS[0];
 
   return (
     <div className="max-w-4xl">
-      {props.errors?.general && (
+      {errors?.general && (
         <div className="mb-6 p-4 bg-red-800/20 border border-red-600 rounded-lg">
-          <p className="text-red-400 text-sm">{props.errors.general}</p>
+          <p className="text-red-400 text-sm">{errors.general}</p>
         </div>
       )}
 
       <div className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="planTitle" className="text-white text-sm">
+          <Label htmlFor="name" className="text-white text-sm">
             Plan Title <span className="text-red-400">*</span>
           </Label>
           <Input
-            id="planTitle"
+            id="name"
             type="text"
-            value={props.formData.planTitle}
-            onChange={(e) => props.handleInputChange("planTitle", e.target.value)}
+            value={formData.name}
+            onChange={(e) => handleInputChange("name", e.target.value)}
             className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
-              props.errors?.planTitle ? 'border-red-500' : ''
+              errors?.name ? 'border-red-500' : ''
             }`}
             placeholder="Enter plan title (e.g., Growth Pro)"
-            disabled={props.isLoading}
+            disabled={isLoading}
           />
-          {props.errors?.planTitle && (
-            <p className="text-red-400 text-sm">{props.errors.planTitle}</p>
+          {errors?.name && (
+            <p className="text-red-400 text-sm">{errors.name}</p>
           )}
         </div>
 
@@ -80,11 +209,11 @@ export const PlanForm = (props: IProps) => {
           </Label>
           <Textarea
             id="description"
-            value={props.formData.description}
-            onChange={(e) => props.handleInputChange("description", e.target.value)}
+            value={formData.description}
+            onChange={(e) => handleInputChange("description", e.target.value)}
             className="bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 min-h-[60px] resize-none"
             placeholder="Enter brief description for the plan (e.g., Perfect for growing coaching businesses)"
-            disabled={props.isLoading}
+            disabled={isLoading}
           />
         </div>
 
@@ -96,12 +225,12 @@ export const PlanForm = (props: IProps) => {
             <button
               type="button"
               onClick={() => setShowColorPicker(!showColorPicker)}
-              disabled={props.isLoading}
+              disabled={isLoading}
               className="flex items-center gap-3 w-full p-3 bg-background border border-[#3A3A3A] rounded-lg text-white hover:border-[#7B21BA] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div
                 className={`w-6 h-6 rounded-full ${selectedColor.class}`}
-                style={{ backgroundColor: props.formData.color }}
+                style={{ backgroundColor: formData.color }}
               />
               <span className="flex-1 text-left">{selectedColor.label}</span>
               <Palette className="w-4 h-4 text-[#A0A0A0]" />
@@ -115,12 +244,12 @@ export const PlanForm = (props: IProps) => {
                       key={color.value}
                       type="button"
                       onClick={() => {
-                        props.handleInputChange("color", color.value);
+                        handleInputChange("color", color.value);
                         setShowColorPicker(false);
                       }}
-                      disabled={props.isLoading}
+                      disabled={isLoading}
                       className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        props.formData.color === color.value
+                        formData.color === color.value
                           ? 'border-white bg-[#3A3A3A]'
                           : 'border-transparent hover:border-[#7B21BA]'
                       }`}
@@ -136,8 +265,8 @@ export const PlanForm = (props: IProps) => {
               </div>
             )}
           </div>
-          {props.errors?.color && (
-            <p className="text-red-400 text-sm">{props.errors.color}</p>
+          {errors?.color && (
+            <p className="text-red-400 text-sm">{errors.color}</p>
           )}
         </div>
 
@@ -151,16 +280,16 @@ export const PlanForm = (props: IProps) => {
               type="number"
               min="0"
               step="0.01"
-              value={props.formData.monthlyPrice}
-              onChange={(e) => props.handleInputChange("monthlyPrice", e.target.value)}
+              value={formData.monthlyPrice}
+              onChange={(e) => handleInputChange("monthlyPrice", e.target.value)}
               className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
-                props.errors?.monthlyPrice ? 'border-red-500' : ''
+                errors?.monthlyPrice ? 'border-red-500' : ''
               }`}
               placeholder="0.00"
-              disabled={props.isLoading}
+              disabled={isLoading}
             />
-            {props.errors?.monthlyPrice && (
-              <p className="text-red-400 text-sm">{props.errors.monthlyPrice}</p>
+            {errors?.monthlyPrice && (
+              <p className="text-red-400 text-sm">{errors.monthlyPrice}</p>
             )}
           </div>
 
@@ -173,16 +302,16 @@ export const PlanForm = (props: IProps) => {
               type="number"
               min="0"
               step="0.01"
-              value={props.formData.annualPrice}
-              onChange={(e) => props.handleInputChange("annualPrice", e.target.value)}
+              value={formData.annualPrice}
+              onChange={(e) => handleInputChange("annualPrice", e.target.value)}
               className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
-                props.errors?.annualPrice ? 'border-red-500' : ''
+                errors?.annualPrice ? 'border-red-500' : ''
               }`}
               placeholder="0.00"
-              disabled={props.isLoading}
+              disabled={isLoading}
             />
-            {props.errors?.annualPrice && (
-              <p className="text-red-400 text-sm">{props.errors.annualPrice}</p>
+            {errors?.annualPrice && (
+              <p className="text-red-400 text-sm">{errors.annualPrice}</p>
             )}
           </div>
         </div>
@@ -196,16 +325,16 @@ export const PlanForm = (props: IProps) => {
               id="maxClients"
               type="number"
               min="0"
-              value={props.formData.maxClients}
-              onChange={(e) => props.handleInputChange("maxClients", e.target.value)}
+              value={formData.maxClients}
+              onChange={(e) => handleInputChange("maxClients", e.target.value)}
               className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
-                props.errors?.maxClients ? 'border-red-500' : ''
+                errors?.maxClients ? 'border-red-500' : ''
               }`}
               placeholder="Leave empty for unlimited"
-              disabled={props.isLoading}
+              disabled={isLoading}
             />
-            {props.errors?.maxClients && (
-              <p className="text-red-400 text-sm">{props.errors.maxClients}</p>
+            {errors?.maxClients && (
+              <p className="text-red-400 text-sm">{errors.maxClients}</p>
             )}
           </div>
 
@@ -217,16 +346,16 @@ export const PlanForm = (props: IProps) => {
               id="maxAiAgents"
               type="number"
               min="0"
-              value={props.formData.maxAiAgents}
-              onChange={(e) => props.handleInputChange("maxAiAgents", e.target.value)}
+              value={formData.maxAiAgents}
+              onChange={(e) => handleInputChange("maxAiAgents", e.target.value)}
               className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
-                props.errors?.maxAiAgents ? 'border-red-500' : ''
+                errors?.maxAiAgents ? 'border-red-500' : ''
               }`}
               placeholder="Leave empty for unlimited"
-              disabled={props.isLoading}
+              disabled={isLoading}
             />
-            {props.errors?.maxAiAgents && (
-              <p className="text-red-400 text-sm">{props.errors.maxAiAgents}</p>
+            {errors?.maxAiAgents && (
+              <p className="text-red-400 text-sm">{errors.maxAiAgents}</p>
             )}
           </div>
         </div>
@@ -245,23 +374,23 @@ export const PlanForm = (props: IProps) => {
               onKeyPress={handleKeyPress}
               className="bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 flex-1"
               placeholder="Enter a feature (e.g., AI Email Management)"
-              disabled={props.isLoading}
+              disabled={isLoading}
             />
             <Button
               type="button"
               onClick={addFeature}
-              disabled={!newFeature.trim() || props.isLoading}
+              disabled={!newFeature.trim() || isLoading}
               className="px-4 py-2 bg-[#7B21BA] hover:bg-[#8B31CA] text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
             </Button>
           </div>
 
-          {props.formData.features.length > 0 && (
+          {formData.features.length > 0 && (
             <div className="space-y-2 mt-4">
-              <p className="text-white text-sm font-medium">Features ({props.formData.features.length}):</p>
+              <p className="text-white text-sm font-medium">Features ({formData.features.length}):</p>
               <div className="max-h-40 overflow-y-auto space-y-2">
-                {props.formData.features.map((feature, index) => (
+                {formData.features.map((feature, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg px-3 py-2"
@@ -270,7 +399,7 @@ export const PlanForm = (props: IProps) => {
                     <button
                       type="button"
                       onClick={() => removeFeature(index)}
-                      disabled={props.isLoading}
+                      disabled={isLoading}
                       className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <X className="w-4 h-4" />
@@ -281,8 +410,8 @@ export const PlanForm = (props: IProps) => {
             </div>
           )}
 
-          {props.errors?.features && (
-            <p className="text-red-400 text-sm">{props.errors.features}</p>
+          {errors?.features && (
+            <p className="text-red-400 text-sm">{errors.features}</p>
           )}
         </div>
 
@@ -291,10 +420,10 @@ export const PlanForm = (props: IProps) => {
             <Label className="text-white text-sm">Plan Status</Label>
             <button
               type="button"
-              onClick={() => props.handleInputChange("isActive", !props.formData.isActive)}
-              disabled={props.isLoading}
+              onClick={() => handleInputChange("isActive", !formData.isActive)}
+              disabled={isLoading}
               className={`w-16 p-1 rounded-[100px] border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                props.formData.isActive
+                formData.isActive
                   ? "bg-fuchsia-400 border-fuchsia-400 justify-end"
                   : "bg-stone-300 border-stone-300 justify-start"
               } flex items-center`}
@@ -302,9 +431,9 @@ export const PlanForm = (props: IProps) => {
               <div className="w-6 h-6 bg-white rounded-full" />
             </button>
             <span className={`text-sm font-normal ${
-              props.formData.isActive ? "text-white" : "text-zinc-500"
+              formData.isActive ? "text-white" : "text-zinc-500"
             }`}>
-              {props.formData.isActive ? "Active" : "Inactive"}
+              {formData.isActive ? "Active" : "Inactive"}
             </span>
           </div>
         </div>
@@ -312,18 +441,18 @@ export const PlanForm = (props: IProps) => {
 
       <div className="flex gap-3 mt-8">
         <Button
-          onClick={props.onAction}
-          disabled={props.isLoading}
+          onClick={handleSubmit}
+          disabled={isLoading}
           className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white px-8 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {props.isLoading
+          {isLoading
             ? (props.type === 'create' ? 'Creating...' : 'Saving...')
             : (props.type === 'create' ? 'Create Plan' : 'Save Changes')
           }
         </Button>
         <Button
-          onClick={props.onDiscard}
-          disabled={props.isLoading}
+          onClick={handleDiscard}
+          disabled={isLoading}
           variant="outline"
           className="bg-transparent border-[#3A3A3A] text-white hover:bg-background px-8 disabled:opacity-50 disabled:cursor-not-allowed"
         >

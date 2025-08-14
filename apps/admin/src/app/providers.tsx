@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Sonner, TooltipProvider } from '@nlc-ai/ui';
 import {ReactNode, useState} from 'react';
 
-
 interface IProps {
   children: ReactNode;
 }

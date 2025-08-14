@@ -1,6 +1,6 @@
 import { tableRenderers } from "@nlc-ai/shared";
 import {ClientWithDetails, DataTableClient, TableColumn} from "@nlc-ai/types";
-import {Mailbox} from "lucide-react";
+import {Edit3, Mailbox} from "lucide-react";
 
 export const transformClientData = (clients: ClientWithDetails[]): DataTableClient[] => {
   return clients.map(client => ({
@@ -26,7 +26,7 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
   {
     key: 'name',
     header: 'Name',
-    width: `${colWidth * (2 / 3)}%`,
+    width: `${colWidth}%`,
     render: (value: string) => tableRenderers.truncateText(value, 18)
   },
   {
@@ -44,13 +44,13 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
   {
     key: 'coursesBought',
     header: 'Courses Bought',
-    width: `${colWidth * 0.8}%`,
+    width: `${colWidth * 0.6}%`,
     render: tableRenderers.basicText
   },
   {
     key: 'coursesCompleted',
-    header: 'Courses Completed',
-    width: `${colWidth * 0.8}%`,
+    header: 'Completed',
+    width: `${colWidth * 0.6}%`,
     render: tableRenderers.basicText
   },
   {
@@ -61,8 +61,15 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
       return (
         <div className={"flex gap-3"}>
           <button
+            onClick={() => onRowAction?.('edit', client)}
+            className="p-1.5 rounded text-xs bg-purple-600/20 text-fuchsia-400 hover:bg-purple-600/30 transition-colors"
+            title="Edit Client"
+          >
+            <Edit3 className="w-3 h-3" />
+          </button>
+          <button
             onClick={() => onRowAction?.('view-emails', client)}
-            className="px-3 py-1 rounded text-sm bg-blue-600/20 text-pink-400 hover:bg-blue-600/30 transition-colors"
+            className="px-3 py-1 rounded text-sm bg-purple-600/20 text-fuchsia-400 hover:bg-purple-600/30 transition-colors"
           >
             <Mailbox className={"w-4 h-4"}/>
           </button>

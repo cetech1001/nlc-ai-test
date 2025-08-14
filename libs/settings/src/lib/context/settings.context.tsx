@@ -1,8 +1,10 @@
 'use client';
 
 import { FC, createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { SettingsContextType } from '../types/settings.types';
 import {AUTH_TYPES} from "@nlc-ai/types";
+import {authAPI} from "@nlc-ai/auth";
+
+import { SettingsContextType } from '../types/settings.types';
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
@@ -15,7 +17,6 @@ interface SettingsProviderProps {
 export const SettingsProvider: FC<SettingsProviderProps> = ({
   children,
   userType,
-  getProfile,
 }) => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +27,7 @@ export const SettingsProvider: FC<SettingsProviderProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const userData = await getProfile();
+      const userData = await authAPI.getProfile();
       setUser(userData);
     } catch (err: any) {
       setError(err.message || 'Failed to load profile');
@@ -39,7 +40,6 @@ export const SettingsProvider: FC<SettingsProviderProps> = ({
     (() => refreshProfile())();
   }, []);
 
-  // Auto-clear messages after 5 seconds
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => setSuccess(null), 5000);

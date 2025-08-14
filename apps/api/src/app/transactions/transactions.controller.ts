@@ -10,24 +10,26 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import type { Response } from 'express';
 import { TransactionsService } from './transactions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {TransactionsQueryParamsDto} from "./dto";
-import {TransactionStatus} from "@nlc-ai/types";
+import {type AuthUser, TransactionStatus, UserType} from "@nlc-ai/types";
+import {CurrentUser} from "../auth/decorators/current-user.decorator";
 
 @ApiTags('Transactions')
 @Controller('transactions')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@UseGuards(JwtAuthGuard, UserTypesGuard)
+@UserTypes(UserType.admin)
 @ApiBearerAuth()
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
+  @UserTypes(UserType.admin, UserType.coach)
   @Get()
   @ApiOperation({ summary: 'Get all transactions with pagination and filters' })
   @ApiResponse({ status: 200, description: 'Transactions retrieved successfully' })
-  findAll(@Query() query: TransactionsQueryParamsDto) {
-    return this.transactionsService.findAll(query);
+  findAll(@Query() query: TransactionsQueryParamsDto, @CurrentUser() user: AuthUser) {
+    return this.transactionsService.findAll(query, user);
   }
 
   @Get('stats')
@@ -60,17 +62,19 @@ export class TransactionsController {
     return this.transactionsService.findOne(id);
   }
 
-  @Get(':id/export')
-  @ApiOperation({ summary: 'Export transaction data' })
-  @ApiResponse({ status: 200, description: 'Transaction data exported successfully' })
-  async exportTransaction(@Param('id') id: string, @Res() res: Response) {
-    const transactionData = await this.transactionsService.getTransactionExport(id);
+  @Get(':id/invoice')
+  @ApiOperation({ summary: 'Download invoice PDF for transaction' })
+  @ApiResponse({ status: 200, description: 'Invoice PDF generated successfully' })
+  async downloadInvoice(@Param('id') id: string, @Res() res: Response) {
+    const pdfBuffer = await this.transactionsService.generateInvoicePDF(id);
+    const transaction = await this.transactionsService.findOne(id);
 
-    // Set headers for JSON download
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="transaction-${id}.json"`);
+    // Set headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-${transaction.invoiceNumber || id}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
 
-    return res.json(transactionData);
+    res.end(pdfBuffer);
   }
 
   @Get('export/bulk')

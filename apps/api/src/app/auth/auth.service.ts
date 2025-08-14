@@ -177,7 +177,7 @@ export class AuthService {
     try {
       const result = await this.cloudinaryService.uploadAsset(file, {
         resource_type: 'image',
-        folder: `nlc-ai/avatars/${userType}s`,
+        folder: `nlc-ai/avatars/${userType === 'coach' ? 'coaches' : userType + 's'}`,
         public_id: `${userID}_avatar`,
         overwrite: true,
         transformation: [
@@ -435,6 +435,10 @@ export class AuthService {
           businessName: true,
           isVerified: true,
           avatarUrl: true,
+          websiteUrl: true,
+          bio: true,
+          timezone: true,
+          phone: true,
         },
       });
     } else {

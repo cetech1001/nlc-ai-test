@@ -1,19 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import PDFDocument from 'pdfkit';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  AuthUser,
   Coach,
   RevenueGrowthData,
   Transaction,
   TransactionsQueryParams,
   TransactionStatus,
-  TransactionWithDetails
+  TransactionWithDetails, UserType
 } from "@nlc-ai/types";
 
 @Injectable()
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: TransactionsQueryParams) {
+  async findAll(query: TransactionsQueryParams, user: AuthUser) {
     const {
       page = 1,
       limit = 10,
@@ -28,6 +30,10 @@ export class TransactionsService {
     } = query;
 
     const where: any = {};
+
+    if (user.type === UserType.coach) {
+      where.coachID = user.id;
+    }
 
     if (status) {
       where.status = status;
@@ -474,6 +480,177 @@ export class TransactionsService {
     };
   }
 
+  async generateInvoicePDF(transactionID: string): Promise<Buffer> {
+    const transaction = await this.findOne(transactionID);
+
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          margin: 50,
+          size: 'A4'
+        });
+        const chunks: Buffer[] = [];
+
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+        // Company header
+        doc.fontSize(20)
+          .fillColor('#7B21BA')
+          .text('NLC AI PLATFORM', 50, 50);
+
+        doc.fontSize(10)
+          .fillColor('#666666')
+          .text('AI-Powered Coaching Solutions', 50, 75)
+          .text('support@nextlevelcoach.ai', 50, 90)
+          .text('nextlevelcoach.ai', 50, 105);
+
+        // Invoice title and number
+        doc.fontSize(24)
+          .fillColor('#000000')
+          .text('INVOICE', 400, 50);
+
+        doc.fontSize(12)
+          .text(`Invoice #: ${transaction.invoiceNumber || transaction.id.slice(0, 8).toUpperCase()}`, 400, 80)
+          .text(`Date: ${new Date(transaction.invoiceDate).toLocaleDateString()}`, 400, 100)
+          .text(`Due Date: ${transaction.dueDate ? new Date(transaction.dueDate).toLocaleDateString() : 'N/A'}`, 400, 120)
+          .text(`Status: ${transaction.status.toUpperCase()}`, 400, 140);
+
+        // Bill to section
+        doc.fontSize(14)
+          .fillColor('#7B21BA')
+          .text('BILL TO:', 50, 180);
+
+        doc.fontSize(11)
+          .fillColor('#000000')
+          .text(transaction.coachName, 50, 205)
+          .text(transaction.coach.email, 50, 220);
+
+        if (transaction.coach.businessName) {
+          doc.text(transaction.coach.businessName, 50, 235);
+        }
+
+        // Line separator
+        doc.strokeColor('#cccccc')
+          .lineWidth(1)
+          .moveTo(50, 280)
+          .lineTo(550, 280)
+          .stroke();
+
+        // Table header
+        const tableTop = 300;
+        const itemCodeX = 50;
+        const descriptionX = 150;
+        const quantityX = 350;
+        const priceX = 400;
+        const amountX = 480;
+
+        doc.fontSize(12)
+          .fillColor('#7B21BA')
+          .text('Item', itemCodeX, tableTop)
+          .text('Description', descriptionX, tableTop)
+          .text('Qty', quantityX, tableTop)
+          .text('Price', priceX, tableTop)
+          .text('Amount', amountX, tableTop);
+
+        // Table line
+        doc.strokeColor('#cccccc')
+          .lineWidth(1)
+          .moveTo(50, tableTop + 20)
+          .lineTo(550, tableTop + 20)
+          .stroke();
+
+        // Invoice items
+        const itemY = tableTop + 35;
+        doc.fontSize(10)
+          .fillColor('#000000')
+          .text('PLAN-001', itemCodeX, itemY)
+          .text(transaction.plan.name || 'Subscription Plan', descriptionX, itemY)
+          .text('1', quantityX, itemY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, priceX, itemY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, amountX, itemY);
+
+        let nextY = itemY + 15;
+        if (transaction.plan.description) {
+          doc.fontSize(8)
+            .fillColor('#666666')
+            .text(transaction.plan.description, descriptionX, nextY, { width: 180 });
+          nextY += 25;
+        } else {
+          nextY += 10;
+        }
+
+        // Totals section
+        const subtotalY = nextY + 30;
+        const totalX = 450;
+
+        doc.fontSize(11)
+          .fillColor('#000000')
+          .text('Subtotal:', 400, subtotalY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, totalX, subtotalY);
+
+        const taxY = subtotalY + 20;
+        doc.text('Tax (0%):', 400, taxY)
+          .text('$0.00', totalX, taxY);
+
+        // Total line
+        doc.strokeColor('#7B21BA')
+          .lineWidth(2)
+          .moveTo(400, taxY + 25)
+          .lineTo(550, taxY + 25)
+          .stroke();
+
+        const totalY = taxY + 35;
+        doc.fontSize(14)
+          .fillColor('#7B21BA')
+          .text('TOTAL:', 400, totalY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, totalX, totalY);
+
+        // Payment information
+        const paymentY = totalY + 50;
+        doc.fontSize(12)
+          .fillColor('#7B21BA')
+          .text('PAYMENT INFORMATION:', 50, paymentY);
+
+        let paymentInfoY = paymentY + 20;
+        doc.fontSize(10)
+          .fillColor('#000000')
+          .text(`Payment Method: ${transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`, 50, paymentInfoY);
+
+        if (transaction.paidAt) {
+          paymentInfoY += 15;
+          doc.text(`Paid On: ${new Date(transaction.paidAt).toLocaleDateString()}`, 50, paymentInfoY);
+        }
+
+        if (transaction.stripePaymentID) {
+          paymentInfoY += 15;
+          doc.text(`Transaction ID: ${transaction.stripePaymentID}`, 50, paymentInfoY);
+        }
+
+        // Footer - positioned to fit on the same page
+        const footerY = Math.max(paymentInfoY + 40, 650); // Ensure footer starts at reasonable position
+        doc.fontSize(8)
+          .fillColor('#666666')
+          .text('Thank you for choosing NLC AI Platform for your coaching needs.', 50, footerY)
+          .text('For support, please contact us at support@nextlevelcoach.ai', 50, footerY + 12)
+          .text('This invoice was generated automatically by the NLC AI Platform.', 50, footerY + 24);
+
+        // Add watermark for unpaid invoices FIRST (behind other content)
+        if (transaction.status !== 'completed') {
+          doc.fontSize(60)
+            .fillColor('#ff0000', 0.1)
+            .rotate(-45, { origin: [300, 400] })
+            .text('UNPAID', 150, 350)
+            .rotate(45, { origin: [300, 400] });
+        }
+
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   async getTransactionExport(transactionID: string) {
     const transaction = await this.findOne(transactionID);
 
@@ -540,7 +717,7 @@ export class TransactionsService {
       orderBy: { createdAt: 'desc' }
     });
 
-    return transactions.map((transaction: Transaction) => ({
+    return transactions.map((transaction: any) => ({
       transactionID: transaction.id,
       invoiceNumber: transaction.invoiceNumber,
       coachName: `${transaction.coach?.firstName} ${transaction.coach?.lastName}`,
@@ -629,7 +806,7 @@ export class TransactionsService {
       take: limit,
     });
 
-    const coachIDs = result.map((r: Transaction) => r.coachID);
+    const coachIDs: string[] = result.map((r: any) => r.coachID);
     const coaches = await this.prisma.coach.findMany({
       where: {
         id: {
@@ -752,7 +929,7 @@ export class TransactionsService {
       orderBy: { createdAt: 'asc' }
     });
 
-    const trends = transactions.reduce((acc: any, transaction: Transaction) => {
+    const trends = transactions.reduce((acc: any, transaction: any) => {
       const date = transaction.createdAt;
       let key: string;
 

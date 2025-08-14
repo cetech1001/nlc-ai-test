@@ -1,3 +1,5 @@
+export * from './agents';
+
 export * from './activity-log';
 export * from './admin';
 export * from './agent';
@@ -6,6 +8,7 @@ export * from './calendar';
 export * from './calendly';
 export * from './client';
 export * from './coach';
+export * from './coach-payment-request';
 export * from './content';
 export * from './course';
 export * from './data-table';

@@ -220,7 +220,15 @@ const Leads = () => {
           />
         </div>
 
-        <PageHeader title="Lead Management">
+        <PageHeader
+          title="Lead Management"
+          actionButton={{
+            label: 'Add New Lead',
+            onClick: () => router.push('/leads/create'),
+            icon: <Plus className="w-4 h-4" />,
+          }}
+          showActionOnMobile={true}
+        >
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
@@ -252,18 +260,6 @@ const Leads = () => {
             </Button>
           </>
         </PageHeader>
-
-        <div className={'flex sm:hidden justify-end'}>
-          <Button
-            onClick={() => router.push('/leads/create')}
-            className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors'}
-          >
-              <span className="w-4 h-4 mr-2">
-                <Plus className="w-4 h-4" />
-              </span>
-            Add New Lead
-          </Button>
-        </div>
 
         <DataTable
           columns={leadColumns}

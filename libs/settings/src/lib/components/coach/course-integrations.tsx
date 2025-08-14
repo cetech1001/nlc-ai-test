@@ -13,40 +13,44 @@ interface CourseIntegrationsProps {
 }
 
 const coursePlatforms: Record<CoursePlatform, CoursePlatformConfig> = {
-  kajabi: {
-    name: 'Kajabi',
-    icon: '🎓',
-    color: 'from-orange-500 to-red-600',
-    fields: [
-      { name: 'subdomain', type: 'text', placeholder: 'yoursite', required: true },
-      { name: 'apiKey', type: 'password', placeholder: 'Your Kajabi API key', required: true },
-    ],
-  },
   skool: {
     name: 'Skool',
-    icon: '🏫',
+    icon: <img src={"/images/icons/skool-icon.png"} alt={"Skool Icon"}/>,
     color: 'from-green-500 to-emerald-600',
+    isActive: true,
     fields: [
       { name: 'communityUrl', type: 'url', placeholder: 'https://skool.com/your-community', required: true },
       { name: 'apiKey', type: 'password', placeholder: 'Your Skool API key', required: true },
     ],
   },
-  thinkific: {
-    name: 'Thinkific',
-    icon: '💡',
-    color: 'from-blue-500 to-purple-600',
+  kajabi: {
+    name: 'Kajabi',
+    icon: <img src={"/images/icons/kajabi-icon.png"} alt={"Kajabi Icon"}/>,
+    color: 'from-orange-500 to-red-600',
+    isActive: true,
     fields: [
-      { name: 'subdomain', type: 'text', placeholder: 'yourschool', required: true },
-      { name: 'apiKey', type: 'password', placeholder: 'Your Thinkific API key', required: true },
+      { name: 'subdomain', type: 'text', placeholder: 'yoursite', required: true },
+      { name: 'apiKey', type: 'password', placeholder: 'Your Kajabi API key', required: true },
     ],
   },
   teachable: {
     name: 'Teachable',
-    icon: '📚',
+    icon: <img src={"/images/icons/teachable-icon.png"} alt={"Teachable Icon"}/>,
     color: 'from-purple-500 to-pink-600',
+    isActive: false,
     fields: [
       { name: 'schoolUrl', type: 'url', placeholder: 'https://yourschool.teachable.com', required: true },
       { name: 'apiKey', type: 'password', placeholder: 'Your Teachable API key', required: true },
+    ],
+  },
+  thinkific: {
+    name: 'Thinkific',
+    icon: <img src={"/images/icons/thinkific-icon.png"} alt={"Thinkific Icon"}/>,
+    color: 'from-blue-500 to-purple-600',
+    isActive: false,
+    fields: [
+      { name: 'subdomain', type: 'text', placeholder: 'yourschool', required: true },
+      { name: 'apiKey', type: 'password', placeholder: 'Your Thinkific API key', required: true },
     ],
   },
 };
@@ -303,9 +307,12 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
               <h4 className="text-white font-medium mb-4">Available Platforms</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {Object.entries(coursePlatforms).map(([platform, config]) => (
-                  <div key={platform} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 hover:border-violet-500/50 transition-colors">
+                  <div
+                    key={platform}
+                    className={`bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6 transition-colors relative hover:border-violet-500/50`}
+                  >
                     <div className="flex items-center gap-4 mb-4">
-                      <div className={`w-12 h-12 bg-gradient-to-br ${config.color} rounded-xl flex items-center justify-center text-xl`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl`}>
                         {config.icon}
                       </div>
                       <div className="flex-1">
@@ -313,16 +320,23 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                         <div className="text-stone-400 text-sm">Student management & analytics</div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedPlatform(platform as CoursePlatform);
-                        setShowAddForm(true);
-                      }}
-                      className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Connect {config.name}
-                    </button>
+
+                    {config.isActive ? (
+                      <button
+                        onClick={() => {
+                          setSelectedPlatform(platform as CoursePlatform);
+                          setShowAddForm(true);
+                        }}
+                        className="w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Connect {config.name}
+                      </button>
+                    ) : (
+                      <div className="w-full bg-neutral-700/50 text-stone-400 font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed">
+                        <span className="text-sm">Coming Soon</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -382,7 +396,7 @@ export const CourseIntegrations: FC<CourseIntegrationsProps> = ({
                     }}
                     className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                   >
-                    {getAvailablePlatforms().map(platform => (
+                    {getAvailablePlatforms().filter(platform => coursePlatforms[platform].isActive).map(platform => (
                       <option key={platform} value={platform}>
                         {coursePlatforms[platform].name}
                       </option>

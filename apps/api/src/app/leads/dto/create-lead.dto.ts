@@ -3,15 +3,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {CreateLead, LeadStatus} from "@nlc-ai/types";
 
 export class CreateLeadDto implements CreateLead{
-  @ApiProperty({ example: 'John' })
+  @ApiProperty({ example: 'John Doe' })
   @IsString()
   @MinLength(2)
-  firstName: string;
-
-  @ApiProperty({ example: 'Doe' })
-  @IsString()
-  @MinLength(2)
-  lastName: string;
+  name: string;
 
   @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail()

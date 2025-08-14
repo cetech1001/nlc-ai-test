@@ -102,10 +102,10 @@ export interface TopCoach {
 
 export interface DataTableTransaction {
   id: string;
-  coachName: string;
-  coachEmail: string;
+  coachName?: string;
+  coachEmail?: string;
   planName: string;
-  amount: number;
+  amount: string;
   status: string;
   paymentMethod: string;
   transactionDate: string;

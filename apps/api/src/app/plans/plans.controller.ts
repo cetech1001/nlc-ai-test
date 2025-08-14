@@ -13,19 +13,19 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { PlansService } from './plans.service';
 import { CreatePlanDto, UpdatePlanDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
 import {UserType} from "@nlc-ai/types";
 
 @ApiTags('Plans')
 @Controller('plans')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, UserTypesGuard)
 @ApiBearerAuth()
 export class PlansController {
   constructor(private readonly plansService: PlansService) {}
 
   @Post()
-  @Roles(UserType.admin)
+  @UserTypes(UserType.admin)
   @ApiOperation({ summary: 'Create a new subscription plan' })
   @ApiResponse({ status: 201, description: 'Plan created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
@@ -56,7 +56,7 @@ export class PlansController {
   }
 
   @Get(':id/analytics')
-  @Roles(UserType.admin)
+  @UserTypes(UserType.admin)
   @ApiOperation({ summary: 'Get plan transactions' })
   @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -65,7 +65,7 @@ export class PlansController {
   }
 
   @Patch(':id')
-  @Roles(UserType.admin)
+  @UserTypes(UserType.admin)
   @ApiOperation({ summary: 'Update a subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan updated successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -75,7 +75,7 @@ export class PlansController {
   }
 
   @Patch(':id/toggle-status')
-  @Roles(UserType.admin)
+  @UserTypes(UserType.admin)
   @ApiOperation({ summary: 'Toggle plan active status' })
   @ApiResponse({ status: 200, description: 'Plan status toggled successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -84,7 +84,7 @@ export class PlansController {
   }
 
   @Patch(':id/restore')
-  @Roles(UserType.admin)
+  @UserTypes(UserType.admin)
   @ApiOperation({ summary: 'Restore a deleted subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan restored successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })
@@ -95,7 +95,7 @@ export class PlansController {
   }
 
   @Delete(':id')
-  @Roles(UserType.admin)
+  @UserTypes(UserType.admin)
   @ApiOperation({ summary: 'Soft delete a subscription plan' })
   @ApiResponse({ status: 200, description: 'Plan marked for deletion successfully' })
   @ApiResponse({ status: 404, description: 'Plan not found' })

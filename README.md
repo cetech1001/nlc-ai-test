@@ -6,6 +6,10 @@
 
 [Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
 
+## Architecture Plan
+
+Looking for the microservices plan? See: docs/architecture-microservices-plan.md
+
 ## Run tasks
 
 To run the dev server for your app, use:
@@ -84,6 +88,27 @@ npx nx g ci-workflow
 Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
 
 [Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+## Prisma: generating migrations (API)
+
+When you change apps/api/prisma/schema.prisma, generate a migration and update the Prisma Client:
+
+- Install deps (first time):
+  - npm i
+- Generate Prisma Client (optional but useful to catch schema issues):
+  - npm run prisma:generate
+- Create a new migration (dev):
+  - npm run prisma:migrate:dev -- -n your_migration_name
+    - Example: npm run prisma:migrate:dev -- -n add_landing_fields_to_lead
+- Apply migrations in prod/CI:
+  - npm run prisma:migrate:deploy
+- Open Prisma Studio (DB browser):
+  - npm run prisma:studio
+
+Notes
+- The scripts are already configured to use the schema at apps/api/prisma/schema.prisma.
+- Ensure DATABASE_URL is set in apps/api/.env (or your shell) before running the commands.
+- migrate dev will prompt to create the migration and apply it to your dev database.
 
 ## Useful links
 

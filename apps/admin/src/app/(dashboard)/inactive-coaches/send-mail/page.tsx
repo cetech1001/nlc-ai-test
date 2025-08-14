@@ -73,7 +73,7 @@ export default function ClientRetention() {
       }
     };
 
-    fetchTinyMCEConfig();
+    (() => fetchTinyMCEConfig())();
   }, []);
 
   const handleBackClick = () => {

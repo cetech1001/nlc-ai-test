@@ -5,7 +5,7 @@ import {Mail} from "lucide-react";
 export const transformLeadData = (leads: Lead[]): DataTableLead[] => {
   return leads.map(lead => ({
     id: `#${lead.id.slice(-4)}`,
-    name: `${lead.firstName} ${lead.lastName}`,
+    name: lead.name,
     email: lead.email,
     phone: lead.phone || 'N/A',
     source: lead.source || 'Unknown',

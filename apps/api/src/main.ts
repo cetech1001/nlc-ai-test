@@ -28,7 +28,7 @@ async function bootstrap() {
     origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Landing-Token', 'X-Landing-Timestamp', 'X-Landing-Signature'],
   });
 
   app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));

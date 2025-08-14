@@ -50,6 +50,12 @@
   ],
   "references": [
     {
+      "path": "../../libs/utils"
+    },
+    {
+      "path": "../../libs/settings"
+    },
+    {
       "path": "../../libs/api-client"
     },
     {

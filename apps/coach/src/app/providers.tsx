@@ -1,9 +1,9 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Sonner, TooltipProvider } from '@nlc-ai/ui';
 import {ReactNode, useState} from 'react';
-
+import { Sonner, TooltipProvider } from '@nlc-ai/ui';
+import {CookiesProvider} from "react-cookie";
 
 interface IProps {
   children: ReactNode;
@@ -19,11 +19,13 @@ export function Providers({ children }: IProps) {
   }));
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        {children}
-        <Sonner />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <CookiesProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          {children}
+          <Sonner />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </CookiesProvider>
   );
 }

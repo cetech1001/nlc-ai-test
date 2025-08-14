@@ -7,24 +7,27 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
+  UseGuards, ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CoachesService } from './coaches.service';
 import { CreateCoachDto, UpdateCoachDto } from './dto';
 import { CoachQueryDto } from './dto/coach-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserTypes } from '../auth/decorators/user-types.decorator';
+import { UserTypesGuard } from '../auth/guards/user-types.guard';
+import {type AuthUser, UserType} from "@nlc-ai/types";
+import {CurrentUser} from "../auth/decorators/current-user.decorator";
+import {PaymentLinksQueryDto} from "./dto/payment-links-query.dto";
 
 @ApiTags('Coaches')
 @Controller('coaches')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@UseGuards(JwtAuthGuard, UserTypesGuard)
 @ApiBearerAuth()
 export class CoachesController {
   constructor(private readonly coachesService: CoachesService) {}
 
+  @UserTypes(UserType.admin)
   @Get()
   @ApiOperation({ summary: 'Get all coaches with advanced filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Coaches retrieved successfully' })
@@ -60,6 +63,7 @@ export class CoachesController {
     );
   }
 
+  @UserTypes(UserType.admin)
   @Post()
   @ApiOperation({ summary: 'Create a new coach' })
   @ApiResponse({ status: 201, description: 'Coach created successfully' })
@@ -71,7 +75,10 @@ export class CoachesController {
   @ApiOperation({ summary: 'Update a coach' })
   @ApiResponse({ status: 200, description: 'Coach updated successfully' })
   @ApiResponse({ status: 404, description: 'Coach not found' })
-  update(@Param('id') id: string, @Body() updateCoachDto: UpdateCoachDto) {
+  update(@Param('id') id: string, @Body() updateCoachDto: UpdateCoachDto, @CurrentUser() user: AuthUser) {
+    if (user.type === UserType.coach && user.id !== id) {
+      throw new ForbiddenException();
+    }
     return this.coachesService.update(id, updateCoachDto);
   }
 
@@ -99,5 +106,40 @@ export class CoachesController {
   @ApiResponse({ status: 404, description: 'Coach not found' })
   remove(@Param('id') id: string) {
     return this.coachesService.remove(id);
+  }
+
+  @Get(':id/payment-requests')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes(UserType.admin, UserType.coach)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get payment requests for a specific coach' })
+  @ApiResponse({ status: 200, description: 'Payment requests retrieved successfully' })
+  async getCoachPaymentRequests(
+    @Param('id') coachID: string,
+    @Query() query: PaymentLinksQueryDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    if (user.type === UserType.coach && user.id !== coachID) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.coachesService.getCoachPaymentRequests(coachID, query);
+  }
+
+  @Get(':id/payment-requests/stats')
+  @UseGuards(JwtAuthGuard, UserTypesGuard)
+  @UserTypes(UserType.admin, UserType.coach)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get payment request statistics for a coach' })
+  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  async getCoachPaymentRequestStats(
+    @Param('id') coachID: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    if (user.type === UserType.coach && user.id !== coachID) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.coachesService.getCoachPaymentRequestStats(coachID);
   }
 }
