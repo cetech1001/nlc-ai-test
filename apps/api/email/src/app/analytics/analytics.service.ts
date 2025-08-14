@@ -6,7 +6,8 @@ export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getEmailMetrics(coachID: string, dateRange: { start: Date; end: Date }) {
-    const [sentEmails, analytics] = await Promise.all([
+    // First, get counts and the provider message IDs of sent scheduled emails for this coach in range
+    const [sentEmails, sentScheduledEmails] = await Promise.all([
       this.prisma.scheduledEmail.count({
         where: {
           coachID,
@@ -17,21 +18,34 @@ export class AnalyticsService {
           },
         },
       }),
-      this.prisma.emailMessage.findMany({
+      this.prisma.scheduledEmail.findMany({
         where: {
-          // @ts-ignore - Need to join through scheduled emails for coach filtering
           coachID,
+          status: 'sent',
           sentAt: {
             gte: dateRange.start,
             lte: dateRange.end,
           },
-          status: 'sent',
+          // Only rows that have a linked providerMessageID
+          providerMessageID: { not: null },
         },
-        select: {
-          metadata: true,
-        },
+        select: { providerMessageID: true },
       }),
     ]);
+
+    const providerMessageIDs = sentScheduledEmails
+      .map((e) => e.providerMessageID as string)
+      .filter(Boolean);
+
+    // Now fetch analytics for only those messages
+    const analytics = providerMessageIDs.length
+      ? await this.prisma.emailMessage.findMany({
+          where: {
+            providerMessageID: { in: providerMessageIDs },
+          },
+          select: { metadata: true },
+        })
+      : [];
 
     let opened = 0;
     let clicked = 0;
@@ -99,7 +113,6 @@ export class AnalyticsService {
           select: {
             scheduledEmails: {
               where: {
-                status: 'sent',
                 sentAt: {
                   gte: dateRange.start,
                   lte: dateRange.end,
@@ -107,6 +120,16 @@ export class AnalyticsService {
               },
             },
           },
+        },
+        scheduledEmails: {
+          where: {
+            status: 'sent',
+            sentAt: {
+              gte: dateRange.start,
+              lte: dateRange.end,
+            },
+          },
+          select: { id: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -116,9 +139,8 @@ export class AnalyticsService {
       sequences: sequences.map((seq) => ({
         id: seq.id,
         name: seq.name,
-        category: seq.category,
-        totalEmails: seq.totalEmails,
-        emailsSent: seq._count.scheduledEmails,
+        totalEmails: seq._count.scheduledEmails,
+        emailsSent: seq.scheduledEmails.length,
         isActive: seq.isActive,
       })),
     };

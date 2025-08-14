@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { EmailService } from './email.service';
-import { EmailTemplatesService } from './email-templates.service';
+import {TemplatesService} from "../templates/templates.service";
 
 @Injectable()
 export class EmailIntegrationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
-    private readonly emailTemplatesService: EmailTemplatesService,
+    private readonly templatesService: TemplatesService,
   ) {}
 
   async sendLeadFollowupWithTemplate(data: {
@@ -36,7 +36,7 @@ export class EmailIntegrationService {
     let finalContent = content;
 
     if (templateID) {
-      const template = await this.emailTemplatesService.getTemplate(coachID, templateID);
+      const template = await this.templatesService.getTemplate(coachID, templateID);
       const templateVars = {
         leadName: lead.name,
         coachName: `${coach.firstName} ${coach.lastName}`,
@@ -45,10 +45,10 @@ export class EmailIntegrationService {
         lastName: lead.name.split(' ').slice(1).join(' ') || '',
       };
 
-      finalSubject = this.processTemplateVariables(template.template.subjectTemplate, templateVars);
-      finalContent = this.processTemplateVariables(template.template.bodyTemplate, templateVars);
+      finalSubject = this.processTemplateVariables(template?.template.subjectTemplate || '', templateVars);
+      finalContent = this.processTemplateVariables(template?.template.bodyTemplate, templateVars);
 
-      await this.emailTemplatesService.incrementTemplateUsage(templateID);
+      await this.templatesService.incrementTemplateUsage(templateID);
     }
 
     const scheduledEmail = await this.prisma.scheduledEmail.create({
@@ -56,6 +56,7 @@ export class EmailIntegrationService {
         leadID,
         coachID,
         emailSequenceID,
+        to: lead.email,
         subject: finalSubject || 'Follow-up from your coach',
         body: finalContent || 'Thank you for your interest. I wanted to follow up with you.',
         sequenceOrder: sequenceOrder || 1,
@@ -77,7 +78,7 @@ export class EmailIntegrationService {
           finalContent || 'Thank you for your interest. I wanted to follow up with you.',
           `${coach.firstName} ${coach.lastName}`,
           lead.name,
-          coach.businessName,
+          coach.businessName || undefined,
           sequenceOrder,
           undefined,
           this.generateUnsubscribeLink(leadID)
@@ -131,7 +132,7 @@ export class EmailIntegrationService {
     let finalContent = content;
 
     if (templateID) {
-      const template = await this.emailTemplatesService.getTemplate(coachID, templateID);
+      const template = await this.templatesService.getTemplate(coachID, templateID);
       const templateVars = {
         clientName: `${client.firstName} ${client.lastName}`,
         coachName: `${coach.firstName} ${coach.lastName}`,
@@ -140,16 +141,17 @@ export class EmailIntegrationService {
         lastName: client.lastName,
       };
 
-      finalSubject = this.processTemplateVariables(template.template.subjectTemplate, templateVars);
-      finalContent = this.processTemplateVariables(template.template.bodyTemplate, templateVars);
+      finalSubject = this.processTemplateVariables(template?.template.subjectTemplate || '', templateVars);
+      finalContent = this.processTemplateVariables(template?.template.bodyTemplate, templateVars);
 
-      await this.emailTemplatesService.incrementTemplateUsage(templateID);
+      await this.templatesService.incrementTemplateUsage(templateID);
     }
 
     const scheduledEmail = await this.prisma.scheduledEmail.create({
       data: {
         clientID,
         coachID,
+        to: client.email,
         subject: finalSubject,
         body: finalContent,
         sequenceOrder: 1,
@@ -173,7 +175,7 @@ export class EmailIntegrationService {
           finalContent,
           `${coach.firstName} ${coach.lastName}`,
           `${client.firstName} ${client.lastName}`,
-          coach.businessName,
+          coach.businessName || undefined,
           subject,
           isReply
         );
@@ -218,7 +220,7 @@ export class EmailIntegrationService {
         lead.email,
         lead.name,
         `${coach.firstName} ${coach.lastName}`,
-        coach.businessName,
+        coach.businessName || undefined,
         totalSent,
         'Schedule a Call',
         `${process.env.FRONTEND_URL}/schedule/${coachID}`
@@ -244,6 +246,6 @@ export class EmailIntegrationService {
 
   private generateUnsubscribeLink(leadID: string): string {
     const baseUrl = process.env.FRONTEND_URL || 'https://app.nextlevelcoach.ai';
-    return `${baseUrl}/unsubscribe?leadId=${leadID}`;
+    return `${baseUrl}/unsubscribe?leadID=${leadID}`;
   }
 }

@@ -7,31 +7,14 @@ import Mailgun from 'mailgun.js';
 import { getPasswordResetEmailTemplate, getVerificationEmailTemplate, getWelcomeEmailTemplate } from "./templates/auth";
 import { getPaymentRequestEmailTemplate } from "./templates/payment";
 import { getLeadFollowupEmailTemplate, getClientResponseEmailTemplate, getEmailSequenceCompleteTemplate } from "./templates/lead";
-
-export interface SendEmailRequest {
-  to: string;
-  subject: string;
-  html: string;
-  text?: string;
-  from?: string;
-  templateID?: string;
-  metadata?: Record<string, any>;
-  replyTo?: string;
-  cc?: string[];
-  bcc?: string[];
-}
-
-export interface EmailAnalytics {
-  opened: boolean;
-  clicked: boolean;
-  bounced: boolean;
-  complained: boolean;
-  unsubscribed: boolean;
-  openedAt?: Date;
-  clickedAt?: Date;
-  userAgent?: string;
-  ipAddress?: string;
-}
+import {
+  EMAIL_ROUTING_KEYS,
+  EmailAnalytics,
+  EmailBouncedEvent,
+  EmailEvent,
+  EmailOpenedEvent,
+  SendEmailRequest
+} from "@nlc-ai/api-types";
 
 @Injectable()
 export class EmailService {
@@ -120,20 +103,21 @@ export class EmailService {
       }
 
       const result = await this.mailgun.messages.create(this.domain, mailgunMessage);
+      const sentAt = new Date();
 
       await this.prisma.emailMessage.update({
         where: { id: emailRecord.id },
         data: {
           status: 'sent',
-          sentAt: new Date(),
+          sentAt,
           providerMessageID: result.id,
         },
       });
 
       // Emit email sent event
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailEvent>(
         {
-          eventType: 'email.sent',
+          eventType: EMAIL_ROUTING_KEYS.SENT,
           schemaVersion: 1,
           payload: {
             emailID: emailRecord.id,
@@ -141,9 +125,10 @@ export class EmailService {
             subject,
             templateID,
             providerMessageID: result.id,
+            sentAt: sentAt.toISOString(),
           },
         },
-        'email.sent'
+        EMAIL_ROUTING_KEYS.SENT
       );
 
       this.logger.log(`Email sent successfully to ${to}. Message ID: ${result.id}`);
@@ -163,18 +148,19 @@ export class EmailService {
       });
 
       // Emit email failed event
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailEvent>(
         {
-          eventType: 'email.failed',
+          eventType: EMAIL_ROUTING_KEYS.FAILED,
           schemaVersion: 1,
           payload: {
             emailID: emailRecord.id,
             to,
             subject,
             error: error instanceof Error ? error.message : String(error),
+            failedAt: new Date().toISOString(),
           },
         },
-        'email.failed'
+        EMAIL_ROUTING_KEYS.FAILED
       );
 
       this.logger.error(`Failed to send email to ${to}:`, error);
@@ -402,7 +388,7 @@ ${coachBusinessName || ''}
   // Email Analytics and Tracking
   async trackEmailOpen(messageID: string, analytics: Partial<EmailAnalytics>): Promise<void> {
     try {
-      await this.prisma.emailMessage.update({
+      const message = await this.prisma.emailMessage.update({
         where: { providerMessageID: messageID },
         data: {
           metadata: {
@@ -415,17 +401,19 @@ ${coachBusinessName || ''}
         }
       });
 
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailOpenedEvent>(
         {
-          eventType: 'email.opened',
+          eventType: EMAIL_ROUTING_KEYS.OPENED,
           schemaVersion: 1,
           payload: {
             messageID,
+            recipientEmail: message.to,
+            // @ts-ignore
             openedAt: new Date().toISOString(),
             ...analytics,
           },
         },
-        'email.opened'
+        EMAIL_ROUTING_KEYS.OPENED
       );
     } catch (error) {
       this.logger.error(`Failed to track email open for ${messageID}:`, error);
@@ -448,13 +436,14 @@ ${coachBusinessName || ''}
         }
       });
 
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailEvent>(
         {
           eventType: 'email.clicked',
           schemaVersion: 1,
           payload: {
             messageID,
             clickedUrl,
+            // @ts-ignore
             clickedAt: new Date().toISOString(),
             ...analytics,
           },
@@ -468,7 +457,7 @@ ${coachBusinessName || ''}
 
   async trackEmailBounce(messageID: string, reason: string): Promise<void> {
     try {
-      await this.prisma.emailMessage.update({
+      const message = await this.prisma.emailMessage.update({
         where: { providerMessageID: messageID },
         data: {
           status: 'bounced',
@@ -482,13 +471,15 @@ ${coachBusinessName || ''}
         }
       });
 
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailBouncedEvent>(
         {
           eventType: 'email.bounced',
           schemaVersion: 1,
           payload: {
             messageID,
             reason,
+            recipientEmail: message.to,
+            bounceType: 'soft',
             bouncedAt: new Date().toISOString(),
           },
         },
@@ -501,7 +492,7 @@ ${coachBusinessName || ''}
 
   async trackEmailComplaint(messageID: string): Promise<void> {
     try {
-      await this.prisma.emailMessage.update({
+      const message = await this.prisma.emailMessage.update({
         where: { providerMessageID: messageID },
         data: {
           metadata: {
@@ -513,12 +504,13 @@ ${coachBusinessName || ''}
         }
       });
 
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailEvent>(
         {
           eventType: 'email.complained',
           schemaVersion: 1,
           payload: {
             messageID,
+            recipientEmail: message.to,
             complainedAt: new Date().toISOString(),
           },
         },
@@ -543,7 +535,7 @@ ${coachBusinessName || ''}
         }
       });
 
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailEvent>(
         {
           eventType: 'email.unsubscribed',
           schemaVersion: 1,

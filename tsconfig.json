@@ -59,6 +59,9 @@
     },
     {
       "path": "./apps/api/email"
+    },
+    {
+      "path": "./apps/api/media"
     }
   ]
 }

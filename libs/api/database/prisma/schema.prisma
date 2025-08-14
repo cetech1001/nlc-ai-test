@@ -577,13 +577,13 @@ model EventOutbox {
   eventID      String            @unique @db.Uuid
   eventType    String            @db.VarChar(100)
   routingKey   String            @db.VarChar(100)
-  payload      Json
+  payload      String // JSON as string for cross-service compatibility
   status       EventOutboxStatus @default(pending)
   retryCount   Int               @default(0)
   maxRetries   Int               @default(3)
   lastError    String?
   publishedAt  DateTime?         @db.Timestamptz(6)
-  scheduledFor DateTime?         @db.Timestamptz(6) // For delayed events
+  scheduledFor DateTime?         @db.Timestamptz(6)
   createdAt    DateTime          @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime          @updatedAt @db.Timestamptz(6)
 

@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@nlc-ai/api-database';
 import { EmailService } from './email.service';
 import { OutboxService } from '@nlc-ai/api-messaging';
+import {EmailEvent} from "@nlc-ai/api-types";
 
 interface EmailDeliveryResult {
   success: boolean;
@@ -264,13 +265,13 @@ export class EmailSchedulerService {
     }
 
     // Emit success event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<EmailEvent>(
       {
         eventType: 'email.scheduled.sent',
         schemaVersion: 1,
         payload: {
           scheduledEmailID: emailID,
-          providerMessageID: result.messageID,
+          providerMessageID: result.messageID || '',
           recipientEmail: scheduledEmail.lead?.email || scheduledEmail.client?.email,
           coachID: scheduledEmail.coachID,
           sentAt: new Date().toISOString(),
@@ -319,7 +320,7 @@ export class EmailSchedulerService {
       });
 
       // Emit failure event
-      await this.outbox.saveAndPublishEvent(
+      await this.outbox.saveAndPublishEvent<EmailEvent>(
         {
           eventType: 'email.scheduled.failed',
           schemaVersion: 1,
@@ -327,7 +328,7 @@ export class EmailSchedulerService {
             scheduledEmailID: emailID,
             recipientEmail: scheduledEmail.lead?.email || scheduledEmail.client?.email,
             coachID: scheduledEmail.coachID,
-            error: result.error,
+            error: result.error || '',
             retryCount: currentRetryCount,
             failedAt: new Date().toISOString(),
           },
@@ -732,7 +733,7 @@ export class EmailSchedulerService {
       },
     });
 
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<EmailEvent>(
       {
         eventType: 'email.emergency.paused',
         schemaVersion: 1,
