@@ -71,6 +71,9 @@
     },
     {
       "path": "./apps/api/leads"
+    },
+    {
+      "path": "./apps/api/integrations"
     }
   ]
 }

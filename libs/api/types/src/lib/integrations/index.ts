@@ -1,5 +1,5 @@
 export * from './enums';
 export * from './events';
-export * from './lead.types';
+export * from './integration.types';
 export * from './requests';
 export * from './responses';

@@ -1,4 +1,4 @@
-import {Lead} from "./leads.types";
+import {Lead} from "./lead.types";
 
 export interface LeadWithDetails extends Lead {
   emailSequencesCount?: number;
