@@ -79,7 +79,6 @@ model Admin {
   lastLoginAt    DateTime?       @db.Timestamptz(6)
   createdAt      DateTime?       @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime?       @default(now()) @db.Timestamptz(6)
-  notifications  Notification[]
   systemSettings SystemSetting[]
 
   @@map("admins")
@@ -272,7 +271,6 @@ model Coach {
   emailTemplates     EmailTemplate[]
   emailThreads       EmailThread[]
   integrations       Integration[]
-  notifications      Notification[]
   paymentMethods     PaymentMethod[]
   transactions       Transaction[]
   invoices           Invoice[]
@@ -706,10 +704,15 @@ model MediaTransformation {
   @@map("media_transformations")
 }
 
+// Updates to existing Notification model in schema.prisma
+
 model Notification {
-  id        String    @id @default(uuid()) @db.Uuid
-  coachID   String?   @db.Uuid
-  adminID   String?   @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
+
+  // Add unified user fields for multi-user support
+  userID   String? @db.Uuid // Will replace coachID/adminID usage
+  userType String? @db.VarChar(20) // 'coach', 'admin', 'client'
+
   type      String    @db.VarChar(50)
   title     String    @db.VarChar(255)
   message   String
@@ -719,13 +722,46 @@ model Notification {
   priority  String?   @default("normal") @db.VarChar(20)
   metadata  Json?     @default("{}")
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
-  admin     Admin?    @relation(fields: [adminID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coach     Coach?    @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([adminID], map: "idx_notifications_admin_id")
-  @@index([coachID], map: "idx_notifications_coach_id")
+  @@index([userID, userType], map: "idx_notifications_user")
   @@index([isRead], map: "idx_notifications_is_read")
   @@map("notifications")
+}
+
+// Add new models for notification system
+
+model NotificationPreference {
+  id           String   @id @default(uuid()) @db.Uuid
+  userID       String   @db.Uuid
+  userType     String   @db.VarChar(20) // 'coach', 'admin', 'client'
+  emailEnabled Boolean  @default(true)
+  pushEnabled  Boolean  @default(true)
+  webhookUrl   String?  @db.VarChar(500)
+  preferences  Json     @default("{}")
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userID, userType])
+  @@index([userID])
+  @@map("notification_preferences")
+}
+
+model NotificationDelivery {
+  id             String    @id @default(uuid()) @db.Uuid
+  notificationID String    @db.Uuid
+  channel        String    @db.VarChar(50) // 'email', 'push', 'webhook'
+  status         String    @default("pending") @db.VarChar(20) // 'pending', 'sent', 'delivered', 'failed'
+  messageID      String?   @db.VarChar(255) // External provider message ID
+  error          String?
+  retryCount     Int       @default(0)
+  deliveredAt    DateTime? @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([notificationID])
+  @@index([status])
+  @@index([channel])
+  @@map("notification_deliveries")
 }
 
 model PlatformAnalytic {

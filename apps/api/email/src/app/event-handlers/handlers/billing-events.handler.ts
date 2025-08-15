@@ -66,7 +66,7 @@ export class BillingEventsHandler {
   private async handlePaymentFailed(payload: any) {
     const { coachID, amount, reason, retryUrl } = payload;
 
-    // Send payment failure notification
+    // Send payment failure notifications
     await this.sendPaymentFailureEmail(coachID, amount, reason, retryUrl);
     this.logger.log(`Payment failure notification sent to coach ${coachID}`);
   }
@@ -90,7 +90,7 @@ export class BillingEventsHandler {
   private async handleInvoiceIssued(payload: any) {
     const { coachID, invoiceNumber, amount, dueDate } = payload;
 
-    // Send invoice notification
+    // Send invoice notifications
     await this.sendInvoiceEmail(coachID, invoiceNumber, amount, new Date(dueDate));
     this.logger.log(`Invoice email sent to coach ${coachID} for invoice ${invoiceNumber}`);
   }

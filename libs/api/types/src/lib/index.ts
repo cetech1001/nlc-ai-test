@@ -3,3 +3,4 @@ export * from './billing';
 export * from './common';
 export * from './email';
 export * from './media';
+export * from './notifications';
