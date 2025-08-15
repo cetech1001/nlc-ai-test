@@ -282,6 +282,7 @@ model Coach {
   contentCategories  ContentCategory[]
   emailSequences     EmailSequence[]
   scheduledEmails    ScheduledEmail[]
+  mediaFiles         MediaFile[]
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
@@ -615,6 +616,94 @@ model Integration {
 
   @@index([coachID], map: "idx_integrations_coach_id")
   @@map("integrations")
+}
+
+// Addition to libs/api/database/prisma/schema.prisma
+
+enum MediaProvider {
+  cloudinary
+  vimeo
+  cloudfront
+  aws_s3
+}
+
+enum MediaResourceType {
+  image
+  video
+  raw
+}
+
+model MediaFile {
+  id           String            @id @default(uuid()) @db.Uuid
+  coachID      String            @db.Uuid
+  publicID     String            @unique @db.VarChar(255)
+  originalName String            @db.VarChar(500)
+  url          String            @db.Text
+  secureUrl    String            @db.Text
+  format       String            @db.VarChar(20)
+  resourceType MediaResourceType
+  fileSize     BigInt
+  width        Int?
+  height       Int?
+  duration     Int? // in seconds for videos
+  folder       String?           @db.VarChar(255)
+  tags         String[]
+  metadata     Json              @default("{}")
+  provider     MediaProvider
+  providerData Json              @default("{}")
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime          @updatedAt @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  mediaAnalytics MediaAnalytics[]
+
+  @@index([coachID])
+  @@index([resourceType])
+  @@index([folder])
+  @@index([tags])
+  @@index([createdAt])
+  @@map("media_files")
+}
+
+model MediaAnalytics {
+  id              String   @id @default(uuid()) @db.Uuid
+  mediaFileID     String   @db.Uuid
+  date            DateTime @db.Date
+  views           Int      @default(0)
+  downloads       Int      @default(0)
+  transformations Int      @default(0)
+  bandwidthBytes  BigInt   @default(0)
+  uniqueViewers   Int      @default(0)
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  mediaFile MediaFile @relation(fields: [mediaFileID], references: [id], onDelete: Cascade)
+
+  @@unique([mediaFileID, date])
+  @@index([date])
+  @@map("media_analytics")
+}
+
+model MediaTransformation {
+  id           String    @id @default(uuid()) @db.Uuid
+  mediaFileID  String    @db.Uuid
+  coachID      String    @db.Uuid
+  requestedBy  String    @db.Uuid
+  requestURL   String    @db.Text
+  parameters   Json
+  resultURL    String?   @db.Text
+  status       String    @default("pending") @db.VarChar(20)
+  errorMessage String?   @db.Text
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  completedAt  DateTime? @db.Timestamptz(6)
+
+  @@index([mediaFileID])
+  @@index([coachID])
+  @@index([status])
+  @@index([createdAt])
+  @@map("media_transformations")
 }
 
 model Notification {
