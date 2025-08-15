@@ -65,6 +65,12 @@
     },
     {
       "path": "./apps/api/notifications"
+    },
+    {
+      "path": "./apps/api/leads-e2e"
+    },
+    {
+      "path": "./apps/api/leads"
     }
   ]
 }
