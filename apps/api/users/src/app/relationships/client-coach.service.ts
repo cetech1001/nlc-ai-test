@@ -1,7 +1,8 @@
-import {Injectable, NotFoundException} from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import { CreateRelationshipDto, UpdateRelationshipDto, RelationshipQueryDto } from './dto';
-import {PrismaService} from "@nlc-ai/api-database";
+import {UserEvent} from "@nlc-ai/api-types";
 
 @Injectable()
 export class ClientCoachService {
@@ -64,7 +65,7 @@ export class ClientCoachService {
     });
 
     // Emit relationship created event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<UserEvent>(
       {
         eventType: 'auth.client.connected',
         schemaVersion: 1,
@@ -122,31 +123,21 @@ export class ClientCoachService {
         },
         coach: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
             businessName: true,
+            email: true,
+            avatarUrl: true,
           }
         }
       },
     });
 
-    // Emit relationship updated event
-    await this.outbox.saveAndPublishEvent(
-      {
-        eventType: 'auth.client.relationship.updated',
-        schemaVersion: 1,
-        payload: {
-          relationshipID: id,
-          clientID: relationship.clientID,
-          coachID: relationship.coachID,
-          changes: updateRelationshipDto,
-          updatedBy,
-        },
-      },
-      'auth.client.relationship.updated'
-    );
-
-    return updatedRelationship;
+    return {
+      data: result.data,
+      pagination: result.pagination,
+    };
   }
 
   async findOne(id: string, coachID?: string) {
@@ -192,10 +183,59 @@ export class ClientCoachService {
     return relationship;
   }
 
+  async update(id: string, updateRelationshipDto: UpdateRelationshipDto, updatedBy: string) {
+    const relationship = await this.findOne(id);
+
+    const updatedRelationship = await this.prisma.clientCoach.update({
+      where: { id },
+      data: {
+        ...updateRelationshipDto,
+        updatedAt: new Date(),
+      },
+      include: {
+        client: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          }
+        },
+        coach: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            businessName: true,
+            email: true,
+            avatarUrl: true,
+          }
+        }
+      },
+    });
+
+    // Emit relationship updated event
+    await this.outbox.saveAndPublishEvent<UserEvent>(
+      {
+        eventType: 'auth.client.relationship.updated',
+        schemaVersion: 1,
+        payload: {
+          relationshipID: id,
+          clientID: relationship.clientID,
+          coachID: relationship.coachID,
+          changes: updateRelationshipDto,
+          updatedBy,
+        },
+      },
+      'auth.client.relationship.updated'
+    );
+
+    return updatedRelationship;
+  }
+
   async remove(id: string, removedBy: string) {
     const relationship = await this.findOne(id);
 
-    const removedRelationship = await this.prisma.clientCoach.update({
+    await this.prisma.clientCoach.update({
       where: { id },
       data: {
         status: 'inactive',
@@ -204,7 +244,7 @@ export class ClientCoachService {
     });
 
     // Emit relationship removed event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<UserEvent>(
       {
         eventType: 'auth.client.relationship.removed',
         schemaVersion: 1,

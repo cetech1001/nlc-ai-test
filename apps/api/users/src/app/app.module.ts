@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
@@ -15,6 +15,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
 import usersConfig from './config/users.config';
+import {JwtModule} from "@nestjs/jwt";
 
 @Module({
   imports: [
@@ -23,6 +24,17 @@ import usersConfig from './config/users.config';
       load: [usersConfig],
       cache: true,
       expandVariables: true,
+    }),
+    JwtModule.registerAsync({
+      useFactory: (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET') || 'fallback-secret',
+        signOptions: {
+          expiresIn: config.get('JWT_EXPIRES_IN') || '24h',
+          audience: 'users-service',
+          issuer: 'nlc-ai',
+        },
+      }),
+      inject: [ConfigService],
     }),
     ScheduleModule.forRoot(),
     DatabaseModule.forFeature(),

@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@nlc-ai/api-database';
-import { AnalyticsQueryDto } from './dto';
+import {Injectable} from '@nestjs/common';
+import {PrismaService} from '@nlc-ai/api-database';
+import {AnalyticsQueryDto} from './dto';
+import {ClientCoachStatus} from "@prisma/client";
 
 @Injectable()
 export class AnalyticsService {
@@ -71,7 +72,7 @@ export class AnalyticsService {
       clientCoaches: {
         some: {
           coachID,
-          status: 'active'
+          status: ClientCoachStatus.active,
         }
       }
     } : {};
@@ -240,6 +241,7 @@ export class AnalyticsService {
       by: ['planID'],
       where: { status: 'active' },
       _count: true,
+      // @ts-ignore
       include: {
         plan: {
           select: { name: true }
@@ -255,15 +257,14 @@ export class AnalyticsService {
 
   private async getCoachGrowthData(startDate: Date, endDate: Date) {
     // Implement daily/weekly coach registration data
-    const dailySignups = await this.prisma.$queryRaw`
-      SELECT DATE(created_at) as date, COUNT(*) as count
+    return this.prisma.$queryRaw`
+      SELECT DATE (created_at) as date, COUNT (*) as count
       FROM coaches
-      WHERE created_at >= ${startDate} AND created_at <= ${endDate}
-      GROUP BY DATE(created_at)
+      WHERE created_at >= ${startDate}
+        AND created_at <= ${endDate}
+      GROUP BY DATE (created_at)
       ORDER BY date ASC
     `;
-
-    return dailySignups;
   }
 
   private async getTopPerformingCoaches(limit: number) {
@@ -295,7 +296,7 @@ export class AnalyticsService {
         clientCoaches: {
           some: {
             coachID,
-            status: 'active'
+            status: ClientCoachStatus.active,
           }
         }
       } : {})

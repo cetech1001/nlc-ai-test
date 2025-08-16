@@ -1,6 +1,7 @@
 import {DynamicModule, Global, Module} from "@nestjs/common";
 import {EventBusService, OutboxService} from "./services";
-import {DatabaseModule} from "@nlc-ai/api-database";
+import { DatabaseModule, PrismaService } from "@nlc-ai/api-database";
+import { ConfigService } from "@nestjs/config";
 import {OutboxConfig} from "./types";
 
 @Global()
@@ -13,10 +14,10 @@ export class MessagingModule {
       providers: [
         {
           provide: OutboxService,
-          useFactory: (prisma, eventBus, configService) => {
+          useFactory: (prisma: PrismaService, eventBus: EventBusService, configService: ConfigService) => {
             return new OutboxService(prisma, eventBus, configService, config);
           },
-          inject: ['PrismaService', 'EventBusService', 'ConfigService'],
+          inject: [PrismaService, EventBusService, ConfigService],
         },
         EventBusService,
       ],

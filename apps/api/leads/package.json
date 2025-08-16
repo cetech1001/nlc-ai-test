@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "@nlc-ais/leads-service",
+    "name": "@nlc-ai/leads-service",
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -29,15 +29,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@nlc-ais/leads-service:build",
+          "buildTarget": "@nlc-ai/leads-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@nlc-ais/leads-service:build:development"
+            "buildTarget": "@nlc-ai/leads-service:build:development"
           },
           "production": {
-            "buildTarget": "@nlc-ais/leads-service:build:production"
+            "buildTarget": "@nlc-ai/leads-service:build:production"
           }
         }
       }

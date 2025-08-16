@@ -3,6 +3,7 @@ import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import { CreateInviteDto, InviteQueryDto } from './dto';
 import { v4 as uuid } from 'uuid';
+import {UserEvent} from "@nlc-ai/api-types";
 
 @Injectable()
 export class InvitesService {
@@ -153,7 +154,7 @@ export class InvitesService {
     });
 
     // Emit client invited event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<UserEvent>(
       {
         eventType: 'auth.client.invited',
         schemaVersion: 1,
@@ -205,7 +206,7 @@ export class InvitesService {
     });
 
     // Emit resend event
-    await this.outbox.saveAndPublishEvent(
+    await this.outbox.saveAndPublishEvent<UserEvent>(
       {
         eventType: 'auth.client.invited',
         schemaVersion: 1,

@@ -12,13 +12,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CoachesService } from './coaches.service';
-import { CreateCoachDto, UpdateCoachDto } from './dto';
-import { CoachQueryDto } from './dto/coach-query.dto';
+import { CreateCoachDto, UpdateCoachDto, PaymentLinksQueryDto, CoachQueryDto } from './dto';
 import { JwtAuthGuard, UserTypesGuard } from '@nlc-ai/api-auth';
 import { UserTypes } from '@nlc-ai/api-auth';
 import { CurrentUser } from '@nlc-ai/api-auth';
 import { type AuthUser, UserType } from '@nlc-ai/api-types';
-import { PaymentLinksQueryDto } from './dto/payment-links-query.dto';
 
 @ApiTags('Coaches')
 @Controller('coaches')

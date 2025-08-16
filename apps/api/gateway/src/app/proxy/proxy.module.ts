@@ -20,6 +20,7 @@ import { CircuitBreakerService } from './circuit-breaker.service';
   ],
   exports: [
     ProxyService,
+    CircuitBreakerService,
     ServiceRegistryService,
   ],
 })

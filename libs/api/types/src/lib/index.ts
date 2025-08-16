@@ -7,3 +7,4 @@ export * from './integrations';
 export * from './leads';
 export * from './media';
 export * from './notifications';
+export * from './users';

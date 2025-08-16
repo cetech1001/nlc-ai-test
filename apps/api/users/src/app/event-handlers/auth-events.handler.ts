@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
 import { PrismaService } from '@nlc-ai/api-database';
-import { ClientsService } from '../clients/clients.service';
-import { CoachesService } from '../coaches/coaches.service';
 
 @Injectable()
 export class AuthEventsHandler {
@@ -11,8 +9,6 @@ export class AuthEventsHandler {
   constructor(
     private readonly eventBus: EventBusService,
     private readonly prisma: PrismaService,
-    private readonly clientsService: ClientsService,
-    private readonly coachesService: CoachesService,
   ) {
     this.subscribeToEvents();
   }
@@ -63,7 +59,7 @@ export class AuthEventsHandler {
   }
 
   private async handleCoachRegistered(payload: any) {
-    const { coachID, email, firstName, lastName } = payload;
+    const { coachID, email } = payload;
 
     try {
       // Verify the coach exists in the database
@@ -107,7 +103,7 @@ export class AuthEventsHandler {
   }
 
   private async handleClientRegistered(payload: any) {
-    const { clientID, coachID, email, firstName, lastName } = payload;
+    const { clientID, coachID, email } = payload;
 
     try {
       // Verify the client exists
@@ -128,7 +124,7 @@ export class AuthEventsHandler {
   }
 
   private async handleClientConnected(payload: any) {
-    const { relationshipID, clientID, coachID, email } = payload;
+    const { relationshipID, coachID, email } = payload;
 
     try {
       // Verify the relationship exists
@@ -149,7 +145,7 @@ export class AuthEventsHandler {
   }
 
   private async handleProfileUpdated(payload: any) {
-    const { userID, email, firstName, lastName } = payload;
+    const { userID, email } = payload;
 
     try {
       this.logger.log(`Profile update processed for user: ${email}`);

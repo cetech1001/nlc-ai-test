@@ -61,6 +61,10 @@ export default registerAs('gateway', () => {
         url: config.NOTIFICATIONS_SERVICE_URL,
         timeout: config.REQUEST_TIMEOUT,
       },
+      integrations: {
+        url: config.INTEGRATIONS_SERVICE_URL,
+        timeout: config.REQUEST_TIMEOUT,
+      },
     },
     rateLimit: {
       ttl: config.RATE_LIMIT_TTL,

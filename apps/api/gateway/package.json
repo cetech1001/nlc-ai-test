@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "gateway-service",
+    "name": "@nlc-ai/gateway-service",
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -29,15 +29,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "gateway-service:build",
+          "buildTarget": "@nlc-ai/gateway-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "gateway-service:build:development"
+            "buildTarget": "@nlc-ai/gateway-service:build:development"
           },
           "production": {
-            "buildTarget": "gateway-service:build:production"
+            "buildTarget": "@nlc-ai/gateway-service:build:production"
           }
         }
       }

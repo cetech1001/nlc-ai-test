@@ -45,7 +45,7 @@ export class ClientCoachController {
   @ApiResponse({ status: 201, description: 'Relationship created successfully' })
   create(@Body() createRelationshipDto: CreateRelationshipDto, @CurrentUser() user: AuthUser) {
     const coachID = user.type === UserType.coach ? user.id : createRelationshipDto.coachID;
-    return this.clientCoachService.create(createRelationshipDto, coachID, user.id);
+    return this.clientCoachService.create(createRelationshipDto, coachID!, user.id);
   }
 
   @Patch(':id')

@@ -44,7 +44,7 @@ export class InvitesController {
   @ApiResponse({ status: 201, description: 'Invitation created successfully' })
   create(@Body() createInviteDto: CreateInviteDto, @CurrentUser() user: AuthUser) {
     const coachID = user.type === UserType.coach ? user.id : createInviteDto.coachID;
-    return this.invitesService.create(createInviteDto, coachID);
+    return this.invitesService.create(createInviteDto, coachID!);
   }
 
   @Patch(':id/resend')
