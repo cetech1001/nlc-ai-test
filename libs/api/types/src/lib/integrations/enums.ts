@@ -24,7 +24,7 @@ export enum AppPlatform {
   OUTLOOK = 'outlook',
 }
 
-export enum EmailProvider {
+export enum EmailProviderTypes {
   GOOGLE = 'google',
   MICROSOFT = 'microsoft',
 }

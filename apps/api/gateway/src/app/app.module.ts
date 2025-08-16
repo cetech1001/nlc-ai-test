@@ -1,49 +1,64 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from './prisma/prisma.module';
-import {ConfigModule} from "@nestjs/config";
-import { CoachesModule } from './coaches/coaches.module';
-import { AuthModule } from './auth/auth.module';
-import {APP_GUARD} from "@nestjs/core";
-import {JwtAuthGuard} from "./auth/guards/jwt-auth.guard";
-import { EmailModule } from './email/email.module';
-import {PlansModule} from "./plans/plans.module";
-import { TransactionsModule } from './transactions/transactions.module';
-import {CleanupModule} from "./cleanup/cleanup.module";
-import { LeadsModule } from './leads/leads.module';
-import { SystemSettingsModule } from './system-settings/system-settings.module';
-import { PaymentsModule } from './payments/payments.module';
-import { ClientsModule } from './clients/clients.module';
-import { ContentModule } from './content/content.module';
-import { IntegrationsModule } from './integrations/integrations.module';
-import {AiAgentsModule} from "./ai-agents/ai-agents.module";
-import { EmailAccountsModule } from './email-accounts/email-accounts.module';
+import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
+import { JwtAuthGuard } from '@nlc-ai/api-auth';
+import { GatewayModule } from './gateway/gateway.module';
+import { ProxyModule } from './proxy/proxy.module';
+import { HealthModule } from './health/health.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { CacheModule } from './cache/cache.module';
+import { SecurityModule } from './security/security.module';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { ResponseTransformInterceptor } from './interceptors/response-transform.interceptor';
+import gatewayConfig from './config/gateway.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      load: [gatewayConfig],
+      cache: true,
+      expandVariables: true,
     }),
-    PrismaModule,
-    AuthModule,
-    CoachesModule,
-    EmailModule,
-    PlansModule,
-    TransactionsModule,
-    CleanupModule,
-    LeadsModule,
-    SystemSettingsModule,
-    PaymentsModule,
-    ClientsModule,
-    ContentModule,
-    IntegrationsModule,
-    AiAgentsModule,
-    EmailAccountsModule,
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute
+        limit: 100, // 100 requests per minute per IP
+      },
+    ]),
+    GatewayModule,
+    ProxyModule,
+    HealthModule,
+    MetricsModule,
+    CacheModule,
+    SecurityModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseTransformInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
 })

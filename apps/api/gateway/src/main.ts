@@ -1,66 +1,68 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
-import {Logger, ValidationPipe} from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app/app.module';
-import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
-import {ConfigService} from "@nestjs/config";
-import cookieParser from 'cookie-parser';
-import express from "express";
+import { SecurityService } from './app/security/security.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const securityService = app.get(SecurityService);
 
-  const globalPrefix = 'api';
-  const docsEndpoint = 'docs';
+  // Apply security configurations
+  securityService.applySecurity(app);
 
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ limit: '10mb', extended: true }));
-  app.use(cookieParser());
-  app.setGlobalPrefix(globalPrefix);
+  // Enable CORS
+  const corsOrigins = configService.get<string[]>('gateway.cors.origins');
+  const corsCredentials = configService.get<boolean>('gateway.cors.credentials');
 
-  const corsOrigins = configService.get('CORS_ORIGINS', '').split(',').filter(Boolean);
   app.enableCors({
     origin: corsOrigins,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Landing-Token', 'X-Landing-Timestamp', 'X-Landing-Signature'],
+    credentials: corsCredentials,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  app.use('/gateway/payments/webhook', express.raw({ type: 'application/json' }));
+  // Global prefix
+  app.setGlobalPrefix('api');
 
-  app.use(express.json());
-
+  // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('NLC AI API')
-    .setDescription('Next Level Coach AI Platform API')
+    .setTitle('NLC AI API Gateway')
+    .setDescription('Unified API Gateway for NLC AI Platform')
     .setVersion('1.0')
     .addBearerAuth()
+    .addServer('http://localhost:3000', 'Development')
+    .addServer('https://api.nextlevelcoach.ai', 'Production')
+    .addTag('Authentication', 'User authentication and authorization')
+    .addTag('Users', 'User management and profiles')
+    .addTag('Media', 'File upload and media management')
+    .addTag('Email', 'Email services and templates')
+    .addTag('Billing', 'Subscription and payment management')
+    .addTag('Leads', 'Lead capture and management')
+    .addTag('Notifications', 'Notification services')
+    .addTag('Gateway', 'Gateway health and metrics')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup(docsEndpoint, app, document);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+  });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      forbidUnknownValues: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    })
-  );
-
-  const port = configService.get('PORT', '');
+  const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
-  Logger.log(`📚 API Documentation: http://localhost:${port}/${docsEndpoint}`);
+  Logger.log(`🚀 API Gateway is running on: http://localhost:${port}/api`);
+  Logger.log(`📚 Swagger docs available at: http://localhost:${port}/docs`);
+  Logger.log(`🔍 Health checks at: http://localhost:${port}/api/health`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  Logger.error('Failed to start API Gateway:', error);
+  process.exit(1);
+});

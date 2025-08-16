@@ -11,15 +11,16 @@
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "strictPropertyInitialization": false,
-    "target": "es2021"
+    "target": "es2021",
+    "strictPropertyInitialization": false
   },
   "include": [
     "src/**/*.ts"
   ],
-  "exclude": [
-    "eslint.config.js",
-    "eslint.config.cjs",
-    "eslint.config.mjs"
+  "exclude": [],
+  "references": [
+    {
+      "path": "../../../libs/types/tsconfig.lib.json"
+    }
   ]
 }
