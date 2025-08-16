@@ -32,7 +32,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/notifications');
 
-  const port = process.env.PORT || 3004;
+  const port = process.env.PORT || 3007;
   await app.listen(port);
 
   console.log(`🔔 Notifications Service is running on: http://localhost:${port}/api/notifications`);

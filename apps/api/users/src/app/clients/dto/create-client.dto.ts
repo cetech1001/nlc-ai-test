@@ -1,6 +1,6 @@
-import { IsEmail, IsOptional, IsString, IsArray } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsArray, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateClient } from "@nlc-ai/types";
+import { CreateClient } from '@nlc-ai/api-types';
 
 export class CreateClientDto implements CreateClient {
   @ApiProperty({ example: 'client@example.com' })
@@ -35,4 +35,9 @@ export class CreateClientDto implements CreateClient {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @ApiProperty({ example: 'coach-uuid', required: false })
+  @IsOptional()
+  @IsUUID()
+  coachID?: string;
 }

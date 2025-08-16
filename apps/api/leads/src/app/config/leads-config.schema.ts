@@ -1,4 +1,3 @@
-// apps/api/leads/src/app/config/leads-config.schema.ts
 import { IsString, IsNumber, IsOptional, IsUrl } from 'class-validator';
 import { Transform } from 'class-transformer';
 

@@ -31,7 +31,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/leads');
 
-  const port = process.env.PORT || 3005;
+  const port = process.env.PORT || 3006;
   await app.listen(port);
 
   console.log(`🎯 Leads Service is running on: http://localhost:${port}/api/leads`);

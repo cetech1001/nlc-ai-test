@@ -1,35 +1,44 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ValidationPipe, AllExceptionsFilter, HttpExceptionFilter } from '@nlc-ai/api-validation';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix('api/v1');
-
-  app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
-
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: true,
     credentials: true,
   });
 
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
+
   const config = new DocumentBuilder()
-    .setTitle('Integrations Service API')
-    .setDescription('OAuth integrations and email account management')
+    .setTitle('NLC AI Integrations Service')
+    .setDescription('OAuth integrations and email accounts management')
     .setVersion('1.0')
     .addBearerAuth()
+    .addTag('OAuth Integrations')
+    .addTag('Email Accounts')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('docs', app, document);
 
-  const port = process.env.PORT || 3003;
+  app.setGlobalPrefix('api/integrations');
+
+  const port = process.env.PORT || 3008;
   await app.listen(port);
 
-  console.log(`Integrations service running on port ${port}`);
+  console.log(`🚀 Integrations Service is running on: http://localhost:${port}/api/integrations`);
+  console.log(`📚 Swagger docs available at: http://localhost:${port}/docs`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Failed to start Integrations Service:', error);
+  process.exit(1);
+});

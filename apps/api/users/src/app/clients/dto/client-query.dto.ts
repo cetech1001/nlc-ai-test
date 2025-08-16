@@ -1,7 +1,7 @@
-import { IsOptional, IsString, IsDateString, IsNumberString } from 'class-validator';
+import { IsOptional, IsString, IsDateString, IsNumberString, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ClientQueryParams } from "@nlc-ai/types";
+import { ClientQueryParams } from '@nlc-ai/api-types';
 
 export class ClientQueryDto implements ClientQueryParams {
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
@@ -48,4 +48,9 @@ export class ClientQueryDto implements ClientQueryParams {
   @IsOptional()
   @IsDateString()
   lastInteractionEnd?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by coach ID (admin only)' })
+  @IsOptional()
+  @IsUUID()
+  coachID?: string;
 }

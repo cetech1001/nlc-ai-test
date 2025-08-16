@@ -1,11 +1,12 @@
-import {BadRequestException, ConflictException, Injectable, NotFoundException} from '@nestjs/common';
-import { PrismaService } from "../prisma/prisma.service";
-import {Coach, CoachQueryParams, CoachStatus, CoachWithStatus, CreateCoach, UpdateCoach} from "@nlc-ai/types";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@nlc-ai/api-database';
+import { CoachQueryParams, CoachStatus, CoachWithStatus, CreateCoach, UpdateCoach } from '@nlc-ai/api-types';
 
 @Injectable()
 export class CoachesService {
-  constructor(private prisma: PrismaService) {
-  }
+  constructor(
+    private prisma: PrismaService,
+  ) {}
 
   private determineCoachStatus(coach: any): CoachStatus {
     if (coach.isDeleted) {
@@ -164,7 +165,7 @@ export class CoachesService {
             }
           }
         },
-        clients: {
+        clientCoaches: {
           where: { status: 'active' },
           select: { id: true }
         },
@@ -175,16 +176,16 @@ export class CoachesService {
       },
     });
 
-    const coachesWithStatus: CoachWithStatus[] = result.data.map((coach: Coach) => {
+    const coachesWithStatus: CoachWithStatus[] = result.data.map((coach: any) => {
       const calculatedStatus = this.determineCoachStatus(coach);
-      const totalRevenue = coach.transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+      const totalRevenue = coach.transactions?.reduce((sum: number, t: any) => sum + t.amount, 0) || 0;
 
       return {
         ...coach,
         status: calculatedStatus,
         currentPlan: coach.subscriptions?.[0]?.plan?.name || 'No Plan',
         subscriptionStatus: coach.subscriptions?.[0]?.status || 'none',
-        clientCount: coach.clients?.length || 0,
+        clientCount: coach.clientCoaches?.length || 0,
         totalRevenue: Math.round(totalRevenue / 100),
       };
     });
@@ -243,25 +244,36 @@ export class CoachesService {
 
   async findOne(id: string) {
     const coach = await this.prisma.coach.findUnique({
-      where: {id},
+      where: { id },
       include: {
         subscriptions: {
-          orderBy: {createdAt: 'desc'},
+          orderBy: { createdAt: 'desc' },
           include: {
             plan: true
           }
         },
-        clients: {
-          where: {status: 'active'},
-          orderBy: {lastInteractionAt: 'desc'},
+        clientCoaches: {
+          where: { status: 'active' },
+          orderBy: { assignedAt: 'desc' },
           take: 5,
+          include: {
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                lastInteractionAt: true,
+              }
+            }
+          }
         },
         transactions: {
-          orderBy: {createdAt: 'desc'},
+          orderBy: { createdAt: 'desc' },
           take: 10,
           include: {
             plan: {
-              select: {name: true}
+              select: { name: true }
             }
           }
         }
@@ -277,7 +289,7 @@ export class CoachesService {
         coachID: id,
         status: 'completed'
       },
-      _sum: {amount: true}
+      _sum: { amount: true }
     });
 
     return {
@@ -300,7 +312,7 @@ export class CoachesService {
     await this.findOne(id);
 
     return this.prisma.coach.update({
-      where: {id},
+      where: { id },
       data: {
         ...updateCoachDto,
         updatedAt: new Date(),
@@ -316,7 +328,7 @@ export class CoachesService {
     }
 
     return this.prisma.coach.update({
-      where: {id},
+      where: { id },
       data: {
         isActive: !coach.isActive,
         updatedAt: new Date(),
@@ -328,7 +340,7 @@ export class CoachesService {
     await this.findOne(id);
 
     return this.prisma.coach.update({
-      where: {id},
+      where: { id },
       data: {
         isDeleted: true,
         deletedAt: new Date(),
@@ -349,7 +361,7 @@ export class CoachesService {
             plan: true
           }
         },
-        clients: {
+        clientCoaches: {
           where: { status: 'active' },
           select: { id: true }
         },
@@ -396,7 +408,7 @@ export class CoachesService {
             plan: true
           }
         },
-        clients: {
+        clientCoaches: {
           where: { status: 'active' },
           select: { id: true }
         },
@@ -428,10 +440,10 @@ export class CoachesService {
     startDate.setDate(startDate.getDate() - days);
 
     const [totalClients, activeClients, recentInteractions, aiUsage, totalRevenue] = await Promise.all([
-      this.prisma.client.count({
-        where: {coachID},
+      this.prisma.clientCoach.count({
+        where: { coachID },
       }),
-      this.prisma.client.count({
+      this.prisma.clientCoach.count({
         where: {
           coachID,
           status: 'active',
@@ -440,13 +452,13 @@ export class CoachesService {
       this.prisma.aiInteraction.count({
         where: {
           coachID,
-          createdAt: {gte: startDate},
+          createdAt: { gte: startDate },
         },
       }),
       this.prisma.aiInteraction.aggregate({
         where: {
           coachID,
-          createdAt: {gte: startDate},
+          createdAt: { gte: startDate },
         },
         _sum: {
           tokensUsed: true,
@@ -456,7 +468,7 @@ export class CoachesService {
         where: {
           coachID,
           status: 'completed',
-          createdAt: {gte: startDate},
+          createdAt: { gte: startDate },
         },
         _sum: {
           amount: true,
@@ -471,31 +483,6 @@ export class CoachesService {
       tokensUsed: aiUsage._sum.tokensUsed || 0,
       recentRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
     };
-  }
-
-  async permanentDeleteExpired() {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const expiredCoaches = await this.prisma.coach.findMany({
-      where: {
-        isDeleted: true,
-        deletedAt: {
-          lte: thirtyDaysAgo
-        }
-      }
-    });
-
-    for (const coach of expiredCoaches) {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.client.deleteMany({ where: { coachID: coach.id } });
-        await tx.subscription.deleteMany({ where: { coachID: coach.id } });
-        await tx.transaction.deleteMany({ where: { coachID: coach.id } });
-        await tx.coach.delete({ where: { id: coach.id } });
-      });
-    }
-
-    return { deletedCount: expiredCoaches.length };
   }
 
   async getCoachPaymentRequests(coachID: string, query: any) {

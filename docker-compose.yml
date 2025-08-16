@@ -28,6 +28,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # One-off init job to create an extra DB in the primary Postgres (optional)
+  db_init:
+    image: postgres:16
+    container_name: nlc_ai_db_init
+    depends_on:
+      - postgres
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: [ "bash", "-lc" ]
+    command: >-
+      "until pg_isready -h postgres -p 5432 -U ${POSTGRES_USER}; do sleep 1; done;
+      psql -h postgres -U ${POSTGRES_USER} -c \"CREATE DATABASE ${POSTGRES_SHADOW_DB};\" || true"
+    restart: "no"
+
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: nlc_ai_rabbitmq

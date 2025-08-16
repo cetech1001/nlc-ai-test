@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from "../prisma/prisma.service";
-import {ClientQueryParams, CreateClient, UpdateClient, ClientWithDetails} from "@nlc-ai/types";
+import { PrismaService } from '@nlc-ai/api-database';
+import { ClientQueryParams, CreateClient, UpdateClient, ClientWithDetails } from '@nlc-ai/api-types';
 
 @Injectable()
 export class ClientsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+  ) {}
 
-  async findAll(query: ClientQueryParams, coachID: string) {
+  async findAll(query: ClientQueryParams, coachID?: string) {
     const {
       page = 1,
       limit = 10,
@@ -19,10 +21,20 @@ export class ClientsService {
       lastInteractionEnd,
     } = query;
 
-    const where: any = { coachID };
+    const where: any = {};
+
+    // If coachID is provided, filter by coach relationships
+    if (coachID) {
+      where.clientCoaches = {
+        some: {
+          coachID,
+          status: 'active'
+        }
+      };
+    }
 
     if (status && status !== '') {
-      where.status = status;
+      where.isActive = status === 'active';
     }
 
     if (search) {
@@ -80,6 +92,19 @@ export class ClientsService {
         emailThreads: {
           where: { status: 'active' },
           select: { id: true }
+        },
+        clientCoaches: {
+          where: { status: 'active' },
+          include: {
+            coach: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                businessName: true,
+              }
+            }
+          }
         }
       },
     });
@@ -91,6 +116,12 @@ export class ClientsService {
         e.progressPercentage === 100 || e.completedAt
       ).length || 0,
       emailThreadsCount: client.emailThreads?.length || 0,
+      coaches: client.clientCoaches?.map((cc: any) => ({
+        id: cc.coach.id,
+        name: `${cc.coach.firstName} ${cc.coach.lastName}`,
+        businessName: cc.coach.businessName,
+        isPrimary: cc.isPrimary,
+      })) || [],
     }));
 
     return {
@@ -99,20 +130,54 @@ export class ClientsService {
     };
   }
 
-  async getClientStats(coachID: string) {
+  async getClientStats(coachID?: string) {
+    const where: any = {};
+
+    if (coachID) {
+      where.clientCoaches = {
+        some: {
+          coachID,
+          status: 'active'
+        }
+      };
+    }
+
     const [totalClients, activeClients, totalCoursesBought, coursesCompleted] = await Promise.all([
-      this.prisma.client.count({ where: { coachID } }),
-      this.prisma.client.count({ where: { coachID, status: 'active' } }),
+      this.prisma.client.count({ where }),
+      this.prisma.client.count({
+        where: {
+          ...where,
+          isActive: true
+        }
+      }),
       this.prisma.courseEnrollment.count({
-        where: { client: { coachID } }
+        where: coachID ? {
+          client: {
+            clientCoaches: {
+              some: {
+                coachID,
+                status: 'active'
+              }
+            }
+          }
+        } : {}
       }),
       this.prisma.courseEnrollment.count({
         where: {
-          client: { coachID },
           OR: [
             { progressPercentage: 100 },
             { completedAt: { not: null } }
-          ]
+          ],
+          ...(coachID ? {
+            client: {
+              clientCoaches: {
+                some: {
+                  coachID,
+                  status: 'active'
+                }
+              }
+            }
+          } : {})
         }
       }),
     ]);
@@ -125,9 +190,20 @@ export class ClientsService {
     };
   }
 
-  async findOne(id: string, coachID: string) {
+  async findOne(id: string, coachID?: string) {
+    const where: any = { id };
+
+    if (coachID) {
+      where.clientCoaches = {
+        some: {
+          coachID,
+          status: 'active'
+        }
+      };
+    }
+
     const client = await this.prisma.client.findFirst({
-      where: { id, coachID },
+      where,
       include: {
         courseEnrollments: {
           include: {
@@ -153,6 +229,19 @@ export class ClientsService {
             lastMessageAt: true,
             messageCount: true
           }
+        },
+        clientCoaches: {
+          where: { status: 'active' },
+          include: {
+            coach: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                businessName: true,
+              }
+            }
+          }
         }
       },
     });
@@ -167,19 +256,44 @@ export class ClientsService {
       coursesCompleted: client.courseEnrollments?.filter((e: any) =>
         e.progressPercentage === 100 || e.completedAt
       ).length || 0,
+      coaches: client.clientCoaches?.map((cc: any) => ({
+        id: cc.coach.id,
+        name: `${cc.coach.firstName} ${cc.coach.lastName}`,
+        businessName: cc.coach.businessName,
+        isPrimary: cc.isPrimary,
+      })) || [],
     };
   }
 
-  async create(createClientDto: CreateClient, coachID: string) {
-    return this.prisma.client.create({
-      data: {
-        ...createClientDto,
-        coachID,
-      },
+  async create(createClientDto: CreateClient, coachID?: string) {
+    if (!coachID) {
+      throw new Error('Coach ID is required for client creation');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // Create the client
+      const client = await tx.client.create({
+        data: {
+          ...createClientDto,
+        },
+      });
+
+      // Create the client-coach relationship
+      await tx.clientCoach.create({
+        data: {
+          clientID: client.id,
+          coachID,
+          status: 'active',
+          isPrimary: true,
+          assignedBy: coachID,
+        },
+      });
+
+      return client;
     });
   }
 
-  async update(id: string, updateClientDto: UpdateClient, coachID: string) {
+  async update(id: string, updateClientDto: UpdateClient, coachID?: string) {
     await this.findOne(id, coachID);
 
     return this.prisma.client.update({
@@ -191,13 +305,13 @@ export class ClientsService {
     });
   }
 
-  async remove(id: string, coachID: string) {
+  async remove(id: string, coachID?: string) {
     await this.findOne(id, coachID);
 
     return this.prisma.client.update({
       where: { id },
       data: {
-        status: 'inactive',
+        isActive: false,
         updatedAt: new Date(),
       },
     });
