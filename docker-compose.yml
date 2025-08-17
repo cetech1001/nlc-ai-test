@@ -42,7 +42,6 @@ services:
       psql -h postgres -U ${POSTGRES_USER} -c \"CREATE DATABASE ${POSTGRES_SHADOW_DB};\" || true"
     restart: "no"
 
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: nlc_ai_rabbitmq
@@ -55,6 +54,25 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/auth/Dockerfile
+      target: runner
+    container_name: nlc_ai_auth_service
+    restart: unless-stopped
+#    environment:
+#      NODE_ENV: production
+#      PORT: 3001
+#      HOSTNAME: 0.0.0.0
+      # add other env vars like DB connection, JWT secret, etc.
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - rabbitmq
+    command: [ "node", "main.js" ]
 
 #  redis-commander:
 #    image: rediscommander/redis-commander:latest

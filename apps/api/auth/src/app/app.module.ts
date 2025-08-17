@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import {ConfigModule, ConfigService} from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -28,7 +28,7 @@ import authConfig from './config/auth.config';
           issuer: 'nlc-ai',
         },
       }),
-      inject: [ConfigModule],
+      inject: [ConfigService],
     }),
     ScheduleModule.forRoot(),
     DatabaseModule.forRoot({ schema: 'auth' }),

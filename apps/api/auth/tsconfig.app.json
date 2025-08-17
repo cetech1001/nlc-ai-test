@@ -12,7 +12,10 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
-    "target": "es2021"
+    "target": "es2021",
+    "paths": {
+      "@nlc-ai/*": ["../../../libs/api/*/src"]
+    }
   },
   "include": [
     "src/**/*.ts"
