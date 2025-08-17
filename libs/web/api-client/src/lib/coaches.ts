@@ -52,49 +52,49 @@ class CoachesAPI extends BaseAPI {
       params.append('includeDeleted', filters.includeDeleted);
     }
 
-    return this.makeRequest(`/coaches?${params.toString()}`);
+    return this.makeRequest(`/users/coaches?${params.toString()}`);
   }
 
   async getCoachStats(): Promise<CoachStats> {
-    return this.makeRequest('/coaches/stats');
+    return this.makeRequest('/users/coaches/stats');
   }
 
   async getCoach(id: string): Promise<CoachWithStatus> {
-    return this.makeRequest(`/coaches/${id}`);
+    return this.makeRequest(`/users/coaches/${id}`);
   }
 
   async getCoachKpis(id: string, days = 30) {
-    return this.makeRequest(`/coaches/${id}/kpis?days=${days}`);
+    return this.makeRequest(`/users/coaches/${id}/kpis?days=${days}`);
   }
 
   async toggleCoachStatus(id: string): Promise<Coach> {
-    return this.makeRequest(`/coaches/${id}/toggle-status`, {
+    return this.makeRequest(`/users/coaches/${id}/toggle-status`, {
       method: 'PATCH',
     });
   }
 
   async deleteCoach(id: string): Promise<Coach> {
-    return this.makeRequest(`/coaches/${id}`, {
+    return this.makeRequest(`/users/coaches/${id}`, {
       method: 'DELETE',
     });
   }
 
   async updateCoach(id: string, data: Partial<Coach>): Promise<Coach> {
-    return this.makeRequest(`/coaches/${id}`, {
+    return this.makeRequest(`/users/coaches/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async createCoach(data: Omit<Coach, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<Coach> {
-    return this.makeRequest('/coaches', {
+    return this.makeRequest('/users/coaches', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async restoreCoach(id: string): Promise<Coach> {
-    return this.makeRequest(`/coaches/${id}/restore`, {
+    return this.makeRequest(`/users/coaches/${id}/restore`, {
       method: 'PATCH',
     });
   }
@@ -117,11 +117,11 @@ class CoachesAPI extends BaseAPI {
       params.append('status', filters.status);
     }
 
-    return this.makeRequest(`/coaches/${coachID}/payment-requests?${params.toString()}`);
+    return this.makeRequest(`/users/coaches/${coachID}/payment-requests?${params.toString()}`);
   }
 
   async getCoachPaymentRequestStats(coachID: string): Promise<CoachPaymentRequestStats> {
-    return this.makeRequest(`/coaches/${coachID}/payment-requests/stats`);
+    return this.makeRequest(`/users/coaches/${coachID}/payment-requests/stats`);
   }
 }
 

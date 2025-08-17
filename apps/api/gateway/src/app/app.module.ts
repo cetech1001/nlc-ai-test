@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
-import { JwtAuthGuard } from '@nlc-ai/api-auth';
 import { GatewayModule } from './gateway/gateway.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { HealthModule } from './health/health.module';
@@ -39,10 +38,6 @@ import gatewayConfig from './config/gateway.config';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
     },
     {
       provide: APP_INTERCEPTOR,

@@ -28,7 +28,7 @@ export class ServiceAuthGuard implements CanActivate {
     }
 
     try {
-      const secret = this.configService.get<string>('billing.jwt.secret');
+      const secret = this.configService.get<string>('JWT_SECRET');
       // Add user info to request
       request['user'] = this.jwtService.verify(token, {secret});
       request['token'] = token;
