@@ -5,7 +5,7 @@ import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
 import { Button, Input, Checkbox, EyeLashIcon, AlertBanner } from '@nlc-ai/web-ui';
-import {ApiError} from "@nlc-ai/web-api-client";
+import {ApiResponse} from "@nlc-ai/api-types";
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
@@ -43,8 +43,8 @@ export const LoginForm = (props: LoginFormProps) => {
       await authAPI.googleLogin(credentialResponse.credential);
       props.handleHome();
     } catch (err: unknown) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Google login failed');
+      const apiError = err as ApiResponse;
+      setError(apiError.error?.message || 'Google login failed');
     } finally {
       setIsLoading(false);
     }
@@ -66,16 +66,16 @@ export const LoginForm = (props: LoginFormProps) => {
     props.setSuccessMessage('');
 
     try {
-      await login(data.email, data.password, data.rememberMe, props.userType);
+      await login(data.email, data.password, props.userType, data.rememberMe);
       props.handleHome();
     } catch (err: unknown) {
-      const apiError = err as ApiError;
+      const apiError = err as ApiResponse;
 
-      if (apiError.requiresVerification && props.handleAccountVerification) {
-        return props.handleAccountVerification(apiError.email);
+      if (apiError.error?.details.requiresVerification && props.handleAccountVerification) {
+        return props.handleAccountVerification(apiError.error.details.email);
       }
 
-      setError(apiError.message || 'An error occurred during login');
+      setError(apiError.error?.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }

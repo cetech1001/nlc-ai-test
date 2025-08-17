@@ -1,5 +1,5 @@
 import {BadRequestException, ConflictException, Injectable, UnauthorizedException} from "@nestjs/common";
-import {LoginRequest, UserType} from "@nlc-ai/types";
+import {LoginRequest, UserType} from "@nlc-ai/api-types";
 import * as bcrypt from "bcryptjs";
 import {PrismaService} from "@nlc-ai/api-database";
 import {OutboxService} from "@nlc-ai/api-messaging";

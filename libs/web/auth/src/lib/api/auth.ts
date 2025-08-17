@@ -14,15 +14,11 @@ class AuthAPI extends BaseAPI{
   async login(
     email: string,
     password: string,
-    rememberMe?: boolean,
-    userType?: AUTH_TYPES
+    userType: AUTH_TYPES,
+    rememberMe?: boolean
   ): Promise<LoginResponse> {
     try {
-      let param = "";
-      if (userType) {
-        param += `?type=${userType}`;
-      }
-      const result = await this.makeRequest<LoginResponse>(`/auth/login${param}`, {
+      const result = await this.makeRequest<LoginResponse>(`/auth/${userType}/login`, {
         method: 'POST',
         body: JSON.stringify({email, password, rememberMe}),
       });

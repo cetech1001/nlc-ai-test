@@ -14,7 +14,11 @@
     "strictPropertyInitialization": false,
     "target": "es2021",
     "paths": {
-      "@nlc-ai/*": ["../../../libs/api/*/src"]
+      "@nlc-ai/api-types": ["../../../libs/api/types/src"],
+      "@nlc-ai/api-database": ["../../../libs/api/database/src"],
+      "@nlc-ai/api-messaging": ["../../../libs/api/messaging/src"],
+      "@nlc-ai/api-validation": ["../../../libs/api/validation/src"],
+      "@nlc-ai/api-auth": ["../../../libs/api/auth/src"]
     }
   },
   "include": [
@@ -26,9 +30,6 @@
     "eslint.config.mjs"
   ],
   "references": [
-    {
-      "path": "../../../libs/types/tsconfig.lib.json"
-    },
     {
       "path": "../../../libs/api/types/tsconfig.lib.json"
     },

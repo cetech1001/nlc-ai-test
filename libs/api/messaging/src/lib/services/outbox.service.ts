@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import {v4 as uuid} from "uuid";
 import { PrismaService } from '@nlc-ai/api-database';
 import {EventBusService} from "./event-bus.service";
 import {BaseEvent, type OutboxConfig} from "../types";
@@ -28,7 +29,7 @@ export class OutboxService {
     routingKey: string,
     scheduledFor?: Date
   ): Promise<void> {
-    const eventID = this.generateEventID();
+    const eventID = uuid();
     const fullEvent: T = {
       ...event,
       eventID,
@@ -78,7 +79,7 @@ export class OutboxService {
             { scheduledFor: { lte: now } }
           ]
         },
-        take: this.batchSize,
+        take: Number(this.batchSize),
         orderBy: { createdAt: 'asc' },
       });
 
@@ -166,9 +167,5 @@ export class OutboxService {
     });
 
     this.logger.log(`Reset failed events for retry`, { eventIDs });
-  }
-
-  private generateEventID(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(2)}`;
   }
 }

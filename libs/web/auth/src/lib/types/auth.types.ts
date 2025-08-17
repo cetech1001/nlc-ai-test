@@ -2,7 +2,7 @@ import {ReactNode} from "react";
 
 export interface AuthFormProps {
   className?: string;
-  userType?: AUTH_TYPES;
+  userType: AUTH_TYPES;
 }
 
 export interface LoginFormProps extends AuthFormProps {

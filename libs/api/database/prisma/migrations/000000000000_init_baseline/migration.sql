@@ -1,6 +1,0 @@
--- Baseline migration: represents the existing database schema before adopting Prisma Migrate
--- This file is intentionally empty and should not be executed against a non-empty database.
--- Apply it as "already applied" using:
---   npx prisma migrate resolve --applied 000000000000_init_baseline
--- After resolving the baseline, run:
---   npx prisma migrate deploy

@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
-import { ValidatedGoogleUser } from '@nlc-ai/types';
+import { ValidatedGoogleUser } from '@nlc-ai/api-types';
 import { ClientAuthService } from './client-auth.service';
 import { CoachAuthService } from './coach-auth.service';
 

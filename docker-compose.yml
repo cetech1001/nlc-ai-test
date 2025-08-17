@@ -39,7 +39,7 @@ services:
     entrypoint: [ "bash", "-lc" ]
     command: >-
       "until pg_isready -h postgres -p 5432 -U ${POSTGRES_USER}; do sleep 1; done;
-      psql -h postgres -U ${POSTGRES_USER} -c \"CREATE DATABASE ${POSTGRES_SHADOW_DB};\" || true"
+      psql -h postgres -U ${POSTGRES_USER} -d postgres -c 'CREATE DATABASE ${POSTGRES_SHADOW_DB};' || true"
     restart: "no"
 
   rabbitmq:
@@ -55,35 +55,18 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  auth-service:
-    build:
-      context: .
-      dockerfile: ./apps/api/auth/Dockerfile
-      target: runner
-    container_name: nlc_ai_auth_service
-    restart: unless-stopped
-#    environment:
-#      NODE_ENV: production
-#      PORT: 3001
-#      HOSTNAME: 0.0.0.0
-      # add other env vars like DB connection, JWT secret, etc.
-    ports:
-      - "3001:3001"
-    depends_on:
-      - postgres
-      - rabbitmq
-    command: [ "node", "main.js" ]
-
-#  redis-commander:
-#    image: rediscommander/redis-commander:latest
-#    container_name: nlc_ai_redis_gui
+#  auth-service:
+#    build:
+#      context: .
+#      dockerfile: ./apps/api/auth/Dockerfile
+#      target: runner
+#    container_name: nlc_ai_auth_service
 #    restart: unless-stopped
-#    environment:
-#      REDIS_HOST: ${REDIS_HOST}
-#      REDIS_PORT: ${REDIS_PORT}
-#      REDIS_PASSWORD: ${REDIS_PASSWORD}
 #    ports:
-#      - "8081:8081"
+#      - "3001:3000"
+#    depends_on:
+#      - postgres
+#      - rabbitmq
 
 volumes:
   pgadmin_data:

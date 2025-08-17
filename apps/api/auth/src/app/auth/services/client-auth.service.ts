@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { ValidatedGoogleUser, UserType } from '@nlc-ai/types';
+import { ValidatedGoogleUser, UserType } from '@nlc-ai/api-types';
 import {
   AuthEvent,
   ClientRegistrationRequest,

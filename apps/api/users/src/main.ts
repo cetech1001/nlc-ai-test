@@ -16,6 +16,7 @@ async function bootstrap() {
     .setDescription('User management, profiles, and relationships service')
     .setVersion('1.0')
     .addBearerAuth()
+    .addServer('http://localhost:3002/api/users', 'Development')
     .addTag('Coaches')
     .addTag('Clients')
     .addTag('Admin')

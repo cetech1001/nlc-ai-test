@@ -56,11 +56,11 @@ export const useAuth = (role?: AUTH_TYPES) => {
   const login = async (
     email: string,
     password: string,
+    userType: AUTH_TYPES,
     rememberMe?: boolean,
-    userType?: AUTH_TYPES,
   ) => {
     try {
-      const response = await authAPI.login(email, password, rememberMe, userType);
+      const response = await authAPI.login(email, password, userType, rememberMe);
       setAuthState({
         user: response.user,
         isLoading: false,

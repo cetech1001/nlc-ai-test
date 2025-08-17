@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { CreateAdminDto, UpdateAdminDto, AdminQueryDto } from './dto';
-import { JwtAuthGuard, UserTypesGuard, UserTypes } from '@nlc-ai/api-auth';
+import { JwtAuthGuard, UserTypesGuard, UserTypes, Public } from '@nlc-ai/api-auth';
 import { UserType } from '@nlc-ai/api-types';
 
 @ApiTags('Admin')
@@ -38,6 +38,7 @@ export class AdminController {
     return this.adminService.findOne(id);
   }
 
+  @Public()
   @Post()
   @ApiOperation({ summary: 'Create a new administrator' })
   @ApiResponse({ status: 201, description: 'Administrator created successfully' })
