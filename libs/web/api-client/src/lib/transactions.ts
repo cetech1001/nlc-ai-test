@@ -45,28 +45,28 @@ export class TransactionsAPI extends BaseAPI {
       params.append('planNames', filters.planNames.join(','));
     }
 
-    return this.makeRequest(`/transactions?${params.toString()}`);
+    return this.makeRequest(`/billing/transactions?${params.toString()}`);
   }
 
   async getTransaction(id: string): Promise<Transaction> {
-    return this.makeRequest(`/transactions/${id}`);
+    return this.makeRequest(`/billing/transactions/${id}`);
   }
 
   async getTransactionStats(): Promise<TransactionStats> {
-    return this.makeRequest('/transactions/stats');
+    return this.makeRequest('/billing/transactions/stats');
   }
 
   async getRevenueByPeriod(period: 'week' | 'month' | 'year' = 'month'): Promise<RevenueGrowthData> {
-    return this.makeRequest(`/transactions/revenue?period=${period}`);
+    return this.makeRequest(`/billing/transactions/revenue?period=${period}`);
   }
 
   async getRevenueStats(): Promise<any> {
-    return this.makeRequest('/transactions/revenue/stats');
+    return this.makeRequest('/billing/transactions/revenue/stats');
   }
 
   async downloadTransaction(id: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseURL}/transactions/${id}/invoice`, {
+      const response = await fetch(`${this.baseURL}/billing/transactions/${id}/invoice`, {
         headers: {
           'Authorization': `Bearer ${this.getToken()}`,
         },
@@ -106,7 +106,7 @@ export class TransactionsAPI extends BaseAPI {
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
 
-    const response = await fetch(`${this.baseURL}/transactions/export/bulk?${params.toString()}`, {
+    const response = await fetch(`${this.baseURL}/billing/transactions/export/bulk?${params.toString()}`, {
       headers: {
         'Authorization': `Bearer ${this.getToken()}`,
       },
@@ -132,15 +132,15 @@ export class TransactionsAPI extends BaseAPI {
   }
 
   async getTopPayingCoaches(limit = 10): Promise<any[]> {
-    return this.makeRequest(`/transactions/analytics/top-coaches?limit=${limit}`);
+    return this.makeRequest(`/billing/transactions/analytics/top-coaches?limit=${limit}`);
   }
 
   async getMonthlyRevenueComparison(): Promise<any> {
-    return this.makeRequest('/transactions/analytics/monthly-comparison');
+    return this.makeRequest('/billing/transactions/analytics/monthly-comparison');
   }
 
   async getTransactionsByStatus(status: string): Promise<any[]> {
-    return this.makeRequest(`/transactions/by-status/${status}`);
+    return this.makeRequest(`/billing/transactions/by-status/${status}`);
   }
 
   async getTransactionsByDateRange(startDate: string, endDate: string): Promise<any[]> {
@@ -148,7 +148,7 @@ export class TransactionsAPI extends BaseAPI {
       startDate,
       endDate,
     });
-    return this.makeRequest(`/transactions/by-date-range?${params.toString()}`);
+    return this.makeRequest(`/billing/transactions/by-date-range?${params.toString()}`);
   }
 }
 

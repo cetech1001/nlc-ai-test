@@ -4,6 +4,24 @@
   "include": [],
   "references": [
     {
+      "path": "../../api/types"
+    },
+    {
+      "path": "../billing"
+    },
+    {
+      "path": "../email"
+    },
+    {
+      "path": "../auth"
+    },
+    {
+      "path": "../users"
+    },
+    {
+      "path": "../core"
+    },
+    {
       "path": "./tsconfig.lib.json"
     }
   ]

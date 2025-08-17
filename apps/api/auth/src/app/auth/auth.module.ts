@@ -1,40 +1,21 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { GoogleAuthService } from './services/google-auth.service';
-import { GoogleStrategy } from './strategies/google.strategy';
 import { TokenService } from './services/token.service';
 import { AdminAuthService } from './services/admin-auth.service';
 import { CoachAuthService } from './services/coach-auth.service';
 import { ClientAuthService } from './services/client-auth.service';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
-import {JwtStrategy} from "@nlc-ai/api-auth";
+import {AuthLibModule} from "@nlc-ai/api-auth";
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('auth.jwt.secret'),
-        signOptions: {
-          expiresIn: configService.get<string>('auth.jwt.expiresIn', '7d'),
-          audience: configService.get<string>('auth.service.name', 'auth-service'),
-          issuer: 'nlc-ai',
-        },
-      }),
-      inject: [ConfigService],
-      global: true,
-    }),
+    AuthLibModule,
     CloudinaryModule,
   ],
   controllers: [AuthController],
   providers: [
-    JwtStrategy,
-    GoogleStrategy,
     AuthService,
     GoogleAuthService,
     TokenService,
@@ -49,7 +30,6 @@ import {JwtStrategy} from "@nlc-ai/api-auth";
     AdminAuthService,
     CoachAuthService,
     ClientAuthService,
-    JwtModule,
   ],
 })
 export class AuthModule {}

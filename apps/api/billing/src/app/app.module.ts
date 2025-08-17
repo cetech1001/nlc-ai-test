@@ -1,6 +1,5 @@
 import {Module} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import {JwtModule} from "@nestjs/jwt";
 import {APP_FILTER, APP_GUARD, APP_PIPE} from "@nestjs/core";
 import {ScheduleModule} from "@nestjs/schedule";
 import {ValidationPipe, HttpExceptionFilter, AllExceptionsFilter} from "@nlc-ai/api-validation";
@@ -24,17 +23,6 @@ import {MessagingModule} from "@nlc-ai/api-messaging";
       load: [billingConfig],
       cache: true,
       expandVariables: true,
-    }),
-    JwtModule.registerAsync({
-      useFactory: (config) => ({
-        secret: config.get('JWT_SECRET') || 'fallback-secret',
-        signOptions: {
-          expiresIn: config.get('JWT_EXPIRES_IN') || '24h',
-          audience: 'billing-service',
-          issuer: 'nlc-ai',
-        },
-      }),
-      inject: [ConfigModule],
     }),
     ScheduleModule.forRoot(),
     DatabaseModule.forFeature(),
