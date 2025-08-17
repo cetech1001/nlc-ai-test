@@ -74,6 +74,30 @@
     },
     {
       "path": "./apps/api/gateway"
+    },
+    {
+      "path": "./libs/sdk/core"
+    },
+    {
+      "path": "./libs/sdk/users"
+    },
+    {
+      "path": "./libs/sdk/core"
+    },
+    {
+      "path": "./libs/sdk/users"
+    },
+    {
+      "path": "./libs/sdk/auth"
+    },
+    {
+      "path": "./libs/sdk/email"
+    },
+    {
+      "path": "./libs/sdk/billing"
+    },
+    {
+      "path": "./libs/sdk/main"
     }
   ]
 }

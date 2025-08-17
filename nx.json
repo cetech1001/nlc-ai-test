@@ -36,7 +36,13 @@
         "libs/api/database/*",
         "libs/api/messaging/*",
         "libs/api/validation/*",
-        "libs/api/auth/*"
+        "libs/api/auth/*",
+        "libs/sdk/core/*",
+        "libs/sdk/users/*",
+        "libs/sdk/auth/*",
+        "libs/sdk/email/*",
+        "libs/sdk/billing/*",
+        "libs/sdk/main/*"
       ]
     },
     {
@@ -94,7 +100,13 @@
         "libs/api/database/*",
         "libs/api/messaging/*",
         "libs/api/validation/*",
-        "libs/api/auth/*"
+        "libs/api/auth/*",
+        "libs/sdk/core/*",
+        "libs/sdk/users/*",
+        "libs/sdk/auth/*",
+        "libs/sdk/email/*",
+        "libs/sdk/billing/*",
+        "libs/sdk/main/*"
       ],
       "options": {
         "typecheck": {
