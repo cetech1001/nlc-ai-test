@@ -76,3 +76,10 @@ jest.config.js
 **/*.test.ts
 
 pgadmin
+
+docs
+
+apps/web
+
+libs/sdk
+libs/web

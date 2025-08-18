@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "apps/api/gateway/Dockerfile"
+
+[deploy]
+preDeployCommand = ["npm run db:deploy"]
+healthcheckPath = "/api/ready"
+healthcheckTimeout = 100
+restartPolicyType = "never"

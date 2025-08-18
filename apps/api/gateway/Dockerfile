@@ -19,26 +19,22 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./
 
-COPY nx.json ./
-COPY tsconfig.json ./
-COPY tsconfig.base.json ./
-COPY package*.json ./
-COPY libs/api ./libs/api
-COPY apps/api/auth ./apps/api/auth
+COPY . .
 
 RUN npx nx sync
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
-RUN NX_DAEMON=false npx nx build auth-service
+RUN NX_DAEMON=false npx nx build gateway-service
 
 FROM base AS runner
 WORKDIR /app
 
+#ARG NODE_ENV
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-COPY --from=builder /app/apps/api/auth/dist ./apps/api/auth/dist
+COPY --from=builder /app/apps/api/gateway/dist ./apps/api/gateway/dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/libs/api/database ./libs/api/database
 
@@ -52,4 +48,4 @@ USER nestjs
 EXPOSE 3000
 ENV PORT=3000
 
-CMD ["node", "apps/api/auth/dist/main.js"]
+CMD ["node", "apps/api/gateway/dist/main.js"]
