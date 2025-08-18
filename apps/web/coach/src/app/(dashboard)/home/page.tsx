@@ -10,7 +10,7 @@ import {
   TestimonialOpportunity,
   TopPerformingContent,
   ClientEmailWidget,
-  CoachConfidenceScore
+  CoachConfidenceScore, sdkClient
 } from "@/lib";
 import {
   Flag,
@@ -23,7 +23,7 @@ import {
   MessageCircleHeart,
   Lightbulb
 } from "lucide-react";
-import { AnalyticsServiceClient, CoachDashboardData } from '@nlc-ai/sdk-analytics';
+import { CoachDashboardData } from '@nlc-ai/sdk-analytics';
 
 const CoachHome = () => {
   const [dashboardData, setDashboardData] = useState<CoachDashboardData | null>(null);
@@ -43,11 +43,7 @@ const CoachHome = () => {
       const coachID = 'current-coach-id';
 
       // Create analytics client - TODO: Get config from app config
-      const analyticsClient = new AnalyticsServiceClient({
-        baseURL: process.env.NEXT_PUBLIC_API_URL + '/api/analytics' || 'http://localhost:3000/api/analytics'
-      });
-
-      const data = await analyticsClient.getCoachDashboard(coachID);
+      const data = await sdkClient.analytics.getCoachDashboard(coachID);
       setDashboardData(data);
     } catch (err: any) {
       setError('Failed to load dashboard data');

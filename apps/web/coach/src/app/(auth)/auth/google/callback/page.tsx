@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@nlc-ai/web-auth';
 import {UserType} from "@nlc-ai/types";
+import config from "@/config/app.config";
 
 const GoogleAuthCallbackPage = () => {
   const router = useRouter();
@@ -14,7 +15,7 @@ const GoogleAuthCallbackPage = () => {
     const token = searchParams.get('token');
 
     if (token) {
-      localStorage.setItem('adminToken', token);
+      localStorage.setItem(config.auth.tokenKey, token);
 
       checkAuthStatus(UserType.coach).then(() => {
         router.push('/home');

@@ -9,7 +9,8 @@ import {
 } from 'class-validator';
 import {Type, Transform} from "class-transformer";
 import { InvoiceStatus } from '@prisma/client';
-import {AmountRangeDto, DateRangeDto, InvoiceFilters} from '@nlc-ai/api-types';
+import {InvoiceFilters} from '@nlc-ai/api-types';
+import {AmountRangeDto, DateRangeDto} from "@nlc-ai/api-dto";
 
 export class InvoiceFiltersDto implements InvoiceFilters {
   @ApiProperty({ required: false })

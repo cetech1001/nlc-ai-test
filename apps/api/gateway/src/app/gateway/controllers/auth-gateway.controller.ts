@@ -20,7 +20,7 @@ export class AuthGatewayController {
   @All('*')
   async proxyToAuth(@Req() req: Request, @Res() res: Response) {
     // Extract the path after /api/auth
-    const path = req.url.replace(/^\/auth/, '');
+    const path = req.path.replace(/^\/auth/, '');
     // const fullPath = `/api/auth${path}`;
 
     // Special handling for profile GET requests - check cache first

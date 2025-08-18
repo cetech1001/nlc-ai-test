@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {IsOptional, IsBoolean, IsString, ValidateNested} from 'class-validator';
 import {Type, Transform} from "class-transformer";
-import {AmountRangeDto, PlanFilters} from '@nlc-ai/api-types';
+import {PlanFilters} from '@nlc-ai/api-types';
+import {AmountRangeDto} from "@nlc-ai/api-dto";
 
 export class PlanFiltersDto implements PlanFilters {
   @ApiProperty({ required: false })

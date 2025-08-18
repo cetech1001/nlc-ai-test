@@ -1,65 +1,53 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import {ClientWithDetails, DataTableClient, TableColumn} from "@nlc-ai/types";
-import {Edit3, Mailbox} from "lucide-react";
-
-export const transformClientData = (clients: ClientWithDetails[]): DataTableClient[] => {
-  return clients.map(client => ({
-    id: `#${client.id.slice(-4)}`,
-    name: `${client.firstName} ${client.lastName}`,
-    email: client.email,
-    firstCourseBoughtOn: client.courseEnrollments?.[0]?.enrolledAt
-      ? new Date(client.courseEnrollments[0].enrolledAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      })
-      : 'No courses',
-    coursesBought: client.coursesBought,
-    coursesCompleted: client.coursesCompleted,
-    originalID: client.id,
-  }));
-};
+import { TableColumn } from "@nlc-ai/types";
+import {ClientWithDetails} from "@nlc-ai/api-types";
+import { Edit3, Mailbox } from "lucide-react";
 
 const colWidth = 100 / 6;
 
-export const clientColumns: TableColumn<DataTableClient>[] = [
+export const clientColumns: TableColumn<ClientWithDetails>[] = [
   {
     key: 'name',
     header: 'Name',
     width: `${colWidth}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 18)
+    render: (_, client: ClientWithDetails) =>
+      tableRenderers.truncateText(`${client.firstName} ${client.lastName}`, 18)
   },
   {
     key: 'email',
     header: 'Email',
     width: `${colWidth * (5 / 3)}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 25)
+    render: (_, client: ClientWithDetails) =>
+      tableRenderers.truncateText(client.email, 25)
   },
   {
-    key: 'firstCourseBoughtOn',
-    header: 'First Course Bought On',
+    key: 'createdAt',
+    header: 'Date Joined',
     width: `${colWidth}%`,
-    render: tableRenderers.dateText
+    render: (_, client: ClientWithDetails) =>
+      client.createdAt ? tableRenderers.dateText(client.createdAt.toString()) : 'N/A'
   },
   {
     key: 'coursesBought',
     header: 'Courses Bought',
     width: `${colWidth * 0.6}%`,
-    render: tableRenderers.basicText
+    render: (_, client: ClientWithDetails) =>
+      tableRenderers.basicText(client.coursesBought.toString())
   },
   {
     key: 'coursesCompleted',
     header: 'Completed',
     width: `${colWidth * 0.6}%`,
-    render: tableRenderers.basicText
+    render: (_, client: ClientWithDetails) =>
+      tableRenderers.basicText(client.coursesCompleted.toString())
   },
   {
     key: 'actions',
     header: 'Actions',
     width: 'auto',
-    render: (_: string, client: DataTableClient, onRowAction?: (action: string, row: any) => void) => {
+    render: (_, client: ClientWithDetails, onRowAction?: (action: string, row: any) => void) => {
       return (
-        <div className={"flex gap-3"}>
+        <div className="flex gap-3">
           <button
             onClick={() => onRowAction?.('edit', client)}
             className="p-1.5 rounded text-xs bg-purple-600/20 text-fuchsia-400 hover:bg-purple-600/30 transition-colors"
@@ -70,8 +58,9 @@ export const clientColumns: TableColumn<DataTableClient>[] = [
           <button
             onClick={() => onRowAction?.('view-emails', client)}
             className="px-3 py-1 rounded text-sm bg-purple-600/20 text-fuchsia-400 hover:bg-purple-600/30 transition-colors"
+            title="View Emails"
           >
-            <Mailbox className={"w-4 h-4"}/>
+            <Mailbox className="w-4 h-4"/>
           </button>
           <button
             onClick={() => onRowAction?.('view-details', client)}

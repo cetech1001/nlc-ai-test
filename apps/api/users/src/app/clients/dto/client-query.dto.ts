@@ -1,17 +1,19 @@
-import { IsOptional, IsString, IsDateString, IsNumberString, IsUUID } from 'class-validator';
+import {IsOptional, IsString, IsDateString, IsNumberString, IsUUID, IsInt} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { ClientQueryParams } from '@nlc-ai/api-types';
+import {Transform} from "class-transformer";
 
 export class ClientQueryDto implements ClientQueryParams {
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
-  @Type(() => Number)
+  @Transform(v => +v.value)
+  @IsInt()
   page?: number = 1;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 10 })
   @IsOptional()
-  @Type(() => Number)
+  @Transform(v => +v.value)
+  @IsInt()
   limit?: number = 10;
 
   @ApiPropertyOptional({ description: 'Filter by client status' })

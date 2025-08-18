@@ -372,7 +372,7 @@ export class ClientAuthService {
   }
 
   async findByUserID(id: string) {
-    return this.prisma.client.findUnique({
+    const data = await this.prisma.client.findUnique({
       where: { id, isActive: true },
       select: {
         id: true,
@@ -383,6 +383,8 @@ export class ClientAuthService {
         phone: true,
       },
     });
+
+    return { ...data, type: UserType.client };
   }
 
   // HELPER METHODS

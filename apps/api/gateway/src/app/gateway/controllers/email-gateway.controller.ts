@@ -17,7 +17,7 @@ export class EmailGatewayController {
   @All('*')
   async proxyToEmail(@Req() req: Request, @Res() res: Response) {
     // Extract the path after /api/email
-    const path = req.url.replace(/^\/email/, '');
+    const path = req.path.replace(/^\/email/, '');
 
     const response = await this.proxyService.proxyRequest(
       'email',
@@ -30,7 +30,9 @@ export class EmailGatewayController {
       }
     );
 
-    return res.status(response.status).json(response.data);
+    res.status(response.status)
+
+return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

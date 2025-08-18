@@ -1,3 +1,5 @@
+import {UserType} from "@nlc-ai/api-types";
+
 export interface LoginResponse {
   access_token: string;
   user: {
@@ -7,6 +9,7 @@ export interface LoginResponse {
     lastName: string;
     role?: string;
     avatarUrl?: string;
+    type: UserType
   };
 }
 

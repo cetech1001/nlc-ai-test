@@ -7,7 +7,7 @@ import {LoginResponse, UpdatePasswordRequest, UpdateProfileRequest} from "../typ
 class AuthAPI extends BaseAPI{
   private setToken(token: string): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('adminToken', token);
+    localStorage.setItem('nlc_auth_token', token);
   }
 
   async login(

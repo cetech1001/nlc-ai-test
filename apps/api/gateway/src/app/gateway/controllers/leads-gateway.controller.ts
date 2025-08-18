@@ -16,7 +16,7 @@ export class LeadsGatewayController {
   @All('*')
   async proxyToLeads(@Req() req: Request, @Res() res: Response) {
     // Extract the path after /api/leads
-    const path = req.url.replace(/^\/leads/, '');
+    const path = req.path.replace(/^\/leads/, '');
 
     const response = await this.proxyService.proxyRequest(
       'leads',
@@ -29,7 +29,9 @@ export class LeadsGatewayController {
       }
     );
 
-    return res.status(response.status).json(response.data);
+    res.status(response.status)
+
+return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

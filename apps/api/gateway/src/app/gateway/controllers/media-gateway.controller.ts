@@ -17,7 +17,7 @@ export class MediaGatewayController {
   @All('*')
   async proxyToMedia(@Req() req: Request, @Res() res: Response) {
     // Extract the path after /api/media
-    const path = req.url.replace(/^\/media/, '');
+    const path = req.path.replace(/^\/media/, '');
 
     // Handle multipart/form-data for file uploads
     let requestData = req.body;
@@ -41,7 +41,9 @@ export class MediaGatewayController {
       }
     );
 
-    return res.status(response.status).json(response.data);
+    res.status(response.status)
+
+return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

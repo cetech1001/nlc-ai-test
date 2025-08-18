@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClientForm } from "@/lib/components/clients/client-form";
-import { ClientFormSkeleton } from "@/lib";
-import { clientsAPI } from "@nlc-ai/web-api-client";
-import {ClientFormData, ClientWithDetails} from "@nlc-ai/types";
+import {ClientFormSkeleton, sdkClient} from "@/lib";
+import { formatDate } from "@nlc-ai/web-utils";
+import {ClientFormData} from "@nlc-ai/types";
+import {ClientWithDetails} from "@nlc-ai/api-types";
 import { BackTo } from "@nlc-ai/web-shared";
 import { User, CheckCircle } from "lucide-react";
 
@@ -29,7 +30,7 @@ const EditClient = () => {
   const loadClient = async (id: string) => {
     try {
       setIsLoadingClient(true);
-      const client = await clientsAPI.getClient(id);
+      const client = await sdkClient.users.getClient(id);
       setOriginalClient(client);
     } finally {
       setIsLoadingClient(false);
@@ -38,7 +39,7 @@ const EditClient = () => {
 
   const handleEditClient = async (requestData: ClientFormData) => {
     if (clientID) {
-      await clientsAPI.updateClient(clientID, requestData);
+      await sdkClient.users.updateClient(clientID, requestData);
       router.push("/clients?success=Client updated successfully");
     }
   };
@@ -79,6 +80,7 @@ const EditClient = () => {
         <div className="lg:col-span-2">
           <ClientForm
             type="edit"
+            originalClient={originalClient}
             onAction={handleEditClient}
             onDiscard={handleDiscard}
           />
@@ -124,7 +126,7 @@ const EditClient = () => {
                   <div className="bg-[#1A1A1A]/50 border border-[#2A2A2A] rounded-xl p-4">
                     <div className="text-[#A0A0A0] text-xs font-medium mb-2">MEMBER SINCE</div>
                     <div className="text-white text-sm">
-                      {originalClient && new Date(originalClient.createdAt).toLocaleDateString('en-US', {
+                      {originalClient && new Date(originalClient.createdAt!).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric'
@@ -174,11 +176,7 @@ const EditClient = () => {
                     <div>
                       <div className="text-white text-sm">Joined Program</div>
                       <div className="text-[#A0A0A0] text-xs">
-                        {originalClient && new Date(originalClient.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
+                        {originalClient && formatDate(originalClient.createdAt!)}
                       </div>
                     </div>
                   </div>

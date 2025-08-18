@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsArray, IsEnum, IsDateString, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { PaginationDto } from '@nlc-ai/api-types';
+import { PaginationDto } from '@nlc-ai/api-dto';
 
 export enum MediaResourceType {
   IMAGE = 'image',

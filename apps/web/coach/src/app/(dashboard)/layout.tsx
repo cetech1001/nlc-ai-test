@@ -5,7 +5,7 @@ import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/web-auth";
 import {menuItems, pageConfig, settingsItems} from "@/lib";
-import {UserType} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/api-types";
 
 
 interface DashboardLayoutProps {

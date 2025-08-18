@@ -5,7 +5,8 @@ import {
 } from "@nlc-ai/web-ui";
 import { X, Plus, User, Mail, Phone, Tag, Users } from "lucide-react";
 import {useEffect, useState} from "react";
-import {ClientFormData, ClientFormErrors, ClientWithDetails} from "@nlc-ai/types";
+import {ClientWithDetails} from "@nlc-ai/api-types";
+import {ClientFormData, ClientFormErrors} from "@nlc-ai/types";
 
 const sourceOptions = [
   { value: 'website', label: 'Website' },

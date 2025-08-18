@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {LoginResponse} from "../types";
 import {authAPI} from "../api";
-import {AUTH_TYPES, UserType} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/types";
 
 interface AuthState {
   user: LoginResponse['user'] | null;
@@ -11,7 +11,7 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-export const useAuth = (role?: AUTH_TYPES) => {
+export const useAuth = (userType?: UserType) => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -19,10 +19,10 @@ export const useAuth = (role?: AUTH_TYPES) => {
   });
 
   useEffect(() => {
-    checkAuthStatus(role);
-  }, [role]);
+    checkAuthStatus(userType);
+  }, [userType]);
 
-  const checkAuthStatus = async (role?: AUTH_TYPES) => {
+  const checkAuthStatus = async (userType?: UserType) => {
     try {
       if (!authState.isLoading) {
         setAuthState(prevState => ({
@@ -32,8 +32,8 @@ export const useAuth = (role?: AUTH_TYPES) => {
       }
       const user = await authAPI.getProfile();
 
-      if (role) {
-        if ((user.role && user.role !== role) || (!user.role && role === UserType.admin)) {
+      if (userType) {
+        if ((user.type && user.type !== userType) || (!user.type && userType === UserType.admin)) {
           throw new Error('Unauthorised');
         }
       }
@@ -56,7 +56,7 @@ export const useAuth = (role?: AUTH_TYPES) => {
   const login = async (
     email: string,
     password: string,
-    userType: AUTH_TYPES,
+    userType: UserType,
     rememberMe?: boolean,
   ) => {
     try {

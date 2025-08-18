@@ -101,6 +101,9 @@
     },
     {
       "path": "./libs/sdk/analytics"
+    },
+    {
+      "path": "./libs/api/dto"
     }
   ]
 }

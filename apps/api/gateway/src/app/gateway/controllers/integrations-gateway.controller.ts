@@ -17,7 +17,7 @@ export class NotificationsGatewayController {
   @All('*')
   async proxyToNotifications(@Req() req: Request, @Res() res: Response) {
     // Extract the path after /api/integrations
-    const path = req.url.replace(/^\/integrations/, '');
+    const path = req.path.replace(/^\/integrations/, '');
 
     const response = await this.proxyService.proxyRequest(
       'integrations',
@@ -30,7 +30,9 @@ export class NotificationsGatewayController {
       }
     );
 
-    return res.status(response.status).json(response.data);
+    res.status(response.status)
+
+return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

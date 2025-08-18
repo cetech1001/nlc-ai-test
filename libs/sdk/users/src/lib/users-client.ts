@@ -8,6 +8,7 @@ import {
   CoachQueryParams,
   CoachWithStatus,
   Paginated,
+  ClientStats,
 } from '@nlc-ai/api-types';
 
 export class UsersServiceClient extends BaseServiceClient {
@@ -26,6 +27,11 @@ export class UsersServiceClient extends BaseServiceClient {
       'GET',
       `/clients?${searchParams}`
     );
+    return response.data!;
+  }
+
+  async getClientStats(): Promise<ClientStats> {
+    const response = await this.request<ClientStats>('GET', '/clients/stats');
     return response.data!;
   }
 
@@ -89,7 +95,7 @@ export class UsersServiceClient extends BaseServiceClient {
     return response.data!;
   }
 
-  async inviteClient(email: string, coachID: string, message?: string) {
+  async inviteClient(email: string, coachID?: string, message?: string) {
     const response = await this.request('POST', '/invites', {
       body: { email, coachID, message }
     });

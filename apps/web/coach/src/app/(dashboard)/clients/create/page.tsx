@@ -2,8 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
-import { ClientForm } from "@/lib";
-import { clientsAPI } from "@nlc-ai/web-api-client";
+import {ClientForm, sdkClient} from "@/lib";
 import {ClientFormData, CreateClient} from "@nlc-ai/types";
 import { BackTo } from "@nlc-ai/web-shared";
 
@@ -11,7 +10,7 @@ const CreateNewClient = () => {
   const router = useRouter();
 
   const handleCreateClient = async (requestData: ClientFormData) => {
-    await clientsAPI.createClient(requestData  as CreateClient);
+    await sdkClient.users.createClient(requestData as CreateClient);
     router.push("/clients?success=Client created successfully");
   };
 

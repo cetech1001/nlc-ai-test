@@ -7,6 +7,9 @@
       "path": "../../../libs/types"
     },
     {
+      "path": "../../../libs/api/dto"
+    },
+    {
       "path": "../../../libs/api/types"
     },
     {

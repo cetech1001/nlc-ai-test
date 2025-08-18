@@ -2,10 +2,9 @@ import {
   Controller,
   All,
   Req,
-  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 import { CacheService } from '../../cache/cache.service';
 
@@ -19,9 +18,11 @@ export class UsersGatewayController {
   ) {}
 
   @All('*')
-  async proxyToUsers(@Req() req: Request, @Res() res: Response) {
+  async proxyToUsers(@Req() req: Request) {
     // Extract the path after /api/users
-    const path = req.url.replace(/^\/users/, '');
+    const path = req.path.replace(/^\/users/, '');
+
+    console.log("Path: ", path);
 
     // Cache coaches list for 2 minutes
     if (req.method === 'GET' && path.startsWith('/coaches') && !path.includes('/stats') && !path.includes('/kpis')) {
@@ -29,7 +30,7 @@ export class UsersGatewayController {
       const cached = await this.cacheService.get(cacheKey);
 
       if (cached) {
-        return res.json(cached);
+        return cached;
       }
     }
 
@@ -50,7 +51,8 @@ export class UsersGatewayController {
       await this.cacheService.set(cacheKey, response.data, 120); // 2 minutes
     }
 
-    return res.status(response.status).json(response.data);
+    // res.status(response.status);
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

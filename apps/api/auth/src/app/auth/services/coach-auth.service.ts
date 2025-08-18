@@ -303,8 +303,8 @@ export class CoachAuthService {
     }, false);
   }
 
-  findByUserID(id: string) {
-    return this.prisma.coach.findUnique({
+  async findByUserID(id: string) {
+    const data = await this.prisma.coach.findUnique({
       where: { id, isActive: true },
       select: {
         id: true,
@@ -320,6 +320,10 @@ export class CoachAuthService {
         phone: true,
       },
     });
+    return {
+      ...data,
+      type: UserType.coach,
+    }
   }
 
   // HELPER METHODS

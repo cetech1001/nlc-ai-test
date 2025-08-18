@@ -17,7 +17,7 @@ export class BillingGatewayController {
   @All('*')
   async proxyToBilling(@Req() req: Request, @Res() res: Response) {
     // Extract the path after /api/billing
-    const path = req.url.replace(/^\/billing/, '');
+    const path = req.path.replace(/^\/billing/, '');
     // const fullPath = `/api/billing${path}`;
 
     const response = await this.proxyService.proxyRequest(
@@ -31,7 +31,9 @@ export class BillingGatewayController {
       }
     );
 
-    return res.status(response.status).json(response.data);
+    res.status(response.status)
+
+return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

@@ -137,7 +137,7 @@ export class AdminAuthService {
   }
 
   async findByUserID(id: string) {
-    return this.prisma.admin.findUnique({
+    const data = await this.prisma.admin.findUnique({
       where: { id, isActive: true },
       select: {
         id: true,
@@ -148,5 +148,10 @@ export class AdminAuthService {
         avatarUrl: true,
       },
     });
+
+    return {
+      ...data,
+      type: UserType.admin,
+    }
   }
 }
