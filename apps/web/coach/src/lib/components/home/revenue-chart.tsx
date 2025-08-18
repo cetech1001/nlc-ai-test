@@ -1,18 +1,22 @@
-import React, {useState} from "react";
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import React, { useState } from "react";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { TrendingUp } from "lucide-react";
 
-const revenueData = [
-  { date: 'Jun 07', revenue: 4500 },
-  { date: 'Jun 08', revenue: 4200 },
-  { date: 'Jun 09', revenue: 4800 },
-  { date: 'Jun 10', revenue: 5500 },
-  { date: 'Jun 11', revenue: 5200 },
-  { date: 'Jun 12', revenue: 5800 },
-  { date: 'Jun 13', revenue: 6000 }
-];
+interface RevenueData {
+  date: string;
+  revenue: number;
+}
 
-export const RevenueChart = () => {
+interface IProps {
+  data: RevenueData[];
+  growth: number;
+}
+
+export const RevenueChart = ({ data, growth }: IProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState("Custom");
+
+  const hasRevenue = data.some(item => item.revenue > 0);
+  // const maxRevenue = Math.max(...data.map(item => item.revenue));
 
   return (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden h-full">
@@ -27,7 +31,7 @@ export const RevenueChart = () => {
               Revenue Growth
             </h2>
             <p className="text-stone-300 text-sm leading-relaxed">
-              +23.5% increase from last month.
+              {hasRevenue ? `+${growth}% increase from last month.` : 'Track your revenue progress here.'}
             </p>
           </div>
 
@@ -52,61 +56,67 @@ export const RevenueChart = () => {
           </div>
         </div>
 
-        <div className="flex-1 relative min-h-[200px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={revenueData}
-              margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-            >
-              <defs>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#C084FC" stopOpacity={0.2}/>
-                  <stop offset="100%" stopColor="#581C87" stopOpacity={0.05}/>
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#A3A3A3", fontSize: 12 }}
-              />
-              <YAxis hide />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1A1A1A",
-                  border: "1px solid #404040",
-                  borderRadius: "8px",
-                  color: "#ffffff",
-                }}
-                formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
-              />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#C084FC"
-                strokeWidth={3}
-                dot={false}
-                fill="url(#revenueGradient)"
-                activeDot={{
-                  r: 6,
-                  fill: "#C084FC",
-                  stroke: "#ffffff",
-                  strokeWidth: 2
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-
-          <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
-            <div className="bg-[#7B21BA] text-white px-3 py-2 rounded-lg text-sm font-medium relative">
-              Jun 10, 2025
-              <div className="text-center text-lg font-bold">$5,500</div>
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">
-                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[#7B21BA]"></div>
+        {hasRevenue ? (
+          <div className="flex-1 relative min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={data}
+                margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+              >
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#C084FC" stopOpacity={0.2}/>
+                    <stop offset="100%" stopColor="#581C87" stopOpacity={0.05}/>
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#A3A3A3", fontSize: 12 }}
+                />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1A1A1A",
+                    border: "1px solid #404040",
+                    borderRadius: "8px",
+                    color: "#ffffff",
+                  }}
+                  formatter={(value) => [`${value.toLocaleString()}`, "Revenue"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#C084FC"
+                  strokeWidth={3}
+                  dot={false}
+                  fill="url(#revenueGradient)"
+                  activeDot={{
+                    r: 6,
+                    fill: "#C084FC",
+                    stroke: "#ffffff",
+                    strokeWidth: 2
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
+            <div className="text-center">
+              <div className="mb-4">
+                <TrendingUp className="w-16 h-16 text-stone-600 mx-auto" />
               </div>
+              <p className="text-stone-400 text-sm mb-2">
+                No revenue data yet.
+              </p>
+              <p className="text-stone-500 text-xs">
+                Connect your payment systems to track revenue growth.
+              </p>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

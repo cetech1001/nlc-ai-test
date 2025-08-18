@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, FC } from 'react';
+import { FC } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Mail,
@@ -12,66 +12,38 @@ import {
   Zap,
   TrendingUp
 } from 'lucide-react';
-import { aiAgentsAPI } from '@nlc-ai/web-api-client';
-import { ClientEmailStats/*, ClientEmailThread*/ } from '@nlc-ai/types';
-import {ClientEmailWidgetSkeleton} from "./skeletons";
+
+interface ClientEmailStats {
+  pendingResponses: number;
+  emailsProcessedToday: number;
+  emailsProcessedThisWeek: number;
+  averageResponseTime: number;
+  lastSyncAt: Date | null;
+  clientEmailsFound: number;
+}
 
 interface IProps {
   className?: string;
+  stats: ClientEmailStats;
 }
 
-export const ClientEmailWidget: FC<IProps> = ({ className = '' }) => {
+export const ClientEmailWidget: FC<IProps> = ({ className = '', stats }) => {
   const router = useRouter();
-  const [stats, setStats] = useState<ClientEmailStats | null>(null);
-  // const [recentThreads, setRecentThreads] = useState<ClientEmailThread[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [error, setError] = useState<string>('');
-
-  useEffect(() => {
-    (() => loadData())();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      setError('');
-
-      const [statsData/*, threadsData*/] = await Promise.all([
-        aiAgentsAPI.getClientEmailStats(),
-        // aiAgentsAPI.getClientEmailThreads(3, 'active')
-      ]);
-
-      setStats(statsData);
-      // setRecentThreads(threadsData);
-    } catch (err: any) {
-      setError('Failed to load email data');
-      console.error('Error loading client email data:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSync = async () => {
     try {
-      setIsSyncing(true);
-      await aiAgentsAPI.syncClientEmails();
-      await loadData(); // Refresh data after sync
+      // TODO: Implement sync via analytics service or separate AI agents service
+      console.log('Sync requested - implement via proper service');
+      // Trigger dashboard refresh instead
+      window.location.reload();
     } catch (err: any) {
-      setError('Failed to sync emails');
       console.error('Error syncing emails:', err);
-    } finally {
-      setIsSyncing(false);
     }
   };
 
   const handleViewAll = () => {
     router.push('/clients/emails');
   };
-
-  /*const handleViewThread = (threadID: string) => {
-    router.push(`/clients/emails/${threadID}`);
-  };*/
 
   const formatLastSync = (date: Date | null) => {
     if (!date) return 'Never';
@@ -90,10 +62,6 @@ export const ClientEmailWidget: FC<IProps> = ({ className = '' }) => {
     return `${days}d ago`;
   };
 
-  if (isLoading) {
-    return <ClientEmailWidgetSkeleton/>;
-  }
-
   return (
     <div className={`relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden ${className}`}>
       {/* Background glow orb */}
@@ -103,19 +71,18 @@ export const ClientEmailWidget: FC<IProps> = ({ className = '' }) => {
 
       <div className="relative z-10">
         {/* Header */}
-        <div className="flex justify-between mb-6">
-          <div className="flex flex-col gap-4">
-            <div className="h-12 flex items-center justify-between">
+        <div className="flex justify-between mb-6 w-full">
+          <div className="flex flex-col gap-4 w-full">
+            <div className="h-12 flex items-center justify-between w-full">
               <div className={"h-full w-12 flex items-center justify-center bg-gradient-to-br from-fuchsia-600 to-violet-600 rounded-xl"}>
                 <Mail className="w-6 h-6 text-white" />
               </div>
               <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={handleSync}
-                  disabled={isSyncing}
-                  className="p-2 border border-neutral-700 text-stone-300 hover:text-white hover:border-fuchsia-500 transition-colors rounded-lg disabled:opacity-50"
+                  className="p-2 border border-neutral-700 text-stone-300 hover:text-white hover:border-fuchsia-500 transition-colors rounded-lg"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className="w-4 h-4" />
                 </button>
 
                 <button
@@ -136,60 +103,54 @@ export const ClientEmailWidget: FC<IProps> = ({ className = '' }) => {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-
         {/* Stats Grid */}
-        {stats && (
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="space-y-1">
-              <div className="text-stone-300 text-sm">Pending</div>
-              <div className="flex items-center gap-2">
-                <span className="text-white text-lg font-semibold">{stats.pendingResponses}</span>
-                {stats.pendingResponses > 0 && (
-                  <AlertCircle className="w-4 h-4 text-orange-400" />
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-stone-300 text-sm">Today</div>
-              <div className="flex items-center gap-2">
-                <span className="text-white text-lg font-semibold">{stats.emailsProcessedToday}</span>
-                <Zap className="w-4 h-4 text-fuchsia-400" />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-stone-300 text-sm">This Week</div>
-              <div className="flex items-center gap-2">
-                <span className="text-white text-lg font-semibold">{stats.emailsProcessedThisWeek}</span>
-                <TrendingUp className="w-4 h-4 text-green-400" />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-stone-300 text-sm">Avg Response</div>
-              <div className="flex items-center gap-2">
-                <span className="text-white text-lg font-semibold">{stats.averageResponseTime}m</span>
-                <Clock className="w-4 h-4 text-violet-400" />
-              </div>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="space-y-1">
+            <div className="text-stone-300 text-sm">Pending</div>
+            <div className="flex items-center gap-2">
+              <span className="text-white text-lg font-semibold">{stats.pendingResponses}</span>
+              {stats.pendingResponses > 0 && (
+                <AlertCircle className="w-4 h-4 text-orange-400" />
+              )}
             </div>
           </div>
-        )}
+
+          <div className="space-y-1">
+            <div className="text-stone-300 text-sm">Today</div>
+            <div className="flex items-center gap-2">
+              <span className="text-white text-lg font-semibold">{stats.emailsProcessedToday}</span>
+              <Zap className="w-4 h-4 text-fuchsia-400" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-stone-300 text-sm">This Week</div>
+            <div className="flex items-center gap-2">
+              <span className="text-white text-lg font-semibold">{stats.emailsProcessedThisWeek}</span>
+              <TrendingUp className="w-4 h-4 text-green-400" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-stone-300 text-sm">Avg Response</div>
+            <div className="flex items-center gap-2">
+              <span className="text-white text-lg font-semibold">
+                {stats.averageResponseTime > 0 ? `${stats.averageResponseTime}m` : 'N/A'}
+              </span>
+              <Clock className="w-4 h-4 text-violet-400" />
+            </div>
+          </div>
+        </div>
 
         {/* Last Sync Status */}
         <div className="flex items-center justify-between p-3 bg-neutral-800/50 rounded-lg">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-green-400" />
             <span className="text-stone-300 text-sm">Last sync:</span>
-            <span className="text-white text-sm">{formatLastSync(stats?.lastSyncAt || null)}</span>
+            <span className="text-white text-sm">{formatLastSync(stats.lastSyncAt)}</span>
           </div>
 
-          {stats && stats.clientEmailsFound > 0 && (
+          {stats.clientEmailsFound > 0 && (
             <div className="text-stone-400 text-sm">
               {stats.clientEmailsFound} client emails found
             </div>
@@ -197,7 +158,7 @@ export const ClientEmailWidget: FC<IProps> = ({ className = '' }) => {
         </div>
 
         {/* Action prompt for pending responses */}
-        {stats && stats.pendingResponses > 0 && (
+        {stats.pendingResponses > 0 && (
           <div className="mt-4 p-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -213,6 +174,17 @@ export const ClientEmailWidget: FC<IProps> = ({ className = '' }) => {
               >
                 Review →
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state for new coaches */}
+        {stats.clientEmailsFound === 0 && stats.emailsProcessedToday === 0 && (
+          <div className="mt-4 p-3 bg-neutral-800/30 border border-neutral-700 rounded-lg">
+            <div className="text-center">
+              <p className="text-stone-400 text-sm">
+                No client emails yet. Connect your email to start processing client communications automatically.
+              </p>
             </div>
           </div>
         )}

@@ -23,6 +23,9 @@
   ],
   "references": [
     {
+      "path": "../analytics/tsconfig.lib.json"
+    },
+    {
       "path": "../../api/types/tsconfig.lib.json"
     },
     {

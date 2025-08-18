@@ -1,6 +1,18 @@
-import {Phone} from "lucide-react";
+import { Phone } from "lucide-react";
 
-export const LeadsFollowUpWidget = () => {
+interface LeadsFollowUpData {
+  leadsOpenedLastEmail: number;
+  bookedCalls: number;
+  ghostedAgain: number;
+}
+
+interface IProps {
+  data: LeadsFollowUpData;
+}
+
+export const LeadsFollowUpWidget = ({ data }: IProps) => {
+  const hasActivity = data.leadsOpenedLastEmail > 0 || data.bookedCalls > 0 || data.ghostedAgain > 0;
+
   return (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -8,7 +20,7 @@ export const LeadsFollowUpWidget = () => {
       </div>
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 sm:w-8 h-12 sm:h-8 bg-green-500 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
             <Phone className="w-6 h-6 text-white" />
           </div>
           <h3 className="text-stone-50 text-md font-medium leading-relaxed">
@@ -16,11 +28,19 @@ export const LeadsFollowUpWidget = () => {
           </h3>
         </div>
 
-        <div className="space-y-2 text-stone-300 text-sm">
-          <p>2 leads opened last email.</p>
-          <p>1 booked a call.</p>
-          <p>1 ghosted again.</p>
-        </div>
+        {hasActivity ? (
+          <div className="space-y-2 text-stone-300 text-sm">
+            <p>{data.leadsOpenedLastEmail} leads opened last email.</p>
+            <p>{data.bookedCalls} booked a call.</p>
+            <p>{data.ghostedAgain} ghosted again.</p>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-stone-400 text-sm">
+              No lead activity yet. Your first leads will appear here once captured.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

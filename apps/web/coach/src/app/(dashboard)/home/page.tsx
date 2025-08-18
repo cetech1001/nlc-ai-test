@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react';
 import { StatCard } from "@nlc-ai/web-shared";
 import {
   LeadsFollowUpWidget,
@@ -8,7 +9,8 @@ import {
   RevenueChart,
   TestimonialOpportunity,
   TopPerformingContent,
-  ClientEmailWidget, CoachConfidenceScore
+  ClientEmailWidget,
+  CoachConfidenceScore
 } from "@/lib";
 import {
   Flag,
@@ -18,94 +20,162 @@ import {
   Trophy,
   Users,
   MessagesSquare,
-  MessageCircleHeart, Lightbulb
+  MessageCircleHeart,
+  Lightbulb
 } from "lucide-react";
-
-const priorityList = [
-  {
-    icon: Mail,
-    label: "Emails To Approve",
-    count: 3,
-    color: "text-fuchsia-400"
-  },
-  {
-    icon: TriangleAlert,
-    label: "Clients At Risk",
-    count: 2,
-    color: "text-purple-400"
-  },
-  {
-    icon: Flag,
-    label: "Survey Responses Flagged",
-    count: 5,
-    color: "text-red-400"
-  },
-  {
-    icon: Trophy,
-    label: "Clients Nearing Completion",
-    count: 1,
-    color: "text-yellow-400"
-  },
-  {
-    icon: MessageCircleWarning,
-    label: "Chat Bot Escalations",
-    count: 8,
-    color: "text-orange-400"
-  }
-];
-
-const agentStats = [
-  {
-    icon: Users,
-    label: "Leads Captured",
-    count: 10,
-    color: "text-fuchsia-400"
-  },
-  {
-    icon: Mail,
-    label: "Follow Up Emails Sent",
-    count: 10,
-    color: "text-purple-400"
-  },
-  {
-    icon: MessagesSquare,
-    label: "Feedback Surveys Sent",
-    count: 3,
-    color: "text-red-400"
-  },
-  {
-    icon: MessageCircleHeart,
-    label: "Testimonials Received",
-    count: 1,
-    color: "text-yellow-400"
-  },
-  {
-    icon: Lightbulb,
-    label: "Content Ideas Generated",
-    count: 8,
-    color: "text-orange-400"
-  }
-];
+import { AnalyticsServiceClient, CoachDashboardData } from '@nlc-ai/sdk-analytics';
 
 const CoachHome = () => {
+  const [dashboardData, setDashboardData] = useState<CoachDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    (() => loadDashboardData())();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+
+      // TODO: Get actual coachID from auth context
+      const coachID = 'current-coach-id';
+
+      // Create analytics client - TODO: Get config from app config
+      const analyticsClient = new AnalyticsServiceClient({
+        baseURL: process.env.NEXT_PUBLIC_API_URL + '/api/analytics' || 'http://localhost:3000/api/analytics'
+      });
+
+      const data = await analyticsClient.getCoachDashboard(coachID);
+      setDashboardData(data);
+    } catch (err: any) {
+      setError('Failed to load dashboard data');
+      console.error('Error loading dashboard:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /*if (isLoading) {
+    return (
+      <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
+        <div className="animate-pulse">
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="h-32 bg-neutral-800 rounded-[30px]"></div>
+            <div className="h-32 bg-neutral-800 rounded-[30px]"></div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
+            <div className="h-64 bg-neutral-800 rounded-[30px]"></div>
+            <div className="h-64 bg-neutral-800 rounded-[30px]"></div>
+            <div className="h-64 bg-neutral-800 rounded-[30px]"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }*/
+
+  if (error || !dashboardData) {
+    return (
+      <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
+        <div className="text-center p-8">
+          <p className="text-red-400 mb-4">{error || 'Failed to load dashboard'}</p>
+          <button
+            onClick={loadDashboardData}
+            className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const priorityList = [
+    {
+      icon: Mail,
+      label: "Emails To Approve",
+      count: dashboardData.priorities.find(p => p.type === 'emails_to_approve')?.count || 0,
+      color: "text-fuchsia-400"
+    },
+    {
+      icon: TriangleAlert,
+      label: "Clients At Risk",
+      count: dashboardData.priorities.find(p => p.type === 'clients_at_risk')?.count || 0,
+      color: "text-purple-400"
+    },
+    {
+      icon: Flag,
+      label: "Survey Responses Flagged",
+      count: dashboardData.priorities.find(p => p.type === 'survey_responses_flagged')?.count || 0,
+      color: "text-red-400"
+    },
+    {
+      icon: Trophy,
+      label: "Clients Nearing Completion",
+      count: dashboardData.priorities.find(p => p.type === 'clients_nearing_completion')?.count || 0,
+      color: "text-yellow-400"
+    },
+    {
+      icon: MessageCircleWarning,
+      label: "Chat Bot Escalations",
+      count: dashboardData.priorities.find(p => p.type === 'chatbot_escalations')?.count || 0,
+      color: "text-orange-400"
+    }
+  ];
+
+  const agentStats = [
+    {
+      icon: Users,
+      label: "Leads Captured",
+      count: dashboardData.agentStats.leadsCaptured,
+      color: "text-fuchsia-400"
+    },
+    {
+      icon: Mail,
+      label: "Follow Up Emails Sent",
+      count: dashboardData.agentStats.followUpEmailsSent,
+      color: "text-purple-400"
+    },
+    {
+      icon: MessagesSquare,
+      label: "Feedback Surveys Sent",
+      count: dashboardData.agentStats.feedbackSurveysSent,
+      color: "text-red-400"
+    },
+    {
+      icon: MessageCircleHeart,
+      label: "Testimonials Received",
+      count: dashboardData.agentStats.testimonialsReceived,
+      color: "text-yellow-400"
+    },
+    {
+      icon: Lightbulb,
+      label: "Content Ideas Generated",
+      count: dashboardData.agentStats.contentIdeasGenerated,
+      color: "text-orange-400"
+    }
+  ];
+
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
       <div className="grid grid-cols-2 gap-4">
         <StatCard
+          isLoading={isLoading}
           title="Total Clients"
-          value="4,629"
-          growth={25}
+          value={dashboardData.totalClients.toString()}
+          growth={dashboardData.totalClients > 0 ? 25 : undefined}
           description="Number Of enrolled students or active clients"
         />
         <CoachConfidenceScore
           title={'Coach Confidence Score'}
-          value={85}
+          value={dashboardData.confidenceScore}
           description={'Accuracy of AI outputs based on coach approval/edit history'}
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <ClientEmailWidget/>
+        <ClientEmailWidget stats={dashboardData.clientEmailStats} />
         <TaskList
           title={"Today's Priorities"}
           tasks={priorityList}
@@ -118,25 +188,29 @@ const CoachHome = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="h-full">
-          <RevenueChart />
+          <RevenueChart
+            data={dashboardData.revenueData}
+            growth={dashboardData.revenueGrowth}
+          />
         </div>
         <div className="h-full">
-          <TimeSavedWidget />
+          <TimeSavedWidget data={dashboardData.timeSavedData} />
         </div>
       </div>
 
       <div className={"grid grid-cols-1 sm:grid-cols-2 gap-3"}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <TestimonialOpportunity />
+          <TestimonialOpportunity opportunity={dashboardData.testimonialOpportunity} />
           <div className={"flex flex-col gap-3"}>
-            <LeadsFollowUpWidget />
+            <LeadsFollowUpWidget data={dashboardData.leadsFollowUp} />
             <StatCard
+              isLoading={isLoading}
               title="Leads Captured Weekly"
-              value="32"
+              value={dashboardData.weeklyLeadsCaptured.toString()}
             />
           </div>
         </div>
-        <TopPerformingContent />
+        <TopPerformingContent content={dashboardData.topPerformingContent} />
       </div>
     </div>
   );

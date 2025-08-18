@@ -53,6 +53,9 @@
       "path": "../../../libs/web/settings"
     },
     {
+      "path": "../../../libs/sdk/analytics"
+    },
+    {
       "path": "../../../libs/web/shared"
     },
     {
