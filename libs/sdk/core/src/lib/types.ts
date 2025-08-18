@@ -13,6 +13,7 @@ export interface NLCClientConfig {
     auth?: string;
     email?: string;
     billing?: string;
+    analytics?: string;
   };
 }
 

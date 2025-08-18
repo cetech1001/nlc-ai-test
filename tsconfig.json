@@ -98,6 +98,9 @@
     },
     {
       "path": "./libs/sdk/main"
+    },
+    {
+      "path": "./libs/sdk/analytics"
     }
   ]
 }

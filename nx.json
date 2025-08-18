@@ -42,7 +42,8 @@
         "libs/sdk/auth/*",
         "libs/sdk/email/*",
         "libs/sdk/billing/*",
-        "libs/sdk/main/*"
+        "libs/sdk/main/*",
+        "libs/sdk/analytics/*"
       ]
     },
     {
@@ -106,7 +107,8 @@
         "libs/sdk/auth/*",
         "libs/sdk/email/*",
         "libs/sdk/billing/*",
-        "libs/sdk/main/*"
+        "libs/sdk/main/*",
+        "libs/sdk/analytics/*"
       ],
       "options": {
         "typecheck": {
