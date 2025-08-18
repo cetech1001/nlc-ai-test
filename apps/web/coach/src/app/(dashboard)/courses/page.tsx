@@ -2,92 +2,69 @@
 
 import { useState } from 'react';
 import {
-  Calendar,
-  Clock,
-  Users,
+  GraduationCap,
   Video,
-  Bell,
-  Zap,
-  Globe,
-  Smartphone,
-  Shield,
+  Users,
+  BarChart3,
+  DollarSign,
+  Clock,
+  PlayCircle,
+  BookOpen,
+  Trophy,
   ArrowRight,
   CheckCircle,
-  CalendarDays,
-  Timer,
-  MapPin
+  Star
 } from "lucide-react";
 
-// Set this to false when you want to show the actual calendar features
+// Set this to false when you want to show the actual courses features
 const SHOW_LANDING_PAGE = true;
 
-const CalendarLanding = () => {
-  const [activeFeature, setActiveFeature] = useState('booking');
+const CoursesLanding = () => {
+  const [activeFeature, setActiveFeature] = useState('course-builder');
 
   const features = [
     {
-      id: 'booking',
-      icon: Calendar,
-      title: "Smart Booking System",
-      description: "Let clients book appointments seamlessly with intelligent scheduling",
+      id: 'course-builder',
+      icon: BookOpen,
+      title: "Course Builder",
+      description: "Create professional courses with our intuitive drag-and-drop builder",
       benefits: [
-        "24/7 online booking availability",
-        "Smart conflict detection and prevention",
-        "Buffer time and travel time management",
-        "Multiple service types and durations"
+        "Easy lesson creation with rich media support",
+        "Quiz and assessment builder",
+        "Progress tracking and certificates",
+        "Mobile-optimized student experience"
       ]
     },
     {
-      id: 'automation',
-      icon: Zap,
-      title: "Automated Workflows",
-      description: "Reduce no-shows and streamline your booking process",
+      id: 'student-management',
+      icon: Users,
+      title: "Student Management",
+      description: "Track student progress and engagement across all your courses",
       benefits: [
-        "Automated confirmation and reminder emails",
-        "SMS notifications and follow-ups",
-        "Custom intake forms and questionnaires",
-        "Payment collection at booking"
+        "Real-time progress monitoring",
+        "Automated completion certificates",
+        "Student communication tools",
+        "Performance analytics and insights"
       ]
     },
     {
-      id: 'integration',
-      icon: Globe,
-      title: "Calendar Integration",
-      description: "Sync with your existing calendars and tools",
+      id: 'monetization',
+      icon: DollarSign,
+      title: "Monetization Tools",
+      description: "Multiple pricing models and payment options for your courses",
       benefits: [
-        "Google Calendar, Outlook, Apple Calendar sync",
-        "Zoom, Teams, and other video platform integration",
-        "CRM and client management system sync",
-        "Mobile app for on-the-go management"
+        "One-time, subscription, and payment plan options",
+        "Coupon and discount management",
+        "Revenue analytics and reporting",
+        "Integrated payment processing"
       ]
     }
   ];
 
   const stats = [
-    { label: "Booking Efficiency", value: "+90%", icon: Timer },
-    { label: "No-Show Reduction", value: "-75%", icon: Bell },
-    { label: "Admin Time Saved", value: "20hrs/week", icon: Clock },
-  ];
-
-  const bookingTypes = [
-    {
-      icon: Users,
-      title: "1-on-1 Coaching",
-      description: "Personal coaching sessions",
-      features: ["Custom duration options", "Pre-session questionnaires", "Video call integration"]
-    },
-    {
-      icon: Video,
-      title: "Group Sessions",
-      description: "Workshops and group coaching",
-      features: ["Multi-participant booking", "Capacity management", "Group communication tools"]
-    },
-    {
-      icon: MapPin,
-      title: "In-Person Meetings",
-      description: "Face-to-face appointments",
-      features: ["Location management", "Travel time buffers", "Directions and parking info"]
-    }
+    { label: "Course Creation", value: "10x Faster", icon: Clock },
+    { label: "Student Engagement", value: "85% Higher", icon: Trophy },
+    { label: "Revenue Growth", value: "3x Average", icon: BarChart3 },
   ];
 
   return (
@@ -99,20 +76,20 @@ const CalendarLanding = () => {
 
         <div className="relative z-10 text-center max-w-4xl mx-auto">
           <div className="w-20 h-20 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <CalendarDays className="w-10 h-10 text-fuchsia-400" />
+            <GraduationCap className="w-10 h-10 text-fuchsia-400" />
           </div>
 
           <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-            Smart Calendar & Booking
+            Course Creation & Management
           </h1>
           <p className="text-xl text-stone-300 mb-8">
-            Streamline your appointment booking with intelligent scheduling, automated reminders,
-            and seamless calendar integration. Never miss a booking or deal with scheduling conflicts again.
+            Build, sell, and manage online courses with our comprehensive platform.
+            Turn your expertise into scalable digital products.
           </p>
 
           <div className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/20 border border-fuchsia-400/30 rounded-full text-fuchsia-300 text-lg font-medium">
             <Clock className="w-5 h-5" />
-            Coming Soon - Launch Expected Q2 2025
+            Coming Soon - Beta Access Available Q2 2025
           </div>
         </div>
       </div>
@@ -136,47 +113,11 @@ const CalendarLanding = () => {
         ))}
       </div>
 
-      {/* Booking Types */}
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Support All Your Booking Types</h2>
-          <p className="text-stone-300 text-lg">Flexible scheduling options for every type of coaching session</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {bookingTypes.map((type, index) => (
-            <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-              </div>
-
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mb-4">
-                  <type.icon className="w-6 h-6 text-fuchsia-400" />
-                </div>
-
-                <h3 className="text-xl font-bold text-white mb-2">{type.title}</h3>
-                <p className="text-stone-300 mb-4">{type.description}</p>
-
-                <div className="space-y-2">
-                  {type.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                      <span className="text-stone-200 text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Features Section */}
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Everything You Need for Seamless Scheduling</h2>
-          <p className="text-stone-300 text-lg">Powerful features that save time and improve client experience</p>
+          <h2 className="text-3xl font-bold text-white mb-4">Everything You Need to Create Amazing Courses</h2>
+          <p className="text-stone-300 text-lg">From content creation to student management and revenue optimization</p>
         </div>
 
         <div className="flex flex-wrap gap-2 justify-center">
@@ -231,77 +172,93 @@ const CalendarLanding = () => {
             </div>
           </div>
 
-          {/* Booking Flow */}
+          {/* Course Creation Flow */}
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
             <div className="absolute inset-0 opacity-20">
               <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
             </div>
 
             <div className="relative z-10">
-              <h4 className="text-lg font-semibold text-white mb-4">Simple Booking Process</h4>
+              <h4 className="text-lg font-semibold text-white mb-4">Course Creation Made Simple</h4>
 
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
                   <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold">1</div>
                   <div>
-                    <div className="text-white font-medium">Choose Service</div>
-                    <div className="text-stone-400 text-sm">Client selects coaching type and duration</div>
+                    <div className="text-white font-medium">Upload Content</div>
+                    <div className="text-stone-400 text-sm">Videos, PDFs, quizzes, and more</div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
                   <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 font-bold">2</div>
                   <div>
-                    <div className="text-white font-medium">Pick Time</div>
-                    <div className="text-stone-400 text-sm">Smart calendar shows available slots only</div>
+                    <div className="text-white font-medium">Structure & Organize</div>
+                    <div className="text-stone-400 text-sm">Drag-and-drop course builder</div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
                   <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 font-bold">3</div>
                   <div>
-                    <div className="text-white font-medium">Confirm & Pay</div>
-                    <div className="text-stone-400 text-sm">Instant confirmation with payment processing</div>
+                    <div className="text-white font-medium">Price & Publish</div>
+                    <div className="text-stone-400 text-sm">Set pricing and go live instantly</div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
-                <div className="bg-gradient-to-r from-green-600/10 to-emerald-600/10 border border-green-600/20 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-green-400" />
-                    <span className="text-green-400 font-medium">Secure Payments</span>
-                  </div>
-                  <p className="text-stone-300 text-sm">
-                    Integrated payment processing with industry-standard security.
-                  </p>
+              <div className="mt-6 p-4 bg-gradient-to-r from-yellow-600/10 to-orange-600/10 border border-yellow-600/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="w-4 h-4 text-yellow-400" />
+                  <span className="text-yellow-400 font-medium">Pro Tip</span>
                 </div>
-
-                <div className="bg-gradient-to-r from-blue-600/10 to-cyan-600/10 border border-blue-600/20 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Smartphone className="w-4 h-4 text-blue-400" />
-                    <span className="text-blue-400 font-medium">Mobile Optimized</span>
-                  </div>
-                  <p className="text-stone-300 text-sm">
-                    Perfect booking experience on any device, anywhere.
-                  </p>
-                </div>
+                <p className="text-stone-300 text-sm">
+                  Use our AI content suggestions to create engaging course material that keeps students coming back.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Course Types */}
+      <div className="space-y-6">
+        <h3 className="text-2xl font-bold text-white text-center">Perfect for Any Type of Course</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { icon: Video, title: "Video Courses", desc: "HD video lessons with interactive elements" },
+            { icon: BookOpen, title: "Text-Based", desc: "Rich text content with downloadable resources" },
+            { icon: PlayCircle, title: "Live Sessions", desc: "Scheduled live coaching calls and Q&As" },
+            { icon: Trophy, title: "Cohort Programs", desc: "Group-based learning with peer interaction" }
+          ].map((type, index) => (
+            <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden text-center">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute w-24 h-24 -left-4 -top-6 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px]" />
+              </div>
+
+              <div className="relative z-10">
+                <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <type.icon className="w-6 h-6 text-fuchsia-400" />
+                </div>
+                <h4 className="text-white font-semibold mb-2">{type.title}</h4>
+                <p className="text-stone-400 text-sm">{type.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="text-center space-y-4">
-        <h3 className="text-2xl font-bold text-white">Ready to Streamline Your Scheduling?</h3>
+        <h3 className="text-2xl font-bold text-white">Ready to Launch Your First Course?</h3>
         <p className="text-stone-300 text-lg">
-          Join our waitlist to be the first to access our intelligent booking system.
+          Join our beta program and get early access to the complete course creation platform.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <button className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
-            Join Waitlist
+            Request Beta Access
             <ArrowRight className="w-4 h-4" />
           </button>
           <button className="px-8 py-3 border border-neutral-600 text-stone-300 rounded-lg hover:border-fuchsia-400 hover:text-white transition-colors">
@@ -313,17 +270,17 @@ const CalendarLanding = () => {
   );
 };
 
-const CalendarPage = () => {
+const CoursesPage = () => {
   if (SHOW_LANDING_PAGE) {
-    return <CalendarLanding />;
+    return <CoursesLanding />;
   }
 
-  // Your actual calendar component would go here
+  // Your actual courses component would go here
   return (
     <div>
-      {/* Actual Calendar Features */}
+      {/* Actual Courses Features */}
     </div>
   );
 };
 
-export default CalendarPage;
+export default CoursesPage;

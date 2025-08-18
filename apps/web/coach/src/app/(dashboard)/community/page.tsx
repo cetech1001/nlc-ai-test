@@ -1,13 +1,326 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Share2, Send, ArrowLeft, MoreHorizontal, Search, Camera, Image, Smile } from 'lucide-react';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Send,
+  ArrowLeft,
+  MoreHorizontal,
+  Search,
+  Camera,
+  Image,
+  Smile,
+  Users,
+  Calendar,
+  Trophy,
+  Zap,
+  Clock,
+  Star,
+  UserPlus,
+  Activity,
+  ArrowRight,
+  CheckCircle,
+  Lock,
+  Globe, TrendingUp
+} from 'lucide-react';
+
+// Set this to false when you want to show the actual community features
+const SHOW_LANDING_PAGE = true;
+
+const CommunityLanding = () => {
+  const [activeFeature, setActiveFeature] = useState('discussions');
+
+  const features = [
+    {
+      id: 'discussions',
+      icon: MessageCircle,
+      title: "Discussion Forums",
+      description: "Create dedicated spaces for your clients to connect and support each other",
+      benefits: [
+        "Topic-based discussion threads",
+        "Q&A sections with expert answers",
+        "Private group discussions",
+        "Moderation tools and community guidelines"
+      ]
+    },
+    {
+      id: 'events',
+      icon: Calendar,
+      title: "Community Events",
+      description: "Host virtual events, workshops, and group coaching sessions",
+      benefits: [
+        "Event scheduling and calendar integration",
+        "Live streaming and video conferencing",
+        "Recording and replay capabilities",
+        "RSVP management and notifications"
+      ]
+    },
+    {
+      id: 'achievements',
+      icon: Trophy,
+      title: "Achievement System",
+      description: "Gamify the community experience with badges, levels, and rewards",
+      benefits: [
+        "Custom achievement badges",
+        "Progress tracking and milestones",
+        "Leaderboards and competitions",
+        "Reward system integration"
+      ]
+    }
+  ];
+
+  const stats = [
+    { label: "Client Engagement", value: "+85%", icon: Activity },
+    { label: "Retention Rate", value: "+70%", icon: Heart },
+    { label: "Community Growth", value: "3x Faster", icon: TrendingUp },
+  ];
+
+  const communityTypes = [
+    {
+      icon: Lock,
+      title: "Private Community",
+      description: "Exclusive space for your paying clients",
+      features: ["Invitation-only access", "Premium content sharing", "Direct coach interaction"]
+    },
+    {
+      icon: Globe,
+      title: "Public Community",
+      description: "Open community to attract new clients",
+      features: ["Public discussions", "Lead generation", "Brand building"]
+    },
+    {
+      icon: Star,
+      title: "Tiered Access",
+      description: "Different levels based on membership",
+      features: ["VIP sections", "Graduated access", "Exclusive content"]
+    }
+  ];
+
+  return (
+    <div className="py-4 sm:py-6 lg:py-8 space-y-8 max-w-full overflow-hidden">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 overflow-hidden">
+        <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
+        <div className="absolute w-64 h-64 right-20 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
+
+        <div className="relative z-10 text-center max-w-4xl mx-auto">
+          <div className="w-20 h-20 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Users className="w-10 h-10 text-fuchsia-400" />
+          </div>
+
+          <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
+            Client Community Platform
+          </h1>
+          <p className="text-xl text-stone-300 mb-8">
+            Build thriving communities around your coaching programs. Foster connections,
+            increase engagement, and create lasting relationships between your clients.
+          </p>
+
+          <div className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/20 border border-fuchsia-400/30 rounded-full text-fuchsia-300 text-lg font-medium">
+            <Clock className="w-5 h-5" />
+            Coming Soon - Private Beta Q2 2025
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map((stat, index) => (
+          <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden text-center">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+            </div>
+
+            <div className="relative z-10">
+              <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <stat.icon className="w-6 h-6 text-fuchsia-400" />
+              </div>
+              <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
+              <div className="text-stone-300">{stat.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Community Types */}
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Choose Your Community Style</h2>
+          <p className="text-stone-300 text-lg">Flexible options to match your coaching business model</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {communityTypes.map((type, index) => (
+            <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+              </div>
+
+              <div className="relative z-10">
+                <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mb-4">
+                  <type.icon className="w-6 h-6 text-fuchsia-400" />
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-2">{type.title}</h3>
+                <p className="text-stone-300 mb-4">{type.description}</p>
+
+                <div className="space-y-2">
+                  {type.features.map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      <span className="text-stone-200 text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Everything You Need for a Thriving Community</h2>
+          <p className="text-stone-300 text-lg">Powerful tools to foster engagement and build lasting connections</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 justify-center">
+          {features.map((feature) => (
+            <button
+              key={feature.id}
+              onClick={() => setActiveFeature(feature.id)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                activeFeature === feature.id
+                  ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white'
+                  : 'bg-neutral-800/50 text-stone-300 hover:bg-neutral-700/50'
+              }`}
+            >
+              <feature.icon className="w-4 h-4" />
+              {feature.title}
+            </button>
+          ))}
+        </div>
+
+        {/* Feature Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+            </div>
+
+            <div className="relative z-10">
+              {features.map((feature) => (
+                <div
+                  key={feature.id}
+                  className={`${activeFeature === feature.id ? 'block' : 'hidden'}`}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center">
+                      <feature.icon className="w-6 h-6 text-fuchsia-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">{feature.title}</h3>
+                  </div>
+
+                  <p className="text-stone-300 text-lg mb-6">{feature.description}</p>
+
+                  <div className="space-y-3">
+                    {feature.benefits.map((benefit, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-stone-200">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Community Benefits */}
+          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+            </div>
+
+            <div className="relative z-10">
+              <h4 className="text-lg font-semibold text-white mb-4">Why Communities Work</h4>
+
+              <div className="space-y-4">
+                <div className="bg-neutral-800/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Heart className="w-4 h-4 text-red-400" />
+                    <span className="text-red-400 font-medium">Increased Retention</span>
+                  </div>
+                  <p className="text-stone-300 text-sm">
+                    Clients with community access are 70% more likely to complete programs and continue long-term.
+                  </p>
+                </div>
+
+                <div className="bg-neutral-800/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <UserPlus className="w-4 h-4 text-blue-400" />
+                    <span className="text-blue-400 font-medium">Peer Support</span>
+                  </div>
+                  <p className="text-stone-300 text-sm">
+                    Community members support each other, reducing your individual support burden.
+                  </p>
+                </div>
+
+                <div className="bg-neutral-800/50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    <span className="text-yellow-400 font-medium">Viral Growth</span>
+                  </div>
+                  <p className="text-stone-300 text-sm">
+                    Happy community members become your best advocates, bringing in referrals naturally.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-gradient-to-r from-purple-600/10 to-pink-600/10 border border-purple-600/20 rounded-lg">
+                <p className="text-purple-300 text-sm font-medium mb-2">Success Story</p>
+                <p className="text-stone-300 text-sm">
+                  "Our community has become the heart of our coaching business. Clients stay longer, refer more, and achieve better results together."
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="text-center space-y-4">
+        <h3 className="text-2xl font-bold text-white">Ready to Build Your Community?</h3>
+        <p className="text-stone-300 text-lg">
+          Join our private beta and be among the first to create thriving client communities.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <button className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+            Request Beta Access
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <button className="px-8 py-3 border border-neutral-600 text-stone-300 rounded-lg hover:border-fuchsia-400 hover:text-white transition-colors">
+            See Examples
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const CommunityPage = () => {
   const [activeChat, setActiveChat] = useState<any>(null);
   const [newPost, setNewPost] = useState('');
   const [showComments, setShowComments] = useState<any>({});
   const [newComment, setNewComment] = useState('');
+
+  if (SHOW_LANDING_PAGE) {
+    return <CommunityLanding />;
+  }
 
   const posts = [
     {

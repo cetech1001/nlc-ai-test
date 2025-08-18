@@ -1,5 +1,6 @@
 import {useMemo} from "react";
 import {Skeleton} from "@nlc-ai/web-ui";
+import {NotificationBell} from "./notification-bell";
 
 const UserDisplaySection = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const userFullName = useMemo(() => {
@@ -54,6 +55,7 @@ export const DashboardHeader = (props: IProps) => {
       </div>
 
       <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
+        <NotificationBell/>
         <div className="flex items-center gap-3">
           <UserDisplaySection user={user} isLoading={props.isLoading} />
           <div
