@@ -4,7 +4,7 @@ import {ReactNode, useEffect} from 'react';
 import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/web-auth";
-import {menuItems, pageConfig, settingsItems} from "@/lib";
+import {ChatPopupWidget, menuItems, pageConfig, settingsItems} from "@/lib";
 import {UserType} from "@nlc-ai/api-types";
 
 
@@ -77,6 +77,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
             {children}
           </div>
         </main>
+        <ChatPopupWidget/>
       </div>
     </div>
   );

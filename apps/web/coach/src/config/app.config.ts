@@ -4,6 +4,7 @@ interface AppConfig {
     timeout: number;
     services: {
       users: string;
+      leads: string;
       auth: string;
       email: string;
       billing: string;
@@ -33,6 +34,7 @@ const config: AppConfig = {
     timeout: 30000,
     services: {
       users: `${process.env.NEXT_PUBLIC_API_URL}/users`,
+      leads: `${process.env.NEXT_PUBLIC_API_URL}/leads`,
       auth: `${process.env.NEXT_PUBLIC_API_URL}/auth`,
       email: `${process.env.NEXT_PUBLIC_API_URL}/email`,
       billing: `${process.env.NEXT_PUBLIC_API_URL}/billing`,

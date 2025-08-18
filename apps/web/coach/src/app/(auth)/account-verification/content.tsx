@@ -3,6 +3,7 @@
 import {useMemo} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import { AccountVerificationForm, useAuthPage } from '@nlc-ai/web-auth';
+import {UserType} from "@nlc-ai/api-types";
 
 export const CoachAccountVerificationContent = () => {
   const router = useRouter();
@@ -50,6 +51,7 @@ export const CoachAccountVerificationContent = () => {
 
   return (
     <AccountVerificationForm
+      userType={UserType.coach}
       handleBackToLogin={handleBackToLogin}
       handleResetToken={handleResetToken}
       handleHome={handleHome}

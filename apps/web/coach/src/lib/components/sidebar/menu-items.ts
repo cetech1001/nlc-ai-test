@@ -20,7 +20,8 @@ import {
   Heart,
   Target,
   Mail,
-  Zap
+  Zap,
+  MessageCircleReply,
 } from "lucide-react";
 import {MenuItemType} from "@nlc-ai/types";
 
@@ -56,6 +57,7 @@ export const menuItems: MenuItemType[] = [
   { icon: Calendar, label: "Smart Booking", path: "/calendar" }, // More descriptive
   { icon: Globe, label: "AI Vault", path: "/vault" }, // Keep as is since it's unique
   { icon: Heart, label: "Client Community", path: "/community" }, // More specific
+  { icon: MessageCircleReply, label: "Chat", path: "/chat" },
   { icon: Quote, label: "Success Stories", path: "/testimonials" }, // More engaging name
   { icon: HiCurrencyDollar, label: "Payment Hub", path: "/payment/requests" }, // Cleaner name
 ];
