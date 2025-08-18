@@ -4,7 +4,7 @@
   "include": [],
   "references": [
     {
-      "path": "../../api/types"
+      "path": "../../types"
     },
     {
       "path": "../core"

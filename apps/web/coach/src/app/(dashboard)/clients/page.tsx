@@ -12,7 +12,7 @@ import {
 } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import { FilterValues } from "@nlc-ai/types";
-import {ClientWithDetails} from "@nlc-ai/api-types";
+import {ClientWithDetails} from "@nlc-ai/types";
 import {clientColumns, clientFilters, emptyClientFilterValues, sdkClient} from "@/lib";
 
 const Clients = () => {

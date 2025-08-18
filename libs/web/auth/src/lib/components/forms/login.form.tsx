@@ -5,7 +5,7 @@ import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
 import { Button, Input, Checkbox, EyeLashIcon, AlertBanner } from '@nlc-ai/web-ui';
-import {ApiResponse} from "@nlc-ai/api-types";
+import {ApiResponse} from "@nlc-ai/sdk-core";
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
@@ -43,7 +43,7 @@ export const LoginForm = (props: LoginFormProps) => {
       await authAPI.googleAuth(credentialResponse.credential, props.userType);
       props.handleHome();
     } catch (err: unknown) {
-      const apiError = err as ApiResponse;
+      const apiError = err as ApiResponse<undefined>;
       setError(apiError.error?.message || 'Google login failed');
     } finally {
       setIsLoading(false);
@@ -69,7 +69,7 @@ export const LoginForm = (props: LoginFormProps) => {
       await login(data.email, data.password, props.userType, data.rememberMe);
       props.handleHome();
     } catch (err: unknown) {
-      const apiError = err as ApiResponse;
+      const apiError = err as ApiResponse<undefined>;
 
       if (apiError.error?.details.requiresVerification && props.handleAccountVerification) {
         return props.handleAccountVerification(apiError.error.details.email);

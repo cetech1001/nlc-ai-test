@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import {useState, useRef, useEffect, FC} from 'react';
 import { Bell, X, Clock, Mail, Users, Calendar, Star } from 'lucide-react';
-import {useRouter} from "next/navigation";
 
 interface NotificationItem {
   id: string;
@@ -78,8 +77,11 @@ const getNotificationIcon = (type: NotificationItem['type']) => {
   }
 };
 
-export const NotificationBell = () => {
-  const router = useRouter();
+interface IProps {
+  goToNotifications: () => void;
+}
+
+export const NotificationBell: FC<IProps> = (props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -238,7 +240,7 @@ export const NotificationBell = () => {
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="p-3 border-t border-neutral-700 bg-neutral-800/50">
-              <button onClick={() => router.push('/notifications')} className="w-full text-center text-fuchsia-400 hover:text-fuchsia-300 text-sm font-medium transition-colors">
+              <button onClick={props.goToNotifications} className="w-full text-center text-fuchsia-400 hover:text-fuchsia-300 text-sm font-medium transition-colors">
                 View All Notifications
               </button>
             </div>

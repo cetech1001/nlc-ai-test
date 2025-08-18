@@ -7,7 +7,7 @@
       "path": "../analytics"
     },
     {
-      "path": "../../api/types"
+      "path": "../../types"
     },
     {
       "path": "../billing"

@@ -35,6 +35,7 @@ export interface Client {
   status: string;
   source?: string;
   tags: string[];
+  isActive: boolean;
   lastInteractionAt?: Date;
   totalInteractions: number;
   engagementScore: number;

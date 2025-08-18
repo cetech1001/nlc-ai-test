@@ -9,7 +9,7 @@ import {
   CoachWithStatus,
   Paginated,
   ClientStats,
-} from '@nlc-ai/api-types';
+} from '@nlc-ai/types';
 
 export class UsersServiceClient extends BaseServiceClient {
   // Client methods

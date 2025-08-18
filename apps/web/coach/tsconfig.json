@@ -50,6 +50,9 @@
   ],
   "references": [
     {
+      "path": "../../../libs/types"
+    },
+    {
       "path": "../../../libs/sdk/users"
     },
     {
@@ -65,9 +68,6 @@
       "path": "../../../libs/sdk/analytics"
     },
     {
-      "path": "../../../libs/api/types"
-    },
-    {
       "path": "../../../libs/web/shared"
     },
     {
@@ -78,9 +78,6 @@
     },
     {
       "path": "../../../libs/web/ui"
-    },
-    {
-      "path": "../../../libs/types"
     },
     {
       "path": "../../../libs/web/auth"

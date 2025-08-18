@@ -1,4 +1,4 @@
-import {UserType} from "@nlc-ai/api-types";
+import {UserType} from "@nlc-ai/types";
 
 export interface LoginResponse {
   access_token: string;

@@ -29,6 +29,7 @@ interface IProps {
   title: string;
   user: any;
   isLoading: boolean;
+  goToNotifications: () => void;
 }
 
 export const DashboardHeader = (props: IProps) => {
@@ -55,7 +56,7 @@ export const DashboardHeader = (props: IProps) => {
       </div>
 
       <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
-        <NotificationBell/>
+        <NotificationBell goToNotifications={props.goToNotifications}/>
         <div className="flex items-center gap-3">
           <UserDisplaySection user={user} isLoading={props.isLoading} />
           <div

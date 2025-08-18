@@ -5,7 +5,7 @@ import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/web-auth";
 import {ChatPopupWidget, menuItems, pageConfig, settingsItems} from "@/lib";
-import {UserType} from "@nlc-ai/api-types";
+import {UserType} from "@nlc-ai/types";
 
 
 interface DashboardLayoutProps {
@@ -41,6 +41,10 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
     router.push(path);
   }
 
+  const goToNotifications = () => {
+    router.push('/notifications');
+  }
+
   const handleLogout = () => {
     logout();
     router.push('/login');
@@ -69,6 +73,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
             user={user}
             isLoading={isLoading}
             title={currentConfig.title}
+            goToNotifications={goToNotifications}
           />
         </div>
 

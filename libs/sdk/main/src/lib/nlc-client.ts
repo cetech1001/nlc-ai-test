@@ -3,9 +3,8 @@ import {UsersServiceClient} from "@nlc-ai/sdk-users";
 import {AuthServiceClient} from "@nlc-ai/sdk-auth";
 import {EmailServiceClient} from "@nlc-ai/sdk-email";
 import {BillingServiceClient} from "@nlc-ai/sdk-billing";
-import {CreateCoach} from "@nlc-ai/api-types";
+import {CreateCoach} from "@nlc-ai/types";
 import {AnalyticsServiceClient} from "@nlc-ai/sdk-analytics";
-
 
 export class NLCClient {
   public users: UsersServiceClient;

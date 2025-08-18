@@ -7,9 +7,10 @@ import { AdminIntegrations } from './admin/admin-integrations';
 import { SocialIntegrations } from './coach/social-integrations';
 import { CourseIntegrations } from './coach/course-integrations';
 import { ProfileFormData, PasswordFormData } from '../types/settings.types';
+import {UserType} from "@nlc-ai/types";
 
 interface SettingsProps {
-  userType: 'admin' | 'coach';
+  userType: UserType;
   activeTab: string;
   handleTabChange: (tabID: string) => void;
 

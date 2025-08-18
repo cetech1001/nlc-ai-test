@@ -1,6 +1,6 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
 import { TableColumn } from "@nlc-ai/types";
-import {ClientWithDetails} from "@nlc-ai/api-types";
+import {ClientWithDetails} from "@nlc-ai/types";
 import { Edit3, Mailbox } from "lucide-react";
 
 const colWidth = 100 / 6;

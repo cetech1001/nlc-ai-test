@@ -6,7 +6,7 @@ import { ClientForm } from "@/lib/components/clients/client-form";
 import {ClientFormSkeleton, sdkClient} from "@/lib";
 import { formatDate } from "@nlc-ai/web-utils";
 import {ClientFormData} from "@nlc-ai/types";
-import {ClientWithDetails} from "@nlc-ai/api-types";
+import {ClientWithDetails} from "@nlc-ai/types";
 import { BackTo } from "@nlc-ai/web-shared";
 import { User, CheckCircle } from "lucide-react";
 

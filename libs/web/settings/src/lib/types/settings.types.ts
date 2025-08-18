@@ -1,5 +1,5 @@
 import {ReactNode} from "react";
-import {Integration} from "@nlc-ai/types";
+import {Integration, UserType} from "@nlc-ai/types";
 
 export interface BaseIntegration {
   id: string;
@@ -79,7 +79,7 @@ export interface IntegrationStats {
 export interface SettingsTabProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  userType: 'admin' | 'coach';
+  userType: UserType;
 }
 
 export interface ProfileFormData {
@@ -137,7 +137,7 @@ export interface CoursePlatformConfig {
 
 export interface SettingsContextType {
   user: any;
-  userType: 'admin' | 'coach';
+  userType: UserType;
   isLoading: boolean;
   error: string | null;
   success: string | null;

@@ -26,7 +26,7 @@
       "path": "../analytics/tsconfig.lib.json"
     },
     {
-      "path": "../../api/types/tsconfig.lib.json"
+      "path": "../../types/tsconfig.lib.json"
     },
     {
       "path": "../billing/tsconfig.lib.json"

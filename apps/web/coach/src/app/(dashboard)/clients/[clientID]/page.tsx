@@ -1,11 +1,10 @@
-// apps/web/coach/src/app/(dashboard)/clients/[clientID]/page.tsx
 'use client'
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { BackTo } from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import { ClientWithDetails } from "@nlc-ai/api-types";
+import { ClientWithDetails } from "@nlc-ai/types";
 import {
   User,
   Mail,
@@ -294,7 +293,7 @@ const ClientDetailsPage = () => {
         <StatCard
           icon={MessageSquare}
           title="Email Threads"
-          value={client.emailThreadsCount}
+          value={client.emailThreadsCount || 0}
           subtitle="Active conversations"
           color="text-purple-400"
         />
@@ -441,7 +440,7 @@ const ClientDetailsPage = () => {
             ))}
 
             {/* Email activity */}
-            {client.emailThreadsCount > 0 && (
+            {client.emailThreadsCount && client.emailThreadsCount > 0 && (
               <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
                 <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
                   <MessageSquare className="w-4 h-4 text-purple-400" />

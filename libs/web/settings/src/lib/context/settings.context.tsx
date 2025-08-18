@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import {AUTH_TYPES} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/types";
 import {authAPI} from "@nlc-ai/web-auth";
 
 import { SettingsContextType } from '../types/settings.types';
@@ -10,7 +10,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 interface SettingsProviderProps {
   children: ReactNode;
-  userType: AUTH_TYPES;
+  userType: UserType;
   getProfile: () => Promise<any>;
 }
 
