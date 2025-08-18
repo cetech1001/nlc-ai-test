@@ -1,0 +1,11 @@
+node_modules
+.nx/cache
+dist
+.next
+.git
+*.log
+.vscode
+apps/web
+libs/web
+libs/sdk
+apps/api/monolith
