@@ -1,0 +1,9 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm ci --only=production && npm install nx@latest && npx nx build gateway-service"
+
+[deploy]
+startCommand = "node apps/api/gateway/dist/main.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on-failure"

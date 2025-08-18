@@ -1,2 +1,0 @@
-[phases.install]
-cmds = ["npm ci --only=production", "npm install nx@latest", "npm install @rollup/rollup-linux-x64-musl --save-optional --no-save"]
