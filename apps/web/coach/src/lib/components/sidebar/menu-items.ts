@@ -27,25 +27,28 @@ export const menuItems: MenuItemType[] = [
     icon: HiSparkles,
     label: 'AI Agents',
     dropdown: [
-      { icon: HiEnvelope, label: "Email Management", path: "/emails" },
-      { icon: HiCollection, label: "Client Retention", path: "/retention/templates" },
-      { icon: MailQuestion, label: "Content Suggestion", path: "/suggestions" },
-      { icon: Bot, label: "Bot Training", path: "/bot-training" },
+      { icon: HiEnvelope, label: "Lead Follow-up", path: "/agents/lead-followup" },
+      { icon: HiEnvelope, label: "Client Email", path: "/agents/client-email" },
+      { icon: HiCollection, label: "Client Retention", path: "agents/client-retention" },
+      { icon: MailQuestion, label: "Content Suggestion", path: "/agents/content-suggestion" },
+      { icon: Bot, label: "Coach Replica", path: "/agents/coach-replica" },
     ]
   },
   {
     icon: HiInsights,
-    label: 'Insights',
+    label: 'AI Agent Insights',
     dropdown: [
-      { icon: HiEnvelope, label: "AI Email Agent", path: "/insights/emails" },
-      { icon: HiCollection, label: "Client Retention", path: "/insights/retention/templates" },
-      { icon: TvMinimalPlay, label: "Content Management", path: "/insights/content/categories" },
-      { icon: MailQuestion, label: "Content Suggestion", path: "/insights/suggestions" },
-      { icon: Bot, label: "Bot Training", path: "/insights/bot-training" },
+      { icon: TvMinimalPlay, label: "Lead Follow-up", path: "/insights/lead-followup" },
+      { icon: HiEnvelope, label: "Client Email", path: "/insights/client-email" },
+      { icon: HiCollection, label: "Client Retention", path: "/insights/client-retention" },
+      { icon: MailQuestion, label: "Content Suggestion", path: "/insights/content-suggestion" },
+      { icon: Bot, label: "Coach Replica", path: "/insights/coach-replica" },
     ]
   },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
+  { icon: HiUsers, label: "AI Vault", path: "/vault" },
   { icon: HiUsers, label: "Community", path: "/community" },
+  { icon: HiUsers, label: "Testimonials", path: "/testimonials" },
   { icon: HiCurrencyDollar, label: "Payment Requests", path: "/payment/requests" },
 ];
 
