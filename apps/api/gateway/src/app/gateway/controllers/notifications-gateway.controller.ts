@@ -1,15 +1,10 @@
 import {
   Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Query,
+  All,
   Req,
   Res,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
@@ -19,82 +14,18 @@ import { ProxyService } from '../../proxy/proxy.service';
 export class NotificationsGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
-  @Get('')
-  @ApiOperation({ summary: 'Get notifications' })
-  @ApiResponse({ status: 200, description: 'Notifications retrieved successfully' })
-  async getNotifications(@Query() query: any, @Req() req: Request, @Res() res: Response) {
+  @All('*')
+  async proxyToNotifications(@Req() req: Request, @Res() res: Response) {
+    // Extract the path after /api/notifications
+    const path = req.url.replace(/^\/notifications/, '');
+
     const response = await this.proxyService.proxyRequest(
       'notifications',
-      '/api/notifications',
+      path,
       {
-        method: 'GET',
-        params: query,
-        headers: this.extractHeaders(req),
-      }
-    );
-
-    return res.status(response.status).json(response.data);
-  }
-
-  @Post('')
-  @ApiOperation({ summary: 'Create notification' })
-  @ApiResponse({ status: 201, description: 'Notification created successfully' })
-  async createNotification(@Body() body: any, @Req() req: Request, @Res() res: Response) {
-    const response = await this.proxyService.proxyRequest(
-      'notifications',
-      '/api/notifications',
-      {
-        method: 'POST',
-        data: body,
-        headers: this.extractHeaders(req),
-      }
-    );
-
-    return res.status(response.status).json(response.data);
-  }
-
-  @Patch(':id/read')
-  @ApiOperation({ summary: 'Mark notification as read' })
-  @ApiResponse({ status: 200, description: 'Notification marked as read' })
-  async markAsRead(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
-    const response = await this.proxyService.proxyRequest(
-      'notifications',
-      `/api/notifications/${id}/read`,
-      {
-        method: 'PATCH',
-        headers: this.extractHeaders(req),
-      }
-    );
-
-    return res.status(response.status).json(response.data);
-  }
-
-  @Get('preferences')
-  @ApiOperation({ summary: 'Get notification preferences' })
-  @ApiResponse({ status: 200, description: 'Preferences retrieved successfully' })
-  async getPreferences(@Req() req: Request, @Res() res: Response) {
-    const response = await this.proxyService.proxyRequest(
-      'notifications',
-      '/api/notifications/preferences',
-      {
-        method: 'GET',
-        headers: this.extractHeaders(req),
-      }
-    );
-
-    return res.status(response.status).json(response.data);
-  }
-
-  @Patch('preferences')
-  @ApiOperation({ summary: 'Update notification preferences' })
-  @ApiResponse({ status: 200, description: 'Preferences updated successfully' })
-  async updatePreferences(@Body() body: any, @Req() req: Request, @Res() res: Response) {
-    const response = await this.proxyService.proxyRequest(
-      'notifications',
-      '/api/notifications/preferences',
-      {
-        method: 'PATCH',
-        data: body,
+        method: req.method as any,
+        data: req.body,
+        params: req.query,
         headers: this.extractHeaders(req),
       }
     );

@@ -29,14 +29,14 @@ class EmailAccountsAPI extends BaseAPI {
    * Get all email accounts for the authenticated coach
    */
   async getEmailAccounts(): Promise<EmailAccountResponse[]> {
-    return this.makeRequest('/email-accounts');
+    return this.makeRequest('/integrations/email-accounts');
   }
 
   /**
    * Get OAuth authorization URL for email provider
    */
   async getEmailAuthUrl(provider: string): Promise<EmailAuthUrlResponse> {
-    return this.makeRequest(`/email-accounts/auth/${provider}/url`);
+    return this.makeRequest(`/integrations/email-accounts/auth/${provider}/url`);
   }
 
   /**
@@ -47,7 +47,7 @@ class EmailAccountsAPI extends BaseAPI {
     code: string,
     state?: string
   ): Promise<EmailAccountResponse> {
-    return this.makeRequest(`/email-accounts/auth/${provider}/callback`, {
+    return this.makeRequest(`/integrations/email-accounts/auth/${provider}/callback`, {
       method: 'POST',
       body: JSON.stringify({ code, state }),
     });
@@ -57,7 +57,7 @@ class EmailAccountsAPI extends BaseAPI {
    * Set email account as primary
    */
   async setPrimaryEmailAccount(accountID: string): Promise<EmailTestResponse> {
-    return this.makeRequest(`/email-accounts/${accountID}/set-primary`, {
+    return this.makeRequest(`/integrations/email-accounts/${accountID}/set-primary`, {
       method: 'POST',
     });
   }
@@ -66,7 +66,7 @@ class EmailAccountsAPI extends BaseAPI {
    * Manually sync email account
    */
   async syncEmailAccount(accountID: string): Promise<EmailTestResponse> {
-    return this.makeRequest(`/email-accounts/${accountID}/sync`, {
+    return this.makeRequest(`/integrations/email-accounts/${accountID}/sync`, {
       method: 'POST',
     });
   }
@@ -75,7 +75,7 @@ class EmailAccountsAPI extends BaseAPI {
    * Test email account connection
    */
   async testEmailAccount(accountID: string): Promise<EmailTestResponse> {
-    return this.makeRequest(`/email-accounts/${accountID}/test`, {
+    return this.makeRequest(`/integrations/email-accounts/${accountID}/test`, {
       method: 'POST',
     });
   }
@@ -84,7 +84,7 @@ class EmailAccountsAPI extends BaseAPI {
    * Disconnect email account
    */
   async disconnectEmailAccount(accountID: string): Promise<EmailTestResponse> {
-    return this.makeRequest(`/email-accounts/${accountID}`, {
+    return this.makeRequest(`/integrations/email-accounts/${accountID}`, {
       method: 'DELETE',
     });
   }
@@ -96,7 +96,7 @@ class EmailAccountsAPI extends BaseAPI {
     accountID: string,
     syncEnabled: boolean
   ): Promise<EmailTestResponse> {
-    return this.makeRequest(`/email-accounts/${accountID}/toggle`, {
+    return this.makeRequest(`/integrations/email-accounts/${accountID}/toggle`, {
       method: 'POST',
       body: JSON.stringify({ syncEnabled }),
     });
@@ -109,7 +109,7 @@ class EmailAccountsAPI extends BaseAPI {
     accountID: string,
     days: number = 30
   ): Promise<EmailAccountStats> {
-    return this.makeRequest(`/email-accounts/${accountID}/stats?days=${days}`);
+    return this.makeRequest(`/integrations/email-accounts/${accountID}/stats?days=${days}`);
   }
 
   /**

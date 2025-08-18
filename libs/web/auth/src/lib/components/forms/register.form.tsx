@@ -37,7 +37,7 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
       setIsLoading(true);
       setError('');
 
-      await authAPI.googleRegister(credentialResponse.credential);
+      await authAPI.googleAuth(credentialResponse.credential, props.userType);
       props.handleHome();
     } catch (err: unknown) {
       const apiError = err as ApiError;

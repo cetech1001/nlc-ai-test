@@ -18,6 +18,7 @@ import {ServiceAuthGuard} from "./guards";
         },
       }),
       inject: [ConfigService],
+      global: true,
     }),
     DatabaseModule.forFeature(),
   ],
@@ -25,6 +26,6 @@ import {ServiceAuthGuard} from "./guards";
     JwtStrategy,
     ServiceAuthGuard,
   ],
-  exports: [JwtStrategy, JwtModule],
+  exports: [JwtModule, JwtStrategy, ServiceAuthGuard],
 })
 export class AuthLibModule {}

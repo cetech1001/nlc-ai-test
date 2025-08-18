@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {ApiTags, ApiOperation, ApiResponse, ApiQuery} from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import {CreateTransactionDto, RefundDto, TransactionFiltersDto, UpdateTransactionDto} from "./dto";
 
@@ -36,6 +36,21 @@ export class TransactionsController {
   @ApiResponse({ status: 200, description: 'Pending transactions retrieved successfully' })
   async getPendingTransactions(@Query('olderThanMinutes') olderThanMinutes: number = 60) {
     return this.transactionsService.getPendingTransactions(olderThanMinutes);
+  }
+
+  @Get('revenue/stats')
+  @ApiOperation({ summary: 'Get revenue statistics' })
+  @ApiResponse({ status: 200, description: 'Revenue statistics retrieved successfully' })
+  getRevenueStats() {
+    return this.transactionsService.getRevenueStats();
+  }
+
+  @Get('revenue')
+  @ApiOperation({ summary: 'Get revenue data by period' })
+  @ApiQuery({ name: 'period', enum: ['week', 'month', 'year'], required: false })
+  @ApiResponse({ status: 200, description: 'Revenue data retrieved successfully' })
+  getRevenue(@Query('period') period?: 'week' | 'month' | 'year') {
+    return this.transactionsService.getRevenueByPeriod(period);
   }
 
   @Get('stats')

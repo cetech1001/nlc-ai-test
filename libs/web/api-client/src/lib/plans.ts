@@ -7,45 +7,45 @@ class PlansAPI extends BaseAPI {
     if (includeInactive) params.append('includeInactive', 'true');
     if (includeDeleted) params.append('includeDeleted', 'true');
 
-    return this.makeRequest(`/plans?${params.toString()}`);
+    return this.makeRequest(`/billing/plans?${params.toString()}`);
   }
 
   async getPlan(id: string): Promise<Plan> {
-    return this.makeRequest(`/plans/${id}`);
+    return this.makeRequest(`/billing/plans/${id}`);
   }
 
   async createPlan(data: CreatePlanRequest): Promise<Plan> {
-    return this.makeRequest('/plans', {
+    return this.makeRequest('/billing/plans', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updatePlan(id: string, data: UpdatePlanRequest): Promise<Plan> {
-    return this.makeRequest(`/plans/${id}`, {
+    return this.makeRequest(`/billing/plans/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deletePlan(id: string): Promise<{ message: string }> {
-    return this.makeRequest(`/plans/${id}`, {
+    return this.makeRequest(`/billing/plans/${id}`, {
       method: 'DELETE',
     });
   }
 
   async togglePlanStatus(id: string): Promise<Plan> {
-    return this.makeRequest(`/plans/${id}/toggle-status`, {
+    return this.makeRequest(`/billing/plans/${id}/toggle-status`, {
       method: 'PATCH',
     });
   }
 
   async getPlanAnalytics(id: string): Promise<PlanAnalytics> {
-    return this.makeRequest(`/plans/${id}/analytics`);
+    return this.makeRequest(`/billing/plans/${id}/analytics`);
   }
 
   async restorePlan(id: string): Promise<Plan> {
-    return this.makeRequest(`/plans/${id}/restore`, {
+    return this.makeRequest(`/billing/plans/${id}/restore`, {
       method: 'PATCH',
     });
   }

@@ -4,6 +4,7 @@ import { LoginForm, useAuthPage } from "@nlc-ai/web-auth";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {useCookies} from "react-cookie";
+import {UserType} from "@nlc-ai/types";
 
 const CoachLoginPage = () => {
   const router = useRouter();
@@ -44,6 +45,7 @@ const CoachLoginPage = () => {
 
   return (
     <LoginForm
+      userType={UserType.coach}
       handleHome={handleHome}
       handleSignUp={handleSignUp}
       handleForgotPassword={handleForgotPassword}

@@ -2,6 +2,7 @@
 
 import { RegisterForm, useAuthPage } from '@nlc-ai/web-auth';
 import {useRouter} from "next/navigation";
+import {UserType} from "@nlc-ai/types";
 
 const CoachRegisterPage = () => {
   const router = useRouter();
@@ -25,6 +26,7 @@ const CoachRegisterPage = () => {
 
   return (
     <RegisterForm
+      userType={UserType.coach}
       handleHome={handleHome}
       handleSignIn={handleSignIn}
       handleAccountVerification={handleAccountVerification}

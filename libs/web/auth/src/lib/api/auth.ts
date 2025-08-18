@@ -1,7 +1,6 @@
 /// <reference lib="dom" />
 import {BaseAPI} from "@nlc-ai/web-api-client";
 import {AUTH_TYPES} from "@nlc-ai/types";
-
 import {LoginResponse, UpdatePasswordRequest, UpdateProfileRequest} from "../types";
 
 
@@ -48,8 +47,8 @@ class AuthAPI extends BaseAPI{
     });
   }
 
-  async googleLogin(idToken: string): Promise<LoginResponse> {
-    const result = await this.makeRequest<LoginResponse>('/auth/google/login', {
+  async googleAuth(idToken: string, userType: AUTH_TYPES): Promise<LoginResponse> {
+    const result = await this.makeRequest<LoginResponse>(`/auth/${userType}/google/auth`, {
       method: 'POST',
       body: JSON.stringify({ idToken }),
     });
@@ -58,7 +57,7 @@ class AuthAPI extends BaseAPI{
     return result;
   }
 
-  async googleRegister(idToken: string): Promise<LoginResponse> {
+  /*async googleRegister(idToken: string, userType: UserType): Promise<LoginResponse> {
     const result = await this.makeRequest<LoginResponse>('/auth/google/register', {
       method: 'POST',
       body: JSON.stringify({ idToken }),
@@ -66,7 +65,7 @@ class AuthAPI extends BaseAPI{
 
     this.setToken(result.access_token);
     return result;
-  }
+  }*/
 
   async forgotPassword(email: string, userType?: AUTH_TYPES): Promise<{ message: string }> {
     let param = "";

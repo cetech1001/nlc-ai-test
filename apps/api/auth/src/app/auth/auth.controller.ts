@@ -52,7 +52,7 @@ export class AuthController {
   }
 
   // ========== COACH AUTHENTICATION ==========
-  @Post('coaches/register')
+  @Post('coach/register')
   @Public()
   @ApiOperation({ summary: 'Register new coach' })
   @ApiResponse({ status: 201, description: 'Registration successful' })
@@ -61,7 +61,7 @@ export class AuthController {
     return this.authService.registerCoach(registerDto);
   }
 
-  @Post('coaches/login')
+  @Post('coach/login')
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Coach login' })
@@ -71,7 +71,7 @@ export class AuthController {
     return this.authService.loginCoach(loginDto);
   }
 
-  @Post('coaches/google/auth')
+  @Post('coach/google/auth')
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Coach Google OAuth (login or register)' })

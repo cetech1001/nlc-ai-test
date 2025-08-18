@@ -8,20 +8,19 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
-@ApiTags('Billing')
-@Controller('billing')
+@ApiTags('Integrations')
+@Controller('integrations')
 @ApiBearerAuth()
-export class BillingGatewayController {
+export class NotificationsGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToBilling(@Req() req: Request, @Res() res: Response) {
-    // Extract the path after /api/billing
-    const path = req.url.replace(/^\/billing/, '');
-    // const fullPath = `/api/billing${path}`;
+  async proxyToNotifications(@Req() req: Request, @Res() res: Response) {
+    // Extract the path after /api/integrations
+    const path = req.url.replace(/^\/integrations/, '');
 
     const response = await this.proxyService.proxyRequest(
-      'billing',
+      'integrations',
       path,
       {
         method: req.method as any,
