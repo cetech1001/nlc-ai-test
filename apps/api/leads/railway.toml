@@ -1,7 +1,7 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "apps/api/leads/Dockerfile"
-watchPaths = [
+watchPatterns = [
   "apps/api/leads/**",
   "libs/api/**",
   "nx.json",
