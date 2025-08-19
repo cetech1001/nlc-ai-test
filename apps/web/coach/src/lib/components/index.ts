@@ -2,6 +2,7 @@ export * from './billing';
 export * from './calendar';
 export * from './chat';
 export * from './clients';
+export * from './community';
 export * from './content';
 export * from './home';
 export * from './leads';

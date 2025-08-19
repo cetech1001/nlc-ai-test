@@ -110,6 +110,9 @@
     },
     {
       "path": "./apps/api/community"
+    },
+    {
+      "path": "./libs/sdk/community"
     }
   ]
 }

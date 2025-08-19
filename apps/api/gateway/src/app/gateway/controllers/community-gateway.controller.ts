@@ -2,25 +2,23 @@ import {
   Controller,
   All,
   Req,
-  Res,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import { ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
-@ApiTags('Integrations')
-@Controller('integrations')
-@ApiBearerAuth()
-export class IntegrationsGatewayController {
+@ApiTags('Community')
+@Controller('community')
+export class CommunityGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToIntegrations(@Req() req: Request, @Res() res: Response) {
-    // Extract the path after /api/integrations
-    const path = req.path.replace(/^\/integrations/, '');
+  async proxyToCommunity(@Req() req: Request) {
+    // Extract the path after /api/community
+    const path = req.path.replace(/^\/community/, '');
 
     const response = await this.proxyService.proxyRequest(
-      'integrations',
+      'community',
       path,
       {
         method: req.method as any,
@@ -30,9 +28,7 @@ export class IntegrationsGatewayController {
       }
     );
 
-    res.status(response.status)
-
-return response.data;
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

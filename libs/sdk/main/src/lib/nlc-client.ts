@@ -1,12 +1,11 @@
-import {NLCClientConfig} from "@nlc-ai/sdk-core";
+import {NLCClientConfig} from "./nlc-client.types";
 import {UsersServiceClient} from "@nlc-ai/sdk-users";
 import {AuthServiceClient} from "@nlc-ai/sdk-auth";
 import {EmailServiceClient} from "@nlc-ai/sdk-email";
 import {BillingServiceClient} from "@nlc-ai/sdk-billing";
-import {CreateCoach} from "@nlc-ai/types";
 import {AnalyticsServiceClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
-
+import {CommunityServiceClient} from "@nlc-ai/sdk-community";
 
 export class NLCClient {
   public users: UsersServiceClient;
@@ -15,6 +14,7 @@ export class NLCClient {
   public billing: BillingServiceClient;
   public analytics: AnalyticsServiceClient;
   public leads: LeadsServiceClient;
+  public community: CommunityServiceClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -51,35 +51,10 @@ export class NLCClient {
       ...baseConfig,
       baseURL: config.services?.leads || `${config.baseURL}/api/leads`,
     });
-  }
 
-  // Convenience methods for common workflows
-  async createCoachWithSubscription(
-    coachData: CreateCoach,
-    planID: string,
-    billingCycle: 'monthly' | 'annual'
-  ) {
-    // Create coach
-    const coach = await this.users.createCoach(coachData);
-
-    // Create subscription
-    const subscription = await this.billing.createSubscription(
-      coach.id,
-      planID,
-      billingCycle
-    );
-
-    return { coach, subscription };
-  }
-
-  async inviteAndConnectClient(
-    email: string,
-    coachID: string,
-    message?: string
-  ) {
-    // Send invitation
-    const invite = await this.users.inviteClient(email, coachID, message);
-
-    return invite;
+    this.community = new CommunityServiceClient({
+      ...baseConfig,
+      baseURL: config.services?.community || `${config.baseURL}/api/community`,
+    });
   }
 }

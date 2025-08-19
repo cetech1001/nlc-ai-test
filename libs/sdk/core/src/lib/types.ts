@@ -4,20 +4,6 @@ export interface ServiceClientConfig {
   timeout?: number;
 }
 
-export interface NLCClientConfig {
-  baseURL: string;
-  apiKey?: string;
-  timeout?: number;
-  services?: {
-    auth?: string;
-    users?: string;
-    leads?: string;
-    email?: string;
-    billing?: string;
-    analytics?: string;
-  };
-}
-
 export interface RequestOptions {
   headers?: Record<string, string>;
   body?: any;
@@ -38,3 +24,18 @@ export interface ApiResponse<T> {
     requestID?: string;
   };
 }
+
+export interface Paginated<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+

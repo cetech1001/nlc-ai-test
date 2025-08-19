@@ -10,6 +10,7 @@ interface AppConfig {
       billing: string;
       analytics: string;
       aiAgents: string;
+      community: string;
     };
   };
   auth: {
@@ -41,6 +42,7 @@ const config: AppConfig = {
       billing: `${process.env.NEXT_PUBLIC_API_URL}/billing`,
       analytics: `${process.env.NEXT_PUBLIC_API_URL}/analytics`,
       aiAgents: `${process.env.NEXT_PUBLIC_API_URL}/ai-agents`,
+      community: `${process.env.NEXT_PUBLIC_API_URL}/community`,
     },
   },
   auth: {

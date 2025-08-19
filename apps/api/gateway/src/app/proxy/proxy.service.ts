@@ -36,7 +36,7 @@ export class ProxyService {
     const serviceConfig = this.serviceRegistry.getService(serviceName);
 
     if (!serviceConfig) {
-      throw new ServiceUnavailableException(`Service ${serviceName} is not available`);
+      throw new ServiceUnavailableException(`${serviceName} service is not available`);
     }
 
     // Check circuit breaker

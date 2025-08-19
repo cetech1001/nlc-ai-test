@@ -23,25 +23,7 @@
   ],
   "references": [
     {
-      "path": "../community/tsconfig.lib.json"
-    },
-    {
-      "path": "../leads/tsconfig.lib.json"
-    },
-    {
-      "path": "../analytics/tsconfig.lib.json"
-    },
-    {
-      "path": "../billing/tsconfig.lib.json"
-    },
-    {
-      "path": "../email/tsconfig.lib.json"
-    },
-    {
-      "path": "../auth/tsconfig.lib.json"
-    },
-    {
-      "path": "../users/tsconfig.lib.json"
+      "path": "../core/tsconfig.lib.json"
     }
   ]
 }

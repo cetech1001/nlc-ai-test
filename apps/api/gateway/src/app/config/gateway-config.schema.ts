@@ -49,6 +49,10 @@ export class GatewayConfigSchema {
   @IsString()
   INTEGRATIONS_SERVICE_URL?: string;
 
+  @IsOptional()
+  @IsString()
+  COMMUNITY_SERVICE_URL?: string;
+
   // Rate limiting
   @IsOptional()
   @IsNumber()

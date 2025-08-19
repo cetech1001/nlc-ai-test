@@ -9,6 +9,8 @@ import { EmailGatewayController } from './controllers/email-gateway.controller';
 import { BillingGatewayController } from './controllers/billing-gateway.controller';
 import { LeadsGatewayController } from './controllers/leads-gateway.controller';
 import { NotificationsGatewayController } from './controllers/notifications-gateway.controller';
+import {IntegrationsGatewayController} from "./controllers/integrations-gateway.controller";
+import {CommunityGatewayController} from "./controllers/community-gateway.controller";
 
 @Module({
   imports: [ProxyModule, CacheModule, SecurityModule],
@@ -20,6 +22,8 @@ import { NotificationsGatewayController } from './controllers/notifications-gate
     BillingGatewayController,
     LeadsGatewayController,
     NotificationsGatewayController,
+    IntegrationsGatewayController,
+    CommunityGatewayController,
   ],
 })
 export class GatewayModule {}

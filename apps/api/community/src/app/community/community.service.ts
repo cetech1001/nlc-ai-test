@@ -1,16 +1,16 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '@nlc-ai/api-database';
-import { OutboxService } from '@nlc-ai/api-messaging';
+import {ForbiddenException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {PrismaService} from '@nlc-ai/api-database';
+import {OutboxService} from '@nlc-ai/api-messaging';
 import {
+  COMMUNITY_ROUTING_KEYS,
+  CommunityEvent,
+  CommunityFilters,
   CommunityType,
   CommunityVisibility,
+  CreateCommunityRequest,
   MemberRole,
   MemberStatus,
-  CommunityEvent,
-  COMMUNITY_ROUTING_KEYS,
-  CreateCommunityRequest,
   UpdateCommunityRequest,
-  CommunityFilters,
   UserType
 } from '@nlc-ai/api-types';
 
@@ -288,36 +288,26 @@ export class CommunityService {
       ];
     }
 
-    const [communities, total] = await Promise.all([
-      this.prisma.community.findMany({
-        where,
-        include: {
-          members: {
-            where: { userID, userType },
-            select: { role: true, status: true, joinedAt: true },
-          },
-          _count: {
-            select: {
-              members: {
-                where: { status: MemberStatus.ACTIVE },
-              },
-              posts: true,
+    return this.prisma.paginate(this.prisma.community, {
+      page: filters.page,
+      limit: filters.limit,
+      where,
+      include: {
+        members: {
+          where: {userID, userType},
+          select: {role: true, status: true, joinedAt: true},
+        },
+        _count: {
+          select: {
+            members: {
+              where: {status: MemberStatus.ACTIVE},
             },
+            posts: true,
           },
         },
-        orderBy: { createdAt: 'desc' },
-        skip: ((filters.page || 1) - 1) * (filters.limit || 10),
-        take: filters.limit || 10,
-      }),
-      this.prisma.community.count({ where }),
-    ]);
-
-    return {
-      communities,
-      total,
-      page: filters.page || 1,
-      limit: filters.limit || 10,
-    };
+      },
+      orderBy: {createdAt: 'desc'},
+    });
   }
 
   async getCommunity(id: string, userID: string, userType: UserType) {

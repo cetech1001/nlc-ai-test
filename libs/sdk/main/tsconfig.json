@@ -4,13 +4,13 @@
   "include": [],
   "references": [
     {
+      "path": "../community"
+    },
+    {
       "path": "../leads"
     },
     {
       "path": "../analytics"
-    },
-    {
-      "path": "../../types"
     },
     {
       "path": "../billing"
@@ -23,9 +23,6 @@
     },
     {
       "path": "../users"
-    },
-    {
-      "path": "../core"
     },
     {
       "path": "./tsconfig.lib.json"

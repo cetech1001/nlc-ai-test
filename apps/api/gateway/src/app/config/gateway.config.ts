@@ -65,6 +65,10 @@ export default registerAs('gateway', () => {
         url: config.INTEGRATIONS_SERVICE_URL,
         timeout: config.REQUEST_TIMEOUT,
       },
+      community: {
+        url: config.COMMUNITY_SERVICE_URL,
+        timeout: config.REQUEST_TIMEOUT,
+      },
     },
     rateLimit: {
       ttl: config.RATE_LIMIT_TTL,

@@ -34,7 +34,7 @@ const AlertBanner = React.forwardRef<HTMLDivElement, AlertBannerProps>(
           {onDismiss && (
             <button
               onClick={onDismiss}
-              className="hover:opacity-70 transition-opacity text-sm underline ml-4"
+              className="hover:opacity-70 transition-opacity cursor-pointer text-sm underline ml-4"
             >
               Dismiss
             </button>

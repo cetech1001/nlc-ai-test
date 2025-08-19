@@ -1,0 +1,14 @@
+export interface NLCClientConfig {
+  baseURL: string;
+  apiKey?: string;
+  timeout?: number;
+  services?: {
+    auth?: string;
+    users?: string;
+    leads?: string;
+    email?: string;
+    billing?: string;
+    analytics?: string;
+    community?: string;
+  };
+}
