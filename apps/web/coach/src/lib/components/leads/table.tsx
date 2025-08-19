@@ -1,5 +1,5 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import { EmailSequenceWithEmails, Lead } from "@nlc-ai/types";
+import { Lead } from "@nlc-ai/sdk-leads";
 import {
   Mail,
   Pause,
@@ -13,6 +13,7 @@ import {
   Clock,
   AlertTriangle
 } from "lucide-react";
+import {EmailSequenceWithEmails} from "@nlc-ai/types";
 
 const colWidth = 100 / 7;
 
