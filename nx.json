@@ -44,7 +44,8 @@
         "libs/sdk/billing/*",
         "libs/sdk/main/*",
         "libs/sdk/analytics/*",
-        "libs/api/dto/*"
+        "libs/api/dto/*",
+        "libs/sdk/leads/*"
       ]
     },
     {
@@ -110,7 +111,8 @@
         "libs/sdk/billing/*",
         "libs/sdk/main/*",
         "libs/sdk/analytics/*",
-        "libs/api/dto/*"
+        "libs/api/dto/*",
+        "libs/sdk/leads/*"
       ],
       "options": {
         "typecheck": {

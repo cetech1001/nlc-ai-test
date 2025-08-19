@@ -9,8 +9,9 @@ export interface NLCClientConfig {
   apiKey?: string;
   timeout?: number;
   services?: {
-    users?: string;
     auth?: string;
+    users?: string;
+    leads?: string;
     email?: string;
     billing?: string;
     analytics?: string;

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class LeadsConfigSchema {
@@ -37,7 +37,7 @@ export class LeadsConfigSchema {
 
   // External Services
   @IsOptional()
-  @IsUrl()
+  @IsString()
   EMAIL_SERVICE_URL?: string = 'http://localhost:3002';
 
   @IsOptional()
@@ -45,7 +45,7 @@ export class LeadsConfigSchema {
   EMAIL_SERVICE_TOKEN?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   GATEWAY_SERVICE_URL?: string = 'http://localhost:3001';
 
   @IsOptional()

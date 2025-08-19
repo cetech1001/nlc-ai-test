@@ -2,10 +2,9 @@ import {
   Controller,
   All,
   Req,
-  Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
 @ApiTags('Leads')
@@ -14,7 +13,7 @@ export class LeadsGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToLeads(@Req() req: Request, @Res() res: Response) {
+  async proxyToLeads(@Req() req: Request) {
     // Extract the path after /api/leads
     const path = req.path.replace(/^\/leads/, '');
 
@@ -29,9 +28,7 @@ export class LeadsGatewayController {
       }
     );
 
-    res.status(response.status)
-
-return response.data;
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

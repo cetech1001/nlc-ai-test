@@ -104,6 +104,9 @@
     },
     {
       "path": "./libs/api/dto"
+    },
+    {
+      "path": "./libs/sdk/leads"
     }
   ]
 }

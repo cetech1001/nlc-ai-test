@@ -41,7 +41,7 @@ export class ProxyService {
 
     // Check circuit breaker
     if (!this.circuitBreaker.canExecute(serviceName)) {
-      throw new ServiceUnavailableException(`Service ${serviceName} is temporarily unavailable`);
+      throw new ServiceUnavailableException(`${serviceName} service is temporarily unavailable`);
     }
 
     const fullUrl = `${serviceConfig.url}${path}`;

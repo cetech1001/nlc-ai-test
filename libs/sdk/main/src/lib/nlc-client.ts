@@ -5,6 +5,8 @@ import {EmailServiceClient} from "@nlc-ai/sdk-email";
 import {BillingServiceClient} from "@nlc-ai/sdk-billing";
 import {CreateCoach} from "@nlc-ai/types";
 import {AnalyticsServiceClient} from "@nlc-ai/sdk-analytics";
+import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
+
 
 export class NLCClient {
   public users: UsersServiceClient;
@@ -12,6 +14,7 @@ export class NLCClient {
   public email: EmailServiceClient;
   public billing: BillingServiceClient;
   public analytics: AnalyticsServiceClient;
+  public leads: LeadsServiceClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -42,6 +45,11 @@ export class NLCClient {
     this.analytics = new AnalyticsServiceClient({
       ...baseConfig,
       baseURL: config.services?.analytics || `${config.baseURL}/api/analytics`,
+    });
+
+    this.leads = new LeadsServiceClient({
+      ...baseConfig,
+      baseURL: config.services?.leads || `${config.baseURL}/api/leads`,
     });
   }
 

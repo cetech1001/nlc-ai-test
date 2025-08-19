@@ -1,5 +1,5 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import { EmailSequenceWithEmails } from "@nlc-ai/types";
+import { EmailSequenceWithEmails, Lead } from "@nlc-ai/types";
 import {
   Mail,
   Pause,
@@ -24,7 +24,7 @@ export const coachLeadColumns = (
     key: 'name',
     header: 'Name',
     width: `${colWidth}%`,
-    render: (value: string, _: any) => (
+    render: (value: string, _: Lead) => (
       <div className="font-medium text-white">{value}</div>
     )
   },
@@ -42,7 +42,7 @@ export const coachLeadColumns = (
     width: `${colWidth * (2 / 3)}%`,
     render: (value: string) => (
       <span className="px-2 py-1 rounded-full text-xs bg-gray-600/20 text-gray-300">
-        {value}
+        {value || 'Unknown'}
       </span>
     )
   },
@@ -50,7 +50,7 @@ export const coachLeadColumns = (
     key: 'status',
     header: 'Status',
     width: `${colWidth * (2 / 3)}%`,
-    render: (_: string, row: any) => {
+    render: (_: string, row: Lead) => {
       const statusConfig = {
         contacted: { bg: 'bg-yellow-600/20', text: 'text-yellow-400', label: 'Not Converted' },
         scheduled: { bg: 'bg-blue-600/20', text: 'text-blue-400', label: 'Scheduled' },
@@ -70,7 +70,7 @@ export const coachLeadColumns = (
     key: 'aiSequence',
     header: 'AI Sequence',
     width: `${colWidth}%`,
-    render: (_: any, row: any) => {
+    render: (_: any, row: Lead) => {
       const sequence = getSequenceForLead(row.id);
 
       if (isGeneratingSequence === row.id) {
@@ -132,7 +132,7 @@ export const coachLeadColumns = (
     key: 'meetingDate',
     header: 'Meeting Date',
     width: `${colWidth}%`,
-    render: (value: string) => (
+    render: (value: Date | string | null) => (
       <div className="text-sm text-[#A0A0A0]">
         {value ? new Date(value).toLocaleDateString('en-US', {
           month: 'short',
@@ -146,7 +146,7 @@ export const coachLeadColumns = (
     key: 'actions',
     header: 'Actions',
     width: `${colWidth}%`,
-    render: (_: any, row: any, onRowAction?: (action: string, row: any) => void) => {
+    render: (_: any, row: Lead, onRowAction?: (action: string, row: any) => void) => {
       const sequence = getSequenceForLead(row.id);
       const hasActiveSequence = !!sequence;
       const isSequencePaused = sequence && !sequence.isActive;

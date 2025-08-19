@@ -44,7 +44,7 @@ export const LeadForm = (props: IProps) => {
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Personal Information Section */}
         <div className="space-y-6">
           <div className="flex items-center gap-3 mb-4">
@@ -57,7 +57,7 @@ export const LeadForm = (props: IProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-white text-sm">
-                First Name <span className="text-red-400">*</span>
+                Full Name <span className="text-red-400">*</span>
               </Label>
               <Input
                 id="name"
@@ -67,16 +67,14 @@ export const LeadForm = (props: IProps) => {
                 className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
                   props.errors?.name ? 'border-red-500' : ''
                 }`}
-                placeholder="Enter first name"
+                placeholder="Enter full name"
                 disabled={props.isLoading}
               />
               {props.errors?.name && (
                 <p className="text-red-400 text-sm">{props.errors.name}</p>
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white text-sm">
                 Email Address <span className="text-red-400">*</span>
@@ -99,7 +97,9 @@ export const LeadForm = (props: IProps) => {
                 <p className="text-red-400 text-sm">{props.errors.email}</p>
               )}
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-white text-sm">
                 Phone Number
@@ -117,6 +117,24 @@ export const LeadForm = (props: IProps) => {
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="source" className="text-white text-sm">
+                Lead Source
+              </Label>
+              <select
+                id="source"
+                value={props.formData.source || ''}
+                onChange={(e) => props.handleInputChange("source", e.target.value)}
+                className="w-full bg-background outline-none border border-[#3A3A3A] text-white focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 px-3 py-2 rounded-md"
+                disabled={props.isLoading}
+              >
+                <option value="">Select source</option>
+                {sourceOptions.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -131,27 +149,6 @@ export const LeadForm = (props: IProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="source" className="text-white text-sm">
-                Lead Source
-              </Label>
-              <select
-                id="source"
-                value={props.formData.source || ''}
-                onChange={(e) => props.handleInputChange("source", e.target.value)}
-                className="w-full bg-background border-[#3A3A3A] text-white focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 px-3 py-2 rounded-md"
-                disabled={props.isLoading}
-              >
-                <option value="">Select source</option>
-                {sourceOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-              {props.errors?.source && (
-                <p className="text-red-400 text-sm">{props.errors.source}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="status" className="text-white text-sm">
                 {props.type === 'create' ? 'Initial Status' : 'Lead Status'}
               </Label>
@@ -159,7 +156,7 @@ export const LeadForm = (props: IProps) => {
                 id="status"
                 value={props.formData.status}
                 onChange={(e) => props.handleInputChange("status", e.target.value)}
-                className="w-full bg-background border-[#3A3A3A] text-white focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 px-3 py-2 rounded-md"
+                className="w-full bg-background outline-none border border-[#3A3A3A] text-white focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 px-3 py-2 rounded-md"
                 disabled={props.isLoading}
               >
                 {statusOptions.map(option => (

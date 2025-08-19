@@ -12,7 +12,7 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin_data:/var/lib/pgladmin
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
 
   postgres:
@@ -55,18 +55,59 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-#  auth-service:
-#    build:
-#      context: .
-#      dockerfile: ./apps/api/auth/Dockerfile
-#      target: runner
-#    container_name: nlc_ai_auth_service
-#    restart: unless-stopped
-#    ports:
-#      - "3001:3000"
-#    depends_on:
-#      - postgres
-#      - rabbitmq
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/auth/Dockerfile
+      target: runner
+    container_name: nlc_ai_auth_service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - db_init
+    environment:
+      - NODE_ENV=production
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/gateway/Dockerfile
+      target: runner
+    container_name: nlc_ai_gateway_service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - db_init
+      - auth-service
+      - users-service
+    environment:
+      - NODE_ENV=production
+    # Pre-deploy command equivalent - run migrations before starting the service
+    entrypoint: ["sh", "-c"]
+    command: >-
+      "npm run db:deploy && node apps/api/gateway/dist/main.js"
+
+  users-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/users/Dockerfile
+      target: runner
+    container_name: nlc_ai_users_service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - db_init
+    environment:
+      - NODE_ENV=production
 
 volumes:
   pgadmin_data:

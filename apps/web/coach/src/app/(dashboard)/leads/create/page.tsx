@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LeadForm } from "@/lib/components/leads/lead-form";
-import { leadsAPI } from "@nlc-ai/web-api-client";
-import { LeadFormData, LeadFormErrors } from "@nlc-ai/types";
+import { sdkClient } from "@/lib";
+import { LeadFormData, LeadFormErrors, CreateLead } from "@nlc-ai/sdk-leads";
 import { BackTo } from "@nlc-ai/web-shared";
 import { Sparkles } from "lucide-react";
 
@@ -64,16 +64,21 @@ const CreateNewLead = () => {
     setErrors({});
 
     try {
-      const requestData = {
-        ...formData,
+      const requestData: CreateLead = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone?.trim() || undefined,
+        source: formData.source?.trim() || undefined,
+        status: formData.status as any,
         meetingDate: formData.meetingDate || undefined,
         meetingTime: formData.meetingTime || undefined,
+        notes: formData.notes?.trim() || undefined,
       };
 
-      await leadsAPI.createLead(requestData);
+      await sdkClient.leads.createLead(requestData);
 
       // Redirect to leads page with success message
-      router.push("/leads?success=Lead created successfully");
+      router.push("/leads?success=created");
     } catch (error: any) {
       if (error.statusCode === 409) {
         setErrors({ email: "A lead with this email already exists" });
@@ -146,24 +151,15 @@ const CreateNewLead = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
           {/* Main Form */}
           <div className="lg:col-span-2">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-fuchsia-600/20 to-violet-600/20 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
-
-              <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl p-6">
-                <div className="absolute w-56 h-56 -left-12 -top-20 opacity-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
-                <div className="relative z-10">
-                  <LeadForm
-                    type="create"
-                    formData={formData}
-                    handleInputChange={handleInputChange}
-                    onAction={handleCreateLead}
-                    onDiscard={handleDiscard}
-                    isLoading={isLoading}
-                    errors={errors}
-                  />
-                </div>
-              </div>
-            </div>
+            <LeadForm
+              type="create"
+              formData={formData}
+              handleInputChange={handleInputChange}
+              onAction={handleCreateLead}
+              onDiscard={handleDiscard}
+              isLoading={isLoading}
+              errors={errors}
+            />
           </div>
 
           {/* Automation Preview Sidebar */}

@@ -49,7 +49,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 RUN chown -R nestjs:nodejs /app
 USER nestjs
 
-EXPOSE 3000
-ENV PORT=3000
+EXPOSE 3002
+ENV PORT=3002
 
 CMD ["node", "apps/api/users/dist/main.js"]

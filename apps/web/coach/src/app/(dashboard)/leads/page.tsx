@@ -6,14 +6,16 @@ import { Search, Plus, Calendar, TrendingUp, AlertCircle, Sparkles } from "lucid
 import { toast } from "sonner";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
-import { leadsAPI, aiAgentsAPI } from '@nlc-ai/web-api-client';
-import { DataTableLead, FilterValues, LeadStats, EmailSequenceWithEmails } from "@nlc-ai/types";
+import { aiAgentsAPI } from '@nlc-ai/web-api-client';
+import { LeadStats, Lead } from "@nlc-ai/sdk-leads";
+import { EmailSequenceWithEmails, FilterValues } from "@nlc-ai/types";
 import {
   EmailAutomationModal,
   CreateSequenceModal,
   emptyLeadsFilterValues,
   coachLeadColumns,
   leadFilters,
+  sdkClient,
 } from '@/lib';
 
 const CoachLeads = () => {
@@ -26,7 +28,7 @@ const CoachLeads = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [leads, setLeads] = useState<any[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyLeadsFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -41,7 +43,7 @@ const CoachLeads = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showCreateSequenceModal, setShowCreateSequenceModal] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<DataTableLead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [stats, setStats] = useState<LeadStats>();
   const [activeSequences, setActiveSequences] = useState<EmailSequenceWithEmails[]>([]);
 
@@ -93,12 +95,21 @@ const CoachLeads = () => {
   const fetchLeads = async () => {
     try {
       setIsLeadsLoading(true);
-      const response = await leadsAPI.getLeads(
-        currentPage,
-        leadsPerPage,
-        filterValues,
-        searchQuery
-      );
+      const queryParams = {
+        page: currentPage,
+        limit: leadsPerPage,
+        search: searchQuery || undefined,
+        status: filterValues.status || undefined,
+        source: Array.isArray(filterValues.source) && filterValues.source.length > 0
+          ? filterValues.source.join(',')
+          : undefined,
+        startDate: filterValues.dateRange?.start || undefined,
+        endDate: filterValues.dateRange?.end || undefined,
+        meetingStartDate: filterValues.meetingDateRange?.start || undefined,
+        meetingEndDate: filterValues.meetingDateRange?.end || undefined,
+      };
+
+      const response = await sdkClient.leads.getLeads(queryParams);
       setLeads(response.data);
       setPagination(response.pagination);
     } catch (e) {
@@ -111,7 +122,7 @@ const CoachLeads = () => {
   const fetchStats = async () => {
     try {
       setIsLeadStatsLoading(true);
-      const response = await leadsAPI.getLeadStats();
+      const response = await sdkClient.leads.getLeadStats();
       setStats(response);
     } catch (e) {
       throw e;
@@ -220,7 +231,7 @@ const CoachLeads = () => {
     }
 
     try {
-      await leadsAPI.deleteLead(leadID);
+      await sdkClient.leads.deleteLead(leadID);
       setSuccessMessage("Lead deleted successfully!");
       await Promise.all([fetchLeads(), fetchStats(), fetchActiveSequences()]);
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -229,12 +240,12 @@ const CoachLeads = () => {
     }
   };
 
-  const handleEmailLead = (lead: any) => {
+  const handleEmailLead = (lead: Lead) => {
     setSelectedLead(lead);
     setShowEmailModal(true);
   };
 
-  const handleRowAction = async (action: string, lead: any) => {
+  const handleRowAction = async (action: string, lead: Lead) => {
     if (action === 'edit') {
       router.push(`/leads/edit?leadID=${lead.id}`);
     } else if (action === 'delete') {

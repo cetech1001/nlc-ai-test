@@ -50,9 +50,6 @@
   ],
   "references": [
     {
-      "path": "../../../libs/types"
-    },
-    {
       "path": "../../../libs/sdk/users"
     },
     {
@@ -63,6 +60,9 @@
     },
     {
       "path": "../../../libs/web/settings"
+    },
+    {
+      "path": "../../../libs/sdk/leads"
     },
     {
       "path": "../../../libs/sdk/analytics"
@@ -78,6 +78,9 @@
     },
     {
       "path": "../../../libs/web/ui"
+    },
+    {
+      "path": "../../../libs/types"
     },
     {
       "path": "../../../libs/web/auth"
