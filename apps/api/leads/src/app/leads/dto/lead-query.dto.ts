@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LeadStatus } from '@nlc-ai/types';
+import { LeadStatus } from '@nlc-ai/api-types';
 
 export class LeadQueryDto {
   @ApiPropertyOptional({ description: 'Page number', default: 1 })

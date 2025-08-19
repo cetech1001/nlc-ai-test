@@ -8,7 +8,7 @@ import {
 } from '@nestjs/terminus';
 import { PrismaService } from '@nlc-ai/api-database';
 import { JwtAuthGuard, UserTypes, UserTypesGuard } from '@nlc-ai/api-auth';
-import { UserType } from '@nlc-ai/types';
+import { UserType } from '@nlc-ai/api-types';
 import { Public } from '@nlc-ai/api-auth';
 import { HealthService } from './health.service';
 

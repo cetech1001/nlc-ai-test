@@ -7,9 +7,6 @@
       "path": "../../../libs/api/types"
     },
     {
-      "path": "../../../libs/types"
-    },
-    {
       "path": "../../../libs/api/messaging"
     },
     {

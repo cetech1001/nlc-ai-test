@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { LeadsService } from '../leads/leads.service';
-import { LeadType, LeadStatus } from '@nlc-ai/types';
+import { LeadType, LeadStatus } from '@nlc-ai/api-types';
 
 @Injectable()
 export class HealthService {

@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, LandingTokenGuard } from '@nlc-ai/api-auth';
 import { Public } from '@nlc-ai/api-auth';
-import { UserType } from '@nlc-ai/types';
+import { UserType } from '@nlc-ai/api-types';
 import { LeadsService } from './leads.service';
 import {
   CreateLeadDto,

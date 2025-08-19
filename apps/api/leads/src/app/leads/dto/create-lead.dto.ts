@@ -1,6 +1,6 @@
 import { IsString, IsEmail, IsOptional, IsEnum, IsDateString, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LeadStatus } from '@nlc-ai/types';
+import { LeadStatus } from '@nlc-ai/api-types';
 
 export class CreateLeadDto {
   @ApiProperty({ example: 'John Doe' })
