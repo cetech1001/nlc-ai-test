@@ -19,7 +19,7 @@ export class MediaServiceClient extends BaseServiceClient {
       formData.append('transformation', JSON.stringify(options.transformation));
     }
 
-    return this.request<MediaUploadResult>(
+    return this.request<MediaAsset>(
       'POST',
       '/upload/asset',
       {

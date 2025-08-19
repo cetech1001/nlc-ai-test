@@ -6,7 +6,6 @@ import { sdkClient } from "@/lib";
 
 interface IProps {
   post: Post;
-  likedPosts: Set<string>;
   handleReactToPost: (postID: string, reactionType: ReactionType) => void;
   handleAddComment: (postID: string, newComment: string) => void;
 }
@@ -207,9 +206,9 @@ export const SinglePost: FC<IProps> = (props) => {
   );
 
   return (
-    <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden">
+    <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[16px] sm:rounded-[20px] border border-neutral-700 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+        <div className="absolute w-24 sm:w-32 h-24 sm:h-32 -left-4 sm:-left-6 -top-6 sm:-top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px] sm:blur-[56px]" />
       </div>
 
       <div className="relative z-10 p-4 sm:p-6">
@@ -259,7 +258,7 @@ export const SinglePost: FC<IProps> = (props) => {
                 <img
                   src={props.post.mediaUrls[0]}
                   alt="Post content"
-                  className="w-full h-full object-cover"
+                  className="w-full max-h-96 object-cover"
                 />
               </div>
             ) : (
@@ -290,14 +289,13 @@ export const SinglePost: FC<IProps> = (props) => {
           <button
             onClick={() => props.handleReactToPost(props.post.id, ReactionType.LIKE)}
             className={`flex items-center gap-2 transition-colors ${
-              props.post.userReaction === ReactionType.LIKE || props.likedPosts.has(props.post.id)
+              props.post.userReaction === ReactionType.LIKE
                 ? 'text-red-400'
                 : 'text-stone-400 hover:text-red-400'
             }`}
           >
             <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${
-              props.post.userReaction === ReactionType.LIKE || props.likedPosts.has(props.post.id)
-                ? 'fill-current' : ''
+              props.post.userReaction === ReactionType.LIKE ? 'fill-current' : ''
             }`} />
             <span className="text-sm font-medium">{props.post.likeCount}</span>
           </button>

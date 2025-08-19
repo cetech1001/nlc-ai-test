@@ -28,7 +28,7 @@ const VaultPage = () => {
   const [posts, setPosts] = useState<PostResponse[]>([]);
   const [conversations, setConversations] = useState<ConversationResponse[]>([]);
 
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  // Remove the separate likedPosts state - we'll use the post.userReaction from server
   const [isLoading, setIsLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(false);
   const [chatsLoading, setChatsLoading] = useState(false);
@@ -127,26 +127,26 @@ const VaultPage = () => {
 
   const handleReactToPost = async (postID: string, reactionType: ReactionType) => {
     try {
+      // Find the current post to check its reaction state
+      const currentPost = posts.find(p => p.id === postID);
+      if (!currentPost) return;
+
+      const isCurrentlyLiked = currentPost.userReaction === reactionType;
+
+      // Call the API
       await sdkClient.community.reactToPost(postID, { type: reactionType });
 
-      // Update local state
-      setLikedPosts(prev => {
-        const newLiked = new Set(prev);
-        if (newLiked.has(postID)) {
-          newLiked.delete(postID);
-        } else {
-          newLiked.add(postID);
-        }
-        return newLiked;
-      });
-
-      // Update post like count
+      // Update the local state based on the current reaction state
       setPosts(prev => prev.map(post =>
         post.id === postID
           ? {
             ...post,
-            likeCount: likedPosts.has(postID) ? post.likeCount - 1 : post.likeCount + 1,
-            userReaction: likedPosts.has(postID) ? undefined : reactionType
+            likeCount: isCurrentlyLiked
+              ? post.likeCount - 1
+              : post.likeCount + 1,
+            userReaction: isCurrentlyLiked
+              ? undefined
+              : reactionType
           }
           : post
       ));
@@ -236,7 +236,6 @@ const VaultPage = () => {
               <SinglePost
                 key={post.id}
                 post={post}
-                likedPosts={likedPosts}
                 handleReactToPost={handleReactToPost}
                 handleAddComment={handleAddComment}
               />

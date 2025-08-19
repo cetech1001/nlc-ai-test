@@ -101,9 +101,9 @@ export class PostsService {
       where.communityID = filters.communityID;
     }
 
-    if (filters.authorID) {
+    /*if (filters.authorID) {
       where.authorID = filters.authorID;
-    }
+    }*/
 
     if (filters.type) {
       where.type = filters.type;
