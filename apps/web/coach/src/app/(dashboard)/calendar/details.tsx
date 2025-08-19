@@ -126,7 +126,7 @@ const HourlySchedule = ({ appointments, selectedDate }: {
   );
 };
 
-const Calendar = () => {
+const CalendarDetailsPage = () => {
   const router = useRouter();
 
   const [today] = useState(new Date());
@@ -429,4 +429,4 @@ const Calendar = () => {
   );
 };
 
-export default Calendar;
+export default CalendarDetailsPage;

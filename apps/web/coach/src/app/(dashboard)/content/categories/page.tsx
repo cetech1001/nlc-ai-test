@@ -8,7 +8,7 @@ import { AlertBanner } from '@nlc-ai/web-ui';
 import {ContentCategory} from "@nlc-ai/types";
 import {CategoriesSkeleton, CategoryCard, mockCategories} from '@/lib';
 
-export default function ContentCategories() {
+const ContentCategories = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<(ContentCategory & { icon: ComponentType<any>; color: string; })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,3 +88,5 @@ export default function ContentCategories() {
     </div>
   );
 }
+
+export default ContentCategories;

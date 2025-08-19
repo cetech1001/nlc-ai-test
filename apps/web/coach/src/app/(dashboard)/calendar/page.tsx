@@ -17,9 +17,8 @@ import {
   Timer,
   MapPin
 } from "lucide-react";
-
-// Set this to false when you want to show the actual calendar features
-const SHOW_LANDING_PAGE = true;
+import appConfig from "@/config/app.config";
+import CalendarDetailsPage from "@/app/(dashboard)/calendar/details";
 
 const CalendarLanding = () => {
   const [activeFeature, setActiveFeature] = useState('booking');
@@ -314,16 +313,11 @@ const CalendarLanding = () => {
 };
 
 const CalendarPage = () => {
-  if (SHOW_LANDING_PAGE) {
+  if (appConfig.features.enableLanding) {
     return <CalendarLanding />;
   }
 
-  // Your actual calendar component would go here
-  return (
-    <div>
-      {/* Actual Calendar Features */}
-    </div>
-  );
+  return <CalendarDetailsPage/>;
 };
 
 export default CalendarPage;

@@ -15,9 +15,7 @@ import {
   CheckCircle,
   Star
 } from "lucide-react";
-
-// Set this to false when you want to show the actual courses features
-const SHOW_LANDING_PAGE = true;
+import appConfig from "@/config/app.config";
 
 const CoursesLanding = () => {
   const [activeFeature, setActiveFeature] = useState('course-builder');
@@ -271,16 +269,11 @@ const CoursesLanding = () => {
 };
 
 const CoursesPage = () => {
-  if (SHOW_LANDING_PAGE) {
+  if (appConfig.features.enableLanding) {
     return <CoursesLanding />;
   }
 
-  // Your actual courses component would go here
-  return (
-    <div>
-      {/* Actual Courses Features */}
-    </div>
-  );
+  return <div/>;
 };
 
 export default CoursesPage;

@@ -22,6 +22,7 @@ interface AppConfig {
     environment: 'development' | 'staging' | 'production';
   };
   features: {
+    enableLanding: boolean;
     enableAnalytics: boolean;
     enableNotifications: boolean;
     maxUploadSize: number;
@@ -52,6 +53,7 @@ const config: AppConfig = {
     environment: (process.env.NODE_ENV as any) || 'development',
   },
   features: {
+    enableLanding: process.env.NEXT_PUBLIC_ENABLE_LANDING === 'true',
     enableAnalytics: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',
     enableNotifications: process.env.NEXT_PUBLIC_ENABLE_NOTIFICATIONS === 'true',
     maxUploadSize: parseInt(process.env.NEXT_PUBLIC_MAX_UPLOAD_SIZE || '10485760'), // 10MB default

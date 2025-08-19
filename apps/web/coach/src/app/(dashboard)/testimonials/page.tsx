@@ -18,9 +18,7 @@ import {
   MessageSquare,
   BarChart3
 } from "lucide-react";
-
-// Set this to false when you want to show the actual testimonials features
-const SHOW_LANDING_PAGE = true;
+import appConfig from "@/config/app.config";
 
 const TestimonialsLanding = () => {
   const [activeFeature, setActiveFeature] = useState('collection');
@@ -430,16 +428,11 @@ const TestimonialsLanding = () => {
 };
 
 const TestimonialsPage = () => {
-  if (SHOW_LANDING_PAGE) {
+  if (appConfig.features.enableLanding) {
     return <TestimonialsLanding />;
   }
 
-  // Your actual testimonials component would go here
-  return (
-    <div>
-      {/* Actual Testimonials Features */}
-    </div>
-  );
+  return <div/>;
 };
 
 export default TestimonialsPage;

@@ -12,9 +12,8 @@ import {
   ArrowRight,
   CheckCircle
 } from "lucide-react";
-
-// Set this to false when you want to show the actual content management features
-const SHOW_LANDING_PAGE = true;
+import appConfig from "@/config/app.config";
+import ContentCategories from "@/app/(dashboard)/content/categories/page";
 
 const ContentManagementLanding = () => {
   const [activeTab, setActiveTab] = useState('content-calendar');
@@ -216,16 +215,11 @@ const ContentManagementLanding = () => {
 };
 
 const ContentManagementPage = () => {
-  if (SHOW_LANDING_PAGE) {
+  if (appConfig.features.enableLanding) {
     return <ContentManagementLanding />;
   }
 
-  // Your actual content management component would go here
-  return (
-    <div>
-      {/* Actual Content Management Features */}
-    </div>
-  );
+  return <ContentCategories/>;
 };
 
 export default ContentManagementPage;
