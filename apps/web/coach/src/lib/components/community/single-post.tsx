@@ -39,14 +39,12 @@ export const SinglePost: FC<IProps> = (props) => {
       <div className="relative z-10 p-6">
         {/* Post Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">
-              {props.post.authorName ? props.post.authorName.charAt(0).toUpperCase() : 'C'}
-            </span>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center">
+            <img src={props.post.authorAvatarUrl} alt={"Avatar"} className={"w-12 h-12 rounded-full"}/>
           </div>
           <div className="flex-1">
             <h3 className="text-white text-base font-semibold">
-              {props.post.authorName || 'Coach Member'}
+              {props.post.authorName}
             </h3>
             <p className="text-stone-400 text-sm">{formatTimeAgo(props.post.createdAt)}</p>
           </div>
@@ -102,8 +100,8 @@ export const SinglePost: FC<IProps> = (props) => {
 
             {/* Add Comment */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-xs">Y</span>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                <img src={props.post.authorAvatarUrl} alt={"Avatar"} className={"w-8 h-8 rounded-full"}/>
               </div>
               <div className="flex-1 flex gap-2">
                 <input

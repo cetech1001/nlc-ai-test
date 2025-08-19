@@ -421,24 +421,26 @@ model CommunityInvite {
 }
 
 model Post {
-  id           String   @id @default(uuid()) @db.Uuid
-  communityID  String   @db.Uuid
-  authorID     String   @db.Uuid
-  authorType   String   @db.VarChar(20)
-  type         PostType @default(text)
-  content      String   @db.Text
-  mediaUrls    String[] @default([])
-  linkUrl      String?
-  linkPreview  Json?    @default("{}")
-  pollOptions  String[] @default([])
-  eventData    Json?    @default("{}")
-  isPinned     Boolean  @default(false)
-  isEdited     Boolean  @default(false)
-  likeCount    Int      @default(0)
-  commentCount Int      @default(0)
-  shareCount   Int      @default(0)
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+  id              String   @id @default(uuid()) @db.Uuid
+  communityID     String   @db.Uuid
+  authorID        String   @db.Uuid
+  authorType      String   @db.VarChar(20)
+  authorName      String   @db.VarChar(255) // NEW FIELD
+  authorAvatarUrl String?  @db.Text // NEW FIELD
+  type            PostType @default(text)
+  content         String   @db.Text
+  mediaUrls       String[] @default([])
+  linkUrl         String?
+  linkPreview     Json?    @default("{}")
+  pollOptions     String[] @default([])
+  eventData       Json?    @default("{}")
+  isPinned        Boolean  @default(false)
+  isEdited        Boolean  @default(false)
+  likeCount       Int      @default(0)
+  commentCount    Int      @default(0)
+  shareCount      Int      @default(0)
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 
   community Community      @relation(fields: [communityID], references: [id], onDelete: Cascade)
   comments  PostComment[]
@@ -446,6 +448,7 @@ model Post {
 
   @@index([communityID])
   @@index([authorID, authorType])
+  @@index([authorName]) // NEW INDEX
   @@index([type])
   @@index([createdAt])
   @@index([isPinned])
@@ -457,6 +460,8 @@ model PostComment {
   postID          String   @db.Uuid
   authorID        String   @db.Uuid
   authorType      String   @db.VarChar(20)
+  authorName      String   @db.VarChar(255) // NEW FIELD
+  authorAvatarUrl String?  @db.Text // NEW FIELD
   content         String   @db.Text
   mediaUrls       String[] @default([])
   parentCommentID String?  @db.Uuid
@@ -473,6 +478,7 @@ model PostComment {
 
   @@index([postID])
   @@index([authorID, authorType])
+  @@index([authorName]) // NEW INDEX
   @@index([parentCommentID])
   @@index([createdAt])
   @@map("post_comments")

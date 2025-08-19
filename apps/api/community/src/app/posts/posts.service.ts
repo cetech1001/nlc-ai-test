@@ -34,11 +34,15 @@ export class PostsService {
       throw new ForbiddenException(`Post content exceeds maximum length of ${maxLength} characters`);
     }
 
+    const authorInfo = await this.getAuthorInfo(authorID, authorType);
+
     const post = await this.prisma.post.create({
       data: {
         communityID: createRequest.communityID,
         authorID,
         authorType,
+        authorName: authorInfo.name,           // NEW FIELD
+        authorAvatarUrl: authorInfo.avatarUrl,
         type: createRequest.type || PostType.TEXT,
         content: createRequest.content,
         mediaUrls: createRequest.mediaUrls || [],
@@ -148,7 +152,7 @@ export class PostsService {
 
     return {
       ...result,
-      posts: result.data.map(post => ({
+      data: result.data.map(post => ({
         ...post,
         userReaction: post.reactions?.[0]?.type || null,
         reactions: undefined,
@@ -385,11 +389,15 @@ export class PostsService {
     // Check if user has access to the community
     await this.checkCommunityMembership(post.communityID, authorID, authorType);
 
+    const authorInfo = await this.getAuthorInfo(authorID, authorType);
+
     const comment = await this.prisma.postComment.create({
       data: {
         postID,
         authorID,
         authorType,
+        authorName: authorInfo.name,           // NEW FIELD
+        authorAvatarUrl: authorInfo.avatarUrl,
         content: createRequest.content,
         mediaUrls: createRequest.mediaUrls || [],
         parentCommentID: createRequest.parentCommentID,
@@ -633,6 +641,48 @@ export class PostsService {
     } catch (error) {
       this.logger.warn(`Failed to get user name for ${userType} ${userID}`, error);
       return 'Unknown User';
+    }
+  }
+
+  private async getAuthorInfo(authorID: string, authorType: UserType): Promise<{ name: string; avatarUrl: string | null }> {
+    try {
+      switch (authorType) {
+        case UserType.coach:
+          const coach = await this.prisma.coach.findUnique({
+            where: { id: authorID },
+            select: { firstName: true, lastName: true, businessName: true, avatarUrl: true },
+          });
+          return {
+            name: coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach',
+            avatarUrl: coach?.avatarUrl || null,
+          };
+
+        case UserType.client:
+          const client = await this.prisma.client.findUnique({
+            where: { id: authorID },
+            select: { firstName: true, lastName: true, avatarUrl: true },
+          });
+          return {
+            name: `${client?.firstName} ${client?.lastName}` || 'Unknown Client',
+            avatarUrl: client?.avatarUrl || null,
+          };
+
+        case UserType.admin:
+          const admin = await this.prisma.admin.findUnique({
+            where: { id: authorID },
+            select: { firstName: true, lastName: true, avatarUrl: true },
+          });
+          return {
+            name: `${admin?.firstName} ${admin?.lastName}` || 'Admin',
+            avatarUrl: admin?.avatarUrl || null,
+          };
+
+        default:
+          return { name: 'Unknown User', avatarUrl: null };
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get author info for ${authorType} ${authorID}`, error);
+      return { name: 'Unknown User', avatarUrl: null };
     }
   }
 }

@@ -48,8 +48,8 @@ export interface Post {
   communityID: string;
   authorID: string;
   authorType: UserType;
-  authorName?: string;
-  authorAvatar?: string;
+  authorName: string;
+  authorAvatarUrl: string;
   type: PostType;
   content: string;
   mediaUrls: string[];
