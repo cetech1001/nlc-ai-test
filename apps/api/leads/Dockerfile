@@ -24,22 +24,21 @@ COPY tsconfig.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
 COPY libs/api ./libs/api
-COPY apps/api/gateway ./apps/api/gateway
+COPY apps/api/leads ./apps/api/leads
 
 RUN npx nx sync
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
-RUN NX_DAEMON=false npx nx build gateway-service
+RUN NX_DAEMON=false npx nx build leads-service
 
 FROM base AS runner
 WORKDIR /app
 
-#ARG NODE_ENV
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-COPY --from=builder /app/apps/api/gateway/dist ./apps/api/gateway/dist
+COPY --from=builder /app/apps/api/leads/dist ./apps/api/leads/dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/libs/api/database ./libs/api/database
 
@@ -50,7 +49,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 RUN chown -R nestjs:nodejs /app
 USER nestjs
 
-EXPOSE 3000
-ENV PORT=3000
+EXPOSE 3001
+ENV PORT=3001
 
-CMD ["node", "apps/api/gateway/dist/main.js"]
+CMD ["node", "apps/api/leads/dist/main.js"]
