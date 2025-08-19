@@ -21,12 +21,15 @@ try {
     changedFiles.split('\n').some(file => file.startsWith(path))
   );
 
+  console.log('📋 Trigger paths:', triggerPaths.join(', '));
+  console.log('🎯 Should build coach dashboard:', shouldBuild);
+
   if (shouldBuild) {
     console.log('✅ Changes detected in coach dashboard dependencies - proceeding with build');
-    process.exit(0); // Exit code 1 = proceed with build
+    process.exit(1); // Exit code 1 = proceed with deployment
   } else {
-    console.log('❌ No relevant changes for coach dashboard - canceling build');
-    process.exit(1); // Exit code 0 = cancel build
+    console.log('❌ No relevant changes for coach dashboard - skipping deployment');
+    process.exit(0); // Exit code 0 = skip deployment (no error shown)
   }
 } catch (error) {
   console.log('⚠️ Error checking git changes - proceeding with build to be safe');
