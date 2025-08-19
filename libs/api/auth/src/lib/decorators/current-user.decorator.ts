@@ -10,6 +10,6 @@ export const CurrentUser = createParamDecorator(
       return user?.[data];
     }
 
-    return user;
+    return { ...user, id: user.id || user.sub };
   },
 );

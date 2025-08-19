@@ -9,7 +9,8 @@ import {
   COMMUNITY_ROUTING_KEYS,
   CreateMessageRequest,
   MessageFilters,
-  CreateConversationRequest
+  CreateConversationRequest,
+  Conversation
 } from '@nlc-ai/api-types';
 
 @Injectable()
@@ -156,44 +157,32 @@ export class MessagesService {
   }
 
   async getConversations(userID: string, userType: UserType, page = 1, limit = 20) {
-    const [conversations, total] = await Promise.all([
-      this.prisma.conversation.findMany({
-        where: {
-          AND: [
-            { participantIDs: { has: userID } },
-            { participantTypes: { has: userType } },
-          ],
-        },
-        include: {
-          messages: {
-            orderBy: { createdAt: 'desc' },
-            take: 1, // Last message only
-          },
-        },
-        orderBy: { lastMessageAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.conversation.count({
-        where: {
-          AND: [
-            { participantIDs: { has: userID } },
-            { participantTypes: { has: userType } },
-          ],
-        },
-      }),
-    ]);
-
-    return {
-      conversations: conversations.map(conv => ({
-        ...conv,
-        unreadCount: JSON.parse(conv.unreadCount as string)?.[userID] || 0,
-        lastMessage: conv.messages[0] || null,
-        messages: undefined, // Remove messages array from response
-      })),
-      total,
+    const result = await this.prisma.paginate<Conversation>(this.prisma.conversation, {
       page,
       limit,
+      where: {
+        AND: [
+          { participantIDs: { has: userID } },
+          { participantTypes: { has: userType } },
+        ],
+      },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1, // Last message only
+        },
+      },
+      orderBy: { lastMessageAt: 'desc' },
+    });
+
+    return {
+      ...result,
+      data: result.data.map((conv: Conversation) => ({
+        ...conv,
+        unreadCount: conv.unreadCount?.[userID] || 0,
+        lastMessage: conv.messages?.[0] || null,
+        messages: undefined,
+      })),
     };
   }
 

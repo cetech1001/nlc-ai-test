@@ -17,6 +17,8 @@ async function bootstrap() {
     transform: true,
   }));
 
+  app.setGlobalPrefix('api/community');
+
   const config = new DocumentBuilder()
     .setTitle('NLC AI Community Service')
     .setDescription('Community management, posts, and messaging service')
@@ -30,8 +32,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.setGlobalPrefix('api/community');
 
   const port = process.env.PORT || 3009;
   await app.listen(port);

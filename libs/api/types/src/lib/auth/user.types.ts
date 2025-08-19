@@ -5,6 +5,7 @@ export enum UserType {
 }
 
 export interface AuthUser {
+  sub: string;
   id: string;
   email: string;
   type: UserType;

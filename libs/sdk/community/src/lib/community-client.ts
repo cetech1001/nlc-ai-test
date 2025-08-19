@@ -5,7 +5,6 @@ import {
   CreatePostRequest,
   UpdatePostRequest,
   PostFilters,
-  PostListResponse,
   PostResponse,
   CreateCommentRequest,
   ReactToPostRequest,
@@ -15,7 +14,6 @@ import {
   CreateMessageRequest,
   MessageResponse,
   MessageFilters,
-  ConversationListResponse,
   MessageListResponse,
   UnreadCountResponse,
   ActionResponse,
@@ -65,7 +63,7 @@ export class CommunityServiceClient extends BaseServiceClient {
     return response.data!;
   }
 
-  async getPosts(filters?: PostFilters): Promise<PostListResponse> {
+  async getPosts(filters?: PostFilters): Promise<Paginated<PostResponse>> {
     const searchParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -75,7 +73,7 @@ export class CommunityServiceClient extends BaseServiceClient {
       });
     }
 
-    const response = await this.request<PostListResponse>('GET', `/posts?${searchParams}`);
+    const response = await this.request<Paginated<PostResponse>>('GET', `/posts?${searchParams}`);
     return response.data!;
   }
 
@@ -120,9 +118,9 @@ export class CommunityServiceClient extends BaseServiceClient {
     return response.data!;
   }
 
-  async getConversations(page = 1, limit = 20): Promise<ConversationListResponse> {
-    const response = await this.request<ConversationListResponse>('GET', `/messages/conversations?page=${page}&limit=${limit}`);
-    return response.data!;
+  async getConversations(page = 1, limit = 20): Promise<ConversationResponse[]> {
+    const response = await this.request<Paginated<ConversationResponse>>('GET', `/messages/conversations?page=${page}&limit=${limit}`);
+    return response.data!.data;
   }
 
   async sendMessage(conversationID: string, messageData: CreateMessageRequest): Promise<MessageResponse> {

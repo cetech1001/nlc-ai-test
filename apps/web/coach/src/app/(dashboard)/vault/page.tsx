@@ -46,10 +46,8 @@ const VaultPage = () => {
       setIsLoading(true);
       setError("");
 
-      console.log("Coming here");
       // Load coach-to-coach community
       const communityData = await sdkClient.community.getCoachToCommunity();
-      console.log("Response data: ", communityData);
       setCommunity(communityData);
 
       // Load posts and conversations concurrently
@@ -76,12 +74,12 @@ const VaultPage = () => {
       });
 
       if (page === 1) {
-        setPosts(response.posts);
+        setPosts(response.data);
       } else {
-        setPosts(prev => [...prev, ...response.posts]);
+        setPosts(prev => [...prev, ...response.data]);
       }
 
-      setHasMorePosts(response.page < Math.ceil(response.total / 10));
+      setHasMorePosts(response.pagination.hasNext);
     } catch (error: any) {
       setError(error.message || "Failed to load posts");
     } finally {
@@ -93,8 +91,8 @@ const VaultPage = () => {
     try {
       setChatsLoading(true);
 
-      const response = await sdkClient.community.getConversations(1, 20);
-      setConversations(response.conversations);
+      const data = await sdkClient.community.getConversations(1, 20);
+      setConversations(data);
     } catch (error: any) {
       console.error("Failed to load conversations:", error);
       // Don't show error for conversations as it's secondary

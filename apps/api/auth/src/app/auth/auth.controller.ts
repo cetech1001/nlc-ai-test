@@ -229,6 +229,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@CurrentUser() user: AuthUser) {
     const { id, type } = user;
+    console.log("Auth user: ", user);
     return this.authService.findUserByID(id, type);
   }
 

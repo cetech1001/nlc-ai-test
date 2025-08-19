@@ -11,12 +11,13 @@ async function bootstrap() {
     credentials: true,
   });
 
+  app.setGlobalPrefix('api/users');
+
   const config = new DocumentBuilder()
     .setTitle('NLC AI Users Service')
     .setDescription('User management, profiles, and relationships service')
     .setVersion('1.0')
     .addBearerAuth()
-    .addServer('http://localhost:3002/api/users', 'Development')
     .addTag('Coaches')
     .addTag('Clients')
     .addTag('Admin')
@@ -28,8 +29,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.setGlobalPrefix('api/users');
 
   const port = process.env.PORT || 3002;
   await app.listen(port);

@@ -62,6 +62,7 @@ export interface Post {
   shareCount: number;
   createdAt: Date;
   updatedAt: Date;
+  reactions?: PostReaction[];
 }
 
 export interface PostComment {
@@ -119,4 +120,5 @@ export interface Conversation {
   unreadCount: Record<string, number>;
   createdAt: Date;
   updatedAt: Date;
+  messages?: DirectMessage[];
 }

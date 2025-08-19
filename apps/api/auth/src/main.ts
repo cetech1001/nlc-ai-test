@@ -30,6 +30,8 @@ async function bootstrap() {
     Use these endpoints to securely authenticate users and manage access across the system.
   `;
 
+  app.setGlobalPrefix('api/auth');
+
   const config = new DocumentBuilder()
     .setTitle('NLC AI Auth Service')
     .setDescription(swaggerDescription)
@@ -41,8 +43,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.setGlobalPrefix('api/auth');
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

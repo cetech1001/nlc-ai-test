@@ -22,8 +22,6 @@ export class UsersGatewayController {
     // Extract the path after /api/users
     const path = req.path.replace(/^\/users/, '');
 
-    console.log("Path: ", path);
-
     // Cache coaches list for 2 minutes
     if (req.method === 'GET' && path.startsWith('/coaches') && !path.includes('/stats') && !path.includes('/kpis')) {
       const cacheKey = `coaches:${JSON.stringify(req.query)}`;

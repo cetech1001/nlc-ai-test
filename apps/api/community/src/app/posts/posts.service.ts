@@ -12,7 +12,7 @@ import {
   UpdatePostRequest,
   PostFilters,
   CreateCommentRequest,
-  ReactToPostRequest
+  ReactToPostRequest, Post
 } from '@nlc-ai/api-types';
 
 @Injectable()
@@ -124,40 +124,35 @@ export class PostsService {
     // Then by creation date
     orderBy.push({ createdAt: filters.sortOrder || 'desc' });
 
-    const [posts, total] = await Promise.all([
-      this.prisma.post.findMany({
-        where,
-        include: {
-          community: {
-            select: { name: true, type: true },
-          },
-          reactions: {
-            where: { userID, userType },
-            select: { type: true },
-          },
-          _count: {
-            select: {
-              reactions: true,
-              comments: true,
-            },
+    const result = await this.prisma.paginate<Post>(this.prisma.post, {
+      page: filters.page,
+      limit: filters.limit,
+      where,
+      include: {
+        community: {
+          select: { name: true, type: true },
+        },
+        reactions: {
+          where: { userID, userType },
+          select: { type: true },
+        },
+        _count: {
+          select: {
+            reactions: true,
+            comments: true,
           },
         },
-        orderBy,
-        skip: ((filters.page || 1) - 1) * (filters.limit || 10),
-        take: filters.limit || 10,
-      }),
-      this.prisma.post.count({ where }),
-    ]);
+      },
+      orderBy,
+    });
 
     return {
-      posts: posts.map(post => ({
+      ...result,
+      posts: result.data.map(post => ({
         ...post,
-        userReaction: post.reactions[0]?.type || null,
-        reactions: undefined, // Remove detailed reactions from response
+        userReaction: post.reactions?.[0]?.type || null,
+        reactions: undefined,
       })),
-      total,
-      page: filters.page || 1,
-      limit: filters.limit || 10,
     };
   }
 

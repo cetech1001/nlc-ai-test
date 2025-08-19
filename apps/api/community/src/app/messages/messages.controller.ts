@@ -25,6 +25,7 @@ import {
   MessageFiltersDto,
   EditMessageDto,
 } from './dto';
+import {PaginationDto} from "@nlc-ai/api-dto";
 
 @ApiTags('Messages')
 @Controller('messages')
@@ -48,11 +49,10 @@ export class MessagesController {
   @ApiOperation({ summary: 'Get user conversations' })
   @ApiResponse({ status: 200, description: 'Conversations retrieved successfully' })
   async getConversations(
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
+    @Query() paginationDto: PaginationDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.messagesService.getConversations(user.id, user.type, page, limit);
+    return this.messagesService.getConversations(user.id, user.type, paginationDto.page, paginationDto.limit);
   }
 
   @Post('conversations/:id/messages')
