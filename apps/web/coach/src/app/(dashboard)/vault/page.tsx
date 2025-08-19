@@ -19,6 +19,7 @@ import {
 } from "@nlc-ai/sdk-community";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import { formatTimeAgo } from "@nlc-ai/web-utils";
+import {toast} from "sonner";
 
 const VaultPage = () => {
   const router = useRouter();
@@ -61,7 +62,8 @@ const VaultPage = () => {
         loadConversations()
       ]);
     } catch (error: any) {
-      setError(error.message || "Failed to load community data");
+      // setError(error.message || "Failed to load community data");
+      toast.error(error.message || "Failed to load community data");
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +88,8 @@ const VaultPage = () => {
 
       setHasMorePosts(response.pagination.hasNext);
     } catch (error: any) {
-      setError(error.message || "Failed to load posts");
+      // setError(error.message || "Failed to load posts");
+      toast.error(error.message || "Failed to load posts");
     } finally {
       setPostsLoading(false);
     }
@@ -119,9 +122,11 @@ const VaultPage = () => {
 
       // Add new post to the beginning of the list
       setPosts(prev => [newPostData, ...prev]);
-      setSuccessMessage('Post created successfully!');
+      // setSuccessMessage('Post created successfully!');
+      toast.success('Post created successfully!');
     } catch (error: any) {
-      setError(error.message || "Failed to create post");
+      // setError(error.message || "Failed to create post");
+      toast.error(error.message || "Failed to create post");
     }
   };
 
@@ -151,7 +156,8 @@ const VaultPage = () => {
           : post
       ));
     } catch (error: any) {
-      setError(error.message || "Failed to react to post");
+      // setError(error.message || "Failed to react to post");
+      toast.error(error.message || "Failed to react to post");
     }
   };
 
@@ -171,9 +177,11 @@ const VaultPage = () => {
           : post
       ));
 
-      setSuccessMessage('Comment added successfully!');
+      // setSuccessMessage('Comment added successfully!');
+      toast.success('Comment added successfully!');
     } catch (error: any) {
-      setError(error.message || "Failed to add comment");
+      // setError(error.message || "Failed to add comment");
+      toast.error(error.message || "Failed to add comment");
     }
   };
 
