@@ -2,14 +2,18 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { UserType } from '@nlc-ai/api-types';
 import {
+  UserType,
   PostType,
   MemberStatus,
   CommunityEvent,
-  COMMUNITY_ROUTING_KEYS
+  COMMUNITY_ROUTING_KEYS,
+  CreatePostRequest,
+  UpdatePostRequest,
+  PostFilters,
+  CreateCommentRequest,
+  ReactToPostRequest
 } from '@nlc-ai/api-types';
-import { CreatePostDto, UpdatePostDto, PostFiltersDto, CreateCommentDto, ReactToPostDto } from './dto';
 
 @Injectable()
 export class PostsService {
@@ -21,27 +25,27 @@ export class PostsService {
     private readonly configService: ConfigService
   ) {}
 
-  async createPost(createDto: CreatePostDto, authorID: string, authorType: UserType) {
+  async createPost(createRequest: CreatePostRequest, authorID: string, authorType: UserType) {
     // Check if user is a member of the community
-    await this.checkCommunityMembership(createDto.communityID, authorID, authorType);
+    await this.checkCommunityMembership(createRequest.communityID, authorID, authorType);
 
     const maxLength = this.configService.get<number>('community.features.maxPostLength', 5000);
-    if (createDto.content.length > maxLength) {
+    if (createRequest.content.length > maxLength) {
       throw new ForbiddenException(`Post content exceeds maximum length of ${maxLength} characters`);
     }
 
     const post = await this.prisma.post.create({
       data: {
-        communityID: createDto.communityID,
+        communityID: createRequest.communityID,
         authorID,
         authorType,
-        type: createDto.type || PostType.TEXT,
-        content: createDto.content,
-        mediaUrls: createDto.mediaUrls || [],
-        linkUrl: createDto.linkUrl,
-        linkPreview: createDto.linkPreview || {},
-        pollOptions: createDto.pollOptions || [],
-        eventData: createDto.eventData || {},
+        type: createRequest.type || PostType.TEXT,
+        content: createRequest.content,
+        mediaUrls: createRequest.mediaUrls || [],
+        linkUrl: createRequest.linkUrl,
+        linkPreview: createRequest.linkPreview || {},
+        pollOptions: createRequest.pollOptions || [],
+        eventData: createRequest.eventData || {},
       },
       include: {
         community: {
@@ -52,7 +56,7 @@ export class PostsService {
 
     // Update community post count
     await this.prisma.community.update({
-      where: { id: createDto.communityID },
+      where: { id: createRequest.communityID },
       data: { postCount: { increment: 1 } },
     });
 
@@ -76,12 +80,12 @@ export class PostsService {
       },
     }, COMMUNITY_ROUTING_KEYS.POST_CREATED);
 
-    this.logger.log(`Post created: ${post.id} in community ${createDto.communityID} by ${authorType} ${authorID}`);
+    this.logger.log(`Post created: ${post.id} in community ${createRequest.communityID} by ${authorType} ${authorID}`);
 
     return post;
   }
 
-  async getPosts(filters: PostFiltersDto, userID: string, userType: UserType) {
+  async getPosts(filters: PostFilters, userID: string, userType: UserType) {
     // Check if user has access to the community
     if (filters.communityID) {
       await this.checkCommunityMembership(filters.communityID, userID, userType);
@@ -225,7 +229,7 @@ export class PostsService {
     };
   }
 
-  async updatePost(id: string, updateDto: UpdatePostDto, userID: string, userType: UserType) {
+  async updatePost(id: string, updateRequest: UpdatePostRequest, userID: string, userType: UserType) {
     const post = await this.prisma.post.findUnique({
       where: { id },
     });
@@ -242,7 +246,7 @@ export class PostsService {
     const updatedPost = await this.prisma.post.update({
       where: { id },
       data: {
-        ...updateDto,
+        ...updateRequest,
         isEdited: true,
         updatedAt: new Date(),
       },
@@ -282,7 +286,7 @@ export class PostsService {
     return { message: 'Post deleted successfully' };
   }
 
-  async reactToPost(postID: string, reactionDto: ReactToPostDto, userID: string, userType: UserType) {
+  async reactToPost(postID: string, reactionRequest: ReactToPostRequest, userID: string, userType: UserType) {
     const post = await this.prisma.post.findUnique({
       where: { id: postID },
       include: {
@@ -310,7 +314,7 @@ export class PostsService {
     let reactionChange = 0;
 
     if (existingReaction) {
-      if (existingReaction.type === reactionDto.type) {
+      if (existingReaction.type === reactionRequest.type) {
         // Remove reaction
         await this.prisma.postReaction.delete({
           where: { id: existingReaction.id },
@@ -320,7 +324,7 @@ export class PostsService {
         // Update reaction type
         await this.prisma.postReaction.update({
           where: { id: existingReaction.id },
-          data: { type: reactionDto.type },
+          data: { type: reactionRequest.type },
         });
       }
     } else {
@@ -330,7 +334,7 @@ export class PostsService {
           postID,
           userID,
           userType,
-          type: reactionDto.type,
+          type: reactionRequest.type,
         },
       });
       reactionChange = 1;
@@ -360,18 +364,18 @@ export class PostsService {
           likedByID: userID,
           likedByType: userType,
           likedByName: userName,
-          reactionType: reactionDto.type,
+          reactionType: reactionRequest.type,
           likedAt: new Date().toISOString(),
         },
       }, COMMUNITY_ROUTING_KEYS.POST_LIKED);
     }
 
-    this.logger.log(`Post ${postID} reacted to by ${userType} ${userID} with ${reactionDto.type}`);
+    this.logger.log(`Post ${postID} reacted to by ${userType} ${userID} with ${reactionRequest.type}`);
 
     return { message: 'Reaction updated successfully' };
   }
 
-  async createComment(postID: string, createDto: CreateCommentDto, authorID: string, authorType: UserType) {
+  async createComment(postID: string, createRequest: CreateCommentRequest, authorID: string, authorType: UserType) {
     const post = await this.prisma.post.findUnique({
       where: { id: postID },
       include: {
@@ -391,9 +395,9 @@ export class PostsService {
         postID,
         authorID,
         authorType,
-        content: createDto.content,
-        mediaUrls: createDto.mediaUrls || [],
-        parentCommentID: createDto.parentCommentID,
+        content: createRequest.content,
+        mediaUrls: createRequest.mediaUrls || [],
+        parentCommentID: createRequest.parentCommentID,
       },
     });
 
@@ -404,9 +408,9 @@ export class PostsService {
     });
 
     // Update parent comment reply count if this is a reply
-    if (createDto.parentCommentID) {
+    if (createRequest.parentCommentID) {
       await this.prisma.postComment.update({
-        where: { id: createDto.parentCommentID },
+        where: { id: createRequest.parentCommentID },
         data: { replyCount: { increment: 1 } },
       });
     }
@@ -505,7 +509,7 @@ export class PostsService {
     };
   }
 
-  async reactToComment(commentID: string, reactionDto: ReactToPostDto, userID: string, userType: UserType) {
+  async reactToComment(commentID: string, reactionRequest: ReactToPostRequest, userID: string, userType: UserType) {
     const comment = await this.prisma.postComment.findUnique({
       where: { id: commentID },
       include: {
@@ -537,7 +541,7 @@ export class PostsService {
     let reactionChange = 0;
 
     if (existingReaction) {
-      if (existingReaction.type === reactionDto.type) {
+      if (existingReaction.type === reactionRequest.type) {
         // Remove reaction
         await this.prisma.postReaction.delete({
           where: { id: existingReaction.id },
@@ -547,7 +551,7 @@ export class PostsService {
         // Update reaction type
         await this.prisma.postReaction.update({
           where: { id: existingReaction.id },
-          data: { type: reactionDto.type },
+          data: { type: reactionRequest.type },
         });
       }
     } else {
@@ -557,7 +561,7 @@ export class PostsService {
           commentID,
           userID,
           userType,
-          type: reactionDto.type,
+          type: reactionRequest.type,
         },
       });
       reactionChange = 1;
@@ -571,7 +575,7 @@ export class PostsService {
       });
     }
 
-    this.logger.log(`Comment ${commentID} reacted to by ${userType} ${userID} with ${reactionDto.type}`);
+    this.logger.log(`Comment ${commentID} reacted to by ${userType} ${userID} with ${reactionRequest.type}`);
 
     return { message: 'Reaction updated successfully' };
   }

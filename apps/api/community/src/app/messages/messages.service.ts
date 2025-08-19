@@ -2,13 +2,15 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { UserType } from '@nlc-ai/api-types';
 import {
+  UserType,
   MessageType,
   CommunityEvent,
-  COMMUNITY_ROUTING_KEYS
+  COMMUNITY_ROUTING_KEYS,
+  CreateMessageRequest,
+  MessageFilters,
+  CreateConversationRequest
 } from '@nlc-ai/api-types';
-import { CreateMessageDto, MessageFiltersDto, CreateConversationDto } from './dto';
 
 @Injectable()
 export class MessagesService {
@@ -20,25 +22,25 @@ export class MessagesService {
     private readonly configService: ConfigService
   ) {}
 
-  async createConversation(createDto: CreateConversationDto, creatorID: string, creatorType: UserType) {
+  async createConversation(createRequest: CreateConversationRequest, creatorID: string, creatorType: UserType) {
     // Validate participants
-    if (createDto.participantIDs.length < 2) {
+    if (createRequest.participantIDs.length < 2) {
       throw new ForbiddenException('Conversation must have at least 2 participants');
     }
 
     // Ensure creator is in participants
-    if (!createDto.participantIDs.includes(creatorID)) {
-      createDto.participantIDs.push(creatorID);
-      createDto.participantTypes.push(creatorType);
+    if (!createRequest.participantIDs.includes(creatorID)) {
+      createRequest.participantIDs.push(creatorID);
+      createRequest.participantTypes.push(creatorType);
     }
 
     // For direct messages, check if conversation already exists
-    if (createDto.type === 'direct' && createDto.participantIDs.length === 2) {
+    if (createRequest.type === 'direct' && createRequest.participantIDs.length === 2) {
       const existingConversation = await this.prisma.conversation.findFirst({
         where: {
           type: 'direct',
           AND: [
-            { participantIDs: { hasEvery: createDto.participantIDs } },
+            { participantIDs: { hasEvery: createRequest.participantIDs } },
             // @ts-ignore
             { participantIDs: { array_length: 2 } },
           ],
@@ -52,11 +54,11 @@ export class MessagesService {
 
     const conversation = await this.prisma.conversation.create({
       data: {
-        type: createDto.type,
-        name: createDto.name,
-        participantIDs: createDto.participantIDs,
-        participantTypes: createDto.participantTypes,
-        unreadCount: createDto.participantIDs.reduce((acc, id) => {
+        type: createRequest.type,
+        name: createRequest.name,
+        participantIDs: createRequest.participantIDs,
+        participantTypes: createRequest.participantTypes,
+        unreadCount: createRequest.participantIDs.reduce((acc, id) => {
           acc[id] = 0;
           return acc;
         }, {} as Record<string, number>),
@@ -68,7 +70,7 @@ export class MessagesService {
     return conversation;
   }
 
-  async sendMessage(conversationID: string, createDto: CreateMessageDto, senderID: string, senderType: UserType) {
+  async sendMessage(conversationID: string, createRequest: CreateMessageRequest, senderID: string, senderType: UserType) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationID },
     });
@@ -84,7 +86,7 @@ export class MessagesService {
     }
 
     const maxLength = this.configService.get<number>('community.features.maxMessageLength', 2000);
-    if (createDto.content.length > maxLength) {
+    if (createRequest.content.length > maxLength) {
       throw new ForbiddenException(`Message content exceeds maximum length of ${maxLength} characters`);
     }
 
@@ -93,13 +95,13 @@ export class MessagesService {
         conversationID,
         senderID,
         senderType,
-        type: createDto.type || MessageType.TEXT,
-        content: createDto.content,
-        mediaUrls: createDto.mediaUrls || [],
-        fileUrl: createDto.fileUrl,
-        fileName: createDto.fileName,
-        fileSize: createDto.fileSize,
-        replyToMessageID: createDto.replyToMessageID,
+        type: createRequest.type || MessageType.TEXT,
+        content: createRequest.content,
+        mediaUrls: createRequest.mediaUrls || [],
+        fileUrl: createRequest.fileUrl,
+        fileName: createRequest.fileName,
+        fileSize: createRequest.fileSize,
+        replyToMessageID: createRequest.replyToMessageID,
       },
     });
 
@@ -195,7 +197,7 @@ export class MessagesService {
     };
   }
 
-  async getMessages(conversationID: string, userID: string, userType: UserType, filters: MessageFiltersDto) {
+  async getMessages(conversationID: string, userID: string, userType: UserType, filters: MessageFilters) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationID },
     });

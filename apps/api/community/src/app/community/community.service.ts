@@ -1,16 +1,18 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { UserType } from '@nlc-ai/api-types';
 import {
   CommunityType,
   CommunityVisibility,
   MemberRole,
   MemberStatus,
   CommunityEvent,
-  COMMUNITY_ROUTING_KEYS
+  COMMUNITY_ROUTING_KEYS,
+  CreateCommunityRequest,
+  UpdateCommunityRequest,
+  CommunityFilters,
+  UserType
 } from '@nlc-ai/api-types';
-import { CreateCommunityDto, UpdateCommunityDto, CommunityFiltersDto } from './dto';
 
 @Injectable()
 export class CommunityService {
@@ -21,21 +23,21 @@ export class CommunityService {
     private readonly outboxService: OutboxService,
   ) {}
 
-  async createCommunity(createDto: CreateCommunityDto, creatorID: string, creatorType: UserType) {
+  async createCommunity(createRequest: CreateCommunityRequest, creatorID: string, creatorType: UserType) {
     try {
       const community = await this.prisma.community.create({
         data: {
-          name: createDto.name,
-          description: createDto.description,
-          type: createDto.type,
-          visibility: createDto.visibility || CommunityVisibility.PRIVATE,
+          name: createRequest.name,
+          description: createRequest.description,
+          type: createRequest.type,
+          visibility: createRequest.visibility || CommunityVisibility.PRIVATE,
           ownerID: creatorID,
           ownerType: creatorType,
-          coachID: createDto.coachID,
-          courseID: createDto.courseID,
-          avatarUrl: createDto.avatarUrl,
-          bannerUrl: createDto.bannerUrl,
-          settings: createDto.settings || {},
+          coachID: createRequest.coachID,
+          courseID: createRequest.courseID,
+          avatarUrl: createRequest.avatarUrl,
+          bannerUrl: createRequest.bannerUrl,
+          settings: createRequest.settings || {},
           memberCount: 1, // Creator is automatically a member
         },
         include: {
@@ -251,7 +253,7 @@ export class CommunityService {
     );
   }
 
-  async getCommunities(filters: CommunityFiltersDto, userID: string, userType: UserType) {
+  async getCommunities(filters: CommunityFilters, userID: string, userType: UserType) {
     const where: any = {
       isActive: true,
     };
@@ -363,7 +365,7 @@ export class CommunityService {
     };
   }
 
-  async updateCommunity(id: string, updateDto: UpdateCommunityDto, userID: string, userType: UserType) {
+  async updateCommunity(id: string, updateRequest: UpdateCommunityRequest, userID: string, userType: UserType) {
     const community = await this.prisma.community.findUnique({
       where: { id },
     });
@@ -378,7 +380,7 @@ export class CommunityService {
     const updatedCommunity = await this.prisma.community.update({
       where: { id },
       data: {
-        ...updateDto,
+        ...updateRequest,
         updatedAt: new Date(),
       },
     });
