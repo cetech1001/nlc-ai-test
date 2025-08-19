@@ -1,6 +1,13 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "apps/api/auth/Dockerfile"
+watchPaths = [
+  "apps/api/auth/**",
+  "libs/api/**",
+  "nx.json",
+  "package.json",
+  "tsconfig*.json"
+]
 
 [deploy]
 healthcheckPath = ""

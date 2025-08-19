@@ -1,6 +1,13 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "apps/api/gateway/Dockerfile"
+watchPaths = [
+  "apps/api/gateway/**",
+  "libs/api/**",
+  "nx.json",
+  "package.json",
+  "tsconfig*.json"
+]
 
 [deploy]
 preDeployCommand = ["npm run db:deploy"]
