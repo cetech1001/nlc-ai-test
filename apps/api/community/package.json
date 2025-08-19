@@ -1,0 +1,46 @@
+{
+  "name": "@nlc-ai/community-service",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "name": "community-service",
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "webpack-cli build",
+          "args": [
+            "node-env=production"
+          ]
+        },
+        "configurations": {
+          "development": {
+            "args": [
+              "node-env=development"
+            ]
+          }
+        }
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "community-service:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "community-service:build:development"
+          },
+          "production": {
+            "buildTarget": "community-service:build:production"
+          }
+        }
+      }
+    }
+  }
+}

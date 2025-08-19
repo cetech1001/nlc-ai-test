@@ -107,6 +107,9 @@
     },
     {
       "path": "./libs/sdk/leads"
+    },
+    {
+      "path": "./apps/api/community"
     }
   ]
 }

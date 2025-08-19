@@ -1,6 +1,7 @@
 export * from './auth';
 export * from './billing';
 export * from './common';
+export * from './community';
 export * from './gateway';
 export * from './email';
 export * from './integrations';

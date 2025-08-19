@@ -1,11 +1,18 @@
 // libs/api/types/src/lib/users/events/users-service.events.ts
 import { BaseEvent } from '@nlc-ai/api-messaging';
+import {
+  AuthAvatarUpdatedEvent,
+  AuthClientConnectedEvent,
+  AuthClientRegisteredEvent,
+  AuthCoachRegisteredEvent,
+  AuthCoachVerifiedEvent, AuthProfileUpdatedEvent
+} from "../auth";
 
 // =============================================================================
 // AUTH EVENTS (Emitted from auth events handler)
 // =============================================================================
 
-export interface AuthCoachRegisteredEvent extends BaseEvent {
+/*export interface AuthCoachRegisteredEvent extends BaseEvent {
   eventType: 'auth.coach.registered';
   payload: {
     coachID: string;
@@ -62,7 +69,7 @@ export interface AuthAvatarUpdatedEvent extends BaseEvent {
     userType: 'coach' | 'client' | 'admin';
     avatarUrl: string;
   };
-}
+}*/
 
 // =============================================================================
 // CLIENT RELATIONSHIP EVENTS (From client-coach.service.ts)

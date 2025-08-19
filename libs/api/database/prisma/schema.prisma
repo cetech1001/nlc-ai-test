@@ -291,6 +291,281 @@ model Coach {
   @@map("coaches")
 }
 
+enum CommunityType {
+  coach_client
+  coach_to_coach
+  course
+  private
+}
+
+enum CommunityVisibility {
+  public
+  private
+  invite_only
+}
+
+enum MemberRole {
+  owner
+  admin
+  moderator
+  member
+}
+
+enum MemberStatus {
+  active
+  inactive
+  suspended
+  pending
+}
+
+enum PostType {
+  text
+  image
+  video
+  link
+  poll
+  event
+}
+
+enum MessageType {
+  text
+  image
+  video
+  file
+  system
+}
+
+enum ReactionType {
+  like
+  love
+  laugh
+  angry
+  sad
+  celebrate
+}
+
+model Community {
+  id          String              @id @default(uuid()) @db.Uuid
+  name        String              @db.VarChar(255)
+  description String?             @db.Text
+  type        CommunityType
+  visibility  CommunityVisibility @default(private)
+  ownerID     String              @db.Uuid
+  ownerType   String              @db.VarChar(20) // 'coach', 'admin', 'client'
+  coachID     String?             @db.Uuid // For coach-client communities
+  courseID    String?             @db.Uuid // For course communities
+  avatarUrl   String?
+  bannerUrl   String?
+  settings    Json                @default("{}")
+  memberCount Int                 @default(0)
+  postCount   Int                 @default(0)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime            @updatedAt @db.Timestamptz(6)
+
+  // Relations
+  members CommunityMember[]
+  posts   Post[]
+  invites CommunityInvite[]
+
+  @@index([type])
+  @@index([coachID])
+  @@index([courseID])
+  @@index([ownerID, ownerType])
+  @@index([createdAt])
+  @@map("communities")
+}
+
+model CommunityMember {
+  id           String       @id @default(uuid()) @db.Uuid
+  communityID  String       @db.Uuid
+  userID       String       @db.Uuid
+  userType     String       @db.VarChar(20) // 'coach', 'admin', 'client'
+  role         MemberRole   @default(member)
+  status       MemberStatus @default(active)
+  joinedAt     DateTime     @default(now()) @db.Timestamptz(6)
+  lastActiveAt DateTime?    @db.Timestamptz(6)
+  invitedBy    String?      @db.Uuid
+  customTitle  String?      @db.VarChar(100)
+  permissions  String[]     @default([])
+
+  community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
+
+  @@unique([communityID, userID, userType])
+  @@index([userID, userType])
+  @@index([communityID])
+  @@index([status])
+  @@map("community_members")
+}
+
+model CommunityInvite {
+  id          String    @id @default(uuid()) @db.Uuid
+  communityID String    @db.Uuid
+  inviterID   String    @db.Uuid
+  inviterType String    @db.VarChar(20)
+  inviteeID   String    @db.Uuid
+  inviteeType String    @db.VarChar(20)
+  message     String?   @db.Text
+  token       String    @unique @db.VarChar(255)
+  status      String    @default("pending") @db.VarChar(20) // pending, accepted, declined, expired
+  expiresAt   DateTime  @db.Timestamptz(6)
+  acceptedAt  DateTime? @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+
+  community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([inviteeID, inviteeType])
+  @@index([status])
+  @@map("community_invites")
+}
+
+model Post {
+  id           String   @id @default(uuid()) @db.Uuid
+  communityID  String   @db.Uuid
+  authorID     String   @db.Uuid
+  authorType   String   @db.VarChar(20)
+  type         PostType @default(text)
+  content      String   @db.Text
+  mediaUrls    String[] @default([])
+  linkUrl      String?
+  linkPreview  Json?    @default("{}")
+  pollOptions  String[] @default([])
+  eventData    Json?    @default("{}")
+  isPinned     Boolean  @default(false)
+  isEdited     Boolean  @default(false)
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  shareCount   Int      @default(0)
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  community Community      @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  comments  PostComment[]
+  reactions PostReaction[]
+
+  @@index([communityID])
+  @@index([authorID, authorType])
+  @@index([type])
+  @@index([createdAt])
+  @@index([isPinned])
+  @@map("posts")
+}
+
+model PostComment {
+  id              String   @id @default(uuid()) @db.Uuid
+  postID          String   @db.Uuid
+  authorID        String   @db.Uuid
+  authorType      String   @db.VarChar(20)
+  content         String   @db.Text
+  mediaUrls       String[] @default([])
+  parentCommentID String?  @db.Uuid
+  likeCount       Int      @default(0)
+  replyCount      Int      @default(0)
+  isEdited        Boolean  @default(false)
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  post          Post           @relation(fields: [postID], references: [id], onDelete: Cascade)
+  parentComment PostComment?   @relation("CommentReplies", fields: [parentCommentID], references: [id])
+  replies       PostComment[]  @relation("CommentReplies")
+  reactions     PostReaction[]
+
+  @@index([postID])
+  @@index([authorID, authorType])
+  @@index([parentCommentID])
+  @@index([createdAt])
+  @@map("post_comments")
+}
+
+model PostReaction {
+  id        String       @id @default(uuid()) @db.Uuid
+  postID    String?      @db.Uuid
+  commentID String?      @db.Uuid
+  userID    String       @db.Uuid
+  userType  String       @db.VarChar(20)
+  type      ReactionType @default(like)
+  createdAt DateTime     @default(now()) @db.Timestamptz(6)
+
+  post    Post?        @relation(fields: [postID], references: [id], onDelete: Cascade)
+  comment PostComment? @relation(fields: [commentID], references: [id], onDelete: Cascade)
+
+  @@unique([postID, userID, userType])
+  @@unique([commentID, userID, userType])
+  @@index([userID, userType])
+  @@index([type])
+  @@map("post_reactions")
+}
+
+model Conversation {
+  id               String    @id @default(uuid()) @db.Uuid
+  type             String    @db.VarChar(20) // 'direct', 'group'
+  name             String?   @db.VarChar(255)
+  participantIDs   String[]
+  participantTypes String[]
+  lastMessageID    String?   @db.Uuid
+  lastMessageAt    DateTime? @db.Timestamptz(6)
+  unreadCount      Json      @default("{}")
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
+
+  messages DirectMessage[]
+
+  @@index([participantIDs])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model DirectMessage {
+  id               String      @id @default(uuid()) @db.Uuid
+  conversationID   String      @db.Uuid
+  senderID         String      @db.Uuid
+  senderType       String      @db.VarChar(20)
+  type             MessageType @default(text)
+  content          String      @db.Text
+  mediaUrls        String[]    @default([])
+  fileUrl          String?
+  fileName         String?
+  fileSize         Int?
+  isRead           Boolean     @default(false)
+  readAt           DateTime?   @db.Timestamptz(6)
+  isEdited         Boolean     @default(false)
+  editedAt         DateTime?   @db.Timestamptz(6)
+  replyToMessageID String?     @db.Uuid
+  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
+
+  conversation   Conversation    @relation(fields: [conversationID], references: [id], onDelete: Cascade)
+  replyToMessage DirectMessage?  @relation("MessageReplies", fields: [replyToMessageID], references: [id])
+  replies        DirectMessage[] @relation("MessageReplies")
+
+  @@index([conversationID])
+  @@index([senderID, senderType])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("direct_messages")
+}
+
+model CommunityAnalytics {
+  id             String   @id @default(uuid()) @db.Uuid
+  communityID    String   @db.Uuid
+  date           DateTime @db.Date
+  newMembers     Int      @default(0)
+  totalMembers   Int      @default(0)
+  newPosts       Int      @default(0)
+  totalPosts     Int      @default(0)
+  newComments    Int      @default(0)
+  totalComments  Int      @default(0)
+  newReactions   Int      @default(0)
+  totalReactions Int      @default(0)
+  activeUsers    Int      @default(0)
+  engagementRate Float    @default(0)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([communityID, date])
+  @@index([date])
+  @@map("community_analytics")
+}
+
 model ContentCategory {
   id          String   @id @default(uuid()) @db.Uuid
   name        String   @db.VarChar(100)
