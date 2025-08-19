@@ -222,14 +222,16 @@ const VaultPage = () => {
       )}
 
       {/* Mobile Chat Toggle Button */}
-      <div className="lg:hidden fixed top-4 right-4 z-50">
-        <button
-          onClick={() => setShowChatSidebar(!showChatSidebar)}
-          className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-full shadow-lg"
-        >
-          {showChatSidebar ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </div>
+      {!showChatSidebar && (
+        <div className="lg:hidden fixed top-24 right-4 z-50">
+          <button
+            onClick={() => setShowChatSidebar(true)}
+            className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-full shadow-lg"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
       <div className="flex gap-3 sm:gap-4 lg:gap-6 h-full relative">
         {/* Main Content */}
