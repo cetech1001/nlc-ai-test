@@ -46,7 +46,8 @@
         "libs/sdk/analytics/*",
         "libs/api/dto/*",
         "libs/sdk/leads/*",
-        "libs/sdk/community/*"
+        "libs/sdk/community/*",
+        "libs/sdk/media/*"
       ]
     },
     {
@@ -114,7 +115,8 @@
         "libs/sdk/analytics/*",
         "libs/api/dto/*",
         "libs/sdk/leads/*",
-        "libs/sdk/community/*"
+        "libs/sdk/community/*",
+        "libs/sdk/media/*"
       ],
       "options": {
         "typecheck": {

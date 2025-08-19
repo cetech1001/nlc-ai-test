@@ -78,6 +78,8 @@ export interface PostComment {
   isEdited: boolean;
   createdAt: Date;
   updatedAt: Date;
+  reactions?: PostReaction[];
+  replies?: PostComment[];
 }
 
 export interface PostReaction {

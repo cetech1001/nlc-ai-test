@@ -17,6 +17,8 @@ async function bootstrap() {
     transform: true,
   }));
 
+  app.setGlobalPrefix('api/media');
+
   const config = new DocumentBuilder()
     .setTitle('NLC AI Media Service')
     .setDescription('Media upload, transformation, and management service')
@@ -29,8 +31,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.setGlobalPrefix('api/media');
 
   const port = process.env.PORT || 3003;
   await app.listen(port);

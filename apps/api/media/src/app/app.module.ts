@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
-import { ServiceAuthGuard } from '@nlc-ai/api-auth';
+import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { MediaModule } from './media/media.module';
@@ -19,20 +18,10 @@ import mediaConfig from './config/media.config';
       cache: true,
       expandVariables: true,
     }),
-    JwtModule.registerAsync({
-      useFactory: (config) => ({
-        secret: config.get('media.jwt.secret') || 'fallback-secret',
-        signOptions: {
-          expiresIn: config.get('media.jwt.expiresIn') || '24h',
-          audience: 'media-service',
-          issuer: 'nlc-ai',
-        },
-      }),
-      inject: [ConfigModule],
-    }),
     ScheduleModule.forRoot(),
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
+    AuthLibModule,
     HealthModule,
     MediaModule,
   ],

@@ -6,6 +6,8 @@ import {BillingServiceClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsServiceClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
 import {CommunityServiceClient} from "@nlc-ai/sdk-community";
+import {MediaServiceClient} from "@nlc-ai/sdk-media";
+
 
 export class NLCClient {
   public users: UsersServiceClient;
@@ -15,6 +17,7 @@ export class NLCClient {
   public analytics: AnalyticsServiceClient;
   public leads: LeadsServiceClient;
   public community: CommunityServiceClient;
+  public media: MediaServiceClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -55,6 +58,11 @@ export class NLCClient {
     this.community = new CommunityServiceClient({
       ...baseConfig,
       baseURL: config.services?.community || `${config.baseURL}/api/community`,
+    });
+
+    this.media = new MediaServiceClient({
+      ...baseConfig,
+      baseURL: config.services?.media || `${config.baseURL}/api/media`,
     });
   }
 }

@@ -10,5 +10,6 @@ export interface NLCClientConfig {
     billing?: string;
     analytics?: string;
     community?: string;
+    media?: string;
   };
 }

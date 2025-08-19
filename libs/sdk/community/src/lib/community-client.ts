@@ -8,7 +8,6 @@ import {
   PostResponse,
   CreateCommentRequest,
   ReactToPostRequest,
-  CommentListResponse,
   CreateConversationRequest,
   ConversationResponse,
   CreateMessageRequest,
@@ -16,7 +15,7 @@ import {
   MessageFilters,
   MessageListResponse,
   UnreadCountResponse,
-  ActionResponse,
+  ActionResponse, PostComment,
 } from './community.types';
 import {CommunityType} from "./enums";
 
@@ -102,8 +101,8 @@ export class CommunityServiceClient extends BaseServiceClient {
     return response.data!;
   }
 
-  async getComments(postID: string, page = 1, limit = 20): Promise<CommentListResponse> {
-    const response = await this.request<CommentListResponse>('GET', `/posts/${postID}/comments?page=${page}&limit=${limit}`);
+  async getComments(postID: string, page = 1, limit = 20): Promise<Paginated<PostComment>> {
+    const response = await this.request<Paginated<PostComment>>('GET', `/posts/${postID}/comments?page=${page}&limit=${limit}`);
     return response.data!;
   }
 

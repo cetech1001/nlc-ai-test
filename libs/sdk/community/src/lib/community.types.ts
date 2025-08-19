@@ -77,7 +77,7 @@ export interface PostComment {
   authorID: string;
   authorType: UserType;
   authorName?: string;
-  authorAvatar?: string;
+  authorAvatarUrl?: string;
   content: string;
   mediaUrls: string[];
   parentCommentID?: string;

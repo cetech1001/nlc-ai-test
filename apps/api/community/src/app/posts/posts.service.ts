@@ -12,7 +12,7 @@ import {
   UpdatePostRequest,
   PostFilters,
   CreateCommentRequest,
-  ReactToPostRequest, Post
+  ReactToPostRequest, Post, PostComment
 } from '@nlc-ai/api-types';
 
 @Injectable()
@@ -458,57 +458,47 @@ export class PostsService {
     // Check if user has access to the community
     await this.checkCommunityMembership(post.communityID, userID, userType);
 
-    const [comments, total] = await Promise.all([
-      this.prisma.postComment.findMany({
-        where: {
-          postID,
-          parentCommentID: null, // Top-level comments only
+    const result = await this.prisma.paginate<PostComment>(this.prisma.postComment, {
+      page,
+      limit,
+      where: {
+        postID,
+        parentCommentID: null, // Top-level comments only
+      },
+      include: {
+        reactions: {
+          where: { userID, userType },
+          select: { type: true },
         },
-        include: {
-          reactions: {
-            where: { userID, userType },
-            select: { type: true },
-          },
-          replies: {
-            take: 3, // Limited replies per comment
-            include: {
-              reactions: {
-                where: { userID, userType },
-                select: { type: true },
-              },
+        replies: {
+          take: 3, // Limited replies per comment
+          include: {
+            reactions: {
+              where: { userID, userType },
+              select: { type: true },
             },
-            orderBy: { createdAt: 'asc' },
           },
-          _count: {
-            select: { replies: true, reactions: true },
-          },
+          orderBy: { createdAt: 'asc' },
         },
-        orderBy: { createdAt: 'asc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.postComment.count({
-        where: {
-          postID,
-          parentCommentID: null,
+        _count: {
+          select: { replies: true, reactions: true },
         },
-      }),
-    ]);
+      },
+      orderBy: { createdAt: 'asc' },
+    });
 
     return {
-      comments: comments.map(comment => ({
+      ...result,
+      data: result.data.map(comment => ({
         ...comment,
-        userReaction: comment.reactions[0]?.type || null,
-        replies: comment.replies.map(reply => ({
+        userReaction: comment.reactions?.[0]?.type || null,
+        replies: comment.replies?.map(reply => ({
           ...reply,
-          userReaction: reply.reactions[0]?.type || null,
+          userReaction: reply.reactions?.[0]?.type || null,
           reactions: undefined,
         })),
         reactions: undefined,
       })),
-      total,
-      page,
-      limit,
     };
   }
 

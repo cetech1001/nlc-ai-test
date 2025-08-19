@@ -7,6 +7,8 @@ import {
   MoreHorizontal,
   Search,
   Users,
+  Menu,
+  X,
 } from "lucide-react";
 import {CommunityHeader, LoadMorePosts, NewPost, sdkClient, SinglePost} from "@/lib";
 import {
@@ -32,6 +34,9 @@ const VaultPage = () => {
   const [chatsLoading, setChatsLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
+
+  // Mobile state
+  const [showChatSidebar, setShowChatSidebar] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,7 +106,7 @@ const VaultPage = () => {
     }
   };
 
-  const handleCreatePost = async (newPost: string) => {
+  const handleCreatePost = async (newPost: string, mediaUrls?: string[]) => {
     if (!newPost.trim() || !community) return;
 
     try {
@@ -109,12 +114,11 @@ const VaultPage = () => {
         communityID: community.id,
         type: PostType.TEXT,
         content: newPost.trim(),
-        mediaUrls: []
+        mediaUrls: mediaUrls || []
       });
 
       // Add new post to the beginning of the list
       setPosts(prev => [newPostData, ...prev]);
-      // setNewPost('');
       setSuccessMessage('Post created successfully!');
     } catch (error: any) {
       setError(error.message || "Failed to create post");
@@ -167,7 +171,6 @@ const VaultPage = () => {
           : post
       ));
 
-      // setNewComment('');
       setSuccessMessage('Comment added successfully!');
     } catch (error: any) {
       setError(error.message || "Failed to add comment");
@@ -201,7 +204,7 @@ const VaultPage = () => {
   }
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 max-w-full overflow-hidden">
+    <div className="py-2 sm:py-4 lg:py-6 max-w-full overflow-hidden">
       {successMessage && (
         <AlertBanner type="success" message={successMessage} onDismiss={clearMessages} />
       )}
@@ -210,19 +213,32 @@ const VaultPage = () => {
         <AlertBanner type="error" message={error} onDismiss={clearMessages} />
       )}
 
-      <div className="flex gap-6 h-full">
-        <div className="flex-1 max-w-2xl">
+      {/* Mobile Chat Toggle Button */}
+      <div className="lg:hidden fixed top-4 right-4 z-50">
+        <button
+          onClick={() => setShowChatSidebar(!showChatSidebar)}
+          className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-full shadow-lg"
+        >
+          {showChatSidebar ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      <div className="flex gap-3 sm:gap-4 lg:gap-6 h-full relative">
+        {/* Main Content */}
+        <div className="flex-1 max-w-full lg:max-w-2xl px-2 sm:px-0">
           {community && <CommunityHeader community={community}/>}
 
           <NewPost handleCreatePost={handleCreatePost}/>
 
           {/* Posts Feed */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {posts.map(post => (
-              <SinglePost key={post.id} post={post}
-                          likedPosts={likedPosts}
-                          handleReactToPost={handleReactToPost}
-                          handleAddComment={handleAddComment}
+              <SinglePost
+                key={post.id}
+                post={post}
+                likedPosts={likedPosts}
+                handleReactToPost={handleReactToPost}
+                handleAddComment={handleAddComment}
               />
             ))}
 
@@ -233,16 +249,16 @@ const VaultPage = () => {
 
             {posts.length === 0 && !postsLoading && (
               <div className="text-center py-12">
-                <Users className="w-16 h-16 text-stone-600 mx-auto mb-4" />
-                <h3 className="text-white text-lg font-medium mb-2">No posts yet</h3>
-                <p className="text-stone-400">Be the first to share something with the coach community!</p>
+                <Users className="w-12 sm:w-16 h-12 sm:h-16 text-stone-600 mx-auto mb-4" />
+                <h3 className="text-white text-base sm:text-lg font-medium mb-2">No posts yet</h3>
+                <p className="text-stone-400 text-sm sm:text-base px-4">Be the first to share something with the coach community!</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Chat Sidebar */}
-        <div className="w-96 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden h-fit">
+        {/* Chat Sidebar - Desktop */}
+        <div className="hidden lg:block w-96 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden h-fit">
           <div className="absolute inset-0 opacity-20">
             <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
           </div>
@@ -316,6 +332,97 @@ const VaultPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Chat Sidebar - Mobile Overlay */}
+        {showChatSidebar && (
+          <div className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm">
+            <div className="absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-neutral-800 to-neutral-900 border-l border-neutral-700 overflow-hidden">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+              </div>
+
+              <div className="relative z-10 p-4 h-full flex flex-col">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-white text-lg font-semibold">Coach Network</h2>
+                  <button
+                    onClick={() => setShowChatSidebar(false)}
+                    className="text-stone-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="text"
+                    placeholder="Search coaches..."
+                    className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500"
+                  />
+                </div>
+
+                {/* Chat List */}
+                <div className="flex-1 space-y-3 overflow-y-auto">
+                  {chatsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-fuchsia-500"></div>
+                    </div>
+                  ) : conversations.length > 0 ? (
+                    conversations.map(conversation => (
+                      <div
+                        key={conversation.id}
+                        onClick={() => {
+                          handleChatClick(conversation);
+                          setShowChatSidebar(false);
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                      >
+                        <div className="relative">
+                          <div className="w-10 h-10 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {conversation.name ? conversation.name.charAt(0).toUpperCase() : 'C'}
+                            </span>
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-white text-sm font-medium truncate">
+                              {conversation.name || 'Coach Chat'}
+                            </h3>
+                            <button className="text-stone-400 hover:text-white transition-colors">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-stone-400 text-xs truncate">
+                              {conversation.lastMessage?.content || 'Start a conversation'}
+                            </p>
+                            <span className="text-stone-500 text-xs">
+                              {conversation.lastMessageAt ? formatTimeAgo(conversation.lastMessageAt) : ''}
+                            </span>
+                          </div>
+                          {conversation.unreadCount > 0 && (
+                            <div className="w-5 h-5 bg-fuchsia-600 rounded-full flex items-center justify-center mt-1">
+                              <span className="text-white text-xs font-medium">{conversation.unreadCount}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageCircle className="w-12 h-12 text-stone-600 mx-auto mb-3" />
+                      <p className="text-stone-400 text-sm">No conversations yet</p>
+                      <p className="text-stone-500 text-xs">Connect with other coaches</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

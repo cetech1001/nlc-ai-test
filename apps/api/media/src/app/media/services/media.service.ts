@@ -1,11 +1,11 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@nlc-ai/api-database';
-import { OutboxService } from '@nlc-ai/api-messaging';
-import { MediaProviderFactory } from '../providers/provider.factory';
-import { UploadAssetDto } from '../dto/upload-asset.dto';
-import { MediaFiltersDto } from '../dto/media-filters.dto';
-import {MediaFile, MediaUploadResult, MediaResourceType, MediaEvent} from '@nlc-ai/api-types';
+import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {ConfigService} from '@nestjs/config';
+import {PrismaService} from '@nlc-ai/api-database';
+import {OutboxService} from '@nlc-ai/api-messaging';
+import {MediaProviderFactory} from '../providers/provider.factory';
+import {UploadAssetDto} from '../dto/upload-asset.dto';
+import {MediaFiltersDto} from '../dto/media-filters.dto';
+import {MediaEvent, MediaFile, MediaResourceType, MediaUploadResult} from '@nlc-ai/api-types';
 
 @Injectable()
 export class MediaService {
@@ -76,7 +76,7 @@ export class MediaService {
           publicID: asset.publicID,
           originalName: file.originalname,
           resourceType: asset.resourceType as MediaResourceType,
-          fileSize: asset.fileSize,
+          fileSize: asset.fileSize as number,
           provider: this.mediaProviderFactory.getDefaultProvider(),
           folder: asset.folder,
           tags: asset.tags,
@@ -85,21 +85,15 @@ export class MediaService {
         }
       }, 'media.asset.uploaded');
 
-      return {
-        success: true,
-        asset: mediaFile as unknown as MediaFile
-      };
+      return this.serializeMediaFile(mediaFile);
 
     } catch (error: any) {
       this.logger.error('Failed to upload asset', error);
-      return {
-        success: false,
-        error: {
-          code: 'UPLOAD_FAILED',
-          message: error.message,
-          details: error
-        }
-      };
+      throw new BadRequestException({
+        code: 'UPLOAD_FAILED',
+        message: error.message,
+        details: error
+      });
     }
   }
 
@@ -243,5 +237,14 @@ export class MediaService {
     if (!allowedTypes.includes(file.mimetype)) {
       throw new BadRequestException(`File type ${file.mimetype} is not allowed`);
     }
+  }
+
+  private serializeMediaFile(mediaFile: any): any {
+    return {
+      ...mediaFile,
+      fileSize: Number(mediaFile.fileSize),
+      createdAt: mediaFile.createdAt?.toISOString?.() || mediaFile.createdAt,
+      updatedAt: mediaFile.updatedAt?.toISOString?.() || mediaFile.updatedAt,
+    };
   }
 }

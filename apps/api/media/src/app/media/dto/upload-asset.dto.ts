@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsArray, IsObject, IsBoolean } from 'class-validator';
+import {IsOptional, IsString, IsArray, IsBoolean, IsObject} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export enum ResourceType {
@@ -72,12 +72,26 @@ export class UploadAssetDto {
 
   @ApiProperty({ required: false, type: [String] })
   @IsOptional()
+  @Transform(({ value }) => !Array.isArray(value) ? [value] : value)
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
 
   @ApiProperty({ required: false, type: Object, additionalProperties: true })
   @IsOptional()
+  @Transform(({ value }) => {
+    // Handle FormData JSON string
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        console.warn('Failed to parse metadata JSON:', value, error);
+        return {}; // Return empty object if parsing fails
+      }
+    }
+    // Handle direct object
+    return value || {};
+  })
   @IsObject()
   metadata?: Record<string, any>;
 

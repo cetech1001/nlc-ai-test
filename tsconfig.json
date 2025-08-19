@@ -113,6 +113,9 @@
     },
     {
       "path": "./libs/sdk/community"
+    },
+    {
+      "path": "./libs/sdk/media"
     }
   ]
 }

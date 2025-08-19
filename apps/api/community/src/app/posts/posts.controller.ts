@@ -26,6 +26,7 @@ import {
   CreateCommentDto,
   ReactToPostDto,
 } from './dto';
+import {PaginationDto} from "@nlc-ai/api-dto";
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -119,11 +120,10 @@ export class PostsController {
   @ApiResponse({ status: 200, description: 'Comments retrieved successfully' })
   async getComments(
     @Param('id') postID: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
+    @Query() query: PaginationDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.getComments(postID, page, limit, user.id, user.type);
+    return this.postsService.getComments(postID, query.page, query.limit, user.id, user.type);
   }
 
   @Post('comments/:commentID/reactions')

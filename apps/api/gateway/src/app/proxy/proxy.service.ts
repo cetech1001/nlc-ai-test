@@ -110,6 +110,84 @@ export class ProxyService {
     }
   }
 
+  // New method specifically for FormData requests
+  async proxyFormDataRequest<T = any>(
+    serviceName: string,
+    path: string,
+    request: ProxyRequest
+  ): Promise<ProxyResponse<T>> {
+    const serviceConfig = this.serviceRegistry.getService(serviceName);
+
+    if (!serviceConfig) {
+      throw new ServiceUnavailableException(`${serviceName} service is not available`);
+    }
+
+    // Check circuit breaker
+    if (!this.circuitBreaker.canExecute(serviceName)) {
+      throw new ServiceUnavailableException(`${serviceName} service is temporarily unavailable`);
+    }
+
+    const fullUrl = `${serviceConfig.url}${path}`;
+    const requestTimeout = serviceConfig.timeout || 60000; // Longer timeout for file uploads
+
+    this.logger.debug(`Proxying FormData ${request.method} request to: ${fullUrl}`);
+
+    try {
+      const startTime = Date.now();
+
+      const response = await firstValueFrom(
+        this.httpService.request({
+          method: request.method,
+          url: fullUrl,
+          headers: {
+            ...request.headers,
+            'X-Gateway-Request-ID': this.generateRequestID(),
+            'X-Forwarded-For': request.headers?.['x-forwarded-for'] || 'gateway',
+          },
+          data: request.data, // FormData object
+          params: request.params,
+          timeout: requestTimeout,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          validateStatus: () => true,
+        }).pipe(
+          timeout(requestTimeout),
+          // No retry for file uploads - they're expensive
+          catchError((error) => {
+            this.circuitBreaker.recordFailure(serviceName);
+            throw error;
+          })
+        )
+      );
+
+      const duration = Date.now() - startTime;
+      this.circuitBreaker.recordSuccess(serviceName);
+
+      this.logger.debug(`FormData request to ${serviceName} completed in ${duration}ms with status ${response.status}`);
+
+      return {
+        data: response.data,
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers as Record<string, string>,
+      };
+
+    } catch (error: any) {
+      this.logger.error(`FormData request to ${serviceName} failed:`, error.message);
+      this.circuitBreaker.recordFailure(serviceName);
+
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        throw new ServiceUnavailableException(`FormData request to ${serviceName} timed out`);
+      }
+
+      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+        throw new BadGatewayException(`Cannot connect to ${serviceName} service`);
+      }
+
+      throw new BadGatewayException(`Service ${serviceName} FormData error: ${error.message}`);
+    }
+  }
+
   private generateRequestID(): string {
     return `gw-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }

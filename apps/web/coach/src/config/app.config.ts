@@ -11,6 +11,7 @@ interface AppConfig {
       analytics: string;
       aiAgents: string;
       community: string;
+      media: string;
     };
   };
   auth: {
@@ -43,6 +44,7 @@ const config: AppConfig = {
       analytics: `${process.env.NEXT_PUBLIC_API_URL}/analytics`,
       aiAgents: `${process.env.NEXT_PUBLIC_API_URL}/ai-agents`,
       community: `${process.env.NEXT_PUBLIC_API_URL}/community`,
+      media: `${process.env.NEXT_PUBLIC_API_URL}/media`,
     },
   },
   auth: {
