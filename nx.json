@@ -143,5 +143,8 @@
         "unitTestRunner": "none"
       }
     }
+  },
+  "sync": {
+    "applyChanges": true
   }
 }

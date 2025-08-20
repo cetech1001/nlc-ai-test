@@ -1,8 +1,8 @@
-name: "NLC AI"
+name: "NLC AI Dev"
 services:
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: nlc_ai_pgadmin
+    container_name: nlc_ai_dev_pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
@@ -12,12 +12,12 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - pgadmin_data:/var/lib/pgladmin
+      - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
 
   postgres:
     image: postgres:16
-    container_name: nlc_ai_postgres
+    container_name: nlc_ai_dev_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -31,7 +31,7 @@ services:
   # One-off init job to create an extra DB in the primary Postgres (optional)
   db_init:
     image: postgres:16
-    container_name: nlc_ai_db_init
+    container_name: nlc_ai_dev_db_init
     depends_on:
       - postgres
     environment:
@@ -44,7 +44,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: nlc_ai_rabbitmq
+    container_name: nlc_ai_dev_rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
@@ -58,9 +58,8 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: ./apps/api/auth/Dockerfile
-      target: runner
-    container_name: nlc_ai_auth_service
+      dockerfile: ./apps/api/auth/dev.Dockerfile
+    container_name: nlc_ai_dev_auth_service
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -69,14 +68,23 @@ services:
       - rabbitmq
       - db_init
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/api/auth:/app/apps/api/auth
+      - ./libs/api:/app/libs/api
+      - ./nx.json:/app/nx.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      # Prevent overwriting node_modules
+      - /app/node_modules
 
   gateway-service:
     build:
       context: .
-      dockerfile: ./apps/api/gateway/Dockerfile
-      target: runner
-    container_name: nlc_ai_gateway_service
+      dockerfile: ./apps/api/gateway/dev.Dockerfile
+    container_name: nlc_ai_dev_gateway_service
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -87,18 +95,27 @@ services:
       - auth-service
       - users-service
     environment:
-      - NODE_ENV=production
-    # Pre-deploy command equivalent - run migrations before starting the service
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/api/gateway:/app/apps/api/gateway
+      - ./libs/api:/app/libs/api
+      - ./nx.json:/app/nx.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      # Prevent overwriting node_modules
+      - /app/node_modules
+    # Run migrations before starting the service
     entrypoint: ["sh", "-c"]
     command: >-
-      "npm run db:deploy && node apps/api/gateway/dist/main.js"
+      "npm run db:deploy && npx nx serve gateway-service --host 0.0.0.0"
 
   users-service:
     build:
       context: .
-      dockerfile: ./apps/api/users/Dockerfile
-      target: runner
-    container_name: nlc_ai_users_service
+      dockerfile: ./apps/api/users/dev.Dockerfile
+    container_name: nlc_ai_dev_users_service
     restart: unless-stopped
     ports:
       - "3002:3002"
@@ -107,7 +124,92 @@ services:
       - rabbitmq
       - db_init
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/api/users:/app/apps/api/users
+      - ./libs/api:/app/libs/api
+      - ./nx.json:/app/nx.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      # Prevent overwriting node_modules
+      - /app/node_modules
+
+  community-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/community/dev.Dockerfile
+    container_name: nlc_ai_dev_community_service
+    restart: unless-stopped
+    ports:
+      - "3009:3009"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - db_init
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/api/community:/app/apps/api/community
+      - ./libs/api:/app/libs/api
+      - ./nx.json:/app/nx.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      # Prevent overwriting node_modules
+      - /app/node_modules
+
+  leads-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/leads/dev.Dockerfile
+    container_name: nlc_ai_dev_leads_service
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - db_init
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/api/leads:/app/apps/api/leads
+      - ./libs/api:/app/libs/api
+      - ./nx.json:/app/nx.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      # Prevent overwriting node_modules
+      - /app/node_modules
+
+  media-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/media/dev.Dockerfile
+    container_name: nlc_ai_dev_media_service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - db_init
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/api/media:/app/apps/api/media
+      - ./libs/api:/app/libs/api
+      - ./nx.json:/app/nx.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      # Prevent overwriting node_modules
+      - /app/node_modules
 
 volumes:
   pgadmin_data:
