@@ -4,39 +4,6 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/api/billing"
-    },
-    {
-      "path": "./apps/api/monolith"
-    },
-    {
-      "path": "./apps/web/admin"
-    },
-    {
-      "path": "./apps/web/coach"
-    },
-    {
-      "path": "./libs/types"
-    },
-    {
-      "path": "./libs/web/api-client"
-    },
-    {
-      "path": "./libs/web/settings"
-    },
-    {
-      "path": "./libs/web/shared"
-    },
-    {
-      "path": "./libs/web/utils"
-    },
-    {
-      "path": "./libs/web/auth"
-    },
-    {
-      "path": "./libs/web/ui"
-    },
-    {
       "path": "./libs/api/types"
     },
     {
@@ -52,70 +19,97 @@
       "path": "./libs/api/auth"
     },
     {
-      "path": "./apps/api/auth"
-    },
-    {
       "path": "./apps/api/users"
-    },
-    {
-      "path": "./apps/api/email"
-    },
-    {
-      "path": "./apps/api/media"
-    },
-    {
-      "path": "./apps/api/notifications"
-    },
-    {
-      "path": "./apps/api/leads"
-    },
-    {
-      "path": "./apps/api/integrations"
-    },
-    {
-      "path": "./apps/api/gateway"
-    },
-    {
-      "path": "./libs/sdk/core"
-    },
-    {
-      "path": "./libs/sdk/users"
-    },
-    {
-      "path": "./libs/sdk/core"
-    },
-    {
-      "path": "./libs/sdk/users"
-    },
-    {
-      "path": "./libs/sdk/auth"
-    },
-    {
-      "path": "./libs/sdk/email"
-    },
-    {
-      "path": "./libs/sdk/billing"
-    },
-    {
-      "path": "./libs/sdk/main"
-    },
-    {
-      "path": "./libs/sdk/analytics"
     },
     {
       "path": "./libs/api/dto"
     },
     {
-      "path": "./libs/sdk/leads"
+      "path": "./apps/api/notifications"
+    },
+    {
+      "path": "./apps/api/integrations"
     },
     {
       "path": "./apps/api/community"
     },
     {
+      "path": "./apps/api/monolith"
+    },
+    {
+      "path": "./apps/api/billing"
+    },
+    {
+      "path": "./apps/api/gateway"
+    },
+    {
+      "path": "./apps/api/email"
+    },
+    {
+      "path": "./apps/api/leads"
+    },
+    {
+      "path": "./apps/api/media"
+    },
+    {
+      "path": "./apps/api/auth"
+    },
+    {
+      "path": "./libs/types"
+    },
+    {
+      "path": "./libs/web/api-client"
+    },
+    {
+      "path": "./libs/sdk/analytics"
+    },
+    {
       "path": "./libs/sdk/community"
     },
     {
+      "path": "./libs/web/settings"
+    },
+    {
+      "path": "./libs/sdk/billing"
+    },
+    {
+      "path": "./libs/web/shared"
+    },
+    {
+      "path": "./apps/web/admin"
+    },
+    {
+      "path": "./apps/web/coach"
+    },
+    {
+      "path": "./libs/sdk/email"
+    },
+    {
+      "path": "./libs/sdk/leads"
+    },
+    {
       "path": "./libs/sdk/media"
+    },
+    {
+      "path": "./libs/sdk/users"
+    },
+    {
+      "path": "./libs/web/utils"
+    },
+    {
+      "path": "./libs/sdk/auth"
+    },
+    {
+      "path": "./libs/sdk/core"
+    },
+    {
+      "path": "./libs/sdk/main"
+    },
+    {
+      "path": "./libs/web/auth"
+    },
+    {
+      "path": "./libs/web/ui"
     }
   ]
 }

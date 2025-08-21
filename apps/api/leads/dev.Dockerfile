@@ -9,7 +9,7 @@ COPY package*.json ./
 COPY nx.json ./
 COPY tsconfig.base.json ./
 
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 RUN npm install nx@latest
 
 # Copy source code (will be overridden by volume mount in dev)

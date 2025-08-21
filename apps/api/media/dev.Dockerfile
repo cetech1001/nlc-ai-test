@@ -5,15 +5,15 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies first for better caching
-COPY package*.json ./
-COPY nx.json ./
-COPY tsconfig.base.json ./
+COPY . .
 
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 RUN npm install nx@latest
 
 # Copy source code (will be overridden by volume mount in dev)
-COPY . .
+COPY tsconfig.json ./
+COPY libs/api ./libs/api
+COPY apps/api/media ./apps/api/media
 
 # Generate Prisma client
 RUN npx nx sync

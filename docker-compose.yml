@@ -2,7 +2,7 @@ name: "NLC AI Dev"
 services:
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: nlc_ai_dev_pgadmin
+    container_name: pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
@@ -17,7 +17,7 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: nlc_ai_dev_postgres
+    container_name: postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -31,7 +31,7 @@ services:
   # One-off init job to create an extra DB in the primary Postgres (optional)
   db_init:
     image: postgres:16
-    container_name: nlc_ai_dev_db_init
+    container_name: db_init
     depends_on:
       - postgres
     environment:
@@ -44,7 +44,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: nlc_ai_dev_rabbitmq
+    container_name: rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
@@ -55,11 +55,28 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  # Database migration service - runs once to apply migrations
+  db_migrate:
+    build:
+      context: .
+      dockerfile: ./apps/api/gateway/dev.Dockerfile
+    container_name: db_migrate
+    depends_on:
+      - postgres
+      - db_init
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./.env:/app/.env
+      - ./libs/api:/app/libs/api
+    command: ["npm", "run", "db:deploy"]
+    restart: "no"
+
   auth-service:
     build:
       context: .
       dockerfile: ./apps/api/auth/dev.Dockerfile
-    container_name: nlc_ai_dev_auth_service
+    container_name: auth_service
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -84,16 +101,14 @@ services:
     build:
       context: .
       dockerfile: ./apps/api/gateway/dev.Dockerfile
-    container_name: nlc_ai_dev_gateway_service
+    container_name: gateway_service
     restart: unless-stopped
     ports:
       - "3000:3000"
     depends_on:
       - postgres
       - rabbitmq
-      - db_init
-      - auth-service
-      - users-service
+      - db_migrate
     environment:
       - NODE_ENV=development
     volumes:
@@ -106,19 +121,15 @@ services:
       - ./.env:/app/.env
       # Prevent overwriting node_modules
       - /app/node_modules
-    # Run migrations before starting the service
-    entrypoint: ["sh", "-c"]
-    command: >-
-      "npm run db:deploy && npx nx serve gateway-service --host 0.0.0.0"
 
   users-service:
     build:
       context: .
       dockerfile: ./apps/api/users/dev.Dockerfile
-    container_name: nlc_ai_dev_users_service
-    restart: unless-stopped
+    container_name: users_service
+    restart: no
     ports:
-      - "3002:3002"
+      - "3005:3005"
     depends_on:
       - postgres
       - rabbitmq
@@ -140,10 +151,10 @@ services:
     build:
       context: .
       dockerfile: ./apps/api/community/dev.Dockerfile
-    container_name: nlc_ai_dev_community_service
+    container_name: community_service
     restart: unless-stopped
     ports:
-      - "3009:3009"
+      - "3002:3002"
     depends_on:
       - postgres
       - rabbitmq
@@ -165,10 +176,10 @@ services:
     build:
       context: .
       dockerfile: ./apps/api/leads/dev.Dockerfile
-    container_name: nlc_ai_dev_leads_service
+    container_name: leads_service
     restart: unless-stopped
     ports:
-      - "3006:3006"
+      - "3003:3003"
     depends_on:
       - postgres
       - rabbitmq
@@ -190,10 +201,10 @@ services:
     build:
       context: .
       dockerfile: ./apps/api/media/dev.Dockerfile
-    container_name: nlc_ai_dev_media_service
+    container_name: media_service
     restart: unless-stopped
     ports:
-      - "3003:3003"
+      - "3004:3004"
     depends_on:
       - postgres
       - rabbitmq
