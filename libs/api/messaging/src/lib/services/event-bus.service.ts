@@ -1,40 +1,102 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 import { BaseEvent } from '../types';
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
-export class EventBusService {
+export class EventBusService implements OnModuleInit, OnModuleDestroy {
   private connection: amqp.ChannelModel | undefined;
   private channel: amqp.Channel | undefined;
   private readonly logger = new Logger(EventBusService.name);
+  private isConnecting = false;
+  private connectionPromise: Promise<void> | null = null;
 
   constructor(private configService: ConfigService) {}
 
-  async connect(): Promise<void> {
+  async onModuleInit(): Promise<void> {
+    await this.ensureConnection();
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await this.close();
+  }
+
+  private async ensureConnection(): Promise<void> {
+    if (this.connection && this.channel) {
+      return;
+    }
+
+    if (this.isConnecting && this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
+    this.isConnecting = true;
+    this.connectionPromise = this.connect();
+
     try {
-      this.connection = await amqp.connect(
-        this.configService.get('RABBITMQ_URL', '')
-      );
+      await this.connectionPromise;
+    } finally {
+      this.isConnecting = false;
+      this.connectionPromise = null;
+    }
+  }
+
+  private async connect(): Promise<void> {
+    try {
+      const rabbitmqUrl = this.configService.get('RABBITMQ_URL');
+      if (!rabbitmqUrl) {
+        this.logger.warn('RABBITMQ_URL not configured - events will not be published');
+        return;
+      }
+
+      this.connection = await amqp.connect(rabbitmqUrl);
       this.channel = await this.connection.createChannel();
 
+      // Setup error handlers
+      this.connection.on('error', (error) => {
+        this.logger.error('RabbitMQ connection error:', error);
+        this.resetConnection();
+      });
+
+      this.connection.on('close', () => {
+        this.logger.warn('RabbitMQ connection closed');
+        this.resetConnection();
+      });
+
+      this.channel.on('error', (error) => {
+        this.logger.error('RabbitMQ channel error:', error);
+        this.resetConnection();
+      });
+
       // Setup exchanges
-      await this.channel.assertExchange('nlc.domain.types', 'topic', {
+      await this.channel.assertExchange('nlc.domain.events', 'topic', {
         durable: true,
       });
 
-      this.logger.log('Connected to RabbitMQ');
+      this.logger.log('Connected to RabbitMQ successfully');
     } catch (error) {
       this.logger.error('Failed to connect to RabbitMQ', error);
+      this.resetConnection();
       throw error;
     }
+  }
+
+  private resetConnection(): void {
+    this.connection = undefined;
+    this.channel = undefined;
   }
 
   async publish<T extends BaseEvent>(
     routingKey: string,
     event: Omit<T, 'eventID' | 'occurredAt' | 'producer' | 'source'>
   ): Promise<void> {
+    await this.ensureConnection();
+
+    if (!this.channel) {
+      throw new Error('No RabbitMQ connection available');
+    }
+
     const fullEvent: T = {
       ...event,
       eventID: uuid(),
@@ -44,8 +106,8 @@ export class EventBusService {
     } as T;
 
     try {
-      const published = this.channel?.publish(
-        'nlc.domain.types',
+      const published = this.channel.publish(
+        'nlc.domain.events',
         routingKey,
         Buffer.from(JSON.stringify(fullEvent)),
         {
@@ -75,17 +137,23 @@ export class EventBusService {
     routingKeys: string[],
     handler: (event: T) => Promise<void>
   ): Promise<void> {
+    await this.ensureConnection();
+
+    if (!this.channel) {
+      throw new Error('No RabbitMQ connection available');
+    }
+
     try {
-      await this.channel?.assertQueue(queueName, {
+      await this.channel.assertQueue(queueName, {
         durable: true,
       });
 
       // Bind queue to routing keys
       for (const routingKey of routingKeys) {
-        await this.channel?.bindQueue(queueName, 'nlc.domain.types', routingKey);
+        await this.channel.bindQueue(queueName, 'nlc.domain.events', routingKey);
       }
 
-      await this.channel?.consume(
+      await this.channel.consume(
         queueName,
         async (msg) => {
           if (!msg) return;
@@ -117,11 +185,18 @@ export class EventBusService {
   }
 
   async close(): Promise<void> {
-    if (this.channel) {
-      await this.channel.close();
-    }
-    if (this.connection) {
-      await this.connection.close();
+    try {
+      if (this.channel) {
+        await this.channel.close();
+        this.channel = undefined;
+      }
+      if (this.connection) {
+        await this.connection.close();
+        this.connection = undefined;
+      }
+      this.logger.log('RabbitMQ connection closed');
+    } catch (error) {
+      this.logger.error('Error closing RabbitMQ connection:', error);
     }
   }
 }

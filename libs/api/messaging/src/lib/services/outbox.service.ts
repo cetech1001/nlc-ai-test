@@ -12,6 +12,7 @@ export class OutboxService {
   private readonly batchSize: number;
   private readonly maxRetries: number;
   private readonly retentionDays: number;
+  private isProcessing = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -58,7 +59,12 @@ export class OutboxService {
 
       // Try to publish immediately if not scheduled for later
       if (!scheduledFor || scheduledFor <= new Date()) {
-        await this.processOutboxEvents();
+        // Use setImmediate to avoid blocking the current operation
+        setImmediate(() => {
+          this.processOutboxEvents().catch(error => {
+            this.logger.error('Error in immediate outbox processing:', error);
+          });
+        });
       }
     } catch (error) {
       this.logger.error(`Failed to save event to outbox: ${fullEvent.eventType}`, error);
@@ -68,6 +74,12 @@ export class OutboxService {
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async processOutboxEvents(): Promise<void> {
+    if (this.isProcessing) {
+      return; // Prevent overlapping executions
+    }
+
+    this.isProcessing = true;
+
     try {
       const now = new Date();
       const pendingEvents = await this.prisma.eventOutbox.findMany({
@@ -91,9 +103,11 @@ export class OutboxService {
 
       for (const outboxEvent of pendingEvents) {
         try {
+          const eventPayload = JSON.parse(outboxEvent.payload as string);
+
           await this.eventBus.publish(
             outboxEvent.routingKey,
-            JSON.parse(outboxEvent.payload as string)
+            eventPayload
           );
 
           await this.prisma.eventOutbox.update({
@@ -132,40 +146,51 @@ export class OutboxService {
       }
     } catch (error) {
       this.logger.error('Error processing outbox events', error);
+    } finally {
+      this.isProcessing = false;
     }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async cleanupOldEvents(): Promise<void> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
 
-    const result = await this.prisma.eventOutbox.deleteMany({
-      where: {
-        status: 'published',
-        publishedAt: { lte: cutoffDate },
-      },
-    });
+      const result = await this.prisma.eventOutbox.deleteMany({
+        where: {
+          status: 'published',
+          publishedAt: { lte: cutoffDate },
+        },
+      });
 
-    this.logger.log(`Cleaned up ${result.count} old outbox events`);
+      this.logger.log(`Cleaned up ${result.count} old outbox events`);
+    } catch (error) {
+      this.logger.error('Error cleaning up old events:', error);
+    }
   }
 
   async retryFailedEvents(eventIDs?: string[]): Promise<void> {
-    const where: any = { status: 'failed' };
-    if (eventIDs && eventIDs.length > 0) {
-      where.eventID = { in: eventIDs };
+    try {
+      const where: any = { status: 'failed' };
+      if (eventIDs && eventIDs.length > 0) {
+        where.eventID = { in: eventIDs };
+      }
+
+      const result = await this.prisma.eventOutbox.updateMany({
+        where,
+        data: {
+          status: 'pending',
+          retryCount: 0,
+          lastError: null,
+          updatedAt: new Date(),
+        },
+      });
+
+      this.logger.log(`Reset ${result.count} failed events for retry`, { eventIDs });
+    } catch (error) {
+      this.logger.error('Error retrying failed events:', error);
+      throw error;
     }
-
-    await this.prisma.eventOutbox.updateMany({
-      where,
-      data: {
-        status: 'pending',
-        retryCount: 0,
-        lastError: null,
-        updatedAt: new Date(),
-      },
-    });
-
-    this.logger.log(`Reset failed events for retry`, { eventIDs });
   }
 }
