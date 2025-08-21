@@ -59,7 +59,7 @@ services:
   db_migrate:
     build:
       context: .
-      dockerfile: ./apps/api/gateway/dev.Dockerfile
+      dockerfile: ./apps/api/gateway/Dockerfile
     container_name: db_migrate
     depends_on:
       - postgres
@@ -75,7 +75,7 @@ services:
   auth-service:
     build:
       context: .
-      dockerfile: ./apps/api/auth/dev.Dockerfile
+      dockerfile: ./apps/api/auth/Dockerfile
     container_name: auth_service
     restart: unless-stopped
     ports:
@@ -100,7 +100,7 @@ services:
   gateway-service:
     build:
       context: .
-      dockerfile: ./apps/api/gateway/dev.Dockerfile
+      dockerfile: ./apps/api/gateway/Dockerfile
     container_name: gateway_service
     restart: unless-stopped
     ports:
@@ -125,7 +125,7 @@ services:
   users-service:
     build:
       context: .
-      dockerfile: ./apps/api/users/dev.Dockerfile
+      dockerfile: ./apps/api/users/Dockerfile
     container_name: users_service
     restart: no
     ports:
@@ -150,7 +150,7 @@ services:
   community-service:
     build:
       context: .
-      dockerfile: ./apps/api/community/dev.Dockerfile
+      dockerfile: ./apps/api/community/Dockerfile
     container_name: community_service
     restart: unless-stopped
     ports:
@@ -175,7 +175,7 @@ services:
   leads-service:
     build:
       context: .
-      dockerfile: ./apps/api/leads/dev.Dockerfile
+      dockerfile: ./apps/api/leads/Dockerfile
     container_name: leads_service
     restart: unless-stopped
     ports:
@@ -200,7 +200,7 @@ services:
   media-service:
     build:
       context: .
-      dockerfile: ./apps/api/media/dev.Dockerfile
+      dockerfile: ./apps/api/media/Dockerfile
     container_name: media_service
     restart: unless-stopped
     ports:

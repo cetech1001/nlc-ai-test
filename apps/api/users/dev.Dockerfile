@@ -1,32 +1,31 @@
 FROM node:20-alpine
 
 RUN apk add --no-cache libc6-compat
-
 WORKDIR /app
 
-# Make installs predictable in CI/containers
-ENV CI=1 \
-    HUSKY=0 \
-    npm_config_audit=false \
-    npm_config_fund=false \
-    npm_config_progress=false
-
-# Copy lockfiles first for better caching
-COPY package*.json ./
+# Copy workspace configuration
 COPY nx.json ./
-COPY tsconfig*.json ./
+COPY eslint.config.mjs ./
+COPY tsconfig.base.json ./
+COPY tsconfig.json ./
+COPY package*.json ./
+COPY libs/api ./libs/api
+COPY apps/api/users ./apps/api/users
 
-# Install (skip lifecycle scripts to avoid hangs), include dev deps for Nx serve
+# Install all dependencies (including dev deps for development)
 RUN npm ci --ignore-scripts
+RUN npm install nx@latest
+RUN npm install @rollup/rollup-linux-x64-musl --save-optional --no-save
 
-# Copy the rest of the workspace
-COPY . .
+# Setup workspace and generate Prisma client
+RUN npx nx sync
+RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
 
-# Run only the scripts you actually need
-RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma || true
+RUN npx nx sync --verbose || echo "Sync completed with warnings"
 
 EXPOSE 3002
 ENV PORT=3002
+ENV NODE_ENV=development
 
 # Development command with hot reload
-CMD ["npx", "nx", "serve", "users-service", "--host", "0.0.0.0"]
+CMD ["npx", "nx", "serve", "users-service", "--host", "0.0.0.0", "--port", "3002", "--skip-nx-cache"]
