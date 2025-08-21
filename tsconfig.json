@@ -110,6 +110,9 @@
     },
     {
       "path": "./libs/web/ui"
+    },
+    {
+      "path": "./libs/sdk/notifications"
     }
   ]
 }

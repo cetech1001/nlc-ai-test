@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class NotificationsConfigSchema {
@@ -22,7 +22,7 @@ export class NotificationsConfigSchema {
 
   // Email Service Integration
   @IsOptional()
-  @IsUrl()
+  @IsString()
   EMAIL_SERVICE_URL?: string = 'http://localhost:3002';
 
   @IsOptional()

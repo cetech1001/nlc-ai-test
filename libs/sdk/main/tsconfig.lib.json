@@ -23,6 +23,9 @@
   ],
   "references": [
     {
+      "path": "../notifications/tsconfig.lib.json"
+    },
+    {
       "path": "../media/tsconfig.lib.json"
     },
     {

@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Bell,
   X,
-  Clock,
   Mail,
   Users,
   Calendar,
@@ -13,163 +12,47 @@ import {
   Search,
   CheckCircle,
   MoreVertical,
-  ArrowLeft
+  ArrowLeft,
+  Heart,
+  MessageSquare,
+  DollarSign,
+  AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useNotifications } from '@nlc-ai/web-shared';
+import { NotificationResponse, NotificationPriority, NotificationFilters } from '@nlc-ai/sdk-notifications';
+import { sdkClient } from '@/lib/sdk-client';
 
-interface NotificationItem {
-  id: string;
-  type: 'client' | 'email' | 'booking' | 'testimonial' | 'system' | 'payment' | 'course';
-  title: string;
-  message: string;
-  timestamp: string;
-  isRead: boolean;
-  isArchived: boolean;
-  priority: 'low' | 'normal' | 'high';
-  actionUrl?: string;
-  metadata?: {
-    clientName?: string;
-    amount?: string;
-    courseName?: string;
-  };
-}
-
-// Extended mock notifications data
-const mockNotifications: NotificationItem[] = [
-  {
-    id: '1',
-    type: 'client',
-    title: 'New Client Registration',
-    message: 'Sarah Johnson has signed up for your Premium Coaching Program and completed the onboarding process.',
-    timestamp: '2024-01-20T10:30:00Z',
-    isRead: false,
-    isArchived: false,
-    priority: 'high',
-    actionUrl: '/clients/abc123',
-    metadata: { clientName: 'Sarah Johnson' }
-  },
-  {
-    id: '2',
-    type: 'email',
-    title: 'Client Email Response',
-    message: 'Maria Rodriguez replied to your email about Module 3 and has some questions about the implementation strategies.',
-    timestamp: '2024-01-20T09:15:00Z',
-    isRead: false,
-    isArchived: false,
-    priority: 'normal',
-    actionUrl: '/emails/thread-456',
-    metadata: { clientName: 'Maria Rodriguez' }
-  },
-  {
-    id: '3',
-    type: 'booking',
-    title: 'New Booking Confirmation',
-    message: 'James Miller booked a 1-on-1 Power Session for tomorrow at 2:00 PM. He mentioned wanting to focus on business scaling strategies.',
-    timestamp: '2024-01-20T08:45:00Z',
-    isRead: true,
-    isArchived: false,
-    priority: 'normal',
-    actionUrl: '/calendar',
-    metadata: { clientName: 'James Miller' }
-  },
-  {
-    id: '4',
-    type: 'testimonial',
-    title: 'New 5-Star Testimonial Received',
-    message: 'Alex Thompson left an amazing 5-star review for your "Business Breakthrough" program, highlighting the incredible ROI.',
-    timestamp: '2024-01-19T16:20:00Z',
-    isRead: false,
-    isArchived: false,
-    priority: 'normal',
-    actionUrl: '/testimonials',
-    metadata: { clientName: 'Alex Thompson' }
-  },
-  {
-    id: '5',
-    type: 'system',
-    title: 'AI Assistant Daily Report',
-    message: 'Your Lead Nurturing assistant processed 12 new leads today with a 34% engagement rate. 3 leads are ready for personal follow-up.',
-    timestamp: '2024-01-19T18:00:00Z',
-    isRead: true,
-    isArchived: false,
-    priority: 'low',
-    actionUrl: '/agents/lead-followup'
-  },
-  {
-    id: '6',
-    type: 'payment',
-    title: 'Payment Received',
-    message: 'Jennifer Walsh paid $2,497 for the VIP Coaching Package. Payment has been processed successfully.',
-    timestamp: '2024-01-19T14:30:00Z',
-    isRead: true,
-    isArchived: false,
-    priority: 'high',
-    actionUrl: '/payment/requests',
-    metadata: { clientName: 'Jennifer Walsh', amount: '$2,497' }
-  },
-  {
-    id: '7',
-    type: 'course',
-    title: 'Course Completion',
-    message: 'Michael Chen completed your "Mindset Mastery" course with a 95% score and requested the advanced module.',
-    timestamp: '2024-01-19T11:15:00Z',
-    isRead: true,
-    isArchived: false,
-    priority: 'normal',
-    actionUrl: '/courses',
-    metadata: { clientName: 'Michael Chen', courseName: 'Mindset Mastery' }
-  },
-  {
-    id: '8',
-    type: 'booking',
-    title: 'Booking Cancellation',
-    message: 'Lisa Park cancelled her session scheduled for today at 3:00 PM. Reason: Family emergency. She wants to reschedule.',
-    timestamp: '2024-01-19T09:00:00Z',
-    isRead: false,
-    isArchived: false,
-    priority: 'high',
-    actionUrl: '/calendar'
-  },
-  {
-    id: '9',
-    type: 'email',
-    title: 'Bulk Email Campaign Results',
-    message: 'Your weekly newsletter achieved a 42% open rate and 8% click-through rate. 15 recipients replied with questions.',
-    timestamp: '2024-01-18T20:00:00Z',
-    isRead: true,
-    isArchived: false,
-    priority: 'low',
-    actionUrl: '/emails'
-  },
-  {
-    id: '10',
-    type: 'system',
-    title: 'System Maintenance Complete',
-    message: 'Scheduled maintenance has been completed. All AI assistants are running optimally with improved response times.',
-    timestamp: '2024-01-18T02:00:00Z',
-    isRead: true,
-    isArchived: false,
-    priority: 'low',
-    actionUrl: '/agents'
-  }
-];
-
-const getNotificationIcon = (type: NotificationItem['type']) => {
+const getNotificationIcon = (type: string) => {
   const iconProps = { className: "w-5 h-5" };
 
   switch (type) {
-    case 'client':
+    case 'client_registered':
+    case 'member_joined':
+    case 'member_left':
       return <Users {...iconProps} className="w-5 h-5 text-blue-400" />;
-    case 'email':
+    case 'email_sequence':
+    case 'email_bulk_operation':
       return <Mail {...iconProps} className="w-5 h-5 text-green-400" />;
+    case 'client_booking':
     case 'booking':
       return <Calendar {...iconProps} className="w-5 h-5 text-purple-400" />;
     case 'testimonial':
       return <Star {...iconProps} className="w-5 h-5 text-yellow-400" />;
     case 'system':
-      return <Clock {...iconProps} className="w-5 h-5 text-orange-400" />;
-    case 'payment':
-      return <CheckCircle {...iconProps} className="w-5 h-5 text-emerald-400" />;
+    case 'urgent':
+      return <AlertCircle {...iconProps} className="w-5 h-5 text-orange-400" />;
+    case 'payment_success':
+    case 'payment_failed':
+    case 'invoice_issued':
+      return <DollarSign {...iconProps} className="w-5 h-5 text-emerald-400" />;
+    case 'post_liked':
+    case 'comment_liked':
+      return <Heart {...iconProps} className="w-5 h-5 text-pink-400" />;
+    case 'post_commented':
+    case 'comment_reply':
+    case 'message_received':
+      return <MessageSquare {...iconProps} className="w-5 h-5 text-blue-400" />;
     case 'course':
       return <CheckCircle {...iconProps} className="w-5 h-5 text-indigo-400" />;
     default:
@@ -177,20 +60,22 @@ const getNotificationIcon = (type: NotificationItem['type']) => {
   }
 };
 
-const getPriorityColor = (priority: NotificationItem['priority']) => {
+const getPriorityColor = (priority: string) => {
   switch (priority) {
-    case 'high':
+    case NotificationPriority.URGENT:
       return 'border-l-red-500 bg-red-500/5';
-    case 'normal':
+    case NotificationPriority.HIGH:
+      return 'border-l-orange-500 bg-orange-500/5';
+    case NotificationPriority.NORMAL:
       return 'border-l-blue-500 bg-blue-500/5';
-    case 'low':
+    case NotificationPriority.LOW:
       return 'border-l-gray-500 bg-gray-500/5';
     default:
       return 'border-l-gray-500';
   }
 };
 
-const formatTimestamp = (timestamp: string) => {
+const formatTimestamp = (timestamp: string | Date) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
@@ -214,69 +99,99 @@ const formatTimestamp = (timestamp: string) => {
 
 const NotificationsPage = () => {
   const router = useRouter();
-  const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
-  const [filterType, setFilterType] = useState<'all' | NotificationItem['type']>('all');
+  const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'unread' | 'read'>('all');
+  const [filterPriority, setFilterPriority] = useState<NotificationPriority | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const [localNotifications, setLocalNotifications] = useState<NotificationResponse[]>([]);
 
-  const filteredNotifications = useMemo(() => {
-    return notifications.filter(notification => {
-      // Filter by type
-      if (filterType !== 'all' && notification.type !== filterType) return false;
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    markAsRead,
+    markAllAsRead,
+    fetchNotifications,
+  } = useNotifications(sdkClient, {
+    autoConnect: true,
+    playSound: false, // Disable sound on this page
+    showToast: false, // Disable toasts on this page
+  });
 
-      // Filter by read status
-      if (filterStatus === 'unread' && notification.isRead) return false;
-      if (filterStatus === 'read' && !notification.isRead) return false;
+  // Initialize local notifications
+  useEffect(() => {
+    setLocalNotifications(notifications);
+  }, [notifications]);
 
-      // Filter by search query
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return notification.title.toLowerCase().includes(query) ||
-          notification.message.toLowerCase().includes(query) ||
-          notification.metadata?.clientName?.toLowerCase().includes(query);
-      }
+  // Build filters for API
+  const buildFilters = useCallback((): NotificationFilters => {
+    const filters: NotificationFilters = {
+      page,
+      limit: 20,
+    };
 
-      return !notification.isArchived;
-    });
-  }, [notifications, filterType, filterStatus, searchQuery]);
+    if (filterStatus === 'unread') filters.isRead = false;
+    if (filterStatus === 'read') filters.isRead = true;
+    if (filterPriority !== 'all') filters.priority = filterPriority;
+    if (filterType !== 'all') filters.type = filterType;
 
-  const unreadCount = notifications.filter(n => !n.isRead && !n.isArchived).length;
+    return filters;
+  }, [page, filterStatus, filterPriority, filterType]);
 
-  const markAsRead = (notificationIDs: string[]) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notificationIDs.includes(notification.id)
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
+  // Fetch notifications when filters change
+  useEffect(() => {
+    const filters = buildFilters();
+    fetchNotifications(filters);
+  }, [buildFilters, fetchNotifications]);
+
+  // Client-side search filtering
+  const filteredNotifications = localNotifications.filter(notification => {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return notification.title.toLowerCase().includes(query) ||
+        notification.message.toLowerCase().includes(query) ||
+        notification.metadata?.clientName?.toLowerCase().includes(query);
+    }
+    return true;
+  });
+
+  const handleMarkAsRead = async (notificationIDs: string[]) => {
+    for (const id of notificationIDs) {
+      await markAsRead(id);
+    }
+    setSelectedNotifications(new Set());
   };
 
-  const markAsUnread = (notificationIDs: string[]) => {
-    setNotifications(prev =>
+  const handleMarkAsUnread = async (notificationIDs: string[]) => {
+    // This would need to be implemented in the SDK
+    // For now, we'll just update locally
+    setLocalNotifications(prev =>
       prev.map(notification =>
         notificationIDs.includes(notification.id)
-          ? { ...notification, isRead: false }
-          : notification
-      )
-    );
-  };
-
-  const archiveNotifications = (notificationIDs: string[]) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notificationIDs.includes(notification.id)
-          ? { ...notification, isArchived: true }
+          ? { ...notification, isRead: false, readAt: undefined }
           : notification
       )
     );
     setSelectedNotifications(new Set());
   };
 
-  const deleteNotifications = (notificationIDs: string[]) => {
-    setNotifications(prev =>
+  const archiveNotifications = async (notificationIDs: string[]) => {
+    // Archive functionality would need backend support
+    // For now, just remove from local state
+    setLocalNotifications(prev =>
+      prev.filter(notification => !notificationIDs.includes(notification.id))
+    );
+    setSelectedNotifications(new Set());
+  };
+
+  const deleteNotifications = async (notificationIDs: string[]) => {
+    // Delete functionality would need backend support
+    // For now, just remove from local state
+    setLocalNotifications(prev =>
       prev.filter(notification => !notificationIDs.includes(notification.id))
     );
     setSelectedNotifications(new Set());
@@ -300,25 +215,53 @@ const NotificationsPage = () => {
     setSelectedNotifications(new Set());
   };
 
-  const handleNotificationClick = (notification: NotificationItem) => {
+  const handleNotificationClick = async (notification: NotificationResponse) => {
     if (!notification.isRead) {
-      markAsRead([notification.id]);
+      await markAsRead(notification.id);
     }
     if (notification.actionUrl) {
       router.push(notification.actionUrl);
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+  };
+
   const typeOptions = [
     { value: 'all', label: 'All Types' },
-    { value: 'client', label: 'Clients' },
-    { value: 'email', label: 'Emails' },
-    { value: 'booking', label: 'Bookings' },
+    { value: 'client_registered', label: 'Clients' },
+    { value: 'email_sequence', label: 'Emails' },
+    { value: 'client_booking', label: 'Bookings' },
     { value: 'testimonial', label: 'Testimonials' },
-    { value: 'payment', label: 'Payments' },
-    { value: 'course', label: 'Courses' },
+    { value: 'payment_success', label: 'Payments' },
+    { value: 'post_commented', label: 'Community' },
     { value: 'system', label: 'System' },
   ];
+
+  const priorityOptions = [
+    { value: 'all', label: 'All Priorities' },
+    { value: NotificationPriority.URGENT, label: 'Urgent' },
+    { value: NotificationPriority.HIGH, label: 'High' },
+    { value: NotificationPriority.NORMAL, label: 'Normal' },
+    { value: NotificationPriority.LOW, label: 'Low' },
+  ];
+
+  if (error) {
+    return (
+      <div className="py-8 text-center">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h3 className="text-white text-lg font-medium mb-2">Failed to load notifications</h3>
+        <p className="text-stone-400">{error}</p>
+        <button
+          onClick={() => fetchNotifications(buildFilters())}
+          className="mt-4 px-4 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
@@ -346,7 +289,7 @@ const NotificationsPage = () => {
                 {selectedNotifications.size} selected
               </span>
               <button
-                onClick={() => markAsRead(Array.from(selectedNotifications))}
+                onClick={() => handleMarkAsRead(Array.from(selectedNotifications))}
                 className="px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors text-sm"
               >
                 Mark Read
@@ -400,13 +343,13 @@ const NotificationsPage = () => {
         {/* Filter Options */}
         {showFilters && (
           <div className="bg-neutral-800/30 border border-neutral-700 rounded-lg p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               {/* Type Filter */}
               <div>
                 <label className="block text-stone-300 text-sm font-medium mb-2">Type</label>
                 <select
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+                  onChange={(e) => setFilterType(e.target.value)}
                   className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-white focus:border-fuchsia-400 focus:outline-none"
                 >
                   {typeOptions.map(option => (
@@ -429,6 +372,20 @@ const NotificationsPage = () => {
                 </select>
               </div>
 
+              {/* Priority Filter */}
+              <div>
+                <label className="block text-stone-300 text-sm font-medium mb-2">Priority</label>
+                <select
+                  value={filterPriority}
+                  onChange={(e) => setFilterPriority(e.target.value as any)}
+                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-white focus:border-fuchsia-400 focus:outline-none"
+                >
+                  {priorityOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Quick Actions */}
               <div>
                 <label className="block text-stone-300 text-sm font-medium mb-2">Quick Actions</label>
@@ -440,7 +397,7 @@ const NotificationsPage = () => {
                     Select All
                   </button>
                   <button
-                    onClick={() => markAsRead(filteredNotifications.filter(n => !n.isRead).map(n => n.id))}
+                    onClick={handleMarkAllAsRead}
                     className="px-3 py-2 bg-green-600/20 text-green-400 rounded-lg hover:bg-green-600/30 transition-colors text-sm"
                   >
                     Mark All Read
@@ -508,7 +465,7 @@ const NotificationsPage = () => {
 
                         <div className="flex items-center gap-4 text-xs">
                           <span className="text-stone-500">
-                            {formatTimestamp(notification.timestamp)}
+                            {formatTimestamp(notification.createdAt)}
                           </span>
 
                           {notification.metadata?.clientName && (
@@ -551,7 +508,7 @@ const NotificationsPage = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          notification.isRead ? markAsUnread([notification.id]) : markAsRead([notification.id]);
+                          notification.isRead ? handleMarkAsUnread([notification.id]) : handleMarkAsRead([notification.id]);
                         }}
                         className="w-full text-left px-3 py-2 text-stone-300 hover:bg-neutral-700 text-sm"
                       >
@@ -597,3 +554,4 @@ const NotificationsPage = () => {
 };
 
 export default NotificationsPage;
+
