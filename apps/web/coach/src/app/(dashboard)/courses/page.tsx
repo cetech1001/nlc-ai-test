@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Star
 } from "lucide-react";
-import appConfig from "@/config/app.config";
+import {appConfig} from "@nlc-ai/web-shared";
 
 const CoursesLanding = () => {
   const [activeFeature, setActiveFeature] = useState('course-builder');

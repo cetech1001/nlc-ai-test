@@ -1,6 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "jsx": "preserve",
     "noEmit": true,
     "emitDeclarationOnly": false,
@@ -49,6 +50,9 @@
     ".next"
   ],
   "references": [
+    {
+      "path": "../../../libs/sdk/main"
+    },
     {
       "path": "../../../libs/web/utils"
     },

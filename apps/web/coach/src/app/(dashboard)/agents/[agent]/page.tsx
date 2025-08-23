@@ -16,7 +16,7 @@ import {
   UserCheck,
   BarChart3
 } from "lucide-react";
-import appConfig from "@/config/app.config";
+import {appConfig} from "@nlc-ai/web-shared";
 
 const AIAgentsLanding = () => {
   const [activeAgent, setActiveAgent] = useState('lead-followup');

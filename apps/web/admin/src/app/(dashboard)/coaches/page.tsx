@@ -14,7 +14,7 @@ import { AlertBanner } from '@nlc-ai/web-ui';
 import {
   CoachesTable,
   coachFilters,
-  emptyCoachFilterValues,
+  emptyCoachFilterValues, sdkClient,
 } from "@/lib";
 import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
@@ -49,12 +49,12 @@ const Coaches = () => {
       setIsLoading(true);
       setError("");
 
-      const response = await coachesAPI.getCoaches(
-        currentPage,
-        coachesPerPage,
-        filterValues,
-        searchQuery
-      );
+      const response = await sdkClient.users.getCoaches({
+        ...filterValues,
+        page: currentPage,
+        limit: coachesPerPage,
+        search: searchQuery
+      });
 
       setCoaches(response.data);
       setPagination(response.pagination);

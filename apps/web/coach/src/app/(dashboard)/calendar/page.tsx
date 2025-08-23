@@ -17,7 +17,7 @@ import {
   Timer,
   MapPin
 } from "lucide-react";
-import appConfig from "@/config/app.config";
+import {appConfig} from "@nlc-ai/web-shared";
 import CalendarDetailsPage from "@/app/(dashboard)/calendar/details";
 
 const CalendarLanding = () => {

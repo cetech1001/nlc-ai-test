@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@nlc-ai/web-auth';
 import {UserType} from "@nlc-ai/types";
-import config from "@/config/app.config";
+import {appConfig} from "@nlc-ai/web-shared";
 
 const GoogleAuthCallbackPage = () => {
   const router = useRouter();

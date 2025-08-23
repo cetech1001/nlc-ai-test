@@ -12,7 +12,7 @@ import {
   ArrowRight,
   CheckCircle
 } from "lucide-react";
-import appConfig from "@/config/app.config";
+import {appConfig} from "@nlc-ai/web-shared";
 import ContentCategories from "@/app/(dashboard)/content/categories/page";
 
 const ContentManagementLanding = () => {

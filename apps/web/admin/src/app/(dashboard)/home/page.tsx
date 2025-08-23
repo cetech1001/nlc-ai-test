@@ -7,7 +7,7 @@ import {toast} from 'sonner';
 import {coachesAPI, transactionsAPI} from "@nlc-ai/web-api-client";
 import { AlertBanner } from "@nlc-ai/web-ui";
 import {CoachStats, CoachWithStatus, RevenueStats, TimePeriodRevenueData} from "@nlc-ai/types";
-import {CoachesTable} from "@/lib";
+import {CoachesTable, sdkClient} from "@/lib";
 
 const AdminHome = () => {
   const router = useRouter();
@@ -33,8 +33,8 @@ const AdminHome = () => {
     try {
       setIsCoachStatsLoading(true);
 
-      const coachStatsData = await coachesAPI.getCoachStats();
-      setCoachStats(coachStatsData);
+      const coachStatsData: any = await coachesAPI.getCoachStats();
+      setCoachStats(coachStatsData.data);
     } catch (e) {
       throw e;
     } finally {
@@ -85,7 +85,10 @@ const AdminHome = () => {
     try {
       setIsRecentCoachesLoading(true);
 
-      const recentCoachesData = await coachesAPI.getCoaches(1, 6);
+      const recentCoachesData = await sdkClient.users.getCoaches({
+        page: 1,
+        limit: 6
+      });
       setRecentCoaches(recentCoachesData.data);
     } catch (e) {
       throw e;

@@ -18,7 +18,7 @@ import {
   MessageSquare,
   BarChart3
 } from "lucide-react";
-import appConfig from "@/config/app.config";
+import {appConfig} from "@nlc-ai/web-shared";
 
 const TestimonialsLanding = () => {
   const [activeFeature, setActiveFeature] = useState('collection');

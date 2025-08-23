@@ -1,6 +1,7 @@
 import {useMemo} from "react";
 import {Skeleton} from "@nlc-ai/web-ui";
 import {NotificationBell} from "./notification-bell";
+import {NLCClient} from "@nlc-ai/sdk-main";
 
 const UserDisplaySection = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const userFullName = useMemo(() => {
@@ -30,6 +31,7 @@ interface IProps {
   user: any;
   isLoading: boolean;
   goToNotifications: () => void;
+  sdkClient: NLCClient;
 }
 
 export const DashboardHeader = (props: IProps) => {
@@ -56,7 +58,7 @@ export const DashboardHeader = (props: IProps) => {
       </div>
 
       <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
-        <NotificationBell goToNotifications={props.goToNotifications}/>
+        <NotificationBell sdkClient={props.sdkClient} goToNotifications={props.goToNotifications}/>
         <div className="flex items-center gap-3">
           <UserDisplaySection user={user} isLoading={props.isLoading} />
           <div

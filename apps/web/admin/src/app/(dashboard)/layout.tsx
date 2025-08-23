@@ -4,7 +4,7 @@ import {ReactNode, useEffect} from 'react';
 import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/web-auth";
-import {menuItems, pageConfig} from "@/lib/utils/constants";
+import {menuItems, pageConfig, sdkClient} from "@/lib";
 import {UserType} from "@nlc-ai/types";
 
 
@@ -62,6 +62,8 @@ const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="h-6 w-px bg-[#1A1A1A] lg:hidden" aria-hidden="true" />
 
           <DashboardHeader
+            sdkClient={sdkClient}
+            goToNotifications={() => router.push('/notifications')}
             key={`${user?.firstName}-${user?.lastName}`}
             user={user}
             isLoading={isLoading}

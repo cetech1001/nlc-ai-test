@@ -25,7 +25,7 @@ import {
   Lock,
   Globe, TrendingUp
 } from 'lucide-react';
-import appConfig from "@/config/app.config";
+import {appConfig} from "@nlc-ai/web-shared";
 
 const CommunityLanding = () => {
   const [activeFeature, setActiveFeature] = useState('discussions');
