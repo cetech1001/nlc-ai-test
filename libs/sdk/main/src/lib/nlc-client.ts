@@ -3,7 +3,7 @@ import {UsersClient} from "@nlc-ai/sdk-users";
 import {AuthServiceClient} from "@nlc-ai/sdk-auth";
 import {EmailServiceClient} from "@nlc-ai/sdk-email";
 import {BillingServiceClient} from "@nlc-ai/sdk-billing";
-import {AnalyticsServiceClient} from "@nlc-ai/sdk-analytics";
+import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
 import {CommunityServiceClient} from "@nlc-ai/sdk-community";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
@@ -14,7 +14,7 @@ export class NLCClient {
   public auth: AuthServiceClient;
   public email: EmailServiceClient;
   public billing: BillingServiceClient;
-  public analytics: AnalyticsServiceClient;
+  public analytics: AnalyticsClient;
   public leads: LeadsServiceClient;
   public community: CommunityServiceClient;
   public media: MediaServiceClient;
@@ -28,47 +28,47 @@ export class NLCClient {
 
     this.users = new UsersClient({
       ...baseConfig,
-      baseURL: config.services?.users || `${config.baseURL}/api/users`,
+      baseURL: config.services?.users || `${config.baseURL}/users`,
     });
 
     this.auth = new AuthServiceClient({
       ...baseConfig,
-      baseURL: config.services?.auth || `${config.baseURL}/api/auth`,
+      baseURL: config.services?.auth || `${config.baseURL}/auth`,
     });
 
     this.email = new EmailServiceClient({
       ...baseConfig,
-      baseURL: config.services?.email || `${config.baseURL}/api/email`,
+      baseURL: config.services?.email || `${config.baseURL}/email`,
     });
 
     this.billing = new BillingServiceClient({
       ...baseConfig,
-      baseURL: config.services?.billing || `${config.baseURL}/api/billing`,
+      baseURL: config.services?.billing || `${config.baseURL}/billing`,
     });
 
-    this.analytics = new AnalyticsServiceClient({
+    this.analytics = new AnalyticsClient({
       ...baseConfig,
-      baseURL: config.services?.analytics || `${config.baseURL}/api/analytics`,
+      baseURL: config.services?.analytics || `${config.baseURL}/analytics`,
     });
 
     this.leads = new LeadsServiceClient({
       ...baseConfig,
-      baseURL: config.services?.leads || `${config.baseURL}/api/leads`,
+      baseURL: config.services?.leads || `${config.baseURL}/leads`,
     });
 
     this.community = new CommunityServiceClient({
       ...baseConfig,
-      baseURL: config.services?.community || `${config.baseURL}/api/community`,
+      baseURL: config.services?.community || `${config.baseURL}/community`,
     });
 
     this.media = new MediaServiceClient({
       ...baseConfig,
-      baseURL: config.services?.media || `${config.baseURL}/api/media`,
+      baseURL: config.services?.media || `${config.baseURL}/media`,
     });
 
     this.notifications = new NotificationsServiceClient({
       ...baseConfig,
-      baseURL: config.services?.notifications || `${config.baseURL}/api/notifications`,
+      baseURL: config.services?.notifications || `${config.baseURL}/notifications`,
     });
   }
 

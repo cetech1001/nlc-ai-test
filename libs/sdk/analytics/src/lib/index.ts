@@ -1,2 +1,2 @@
-export * from './analytics-client';
-export * from './analytics.types';
+export * from './clients';
+export * from './types';

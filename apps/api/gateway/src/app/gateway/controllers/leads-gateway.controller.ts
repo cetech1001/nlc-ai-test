@@ -3,19 +3,30 @@ import {
   All,
   Req,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {ApiBearerAuth, ApiTags} from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
 @ApiTags('Leads')
 @Controller('leads')
+@ApiBearerAuth()
 export class LeadsGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  @All()
+  async proxyRoot(@Req() req: Request) {
+    return this.forwardToLeads(req);
+  }
+
   @All('*')
-  async proxyToLeads(@Req() req: Request) {
-    // Extract the path after /api/leads
+  async proxyWildcard(@Req() req: Request) {
+    return this.forwardToLeads(req);
+  }
+
+  private async forwardToLeads(req: Request) {
     const path = req.path.replace(/^\/leads/, '');
+
+    console.log("This was caught here: ", path);
 
     const response = await this.proxyService.proxyRequest(
       'leads',

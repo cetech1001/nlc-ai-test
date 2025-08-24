@@ -1,6 +1,6 @@
 import {TableProps} from "@nlc-ai/types";
 import {DataTableSkeleton} from "../skeletons";
-import { formatCurrency } from "@nlc-ai/web-utils";
+import { formatCurrency, formatDate } from "@nlc-ai/web-utils";
 
 export const DataTable = <T,>(props: TableProps<T>) => {
   if (props.isLoading) {
@@ -290,7 +290,7 @@ export const tableRenderers = {
 
   dateText: (value: string) => (
     <span className="text-stone-50 font-normal leading-relaxed whitespace-nowrap">
-      {value}
+      {formatDate(value)}
     </span>
   ),
 

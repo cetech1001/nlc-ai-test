@@ -212,8 +212,41 @@ export interface CoachReplicaAgentData {
   };
 }
 
-// Add these interfaces to the existing analytics.types.ts file
+// Revenue data types for the revenue graph
+export interface RevenueData {
+  period: string;
+  revenue: number;
+  date?: string;
+}
 
+export interface RevenueGrowthData {
+  data: RevenueData[];
+  growthDescription: string;
+  growthPercentage: number;
+}
+
+export interface TimePeriodRevenueData {
+  weekly: RevenueGrowthData;
+  monthly: RevenueGrowthData;
+  yearly: RevenueGrowthData;
+}
+
+// Recent coach data for admin dashboard
+export interface RecentCoach {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  businessName?: string;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: Date;
+  subscriptionStatus?: string;
+  clientCount: number;
+  totalRevenue: number;
+}
+
+// Admin dashboard data interface
 export interface AdminDashboardData {
   // Revenue stats
   allTimeRevenue: number;
@@ -227,43 +260,36 @@ export interface AdminDashboardData {
   totalCoachesGrowth: number;
   inactiveCoachesGrowth: number;
 
-  // Revenue data by period
-  revenueData: {
-    weekly: Array<{ date: string; revenue: number }>;
-    monthly: Array<{ date: string; revenue: number }>;
-    yearly: Array<{ date: string; revenue: number }>;
-  };
+  // Revenue data by period (for the graph)
+  revenueData: TimePeriodRevenueData;
+
+  // Recent coaches
+  recentCoaches: RecentCoach[];
 }
 
 export interface TransactionStats {
   totalTransactions: number;
-  totalVolume: number;
-  averageTransactionValue: number;
-  successRate: number;
-  volumeGrowth: number;
-  transactionGrowth: number;
+  completedTransactions: number;
+  pendingTransactions: number;
+  failedTransactions: number;
+  totalRevenue: number;
+}
 
-  // Monthly breakdown
-  monthlyStats: Array<{
-    month: string;
-    transactions: number;
-    volume: number;
-    averageValue: number;
+export interface CoachPerformance {
+  topPerformingCoaches: Array<{
+    id: string;
+    name: string;
+    email: string;
+    businessName?: string;
+    activeClients: number;
+    totalRevenue: number;
   }>;
+}
 
-  // By plan breakdown
-  planBreakdown: Array<{
-    planName: string;
-    transactions: number;
-    volume: number;
-    percentage: number;
-  }>;
-
-  // Payment method breakdown
-  paymentMethodBreakdown: Array<{
-    method: string;
-    transactions: number;
-    volume: number;
-    percentage: number;
+export interface RevenueTrends {
+  monthlyTrends: Array<{
+    month: Date;
+    revenue: number;
+    transactionCount: number;
   }>;
 }

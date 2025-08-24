@@ -60,6 +60,9 @@
       "path": "../../../libs/web/settings"
     },
     {
+      "path": "../../../libs/sdk/analytics"
+    },
+    {
       "path": "../../../libs/sdk/leads"
     },
     {

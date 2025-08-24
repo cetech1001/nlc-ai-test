@@ -29,7 +29,7 @@ async function bootstrap() {
     res.json(document);
   });
 
-  const port = process.env.PORT || 3002;
+  const port = process.env.PORT || 3010;
   await app.listen(port);
 
   Logger.log(`🚀 Analytics Service is running on: http://localhost:${port}/api/analytics`);

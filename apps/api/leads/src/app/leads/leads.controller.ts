@@ -22,7 +22,7 @@ import {
 } from './dto';
 
 @ApiTags('Leads')
-@Controller('leads')
+@Controller('')
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
