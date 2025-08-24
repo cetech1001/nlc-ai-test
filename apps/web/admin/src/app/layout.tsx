@@ -29,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         <Providers>
           {children}
         </Providers>
+        <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
       </body>
     </html>
   );

@@ -1,9 +1,7 @@
-// File: apps/web/coach/src/hooks/useNotifications.ts
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { NotificationResponse, NotificationFilters, NotificationPriority } from '@nlc-ai/sdk-notifications';
 import { toast } from 'sonner';
-import {NLCClient} from "@nlc-ai/sdk-main"; // Assuming you use sonner for toasts
+import {NLCClient} from "@nlc-ai/sdk-main";
 
 interface UseNotificationsOptions {
   autoConnect?: boolean;
@@ -26,22 +24,48 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
   const [error, setError] = useState<string | null>(null);
   const wsCleanup = useRef<(() => void) | null>(null);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
 
-  // Initialize audio for notification sounds
-  useEffect(() => {
-    if (playSound && typeof window !== 'undefined') {
-      audioRef.current = new Audio('/sounds/notification.mp3');
-      audioRef.current.volume = 0.5;
+  // Create notification sound programmatically
+  const playNotificationSound = useCallback(() => {
+    if (!playSound) return;
+
+    try {
+      if (!audioContext.current) {
+        audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      const ctx = audioContext.current;
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      // Create a pleasant notification sound
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
+
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+      oscillator.type = 'sine';
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.3);
+    } catch (err) {
+      console.error('Failed to play notification sound:', err);
     }
   }, [playSound]);
 
-  // Fetch notifications
+  // Fetch notifications with better error handling
   const fetchNotifications = useCallback(async (filters?: NotificationFilters) => {
     try {
       setLoading(true);
       setError(null);
 
+      // Check if notifications service is available first
       const response = await sdkClient.notifications.getNotifications(filters);
       setNotifications(response.data);
 
@@ -52,13 +76,30 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
       return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch notifications';
-      setError(errorMessage);
-      console.error('Error fetching notifications:', err);
-      throw err;
+
+      // Only set error if it's not a timeout - timeouts are expected when service is down
+      if (!errorMessage.includes('timeout') && !errorMessage.includes('ECONNREFUSED')) {
+        setError(errorMessage);
+      }
+
+      console.warn('Notifications service unavailable:', errorMessage);
+
+      // Return empty result instead of throwing
+      return {
+        data: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          totalCount: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        }
+      };
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sdkClient]);
 
   // Mark notification as read
   const markAsRead = useCallback(async (notificationID: string) => {
@@ -72,9 +113,9 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
       console.error('Error marking notification as read:', err);
-      throw err;
+      // Don't throw - just log the error
     }
-  }, []);
+  }, [sdkClient]);
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
@@ -90,11 +131,11 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
       return response.updatedCount;
     } catch (err) {
       console.error('Error marking all notifications as read:', err);
-      throw err;
+      return 0;
     }
-  }, []);
+  }, [sdkClient]);
 
-  // Handle new notification from WebSocket
+  // Handle new notification from WebSocket (currently not used)
   const handleNewNotification = useCallback((notification: NotificationResponse) => {
     // Add to notifications list
     setNotifications(prev => [notification, ...prev]);
@@ -105,9 +146,7 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
     }
 
     // Play sound
-    if (playSound && audioRef.current && !notification.isRead) {
-      audioRef.current.play().catch(console.error);
-    }
+    playNotificationSound();
 
     // Show toast notification
     if (showToast && !notification.isRead) {
@@ -123,9 +162,9 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
         } : undefined,
       });
     }
-  }, [playSound, showToast]);
+  }, [playNotificationSound, showToast]);
 
-  // Connect to WebSocket for real-time notifications
+  // Connect to WebSocket for real-time notifications (disabled for now)
   const connectWebSocket = useCallback(() => {
     if (wsCleanup.current) {
       wsCleanup.current();
@@ -134,9 +173,9 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
     try {
       wsCleanup.current = sdkClient.notifications.connectWebSocket(handleNewNotification);
     } catch (err) {
-      console.error('Failed to connect WebSocket:', err);
+      console.warn('WebSocket connection not available, using polling only');
     }
-  }, [handleNewNotification]);
+  }, [sdkClient, handleNewNotification]);
 
   // Set up polling for notifications
   const startPolling = useCallback(() => {
@@ -145,9 +184,11 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
     }
 
     pollingInterval.current = setInterval(() => {
-      fetchNotifications({ limit: 10 }).catch(console.error);
+      fetchNotifications({ limit: 10 }).catch(() => {
+        // Silently handle polling errors - service might be down temporarily
+      });
     }, pollingIntervalMs);
-  }, [fetchNotifications, pollingInterval]);
+  }, [fetchNotifications, pollingIntervalMs]);
 
   // Initialize
   useEffect(() => {
@@ -155,7 +196,7 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
       // Initial fetch
       fetchNotifications({ limit: 20 });
 
-      // Connect WebSocket
+      // Try to connect WebSocket first
       connectWebSocket();
 
       // Start polling as fallback
@@ -182,12 +223,8 @@ export const useNotifications = (sdkClient: NLCClient, options: UseNotifications
     markAsRead,
     markAllAsRead,
     refresh: () => fetchNotifications({ limit: 20 }),
+    // WebSocket status methods
+    isWebSocketConnected: () => wsCleanup.current !== null,
+    reconnectWebSocket: connectWebSocket,
   };
 };
-
-// File: apps/web/coach/src/hooks/useNotificationPreferences.ts
-
-
-
-// File: apps/web/coach/src/hooks/useCommunityNotifications.ts
-

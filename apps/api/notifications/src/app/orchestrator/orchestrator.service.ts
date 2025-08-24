@@ -5,6 +5,7 @@ import { EmailChannelService } from '../channels/email/email-channel.service';
 import { PushChannelService } from '../channels/push/push-channel.service';
 import { WebhookChannelService } from '../channels/webhook/webhook-channel.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../gateways/notifications.gateway';
 
 @Injectable()
 export class OrchestratorService {
@@ -16,6 +17,7 @@ export class OrchestratorService {
     private readonly emailChannel: EmailChannelService,
     private readonly pushChannel: PushChannelService,
     private readonly webhookChannel: WebhookChannelService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async sendNotification(payload: NotificationPayload): Promise<{
@@ -39,7 +41,29 @@ export class OrchestratorService {
       metadata: payload.metadata,
     });
 
-    // 2. Determine enabled channels and send
+    // 2. Send real-time notification via WebSocket
+    try {
+      await this.notificationsGateway.sendToUser(
+        payload.userID,
+        payload.userType,
+        {
+          id: notification.id,
+          type: payload.type,
+          title: payload.title,
+          message: payload.message,
+          actionUrl: payload.actionUrl,
+          priority: payload.priority,
+          metadata: payload.metadata,
+          isRead: false,
+          createdAt: notification.createdAt,
+        }
+      );
+      this.logger.log(`Real-time notification sent to user ${payload.userID}`);
+    } catch (error) {
+      this.logger.warn('Failed to send real-time notification:', error);
+    }
+
+    // 3. Determine enabled channels and send
     const channels = [
       { name: 'email', service: this.emailChannel },
       { name: 'push', service: this.pushChannel },
@@ -183,6 +207,30 @@ export class OrchestratorService {
       );
 
       await Promise.all(promises);
+    }
+  }
+
+  // Method to broadcast system-wide notifications
+  async broadcastSystemNotification(
+    title: string,
+    message: string,
+    actionUrl?: string,
+    targetUserTypes?: UserType[]
+  ): Promise<void> {
+    try {
+      // Send real-time broadcast
+      await this.notificationsGateway.broadcast({
+        type: 'system_broadcast',
+        title,
+        message,
+        actionUrl,
+        priority: 'high',
+        createdAt: new Date(),
+      });
+
+      this.logger.log('System broadcast sent via WebSocket');
+    } catch (error) {
+      this.logger.error('Failed to send system broadcast:', error);
     }
   }
 }

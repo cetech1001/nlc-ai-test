@@ -1,32 +1,52 @@
-import { BaseClient } from '@nlc-ai/sdk-core';
+import {BaseClient, FilterValues, SearchQuery} from '@nlc-ai/sdk-core';
 import {
   Lead,
   CreateLead,
   UpdateLead,
-  LeadQueryParams,
   LeadStats,
 } from './leads.types';
 import {Paginated} from "@nlc-ai/types";
 
 
 export class LeadsServiceClient extends BaseClient {
-  async getLeads(params?: LeadQueryParams): Promise<Paginated<Lead>> {
-    const searchParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (key === 'source' && Array.isArray(value)) {
-            searchParams.append(key, value.join(','));
-          } else {
-            searchParams.append(key, String(value));
-          }
-        }
-      });
+  async getLeads(searchOptions: SearchQuery = {}, filters: FilterValues = {}): Promise<Paginated<Lead>> {
+    const { page = 1, limit = 10, search } = searchOptions;
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    if (search) params.append('search', search);
+
+    if (filters.status && filters.status !== '') {
+      params.append('status', filters.status);
+    }
+
+    if (filters.source && Array.isArray(filters.source) && filters.source.length > 0) {
+      params.append('source', filters.source.join(','));
+    }
+
+    if (filters.dateRange) {
+      if (filters.dateRange.start) {
+        params.append('startDate', filters.dateRange.start);
+      }
+      if (filters.dateRange.end) {
+        params.append('endDate', filters.dateRange.end);
+      }
+    }
+
+    if (filters.meetingDateRange) {
+      if (filters.meetingDateRange.start) {
+        params.append('meetingStartDate', filters.meetingDateRange.start);
+      }
+      if (filters.meetingDateRange.end) {
+        params.append('meetingEndDate', filters.meetingDateRange.end);
+      }
     }
 
     const response = await this.request<Paginated<Lead>>(
       'GET',
-      `/leads?${searchParams}`
+      `/leads?${params.toString()}`
     );
     return response.data!;
   }

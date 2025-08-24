@@ -11,7 +11,19 @@ import {
   CreateNotificationRequest,
 } from './notifications.types.js';
 
+// Socket.IO client interface (to avoid dependency issues)
+interface SocketIOClient {
+  on(event: string, callback: (...args: any[]) => void): void;
+  emit(event: string, ...args: any[]): void;
+  disconnect(): void;
+  connected: boolean;
+}
+
 export class NotificationsServiceClient extends BaseClient {
+  private socket: SocketIOClient | null = null;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+
   // Notification methods
   async getNotifications(filters?: NotificationFilters): Promise<Paginated<NotificationResponse>> {
     const searchParams = new URLSearchParams();
@@ -61,28 +73,128 @@ export class NotificationsServiceClient extends BaseClient {
     return response.data!.preferences;
   }
 
-  // WebSocket connection for real-time notifications
+  // Socket.IO WebSocket connection
   connectWebSocket(onNotification: (notification: NotificationResponse) => void): () => void {
-    // This would connect to a WebSocket endpoint for real-time notifications
-    // Implementation depends on your WebSocket setup
-    const ws = new WebSocket(`${this.baseURL.replace('http', 'ws')}/notifications/ws`);
+    try {
+      // Dynamically import Socket.IO client if available
+      if (typeof window !== 'undefined' && (window as any).io) {
+        const io = (window as any).io;
 
-    ws.onmessage = (event) => {
-      try {
-        const notification = JSON.parse(event.data);
-        onNotification(notification);
-      } catch (error) {
-        console.error('Failed to parse notification:', error);
+        const socketUrl = this.baseURL.replace('/api/notifications', '');
+        this.socket = io(`${socketUrl}/notifications`, {
+          path: '/api/notifications/socket.io',
+          auth: {
+            token: this.getAuthToken(),
+            userID: this.getCurrentUserID(),
+            userType: this.getCurrentUserType(),
+          },
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: this.maxReconnectAttempts,
+        });
+
+        // Connection events
+        this.socket?.on('connect', () => {
+          console.log('Connected to notifications WebSocket');
+          this.reconnectAttempts = 0;
+
+          // Subscribe to notifications
+          this.socket?.emit('subscribe-notifications');
+        });
+
+        this.socket?.on('disconnect', () => {
+          console.log('Disconnected from notifications WebSocket');
+        });
+
+        this.socket?.on('connect_error', (error: any) => {
+          console.warn('WebSocket connection error:', error);
+          this.reconnectAttempts++;
+
+          if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            console.warn('Max reconnection attempts reached, giving up');
+          }
+        });
+
+        // Notification events
+        this.socket?.on('notification', (notification: NotificationResponse) => {
+          onNotification(notification);
+        });
+
+        this.socket?.on('broadcast-notification', (notification: any) => {
+          onNotification(notification);
+        });
+
+        this.socket?.on('subscribed', (data: any) => {
+          console.log('Subscribed to notifications:', data.message);
+        });
+
+        // Return cleanup function
+        return () => {
+          if (this.socket) {
+            this.socket?.disconnect();
+            this.socket = null;
+          }
+        };
+      } else {
+        console.warn('Socket.IO client not available - add <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script> to your HTML');
+        return () => {};
       }
-    };
+    } catch (error) {
+      console.error('Failed to connect WebSocket:', error);
+      return () => {};
+    }
+  }
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+  private getAuthToken(): string {
+    // Implementation depends on your auth system
+    // This is a placeholder - you'll need to implement based on your auth store
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || '';
+    }
+    return '';
+  }
 
-    // Return cleanup function
-    return () => {
-      ws.close();
-    };
+  private getCurrentUserID(): string {
+    // Implementation depends on your auth system
+    // This is a placeholder - you'll need to implement based on your auth store
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (user) {
+        try {
+          return JSON.parse(user).id || '';
+        } catch {
+          return '';
+        }
+      }
+    }
+    return '';
+  }
+
+  private getCurrentUserType(): string {
+    // Implementation depends on your auth system
+    // This is a placeholder - you'll need to implement based on your auth store
+    if (typeof window !== 'undefined') {
+      const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (user) {
+        try {
+          return JSON.parse(user).type || '';
+        } catch {
+          return '';
+        }
+      }
+    }
+    return '';
+  }
+
+  // Check if WebSocket is connected
+  isWebSocketConnected(): boolean {
+    return this.socket?.connected || false;
+  }
+
+  // Get WebSocket connection status
+  getConnectionStatus(): 'connected' | 'disconnected' | 'connecting' | 'not_initialized' {
+    if (!this.socket) return 'not_initialized';
+    if (this.socket.connected) return 'connected';
+    return 'disconnected';
   }
 }

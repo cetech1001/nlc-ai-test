@@ -16,6 +16,10 @@ export class ClientsClient extends BaseClient{
 
     if (search) params.append('search', search);
 
+    if (filters.coachID) {
+      params.append('coachID', filters.coachID);
+    }
+
     if (filters.status && filters.status !== '') {
       params.append('status', filters.status);
     }
@@ -44,32 +48,32 @@ export class ClientsClient extends BaseClient{
 
     const response = await this.request<Paginated<ExtendedClient>>(
       'GET',
-      `/clients?${params.toString()}`
+      `?${params.toString()}`
     );
     return response.data!;
   }
 
   async getClientStats(): Promise<ClientStats> {
-    const response = await this.request<ClientStats>('GET', '/clients/stats');
+    const response = await this.request<ClientStats>('GET', '/stats');
     return response.data!;
   }
 
   async getClient(id: string): Promise<ExtendedClient> {
-    const response = await this.request<ExtendedClient>('GET', `/clients/${id}`);
+    const response = await this.request<ExtendedClient>('GET', `/${id}`);
     return response.data!;
   }
 
   async createClient(data: CreateClient): Promise<ExtendedClient> {
-    const response = await this.request<ExtendedClient>('POST', '/clients', { body: data });
+    const response = await this.request<ExtendedClient>('POST', '', { body: data });
     return response.data!;
   }
 
   async updateClient(id: string, data: UpdateClient): Promise<ExtendedClient> {
-    const response = await this.request<ExtendedClient>('PATCH', `/clients/${id}`, { body: data });
+    const response = await this.request<ExtendedClient>('PATCH', `/${id}`, { body: data });
     return response.data!;
   }
 
   async deleteClient(id: string): Promise<void> {
-    await this.request('DELETE', `/clients/${id}`);
+    await this.request('DELETE', `/${id}`);
   }
 }

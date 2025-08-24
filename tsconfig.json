@@ -113,6 +113,9 @@
     },
     {
       "path": "./libs/sdk/notifications"
+    },
+    {
+      "path": "./apps/api/analytics"
     }
   ]
 }

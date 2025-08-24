@@ -60,6 +60,12 @@
       "path": "../../../libs/web/settings"
     },
     {
+      "path": "../../../libs/sdk/leads"
+    },
+    {
+      "path": "../../../libs/sdk/users"
+    },
+    {
       "path": "../../../libs/web/shared"
     },
     {

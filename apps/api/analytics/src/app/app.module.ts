@@ -1,26 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
 import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-
-import { NotificationsModule } from './notifications/notifications.module';
-import { PreferencesModule } from './preferences/preferences.module';
-import { ChannelsModule } from './channels/channels.module';
-import { OrchestratorModule } from './orchestrator/orchestrator.module';
-import { EventHandlersModule } from './event-handlers/event-handlers.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { HealthModule } from './health/health.module';
-import { NotificationsGateway } from './gateways/notifications.gateway';
-import notificationsConfig from './config/notifications.config';
+import analyticsConfig from './config/analytics.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [notificationsConfig],
+      load: [analyticsConfig],
       cache: true,
       expandVariables: true,
     }),
@@ -29,11 +23,7 @@ import notificationsConfig from './config/notifications.config';
     MessagingModule.forRoot(),
     AuthLibModule,
     HealthModule,
-    NotificationsModule,
-    PreferencesModule,
-    ChannelsModule,
-    OrchestratorModule,
-    EventHandlersModule,
+    AnalyticsModule,
   ],
   providers: [
     {
@@ -52,8 +42,6 @@ import notificationsConfig from './config/notifications.config';
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
-    NotificationsGateway,
   ],
-  exports: [NotificationsGateway],
 })
 export class AppModule {}

@@ -2,10 +2,9 @@ import {
   Controller,
   All,
   Req,
-  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
 @ApiTags('Notifications')
@@ -15,7 +14,7 @@ export class NotificationsGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToNotifications(@Req() req: Request, @Res() res: Response) {
+  async proxyToNotifications(@Req() req: Request) {
     // Extract the path after /api/notifications
     const path = req.path.replace(/^\/notifications/, '');
 
@@ -30,9 +29,7 @@ export class NotificationsGatewayController {
       }
     );
 
-    res.status(response.status)
-
-return response.data;
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {
