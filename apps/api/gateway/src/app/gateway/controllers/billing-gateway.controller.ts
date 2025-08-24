@@ -2,10 +2,9 @@ import {
   Controller,
   All,
   Req,
-  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
 @ApiTags('Billing')
@@ -15,7 +14,7 @@ export class BillingGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToBilling(@Req() req: Request, @Res() res: Response) {
+  async proxyToBilling(@Req() req: Request) {
     // Extract the path after /api/billing
     const path = req.path.replace(/^\/billing/, '');
     // const fullPath = `/api/billing${path}`;
@@ -31,9 +30,7 @@ export class BillingGatewayController {
       }
     );
 
-    res.status(response.status)
-
-return response.data;
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

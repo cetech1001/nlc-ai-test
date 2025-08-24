@@ -1,7 +1,7 @@
-import {BaseServiceClient} from '@nlc-ai/sdk-core';
+import {BaseClient} from '@nlc-ai/sdk-core';
 import {MediaAsset, MediaFilters, MediaUploadOptions, MediaUploadResult} from './media.types';
 
-export class MediaServiceClient extends BaseServiceClient {
+export class MediaServiceClient extends BaseClient {
   async uploadAsset(file: File, options?: MediaUploadOptions): Promise<MediaUploadResult> {
     const formData = new FormData();
     formData.append('file', file);

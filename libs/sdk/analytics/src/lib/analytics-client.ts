@@ -1,12 +1,16 @@
-import {BaseServiceClient} from "@nlc-ai/sdk-core";
+import {BaseClient} from "@nlc-ai/sdk-core";
 import {
   ClientEmailAgentData,
   ClientRetentionAgentData,
-  CoachDashboardData, CoachReplicaAgentData, ContentCreationAgentData,
-  LeadFollowUpAgentData
+  CoachDashboardData,
+  CoachReplicaAgentData,
+  ContentCreationAgentData,
+  LeadFollowUpAgentData,
+  AdminDashboardData,
+  TransactionStats
 } from "./analytics.types";
 
-export class AnalyticsServiceClient extends BaseServiceClient {
+export class AnalyticsServiceClient extends BaseClient {
   async getCoachDashboard(coachID: string): Promise<CoachDashboardData> {
     // For now, return default values for a newly registered coach
     // TODO: Replace with actual API call when backend is ready
@@ -76,6 +80,90 @@ export class AnalyticsServiceClient extends BaseServiceClient {
       weeklyLeadsCaptured: 0,
 
       topPerformingContent: [], // Empty for new coach
+    };
+  }
+
+  async getAdminDashboard(): Promise<AdminDashboardData> {
+    // TODO: Replace with actual API call when backend is ready
+    // const response = await this.request<AdminDashboardData>('GET', '/analytics/admin-dashboard');
+    // return response.data!;
+
+    return {
+      allTimeRevenue: 125000,
+      monthlyRevenue: 12500,
+      allTimeRevenueGrowth: 15.5,
+      monthlyRevenueGrowth: 8.3,
+
+      totalCoaches: 245,
+      inactiveCoaches: 32,
+      totalCoachesGrowth: 12.1,
+      inactiveCoachesGrowth: -5.2,
+
+      revenueData: {
+        weekly: [
+          {date: 'Aug 17', revenue: 2800},
+          {date: 'Aug 18', revenue: 3200},
+          {date: 'Aug 19', revenue: 2950},
+          {date: 'Aug 20', revenue: 3800},
+          {date: 'Aug 21', revenue: 4100},
+          {date: 'Aug 22', revenue: 3600},
+          {date: 'Aug 23', revenue: 3900},
+        ],
+        monthly: [
+          {date: 'Feb', revenue: 8500},
+          {date: 'Mar', revenue: 9200},
+          {date: 'Apr', revenue: 10800},
+          {date: 'May', revenue: 11200},
+          {date: 'Jun', revenue: 11800},
+          {date: 'Jul', revenue: 12100},
+          {date: 'Aug', revenue: 12500},
+        ],
+        yearly: [
+          {date: '2019', revenue: 45000},
+          {date: '2020', revenue: 62000},
+          {date: '2021', revenue: 78000},
+          {date: '2022', revenue: 95000},
+          {date: '2023', revenue: 110000},
+          {date: '2024', revenue: 125000},
+        ],
+      },
+    };
+  }
+
+  async getTransactionStats(): Promise<TransactionStats> {
+    // TODO: Replace with actual API call when backend is ready
+    // const response = await this.request<TransactionStats>('GET', '/analytics/transaction-stats');
+    // return response.data!;
+
+    return {
+      totalTransactions: 1250,
+      totalVolume: 125000,
+      averageTransactionValue: 100,
+      successRate: 98.5,
+      volumeGrowth: 15.2,
+      transactionGrowth: 22.8,
+
+      monthlyStats: [
+        {month: 'Feb', transactions: 145, volume: 14500, averageValue: 100},
+        {month: 'Mar', transactions: 162, volume: 16200, averageValue: 100},
+        {month: 'Apr', transactions: 178, volume: 17800, averageValue: 100},
+        {month: 'May', transactions: 185, volume: 18500, averageValue: 100},
+        {month: 'Jun', transactions: 192, volume: 19200, averageValue: 100},
+        {month: 'Jul', transactions: 198, volume: 19800, averageValue: 100},
+        {month: 'Aug', transactions: 205, volume: 20500, averageValue: 100},
+      ],
+
+      planBreakdown: [
+        {planName: 'Starter', transactions: 450, volume: 22500, percentage: 36},
+        {planName: 'Professional', transactions: 520, volume: 62400, percentage: 42},
+        {planName: 'Enterprise', transactions: 280, volume: 40200, percentage: 22},
+      ],
+
+      paymentMethodBreakdown: [
+        {method: 'Credit Card', transactions: 875, volume: 87500, percentage: 70},
+        {method: 'PayPal', transactions: 250, volume: 25000, percentage: 20},
+        {method: 'Bank Transfer', transactions: 125, volume: 12500, percentage: 10},
+      ],
     };
   }
 

@@ -1,6 +1,6 @@
 /// <reference lib="dom"/>
 
-import { BaseServiceClient, Paginated } from '@nlc-ai/sdk-core';
+import { BaseClient, Paginated } from '@nlc-ai/sdk-core';
 import {
   NotificationResponse,
   NotificationFilters,
@@ -11,7 +11,7 @@ import {
   CreateNotificationRequest,
 } from './notifications.types.js';
 
-export class NotificationsServiceClient extends BaseServiceClient {
+export class NotificationsServiceClient extends BaseClient {
   // Notification methods
   async getNotifications(filters?: NotificationFilters): Promise<Paginated<NotificationResponse>> {
     const searchParams = new URLSearchParams();

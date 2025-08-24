@@ -31,12 +31,14 @@ export class PlansService {
   }
 
   async findAllPlans(filters: PlanFilters = {}): Promise<Plan[]> {
-    const where: Prisma.PlanWhereInput = {
-      isDeleted: false,
-    };
+    const where: Prisma.PlanWhereInput = {};
 
-    if (filters.isActive !== undefined) {
-      where.isActive = filters.isActive;
+    if (!filters.includeDeleted) {
+      where.isDeleted = false;
+    }
+
+    if (!filters.includeInactive) {
+      where.isActive = true;
     }
 
     if (filters.name) {

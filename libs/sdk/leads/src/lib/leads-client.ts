@@ -1,4 +1,4 @@
-import { BaseServiceClient } from '@nlc-ai/sdk-core';
+import { BaseClient } from '@nlc-ai/sdk-core';
 import {
   Lead,
   CreateLead,
@@ -9,7 +9,7 @@ import {
 import {Paginated} from "@nlc-ai/types";
 
 
-export class LeadsServiceClient extends BaseServiceClient {
+export class LeadsServiceClient extends BaseClient {
   async getLeads(params?: LeadQueryParams): Promise<Paginated<Lead>> {
     const searchParams = new URLSearchParams();
     if (params) {

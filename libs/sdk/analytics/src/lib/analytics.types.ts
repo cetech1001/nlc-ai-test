@@ -211,3 +211,59 @@ export interface CoachReplicaAgentData {
     totalLeadsCaptured: number;
   };
 }
+
+// Add these interfaces to the existing analytics.types.ts file
+
+export interface AdminDashboardData {
+  // Revenue stats
+  allTimeRevenue: number;
+  monthlyRevenue: number;
+  allTimeRevenueGrowth: number;
+  monthlyRevenueGrowth: number;
+
+  // Coach stats
+  totalCoaches: number;
+  inactiveCoaches: number;
+  totalCoachesGrowth: number;
+  inactiveCoachesGrowth: number;
+
+  // Revenue data by period
+  revenueData: {
+    weekly: Array<{ date: string; revenue: number }>;
+    monthly: Array<{ date: string; revenue: number }>;
+    yearly: Array<{ date: string; revenue: number }>;
+  };
+}
+
+export interface TransactionStats {
+  totalTransactions: number;
+  totalVolume: number;
+  averageTransactionValue: number;
+  successRate: number;
+  volumeGrowth: number;
+  transactionGrowth: number;
+
+  // Monthly breakdown
+  monthlyStats: Array<{
+    month: string;
+    transactions: number;
+    volume: number;
+    averageValue: number;
+  }>;
+
+  // By plan breakdown
+  planBreakdown: Array<{
+    planName: string;
+    transactions: number;
+    volume: number;
+    percentage: number;
+  }>;
+
+  // Payment method breakdown
+  paymentMethodBreakdown: Array<{
+    method: string;
+    transactions: number;
+    volume: number;
+    percentage: number;
+  }>;
+}

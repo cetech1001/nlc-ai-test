@@ -1,6 +1,6 @@
-import {BaseServiceClient} from "@nlc-ai/sdk-core";
+import {BaseClient} from "@nlc-ai/sdk-core";
 
-export class EmailServiceClient extends BaseServiceClient {
+export class EmailServiceClient extends BaseClient {
   async sendEmail(data: any) {
     const response = await this.request('POST', '/email/send', { body: data });
     return response.data!;

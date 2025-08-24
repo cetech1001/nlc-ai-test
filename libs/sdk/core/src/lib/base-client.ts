@@ -1,7 +1,7 @@
 import {ServiceError} from "./service-error";
 import {ApiResponse, RequestOptions, ServiceClientConfig} from "./types";
 
-export abstract class BaseServiceClient {
+export abstract class BaseClient {
   protected baseURL: string;
   protected apiKey?: string;
   protected timeout: number = 30000;
@@ -119,5 +119,11 @@ export abstract class BaseServiceClient {
     }
 
     return new ServiceError(error.message || 'Unknown error', 500);
+  }
+
+  updateApiKey(apiKey: string | null) {
+    if (apiKey) {
+      this.apiKey = apiKey;
+    }
   }
 }

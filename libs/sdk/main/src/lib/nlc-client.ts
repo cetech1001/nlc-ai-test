@@ -1,5 +1,5 @@
 import {NLCClientConfig} from "./nlc-client.types";
-import {UsersServiceClient} from "@nlc-ai/sdk-users";
+import {UsersClient} from "@nlc-ai/sdk-users";
 import {AuthServiceClient} from "@nlc-ai/sdk-auth";
 import {EmailServiceClient} from "@nlc-ai/sdk-email";
 import {BillingServiceClient} from "@nlc-ai/sdk-billing";
@@ -9,9 +9,8 @@ import {CommunityServiceClient} from "@nlc-ai/sdk-community";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
 
-
 export class NLCClient {
-  public users: UsersServiceClient;
+  public users: UsersClient;
   public auth: AuthServiceClient;
   public email: EmailServiceClient;
   public billing: BillingServiceClient;
@@ -27,7 +26,7 @@ export class NLCClient {
       timeout: config.timeout,
     };
 
-    this.users = new UsersServiceClient({
+    this.users = new UsersClient({
       ...baseConfig,
       baseURL: config.services?.users || `${config.baseURL}/api/users`,
     });
@@ -70,6 +69,19 @@ export class NLCClient {
     this.notifications = new NotificationsServiceClient({
       ...baseConfig,
       baseURL: config.services?.notifications || `${config.baseURL}/api/notifications`,
+    });
+  }
+
+  // Method to update API key for all services
+  updateApiKey(apiKey: string | null) {
+    const services = [
+      this.users, this.auth, this.email, this.billing,
+      this.analytics, this.leads, this.community,
+      this.media, this.notifications
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
     });
   }
 }

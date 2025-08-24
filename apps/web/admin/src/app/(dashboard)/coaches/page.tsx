@@ -9,12 +9,12 @@ import {
   DataFilter,
   MobilePagination,
 } from "@nlc-ai/web-shared";
-import { coachesAPI } from "@nlc-ai/web-api-client";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import {
   CoachesTable,
   coachFilters,
-  emptyCoachFilterValues, sdkClient,
+  emptyCoachFilterValues,
+  sdkClient,
 } from "@/lib";
 import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
@@ -49,12 +49,11 @@ const Coaches = () => {
       setIsLoading(true);
       setError("");
 
-      const response = await sdkClient.users.getCoaches({
-        ...filterValues,
+      const response = await sdkClient.users.coaches.getCoaches({
         page: currentPage,
         limit: coachesPerPage,
         search: searchQuery
-      });
+      }, filterValues);
 
       setCoaches(response.data);
       setPagination(response.pagination);

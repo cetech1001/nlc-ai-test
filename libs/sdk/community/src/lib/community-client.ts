@@ -1,4 +1,4 @@
-import {BaseServiceClient, Paginated} from '@nlc-ai/sdk-core';
+import {BaseClient, Paginated} from '@nlc-ai/sdk-core';
 import {
   CommunityFilters,
   CommunityResponse,
@@ -19,7 +19,7 @@ import {
 } from './community.types';
 import {CommunityType} from "./enums";
 
-export class CommunityServiceClient extends BaseServiceClient {
+export class CommunityServiceClient extends BaseClient {
   // Community methods
   async getCommunities(filters?: CommunityFilters): Promise<Paginated<CommunityResponse>> {
     const searchParams = new URLSearchParams();

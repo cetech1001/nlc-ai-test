@@ -1,6 +1,6 @@
-import {BaseServiceClient} from "@nlc-ai/sdk-core";
+import {BaseClient} from "@nlc-ai/sdk-core";
 
-export class AuthServiceClient extends BaseServiceClient {
+export class AuthServiceClient extends BaseClient {
   async loginCoach(email: string, password: string) {
     const response = await this.request('POST', '/auth/coach/login', {
       body: { email, password }

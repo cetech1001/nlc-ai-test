@@ -14,9 +14,5 @@ export const sdkClient = new NLCClient({
 });
 
 export const updateSDKToken = (token: string | null) => {
-  sdkClient.auth = new (require('@nlc-ai/sdk-auth').AuthServiceClient)({
-    baseURL: appConfig.api.services.auth,
-    apiKey: token || undefined,
-    timeout: appConfig.api.timeout,
-  });
+  sdkClient.updateApiKey(token);
 };

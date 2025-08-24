@@ -22,7 +22,8 @@ export interface UpdatePlanRequest {
 }
 
 export interface PlanFilters {
-  isActive?: boolean;
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
   name?: string;
   priceRange?: {
     min?: number;

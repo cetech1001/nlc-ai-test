@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/web-shared";
-import { coachesAPI } from "@nlc-ai/web-api-client";
 import {
   emptyInactiveCoachesFilterValues,
   inactiveCoachFilters,
-  CoachesTable
+  CoachesTable,
+  sdkClient
 } from "@/lib";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
+import {CoachStatus, CoachWithStatus, FilterValues} from "@nlc-ai/types";
 
 export default function InactiveCoaches() {
   const router = useRouter();
@@ -44,17 +44,16 @@ export default function InactiveCoaches() {
       setIsLoading(true);
       setError("");
 
-      const filtersWithStatus = {
+      const filters = {
         ...filterValues,
-        status: 'inactive'
-      };
+        status: CoachStatus.INACTIVE,
+      }
 
-      const response = await coachesAPI.getCoaches(
-        currentPage,
-        coachesPerPage,
-        filtersWithStatus,
-        searchQuery
-      );
+      const response = await sdkClient.users.coaches.getCoaches({
+        page: currentPage,
+        limit: coachesPerPage,
+        search: searchQuery
+      }, filters);
 
       setCoaches(response.data);
       setPagination(response.pagination);

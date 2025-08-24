@@ -4,10 +4,10 @@ import { RevenueGraph, StatCard } from "@nlc-ai/web-shared";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {toast} from 'sonner';
-import {coachesAPI, transactionsAPI} from "@nlc-ai/web-api-client";
 import { AlertBanner } from "@nlc-ai/web-ui";
 import {CoachStats, CoachWithStatus, RevenueStats, TimePeriodRevenueData} from "@nlc-ai/types";
 import {CoachesTable, sdkClient} from "@/lib";
+
 
 const AdminHome = () => {
   const router = useRouter();
@@ -33,8 +33,15 @@ const AdminHome = () => {
     try {
       setIsCoachStatsLoading(true);
 
-      const coachStatsData: any = await coachesAPI.getCoachStats();
-      setCoachStats(coachStatsData.data);
+      const dashboardData = await sdkClient.analytics.getAdminDashboard();
+
+      // Transform admin dashboard data to coach stats format
+      setCoachStats({
+        totalCoaches: dashboardData.totalCoaches,
+        inactiveCoaches: dashboardData.inactiveCoaches,
+        totalCoachesGrowth: dashboardData.totalCoachesGrowth,
+        inactiveCoachesGrowth: dashboardData.inactiveCoachesGrowth,
+      });
     } catch (e) {
       throw e;
     } finally {
@@ -46,8 +53,15 @@ const AdminHome = () => {
     try {
       setIsRevenueStatsLoading(true);
 
-      const revenueStatsData = await transactionsAPI.getRevenueStats();
-      setRevenueStats(revenueStatsData);
+      const dashboardData = await sdkClient.analytics.getAdminDashboard();
+
+      // Transform admin dashboard data to revenue stats format
+      setRevenueStats({
+        allTimeRevenue: dashboardData.allTimeRevenue,
+        monthlyRevenue: dashboardData.monthlyRevenue,
+        allTimeRevenueGrowth: dashboardData.allTimeRevenueGrowth,
+        monthlyRevenueGrowth: dashboardData.monthlyRevenueGrowth,
+      });
     } catch (e) {
       throw e;
     } finally {
@@ -59,20 +73,12 @@ const AdminHome = () => {
     try {
       setIsRevenueDataLoading(true);
 
-      const [
-        weeklyData,
-        monthlyData,
-        yearlyData,
-      ] = await Promise.all([
-        transactionsAPI.getRevenueByPeriod('week'),
-        transactionsAPI.getRevenueByPeriod('month'),
-        transactionsAPI.getRevenueByPeriod('year'),
-      ]);
+      const dashboardData = await sdkClient.analytics.getAdminDashboard();
 
       setRevenueData({
-        weekly: weeklyData,
-        monthly: monthlyData,
-        yearly: yearlyData
+        weekly: dashboardData.revenueData.weekly,
+        monthly: dashboardData.revenueData.monthly,
+        yearly: dashboardData.revenueData.yearly
       });
     } catch (e) {
       throw e;
@@ -85,7 +91,7 @@ const AdminHome = () => {
     try {
       setIsRecentCoachesLoading(true);
 
-      const recentCoachesData = await sdkClient.users.getCoaches({
+      const recentCoachesData = await sdkClient.users.coaches.getCoaches({
         page: 1,
         limit: 6
       });
@@ -119,8 +125,8 @@ const AdminHome = () => {
 
   const handleActionSuccess = async (message: string) => {
     setSuccessMessage(message);
-    const recentCoaches = await coachesAPI.getCoaches(1, 6);
-    setRecentCoaches(recentCoaches.data);
+    const recentCoachesData = await sdkClient.users.coaches.getCoaches({ page: 1, limit: 6 });
+    setRecentCoaches(recentCoachesData.data);
     setTimeout(() => setSuccessMessage(""), 3000);
   }
 
@@ -149,7 +155,7 @@ const AdminHome = () => {
           />
           <StatCard
             title="All Time Revenue"
-            value={`$${revenueStats?.allTimeRevenue.toLocaleString()}`}
+            value={`${revenueStats?.allTimeRevenue.toLocaleString()}`}
             growth={revenueStats?.allTimeRevenueGrowth}
             isLoading={isRevenueStatsLoading || !revenueStats}
           />
@@ -161,7 +167,7 @@ const AdminHome = () => {
           />
           <StatCard
             title="Monthly Revenue"
-            value={`$${revenueStats?.monthlyRevenue.toLocaleString()}`}
+            value={`${revenueStats?.monthlyRevenue.toLocaleString()}`}
             growth={revenueStats?.monthlyRevenueGrowth}
             isLoading={isRevenueStatsLoading || !revenueStats}
           />

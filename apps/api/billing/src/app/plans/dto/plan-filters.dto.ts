@@ -9,7 +9,13 @@ export class PlanFiltersDto implements PlanFilters {
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true')
-  isActive?: boolean;
+  includeInactive?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true')
+  includeDeleted?: boolean;
 
   @ApiProperty({ example: 'Premium', required: false })
   @IsOptional()
