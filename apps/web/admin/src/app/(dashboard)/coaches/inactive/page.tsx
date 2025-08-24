@@ -132,7 +132,7 @@ export default function InactiveCoaches() {
 
         <CoachesTable
           coaches={coaches}
-          handleRouteClick={handleSendEmail}
+          handleViewDetails={handleSendEmail}
           handleActionSuccess={handleActionSuccess}
           setError={setError}
           areInactiveCoaches={true}

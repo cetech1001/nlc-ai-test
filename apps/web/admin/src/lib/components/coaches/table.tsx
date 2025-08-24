@@ -6,7 +6,8 @@ import {ExtendedCoach} from "@nlc-ai/sdk-users";
 
 interface IProps {
   coaches: ExtendedCoach[];
-  handleRouteClick: (coachID: string) => void;
+  handleViewDetails: (coachID: string) => void;
+  handleEditClick: (coachID: string) => void;
   handleActionSuccess: (message: string) => void;
   setError: Dispatch<SetStateAction<string>>;
   areInactiveCoaches?: boolean;
@@ -103,6 +104,12 @@ export const CoachesTable: FC<IProps> = (props) => {
               </button>
             )}
             <button
+              onClick={() => onRowAction?.('edit', coach)}
+              className="px-3 py-1 rounded text-sm bg-fuchsia-600/20 text-fuchsia-400 hover:bg-fuchsia-600/30"
+            >
+              Edit
+            </button>
+            <button
               onClick={() => onRowAction?.(props.areInactiveCoaches ? 'send-mail' : 'make-payment', coach)}
               className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
               disabled={coach.rawStatus === 'deleted'}
@@ -117,13 +124,15 @@ export const CoachesTable: FC<IProps> = (props) => {
 
   const handleRowAction = async (action: string, coach: DataTableCoach) => {
     if (action === 'make-payment' || action === 'send-mail') {
-      props.handleRouteClick(coach.originalID);
+      props.handleViewDetails(coach.originalID);
     } else if (action === 'toggle-status') {
       await handleToggleStatus(coach.originalID);
     } else if (action === 'delete') {
       await handleDeleteCoach(coach.originalID);
     } else if (action === 'restore') {
       await handleRestoreCoach(coach.originalID);
+    } else if (action === 'edit') {
+      props.handleEditClick(coach.originalID);
     }
   };
 

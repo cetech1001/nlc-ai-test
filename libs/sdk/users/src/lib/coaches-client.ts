@@ -1,5 +1,5 @@
 import {BaseClient, SearchQuery, FilterValues, Paginated} from "@nlc-ai/sdk-core";
-import {ExtendedCoach, CreateCoach} from "./types";
+import {ExtendedCoach, CreateCoach, UpdateCoach} from "./types";
 
 export class CoachesClient extends BaseClient{
   async getCoaches(searchOptions: SearchQuery = {}, filters: FilterValues = {}) {
@@ -59,6 +59,11 @@ export class CoachesClient extends BaseClient{
 
   async createCoach(data: CreateCoach): Promise<ExtendedCoach> {
     const response = await this.request<ExtendedCoach>('POST', '', { body: data });
+    return response.data!;
+  }
+
+  async updateCoach(id: string, data: UpdateCoach): Promise<ExtendedCoach> {
+    const response = await this.request<ExtendedCoach>('PATCH', `/${id}`, { body: data });
     return response.data!;
   }
 

@@ -108,6 +108,10 @@ const AdminCoachesPage = () => {
     router.push(`/coaches/${coachID}`);
   }
 
+  const handleEditCoach = (coachID: string) => {
+    router.push(`/coaches/edit?coachID=${coachID}`);
+  }
+
   const handleActionSuccess = async (message: string) => {
     setSuccessMessage(message);
     await fetchCoaches();
@@ -169,7 +173,8 @@ const AdminCoachesPage = () => {
         <CoachesTable
           coaches={coaches}
           handleActionSuccess={handleActionSuccess}
-          handleRouteClick={handleViewDetails}
+          handleViewDetails={handleViewDetails}
+          handleEditClick={handleEditCoach}
           setError={setError}
           isLoading={isLoading}
         />
