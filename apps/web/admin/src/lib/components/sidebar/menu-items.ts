@@ -11,7 +11,7 @@ import {
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
   { icon: HiUsers, label: "Coaches", path: "/coaches" },
-  { icon: HiMoon, label: "Inactive Coaches", path: "/inactive-coaches" },
+  { icon: HiMoon, label: "Inactive Coaches", path: "/coaches/inactive" },
   { icon: HiEnvelope, label: "Leads", path: "/leads" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
   { icon: HiCollection, label: "Subscription Plans", path: "/subscription-plans" },
@@ -44,7 +44,7 @@ export const pageConfig = {
     subtitle: 'Track all payments and financial activities.',
     breadcrumb: 'Transactions'
   },
-  'inactive-coaches': {
+  'coaches/inactive': {
     title: 'Inactive Coaches',
     subtitle: 'Coaches who are currently inactive or need attention.',
     breadcrumb: 'Inactive'

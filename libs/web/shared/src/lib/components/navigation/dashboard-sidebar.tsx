@@ -52,6 +52,9 @@ const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
     if (path === '/home') {
       return props.pathname === '/home' || props.pathname === '/dashboard';
     }
+    if (props.pathname.includes('inactive')) {
+      return path.includes('coaches/inactive');
+    }
     return props.pathname.startsWith(path);
   };
 

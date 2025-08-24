@@ -11,7 +11,8 @@ import {
   sdkClient
 } from "@/lib";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {CoachStatus, CoachWithStatus, FilterValues} from "@nlc-ai/types";
+import {FilterValues} from "@nlc-ai/sdk-core";
+import {ExtendedCoach, CoachStatus} from "@nlc-ai/sdk-users";
 
 export default function InactiveCoaches() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function InactiveCoaches() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [coaches, setCoaches] = useState<CoachWithStatus[]>([]);
+  const [coaches, setCoaches] = useState<ExtendedCoach[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyInactiveCoachesFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -81,7 +82,7 @@ export default function InactiveCoaches() {
   };
 
   const handleSendEmail = (coachID: string) => {
-    router.push(`/inactive-coaches/send-mail?coachID=${coachID}`);
+    router.push(`/coaches/inactive/${coachID}/send-mail?`);
   }
 
   const handleActionSuccess = async () => {

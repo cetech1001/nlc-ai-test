@@ -6,10 +6,13 @@ import {
   Copy,
 } from "lucide-react";
 import {useEffect, useState} from "react";
-import { useRouter } from "next/navigation";
+import {useParams, useRouter} from "next/navigation";
 import dynamic from 'next/dynamic';
 import {SendMailPageSkeleton} from "@/lib/skeletons/send-mail-page.skeleton";
 import { BackTo } from "@nlc-ai/web-shared";
+import {ExtendedCoach} from "@nlc-ai/sdk-users";
+import {sdkClient} from "@/lib";
+import { formatDate } from "@nlc-ai/web-utils";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,
@@ -20,8 +23,12 @@ interface TinyMCEConfig {
   apiKey: string;
 }
 
-export default function ClientRetention() {
+const AdminClientRetentionPage = () => {
   const router = useRouter();
+  const params = useParams();
+
+  const coachID = params.coachID as string;
+
   const [emailContent, setEmailContent] = useState(`<p>Hi [Coach's Name],</p>
 
 <p>We noticed you haven't logged into your Next Level Coach AI account for a little while, and we just wanted to check in. Your coaching business is important to us, and we're here to help you make the most of your platform to engage with clients, grow your revenue, and streamline your day-to-day tasks.</p>
@@ -49,14 +56,7 @@ export default function ClientRetention() {
   const [tinyMCEConfig, setTinyMCEConfig] = useState<TinyMCEConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const [coach, setCoach] = useState<ExtendedCoach | null>(null);
 
   useEffect(() => {
     const fetchTinyMCEConfig = async () => {
@@ -74,10 +74,17 @@ export default function ClientRetention() {
     };
 
     (() => fetchTinyMCEConfig())();
+    (() => fetchCoach())();
   }, []);
 
-  const handleBackClick = () => {
-    router.push('/inactive-coaches');
+  const fetchCoach = async () => {
+    setIsLoading(true);
+    try {
+      const response = await sdkClient.users.coaches.getCoach(coachID);
+      setCoach(response);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleSendEmail = () => {
@@ -98,7 +105,7 @@ export default function ClientRetention() {
 
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
-      <BackTo onClick={handleBackClick} title={'Client Retention Email'}/>
+      <BackTo onClick={handleDiscard} title={'Client Retention Email'}/>
 
       <div className="w-full max-w-[1750px] relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 overflow-hidden">
 
@@ -109,30 +116,32 @@ export default function ClientRetention() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div className="text-stone-50 text-xl sm:text-2xl font-semibold font-['Inter'] leading-relaxed">
-                  Charlie Levin
+                  {coach?.firstName} {coach?.lastName}
                 </div>
               </div>
 
               <div className="text-stone-300 text-sm font-normal font-['Inter']">
-                charlie.levin@email.com
+                {coach?.email}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <div className="text-stone-50 text-sm font-medium font-['Inter']">User ID</div>
-                  <div className="text-stone-300 text-sm font-normal font-['Inter']">#1234</div>
+                  <div className="text-stone-300 text-sm font-normal font-['Inter']">#${coach?.id.split('-')[0]}</div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <div className="text-stone-50 text-sm font-medium font-['Inter']">Plan</div>
-                  <div className="text-stone-300 text-sm font-normal font-['Inter']">Starter</div>
+                  <div className="text-stone-300 text-sm font-normal font-['Inter']">{coach?.subscriptionPlan || 'N/A'}</div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <div className="text-stone-50 text-sm font-medium font-['Inter']">Joined</div>
-                  <div className="text-stone-300 text-sm font-normal font-['Inter']">Jan 18, 2024</div>
+                  <div className="text-stone-300 text-sm font-normal font-['Inter']">{coach?.createdAt && formatDate(coach.createdAt)}</div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <div className="text-stone-50 text-sm font-medium font-['Inter']">Last Active</div>
-                  <div className="text-stone-300 text-sm font-normal font-['Inter']">Mar 25, 2025</div>
+                  <div className="text-stone-300 text-sm font-normal font-['Inter']">
+                    {coach?.lastLoginAt ? formatDate(coach.lastLoginAt) : 'Never'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -227,7 +236,7 @@ export default function ClientRetention() {
           <div className="absolute left-[30px] top-[30px] w-80 space-y-4">
             <div className="w-80 h-7 flex justify-between items-center">
               <div className="text-stone-50 text-2xl font-semibold font-['Inter'] leading-relaxed">
-                Charlie Levin
+                {coach?.firstName} {coach?.lastName}
               </div>
               <div className="px-2.5 py-0.5 opacity-0 bg-green-700/20 rounded-full border border-green-700 flex justify-center items-center gap-1">
                 <div className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
@@ -237,25 +246,29 @@ export default function ClientRetention() {
             </div>
 
             <div className="text-stone-300 text-sm font-normal font-['Inter']">
-              charlie.levin@email.com
+              {coach?.email}
             </div>
 
             <div className="grid grid-cols-2 gap-x-3 gap-y-4 mt-[47px]">
               <div className="flex flex-col gap-1.5">
                 <div className="text-stone-50 text-sm font-medium font-['Inter']">User ID</div>
-                <div className="text-stone-300 text-sm font-normal font-['Inter']">#1234</div>
+                <div className="text-stone-300 text-sm font-normal font-['Inter']">#{coach?.id.split('-')[0]}</div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="text-stone-50 text-sm font-medium font-['Inter']">Subscription Plan</div>
-                <div className="text-stone-300 text-sm font-normal font-['Inter']">Starter</div>
+                <div className="text-stone-300 text-sm font-normal font-['Inter']">{coach?.subscriptionPlan || 'N/A'}</div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="text-stone-50 text-sm font-medium font-['Inter']">Date Joined</div>
-                <div className="text-stone-300 text-sm font-normal font-['Inter']">Jan 18, 2025</div>
+                <div className="text-stone-300 text-sm font-normal font-['Inter']">
+                  {coach?.createdAt && formatDate(coach.createdAt)}
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="text-stone-50 text-sm font-medium font-['Inter']">Last Active</div>
-                <div className="text-stone-300 text-sm font-normal font-['Inter']">Mar 25, 2025</div>
+                <div className="text-stone-300 text-sm font-normal font-['Inter']">
+                  {coach?.lastLoginAt ? formatDate(coach.lastLoginAt) : 'Never'}
+                </div>
               </div>
             </div>
           </div>
@@ -422,3 +435,5 @@ export default function ClientRetention() {
     </div>
   );
 }
+
+export default AdminClientRetentionPage;
