@@ -11,20 +11,16 @@ const CreateNewPlan = () => {
 
   const handleCreatePlan = async (requestData: CreatePlanRequest) => {
     await plansAPI.createPlan(requestData);
-    router.push("/subscription-plans?success=Plan created successfully");
+    router.push("/plans?success=Plan created successfully");
   };
 
   const handleDiscard = () => {
-    router.push("/subscription-plans");
-  };
-
-  const handleBackToPlans = () => {
-    handleDiscard();
+    router.back();
   };
 
   return (
     <main className="flex-1 pt-2 sm:pt-8">
-      <BackTo title={'Create New Plan'} onClick={handleBackToPlans} />
+      <BackTo title={'Create New Plan'} onClick={handleDiscard} />
 
       <PlanForm
         type="create"

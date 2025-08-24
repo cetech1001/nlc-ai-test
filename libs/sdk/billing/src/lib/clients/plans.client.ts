@@ -12,7 +12,7 @@ export class PlansClient extends BaseClient{
   }
 
   async getPlan(planID: string) {
-    const response = await this.request('GET', `/${planID}`);
+    const response = await this.request<Plan>('GET', `/${planID}`);
     return response.data!;
   }
 

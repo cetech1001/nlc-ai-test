@@ -1,26 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search, Plus } from "lucide-react";
+import { toast } from "sonner";
 import {
   Pagination,
   PageHeader,
   DataFilter,
   MobilePagination,
 } from "@nlc-ai/web-shared";
-import { AlertBanner } from '@nlc-ai/web-ui';
+import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import {
   CoachesTable,
   coachFilters,
   emptyCoachFilterValues,
   sdkClient,
 } from "@/lib";
-import {FilterValues} from "@nlc-ai/sdk-core";
-import {ExtendedCoach} from "@nlc-ai/sdk-users";
+import { FilterValues } from "@nlc-ai/sdk-core";
+import { ExtendedCoach } from "@nlc-ai/sdk-users";
 
-const AdminCoaches = () => {
+const AdminCoachesPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +44,20 @@ const AdminCoaches = () => {
   const coachesPerPage = 10;
 
   useEffect(() => {
+    const success = searchParams.get('success');
+    if (success === 'created') {
+      setSuccessMessage('Coach created successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else if (success === 'updated') {
+      setSuccessMessage('Coach updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+    if (success) {
+      router.replace(window.location.pathname);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     (() => fetchCoaches())();
   }, [currentPage, searchQuery, filterValues]);
 
@@ -59,7 +75,9 @@ const AdminCoaches = () => {
       setCoaches(response.data);
       setPagination(response.pagination);
     } catch (error: any) {
-      setError(error.message || "Failed to load coaches");
+      const message = error.message || "Failed to load coaches";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +109,7 @@ const AdminCoaches = () => {
   }
 
   const handleActionSuccess = async (message: string) => {
-    setSuccessMessage("Coach restored successfully!");
+    setSuccessMessage(message);
     await fetchCoaches();
     setTimeout(() => setSuccessMessage(""), 3000);
   }
@@ -107,7 +125,15 @@ const AdminCoaches = () => {
           <AlertBanner type={"error"} message={error} onDismiss={clearMessages}/>
         )}
 
-        <PageHeader title="Coaches List">
+        <PageHeader
+          title="Coaches List"
+          actionButton={{
+            label: 'Add New Coach',
+            onClick: () => router.push('/coaches/create'),
+            icon: <Plus className="w-4 h-4" />,
+          }}
+          showActionOnMobile={true}
+        >
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
@@ -127,6 +153,16 @@ const AdminCoaches = () => {
               onReset={handleResetFilters}
               setIsFilterOpen={setIsFilterOpen}
             />
+
+            <Button
+              onClick={() => router.push('/coaches/create')}
+              className={'bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex'}
+            >
+              <span className="w-4 h-4 mr-2">
+                <Plus className="w-4 h-4" />
+              </span>
+              Add New Coach
+            </Button>
           </>
         </PageHeader>
 
@@ -153,4 +189,4 @@ const AdminCoaches = () => {
   );
 }
 
-export default AdminCoaches;
+export default AdminCoachesPage;

@@ -13,12 +13,12 @@ export enum LeadStatus {
 export interface Lead {
   id: string;
   coachID?: string;
-  leadType: 'coach_lead' | 'admin_lead';
+  leadType: LeadType;
   name: string;
   email: string;
   phone?: string;
   source?: string;
-  status: 'contacted' | 'scheduled' | 'converted' | 'unresponsive';
+  status: LeadStatus;
   meetingDate?: Date;
   meetingTime?: string;
   notes?: string;
@@ -82,7 +82,7 @@ export interface LeadFormData {
   email: string;
   phone: string;
   source: string;
-  status: string;
+  status: LeadStatus;
   meetingDate: string;
   meetingTime: string;
   notes: string;

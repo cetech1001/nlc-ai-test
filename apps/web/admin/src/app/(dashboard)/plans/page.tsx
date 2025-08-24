@@ -89,11 +89,11 @@ const SubscriptionPlans = () => {
   };
 
   const handleEditPlan = (plan: Plan) => {
-    router.push(`/subscription-plans/edit?id=${plan.id}`);
+    router.push(`/plans/edit?id=${plan.id}`);
   };
 
   const handleCreateNewPlan = () => {
-    router.push("/subscription-plans/create");
+    router.push("/plans/create");
   };
 
   const handleToggleStatus = async (planID: string) => {

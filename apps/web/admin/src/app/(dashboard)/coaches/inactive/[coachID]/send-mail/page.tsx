@@ -8,10 +8,9 @@ import {
 import {useEffect, useState} from "react";
 import {useParams, useRouter} from "next/navigation";
 import dynamic from 'next/dynamic';
-import {SendMailPageSkeleton} from "@/lib/skeletons/send-mail-page.skeleton";
 import { BackTo } from "@nlc-ai/web-shared";
 import {ExtendedCoach} from "@nlc-ai/sdk-users";
-import {sdkClient} from "@/lib";
+import {sdkClient, SendMailPageSkeleton} from "@/lib";
 import { formatDate } from "@nlc-ai/web-utils";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {

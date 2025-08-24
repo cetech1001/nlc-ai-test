@@ -2,13 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PlanForm } from "@/lib/components/plans/plan-form";
-import { PlanFormSkeleton } from "@/lib/skeletons/plan-form.skeleton";
-import { plansAPI } from "@nlc-ai/web-api-client";
 import {Plan, UpdatePlanRequest} from "@nlc-ai/types";
 import { BackTo } from "@nlc-ai/web-shared";
+import {sdkClient, PlanFormSkeleton, PlanForm} from "@/lib";
 
-const EditPlan = () => {
+const AdminEditPlanPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planID = searchParams.get('id');
@@ -18,17 +16,17 @@ const EditPlan = () => {
 
   useEffect(() => {
     if (!planID) {
-      router.push("/subscription-plans");
+      router.push("/plans");
       return;
     }
 
     (() => loadPlan(planID))();
-  }, [planID, router]);
+  }, [planID]);
 
   const loadPlan = async (id: string) => {
     try {
       setIsLoadingPlan(true);
-      const plan = await plansAPI.getPlan(id);
+      const plan = await sdkClient.billing.plans.getPlan(id);
       setOriginalPlan(plan);
     } finally {
       setIsLoadingPlan(false);
@@ -37,17 +35,13 @@ const EditPlan = () => {
 
   const handleEditPlan = async (requestData: UpdatePlanRequest) => {
     if (planID) {
-      await plansAPI.updatePlan(planID, requestData);
-      router.push("/subscription-plans?success=Plan updated successfully");
+      await sdkClient.billing.plans.updatePlan(planID, requestData);
+      router.push("/plans?success=Plan updated successfully");
     }
   };
 
   const handleDiscard = () => {
-    router.push("/subscription-plans");
-  };
-
-  const handleBackToPlans = () => {
-    handleDiscard();
+    router.push("/plans");
   };
 
   if (isLoadingPlan) {
@@ -60,7 +54,7 @@ const EditPlan = () => {
         <div className="text-center py-12">
           <div className="text-red-400 text-lg mb-4">Plan not found</div>
           <button
-            onClick={() => router.push("/subscription-plans")}
+            onClick={() => router.push("/plans")}
             className="text-[#7B21BA] hover:text-[#8B31CA] underline"
           >
             Back to Plans
@@ -72,7 +66,7 @@ const EditPlan = () => {
 
   return (
     <main className="flex-1 pt-2 sm:pt-8">
-      <BackTo title={'Edit Plan'} onClick={handleBackToPlans} />
+      <BackTo title={'Edit Plan'} onClick={handleDiscard} />
 
       <PlanForm
         type="edit"
@@ -84,4 +78,4 @@ const EditPlan = () => {
   );
 };
 
-export default EditPlan;
+export default AdminEditPlanPage;
