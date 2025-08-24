@@ -16,15 +16,16 @@ import {
   emptyCoachFilterValues,
   sdkClient,
 } from "@/lib";
-import {CoachWithStatus, FilterValues} from "@nlc-ai/types";
+import {FilterValues} from "@nlc-ai/sdk-core";
+import {ExtendedCoach} from "@nlc-ai/sdk-users";
 
-const Coaches = () => {
+const AdminCoaches = () => {
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [coaches, setCoaches] = useState<CoachWithStatus[]>([]);
+  const [coaches, setCoaches] = useState<ExtendedCoach[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyCoachFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -85,9 +86,8 @@ const Coaches = () => {
     setSuccessMessage("");
   };
 
-  const handleMakePayment = (coachID: string) => {
+  const handleViewDetails = (coachID: string) => {
     router.push(`/coaches/${coachID}`);
-    // router.push(`/coaches/make-payment?coachID=${coachID}`);
   }
 
   const handleActionSuccess = async (message: string) => {
@@ -133,7 +133,7 @@ const Coaches = () => {
         <CoachesTable
           coaches={coaches}
           handleActionSuccess={handleActionSuccess}
-          handleRouteClick={handleMakePayment}
+          handleRouteClick={handleViewDetails}
           setError={setError}
           isLoading={isLoading}
         />
@@ -153,4 +153,4 @@ const Coaches = () => {
   );
 }
 
-export default Coaches;
+export default AdminCoaches;

@@ -3,7 +3,6 @@
 import { RevenueGraph, StatCard } from "@nlc-ai/web-shared";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from 'sonner';
 import { AlertBanner } from "@nlc-ai/web-ui";
 import { AdminDashboardData } from "@nlc-ai/sdk-analytics";
 import {RecentCoachesTable, sdkClient} from "@/lib";
@@ -17,7 +16,7 @@ const AdminHome = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    fetchDashboardData();
+    (() => fetchDashboardData())();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -29,13 +28,12 @@ const AdminHome = () => {
       setDashboardData(data);
     } catch (error: any) {
       setError(error.message || "Failed to load dashboard data");
-      toast.error(error.message || "Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleMakePayment = (coachID: string) => {
+  const handleViewDetails = (coachID: string) => {
     router.push(`/coaches/${coachID}`);
   }
 
@@ -114,7 +112,7 @@ const AdminHome = () => {
 
         <RecentCoachesTable
           coaches={dashboardData?.recentCoaches || []}
-          handleRouteClick={handleMakePayment}
+          handleRouteClick={handleViewDetails}
           emptyMessage={"No coaches found"}
           isLoading={isLoading}
         />

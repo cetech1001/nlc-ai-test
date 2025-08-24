@@ -63,6 +63,9 @@
       "path": "../../../libs/sdk/analytics"
     },
     {
+      "path": "../../../libs/sdk/core"
+    },
+    {
       "path": "../../../libs/sdk/leads"
     },
     {

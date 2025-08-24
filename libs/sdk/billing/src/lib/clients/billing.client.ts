@@ -1,46 +1,20 @@
 import {BaseClient} from "@nlc-ai/sdk-core";
 import {Paginated} from "@nlc-ai/types";
+import {NLCClientConfig} from "@nlc-ai/sdk-main";
+import {PlansClient} from "./plans.client";
 
-export class BillingServiceClient extends BaseClient {
-  // Plans methods
-  async getPlans(includeInactive = false, includeDeleted = false) {
-    const params = new URLSearchParams();
-    if (includeInactive) params.append('includeInactive', 'true');
-    if (includeDeleted) params.append('includeDeleted', 'true');
+export class BillingClient extends BaseClient {
+  public plans: PlansClient;
 
-    const response = await this.request('GET', `/billing/plans?${params}`);
-    return response.data!;
+  constructor(config: NLCClientConfig) {
+    super(config);
+
+    this.plans = new PlansClient({
+      ...config,
+      baseURL: `${config.baseURL}/plans`
+    });
   }
 
-  async getPlan(planID: string) {
-    const response = await this.request('GET', `/billing/plans/${planID}`);
-    return response.data!;
-  }
-
-  async createPlan(data: any) {
-    const response = await this.request('POST', '/billing/plans', { body: data });
-    return response.data!;
-  }
-
-  async updatePlan(planID: string, data: any) {
-    const response = await this.request('PATCH', `/billing/plans/${planID}`, { body: data });
-    return response.data!;
-  }
-
-  async deletePlan(planID: string) {
-    const response = await this.request('DELETE', `/billing/plans/${planID}`);
-    return response.data!;
-  }
-
-  async restorePlan(planID: string) {
-    const response = await this.request('POST', `/billing/plans/${planID}/restore`);
-    return response.data!;
-  }
-
-  async togglePlanStatus(planID: string) {
-    const response = await this.request('PATCH', `/billing/plans/${planID}/toggle-status`);
-    return response.data!;
-  }
 
   // Transactions methods
   async getTransactions(

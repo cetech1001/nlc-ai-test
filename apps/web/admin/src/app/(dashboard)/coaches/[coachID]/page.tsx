@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { BackTo } from "@nlc-ai/web-shared";
+import { BackTo, StatCard } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
-import { sdkClient } from "@/lib";
+import {CoachDetailsSkeleton, sdkClient} from "@/lib";
 import {
   User,
   Mail,
@@ -21,71 +21,10 @@ import {
 import {ExtendedClient, ExtendedCoach} from "@nlc-ai/sdk-users";
 import {Lead} from "@nlc-ai/sdk-leads";
 
-
-const CoachDetailsSkeleton = () => (
-  <div className="py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
-    <div className="h-6 bg-neutral-700 rounded w-48"></div>
-    <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6">
-      <div className="space-y-4">
-        <div className="h-8 bg-neutral-700 rounded w-64"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-2">
-              <div className="h-4 bg-neutral-700 rounded w-20"></div>
-              <div className="h-5 bg-neutral-700 rounded w-24"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="bg-neutral-800/30 rounded-[20px] p-6 space-y-4">
-          <div className="h-6 bg-neutral-700 rounded w-32"></div>
-          <div className="h-8 bg-neutral-700 rounded w-16"></div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const StatCard = ({
-                    icon: Icon,
-                    title,
-                    value,
-                    subtitle,
-                    color = "text-fuchsia-400"
-                  }: {
-  icon: any;
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  color?: string;
-}) => (
-  <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-    <div className="absolute inset-0 opacity-20">
-      <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-    </div>
-
-    <div className="relative z-10">
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`w-10 h-10 ${color.replace('text-', 'bg-').replace('400', '500/20')} rounded-lg flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${color}`} />
-        </div>
-        <h3 className="text-stone-50 text-lg font-medium">{title}</h3>
-      </div>
-
-      <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      {subtitle && (
-        <div className="text-stone-400 text-sm">{subtitle}</div>
-      )}
-    </div>
-  </div>
-);
-
-const CoachDetailsPage = () => {
+const AdminCoachDetailsPage = () => {
   const router = useRouter();
   const params = useParams();
+
   const coachID = params.coachID as string;
 
   const [coach, setCoach] = useState<ExtendedCoach | null>(null);
@@ -94,11 +33,10 @@ const CoachDetailsPage = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'leads'>('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     if (coachID) {
-      loadCoachData();
+      (() => loadCoachData())();
     }
   }, [coachID]);
 
@@ -128,7 +66,7 @@ const CoachDetailsPage = () => {
   };
 
   const handleMakePayment = () => {
-    setShowPaymentModal(true);
+    router.push(`/coaches/${coachID}/make-payment`);
   };
 
   if (isLoading) {
@@ -315,7 +253,8 @@ const CoachDetailsPage = () => {
           title="Total Clients"
           value={coach.clientCount || 0}
           subtitle="Active clients"
-          color="text-blue-400"
+          iconTextColor="text-blue-400"
+          iconBgColor={"text-blue-400"}
         />
 
         <StatCard
@@ -323,7 +262,8 @@ const CoachDetailsPage = () => {
           title="Total Revenue"
           value={`$${(coach.totalRevenue || 0).toLocaleString()}`}
           subtitle="Lifetime value"
-          color="text-green-400"
+          iconTextColor="text-green-400"
+          iconBgColor={"text-green-400"}
         />
 
         <StatCard
@@ -331,7 +271,8 @@ const CoachDetailsPage = () => {
           title="Leads"
           value={leads.length}
           subtitle="Total leads"
-          color="text-purple-400"
+          iconTextColor="text-purple-400"
+          iconBgColor={"text-purple-400"}
         />
 
         <StatCard
@@ -342,7 +283,8 @@ const CoachDetailsPage = () => {
             'N/A'
           }
           subtitle="Since joining"
-          color="text-orange-400"
+          iconTextColor="text-orange-400"
+          iconBgColor={"text-orange-400"}
         />
       </div>
 
@@ -471,35 +413,8 @@ const CoachDetailsPage = () => {
           )}
         </div>
       )}
-
-      {/* Payment Modal - You'll need to create this as a separate component */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-900 rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-semibold text-white mb-4">Make Payment</h3>
-            <p className="text-stone-300 mb-6">
-              Create payment for {coach.firstName} {coach.lastName}
-            </p>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => router.push(`/coaches/make-payment?coachID=${coach.id}`)}
-                className="flex-1 bg-gradient-to-r from-fuchsia-600 to-violet-600"
-              >
-                Continue to Payment
-              </Button>
-              <Button
-                onClick={() => setShowPaymentModal(false)}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default CoachDetailsPage;
+export default AdminCoachDetailsPage;

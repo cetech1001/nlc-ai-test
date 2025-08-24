@@ -2,7 +2,7 @@ import {NLCClientConfig} from "./nlc-client.types";
 import {UsersClient} from "@nlc-ai/sdk-users";
 import {AuthServiceClient} from "@nlc-ai/sdk-auth";
 import {EmailServiceClient} from "@nlc-ai/sdk-email";
-import {BillingServiceClient} from "@nlc-ai/sdk-billing";
+import {BillingClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
 import {CommunityServiceClient} from "@nlc-ai/sdk-community";
@@ -13,7 +13,7 @@ export class NLCClient {
   public users: UsersClient;
   public auth: AuthServiceClient;
   public email: EmailServiceClient;
-  public billing: BillingServiceClient;
+  public billing: BillingClient;
   public analytics: AnalyticsClient;
   public leads: LeadsServiceClient;
   public community: CommunityServiceClient;
@@ -41,7 +41,7 @@ export class NLCClient {
       baseURL: config.services?.email || `${config.baseURL}/email`,
     });
 
-    this.billing = new BillingServiceClient({
+    this.billing = new BillingClient({
       ...baseConfig,
       baseURL: config.services?.billing || `${config.baseURL}/billing`,
     });

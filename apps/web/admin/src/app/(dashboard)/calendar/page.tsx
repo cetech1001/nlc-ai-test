@@ -16,8 +16,8 @@ import {
   AppointmentCard,
   MiniCalendarCell
 } from "./components";
-import {CalendarPageSkeleton} from "@/lib/skeletons/calendar-page.skeleton";
 import CalendlyEmbedModal from "@/lib/modals/calendly-embed-modal";
+import { CalendarSkeleton } from "@nlc-ai/web-shared";
 
 const isToday = (date: Date, day: number) => {
   const today = new Date();
@@ -290,7 +290,11 @@ const Calendar = () =>{
   }, [currentWeekStart, calendarEvents]);
 
   if (isLoading) {
-    return <CalendarPageSkeleton/>;
+    return (
+      <div className="flex-1 p-4 sm:p-6 lg:p-8">
+        <CalendarSkeleton/>
+      </div>
+    );
   }
 
   return (

@@ -1,1 +1,2 @@
-export * from './billing-client';
+export * from './clients';
+export * from './types';

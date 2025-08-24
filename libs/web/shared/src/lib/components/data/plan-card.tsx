@@ -1,6 +1,6 @@
 import { Button } from "@nlc-ai/web-ui";
 import {Check} from "lucide-react";
-import {Plan, TransformedPlan} from "@nlc-ai/types";
+import {Plan, TransformedPlan} from "@nlc-ai/sdk-billing";
 import {transformPlan} from "@nlc-ai/web-utils";
 
 

@@ -1,5 +1,32 @@
 import { Skeleton } from "@nlc-ai/web-ui";
 
+export const CoachDetailsSkeleton = () => (
+  <div className="py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
+    <div className="h-6 bg-neutral-700 rounded w-48"></div>
+    <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6">
+      <div className="space-y-4">
+        <div className="h-8 bg-neutral-700 rounded w-64"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-20"/>
+              <Skeleton className="h-5 w-24"/>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="bg-neutral-800/30 rounded-[20px] p-6 space-y-4">
+          <Skeleton className="h-6 w-32"/>
+          <Skeleton className="h-8 w-16"/>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export const MakePaymentSkeleton = () => {
   return (
     <div>

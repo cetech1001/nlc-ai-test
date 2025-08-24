@@ -1,19 +1,20 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import {useRouter, useParams} from "next/navigation";
 import {BackTo, PlanCard} from "@nlc-ai/web-shared";
-import { coachesAPI, plansAPI } from "@nlc-ai/web-api-client";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
-import {MakePaymentSkeleton, PaymentModal} from "@/lib";
+import {Plan, TransformedPlan} from "@nlc-ai/sdk-billing";
+import {MakePaymentSkeleton, PaymentModal, sdkClient} from "@/lib";
+import {ExtendedCoach} from "@nlc-ai/sdk-users";
 
-export default function MakePayment() {
+const AdminMakePaymentPage = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const coachID = searchParams.get('coachID');
 
-  const [coach, setCoach] = useState<CoachWithStatus | null>(null);
+  const params = useParams();
+  const coachID = params.coachID as string;
+
+  const [coach, setCoach] = useState<ExtendedCoach | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState("");
@@ -34,8 +35,8 @@ export default function MakePayment() {
         setError("");
 
         const [coachData, plansData] = await Promise.all([
-          coachesAPI.getCoach(coachID),
-          plansAPI.getPlans(false)
+          sdkClient.users.coaches.getCoach(coachID),
+          sdkClient.billing.plans.getPlans(false)
         ]);
 
         setCoach(coachData);
@@ -62,7 +63,7 @@ export default function MakePayment() {
     }, 5000);
 
     if (coachID) {
-      coachesAPI.getCoach(coachID).then(setCoach).catch(console.error);
+      sdkClient.users.coaches.getCoach(coachID).then(setCoach).catch(console.error);
     }
   };
 
@@ -219,3 +220,5 @@ export default function MakePayment() {
     </div>
   );
 }
+
+export default AdminMakePaymentPage;
