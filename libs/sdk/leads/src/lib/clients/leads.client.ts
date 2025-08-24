@@ -1,11 +1,10 @@
-import {BaseClient, FilterValues, SearchQuery} from '@nlc-ai/sdk-core';
+import {BaseClient, FilterValues, SearchQuery, Paginated} from '@nlc-ai/sdk-core';
 import {
   Lead,
   CreateLead,
   UpdateLead,
   LeadStats,
-} from '../types/leads.types';
-import {Paginated} from "@nlc-ai/types";
+} from '../types';
 
 
 export class LeadsServiceClient extends BaseClient {
@@ -17,6 +16,10 @@ export class LeadsServiceClient extends BaseClient {
     });
 
     if (search) params.append('search', search);
+
+    if (filters.coachID) {
+      params.append('coachID', filters.coachID);
+    }
 
     if (filters.status && filters.status !== '') {
       params.append('status', filters.status);

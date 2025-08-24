@@ -10,9 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
-import { JwtAuthGuard, UserTypes, UserTypesGuard, LandingTokenGuard } from '@nlc-ai/api-auth';
+import {JwtAuthGuard, UserTypes, UserTypesGuard, LandingTokenGuard, CurrentUser} from '@nlc-ai/api-auth';
 import { Public } from '@nlc-ai/api-auth';
-import { UserType } from '@nlc-ai/api-types';
+import {type AuthUser, UserType} from '@nlc-ai/api-types';
 import { LeadsService } from './leads.service';
 import {
   CreateLeadDto,
@@ -32,8 +32,12 @@ export class LeadsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all leads with filtering and pagination' })
   @ApiResponse({ status: 200, description: 'Leads retrieved successfully' })
-  findAll(@Query() query: LeadQueryDto) {
-    return this.leadsService.findAll(query);
+  findAll(@Query() query: LeadQueryDto, @CurrentUser() user: AuthUser) {
+    const coachID = user.type === UserType.coach ? user.id : query.coachID;
+    return this.leadsService.findAll({
+      ...query,
+      coachID
+    });
   }
 
   @Get('stats')

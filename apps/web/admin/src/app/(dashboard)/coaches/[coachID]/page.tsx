@@ -158,7 +158,7 @@ const AdminCoachDetailsPage = () => {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="hidden sm:flex gap-3">
               <Button
                 onClick={handleMakePayment}
                 className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-lg hover:opacity-90 transition-opacity"
@@ -170,6 +170,15 @@ const AdminCoachDetailsPage = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex sm:hidden gap-3">
+              <Button
+                onClick={handleMakePayment}
+                className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Make Payment
+              </Button>
+            </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-stone-300 text-sm">
                 <Mail className="w-4 h-4" />

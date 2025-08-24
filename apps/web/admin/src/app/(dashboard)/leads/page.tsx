@@ -141,6 +141,8 @@ const Leads = () => {
       await handleDeleteLead(lead.originalID);
     } else if (action === 'email') {
       handleEmailLead(lead);
+    } else if (action === 'view-details') {
+      router.push(`/leads/${lead.originalID}`);
     }
   };
 

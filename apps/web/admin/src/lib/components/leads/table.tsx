@@ -1,6 +1,7 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
+import {Button} from "@nlc-ai/web-ui";
 import {DataTableLead, Lead} from "@nlc-ai/sdk-leads";
-import {Mail} from "lucide-react";
+import {Mail, Trash, Edit, Eye} from "lucide-react";
 
 export const transformLeadData = (leads: Lead[]): DataTableLead[] => {
   return leads.map(lead => ({
@@ -86,7 +87,7 @@ export const leadColumns = [
           onClick={() => onRowAction?.('edit', row)}
           className="px-3 py-1 rounded text-sm bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
         >
-          Edit
+          <Edit className="w-3 h-3" />
         </button>
         <button
           onClick={() => onRowAction?.('email', row)}
@@ -99,8 +100,15 @@ export const leadColumns = [
           onClick={() => onRowAction?.('delete', row)}
           className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
         >
-          Delete
+          <Trash className="w-3 h-3" />
         </button>
+        <Button
+          onClick={() => onRowAction?.('view-details', row)}
+          variant="outline"
+          className="text-fuchsia-400 border-fuchsia-400/30 hover:bg-fuchsia-400/10"
+        >
+          <Eye className="w-3 h-3" />
+        </Button>
       </div>
     ),
   },
