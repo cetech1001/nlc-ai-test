@@ -7,11 +7,13 @@ import { useEffect, useState } from "react";
 import { plansAPI } from "@nlc-ai/web-api-client";
 import { PageHeader, DataFilter, PlanCard } from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {FilterValues, Plan, TransformedPlan} from "@nlc-ai/types";
-import {emptyPlanFilterValues, planFilters, PlansPageSkeleton} from "@/lib";
+import {Plan, TransformedPlan} from "@nlc-ai/sdk-billing";
+import {FilterValues} from "@nlc-ai/sdk-core";
+import {emptyPlanFilterValues, planFilters, PlansPageSkeleton, sdkClient} from "@/lib";
 
 const SubscriptionPlans = () => {
   const router = useRouter();
+
   const [isLoading, setIsLoading] = useState(true);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [filteredPlans, setFilteredPlans] = useState<Plan[]>([]);
@@ -25,7 +27,7 @@ const SubscriptionPlans = () => {
     const successParam = urlParams.get('success');
     if (successParam) {
       setSuccessMessage(successParam);
-      window.history.replaceState({}, '', window.location.pathname);
+      router.replace(window.location.pathname);
     }
 
     (() => fetchPlans())();
@@ -52,7 +54,7 @@ const SubscriptionPlans = () => {
         ? newIncludeDeleted === 'true'
         : filterValues.includeDeleted === 'true';
 
-      const fetchedPlans = await plansAPI.getPlans(true, includeDeleted);
+      const fetchedPlans = await sdkClient.billing.plans.getPlans(true, includeDeleted);
       setPlans(fetchedPlans);
     } catch (error: any) {
       setError(error.message || "Failed to load plans");

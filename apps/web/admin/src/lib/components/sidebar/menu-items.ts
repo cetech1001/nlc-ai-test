@@ -14,7 +14,7 @@ export const menuItems = [
   { icon: HiMoon, label: "Inactive Coaches", path: "/coaches/inactive" },
   { icon: HiEnvelope, label: "Leads", path: "/leads" },
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
-  { icon: HiCollection, label: "Subscription Plans", path: "/subscription-plans" },
+  { icon: HiCollection, label: "Subscription Plans", path: "/plans" },
   { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
 ];
 
@@ -34,7 +34,7 @@ export const pageConfig = {
     subtitle: 'View and manage all your coaches in one place.',
     breadcrumb: 'Coaches'
   },
-  'subscription-plans': {
+  'plans': {
     title: 'Subscription Plans',
     subtitle: 'Manage your coaching plans and pricing.',
     breadcrumb: 'Plans'

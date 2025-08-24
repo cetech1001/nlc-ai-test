@@ -4,6 +4,12 @@
   "include": [],
   "references": [
     {
+      "path": "../users"
+    },
+    {
+      "path": "../main"
+    },
+    {
       "path": "../../types"
     },
     {

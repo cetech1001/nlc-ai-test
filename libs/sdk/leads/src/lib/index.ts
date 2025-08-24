@@ -1,2 +1,2 @@
-export * from './leads.types';
-export * from './leads-client';
+export * from './clients';
+export * from './types';

@@ -54,7 +54,7 @@ export interface DataTableLead {
   email: string;
   phone: string;
   source: string;
-  status: string;
+  status: LeadStatus;
   meetingDate: string;
   lastContacted: string;
   rawStatus: string;
@@ -95,7 +95,7 @@ export interface LeadFormData {
   email: string;
   phone: string;
   source: string;
-  status: string;
+  status: LeadStatus;
   meetingDate: string;
   meetingTime: string;
   notes: string;

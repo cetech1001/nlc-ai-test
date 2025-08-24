@@ -3,10 +3,13 @@
   "include": [],
   "references": [
     {
+      "path": "../../sdk/notifications"
+    },
+    {
       "path": "../../sdk/main"
     },
     {
-      "path": "../../sdk/notifications"
+      "path": "../../sdk/billing"
     },
     {
       "path": "../utils"

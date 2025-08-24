@@ -32,10 +32,13 @@
   ],
   "references": [
     {
+      "path": "../../sdk/notifications/tsconfig.lib.json"
+    },
+    {
       "path": "../../sdk/main/tsconfig.lib.json"
     },
     {
-      "path": "../../sdk/notifications/tsconfig.lib.json"
+      "path": "../../sdk/billing/tsconfig.lib.json"
     },
     {
       "path": "../utils/tsconfig.lib.json"

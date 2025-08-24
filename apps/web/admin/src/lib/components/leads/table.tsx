@@ -1,5 +1,5 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import {DataTableLead, Lead} from "@nlc-ai/types";
+import {DataTableLead, Lead} from "@nlc-ai/sdk-leads";
 import {Mail} from "lucide-react";
 
 export const transformLeadData = (leads: Lead[]): DataTableLead[] => {

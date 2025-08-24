@@ -4,7 +4,7 @@ import {
   CreateLead,
   UpdateLead,
   LeadStats,
-} from './leads.types';
+} from '../types/leads.types';
 import {Paginated} from "@nlc-ai/types";
 
 

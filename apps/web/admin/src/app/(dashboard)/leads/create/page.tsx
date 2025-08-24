@@ -1,42 +1,42 @@
 'use client'
 
 import {FormEvent, useState} from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@nlc-ai/web-ui';
-import { ArrowLeft, Save, Calendar, User, Mail, Phone, MapPin, FileText, Sparkles } from 'lucide-react';
-import { leadsAPI } from '@nlc-ai/web-api-client';
-import { LeadFormData } from '@nlc-ai/types';
+import {useRouter} from 'next/navigation';
+import {Button} from '@nlc-ai/web-ui';
+import {ArrowLeft, Calendar, FileText, Mail, MapPin, Phone, Save, Sparkles, User} from 'lucide-react';
+import {LeadFormData, LeadStatus} from '@nlc-ai/types';
+import {sdkClient} from "@/lib";
 
 const initialFormData: LeadFormData = {
   name: '',
   email: '',
   phone: '',
   source: '',
-  status: 'contacted',
+  status: LeadStatus.CONTACTED,
   meetingDate: '',
   meetingTime: '',
   notes: '',
 };
 
 const statusOptions = [
-  { value: 'contacted', label: 'Not Converted', color: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30' },
-  { value: 'scheduled', label: 'Scheduled', color: 'bg-blue-600/20 text-blue-400 border-blue-600/30' },
-  { value: 'converted', label: 'Converted', color: 'bg-green-600/20 text-green-400 border-green-600/30' },
-  { value: 'unresponsive', label: 'No Show', color: 'bg-red-600/20 text-red-400 border-red-600/30' },
+  { value: LeadStatus.CONTACTED, label: 'Not Converted', color: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30' },
+  { value: LeadStatus.SCHEDULED, label: 'Scheduled', color: 'bg-blue-600/20 text-blue-400 border-blue-600/30' },
+  { value: LeadStatus.CONVERTED, label: 'Converted', color: 'bg-green-600/20 text-green-400 border-green-600/30' },
+  { value: LeadStatus.UNRESPONSIVE, label: 'No Show', color: 'bg-red-600/20 text-red-400 border-red-600/30' },
 ];
 
 const sourceOptions = [
-  { value: 'website', label: 'Website' },
-  { value: 'referral', label: 'Referral' },
-  { value: 'social_media', label: 'Social Media' },
-  { value: 'email_campaign', label: 'Email Campaign' },
-  { value: 'cold_outreach', label: 'Cold Outreach' },
-  { value: 'networking', label: 'Networking Event' },
-  { value: 'advertisement', label: 'Advertisement' },
-  { value: 'other', label: 'Other' },
+  { value: 'Website', label: 'Website' },
+  { value: 'Referral', label: 'Referral' },
+  { value: 'Social Media', label: 'Social Media' },
+  { value: 'Email Campaign', label: 'Email Campaign' },
+  { value: 'Cold Outreach', label: 'Cold Outreach' },
+  { value: 'Networking', label: 'Networking Event' },
+  { value: 'Advertisement', label: 'Advertisement' },
+  { value: 'Other', label: 'Other' },
 ];
 
-const CreateLead = () => {
+const AdminCreateLeadPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState<LeadFormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +76,7 @@ const CreateLead = () => {
         meetingTime: formData.meetingTime || undefined,
       };
 
-      await leadsAPI.createLead(submitData);
+      await sdkClient.leads.createLead(submitData);
       router.push('/leads?success=created');
     } catch (error: any) {
       setErrors({ submit: error.message || 'Failed to create lead' });
@@ -376,4 +376,4 @@ const CreateLead = () => {
   );
 }
 
-export default CreateLead;
+export default AdminCreateLeadPage;

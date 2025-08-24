@@ -7,18 +7,18 @@ import {toast} from "sonner";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import { leadsAPI } from '@nlc-ai/web-api-client';
-import {DataTableLead, FilterValues, LeadStats} from "@nlc-ai/types";
+import {DataTableLead, LeadStats} from "@nlc-ai/sdk-leads";
+import {FilterValues} from "@nlc-ai/sdk-core";
 import {
   EmailAutomationModal, EmailSequence,
   emptyLeadsFilterValues,
   leadColumns,
-  leadFilters,
+  leadFilters, sdkClient,
   transformLeadData
 } from '@/lib';
 
 const Leads = () => {
   const router = useRouter();
-
   const searchParams = useSearchParams();
 
   const [isLeadStatsLoading, setIsLeadStatsLoading] = useState(true);
@@ -55,7 +55,7 @@ const Leads = () => {
       setTimeout(() => setSuccessMessage(''), 3000);
     }
     if (success) {
-      window.history.replaceState({}, '', window.location.pathname);
+      router.replace(window.location.pathname);
     }
   }, [searchParams]);
 
@@ -84,12 +84,11 @@ const Leads = () => {
     try {
       setIsLeadsLoading(true);
 
-      const response = await leadsAPI.getLeads(
-        currentPage,
-        leadsPerPage,
-        filterValues,
-        searchQuery
-      );
+      const response = await sdkClient.leads.getLeads({
+        page: currentPage,
+        limit: leadsPerPage,
+        search: searchQuery,
+      }, filterValues);
 
       setLeads(transformLeadData(response.data));
       setPagination(response.pagination);
@@ -104,7 +103,7 @@ const Leads = () => {
     try {
       setIsLeadStatsLoading(true);
 
-      const response = await leadsAPI.getLeadStats();
+      const response = await sdkClient.leads.getLeadStats();
       setStats(response);
     } catch (e) {
       throw e;

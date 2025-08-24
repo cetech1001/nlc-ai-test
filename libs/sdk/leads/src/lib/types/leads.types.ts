@@ -1,3 +1,15 @@
+export enum LeadType {
+  COACH_LEAD = 'coach_lead',
+  ADMIN_LEAD = 'admin_lead'
+}
+
+export enum LeadStatus {
+  CONTACTED = 'contacted',
+  SCHEDULED = 'scheduled',
+  CONVERTED = 'converted',
+  UNRESPONSIVE = 'unresponsive',
+}
+
 export interface Lead {
   id: string;
   coachID?: string;
@@ -86,4 +98,17 @@ export interface LeadFormErrors {
   meetingTime?: string;
   notes?: string;
   general?: string;
+}
+
+export interface DataTableLead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  source: string;
+  status: string;
+  meetingDate: string;
+  lastContacted: string;
+  rawStatus: string;
+  originalID: string;
 }

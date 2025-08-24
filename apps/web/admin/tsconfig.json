@@ -54,9 +54,6 @@
       "path": "../../../libs/sdk/main"
     },
     {
-      "path": "../../../libs/web/utils"
-    },
-    {
       "path": "../../../libs/web/settings"
     },
     {
@@ -66,7 +63,13 @@
       "path": "../../../libs/sdk/core"
     },
     {
+      "path": "../../../libs/web/utils"
+    },
+    {
       "path": "../../../libs/sdk/leads"
+    },
+    {
+      "path": "../../../libs/sdk/billing"
     },
     {
       "path": "../../../libs/sdk/users"

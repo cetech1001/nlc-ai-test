@@ -1,33 +1,47 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import {FormEvent, useEffect, useState} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
-import { Button } from '@nlc-ai/web-ui';
-import { ArrowLeft, Save, Calendar, User, Mail, Phone, MapPin, FileText, Sparkles, AlertTriangle, CheckCircle } from 'lucide-react';
-import { leadsAPI } from '@nlc-ai/web-api-client';
+import {Button} from '@nlc-ai/web-ui';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  FileText,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  Sparkles,
+  User
+} from 'lucide-react';
+import {leadsAPI} from '@nlc-ai/web-api-client';
 import {Lead, LeadFormData} from "@nlc-ai/types";
+import {LeadStatus} from "@nlc-ai/sdk-leads";
+import {sdkClient} from "@/lib";
 
 const statusOptions = [
   {
-    value: 'contacted',
+    value: LeadStatus.CONTACTED,
     label: 'Not Converted',
     color: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30',
     bgColor: 'from-yellow-600/10 to-orange-600/10 border-yellow-600/20'
   },
   {
-    value: 'scheduled',
+    value: LeadStatus.SCHEDULED,
     label: 'Scheduled',
     color: 'bg-blue-600/20 text-blue-400 border-blue-600/30',
     bgColor: 'from-blue-600/10 to-cyan-600/10 border-blue-600/20'
   },
   {
-    value: 'converted',
+    value: LeadStatus.CONVERTED,
     label: 'Converted',
     color: 'bg-green-600/20 text-green-400 border-green-600/30',
     bgColor: 'from-green-600/10 to-emerald-600/10 border-green-600/20'
   },
   {
-    value: 'unresponsive',
+    value: LeadStatus.UNRESPONSIVE,
     label: 'No Show',
     color: 'bg-red-600/20 text-red-400 border-red-600/30',
     bgColor: 'from-red-600/10 to-pink-600/10 border-red-600/20'
@@ -57,7 +71,7 @@ const EditLead = () => {
     email: '',
     phone: '',
     source: '',
-    status: '',
+    status: LeadStatus.UNRESPONSIVE,
     meetingDate: '',
     meetingTime: '',
     notes: '',
@@ -131,7 +145,7 @@ const EditLead = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) return;
@@ -144,7 +158,7 @@ const EditLead = () => {
         meetingTime: formData.meetingTime || undefined,
       };
 
-      await leadsAPI.updateLead(leadID || '', submitData);
+      await sdkClient.leads.updateLead(leadID || '', submitData);
       router.push('/leads?success=updated');
     } catch (error: any) {
       setErrors({ submit: error.message || 'Failed to update lead' });
