@@ -26,8 +26,6 @@ export class LeadsGatewayController {
   private async forwardToLeads(req: Request) {
     const path = req.path.replace(/^\/leads/, '');
 
-    console.log("This was caught here: ", path);
-
     const response = await this.proxyService.proxyRequest(
       'leads',
       path,
@@ -49,6 +47,9 @@ export class LeadsGatewayController {
       'user-agent': req.headers['user-agent'] || '',
       'x-forwarded-for': req.headers['x-forwarded-for'] as string || req.ip || '',
       'x-real-ip': req.ip || '',
+      'x-landing-token': req.headers['x-landing-token'] as string || '',
+      'x-landing-signature': req.headers['x-landing-signature'] as string || '',
+      'x-landing-timestamp': req.headers['x-landing-timestamp'] as string || '',
     };
   }
 }

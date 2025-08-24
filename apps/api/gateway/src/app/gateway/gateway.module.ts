@@ -12,10 +12,12 @@ import { NotificationsGatewayController } from './controllers/notifications-gate
 import {IntegrationsGatewayController} from "./controllers/integrations-gateway.controller";
 import {CommunityGatewayController} from "./controllers/community-gateway.controller";
 import {AnalyticsGatewayController} from "./controllers/analytics-gateway.controller";
+import {AgentsGatewayController} from "./controllers/agents-gateway.controller";
 
 @Module({
   imports: [ProxyModule, CacheModule, SecurityModule],
   controllers: [
+    AgentsGatewayController,
     AnalyticsGatewayController,
     AuthGatewayController,
     UsersGatewayController,

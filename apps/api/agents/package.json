@@ -1,0 +1,46 @@
+{
+  "name": "@nlc-ai/agents-service",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "name": "@nlc-ai/agents-service",
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "webpack-cli build",
+          "args": [
+            "node-env=production"
+          ]
+        },
+        "configurations": {
+          "development": {
+            "args": [
+              "node-env=development"
+            ]
+          }
+        }
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@nlc-ai/agents-service:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@nlc-ai/agents-service:build:development"
+          },
+          "production": {
+            "buildTarget": "@nlc-ai/agents-service:build:production"
+          }
+        }
+      }
+    }
+  }
+}

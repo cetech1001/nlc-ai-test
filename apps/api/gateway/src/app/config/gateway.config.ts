@@ -73,6 +73,10 @@ export default registerAs('gateway', () => {
         url: config.ANALYTICS_SERVICE_URL,
         timeout: config.REQUEST_TIMEOUT,
       },
+      agents: {
+        url: config.AGENTS_SERVICE_URL,
+        timeout: config.REQUEST_TIMEOUT,
+      },
     },
     rateLimit: {
       ttl: config.RATE_LIMIT_TTL,
