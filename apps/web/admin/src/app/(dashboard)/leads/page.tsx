@@ -136,7 +136,7 @@ const Leads = () => {
 
   const handleRowAction = async (action: string, lead: any) => {
     if (action === 'edit') {
-      router.push(`/leads/edit?leadID=${lead.originalID}`);
+      router.push(`/leads/${lead.originalID}/edit`);
     } else if (action === 'delete') {
       await handleDeleteLead(lead.originalID);
     } else if (action === 'email') {

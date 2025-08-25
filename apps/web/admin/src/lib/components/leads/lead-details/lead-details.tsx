@@ -43,7 +43,7 @@ export const LeadDetails: FC<IProps> = ({
 
   useEffect(() => {
     if (leadID) {
-      loadLead();
+      (() => loadLead())();
     }
   }, [leadID]);
 
@@ -207,7 +207,7 @@ export const LeadDetails: FC<IProps> = ({
         </div>
       </div>
 
-      <QualificationSummary lead={lead}/>
+      {lead.answers && <QualificationSummary lead={lead}/>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {lead.answers && Object.keys(lead.answers).length > 0 && (
