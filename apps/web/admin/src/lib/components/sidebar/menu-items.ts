@@ -7,6 +7,7 @@ import {
   EnvelopeIcon as HiEnvelope,
   UsersIcon as HiUsers,
 } from "@heroicons/react/24/outline";
+import {Globe} from "lucide-react";
 
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
@@ -16,6 +17,7 @@ export const menuItems = [
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
   { icon: HiCollection, label: "Subscription Plans", path: "/plans" },
   { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
+  { icon: Globe, label: "Communities", path: "/communities" }
 ];
 
 export const pageConfig = {

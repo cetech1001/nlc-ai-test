@@ -60,7 +60,11 @@ export abstract class BaseClient {
 
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
-        return await response.json() as ApiResponse<T>;
+        const data = await response.json() as ApiResponse<T>;
+        if (!data.success) {
+          throw this.transformError(data.error);
+        }
+        return data;
       } else {
         // Handle non-JSON responses
         return {

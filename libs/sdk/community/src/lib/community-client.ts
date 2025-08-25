@@ -56,6 +56,8 @@ export class CommunityServiceClient extends BaseClient {
     return response.data!.data[0];
   }
 
+  async createCommunity(data: any) {}
+
   // Post methods
   async createPost(postData: CreatePostRequest): Promise<PostResponse> {
     const response = await this.request<PostResponse>('POST', '/posts', { body: postData });

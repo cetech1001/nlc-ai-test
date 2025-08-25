@@ -334,19 +334,23 @@ export class CommunityService {
       throw new NotFoundException('Community not found');
     }
 
-    // Check if user has access
-    const membership = await this.prisma.communityMember.findUnique({
-      where: {
-        communityID_userID_userType: {
-          communityID: id,
-          userID,
-          userType,
-        },
-      },
-    });
+    let membership;
 
-    if (!membership && community.visibility !== CommunityVisibility.PUBLIC) {
-      throw new ForbiddenException('Access denied to this community');
+    // Check if user has access
+    if (userType !== UserType.admin) {
+      membership = await this.prisma.communityMember.findUnique({
+        where: {
+          communityID_userID_userType: {
+            communityID: id,
+            userID,
+            userType,
+          },
+        },
+      });
+
+      if (!membership && community.visibility !== CommunityVisibility.PUBLIC) {
+        throw new ForbiddenException('Access denied to this community');
+      }
     }
 
     return {
