@@ -15,7 +15,7 @@ const GoogleAuthCallbackPage = () => {
     const token = searchParams.get('token');
 
     if (token) {
-      localStorage.setItem(config.auth.tokenKey, token);
+      localStorage.setItem(appConfig.auth.tokenKey, token);
 
       checkAuthStatus(UserType.coach).then(() => {
         router.push('/home');

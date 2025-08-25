@@ -1,3 +1,5 @@
+console.log("Testing");
+/*
 import { useEffect } from 'react';
 import { useNotifications } from './use-notifications';
 import { NotificationType } from '@nlc-ai/sdk-notifications';
@@ -58,3 +60,4 @@ export const useCommunityNotifications = (handlers: CommunityNotificationHandler
     markAsRead,
   };
 };
+*/

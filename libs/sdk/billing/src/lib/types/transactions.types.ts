@@ -1,9 +1,9 @@
-import {Coach} from "./coach";
-import {Plan} from "./plan";
-import {Invoice} from "./invoice";
-import {PaymentMethodType} from "./payment.types";
-import {SubscriptionsTypes} from "./subscriptions.types";
-import {QueryParams} from "./query-params";
+import {Coach} from "@nlc-ai/sdk-users";
+import {Plan} from "./plans.types";
+import {Invoice} from "./invoices.types";
+import {PaymentMethodType} from "./payments.types";
+import {Subscription} from "./subscriptions.types";
+// import {QueryParams} from "./query-params";
 
 export enum TransactionStatus {
   PENDING = 'pending',
@@ -38,19 +38,19 @@ export interface Transaction {
   createdAt: Date;
   updatedAt: Date;
   coach?: Coach;
-  subscription?: SubscriptionsTypes | null;
+  subscription?: Subscription | null;
   plan?: Plan;
   invoices?: Invoice[];
 }
 
-export interface TransactionsQueryParams extends QueryParams{
+/*export interface TransactionsQueryParams extends QueryParams{
   startDate?: string;
   endDate?: string;
   paymentMethod?: string;
   minAmount?: number;
   maxAmount?: number;
   planNames?: string;
-}
+}*/
 
 export interface RevenueData {
   period: string;

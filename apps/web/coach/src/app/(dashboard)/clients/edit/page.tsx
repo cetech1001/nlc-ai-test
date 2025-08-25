@@ -6,9 +6,9 @@ import { ClientForm } from "@/lib/components/clients/client-form";
 import {ClientFormSkeleton, sdkClient} from "@/lib";
 import { formatDate } from "@nlc-ai/web-utils";
 import {ClientFormData} from "@nlc-ai/types";
-import {ClientWithDetails} from "@nlc-ai/types";
 import { BackTo } from "@nlc-ai/web-shared";
 import { User, CheckCircle } from "lucide-react";
+import {ExtendedClient} from "@nlc-ai/sdk-users";
 
 const EditClient = () => {
   const router = useRouter();
@@ -16,7 +16,7 @@ const EditClient = () => {
   const clientID = searchParams.get('clientID');
 
   const [isLoadingClient, setIsLoadingClient] = useState(true);
-  const [originalClient, setOriginalClient] = useState<ClientWithDetails | null>(null);
+  const [originalClient, setOriginalClient] = useState<ExtendedClient | null>(null);
 
   useEffect(() => {
     if (!clientID) {
@@ -30,7 +30,7 @@ const EditClient = () => {
   const loadClient = async (id: string) => {
     try {
       setIsLoadingClient(true);
-      const client = await sdkClient.users.getClient(id);
+      const client = await sdkClient.users.clients.getClient(id);
       setOriginalClient(client);
     } finally {
       setIsLoadingClient(false);
@@ -39,7 +39,7 @@ const EditClient = () => {
 
   const handleEditClient = async (requestData: ClientFormData) => {
     if (clientID) {
-      await sdkClient.users.updateClient(clientID, requestData);
+      await sdkClient.users.clients.updateClient(clientID, requestData);
       router.push("/clients?success=Client updated successfully");
     }
   };

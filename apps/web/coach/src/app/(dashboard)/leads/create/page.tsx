@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { LeadForm } from "@/lib/components/leads/lead-form";
-import { sdkClient } from "@/lib";
-import { LeadFormData, LeadFormErrors, CreateLead } from "@nlc-ai/sdk-leads";
-import { BackTo } from "@nlc-ai/web-shared";
-import { Sparkles } from "lucide-react";
+import React, {useState} from "react";
+import {useRouter} from "next/navigation";
+import {LeadForm} from "@/lib/components/leads/lead-form";
+import {sdkClient} from "@/lib";
+import {CreateLead, LeadFormData, LeadFormErrors, LeadStatus} from "@nlc-ai/sdk-leads";
+import {BackTo} from "@nlc-ai/web-shared";
+import {Sparkles} from "lucide-react";
 
 const CreateNewLead = () => {
   const router = useRouter();
@@ -18,7 +18,7 @@ const CreateNewLead = () => {
     email: "",
     phone: "",
     source: "",
-    status: "contacted",
+    status: LeadStatus.CONTACTED,
     meetingDate: "",
     meetingTime: "",
     notes: "",

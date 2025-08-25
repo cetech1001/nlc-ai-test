@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountVerificationForm, useAuthPage } from '@nlc-ai/web-auth';
+import {UserType} from "@nlc-ai/types";
 
 export const AdminAccountVerificationContent = () => {
   const router = useRouter();
@@ -32,6 +33,7 @@ export const AdminAccountVerificationContent = () => {
 
   return (
     <AccountVerificationForm
+      userType={UserType.admin}
       handleBackToLogin={handleBackToLogin}
       handleResetToken={handleResetToken}
       email={email} resendTimer={70}/>

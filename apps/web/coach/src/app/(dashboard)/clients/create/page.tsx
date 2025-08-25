@@ -10,7 +10,7 @@ const CreateNewClient = () => {
   const router = useRouter();
 
   const handleCreateClient = async (requestData: ClientFormData) => {
-    await sdkClient.users.createClient(requestData as CreateClient);
+    await sdkClient.users.clients.createClient(requestData as CreateClient);
     router.push("/clients?success=Client created successfully");
   };
 

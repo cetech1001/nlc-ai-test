@@ -1,5 +1,5 @@
-import {Coach} from "./coach";
-import {Plan} from "./plan";
+import {Coach} from "@nlc-ai/sdk-users";
+import {Plan} from "./plans.types";
 
 export enum PaymentMethodType {
   CREDIT_CARD = 'credit_card',

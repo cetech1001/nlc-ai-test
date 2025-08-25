@@ -43,7 +43,7 @@ const CoachHome = () => {
       const coachID = 'current-coach-id';
 
       // Create analytics client - TODO: Get config from app config
-      const data = await sdkClient.analytics.getCoachDashboard(coachID);
+      const data = await sdkClient.analytics.coach.getDashboardData(coachID);
       setDashboardData(data);
     } catch (err: any) {
       setError('Failed to load dashboard data');

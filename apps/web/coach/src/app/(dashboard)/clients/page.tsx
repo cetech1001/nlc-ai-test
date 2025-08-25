@@ -12,8 +12,8 @@ import {
 } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import { FilterValues } from "@nlc-ai/types";
-import {ClientWithDetails} from "@nlc-ai/types";
 import {clientColumns, clientFilters, emptyClientFilterValues, sdkClient} from "@/lib";
+import {ExtendedClient} from "@nlc-ai/sdk-users";
 
 const Clients = () => {
   const router = useRouter();
@@ -22,7 +22,7 @@ const Clients = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [clients, setClients] = useState<ClientWithDetails[]>([]);
+  const [clients, setClients] = useState<ExtendedClient[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyClientFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -58,19 +58,12 @@ const Clients = () => {
       setIsLoading(true);
       setError("");
 
-      const queryParams = {
+      const response = await sdkClient.users.clients.getClients({
         page: currentPage,
         limit: clientsPerPage,
-        search: searchQuery || undefined,
-        status: filterValues.status || undefined,
-        coursesBought: filterValues.coursesBought || undefined,
-        dateJoinedStart: filterValues.dateJoined?.start || undefined,
-        dateJoinedEnd: filterValues.dateJoined?.end || undefined,
-        lastInteractionStart: filterValues.lastInteraction?.start || undefined,
-        lastInteractionEnd: filterValues.lastInteraction?.end || undefined,
-      };
+        search: searchQuery || undefined
+      }, filterValues);
 
-      const response = await sdkClient.users.getClients(queryParams);
       setClients(response.data);
       setPagination(response.pagination);
     } catch (error: any) {
@@ -101,7 +94,7 @@ const Clients = () => {
     setSuccessMessage("");
   };
 
-  const handleRowAction = async (action: string, client: ClientWithDetails) => {
+  const handleRowAction = async (action: string, client: ExtendedClient) => {
     if (action === 'view-details') {
       router.push(`/clients/${client.id}`);
     } else if (action === 'view-emails') {

@@ -13,7 +13,6 @@ export default function AdminLeadDetailPage() {
       isAdminView={true}
       backUrl="/leads"
       backTitle="Lead Details"
-      apiEndpoint="/api/admin/leads"
     />
   );
 }

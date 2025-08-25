@@ -2,11 +2,13 @@
 
 import {useEffect, useState} from "react";
 import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/web-shared";
-import {coachesAPI, plansAPI, transactionsAPI} from "@nlc-ai/web-api-client";
+import {transactionsAPI} from "@nlc-ai/web-api-client";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {CoachWithStatus, FilterValues, Plan, TransactionWithDetails} from "@nlc-ai/types";
+import {FilterValues, TransactionWithDetails} from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/web-auth";
 import { Search } from "lucide-react";
+import {Plan} from "@nlc-ai/sdk-billing";
+import {ExtendedCoach} from "@nlc-ai/sdk-users";
 import {
   paymentHistoryColumns,
   transformPaymentHistoryData,
@@ -14,7 +16,7 @@ import {
   emptyPaymentHistoryFilterValues,
   PaymentHistoryData,
   CurrentPlanCard,
-  BillingTabs, SubscriptionPlans
+  BillingTabs, SubscriptionPlans, sdkClient
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
 
@@ -26,7 +28,7 @@ export default function Billing() {
 
   const [activeTab, setActiveTab] = useState<'subscription' | 'history'>('subscription');
 
-  const [coach, setCoach] = useState<CoachWithStatus | null>(null);
+  const [coach, setCoach] = useState<ExtendedCoach | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
 
   const [isPlansLoading, setIsPlansLoading] = useState(true);
@@ -94,7 +96,7 @@ export default function Billing() {
       setIsPlansLoading(true);
       setError("");
 
-      const plansData = await plansAPI.getPlans();
+      const plansData = await sdkClient.billing.plans.getPlans();
       setPlans(plansData);
     } catch (e: any) {
       setError(e.message || 'Failed to fetch plans');
@@ -108,7 +110,7 @@ export default function Billing() {
       setIsCoachLoading(true);
       setError("");
 
-      const coachData = await coachesAPI.getCoach(user?.id!);
+      const coachData = await sdkClient.users.coaches.getCoach(user?.id!);
       setCoach(coachData);
     } catch (e: any) {
       setError(e.message || 'Failed to fetch coach subscription data');

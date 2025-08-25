@@ -105,13 +105,12 @@ const NotificationsPage = () => {
   const [filterPriority, setFilterPriority] = useState<NotificationPriority | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, _] = useState(1);
   const [localNotifications, setLocalNotifications] = useState<NotificationResponse[]>([]);
 
   const {
     notifications,
     unreadCount,
-    loading,
     error,
     markAsRead,
     markAllAsRead,

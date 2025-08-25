@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { BackTo } from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import { ClientWithDetails } from "@nlc-ai/types";
 import {
   User,
   Mail,
@@ -18,6 +17,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import {sdkClient} from "@/lib";
+import {ExtendedClient} from "@nlc-ai/sdk-users";
 
 const ClientDetailsSkeleton = () => (
   <div className="py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
@@ -89,7 +89,7 @@ const ClientDetailsPage = () => {
   const params = useParams();
   const clientID = params.clientID as string;
 
-  const [client, setClient] = useState<ClientWithDetails | null>(null);
+  const [client, setClient] = useState<ExtendedClient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
@@ -104,7 +104,7 @@ const ClientDetailsPage = () => {
       setIsLoading(true);
       setError("");
 
-      const clientData = await sdkClient.users.getClient(clientID);
+      const clientData = await sdkClient.users.clients.getClient(clientID);
       setClient(clientData);
     } catch (err: any) {
       setError(err.message || "Failed to load client data");

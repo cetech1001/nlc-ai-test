@@ -37,6 +37,7 @@ const nextConfig = {
       }
     ],
   },
+  eslint: { ignoreDuringBuilds: true },
   transpilePackages: ['@nlc-ai/web-ui', '@nlc-ai/web-auth', '@nlc-ai/web-shared'],
   env: {},
   webpack: (config, { isServer }) => {

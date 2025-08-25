@@ -85,6 +85,10 @@ export default function InactiveCoaches() {
     router.push(`/coaches/inactive/${coachID}/send-mail?`);
   }
 
+  const handleEditClick = (coachID: string) => {
+    router.push(`/coaches/edit?coachID=${coachID}`);
+  }
+
   const handleActionSuccess = async () => {
     setSuccessMessage("Coach activated successfully!");
     await fetchCoaches();
@@ -133,6 +137,7 @@ export default function InactiveCoaches() {
         <CoachesTable
           coaches={coaches}
           handleViewDetails={handleSendEmail}
+          handleEditClick={handleEditClick}
           handleActionSuccess={handleActionSuccess}
           setError={setError}
           areInactiveCoaches={true}

@@ -5,8 +5,8 @@ import {
 } from "@nlc-ai/web-ui";
 import { X, Plus, User, Mail, Phone, Tag, Users } from "lucide-react";
 import {useEffect, useState} from "react";
-import {ClientWithDetails} from "@nlc-ai/types";
 import {ClientFormData, ClientFormErrors} from "@nlc-ai/types";
+import {ExtendedClient} from "@nlc-ai/sdk-users";
 
 const sourceOptions = [
   { value: 'website', label: 'Website' },
@@ -43,7 +43,7 @@ interface IProps {
   type: "create" | "edit";
   onAction: (requestData: ClientFormData) => Promise<void>;
   onDiscard: () => void;
-  originalClient?: ClientWithDetails | null;
+  originalClient?: ExtendedClient | null;
 }
 
 export const ClientForm = (props: IProps) => {

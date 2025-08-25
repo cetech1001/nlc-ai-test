@@ -1,6 +1,8 @@
 import { PlanCard } from "@nlc-ai/web-shared";
-import {CoachWithStatus, Plan, TransformedPlan} from "@nlc-ai/types";
 import {FC} from "react";
+import {ExtendedCoach} from "@nlc-ai/sdk-users";
+import {Plan, TransformedPlan} from "@nlc-ai/sdk-billing";
+
 
 const SubscriptionPlansSkeleton = () => {
   return (
@@ -22,7 +24,7 @@ const SubscriptionPlansSkeleton = () => {
 interface IProps {
   plans: Plan[];
   handleUpgrade: (plan: Plan) => void;
-  coach: CoachWithStatus | null;
+  coach: ExtendedCoach | null;
   isLoading?: boolean;
 }
 
