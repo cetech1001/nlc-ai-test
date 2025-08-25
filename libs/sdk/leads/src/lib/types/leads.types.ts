@@ -1,3 +1,6 @@
+import {Coach} from "@nlc-ai/sdk-users";
+
+
 export enum LeadType {
   COACH_LEAD = 'coach_lead',
   ADMIN_LEAD = 'admin_lead'
@@ -22,11 +25,12 @@ export interface Lead {
   meetingDate?: Date;
   meetingTime?: string;
   notes?: string;
-  answers?: Record<string, unknown>;
+  answers?: LeadAnswers;
   qualified?: boolean;
   submittedAt?: Date;
   lastContactedAt?: Date;
   convertedAt?: Date;
+  coach?: Coach;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -110,5 +114,25 @@ export interface DataTableLead {
   meetingDate: string;
   lastContacted: string;
   rawStatus: string;
+  answers?: Record<string, any>;
+  qualified?: boolean;
   originalID: string;
 }
+
+export interface LeadQuestion {
+  id: number;
+  text: string;
+  subtitle?: string;
+  options: LeadQuestionOption[];
+  multiSelect?: boolean;
+}
+
+export interface LeadQuestionOption {
+  text: string;
+  value: string;
+  disqualifies?: boolean;
+  qualifies?: boolean;
+  points?: number;
+}
+
+export type LeadAnswers = Record<number, string | string[]>;

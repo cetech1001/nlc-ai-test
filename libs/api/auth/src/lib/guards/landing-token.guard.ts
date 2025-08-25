@@ -37,8 +37,6 @@ export class LandingTokenGuard implements CanActivate {
     const timestampHeader = (request.headers['x-landing-timestamp'] || request.headers['X-Landing-Timestamp']) as string | undefined;
     const signatureHeader = (request.headers['x-landing-signature'] || request.headers['X-Landing-Signature']) as string | undefined;
 
-    console.log(token, timestampHeader, signatureHeader);
-
     if (!this.expectedToken) {
       throw new UnauthorizedException('Leads public token not configured');
     }
@@ -68,7 +66,7 @@ export class LandingTokenGuard implements CanActivate {
     const data = `${method}|${path}|${rawBody}|${timestamp}`;
 
     const expectedSig = createHmac('sha256', this.expectedToken).update(data).digest('hex');
-    console.log(expectedSig);
+
     // Time-safe compare (simple constant-time-ish for small strings)
     if (!this.timingSafeEqual(expectedSig, signatureHeader)) {
       throw new UnauthorizedException('Invalid X-Landing-Signature');

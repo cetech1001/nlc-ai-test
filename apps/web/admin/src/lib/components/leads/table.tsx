@@ -21,11 +21,13 @@ export const transformLeadData = (leads: Lead[]): DataTableLead[] => {
       day: 'numeric'
     }) : 'Never',
     rawStatus: lead.status,
+    answers: lead.answers,
+    qualified: lead.qualified,
     originalID: lead.id,
   }));
 };
 
-const colWidth = 100 / 7;
+const colWidth = 100 / 8;
 export const leadColumns = [
   {
     key: 'name',
@@ -42,14 +44,22 @@ export const leadColumns = [
   {
     key: 'phone',
     header: 'Phone',
-    width: `${colWidth * (2 / 3)}%`,
+    width: `${colWidth}%`,
     render: (value: string) => value
   },
   {
     key: 'source',
     header: 'Source',
-    width: `${colWidth}%`,
+    width: `${colWidth * (2 / 3)}%`,
     render: (value: string) => value
+  },
+  {
+    key: 'qualified',
+    header: 'Qualified?',
+    width: `${colWidth * (2 / 3)}%`,
+    render: (value: string, row: DataTableLead) => {
+      return row.answers ? (!!value ? 'Yes' : 'No') : 'N/A';
+    },
   },
   {
     key: 'status',

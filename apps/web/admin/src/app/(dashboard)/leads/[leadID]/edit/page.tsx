@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import {useParams, useRouter} from 'next/navigation';
 import { Button } from '@nlc-ai/web-ui';
 import {AlertTriangle} from 'lucide-react';
 import {Lead, LeadFormData, LeadStatus} from "@nlc-ai/sdk-leads";
@@ -37,9 +37,9 @@ const statusOptions = [
 
 const AdminEditLeadPage = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
 
-  const leadID = searchParams.get('leadID');
+  const leadID = params.leadID as string;
 
   const [lead, setLead] = useState<Lead | undefined>(undefined);
   const [errors, setErrors] = useState<Record<string, string>>({});
