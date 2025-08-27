@@ -41,14 +41,6 @@ export enum PostType {
   EVENT = 'event',
 }
 
-export enum MessageType {
-  TEXT = 'text',
-  IMAGE = 'image',
-  VIDEO = 'video',
-  FILE = 'file',
-  SYSTEM = 'system',
-}
-
 export enum ReactionType {
   LIKE = 'like',
   LOVE = 'love',
