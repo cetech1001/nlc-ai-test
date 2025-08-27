@@ -17,6 +17,7 @@ export const appConfig: AppConfig = {
       community: `${process.env.NEXT_PUBLIC_API_URL}/community`,
       media: `${process.env.NEXT_PUBLIC_API_URL}/media`,
       notifications: `${process.env.NEXT_PUBLIC_API_URL}/notifications`,
+      messaging: `${process.env.NEXT_PUBLIC_API_URL}/messages`,
     },
   },
   auth: {

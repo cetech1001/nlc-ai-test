@@ -1,10 +1,10 @@
 import { registerAs } from '@nestjs/config';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { ChatConfigSchema } from './chat-config.schema';
+import { MessagingConfigSchema } from './messaging-config.schema';
 
 function validateConfig(config: Record<string, unknown>) {
-  const validatedConfig = plainToInstance(ChatConfigSchema, config, {
+  const validatedConfig = plainToInstance(MessagingConfigSchema, config, {
     enableImplicitConversion: true,
   });
 
@@ -19,7 +19,7 @@ function validateConfig(config: Record<string, unknown>) {
   return validatedConfig;
 }
 
-export default registerAs('chat', () => {
+export default registerAs('messaging', () => {
   const config = validateConfig(process.env);
 
   return {

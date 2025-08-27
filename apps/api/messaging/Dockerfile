@@ -25,11 +25,11 @@ COPY tsconfig.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
 COPY libs/api ./libs/api
-COPY apps/api/chat ./apps/api/chat
+COPY apps/api/messaging ./apps/api/messaging
 
 RUN npx nx sync
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
-RUN NX_DAEMON=false npx nx build chat-service
+RUN NX_DAEMON=false npx nx build messaging-service
 
 FROM base AS runner
 WORKDIR /app
@@ -39,7 +39,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-COPY --from=builder /app/apps/api/chat/dist ./apps/api/chat/dist
+COPY --from=builder /app/apps/api/messaging/dist ./apps/api/messaging/dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/libs/api/database ./libs/api/database
 
@@ -53,4 +53,4 @@ USER nestjs
 EXPOSE 3002
 ENV PORT=3002
 
-CMD ["node", "apps/api/chat/dist/main.js"]
+CMD ["node", "apps/api/messaging/dist/main.js"]

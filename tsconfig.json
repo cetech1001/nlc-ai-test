@@ -121,7 +121,10 @@
       "path": "./libs/types"
     },
     {
-      "path": "./apps/api/chat"
+      "path": "./apps/api/messaging"
+    },
+    {
+      "path": "./libs/sdk/messaging"
     }
   ]
 }

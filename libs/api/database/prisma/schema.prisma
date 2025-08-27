@@ -326,14 +326,6 @@ enum PostType {
   event
 }
 
-enum MessageType {
-  text
-  image
-  video
-  file
-  system
-}
-
 enum ReactionType {
   like
   love
@@ -516,54 +508,6 @@ model PostReaction {
   @@index([userID, userType])
   @@index([type])
   @@map("post_reactions")
-}
-
-model Conversation {
-  id               String    @id @default(uuid()) @db.Uuid
-  type             String    @db.VarChar(20) // 'direct', 'group'
-  name             String?   @db.VarChar(255)
-  participantIDs   String[]
-  participantTypes String[]
-  lastMessageID    String?   @db.Uuid
-  lastMessageAt    DateTime? @db.Timestamptz(6)
-  unreadCount      Json      @default("{}")
-  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
-
-  messages DirectMessage[]
-
-  @@index([participantIDs])
-  @@index([lastMessageAt])
-  @@map("conversations")
-}
-
-model DirectMessage {
-  id               String      @id @default(uuid()) @db.Uuid
-  conversationID   String      @db.Uuid
-  senderID         String      @db.Uuid
-  senderType       String      @db.VarChar(20)
-  type             MessageType @default(text)
-  content          String      @db.Text
-  mediaUrls        String[]    @default([])
-  fileUrl          String?
-  fileName         String?
-  fileSize         Int?
-  isRead           Boolean     @default(false)
-  readAt           DateTime?   @db.Timestamptz(6)
-  isEdited         Boolean     @default(false)
-  editedAt         DateTime?   @db.Timestamptz(6)
-  replyToMessageID String?     @db.Uuid
-  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
-
-  conversation   Conversation    @relation(fields: [conversationID], references: [id], onDelete: Cascade)
-  replyToMessage DirectMessage?  @relation("MessageReplies", fields: [replyToMessageID], references: [id])
-  replies        DirectMessage[] @relation("MessageReplies")
-
-  @@index([conversationID])
-  @@index([senderID, senderType])
-  @@index([isRead])
-  @@index([createdAt])
-  @@map("direct_messages")
 }
 
 model CommunityAnalytics {
@@ -1230,6 +1174,104 @@ model Subscription {
   invoices           Invoice[]
 
   @@map("subscription")
+}
+
+// Updated Message-related models for Prisma schema
+// Replace the existing Conversation and DirectMessage models with these:
+
+enum MessageType {
+  text
+  image
+  video
+  file
+  system
+}
+
+model Conversation {
+  id               String    @id @default(uuid()) @db.Uuid
+  type             String    @db.VarChar(20) // 'direct', 'group'
+  name             String?   @db.VarChar(255)
+  participantIDs   String[] // Array of user IDs
+  participantTypes String[] // Array of user types ('coach', 'admin', 'client')
+  lastMessageID    String?   @db.Uuid
+  lastMessageAt    DateTime? @db.Timestamptz(6)
+  unreadCount      Json      @default("{}") // Object with userType:userID as keys
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
+
+  messages DirectMessage[]
+
+  @@index([participantIDs])
+  @@index([lastMessageAt])
+  @@index([isActive])
+  @@map("conversations")
+}
+
+model DirectMessage {
+  id               String      @id @default(uuid()) @db.Uuid
+  conversationID   String      @db.Uuid
+  senderID         String      @db.Uuid
+  senderType       String      @db.VarChar(20) // 'coach', 'admin', 'client'
+  senderName       String      @db.VarChar(255) // Denormalized for performance
+  senderAvatarUrl  String?     @db.Text // Denormalized for performance
+  type             MessageType @default(text)
+  content          String      @db.Text
+  mediaUrls        String[]    @default([])
+  fileUrl          String?     @db.Text
+  fileName         String?     @db.VarChar(255)
+  fileSize         Int?
+  isRead           Boolean     @default(false)
+  readAt           DateTime?   @db.Timestamptz(6)
+  isEdited         Boolean     @default(false)
+  editedAt         DateTime?   @db.Timestamptz(6)
+  replyToMessageID String?     @db.Uuid
+  metadata         Json?       @default("{}")
+  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime    @updatedAt @db.Timestamptz(6)
+
+  conversation   Conversation    @relation(fields: [conversationID], references: [id], onDelete: Cascade)
+  replyToMessage DirectMessage?  @relation("MessageReplies", fields: [replyToMessageID], references: [id])
+  replies        DirectMessage[] @relation("MessageReplies")
+
+  @@index([conversationID])
+  @@index([senderID, senderType])
+  @@index([senderName])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([replyToMessageID])
+  @@map("messages")
+}
+
+model MessageDelivery {
+  id        String   @id @default(uuid()) @db.Uuid
+  messageID String   @db.Uuid
+  userID    String   @db.Uuid
+  userType  String   @db.VarChar(20)
+  status    String   @default("sent") @db.VarChar(20) // 'sent', 'delivered', 'read'
+  timestamp DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([messageID, userID, userType])
+  @@index([userID, userType])
+  @@index([status])
+  @@map("message_deliveries")
+}
+
+model ConversationParticipant {
+  id             String    @id @default(uuid()) @db.Uuid
+  conversationID String    @db.Uuid
+  userID         String    @db.Uuid
+  userType       String    @db.VarChar(20) // 'coach', 'admin', 'client'
+  joinedAt       DateTime  @default(now()) @db.Timestamptz(6)
+  leftAt         DateTime? @db.Timestamptz(6)
+  isActive       Boolean   @default(true)
+  role           String    @default("member") @db.VarChar(20) // 'admin', 'member'
+
+  @@unique([conversationID, userID, userType])
+  @@index([userID, userType])
+  @@index([conversationID])
+  @@index([isActive])
+  @@map("conversation_participants")
 }
 
 model Lead {

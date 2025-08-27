@@ -48,7 +48,8 @@
         "libs/sdk/leads/*",
         "libs/sdk/community/*",
         "libs/sdk/media/*",
-        "libs/sdk/notifications/*"
+        "libs/sdk/notifications/*",
+        "libs/sdk/chat/*"
       ]
     },
     {
@@ -118,7 +119,8 @@
         "libs/sdk/leads/*",
         "libs/sdk/community/*",
         "libs/sdk/media/*",
-        "libs/sdk/notifications/*"
+        "libs/sdk/notifications/*",
+        "libs/sdk/chat/*"
       ],
       "options": {
         "typecheck": {

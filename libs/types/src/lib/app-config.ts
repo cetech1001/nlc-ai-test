@@ -14,6 +14,7 @@ export interface AppConfig {
       community: string;
       media: string;
       notifications: string;
+      messaging: string;
     };
   };
   auth: {

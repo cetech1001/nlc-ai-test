@@ -77,6 +77,10 @@ export default registerAs('gateway', () => {
         url: config.AGENTS_SERVICE_URL,
         timeout: config.REQUEST_TIMEOUT,
       },
+      messaging: {
+        url: config.MESSAGING_SERVICE_URL,
+        timeout: config.REQUEST_TIMEOUT,
+      },
     },
     rateLimit: {
       ttl: config.RATE_LIMIT_TTL,

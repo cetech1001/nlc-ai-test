@@ -11,7 +11,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix('api/chat');
+  app.setGlobalPrefix('api/messages');
 
   const config = new DocumentBuilder()
     .setTitle('NLC AI Chat Service')
@@ -32,7 +32,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3012;
   await app.listen(port);
 
-  Logger.log(`🚀 Chat Service is running on: http://localhost:${port}/api/chat`);
+  Logger.log(`🚀 Chat Service is running on: http://localhost:${port}/api/messages`);
   Logger.log(`📚 Swagger docs available at: http://localhost:${port}/docs`);
 }
 

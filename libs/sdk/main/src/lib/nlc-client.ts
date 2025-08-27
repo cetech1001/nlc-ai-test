@@ -8,6 +8,7 @@ import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
 import {CommunityClient} from "@nlc-ai/sdk-community";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
+import {MessagingClient} from "../../../messaging";
 
 export class NLCClient {
   public users: UsersClient;
@@ -19,6 +20,7 @@ export class NLCClient {
   public community: CommunityClient;
   public media: MediaServiceClient;
   public notifications: NotificationsServiceClient;
+  public messaging: MessagingClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -70,14 +72,18 @@ export class NLCClient {
       ...baseConfig,
       baseURL: config.services?.notifications || `${config.baseURL}/notifications`,
     });
+
+    this.messaging = new MessagingClient({
+      ...baseConfig,
+      baseURL: config.services?.messaging || `${config.baseURL}/messages`,
+    });
   }
 
-  // Method to update API key for all services
   updateApiKey(apiKey: string | null) {
     const services = [
       this.users, this.auth, this.email, this.billing,
       this.analytics, this.leads, this.community,
-      this.media, this.notifications
+      this.media, this.notifications, this.messaging
     ];
 
     services.forEach(service => {

@@ -5,7 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { HealthModule } from './health/health.module';
-import chatConfig from './config/chat.config';
+import messagingConfig from './config/messaging.config';
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
 import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
 
@@ -13,7 +13,7 @@ import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [chatConfig],
+      load: [messagingConfig],
       cache: true,
       expandVariables: true,
     }),

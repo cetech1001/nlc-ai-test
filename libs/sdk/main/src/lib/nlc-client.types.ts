@@ -12,5 +12,6 @@ export interface NLCClientConfig {
     community?: string;
     media?: string;
     notifications?: string;
+    messaging?: string;
   };
 }

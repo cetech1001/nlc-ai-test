@@ -26,5 +26,6 @@ CMD ["/bin/sh","-lc","\
   echo 'Running nx sync to align TS project references...'; \
   npx nx sync --no-interactive --verbose || true; \
   echo 'Starting dev server...'; \
+  npm run db:deploy; \
   npx nx serve gateway-service --configuration=development --verbose \
 "]

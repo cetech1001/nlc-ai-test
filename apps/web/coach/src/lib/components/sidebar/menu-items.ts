@@ -57,7 +57,7 @@ export const menuItems: MenuItemType[] = [
   { icon: Calendar, label: "Smart Booking", path: "/calendar" }, // More descriptive
   { icon: Globe, label: "AI Vault", path: "/vault" }, // Keep as is since it's unique
   { icon: Heart, label: "Client Community", path: "/community" }, // More specific
-  { icon: MessageCircleReply, label: "Chat", path: "/chat" },
+  { icon: MessageCircleReply, label: "Chat", path: "/messages" },
   { icon: Quote, label: "Success Stories", path: "/testimonials" }, // More engaging name
   { icon: HiCurrencyDollar, label: "Payment Hub", path: "/payment/requests" }, // Cleaner name
 ];

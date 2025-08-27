@@ -29,7 +29,7 @@ import {
 } from './dto';
 
 @ApiTags('Messages')
-@Controller('messages')
+@Controller('')
 @UseGuards(UserTypesGuard)
 @UserTypes(UserType.coach, UserType.admin, UserType.client)
 @ApiBearerAuth()

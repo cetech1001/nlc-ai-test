@@ -165,11 +165,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  chat-service:
+  messaging-service:
     build:
       context: .
-      dockerfile: ./apps/api/chat/dev.Dockerfile
-    container_name: chat-service
+      dockerfile: apps/api/messaging/dev.Dockerfile
+    container_name: messaging-service
     restart: unless-stopped
     ports:
       - "3012:3012"
@@ -179,7 +179,7 @@ services:
     #      - db_init
     #      - db_migrate
     volumes:
-      - ./apps/api/chat:/app/apps/api/chat
+      - ./apps/api/messaging:/app/apps/api/messaging
       - ./libs/api:/app/libs/api
       #      - ./nx.json:/app/nx.json
       #      - ./tsconfig.json:/app/tsconfig.json
