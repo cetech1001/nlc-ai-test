@@ -62,7 +62,7 @@ const AdminCommunityDetailPage = () => {
       setIsLoading(true);
       setError('');
 
-      const response = await sdkClient.community.getCommunity(communityID);
+      const response = await sdkClient.community.communities.getCommunity(communityID);
 
       // Mock additional data that would come from the API
       const mockDetail: CommunityDetail = {
