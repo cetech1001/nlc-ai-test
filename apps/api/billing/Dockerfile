@@ -24,6 +24,7 @@ COPY tsconfig.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
 COPY libs/api ./libs/api
+COPY libs/types ./libs/types
 COPY apps/api/billing ./apps/api/billing
 
 RUN npx nx sync
