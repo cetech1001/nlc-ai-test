@@ -13,10 +13,8 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  // Apply security configurations
   securityService.applySecurity(app);
 
-  // Enable CORS
   const corsOrigins = configService.get<string[]>('gateway.cors.origins');
   const corsCredentials = configService.get<boolean>('gateway.cors.credentials');
 
@@ -27,10 +25,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // Global prefix
   app.setGlobalPrefix('api');
 
-  // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('NLC AI API Gateway')
     .setDescription('Unified API Gateway for NLC AI Platform')

@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {Camera, Headphones, Info, MoreVertical, Phone, Send, Smile, User, Users, Video,} from 'lucide-react';
 import {sdkClient, useMessagingWebSocket} from '@/lib';
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messaging';
@@ -34,6 +34,80 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // WebSocket event handlers - use useCallback to prevent re-renders
+  const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
+    console.log('📨 New message received:', data);
+
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev => {
+        // Check if message already exists to prevent duplicates
+        const exists = prev.some(msg => msg.id === data.message.id);
+        if (exists) {
+          console.log('Message already exists, skipping:', data.message.id);
+          return prev;
+        }
+
+        console.log('Adding new message to state:', data.message.id);
+        const newMessages = [...prev, data.message].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+
+        return newMessages;
+      });
+
+      // Auto-mark as read if message is not from current user
+      if (data.message.senderID !== user?.id || data.message.senderType !== user?.type) {
+        console.log('Auto-marking message as read:', data.message.id);
+        setTimeout(() => {
+          markMessageAsRead([data.message.id]);
+        }, 1000);
+      }
+    }
+  }, [conversation?.id, user?.id, user?.type]);
+
+  const handleMessageUpdated = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
+    console.log('✏️ Message updated:', data);
+
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev =>
+        prev.map(msg => msg.id === data.message.id ? data.message : msg)
+      );
+    }
+  }, [conversation?.id]);
+
+  const handleMessageDeleted = useCallback((data: { conversationID: string; messageID: string }) => {
+    console.log('🗑️ Message deleted:', data);
+
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev => prev.filter(msg => msg.id !== data.messageID));
+    }
+  }, [conversation?.id]);
+
+  const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
+    console.log('👁️ Messages read:', data);
+
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev =>
+        prev.map(msg => {
+          if (data.messageIDs.includes(msg.id)) {
+            return { ...msg, isRead: true, readAt: new Date().toISOString() as any };
+          }
+          return msg;
+        })
+      );
+    }
+  }, [conversation?.id]);
+
+  const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
+    console.log('👀 User typing:', data);
+    // The typing state is managed by the hook itself
+  }, []);
+
+  const handleError = useCallback((error: any) => {
+    console.error('🚫 WebSocket error:', error);
+    toast.error('Connection error - messages may not update in real-time');
+  }, []);
+
   // WebSocket integration
   const {
     isConnected,
@@ -48,99 +122,62 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     onMessageDeleted: handleMessageDeleted,
     onMessagesRead: handleMessagesRead,
     onUserTyping: handleUserTyping,
-    onError: (error) => {
-      console.error('WebSocket error:', error);
-      toast.error('Connection error - messages may not update in real-time');
-    },
+    onError: handleError,
   });
 
   const typingUsers = conversation ? getTypingUsers(conversation.id) : [];
   const isTyping = typingUsers.length > 0;
 
+  // Load initial messages when conversation changes
   useEffect(() => {
     if (conversation) {
+      console.log('🔄 Loading messages for conversation:', conversation.id);
       loadMessages();
-      if (isConnected) {
-        joinConversation(conversation.id);
-      }
     }
+  }, [conversation?.id]); // Only depend on conversation ID
 
-    return () => {
-      if (conversation) {
-        leaveConversation(conversation.id);
-      }
-    };
-  }, [conversation?.id, isConnected]);
-
+  // Join/leave conversation when connection status changes
   useEffect(() => {
-    if (user?.id) {
+    if (conversation && isConnected) {
+      console.log('🚪 Joining conversation via WebSocket:', conversation.id);
+      joinConversation(conversation.id);
+
+      return () => {
+        console.log('🚪 Leaving conversation:', conversation.id);
+        leaveConversation(conversation.id);
+      };
+    }
+    return () => {};
+  }, [conversation?.id, isConnected]); // Remove the function dependencies
+
+  // Get other participant info when conversation or user changes
+  useEffect(() => {
+    if (user?.id && conversation) {
       getOtherParticipant();
     }
-  }, [user, conversation]);
+  }, [user?.id, conversation?.id]); // Only depend on IDs, not the functions
 
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // WebSocket event handlers
-  function handleNewMessage(data: { conversationID: string; message: DirectMessageResponse }) {
-    if (data.conversationID === conversation?.id) {
-      setMessages(prev => {
-        // Avoid duplicates by checking if message already exists
-        const exists = prev.some(msg => msg.id === data.message.id);
-        if (exists) return prev;
-
-        return [...prev, data.message].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-      });
-
-      // Auto-mark as read if conversation is active
-      if (data.message.senderID !== user?.id) {
-        setTimeout(() => {
-          markMessageAsRead([data.message.id]);
-        }, 1000);
+  // Clean up typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
       }
-    }
-  }
-
-  function handleMessageUpdated(data: { conversationID: string; message: DirectMessageResponse }) {
-    if (data.conversationID === conversation?.id) {
-      setMessages(prev =>
-        prev.map(msg => msg.id === data.message.id ? data.message : msg)
-      );
-    }
-  }
-
-  function handleMessageDeleted(data: { conversationID: string; messageID: string }) {
-    if (data.conversationID === conversation?.id) {
-      setMessages(prev => prev.filter(msg => msg.id !== data.messageID));
-    }
-  }
-
-  function handleMessagesRead(data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) {
-    if (data.conversationID === conversation?.id) {
-      setMessages(prev =>
-        prev.map(msg => {
-          if (data.messageIDs.includes(msg.id)) {
-            return { ...msg, isRead: true, readAt: new Date() };
-          }
-          return msg;
-        })
-      );
-    }
-  }
-
-  function handleUserTyping(data: { userID: string; userType: string; isTyping: boolean }) {
-    // The typing state is managed by the hook itself
-    // This handler could be used for additional UI updates if needed
-  }
+    };
+  }, [typingTimeout]);
 
   const loadMessages = async () => {
     if (!conversation) return;
 
     try {
       setIsLoading(true);
+      console.log('📥 Loading messages from API for conversation:', conversation.id);
+
       const response = await sdkClient.messaging.getMessages(conversation.id, {
         page: 1,
         limit: 50,
@@ -150,10 +187,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
 
+      console.log('📥 Loaded messages:', sortedMessages.length);
       setMessages(sortedMessages);
     } catch (error: any) {
+      console.error('❌ Failed to load messages:', error);
       toast.error('Failed to load messages');
-      console.error('Failed to load messages:', error);
     } finally {
       setIsLoading(false);
     }
@@ -170,6 +208,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     // Send typing indicator
     if (value.trim() && !typingTimeout) {
+      console.log('⌨️ Sending typing start');
       sendTypingStatus(conversation.id, true);
     }
 
@@ -180,6 +219,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     // Set new timeout to stop typing indicator
     const newTimeout = setTimeout(() => {
+      console.log('⌨️ Sending typing stop');
       sendTypingStatus(conversation.id, false);
       setTypingTimeout(null);
     }, 1000);
@@ -193,20 +233,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const messageContent = inputMessage.trim();
     setInputMessage('');
 
+    console.log('📤 Sending message:', messageContent);
+
     // Clear typing status
     if (typingTimeout) {
       clearTimeout(typingTimeout);
       setTypingTimeout(null);
     }
-    sendTypingStatus(conversation.id, false);
+    if (isConnected) {
+      sendTypingStatus(conversation.id, false);
+    }
 
     try {
-      // The WebSocket will handle adding the message to the UI
-      await sdkClient.messaging.sendMessage(conversation.id, {
+      // Send the message - WebSocket will handle real-time updates
+      const sentMessage = await sdkClient.messaging.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
       });
+
+      console.log('✅ Message sent successfully:', sentMessage.id);
+
+      // Note: Don't manually add the message here - let WebSocket handle it
+      // This prevents race conditions and duplicate messages
+
     } catch (error: any) {
+      console.error('❌ Failed to send message:', error);
       toast.error('Failed to send message');
       setInputMessage(messageContent); // Restore message on error
     }
@@ -215,8 +266,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const markMessageAsRead = async (messageIDs: string[]) => {
     try {
       await sdkClient.messaging.markAsRead({ messageIDs });
+      console.log('👁️ Marked messages as read:', messageIDs);
     } catch (error) {
-      console.error('Failed to mark messages as read:', error);
+      console.error('❌ Failed to mark messages as read:', error);
     }
   };
 
@@ -241,15 +293,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     try {
       const participant = await sdkClient.users.profile.lookupProfile(userType, userID);
 
-      return setOtherParticipant({
+      setOtherParticipant({
         id: participant.id,
         type: userType,
         name: participant.firstName + ' ' + participant.lastName,
         avatar: participant.avatarUrl || '',
-        isOnline: true,
+        isOnline: isConnected, // Use WebSocket connection status as proxy
       });
     } catch (error) {
-      console.error('Failed to load participant info:', error);
+      console.error('❌ Failed to load participant info:', error);
+    } finally {
+      return ;
     }
   };
 
@@ -291,22 +345,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <>
               <div className="relative">
                 <img
-                  src={otherParticipant.avatar}
+                  src={otherParticipant.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${otherParticipant.name}`}
                   alt={otherParticipant.name}
                   className="w-10 h-10 rounded-full object-cover border border-neutral-600"
                 />
-                {otherParticipant.isOnline && (
+                {isConnected && (
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
                 )}
               </div>
               <div>
                 <h3 className="text-white font-semibold">{otherParticipant.name}</h3>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs ${otherParticipant.isOnline ? 'text-green-400' : 'text-stone-500'}`}>
-                    {otherParticipant.isOnline ? 'Online' : 'Offline'}
+                  <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-stone-500'}`}>
+                    {isConnected ? 'Online' : 'Offline'}
                   </span>
                   <span className="text-stone-500">•</span>
-                  <span className="text-xs text-stone-500">
+                  <span className="text-xs text-stone-500 capitalize">
                     {otherParticipant.type}
                   </span>
                   {!isConnected && (
@@ -451,12 +505,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <Send className="w-4 h-4" />
           </button>
         </div>
-        {isAdminConversation() && (
-          <div className="text-xs text-stone-500 mt-2 text-center">
-            Our support team typically responds within a few minutes
-            {isConnected && <span className="text-green-400 ml-2">• Live</span>}
+        <div className="flex items-center justify-between mt-2">
+          {isAdminConversation() && (
+            <div className="text-xs text-stone-500 text-center flex-1">
+              Our support team typically responds within a few minutes
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-xs">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className={isConnected ? 'text-green-400' : 'text-red-400'}>
+              {isConnected ? 'Live' : 'Offline'}
+            </span>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -10,10 +10,10 @@ import { ServiceRegistryService } from '../proxy/service-registry.service';
 
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:4300', 'http://localhost:4400'],
-    credentials: true,
+    origin: process.env.CORS_ORIGINS,
+    credentials: process.env.CORS_CREDENTIALS,
   },
-  path: '/api/messages/socket.io', // Custom path but no namespace
+  path: '/api/messages/socket.io',
 })
 export class WebSocketProxyGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(WebSocketProxyGateway.name);
@@ -23,56 +23,65 @@ export class WebSocketProxyGateway implements OnGatewayConnection, OnGatewayDisc
 
   async handleConnection(client: Socket) {
     try {
-      // Get the messaging service URL
+      this.logger.log(`🔌 Gateway: Client ${client.id} connecting...`);
+
       const messagingService = this.serviceRegistry.getService('messaging');
       if (!messagingService) {
-        this.logger.error('Messaging service not found in registry');
+        this.logger.error('❌ Messaging service not found in registry');
+        client.emit('connect_error', { message: 'Messaging service unavailable' });
         client.disconnect();
         return;
       }
 
-      // Create connection to actual messaging service with namespace
-      const serviceClient = ioClient(`${messagingService.url}/messages`, {
+      this.logger.log(`🎯 Gateway: Connecting to messaging service at ${messagingService.url}`);
+
+      const serviceClient = ioClient(messagingService.url, {
         auth: client.handshake.auth,
-        transports: ['websocket'],
+        query: client.handshake.query,
+        extraHeaders: client.handshake.headers as Record<string, string>,
+        transports: ['websocket', 'polling'],
         forceNew: true,
-        timeout: 5000,
+        timeout: 10000,
       });
 
       this.clientConnections.set(client.id, serviceClient);
 
-      // Forward all events from client to service
       client.onAny((eventName: string, ...args: any[]) => {
         if (serviceClient.connected) {
-          this.logger.debug(`Forwarding event to service: ${eventName}`);
+          this.logger.debug(`➡️ Gateway: Forwarding event to service: ${eventName}`);
           serviceClient.emit(eventName, ...args);
+        } else {
+          this.logger.warn(`⚠️ Gateway: Service not connected, dropping event: ${eventName}`);
         }
       });
 
-      // Forward all events from service to client
       serviceClient.onAny((eventName: string, ...args: any[]) => {
-        this.logger.debug(`Forwarding event to client: ${eventName}`);
+        this.logger.debug(`⬅️ Gateway: Forwarding event to client: ${eventName}`);
         client.emit(eventName, ...args);
       });
 
-      // Handle service connection events
       serviceClient.on('connect', () => {
-        this.logger.log(`✅ Client ${client.id} connected to messaging service`);
+        this.logger.log(`✅ Gateway: Client ${client.id} connected to messaging service`);
+        client.emit('gateway_ready', { message: 'Connected through gateway' });
       });
 
       serviceClient.on('disconnect', (reason) => {
-        this.logger.log(`❌ Service connection for client ${client.id} disconnected: ${reason}`);
+        this.logger.log(`❌ Gateway: Service connection for client ${client.id} disconnected: ${reason}`);
+        client.emit('service_disconnected', { reason });
         client.disconnect();
       });
 
       serviceClient.on('connect_error', (error) => {
-        this.logger.error(`🚫 Service connection error for client ${client.id}:`, error.message);
-        client.emit('connect_error', { message: 'Failed to connect to messaging service', error: error.message });
+        this.logger.error(`🚫 Gateway: Service connection error for client ${client.id}:`, error.message);
+        client.emit('connect_error', {
+          message: 'Failed to connect to messaging service',
+          error: error.message
+        });
+        client.disconnect();
       });
 
-      this.logger.log(`🔌 Gateway: Client ${client.id} connected, establishing service connection...`);
     } catch (error) {
-      this.logger.error('❌ Error handling client connection:', error);
+      this.logger.error('💥 Gateway: Error handling client connection:', error);
       client.emit('connect_error', { message: 'Gateway connection failed' });
       client.disconnect();
     }
