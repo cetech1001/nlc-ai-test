@@ -148,7 +148,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       };
     }
     return () => {};
-  }, [conversation?.id, isConnected]); // Remove the function dependencies
+  }, [conversation?.id, isConnected, joinConversation, leaveConversation]); // Remove the function dependencies
 
   // Get other participant info when conversation or user changes
   useEffect(() => {
