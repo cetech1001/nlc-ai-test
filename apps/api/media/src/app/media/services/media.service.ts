@@ -20,7 +20,7 @@ export class MediaService {
   }
 
   async uploadAsset(
-    coachID: string,
+    userID: string,
     file: Express.Multer.File,
     uploadDto: UploadAssetDto
   ): Promise<MediaUploadResult> {
@@ -30,13 +30,13 @@ export class MediaService {
       const provider = this.mediaProviderFactory.getProvider();
 
       const uploadOptions = {
-        folder: uploadDto.folder || `coaches/${coachID}`,
+        folder: uploadDto.folder,
         publicID: uploadDto.publicID,
         overwrite: uploadDto.overwrite,
         tags: uploadDto.tags || [],
         metadata: {
           ...uploadDto.metadata,
-          coachID,
+          userID,
           originalName: file.originalname
         },
         transformation: uploadDto.transformation
@@ -47,7 +47,7 @@ export class MediaService {
       // Save to database
       const mediaFile = await this.prisma.mediaFile.create({
         data: {
-          coachID,
+          userID,
           publicID: asset.publicID,
           originalName: file.originalname,
           url: asset.url,
@@ -72,7 +72,7 @@ export class MediaService {
         schemaVersion: 1,
         payload: {
           assetID: mediaFile.id,
-          coachID,
+          userID,
           publicID: asset.publicID,
           originalName: file.originalname,
           resourceType: asset.resourceType as MediaResourceType,
@@ -97,9 +97,9 @@ export class MediaService {
     }
   }
 
-  async getAsset(id: string, coachID: string): Promise<MediaFile> {
+  async getAsset(id: string, userID: string): Promise<MediaFile> {
     const asset = await this.prisma.mediaFile.findFirst({
-      where: {id, coachID}
+      where: {id, userID}
     });
 
     if (!asset) {
@@ -109,13 +109,13 @@ export class MediaService {
     return asset as unknown as MediaFile;
   }
 
-  async getAssets(coachID: string, filters: MediaFiltersDto): Promise<{
+  async getAssets(userID: string, filters: MediaFiltersDto): Promise<{
     assets: MediaFile[];
     total: number;
     page: number;
     limit: number;
   }> {
-    const where: any = {coachID};
+    const where: any = {userID};
 
     if (filters.resourceType) {
       where.resourceType = filters.resourceType;
@@ -178,8 +178,8 @@ export class MediaService {
     };
   }
 
-  async deleteAsset(id: string, coachID: string, deletedBy: string): Promise<boolean> {
-    const asset = await this.getAsset(id, coachID);
+  async deleteAsset(id: string, userID: string, deletedBy: string): Promise<boolean> {
+    const asset = await this.getAsset(id, userID);
 
     const provider = this.mediaProviderFactory.getProvider();
     const deleted = await provider.delete(asset.publicID, asset.resourceType);
@@ -195,7 +195,7 @@ export class MediaService {
         schemaVersion: 1,
         payload: {
           assetID: id,
-          coachID,
+          userID,
           publicID: asset.publicID,
           resourceType: asset.resourceType,
           provider: asset.provider,
@@ -208,8 +208,8 @@ export class MediaService {
     return deleted;
   }
 
-  async generateUrl(id: string, coachID: string, transformations?: any[]): Promise<string> {
-    const asset = await this.getAsset(id, coachID);
+  async generateUrl(id: string, userID: string, transformations?: any[]): Promise<string> {
+    const asset = await this.getAsset(id, userID);
     const provider = this.mediaProviderFactory.getProvider();
 
     return provider.generateUrl(asset.publicID, transformations);

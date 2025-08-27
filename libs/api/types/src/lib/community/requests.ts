@@ -1,23 +1,48 @@
-import { CommunityType, CommunityVisibility, MemberRole, PostType, ReactionType, MessageType } from './enums';
+import {
+  CommunityType,
+  CommunityVisibility,
+  MemberRole,
+  PostType,
+  ReactionType,
+  MessageType,
+  CommunityPricingTypes
+} from './enums';
 import { UserType } from '../auth';
 
-// Community Requests
+export interface CommunityPricing {
+  type: CommunityPricingTypes;
+  amount?: number | null;
+  currency?: string;
+}
+
 export interface CreateCommunityRequest {
   name: string;
   description?: string;
+  slug: string;
   type: CommunityType;
   visibility?: CommunityVisibility;
   coachID?: string;
   courseID?: string;
   avatarUrl?: string;
   bannerUrl?: string;
-  settings?: Record<string, any>;
+  pricing?: CommunityPricing;
+  settings?: {
+    allowMemberPosts?: boolean;
+    requireApproval?: boolean;
+    allowFileUploads?: boolean;
+    maxPostLength?: number;
+    allowPolls?: boolean;
+    allowEvents?: boolean;
+    moderationLevel?: string;
+  };
+  isSystemCreated?: boolean;
 }
 
 export interface UpdateCommunityRequest {
   name?: string;
   description?: string;
   visibility?: CommunityVisibility;
+  pricing?: CommunityPricing;
   avatarUrl?: string;
   bannerUrl?: string;
   settings?: Record<string, any>;
@@ -48,7 +73,6 @@ export interface InviteMemberRequest {
   message?: string;
 }
 
-// Post Requests
 export interface CreatePostRequest {
   communityID: string;
   type?: PostType;

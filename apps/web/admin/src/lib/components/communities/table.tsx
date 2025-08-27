@@ -6,13 +6,13 @@ export const communityColumns = [
   {
     key: 'name',
     header: 'Name',
-    width: `${colWidth * (5 / 3)}%`,
+    width: `${colWidth * (4 / 3)}%`,
     sortable: true,
   },
   {
     key: 'type',
     header: 'Type',
-    width: `${colWidth * (2 / 3)}%`,
+    width: `${colWidth}%`,
     render: (value: string) => (
       <span className="px-2.5 py-0.5 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-full text-sm font-medium">
         {value.replace('_', ' ')}

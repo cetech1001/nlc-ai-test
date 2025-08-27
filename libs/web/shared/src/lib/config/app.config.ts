@@ -1,6 +1,8 @@
 import {AppConfig} from "@nlc-ai/types";
 
+
 export const appConfig: AppConfig = {
+  publicUrl: process.env.NEXT_PUBLIC_URL || 'http://localhost:4400',
   api: {
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
     timeout: 30000,

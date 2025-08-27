@@ -80,16 +80,14 @@ export class UploadAssetDto {
   @ApiProperty({ required: false, type: Object, additionalProperties: true })
   @IsOptional()
   @Transform(({ value }) => {
-    // Handle FormData JSON string
     if (typeof value === 'string') {
       try {
         return JSON.parse(value);
       } catch (error) {
         console.warn('Failed to parse metadata JSON:', value, error);
-        return {}; // Return empty object if parsing fails
+        return {};
       }
     }
-    // Handle direct object
     return value || {};
   })
   @IsObject()
@@ -97,6 +95,17 @@ export class UploadAssetDto {
 
   @ApiProperty({ required: false, type: [TransformationDto] })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        console.warn('Failed to parse transformation JSON:', value, error);
+        return [];
+      }
+    }
+    return value || [];
+  })
   @IsArray()
   transformation?: TransformationDto[];
 }

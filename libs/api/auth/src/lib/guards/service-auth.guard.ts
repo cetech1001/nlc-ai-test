@@ -12,7 +12,6 @@ export class ServiceAuthGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // Check if route is marked as public
     const isPublic = this.reflector.get<boolean>('isPublic', context.getHandler()) ||
       this.reflector.get<boolean>('isPublic', context.getClass());
 
@@ -29,7 +28,7 @@ export class ServiceAuthGuard implements CanActivate {
 
     try {
       const secret = this.configService.get<string>('JWT_SECRET');
-      // Add user info to request
+
       request['user'] = this.jwtService.verify(token, {secret});
       request['token'] = token;
 
@@ -46,17 +45,14 @@ export class ServiceAuthGuard implements CanActivate {
       return undefined;
     }
 
-    // Handle "Bearer <token>" format
     if (authHeader.startsWith('Bearer ')) {
       return authHeader.substring(7);
     }
 
-    // Handle direct token in Authorization header
     if (authHeader && typeof authHeader === 'string' && authHeader.length > 0) {
       return authHeader;
     }
 
-    // Also check for token in custom headers (for service-to-service auth)
     const serviceToken = request.headers['x-service-token'] || request.headers['x-auth-token'];
     if (serviceToken && typeof serviceToken === 'string') {
       return serviceToken;

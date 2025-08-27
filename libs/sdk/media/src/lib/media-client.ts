@@ -10,7 +10,7 @@ export class MediaServiceClient extends BaseClient {
     if (options?.publicID) formData.append('publicID', options.publicID);
     if (options?.overwrite) formData.append('overwrite', String(options.overwrite));
     if (options?.tags) {
-      options.tags.forEach(tag => formData.append('tags', tag));
+      /*options.tags.forEach(tag => */formData.append('tags', options.tags)/*)*/;
     }
     if (options?.metadata) {
       formData.append('metadata', JSON.stringify(options.metadata));
@@ -24,7 +24,7 @@ export class MediaServiceClient extends BaseClient {
       '/upload/asset',
       {
         body: formData,
-        headers: {} // Empty headers - let BaseServiceClient handle FormData
+        headers: {}
       }
     );
   }
@@ -38,7 +38,7 @@ export class MediaServiceClient extends BaseClient {
       '/upload/avatar',
       {
         body: formData,
-        headers: {} // Empty headers - let BaseServiceClient handle FormData
+        headers: {}
       }
     );
 

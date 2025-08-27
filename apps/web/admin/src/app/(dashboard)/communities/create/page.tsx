@@ -1,19 +1,19 @@
 'use client'
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Save, X, ChevronRight, ChevronLeft } from 'lucide-react';
-import { BackTo } from "@nlc-ai/web-shared";
-import { Button } from '@nlc-ai/web-ui';
-import { toast } from 'sonner';
+import React, {useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {ChevronLeft, ChevronRight, Save, X} from 'lucide-react';
+import {BackTo} from "@nlc-ai/web-shared";
+import {Button} from '@nlc-ai/web-ui';
+import {toast} from 'sonner';
+import {BasicCommunityInfoFormStep, CommunitySettingsFormStep, CommunityTypeAndAccessFormStep, sdkClient} from "@/lib";
 import {
-  BasicCommunityInfoFormStep,
-  CommunityFormErrors, CommunitySettingsFormStep,
-  CommunityTypeAndAccessFormStep,
-  CreateCommunityForm,
-  sdkClient
-} from "@/lib";
-import { CommunityType, CommunityVisibility } from '@nlc-ai/sdk-community';
+  CommunityFormErrors,
+  CommunityPricingTypes,
+  CommunityType,
+  CommunityVisibility,
+  CreateCommunityForm, CreateCommunityRequest
+} from '@nlc-ai/sdk-community';
 
 const stepNames = [
   "Basic Info",
@@ -30,14 +30,18 @@ const AdminCreateCommunityPage = () => {
   const [form, setForm] = useState<CreateCommunityForm>({
     name: '',
     description: '',
+    slug: '',
     type: CommunityType.PRIVATE,
     visibility: CommunityVisibility.PRIVATE,
     coachID: '',
     courseID: '',
     avatarUrl: '',
     bannerUrl: '',
-    isPaid: false,
-    monthlyPrice: '',
+    pricing: {
+      type: CommunityPricingTypes.FREE,
+      amount: 0,
+      currency: 'USD'
+    },
     settings: {
       allowMemberPosts: true,
       requireApproval: false,
@@ -70,6 +74,14 @@ const AdminCreateCommunityPage = () => {
       } else if (form.description.length < 10) {
         newErrors.description = 'Description must be at least 10 characters';
       }
+
+      if (!form.slug.trim()) {
+        newErrors.slug = 'URL slug is required';
+      } else if (form.slug.length < 3) {
+        newErrors.slug = 'URL slug must be at least 3 characters';
+      } else if (!/^[a-z0-9-]+$/.test(form.slug)) {
+        newErrors.slug = 'URL slug can only contain lowercase letters, numbers, and hyphens';
+      }
     } else if (currentStep === 1) {
       if (form.type === CommunityType.COACH_CLIENT && !form.coachID.trim()) {
         newErrors.coachID = 'Coach selection is required for coach-client communities';
@@ -79,8 +91,8 @@ const AdminCreateCommunityPage = () => {
         newErrors.courseID = 'Course selection is required for course communities';
       }
 
-      if (form.isPaid && (!form.monthlyPrice.trim() || parseFloat(form.monthlyPrice) <= 0)) {
-        newErrors.monthlyPrice = 'Valid monthly price is required for paid communities';
+      if (form.pricing.type !== 'free' && (!form.pricing.amount || form.pricing.amount <= 0)) {
+        newErrors['pricing.amount'] = 'Valid price is required for paid communities';
       }
     } else if (currentStep === 2) {
       if (form.settings.maxPostLength < 100 || form.settings.maxPostLength > 10000) {
@@ -114,25 +126,41 @@ const AdminCreateCommunityPage = () => {
 
     setIsLoading(true);
     try {
-      const createRequest = {
+      const createRequest: CreateCommunityRequest = {
         name: form.name,
         description: form.description,
+        slug: form.slug,
         type: form.type,
         visibility: form.visibility,
-        coachID: form.coachID || undefined,
-        courseID: form.courseID || undefined,
-        avatarUrl: form.avatarUrl || undefined,
-        bannerUrl: form.bannerUrl || undefined,
-        isPaid: form.isPaid,
-        monthlyPrice: form.isPaid ? Math.round(parseFloat(form.monthlyPrice) * 100) : undefined,
+        pricing: form.pricing,
         settings: form.settings,
+        isSystemCreated: true
       };
 
-      await sdkClient.community.createCommunity(createRequest);
+      // Add conditional fields
+      if (form.coachID.trim()) {
+        createRequest.coachID = form.coachID;
+      }
+
+      if (form.courseID.trim()) {
+        createRequest.courseID = form.courseID;
+      }
+
+      if (form.avatarUrl.trim()) {
+        createRequest.avatarUrl = form.avatarUrl;
+      }
+
+      if (form.bannerUrl.trim()) {
+        createRequest.bannerUrl = form.bannerUrl;
+      }
+
+      await sdkClient.community.communities.createCommunity(createRequest);
 
       toast.success('Community created successfully!');
       router.push('/communities?success=created');
     } catch (error: any) {
+      console.error('Failed to create community:', error);
+      setErrors({ general: error.message || 'Failed to create community' });
       toast.error(error.message || 'Failed to create community');
     } finally {
       setIsLoading(false);
@@ -148,6 +176,7 @@ const AdminCreateCommunityPage = () => {
       ...prev,
       [field]: value,
     }));
+    // Clear related errors when field is updated
     if (errors[field as keyof CommunityFormErrors]) {
       setErrors(prev => ({
         ...prev,
@@ -166,11 +195,46 @@ const AdminCreateCommunityPage = () => {
     }));
   };
 
-  // Mock upload function - replace with your actual upload implementation
+  // Image upload handler using media SDK
   const handleUploadImage = async (field: string, blob: Blob): Promise<string> => {
-    // This is where you'd upload the image to your backend/storage
-    // For now, return a mock URL
-    return URL.createObjectURL(blob);
+    try {
+      const fileName = field === 'avatar'
+        ? `community-avatar-${Date.now()}.jpg`
+        : `community-banner-${Date.now()}.jpg`;
+
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+      const uploadResult = await sdkClient.media.uploadAsset(file, {
+        folder: 'communities',
+        tags: [field, 'community-media'],
+        metadata: {
+          uploadedBy: 'admin',
+          purpose: field,
+          communityForm: true
+        },
+        transformation: [
+          {
+            type: 'quality',
+            quality: 'auto'
+          },
+          {
+            type: 'format',
+            format: 'webp'
+          }
+        ]
+      });
+
+      if (uploadResult.success && uploadResult.data) {
+        toast.success(`${field === 'avatar' ? 'Avatar' : 'Banner'} uploaded successfully!`);
+        return uploadResult.data.secureUrl;
+      } else {
+        throw new Error(uploadResult.error?.message || 'Upload failed');
+      }
+    } catch (error: any) {
+      console.error(`Failed to upload ${field}:`, error);
+      toast.error(`Failed to upload ${field === 'avatar' ? 'avatar' : 'banner'}: ${error.message}`);
+      throw error;
+    }
   };
 
   const renderBasicInfo = () => (
@@ -179,6 +243,7 @@ const AdminCreateCommunityPage = () => {
       errors={errors}
       updateForm={updateForm}
       onUploadImage={handleUploadImage}
+      setErrors={setErrors}
     />
   );
 

@@ -1,16 +1,17 @@
-import {CommunityType, CommunityVisibility} from "@nlc-ai/sdk-community";
+import {CommunityPricing} from "./responses";
+import {CommunityType, CommunityVisibility} from "./enums";
 
 export interface CreateCommunityForm {
   name: string;
   description: string;
   type: CommunityType;
   visibility: CommunityVisibility;
+  slug: string;
   coachID: string;
   courseID: string;
   avatarUrl: string;
   bannerUrl: string;
-  isPaid: boolean;
-  monthlyPrice: string;
+  pricing: CommunityPricing;
   settings: {
     allowMemberPosts: boolean;
     requireApproval: boolean;
@@ -20,14 +21,18 @@ export interface CreateCommunityForm {
     allowEvents: boolean;
     moderationLevel: string;
   };
+  isSystemCreated?: boolean;
 }
 
 export interface CommunityFormErrors {
   name?: string;
   description?: string;
+  slug?: string;
   coachID?: string;
   courseID?: string;
-  monthlyPrice?: string;
+  'pricing.amount'?: string;
   maxPostLength?: string;
+  avatarUrl?: string;
+  bannerUrl?: string;
   general?: string;
 }

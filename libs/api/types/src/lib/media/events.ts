@@ -5,7 +5,7 @@ export interface MediaUploadedEvent extends BaseEvent {
   eventType: 'media.asset.uploaded';
   payload: {
     assetID: string;
-    coachID: string;
+    userID: string;
     publicID: string;
     originalName: string;
     resourceType: MediaResourceType;
@@ -22,7 +22,7 @@ export interface MediaDeletedEvent extends BaseEvent {
   eventType: 'media.asset.deleted';
   payload: {
     assetID: string;
-    coachID: string;
+    userID: string;
     publicID: string;
     resourceType: MediaResourceType;
     provider: MediaProviderType;
@@ -35,7 +35,7 @@ export interface MediaTransformationRequestedEvent extends BaseEvent {
   eventType: 'media.transformation.requested';
   payload: {
     assetID: string;
-    coachID: string;
+    userID: string;
     publicID: string;
     transformations: Array<{
       type: string;
@@ -50,7 +50,7 @@ export interface MediaAccessedEvent extends BaseEvent {
   eventType: 'media.asset.accessed';
   payload: {
     assetID: string;
-    coachID: string;
+    userID: string;
     publicID: string;
     accessType: 'view' | 'download' | 'transform';
     userAgent?: string;

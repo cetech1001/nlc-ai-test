@@ -280,7 +280,6 @@ model Coach {
   contentCategories  ContentCategory[]
   emailSequences     EmailSequence[]
   scheduledEmails    ScheduledEmail[]
-  mediaFiles         MediaFile[]
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
@@ -344,6 +343,13 @@ enum ReactionType {
   celebrate
 }
 
+enum CommunityPricingType {
+  free
+  monthly
+  annual
+  one_time
+}
+
 model Community {
   id          String              @id @default(uuid()) @db.Uuid
   name        String              @db.VarChar(255)
@@ -351,27 +357,36 @@ model Community {
   type        CommunityType
   visibility  CommunityVisibility @default(private)
   ownerID     String              @db.Uuid
-  ownerType   String              @db.VarChar(20) // 'coach', 'admin', 'client'
-  coachID     String?             @db.Uuid // For coach-client communities
-  courseID    String?             @db.Uuid // For course communities
+  ownerType   String              @db.VarChar(20)
+  coachID     String?             @db.Uuid
+  courseID    String?             @db.Uuid
   avatarUrl   String?
   bannerUrl   String?
-  settings    Json                @default("{}")
-  memberCount Int                 @default(0)
-  postCount   Int                 @default(0)
-  isActive    Boolean             @default(true)
-  createdAt   DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime            @updatedAt @db.Timestamptz(6)
+  slug        String              @unique @db.VarChar(100)
 
-  // Relations
+  pricingType     CommunityPricingType @default(free)
+  pricingAmount   Int?
+  pricingCurrency String?              @default("USD") @db.VarChar(3)
+
+  isSystemCreated Boolean @default(false)
+
+  settings    Json     @default("{}")
+  memberCount Int      @default(0)
+  postCount   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
   members CommunityMember[]
   posts   Post[]
   invites CommunityInvite[]
 
   @@index([type])
+  @@index([pricingType])
   @@index([coachID])
   @@index([courseID])
   @@index([ownerID, ownerType])
+  @@index([isSystemCreated])
   @@index([createdAt])
   @@map("communities")
 }
@@ -920,7 +935,7 @@ enum MediaResourceType {
 
 model MediaFile {
   id           String            @id @default(uuid()) @db.Uuid
-  coachID      String            @db.Uuid
+  userID       String            @db.Uuid
   publicID     String            @unique @db.VarChar(255)
   originalName String            @db.VarChar(500)
   url          String            @db.Text
@@ -940,11 +955,9 @@ model MediaFile {
   createdAt    DateTime          @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime          @updatedAt @db.Timestamptz(6)
 
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
   mediaAnalytics MediaAnalytics[]
 
-  @@index([coachID])
+  @@index([userID])
   @@index([resourceType])
   @@index([folder])
   @@index([tags])
@@ -974,7 +987,7 @@ model MediaAnalytics {
 model MediaTransformation {
   id           String    @id @default(uuid()) @db.Uuid
   mediaFileID  String    @db.Uuid
-  coachID      String    @db.Uuid
+  userID       String    @db.Uuid
   requestedBy  String    @db.Uuid
   requestURL   String    @db.Text
   parameters   Json
@@ -985,7 +998,7 @@ model MediaTransformation {
   completedAt  DateTime? @db.Timestamptz(6)
 
   @@index([mediaFileID])
-  @@index([coachID])
+  @@index([userID])
   @@index([status])
   @@index([createdAt])
   @@map("media_transformations")

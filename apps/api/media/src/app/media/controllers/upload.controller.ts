@@ -10,14 +10,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser, UserTypesGuard, UserTypes } from '@nlc-ai/api-auth';
-import type { AuthUser } from '@nlc-ai/api-types';
+import {type AuthUser, UserType} from '@nlc-ai/api-types';
 import { MediaService } from '../services/media.service';
 import { UploadAssetDto } from '../dto/upload-asset.dto';
 
 @ApiTags('Media Upload')
 @Controller('upload')
 @UseGuards(UserTypesGuard)
-@UserTypes('coach')
+@UserTypes(UserType.coach, UserType.admin, UserType.client)
 export class UploadController {
   constructor(private readonly mediaService: MediaService) {}
 
@@ -49,6 +49,9 @@ export class UploadController {
     @Body() uploadDto: UploadAssetDto,
     @CurrentUser() user: AuthUser
   ) {
+    console.log("Uploaded file: ", file);
+    console.log("Request bodyyyy: ", uploadDto);
+
     if (!file) {
       throw new BadRequestException('No file provided');
     }

@@ -5,7 +5,7 @@ import {EmailServiceClient} from "@nlc-ai/sdk-email";
 import {BillingClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
-import {CommunityServiceClient} from "@nlc-ai/sdk-community";
+import {CommunityClient} from "@nlc-ai/sdk-community";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
 
@@ -16,7 +16,7 @@ export class NLCClient {
   public billing: BillingClient;
   public analytics: AnalyticsClient;
   public leads: LeadsServiceClient;
-  public community: CommunityServiceClient;
+  public community: CommunityClient;
   public media: MediaServiceClient;
   public notifications: NotificationsServiceClient;
 
@@ -56,7 +56,7 @@ export class NLCClient {
       baseURL: config.services?.leads || `${config.baseURL}/leads`,
     });
 
-    this.community = new CommunityServiceClient({
+    this.community = new CommunityClient({
       ...baseConfig,
       baseURL: config.services?.community || `${config.baseURL}/community`,
     });

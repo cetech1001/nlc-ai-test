@@ -1,14 +1,16 @@
 import { Input, Textarea, Label } from '@nlc-ai/web-ui';
-import { CommunityFormErrors, CreateCommunityForm } from "@/lib";
+import { CommunityFormErrors, CreateCommunityForm } from "@nlc-ai/sdk-community";
 import { FC, useState } from "react";
 import { Camera, X, Upload, RotateCw } from 'lucide-react';
 import { ImageCropper } from '@nlc-ai/web-settings';
+import { appConfig } from "@nlc-ai/web-shared";
 
 interface IProps {
   form: CreateCommunityForm;
   errors: CommunityFormErrors;
   updateForm: (field: string, value: string) => void;
   onUploadImage?: (field: string, blob: Blob) => Promise<string>; // Returns uploaded URL
+  setErrors?: (errors: CommunityFormErrors) => void; // Add error setter
 }
 
 export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
@@ -34,13 +36,24 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      // Handle error - you might want to set this in your errors state
+      if (props.setErrors) {
+        props.setErrors({ ...props.errors, avatarUrl: 'Please select a valid image file' });
+      }
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      // Handle error - file too large
+      if (props.setErrors) {
+        props.setErrors({ ...props.errors, avatarUrl: 'Image size must be less than 10MB' });
+      }
       return;
+    }
+
+    // Clear any existing errors
+    if (props.setErrors) {
+      const newErrors = { ...props.errors };
+      delete newErrors.avatarUrl;
+      props.setErrors(newErrors);
     }
 
     const reader = new FileReader();
@@ -86,8 +99,11 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
       const uploadedUrl = await props.onUploadImage('avatar', avatarCroppedBlob);
       props.updateForm('avatarUrl', uploadedUrl);
       closeAvatarUploadModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to upload avatar:', error);
+      if (props.setErrors) {
+        props.setErrors({ ...props.errors, avatarUrl: error.message || 'Failed to upload avatar' });
+      }
     } finally {
       setAvatarUploading(false);
     }
@@ -106,11 +122,24 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
+      if (props.setErrors) {
+        props.setErrors({ ...props.errors, bannerUrl: 'Please select a valid image file' });
+      }
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
+      if (props.setErrors) {
+        props.setErrors({ ...props.errors, bannerUrl: 'Image size must be less than 10MB' });
+      }
       return;
+    }
+
+    // Clear any existing errors
+    if (props.setErrors) {
+      const newErrors = { ...props.errors };
+      delete newErrors.bannerUrl;
+      props.setErrors(newErrors);
     }
 
     const reader = new FileReader();
@@ -156,8 +185,11 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
       const uploadedUrl = await props.onUploadImage('banner', bannerCroppedBlob);
       props.updateForm('bannerUrl', uploadedUrl);
       closeBannerUploadModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to upload banner:', error);
+      if (props.setErrors) {
+        props.setErrors({ ...props.errors, bannerUrl: error.message || 'Failed to upload banner' });
+      }
     } finally {
       setBannerUploading(false);
     }
@@ -188,6 +220,28 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
         {props.errors.name && (
           <p className="text-red-400 text-sm">{props.errors.name}</p>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="slug" className="text-white text-sm">
+          URL Slug <span className="text-red-400">*</span>
+        </Label>
+        <div className="flex items-center">
+          <span className="text-[#A0A0A0] text-sm mr-2">{appConfig.publicUrl}/community/</span>
+          <Input
+            id="slug"
+            value={props.form.slug}
+            onChange={(e) => props.updateForm('slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'))}
+            placeholder="my-awesome-community"
+            className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 ${
+              props.errors.slug ? 'border-red-500' : ''
+            }`}
+          />
+        </div>
+        {props.errors.slug && (
+          <p className="text-red-400 text-sm">{props.errors.slug}</p>
+        )}
+        <p className="text-[#A0A0A0] text-xs">Letters, numbers, and hyphens only. Used for community URL.</p>
       </div>
 
       <div className="space-y-2">
@@ -234,6 +288,9 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
               </span>
               <span className="text-xs text-[#A0A0A0]">Square image recommended</span>
             </button>
+            {props.errors.avatarUrl && (
+              <p className="text-red-400 text-sm">{props.errors.avatarUrl}</p>
+            )}
           </div>
         </div>
 
@@ -261,6 +318,9 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
               </span>
               <span className="text-xs text-[#A0A0A0]">Wide image recommended</span>
             </button>
+            {props.errors.bannerUrl && (
+              <p className="text-red-400 text-sm">{props.errors.bannerUrl}</p>
+            )}
           </div>
         </div>
       </div>
@@ -431,7 +491,7 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
           imageSrc={avatarOriginalImageUrl}
           onCropComplete={handleAvatarCropComplete}
           onCancel={handleAvatarCropCancel}
-          cropType={"square"}
+          cropType="square"
         />
       )}
 
@@ -441,8 +501,8 @@ export const BasicCommunityInfoFormStep: FC<IProps> = (props) => {
           imageSrc={bannerOriginalImageUrl}
           onCropComplete={handleBannerCropComplete}
           onCancel={handleBannerCropCancel}
-          cropType={"banner"}
-          aspectRatio={3}
+          cropType="banner"
+          aspectRatio={3} // 3:1 aspect ratio for banners
         />
       )}
     </div>

@@ -1,13 +1,12 @@
-import {DollarSign, Globe, Lock, UserCheck, Users} from "lucide-react";
-import { Input, Label } from '@nlc-ai/web-ui';
-import {CommunityType, CommunityVisibility} from "@nlc-ai/sdk-community";
 import React, {FC} from "react";
-import {CommunityFormErrors, CreateCommunityForm} from "@/lib";
+import {DollarSign, Globe, Lock, UserCheck, Users, CreditCard, Calendar, Zap} from "lucide-react";
+import { Input, Label } from '@nlc-ai/web-ui';
+import {CommunityType, CommunityVisibility, CommunityFormErrors, CreateCommunityForm} from "@nlc-ai/sdk-community";
 
 interface IProps {
   form: CreateCommunityForm;
   errors: CommunityFormErrors;
-  updateForm: (field: string, value: string) => void;
+  updateForm: (field: string, value: any) => void;
 }
 
 // Mock data for coaches and courses - replace with actual data
@@ -71,7 +70,45 @@ const visibilityOptions = [
   },
 ];
 
+const pricingOptions = [
+  {
+    value: 'free',
+    label: 'Free',
+    icon: Users,
+    description: 'Community is free to join',
+    color: 'text-green-400'
+  },
+  {
+    value: 'monthly',
+    label: 'Monthly Subscription',
+    icon: Calendar,
+    description: 'Recurring monthly payment',
+    color: 'text-blue-400'
+  },
+  {
+    value: 'annual',
+    label: 'Annual Subscription',
+    icon: CreditCard,
+    description: 'Recurring annual payment',
+    color: 'text-purple-400'
+  },
+  {
+    value: 'one_time',
+    label: 'One-Time Payment',
+    icon: Zap,
+    description: 'Single payment for lifetime access',
+    color: 'text-amber-400'
+  },
+];
+
 export const CommunityTypeAndAccessFormStep: FC<IProps> = (props) => {
+  const updatePricing = (field: string, value: any) => {
+    props.updateForm('pricing', {
+      ...props.form.pricing,
+      [field]: value
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -134,49 +171,87 @@ export const CommunityTypeAndAccessFormStep: FC<IProps> = (props) => {
         </div>
       </div>
 
-      {/* Paid Community Option */}
+      {/* Pricing Options */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <Label className="text-white text-sm">Pricing</Label>
-          <button
-            type="button"
-            onClick={() => props.updateForm('isPaid', Boolean(!props.form.isPaid).toString())}
-            className={`w-16 p-1 rounded-[100px] border transition-colors ${
-              props.form.isPaid
-                ? "bg-fuchsia-400 border-fuchsia-400 justify-end"
-                : "bg-stone-300 border-stone-300 justify-start"
-            } flex items-center`}
-          >
-            <div className="w-6 h-6 bg-white rounded-full" />
-          </button>
-          <span className={`text-sm ${props.form.isPaid ? "text-white" : "text-zinc-500"}`}>
-            {props.form.isPaid ? "Paid Community" : "Free Community"}
-          </span>
+        <Label className="text-white text-sm mb-4 block">
+          Pricing Model <span className="text-red-400">*</span>
+        </Label>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {pricingOptions.map((option) => {
+            const Icon = option.icon;
+            return (
+              <div
+                key={option.value}
+                className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                  props.form.pricing.type === option.value
+                    ? 'border-[#7B21BA] bg-[#7B21BA]/20'
+                    : 'border-[#3A3A3A] bg-background hover:bg-[#2A2A2A]'
+                }`}
+                onClick={() => updatePricing('type', option.value)}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-5 h-5 ${option.color}`} />
+                  <div>
+                    <div className="text-white font-medium">{option.label}</div>
+                    <div className="text-[#A0A0A0] text-sm">{option.description}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {props.form.isPaid && (
-          <div className="space-y-2">
-            <Label htmlFor="monthlyPrice" className="text-white text-sm">
-              Monthly Price ($) <span className="text-red-400">*</span>
-            </Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#A0A0A0]" />
-              <Input
-                id="monthlyPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={props.form.monthlyPrice}
-                onChange={(e) => props.updateForm('monthlyPrice', e.target.value)}
-                placeholder="0.00"
-                className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 pl-10 ${
-                  props.errors.monthlyPrice ? 'border-red-500' : ''
-                }`}
-              />
+        {/* Price Input - Show only for paid options */}
+        {props.form.pricing.type !== 'free' && (
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="pricingAmount" className="text-white text-sm">
+                {props.form.pricing.type === 'monthly' ? 'Monthly Price ($)' :
+                  props.form.pricing.type === 'annual' ? 'Annual Price ($)' :
+                    'One-Time Price ($)'} <span className="text-red-400">*</span>
+              </Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#A0A0A0]" />
+                <Input
+                  id="pricingAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={props.form.pricing.amount ? (props.form.pricing.amount / 100).toString() : ''}
+                  onChange={(e) => updatePricing('amount', e.target.value ? Math.round(parseFloat(e.target.value) * 100) : 0)}
+                  placeholder="0.00"
+                  className={`bg-background border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 pl-10 ${
+                    props.errors['pricing.amount'] ? 'border-red-500' : ''
+                  }`}
+                />
+              </div>
+              {props.errors['pricing.amount'] && (
+                <p className="text-red-400 text-sm">{props.errors['pricing.amount']}</p>
+              )}
+              <p className="text-[#A0A0A0] text-xs">
+                {props.form.pricing.type === 'monthly' ? 'Amount charged every month' :
+                  props.form.pricing.type === 'annual' ? 'Amount charged every year' :
+                    'One-time payment for lifetime access'}
+              </p>
             </div>
-            {props.errors.monthlyPrice && (
-              <p className="text-red-400 text-sm">{props.errors.monthlyPrice}</p>
-            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="pricingCurrency" className="text-white text-sm">
+                Currency
+              </Label>
+              <select
+                id="pricingCurrency"
+                value={props.form.pricing.currency || 'USD'}
+                onChange={(e) => updatePricing('currency', e.target.value)}
+                className="w-full bg-background border border-[#3A3A3A] text-white rounded-lg px-3 py-3 focus:border-[#7B21BA] focus:ring-[#7B21BA]/20 focus:outline-none"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="CAD">CAD (C$)</option>
+                <option value="AUD">AUD (A$)</option>
+              </select>
+            </div>
           </div>
         )}
       </div>

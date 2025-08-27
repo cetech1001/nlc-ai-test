@@ -1,4 +1,5 @@
 export interface AppConfig {
+  publicUrl: string;
   api: {
     baseURL: string;
     timeout: number;

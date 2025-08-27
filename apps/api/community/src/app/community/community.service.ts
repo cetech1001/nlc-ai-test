@@ -1,10 +1,11 @@
-import {ForbiddenException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException} from '@nestjs/common';
 import {PrismaService} from '@nlc-ai/api-database';
 import {OutboxService} from '@nlc-ai/api-messaging';
 import {
   COMMUNITY_ROUTING_KEYS,
   CommunityEvent,
   CommunityFilters,
+  CommunityPricingTypes,
   CommunityType,
   CommunityVisibility,
   CreateCommunityRequest,
@@ -13,6 +14,16 @@ import {
   UpdateCommunityRequest,
   UserType
 } from '@nlc-ai/api-types';
+
+interface CommunitySettings {
+  allowMemberPosts?: boolean;
+  requireApproval?: boolean;
+  allowFileUploads?: boolean;
+  maxPostLength?: number;
+  allowPolls?: boolean;
+  allowEvents?: boolean;
+  moderationLevel?: string;
+}
 
 @Injectable()
 export class CommunityService {
@@ -25,10 +36,45 @@ export class CommunityService {
 
   async createCommunity(createRequest: CreateCommunityRequest, creatorID: string, creatorType: UserType) {
     try {
+      // Check if slug already exists
+      const existingCommunity = await this.prisma.community.findUnique({
+        where: { slug: createRequest.slug },
+      });
+
+      if (existingCommunity) {
+        throw new BadRequestException('A community with this URL slug already exists');
+      }
+
+      // Prepare default settings
+      const defaultSettings: CommunitySettings = {
+        allowMemberPosts: true,
+        requireApproval: false,
+        allowFileUploads: true,
+        maxPostLength: 5000,
+        allowPolls: true,
+        allowEvents: false,
+        moderationLevel: 'moderate',
+      };
+
+      // Merge with provided settings
+      const settings: CommunitySettings = {
+        ...defaultSettings,
+        ...createRequest.settings,
+      };
+
+      // Determine if this should be marked as system-created
+      const isSystemCreated = createRequest.isSystemCreated === true && creatorType === UserType.admin;
+
+      // Prepare pricing data
+      const pricingType = createRequest.pricing?.type || CommunityPricingTypes.FREE;
+      const pricingAmount = createRequest.pricing?.amount || null;
+      const pricingCurrency = createRequest.pricing?.currency || 'USD';
+
       const community = await this.prisma.community.create({
         data: {
           name: createRequest.name,
           description: createRequest.description,
+          slug: createRequest.slug,
           type: createRequest.type,
           visibility: createRequest.visibility || CommunityVisibility.PRIVATE,
           ownerID: creatorID,
@@ -37,15 +83,25 @@ export class CommunityService {
           courseID: createRequest.courseID,
           avatarUrl: createRequest.avatarUrl,
           bannerUrl: createRequest.bannerUrl,
-          settings: createRequest.settings || {},
-          memberCount: creatorType === UserType.coach ? 1 : 0,
+
+          // Pricing fields
+          pricingType: pricingType as any, // Cast for Prisma enum
+          pricingAmount,
+          pricingCurrency,
+
+          // System tracking
+          isSystemCreated,
+
+          settings: settings as any, // Cast to any for Prisma JSON field
+          memberCount: (!isSystemCreated && creatorType === UserType.coach) ? 1 : 0,
         },
         include: {
           members: true,
         },
       });
 
-      if (creatorType !== UserType.admin) {
+      // Only auto-add creator as member if not system-created and not admin
+      if (!isSystemCreated && creatorType !== UserType.admin) {
         await this.prisma.communityMember.create({
           data: {
             communityID: community.id,
@@ -58,6 +114,7 @@ export class CommunityService {
         });
       }
 
+      // Publish creation event
       await this.outboxService.saveAndPublishEvent<CommunityEvent>({
         eventType: 'community.created',
         schemaVersion: 1,
@@ -69,11 +126,19 @@ export class CommunityService {
           ownerType: creatorType,
           coachID: community.coachID,
           courseID: community.courseID,
+          isSystemCreated,
+          pricing: {
+            type: pricingType,
+            amount: pricingAmount,
+            currency: pricingCurrency
+          },
           createdAt: community.createdAt.toISOString(),
         },
       }, COMMUNITY_ROUTING_KEYS.CREATED);
 
-      this.logger.log(`Community created: ${community.id} by ${creatorType} ${creatorID}`);
+      this.logger.log(
+        `Community created: ${community.id} by ${creatorType} ${creatorID}${isSystemCreated ? ' (system)' : ''} - ${pricingType} pricing`
+      );
 
       return community;
     } catch (error) {
@@ -108,155 +173,15 @@ export class CommunityService {
     return this.createCommunity({
       name: communityName,
       description: `Welcome to ${communityName}! This is your space to connect with your coach and fellow community members.`,
+      slug: communityName.toLowerCase() + '-' + 'community',
       type: CommunityType.COACH_CLIENT,
       visibility: CommunityVisibility.INVITE_ONLY,
       coachID: coachID,
-    }, coachID, UserType.coach);
-  }
-
-  /*async createCoachToCoachCommunity() {
-    const existingCommunity = await this.prisma.community.findFirst({
-      where: {
-        type: CommunityType.COACH_TO_COACH,
-      },
-    });
-
-    if (existingCommunity) {
-      return existingCommunity;
-    }
-
-    // Create the global coach-to-coach community
-    return this.createCommunity({
-      name: 'Coach Network',
-      description: 'Connect, collaborate, and grow with fellow coaches in the Next Level Coach community.',
-      type: CommunityType.COACH_TO_COACH,
-      visibility: CommunityVisibility.PRIVATE,
-    }, 'system', UserType.admin);
-  }*/
-
-  async addMemberToCommunity(
-    communityID: string,
-    userID: string,
-    userType: UserType,
-    role: MemberRole = MemberRole.MEMBER,
-    inviterID?: string
-  ) {
-    const community = await this.prisma.community.findUnique({
-      where: { id: communityID },
-    });
-
-    if (!community) {
-      throw new NotFoundException('Community not found');
-    }
-
-    // Check if already a member
-    const existingMember = await this.prisma.communityMember.findUnique({
-      where: {
-        communityID_userID_userType: {
-          communityID,
-          userID,
-          userType,
-        },
-      },
-    });
-
-    if (existingMember) {
-      if (existingMember.status === MemberStatus.ACTIVE) {
-        return existingMember;
+      pricing: {
+        type: CommunityPricingTypes.FREE,
+        currency: 'USD'
       }
-
-      // Reactivate if suspended/inactive
-      const updatedMember = await this.prisma.communityMember.update({
-        where: { id: existingMember.id },
-        data: {
-          status: MemberStatus.ACTIVE,
-          role,
-          lastActiveAt: new Date(),
-        },
-      });
-
-      await this.updateMemberCount(communityID);
-      return updatedMember;
-    }
-
-    // Add new member
-    const member = await this.prisma.communityMember.create({
-      data: {
-        communityID,
-        userID,
-        userType,
-        role,
-        status: MemberStatus.ACTIVE,
-        invitedBy: inviterID,
-        permissions: this.getDefaultPermissions(role),
-      },
-    });
-
-    await this.updateMemberCount(communityID);
-
-    // Get user name for event
-    // const userName = await this.getUserName(userID, userType);
-
-    // Publish event
-    await this.outboxService.saveAndPublishEvent<CommunityEvent>({
-      eventType: 'community.member.joined',
-      schemaVersion: 1,
-      payload: {
-        communityID,
-        communityName: community.name,
-        memberID: member.id,
-        userID,
-        userType,
-        role,
-        invitedBy: inviterID,
-        joinedAt: member.joinedAt.toISOString(),
-      },
-    }, COMMUNITY_ROUTING_KEYS.MEMBER_JOINED);
-
-    this.logger.log(`User ${userType} ${userID} joined community ${communityID}`);
-
-    return member;
-  }
-
-  async addCoachToCoachCommunity(coachID: string) {
-    const existingCommunity = await this.prisma.community.findFirst({
-      where: {
-        type: CommunityType.COACH_TO_COACH,
-      },
-    });
-
-    if (existingCommunity) {
-      return this.addMemberToCommunity(
-        existingCommunity.id,
-        coachID,
-        UserType.coach,
-        MemberRole.MEMBER
-      );
-    }
-
-    return {};
-  }
-
-  async addClientToCoachCommunity(clientID: string, coachID: string) {
-    // Find or create the coach's community
-    let community = await this.prisma.community.findFirst({
-      where: {
-        type: CommunityType.COACH_CLIENT,
-        coachID: coachID,
-      },
-    });
-
-    if (!community) {
-      community = await this.createCoachCommunity(coachID);
-    }
-
-    return this.addMemberToCommunity(
-      community.id,
-      clientID,
-      UserType.client,
-      MemberRole.MEMBER,
-      coachID
-    );
+    }, coachID, UserType.coach);
   }
 
   async getCommunities(filters: CommunityFilters, userID: string, userType: UserType) {
@@ -323,7 +248,7 @@ export class CommunityService {
         members: {
           where: { status: MemberStatus.ACTIVE },
           orderBy: { joinedAt: 'asc' },
-          take: 20, // Limit for performance
+          take: 20,
         },
         _count: {
           select: {
@@ -377,12 +302,22 @@ export class CommunityService {
     // Check permissions
     await this.checkPermission(id, userID, userType, 'manage_community');
 
+    // Prepare update data
+    const updateData: any = {
+      ...updateRequest,
+      updatedAt: new Date(),
+    };
+
+    // Handle pricing updates if provided
+    if (updateRequest.pricing) {
+      updateData.pricingType = updateRequest.pricing.type;
+      updateData.pricingAmount = updateRequest.pricing.amount;
+      updateData.pricingCurrency = updateRequest.pricing.currency || 'USD';
+    }
+
     const updatedCommunity = await this.prisma.community.update({
       where: { id },
-      data: {
-        ...updateRequest,
-        updatedAt: new Date(),
-      },
+      data: updateData,
     });
 
     this.logger.log(`Community ${id} updated by ${userType} ${userID}`);
@@ -390,39 +325,7 @@ export class CommunityService {
     return updatedCommunity;
   }
 
-  async removeMemberFromCommunity(communityID: string, targetUserID: string, targetUserType: UserType, actionByID: string, actionByType: UserType) {
-    // Check permissions
-    await this.checkPermission(communityID, actionByID, actionByType, 'remove_members');
-
-    const member = await this.prisma.communityMember.findUnique({
-      where: {
-        communityID_userID_userType: {
-          communityID,
-          userID: targetUserID,
-          userType: targetUserType,
-        },
-      },
-    });
-
-    if (!member) {
-      throw new NotFoundException('Member not found in community');
-    }
-
-    // Cannot remove owner
-    if (member.role === MemberRole.OWNER) {
-      throw new ForbiddenException('Cannot remove community owner');
-    }
-
-    await this.prisma.communityMember.delete({
-      where: { id: member.id },
-    });
-
-    await this.updateMemberCount(communityID);
-
-    this.logger.log(`User ${targetUserType} ${targetUserID} removed from community ${communityID} by ${actionByType} ${actionByID}`);
-
-    return { message: 'Member removed successfully' };
-  }
+  // ... rest of your existing methods remain unchanged
 
   private async updateMemberCount(communityID: string) {
     const count = await this.prisma.communityMember.count({
@@ -481,36 +384,159 @@ export class CommunityService {
     }
   }
 
-  /*private async getUserName(userID: string, userType: UserType): Promise<string> {
-    try {
-      switch (userType) {
-        case UserType.coach:
-          const coach = await this.prisma.coach.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true, businessName: true },
-          });
-          return coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach';
+  async addMemberToCommunity(
+    communityID: string,
+    userID: string,
+    userType: UserType,
+    role: MemberRole = MemberRole.MEMBER,
+    inviterID?: string
+  ) {
+    const community = await this.prisma.community.findUnique({
+      where: { id: communityID },
+    });
 
-        case UserType.client:
-          const client = await this.prisma.client.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true },
-          });
-          return `${client?.firstName} ${client?.lastName}` || 'Unknown Client';
-
-        case UserType.admin:
-          const admin = await this.prisma.admin.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true },
-          });
-          return `${admin?.firstName} ${admin?.lastName}` || 'Admin';
-
-        default:
-          return 'Unknown User';
-      }
-    } catch (error) {
-      this.logger.warn(`Failed to get user name for ${userType} ${userID}`, error);
-      return 'Unknown User';
+    if (!community) {
+      throw new NotFoundException('Community not found');
     }
-  }*/
+
+    // Check if already a member
+    const existingMember = await this.prisma.communityMember.findUnique({
+      where: {
+        communityID_userID_userType: {
+          communityID,
+          userID,
+          userType,
+        },
+      },
+    });
+
+    if (existingMember) {
+      if (existingMember.status === MemberStatus.ACTIVE) {
+        return existingMember;
+      }
+
+      // Reactivate if suspended/inactive
+      const updatedMember = await this.prisma.communityMember.update({
+        where: { id: existingMember.id },
+        data: {
+          status: MemberStatus.ACTIVE,
+          role,
+          lastActiveAt: new Date(),
+        },
+      });
+
+      await this.updateMemberCount(communityID);
+      return updatedMember;
+    }
+
+    // Add new member
+    const member = await this.prisma.communityMember.create({
+      data: {
+        communityID,
+        userID,
+        userType,
+        role,
+        status: MemberStatus.ACTIVE,
+        invitedBy: inviterID,
+        permissions: this.getDefaultPermissions(role),
+      },
+    });
+
+    await this.updateMemberCount(communityID);
+
+    // Publish event
+    await this.outboxService.saveAndPublishEvent<CommunityEvent>({
+      eventType: 'community.member.joined',
+      schemaVersion: 1,
+      payload: {
+        communityID,
+        communityName: community.name,
+        memberID: member.id,
+        userID,
+        userType,
+        role,
+        invitedBy: inviterID,
+        joinedAt: member.joinedAt.toISOString(),
+      },
+    }, COMMUNITY_ROUTING_KEYS.MEMBER_JOINED);
+
+    this.logger.log(`User ${userType} ${userID} joined community ${communityID}`);
+
+    return member;
+  }
+
+  async addCoachToCoachCommunity(coachID: string) {
+    const existingCommunity = await this.prisma.community.findFirst({
+      where: {
+        type: CommunityType.COACH_TO_COACH,
+      },
+    });
+
+    if (existingCommunity) {
+      return this.addMemberToCommunity(
+        existingCommunity.id,
+        coachID,
+        UserType.coach,
+        MemberRole.MEMBER
+      );
+    }
+
+    return {};
+  }
+
+  async addClientToCoachCommunity(clientID: string, coachID: string) {
+    // Find or create the coach's community
+    let community = await this.prisma.community.findFirst({
+      where: {
+        type: CommunityType.COACH_CLIENT,
+        coachID: coachID,
+      },
+    });
+
+    if (!community) {
+      community = await this.createCoachCommunity(coachID);
+    }
+
+    return this.addMemberToCommunity(
+      community.id,
+      clientID,
+      UserType.client,
+      MemberRole.MEMBER,
+      coachID
+    );
+  }
+
+  async removeMemberFromCommunity(communityID: string, targetUserID: string, targetUserType: UserType, actionByID: string, actionByType: UserType) {
+    // Check permissions
+    await this.checkPermission(communityID, actionByID, actionByType, 'remove_members');
+
+    const member = await this.prisma.communityMember.findUnique({
+      where: {
+        communityID_userID_userType: {
+          communityID,
+          userID: targetUserID,
+          userType: targetUserType,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found in community');
+    }
+
+    // Cannot remove owner
+    if (member.role === MemberRole.OWNER) {
+      throw new ForbiddenException('Cannot remove community owner');
+    }
+
+    await this.prisma.communityMember.delete({
+      where: { id: member.id },
+    });
+
+    await this.updateMemberCount(communityID);
+
+    this.logger.log(`User ${targetUserType} ${targetUserID} removed from community ${communityID} by ${actionByType} ${actionByID}`);
+
+    return { message: 'Member removed successfully' };
+  }
 }

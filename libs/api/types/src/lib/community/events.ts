@@ -1,6 +1,7 @@
 import { BaseEvent } from '@nlc-ai/api-messaging';
 import {UserType} from "../auth";
 import {CommunityType, MemberRole, MessageType, PostType, ReactionType} from "./enums";
+import {CommunityPricing} from "./requests";
 
 export interface CommunityCreatedEvent extends BaseEvent {
   eventType: 'community.created';
@@ -8,8 +9,10 @@ export interface CommunityCreatedEvent extends BaseEvent {
     communityID: string;
     name: string;
     type: CommunityType;
+    isSystemCreated: boolean;
     ownerID: string;
     ownerType: UserType;
+    pricing: CommunityPricing;
     coachID?: string | null;
     courseID?: string | null;
     createdAt: string;

@@ -5,6 +5,13 @@ export enum CommunityType {
   PRIVATE = 'private',
 }
 
+export enum CommunityPricingTypes {
+  FREE = 'free',
+  MONTHLY = 'monthly',
+  ANNUAL = 'annual',
+  ONE_TIME = 'one_time'
+}
+
 export enum CommunityVisibility {
   PUBLIC = 'public',
   PRIVATE = 'private',
