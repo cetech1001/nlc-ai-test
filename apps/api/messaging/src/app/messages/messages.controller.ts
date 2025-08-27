@@ -78,7 +78,7 @@ export class MessagesController {
     @Body() createDto: CreateMessageDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.messagesService.sendMessage(conversationID, createDto, user.id, user.type);
+    return this.messagesService.sendMessage(conversationID, createDto, user.id, user.type, user.firstName + ' ' + user.lastName);
   }
 
   @Get('conversations/:conversationID/messages')

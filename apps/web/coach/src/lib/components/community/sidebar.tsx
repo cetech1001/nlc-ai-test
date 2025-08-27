@@ -1,134 +1,93 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  MessageCircle,
-  // MoreHorizontal,
-  Search,
-  Menu,
-  X,
-  User,
-  Crown,
-  Shield
-} from 'lucide-react';
+'use client'
 
-interface CommunityMember {
-  id: string;
-  userID: string;
-  userType: 'coach' | 'client' | 'admin';
-  name: string;
-  avatarUrl?: string;
-  role: 'owner' | 'admin' | 'moderator' | 'member';
-  status: 'active' | 'inactive' | 'suspended';
-  isOnline: boolean;
-  lastActiveAt?: Date;
-  joinedAt: Date;
-}
+import React, {useEffect, useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {Crown, Menu, MessageCircle, Search, Shield, User, X,} from 'lucide-react';
+import {sdkClient} from '@/lib';
+import {ExtendedCommunityMember} from '@nlc-ai/sdk-community';
+import {toast} from 'sonner';
+import {useAuth} from "@nlc-ai/web-auth";
+import {UserType} from "@nlc-ai/sdk-users";
 
-interface CommunitySidebarProps {
+interface CommunityMembersSidebarProps {
   communityID: string;
-  showMobileSidebar: boolean;
-  setShowMobileSidebar: (show: boolean) => void;
+  isMobileOpen?: boolean;
+  onMobileToggle?: () => void;
+  onMemberClick?: (memberID: string, memberType: string) => void;
 }
 
-export const CommunitySidebar: React.FC<CommunitySidebarProps> = ({
-                                                                    communityID,
-                                                                    showMobileSidebar,
-                                                                    setShowMobileSidebar
-                                                                  }) => {
+interface GroupedMembers {
+  [role: string]: ExtendedCommunityMember[];
+}
+
+export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = ({
+  communityID,
+  isMobileOpen = false,
+  onMobileToggle,
+  onMemberClick,
+}) => {
   const router = useRouter();
-  const [members, setMembers] = useState<CommunityMember[]>([]);
+  const { user } = useAuth();
+
+  const [members, setMembers] = useState<ExtendedCommunityMember[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - replace with actual API call
   useEffect(() => {
-    const mockMembers: CommunityMember[] = [
-      {
-        id: '1',
-        userID: 'coach-1',
-        userType: 'coach',
-        name: 'Sarah Johnson',
-        avatarUrl: '/api/placeholder/40/40',
-        role: 'owner',
-        status: 'active',
-        isOnline: true,
-        joinedAt: new Date('2024-01-01')
-      },
-      {
-        id: '2',
-        userID: 'coach-2',
-        userType: 'coach',
-        name: 'Michael Chen',
-        avatarUrl: '/api/placeholder/40/40',
-        role: 'admin',
-        status: 'active',
-        isOnline: true,
-        lastActiveAt: new Date(),
-        joinedAt: new Date('2024-01-05')
-      },
-      {
-        id: '3',
-        userID: 'coach-3',
-        userType: 'coach',
-        name: 'Emily Rodriguez',
-        avatarUrl: '/api/placeholder/40/40',
-        role: 'moderator',
-        status: 'active',
-        isOnline: false,
-        lastActiveAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        joinedAt: new Date('2024-01-10')
-      },
-      {
-        id: '4',
-        userID: 'coach-4',
-        userType: 'coach',
-        name: 'David Thompson',
-        avatarUrl: '/api/placeholder/40/40',
-        role: 'member',
-        status: 'active',
-        isOnline: true,
-        lastActiveAt: new Date(),
-        joinedAt: new Date('2024-01-15')
-      },
-      {
-        id: '5',
-        userID: 'coach-5',
-        userType: 'coach',
-        name: 'Lisa Wang',
-        avatarUrl: '/api/placeholder/40/40',
-        role: 'member',
-        status: 'active',
-        isOnline: false,
-        lastActiveAt: new Date(Date.now() - 30 * 60 * 1000), // 30 min ago
-        joinedAt: new Date('2024-01-20')
-      }
-    ];
-
-    setTimeout(() => {
-      setMembers(mockMembers);
-      setIsLoading(false);
-    }, 1000);
+    if (communityID) {
+      loadCommunityMembers();
+    }
   }, [communityID]);
 
+  const loadCommunityMembers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await sdkClient.community.communities.getCommunityMembers(communityID);
+      setMembers(response.data);
+    } catch (error: any) {
+      toast.error('Failed to load community members');
+      console.error('Failed to load community members:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMemberClick = async (member: ExtendedCommunityMember) => {
+    if (onMemberClick) {
+      onMemberClick(member.userID, member.userType);
+      return;
+    }
+
+    try {
+      const conversation = await sdkClient.messaging.createConversation({
+        type: 'direct',
+        participantIDs: [user?.id || '', member.userID],
+        participantTypes: [user?.type || UserType.coach, member.userType]
+      });
+
+      router.push(`/messages?conversationID=${conversation.id}`);
+      if (onMobileToggle) {
+        onMobileToggle();
+      }
+    } catch (error: any) {
+      toast.error('Failed to start conversation');
+    }
+  };
+
+  // Filter members based on search
   const filteredMembers = members.filter(member =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Group members by role for better organization
-  const groupedMembers = filteredMembers.reduce((groups, member) => {
+  // Group members by role
+  const groupedMembers: GroupedMembers = filteredMembers.reduce((groups, member) => {
     const role = member.role;
     if (!groups[role]) {
       groups[role] = [];
     }
     groups[role].push(member);
     return groups;
-  }, {} as Record<string, CommunityMember[]>);
-
-  const handleMemberClick = (member: CommunityMember) => {
-    // Create or find direct conversation with this member
-    router.push(`/messages?userID=${member.userID}&userType=${member.userType}`);
-    setShowMobileSidebar(false);
-  };
+  }, {} as GroupedMembers);
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -163,99 +122,93 @@ export const CommunitySidebar: React.FC<CommunitySidebarProps> = ({
   };
 
   const SidebarContent = () => (
-    <div className="h-full flex flex-col">
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-white text-xl font-semibold">Community</h2>
+        {onMobileToggle && (
+          <button
+            onClick={onMobileToggle}
+            className="lg:hidden text-stone-400 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      <div className="relative z-10 p-6 flex-1 flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-white text-xl font-semibold">Community</h2>
-          {showMobileSidebar && (
-            <button
-              onClick={() => setShowMobileSidebar(false)}
-              className="lg:hidden text-stone-400 hover:text-white transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+        <input
+          type="text"
+          placeholder="Search members..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500"
+        />
+      </div>
 
-        {/* Search */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-          <input
-            type="text"
-            placeholder="Search members..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500"
-          />
-        </div>
-
-        {/* Members List */}
-        <div className="flex-1 space-y-4 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-fuchsia-500"></div>
-            </div>
-          ) : Object.keys(groupedMembers).length > 0 ? (
-            Object.entries(groupedMembers).map(([role, roleMembers]) => (
-              <div key={role} className="space-y-2">
-                <h3 className="text-stone-400 text-xs font-semibold uppercase tracking-wider px-2">
-                  {getRoleLabel(role)}s ({roleMembers.length})
-                </h3>
-                <div className="space-y-1">
-                  {roleMembers.map(member => (
-                    <div
-                      key={member.id}
-                      onClick={() => handleMemberClick(member)}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer group"
-                    >
-                      <div className="relative">
-                        <img
-                          src={member.avatarUrl || '/api/placeholder/40/40'}
-                          alt={member.name}
-                          className="w-10 h-10 rounded-full object-cover border border-neutral-600"
-                        />
-                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
-                          member.isOnline ? 'bg-green-500' : 'bg-gray-500'
-                        }`}></div>
+      {/* Members List */}
+      <div className="space-y-4 max-h-96 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-fuchsia-500"></div>
+          </div>
+        ) : Object.keys(groupedMembers).length > 0 ? (
+          Object.entries(groupedMembers).map(([role, roleMembers]) => (
+            <div key={role} className="space-y-2">
+              <h3 className="text-stone-400 text-xs font-semibold uppercase tracking-wider px-2">
+                {getRoleLabel(role)}s ({roleMembers.length})
+              </h3>
+              <div className="space-y-1">
+                {roleMembers.map(member => (
+                  <div
+                    key={member.id}
+                    onClick={() => handleMemberClick(member)}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={member.avatarUrl || '/api/placeholder/40/40'}
+                        alt={member.name}
+                        className="w-10 h-10 rounded-full object-cover border border-neutral-600"
+                      />
+                      <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
+                        member.isOnline ? 'bg-green-500' : 'bg-gray-500'
+                      }`}></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-white text-sm font-medium truncate">{member.name}</h3>
+                        {getRoleIcon(member.role)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-white text-sm font-medium truncate">{member.name}</h3>
-                          {getRoleIcon(member.role)}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-stone-400 text-xs">
-                            {member.isOnline ? 'Online' : formatLastActive(member.lastActiveAt)}
-                          </p>
-                          <MessageCircle className="w-3 h-3 text-stone-500 group-hover:text-fuchsia-400 transition-colors" />
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-stone-400 text-xs">
+                          {member.isOnline ? 'Online' : formatLastActive(member.lastActiveAt)}
+                        </p>
+                        <MessageCircle className="w-3 h-3 text-stone-500 group-hover:text-fuchsia-400 transition-colors" />
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <User className="w-12 h-12 text-stone-600 mx-auto mb-3" />
-              <p className="text-stone-400 text-sm">No members found</p>
-              {searchQuery && (
-                <p className="text-stone-500 text-xs mt-1">Try a different search term</p>
-              )}
             </div>
-          )}
-        </div>
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <User className="w-12 h-12 text-stone-600 mx-auto mb-3" />
+            <p className="text-stone-400 text-sm">No members found</p>
+            {searchQuery && (
+              <p className="text-stone-500 text-xs mt-1">Try a different search term</p>
+            )}
+          </div>
+        )}
+      </div>
 
-        {/* Footer */}
-        <div className="border-t border-neutral-700 pt-4 mt-4">
-          <p className="text-stone-500 text-xs text-center">
-            Click any member to start a conversation
-          </p>
-        </div>
+      {/* Footer */}
+      <div className="border-t border-neutral-700 pt-4 mt-4">
+        <p className="text-stone-500 text-xs text-center">
+          Click any member to start a conversation
+        </p>
       </div>
     </div>
   );
@@ -264,14 +217,19 @@ export const CommunitySidebar: React.FC<CommunitySidebarProps> = ({
     <>
       {/* Desktop Sidebar */}
       <div className="hidden lg:block w-96 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden h-fit">
-        <SidebarContent />
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+        </div>
+        <div className="relative z-10">
+          <SidebarContent />
+        </div>
       </div>
 
       {/* Mobile Toggle Button */}
-      {!showMobileSidebar && (
+      {!isMobileOpen && (
         <div className="lg:hidden fixed top-24 right-4 z-50">
           <button
-            onClick={() => setShowMobileSidebar(true)}
+            onClick={onMobileToggle}
             className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-full shadow-lg"
           >
             <Menu className="w-5 h-5" />
@@ -279,11 +237,16 @@ export const CommunitySidebar: React.FC<CommunitySidebarProps> = ({
         </div>
       )}
 
-      {/* Mobile Sidebar Overlay */}
-      {showMobileSidebar && (
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm">
           <div className="absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-neutral-800 to-neutral-900 border-l border-neutral-700 overflow-hidden">
-            <SidebarContent />
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+            </div>
+            <div className="relative z-10 h-full flex flex-col">
+              <SidebarContent />
+            </div>
           </div>
         </div>
       )}

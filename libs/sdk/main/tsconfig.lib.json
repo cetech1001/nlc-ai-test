@@ -23,6 +23,9 @@
   ],
   "references": [
     {
+      "path": "../messaging/tsconfig.lib.json"
+    },
+    {
       "path": "../notifications/tsconfig.lib.json"
     },
     {

@@ -9,6 +9,60 @@ export class ProfilesService {
     private prisma: PrismaService,
   ) {}
 
+  async lookupProfile(userType: UserType, id: string) {
+    let profile;
+
+    switch (userType) {
+      case UserType.coach:
+        profile = await this.prisma.coach.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            businessName: true,
+            avatarUrl: true,
+            bio: true,
+            websiteUrl: true,
+          },
+        });
+        break;
+
+      case UserType.client:
+        profile = await this.prisma.client.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        });
+        break;
+
+      case UserType.admin:
+        profile = await this.prisma.admin.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        });
+        break;
+
+      default:
+        throw new BadRequestException('Invalid user type');
+    }
+
+    if (!profile) {
+      throw new NotFoundException(`${userType} profile not found`);
+    }
+
+    return profile;
+  }
+
   async getProfile(userType: UserType, id: string) {
     let profile;
 

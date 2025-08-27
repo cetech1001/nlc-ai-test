@@ -4,7 +4,7 @@ import {OutboxService} from '@nlc-ai/api-messaging';
 import {
   COMMUNITY_ROUTING_KEYS,
   CommunityEvent,
-  CommunityFilters,
+  CommunityFilters, CommunityMember,
   CommunityPricingTypes,
   CommunityType,
   CommunityVisibility,
@@ -325,7 +325,122 @@ export class CommunityService {
     return updatedCommunity;
   }
 
-  // ... rest of your existing methods remain unchanged
+  async getCommunityMembers(
+    communityID: string,
+    page = 1,
+    limit = 20,
+    userID: string,
+    userType: UserType
+  ) {
+    // Check if user has access to the community
+    await this.checkCommunityMembership(communityID, userID, userType);
+
+    const result = await this.prisma.paginate<CommunityMember>(this.prisma.communityMember, {
+      page,
+      limit,
+      where: {
+        communityID,
+        status: MemberStatus.ACTIVE,
+        userID: {
+          not: userID, // exclude this user
+        },
+      },
+      include: {
+        // Include user details based on userType
+      },
+      orderBy: [
+        { role: 'asc' }, // Owners first, then admins, etc.
+        { joinedAt: 'asc' }
+      ],
+    });
+
+    // Transform the data to include user names and avatars
+    const transformedData = await Promise.all(
+      result.data.map(async (member) => {
+        const userInfo = await this.getUserInfo(member.userID, member.userType);
+        return {
+          ...member,
+          name: userInfo.name,
+          avatarUrl: userInfo.avatarUrl,
+          isOnline: this.isUserOnline(member.userID, member.userType), // Implement this method
+        };
+      })
+    );
+
+    return {
+      ...result,
+      data: transformedData,
+    };
+  }
+
+  private async getUserInfo(userID: string, userType: UserType): Promise<{ name: string; avatarUrl: string | null }> {
+    try {
+      switch (userType) {
+        case UserType.coach:
+          const coach = await this.prisma.coach.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true, businessName: true, avatarUrl: true },
+          });
+          return {
+            name: coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach',
+            avatarUrl: coach?.avatarUrl || null,
+          };
+
+        case UserType.client:
+          const client = await this.prisma.client.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true, avatarUrl: true },
+          });
+          return {
+            name: `${client?.firstName} ${client?.lastName}` || 'Unknown Client',
+            avatarUrl: client?.avatarUrl || null,
+          };
+
+        case UserType.admin:
+          const admin = await this.prisma.admin.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true, avatarUrl: true },
+          });
+          return {
+            name: `${admin?.firstName} ${admin?.lastName}` || 'Admin',
+            avatarUrl: admin?.avatarUrl || null,
+          };
+
+        default:
+          return { name: 'Unknown User', avatarUrl: null };
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get user info for ${userType} ${userID}`, error);
+      return { name: 'Unknown User', avatarUrl: null };
+    }
+  }
+
+  private isUserOnline(userID: string, userType: UserType): boolean {
+    // Implement online status logic - could be based on:
+    // 1. WebSocket connections
+    // 2. Recent activity timestamps
+    // 3. Cache/Redis with TTL
+    // For now, return mock data
+    return Math.random() > 0.5;
+  }
+
+  private async checkCommunityMembership(communityID: string, userID: string, userType: UserType) {
+    const member = await this.prisma.communityMember.findUnique({
+      where: {
+        communityID_userID_userType: {
+          communityID,
+          userID,
+          userType,
+        },
+      },
+    });
+
+    if (!member || member.status !== MemberStatus.ACTIVE) {
+      throw new ForbiddenException('Access denied to this community');
+    }
+
+    return member;
+  }
 
   private async updateMemberCount(communityID: string) {
     const count = await this.prisma.communityMember.count({

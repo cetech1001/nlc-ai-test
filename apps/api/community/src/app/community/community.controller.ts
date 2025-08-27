@@ -25,6 +25,7 @@ import {
   CommunityFiltersDto,
   AddMemberDto,
 } from './dto';
+import {PaginationDto} from "@nlc-ai/api-dto";
 
 @ApiTags('Community')
 @Controller('communities')
@@ -96,6 +97,18 @@ export class CommunityController {
       addMemberDto.role,
       user.id
     );
+  }
+
+  @Get(':id/members')
+  @ApiOperation({ summary: 'Get community members' })
+  @ApiParam({ name: 'id', description: 'Community ID' })
+  @ApiResponse({ status: 200, description: 'Members retrieved successfully' })
+  async getCommunityMembers(
+    @Param('id') id: string,
+    @Query() query: PaginationDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.getCommunityMembers(id, query.page, query.limit, user.id, user.type);
   }
 
   @Delete(':id/members/:userID/:userType')

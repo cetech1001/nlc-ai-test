@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import messagingConfig from './config/messaging.config';
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
 import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
+import {MessagesModule} from "./messages/messages.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
     MessagingModule.forRoot(),
     AuthLibModule,
     HealthModule,
+    MessagesModule,
   ],
   providers: [
     {

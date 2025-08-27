@@ -3,7 +3,10 @@ import {
   CommunityFilters,
   CommunityResponse,
   CreateCommunityRequest,
+  UpdateCommunityRequest,
+  AddMemberRequest,
   CommunityType,
+  CommunityMember, ExtendedCommunityMember,
 } from '../types';
 
 export class CommunitiesClient extends BaseClient {
@@ -44,6 +47,29 @@ export class CommunitiesClient extends BaseClient {
 
   async createCommunity(data: CreateCommunityRequest): Promise<CommunityResponse> {
     const response = await this.request<CommunityResponse>('POST', '', { body: data });
+    return response.data!;
+  }
+
+  async updateCommunity(id: string, data: UpdateCommunityRequest): Promise<CommunityResponse> {
+    const response = await this.request<CommunityResponse>('PUT', `/${id}`, { body: data });
+    return response.data!;
+  }
+
+  async addMember(communityID: string, data: AddMemberRequest): Promise<CommunityMember> {
+    const response = await this.request<CommunityMember>('POST', `/${communityID}/members`, { body: data });
+    return response.data!;
+  }
+
+  async removeMember(communityID: string, userID: string, userType: string): Promise<{ message: string }> {
+    const response = await this.request<{ message: string }>('DELETE', `/${communityID}/members/${userID}/${userType}`);
+    return response.data!;
+  }
+
+  async getCommunityMembers(communityID: string, page = 1, limit = 20): Promise<Paginated<ExtendedCommunityMember>> {
+    const response = await this.request<Paginated<ExtendedCommunityMember>>(
+      'GET',
+      `/${communityID}/members?page=${page}&limit=${limit}`
+    );
     return response.data!;
   }
 }

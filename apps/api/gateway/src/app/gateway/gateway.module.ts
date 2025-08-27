@@ -13,6 +13,7 @@ import {IntegrationsGatewayController} from "./controllers/integrations-gateway.
 import {CommunityGatewayController} from "./controllers/community-gateway.controller";
 import {AnalyticsGatewayController} from "./controllers/analytics-gateway.controller";
 import {AgentsGatewayController} from "./controllers/agents-gateway.controller";
+import {MessagingGatewayController} from "./controllers/messaging-gateway.controller";
 
 @Module({
   imports: [ProxyModule, CacheModule, SecurityModule],
@@ -28,6 +29,7 @@ import {AgentsGatewayController} from "./controllers/agents-gateway.controller";
     NotificationsGatewayController,
     IntegrationsGatewayController,
     CommunityGatewayController,
+    MessagingGatewayController,
   ],
 })
 export class GatewayModule {}

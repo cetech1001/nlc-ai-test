@@ -59,3 +59,17 @@ export interface CommunityResponse extends Community {
     posts: number;
   };
 }
+
+export interface ExtendedCommunityMember extends CommunityMember {
+  name: string;
+  avatarUrl?: string;
+  isOnline: boolean;
+  lastActiveAt?: Date;
+}
+
+export interface CommunityStats {
+  totalMembers: number;
+  totalPosts: number;
+  activeMembers: number;
+  onlineMembers: number;
+}

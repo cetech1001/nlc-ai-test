@@ -4,7 +4,7 @@ import {
   ExtendedClient,
   CreateClient,
   UpdateClient
-} from "./types";
+} from "../types";
 
 export class ClientsClient extends BaseClient{
   async getClients(searchOptions: SearchQuery, filters: FilterValues): Promise<Paginated<ExtendedClient>> {

@@ -18,7 +18,7 @@ export class MessagingGatewayController {
     const path = req.path.replace(/^\/messages/, '');
 
     const response = await this.proxyService.proxyRequest(
-      'messages',
+      'messaging',
       path,
       {
         method: req.method as any,

@@ -20,6 +20,17 @@ import { UserType, type AuthUser } from '@nlc-ai/api-types';
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
+  @Get('lookup/:userType/:id')
+  @UserTypes(UserType.admin, UserType.coach, UserType.client)
+  @ApiOperation({ summary: 'Lookup user profile by type and ID' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
+  lookupUserProfile(
+    @Param('userType') userType: UserType,
+    @Param('id') id: string,
+  ) {
+    return this.profilesService.lookupProfile(userType, id);
+  }
+
   @Get(':userType/:id')
   @UserTypes(UserType.admin, UserType.coach, UserType.client)
   @ApiOperation({ summary: 'Get user profile by type and ID' })

@@ -1,3 +1,4 @@
+import {UserType} from "@nlc-ai/sdk-users";
 import {MessageType} from "./index";
 
 export interface DirectMessageResponse {
@@ -31,7 +32,7 @@ export interface ConversationResponse {
   type: 'direct' | 'group';
   name?: string;
   participantIDs: string[];
-  participantTypes: ('admin' | 'coach' | 'client')[];
+  participantTypes: UserType[];
   lastMessageID?: string;
   lastMessageAt?: Date;
   unreadCount: Record<string, number>;

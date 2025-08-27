@@ -1,5 +1,5 @@
 import {BaseClient, SearchQuery, FilterValues, Paginated} from "@nlc-ai/sdk-core";
-import {ExtendedCoach, CreateCoach, UpdateCoach} from "./types";
+import {ExtendedCoach, CreateCoach, UpdateCoach} from "../types";
 
 export class CoachesClient extends BaseClient{
   async getCoaches(searchOptions: SearchQuery = {}, filters: FilterValues = {}) {

@@ -1,5 +1,5 @@
 import {UserType} from "@nlc-ai/sdk-users";
-import {CommunityType, CommunityVisibility, MemberRole} from "./enums";
+import {CommunityType, CommunityVisibility, MemberRole, MemberStatus} from "./enums";
 import {CommunityPricing} from "./responses";
 
 export interface CreateCommunityRequest {
@@ -40,6 +40,14 @@ export interface CommunityFilters {
   coachID?: string;
   search?: string;
   memberOf?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface CommunityMemberFilters {
+  role?: MemberRole;
+  status?: MemberStatus;
+  search?: string;
   page?: number;
   limit?: number;
 }

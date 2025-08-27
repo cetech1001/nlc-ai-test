@@ -143,7 +143,8 @@ export class MessagesService {
     conversationID: string,
     createDto: CreateMessageDto,
     senderID: string,
-    senderType: UserType
+    senderType: UserType,
+    senderName: string,
   ) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationID },
@@ -162,6 +163,7 @@ export class MessagesService {
         conversationID,
         senderID,
         senderType,
+        senderName,
         type: createDto.type || MessageType.TEXT,
         content: createDto.content,
         mediaUrls: createDto.mediaUrls || [],
@@ -413,8 +415,6 @@ export class MessagesService {
         AND: [
           { participantIDs: { hasEvery: participantIDs } },
           { participantTypes: { hasEvery: participantTypes } },
-          // @ts-ignore
-          { participantIDs: { array_length: 2 } },
         ],
       },
       include: {
