@@ -87,7 +87,7 @@ export default registerAs('gateway', () => {
       limit: config.RATE_LIMIT_MAX,
     },
     cors: {
-      origins: config.CORS_ORIGINS || ['http://localhost:3000', 'http://localhost:4200'],
+      origins: config.CORS_ORIGINS || ['http://localhost:4200', 'http://localhost:4300'],
       credentials: config.CORS_CREDENTIALS,
     },
     cache: {

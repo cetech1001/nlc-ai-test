@@ -9,6 +9,7 @@ import messagingConfig from './config/messaging.config';
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
 import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
 import {MessagesModule} from "./messages/messages.module";
+import {WebSocketModule} from "./websocket/websocket.module";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import {MessagesModule} from "./messages/messages.module";
     AuthLibModule,
     HealthModule,
     MessagesModule,
+    WebSocketModule,
   ],
   providers: [
     {

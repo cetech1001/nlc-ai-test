@@ -44,5 +44,9 @@ export default registerAs('messaging', () => {
       maxRetries: config.MAX_RETRIES,
       cacheTTL: config.CACHE_TTL,
     },
+    cors: {
+      origins: config.CORS_ORIGINS || ['http://localhost:4200', 'http://localhost:4300'],
+      credentials: config.CORS_CREDENTIALS,
+    },
   };
 });

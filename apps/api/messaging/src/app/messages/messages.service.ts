@@ -6,8 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-// import { OutboxService } from '@nlc-ai/api-messaging';
-import {MessageType, UserType} from '@nlc-ai/api-types';
+import { MessageType, UserType } from '@nlc-ai/api-types';
 import {
   CreateConversationDto,
   CreateMessageDto,
@@ -15,6 +14,7 @@ import {
   MessageFiltersDto,
   ConversationFiltersDto,
 } from './dto';
+import { MessagesGateway } from '../websocket/messages.gateway';
 
 @Injectable()
 export class MessagesService {
@@ -22,7 +22,7 @@ export class MessagesService {
 
   constructor(
     private readonly prisma: PrismaService,
-    // private readonly outboxService: OutboxService,
+    private readonly messagesGateway: MessagesGateway,
   ) {}
 
   async createConversation(
@@ -122,7 +122,7 @@ export class MessagesService {
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },
-          take: 50, // Get recent messages
+          take: 50,
         },
       },
     });
@@ -131,7 +131,6 @@ export class MessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
-    // Check if user is participant
     if (!this.isParticipant(conversation, userID, userType)) {
       throw new ForbiddenException('Access denied to this conversation');
     }
@@ -203,8 +202,8 @@ export class MessagesService {
       },
     });
 
-    // Publish message event
-    await this.publishMessageEvent(message, conversation);
+    // Broadcast the new message via WebSocket
+    await this.messagesGateway.broadcastNewMessage(conversationID, message, conversation);
 
     this.logger.log(`Message sent: ${message.id} in conversation ${conversationID}`);
     return message;
@@ -292,6 +291,9 @@ export class MessagesService {
       },
     });
 
+    // Broadcast the message update via WebSocket
+    await this.messagesGateway.broadcastMessageUpdate(message.conversationID, updatedMessage);
+
     this.logger.log(`Message edited: ${messageID}`);
     return updatedMessage;
   }
@@ -313,6 +315,9 @@ export class MessagesService {
       where: { id: messageID },
     });
 
+    // Broadcast the message deletion via WebSocket
+    await this.messagesGateway.broadcastMessageDelete(message.conversationID, messageID);
+
     this.logger.log(`Message deleted: ${messageID}`);
     return { message: 'Message deleted successfully' };
   }
@@ -332,6 +337,22 @@ export class MessagesService {
         readAt: new Date(),
       },
     });
+
+    // Get conversation ID for broadcasting
+    const firstMessage = await this.prisma.directMessage.findFirst({
+      where: { id: { in: messageIDs } },
+      select: { conversationID: true },
+    });
+
+    if (firstMessage) {
+      // Broadcast read status via WebSocket
+      await this.messagesGateway.broadcastReadStatus(
+        firstMessage.conversationID,
+        messageIDs,
+        userID,
+        userType
+      );
+    }
 
     // Update conversation unread counts
     const messages = await this.prisma.directMessage.findMany({
@@ -369,7 +390,6 @@ export class MessagesService {
   }
 
   async createSupportConversation(coachID: string) {
-    // Find an admin to create conversation with
     const admin = await this.prisma.admin.findFirst({
       where: { isActive: true },
       orderBy: { createdAt: 'asc' },
@@ -379,7 +399,6 @@ export class MessagesService {
       throw new NotFoundException('No admin available for support');
     }
 
-    // Check if conversation already exists
     const existingConversation = await this.findExistingDirectConversation(
       [coachID, admin.id],
       [UserType.coach, UserType.admin]
@@ -389,7 +408,6 @@ export class MessagesService {
       return existingConversation;
     }
 
-    // Create new support conversation
     const conversation = await this.createConversation(
       {
         type: 'direct',
@@ -454,7 +472,6 @@ export class MessagesService {
       const userType = participantTypes[i];
       const key = `${userType}:${userID}`;
 
-      // Don't increment for sender
       if (userID !== senderID || userType !== senderType) {
         updatedCount[key] = (updatedCount[key] || 0) + 1;
       }
@@ -492,10 +509,5 @@ export class MessagesService {
         data: { unreadCount: updatedUnreadCount },
       });
     }
-  }
-
-  private async publishMessageEvent(message: any, conversation: any) {
-    // Implementation would depend on your event system
-    // This is a placeholder for the event publishing logic
   }
 }

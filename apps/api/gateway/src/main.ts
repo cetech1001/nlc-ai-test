@@ -4,11 +4,14 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app/app.module';
 import { SecurityService } from './app/security/security.service';
+import {IoAdapter} from "@nestjs/platform-socket.io";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const securityService = app.get(SecurityService);
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Apply security configurations
   securityService.applySecurity(app);

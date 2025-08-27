@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import {IsString, IsOptional, IsNumber, IsArray, IsBoolean} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class MessagingConfigSchema {
@@ -15,6 +15,16 @@ export class MessagingConfigSchema {
   @IsOptional()
   @IsString()
   RABBITMQ_EXCHANGE?: string = 'nlc.domain.events';
+
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => value?.split(',') || [])
+  CORS_ORIGINS?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true')
+  CORS_CREDENTIALS?: boolean = true;
 
   @IsString()
   JWT_SECRET: string;

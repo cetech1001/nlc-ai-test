@@ -2,7 +2,7 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 import {Camera, Headphones, Info, MoreVertical, Phone, Send, Smile, User, Users, Video,} from 'lucide-react';
-import {sdkClient} from '@/lib';
+import {sdkClient, useMessagingWebSocket} from '@/lib';
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messaging';
 import {toast} from 'sonner';
 import {useAuth} from "@nlc-ai/web-auth";
@@ -22,33 +22,119 @@ interface Participant {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
-  conversation,
-  onBack,
-}) => {
+                                                        conversation,
+                                                        onBack,
+                                                      }) => {
   const { user } = useAuth();
 
   const [messages, setMessages] = useState<DirectMessageResponse[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [otherParticipant, setOtherParticipant] = useState<Participant | null>(null);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // WebSocket integration
+  const {
+    isConnected,
+    joinConversation,
+    leaveConversation,
+    sendTypingStatus,
+    getTypingUsers,
+  } = useMessagingWebSocket({
+    enabled: !!conversation,
+    onNewMessage: handleNewMessage,
+    onMessageUpdated: handleMessageUpdated,
+    onMessageDeleted: handleMessageDeleted,
+    onMessagesRead: handleMessagesRead,
+    onUserTyping: handleUserTyping,
+    onError: (error) => {
+      console.error('WebSocket error:', error);
+      toast.error('Connection error - messages may not update in real-time');
+    },
+  });
+
+  const typingUsers = conversation ? getTypingUsers(conversation.id) : [];
+  const isTyping = typingUsers.length > 0;
 
   useEffect(() => {
     if (conversation) {
       loadMessages();
+      if (isConnected) {
+        joinConversation(conversation.id);
+      }
     }
-  }, [conversation?.id]);
+
+    return () => {
+      if (conversation) {
+        leaveConversation(conversation.id);
+      }
+    };
+  }, [conversation?.id, isConnected]);
 
   useEffect(() => {
     if (user?.id) {
-      (() => getOtherParticipant())()
+      getOtherParticipant();
     }
-  }, [user]);
+  }, [user, conversation]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // WebSocket event handlers
+  function handleNewMessage(data: { conversationID: string; message: DirectMessageResponse }) {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev => {
+        // Avoid duplicates by checking if message already exists
+        const exists = prev.some(msg => msg.id === data.message.id);
+        if (exists) return prev;
+
+        return [...prev, data.message].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      });
+
+      // Auto-mark as read if conversation is active
+      if (data.message.senderID !== user?.id) {
+        setTimeout(() => {
+          markMessageAsRead([data.message.id]);
+        }, 1000);
+      }
+    }
+  }
+
+  function handleMessageUpdated(data: { conversationID: string; message: DirectMessageResponse }) {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev =>
+        prev.map(msg => msg.id === data.message.id ? data.message : msg)
+      );
+    }
+  }
+
+  function handleMessageDeleted(data: { conversationID: string; messageID: string }) {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev => prev.filter(msg => msg.id !== data.messageID));
+    }
+  }
+
+  function handleMessagesRead(data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev =>
+        prev.map(msg => {
+          if (data.messageIDs.includes(msg.id)) {
+            return { ...msg, isRead: true, readAt: new Date() };
+          }
+          return msg;
+        })
+      );
+    }
+  }
+
+  function handleUserTyping(data: { userID: string; userType: string; isTyping: boolean }) {
+    // The typing state is managed by the hook itself
+    // This handler could be used for additional UI updates if needed
+  }
 
   const loadMessages = async () => {
     if (!conversation) return;
@@ -60,7 +146,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         limit: 50,
       });
 
-      // Sort messages chronologically
       const sortedMessages = response.data.sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
@@ -78,77 +163,61 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleInputChange = (value: string) => {
+    setInputMessage(value);
+
+    if (!conversation || !isConnected) return;
+
+    // Send typing indicator
+    if (value.trim() && !typingTimeout) {
+      sendTypingStatus(conversation.id, true);
+    }
+
+    // Clear existing timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    // Set new timeout to stop typing indicator
+    const newTimeout = setTimeout(() => {
+      sendTypingStatus(conversation.id, false);
+      setTypingTimeout(null);
+    }, 1000);
+
+    setTypingTimeout(newTimeout);
+  };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !conversation) return;
 
-    const tempMessage: DirectMessageResponse = {
-      id: `temp-${Date.now()}`,
-      conversationID: conversation.id,
-      senderID: user?.id || '',
-      senderType: user?.type || UserType.coach,
-      type: MessageType.TEXT,
-      content: inputMessage,
-      mediaUrls: [],
-      isRead: false,
-      isEdited: false,
-      createdAt: new Date(),
-    };
-
-    setMessages(prev => [...prev, tempMessage]);
+    const messageContent = inputMessage.trim();
     setInputMessage('');
 
+    // Clear typing status
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+      setTypingTimeout(null);
+    }
+    sendTypingStatus(conversation.id, false);
+
     try {
-      const newMessage = await sdkClient.messaging.sendMessage(conversation.id, {
+      // The WebSocket will handle adding the message to the UI
+      await sdkClient.messaging.sendMessage(conversation.id, {
         type: MessageType.TEXT,
-        content: inputMessage.trim(),
+        content: messageContent,
       });
-
-      setMessages(prev => prev.map(msg =>
-        msg.id === tempMessage.id ? newMessage : msg
-      ));
-
-      // Simulate response for admin conversations
-      if (isAdminConversation()) {
-        simulateAdminResponse(inputMessage.trim());
-      }
     } catch (error: any) {
       toast.error('Failed to send message');
-      // Remove temp message on error
-      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+      setInputMessage(messageContent); // Restore message on error
     }
   };
 
-  const simulateAdminResponse = (userInput: string) => {
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const adminResponse: DirectMessageResponse = {
-        id: `admin-${Date.now()}`,
-        conversationID: conversation!.id,
-        senderID: 'admin-1',
-        senderType: 'admin',
-        type: MessageType.TEXT,
-        content: getAdminResponse(userInput),
-        mediaUrls: [],
-        isRead: false,
-        isEdited: false,
-        createdAt: new Date(),
-      };
-
-      setMessages(prev => [...prev, adminResponse]);
-      setIsTyping(false);
-    }, 2000);
-  };
-
-  const getAdminResponse = (userInput: string): string => {
-    const responses = [
-      "Thank you for reaching out! I'm reviewing your account now and will provide you with a solution shortly.",
-      "I understand the issue you're facing. Let me walk you through the steps to resolve this.",
-      "That's a great question! Here's what you need to know about that feature...",
-      "I've identified the problem and here's how we can fix it together.",
-      "Your feedback is valuable! I'll make sure our development team reviews this for future improvements."
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
+  const markMessageAsRead = async (messageIDs: string[]) => {
+    try {
+      await sdkClient.messaging.markAsRead({ messageIDs });
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -169,20 +238,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const userID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
     const userType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
-    const participant = await sdkClient.users.profile.lookupProfile(userType, userID);
+    try {
+      const participant = await sdkClient.users.profile.lookupProfile(userType, userID);
 
-    // Assuming current user is coach and is first participant
-    return setOtherParticipant({
-      id: participant.id,
-      type: userType,
-      name: participant.firstName + ' ' + participant.lastName,
-      avatar: participant.avatarUrl || '',
-      isOnline: true,
-    });
+      return setOtherParticipant({
+        id: participant.id,
+        type: userType,
+        name: participant.firstName + ' ' + participant.lastName,
+        avatar: participant.avatarUrl || '',
+        isOnline: true,
+      });
+    } catch (error) {
+      console.error('Failed to load participant info:', error);
+    }
   };
 
   const isCurrentUserMessage = (message: DirectMessageResponse) => {
-    return message.senderID === user?.id;
+    return message.senderID === user?.id && message.senderType === user?.type;
   };
 
   if (!conversation) {
@@ -194,6 +266,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
           <h3 className="text-white text-lg font-semibold mb-2">Select a conversation</h3>
           <p className="text-stone-400">Choose from admin support, clients, or community members</p>
+          {!isConnected && (
+            <p className="text-red-400 text-sm mt-2">⚠️ Real-time updates unavailable</p>
+          )}
         </div>
       </div>
     );
@@ -234,6 +309,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   <span className="text-xs text-stone-500">
                     {otherParticipant.type}
                   </span>
+                  {!isConnected && (
+                    <>
+                      <span className="text-stone-500">•</span>
+                      <span className="text-xs text-red-400">Offline mode</span>
+                    </>
+                  )}
                 </div>
               </div>
             </>
@@ -292,6 +373,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <div className="text-xs text-stone-500 mb-1">
                   {message.senderType === 'admin' ? 'Admin Support' :
                     isCurrentUserMessage(message) ? 'You' : otherParticipant?.name} • {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {message.isRead && isCurrentUserMessage(message) && (
+                    <span className="ml-2 text-blue-400">✓</span>
+                  )}
                 </div>
                 <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
                   isCurrentUserMessage(message)
@@ -318,11 +402,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 rounded-2xl rounded-bl-md">
-              <div className="flex items-center gap-2 mb-2 opacity-90">
-                <User className="w-3 h-3" />
-                <span className="text-xs font-medium">Admin Support</span>
-              </div>
+            <div className={`p-3 rounded-2xl rounded-bl-md ${
+              isAdminConversation()
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600'
+                : 'bg-neutral-700/80'
+            } text-white`}>
+              {isAdminConversation() && (
+                <div className="flex items-center gap-2 mb-2 opacity-90">
+                  <User className="w-3 h-3" />
+                  <span className="text-xs font-medium">Support Team</span>
+                </div>
+              )}
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -343,7 +433,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           <div className="flex-1">
             <textarea
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder={isAdminConversation() ? 'Describe your issue or question...' : 'Type your message...'}
               className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 resize-none max-h-32"
@@ -364,6 +454,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         {isAdminConversation() && (
           <div className="text-xs text-stone-500 mt-2 text-center">
             Our support team typically responds within a few minutes
+            {isConnected && <span className="text-green-400 ml-2">• Live</span>}
           </div>
         )}
       </div>

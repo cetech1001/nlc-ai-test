@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { MessagesService } from './messages.service';
 import { MessagesController } from './messages.controller';
+import {WebSocketModule} from "../websocket/websocket.module";
 
 @Module({
   imports: [
-    DatabaseModule,
     MessagingModule.forRoot(),
+    WebSocketModule,
   ],
   controllers: [MessagesController],
   providers: [MessagesService],
