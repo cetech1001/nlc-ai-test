@@ -112,7 +112,7 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
       return;
     }
 
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').split('/api')[0];
+    const apiUrl = process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:3000';
 
     console.log('🔌 Connecting to WebSocket via gateway:', apiUrl);
 
