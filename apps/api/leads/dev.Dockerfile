@@ -1,26 +1,30 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
-RUN apk add --no-cache libc6-compat
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install dependencies first for better caching
 COPY package*.json ./
-COPY nx.json ./
-COPY tsconfig.base.json ./
+COPY nx.json tsconfig.base.json ./
 
-RUN npm ci --omit=dev
-RUN npm install nx@latest
+RUN set -eux; npm ci --ignore-scripts && npm install nx;
 
-# Copy source code (will be overridden by volume mount in dev)
-COPY . .
+COPY apps/api/leads ./apps/api/leads
+COPY libs/api ./libs/api
+COPY eslint.config.mjs tsconfig.json ./
 
-# Generate Prisma client
-RUN npx nx sync
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
 
-EXPOSE 3006
-ENV PORT=3006
+ENV NODE_ENV=development \
+    NX_DAEMON=false \
+    NX_CACHE_DIRECTORY=/app/.nx/cache
 
-# Development command with hot reload
-CMD ["npx", "nx", "serve", "leads-service", "--host", "0.0.0.0"]
+ENV PORT=3006
+EXPOSE 3006
+
+CMD ["/bin/sh","-lc","\
+  echo 'Running nx sync to align TS project references...'; \
+  npx nx sync --no-interactive --verbose || true; \
+  echo 'Starting dev server...'; \
+  npx nx serve leads-service --configuration=development --verbose \
+"]

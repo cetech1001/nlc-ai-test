@@ -1,26 +1,30 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
-RUN apk add --no-cache libc6-compat
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install dependencies first for better caching
-COPY . .
+COPY package*.json ./
+COPY nx.json tsconfig.base.json ./
 
-RUN npm ci --omit=dev
-RUN npm install nx@latest
+RUN set -eux; npm ci --ignore-scripts && npm install nx;
 
-# Copy source code (will be overridden by volume mount in dev)
-COPY tsconfig.json ./
-COPY libs/api ./libs/api
 COPY apps/api/media ./apps/api/media
+COPY libs/api ./libs/api
+COPY eslint.config.mjs tsconfig.json ./
 
-# Generate Prisma client
-RUN npx nx sync
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
 
-EXPOSE 3003
-ENV PORT=3003
+ENV NODE_ENV=development \
+    NX_DAEMON=false \
+    NX_CACHE_DIRECTORY=/app/.nx/cache
 
-# Development command with hot reload
-CMD ["npx", "nx", "serve", "media-service", "--host", "0.0.0.0"]
+ENV PORT=3003
+EXPOSE 3003
+
+CMD ["/bin/sh","-lc","\
+  echo 'Running nx sync to align TS project references...'; \
+  npx nx sync --no-interactive --verbose || true; \
+  echo 'Starting dev server...'; \
+  npx nx serve media-service --configuration=development --verbose \
+"]

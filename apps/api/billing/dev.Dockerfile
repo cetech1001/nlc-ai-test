@@ -9,8 +9,9 @@ COPY nx.json tsconfig.base.json ./
 
 RUN set -eux; npm ci --ignore-scripts && npm install nx;
 
-COPY apps/api/gateway ./apps/api/gateway
+COPY apps/api/billing ./apps/api/billing
 COPY libs/api ./libs/api
+COPY libs/types ./libs/types
 COPY eslint.config.mjs tsconfig.json ./
 
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
@@ -19,12 +20,12 @@ ENV NODE_ENV=development \
     NX_DAEMON=false \
     NX_CACHE_DIRECTORY=/app/.nx/cache
 
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=3005
+EXPOSE 3005
 
 CMD ["/bin/sh","-lc","\
   echo 'Running nx sync to align TS project references...'; \
   npx nx sync --no-interactive --verbose || true; \
   echo 'Starting dev server...'; \
-  npx nx serve gateway-service --configuration=development --verbose \
+  npx nx serve billing-service --configuration=development --verbose \
 "]

@@ -15,7 +15,7 @@ import {
   MessageFilters,
   MessageListResponse,
   UnreadCountResponse,
-  ActionResponse, PostComment,
+  ActionResponse, PostComment, CreateCommunityRequest,
 } from './community.types';
 import {CommunityType} from "./enums";
 
@@ -56,7 +56,10 @@ export class CommunityServiceClient extends BaseClient {
     return response.data!.data[0];
   }
 
-  async createCommunity(data: any) {}
+  async createCommunity(data: CreateCommunityRequest): Promise<CommunityResponse> {
+    const response = await this.request<CommunityResponse>('POST', '/communities', { body: data });
+    return response.data!;
+  }
 
   // Post methods
   async createPost(postData: CreatePostRequest): Promise<PostResponse> {

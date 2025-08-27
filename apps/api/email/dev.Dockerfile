@@ -9,7 +9,7 @@ COPY nx.json tsconfig.base.json ./
 
 RUN set -eux; npm ci --ignore-scripts && npm install nx;
 
-COPY apps/api/gateway ./apps/api/gateway
+COPY apps/api/email ./apps/api/email
 COPY libs/api ./libs/api
 COPY eslint.config.mjs tsconfig.json ./
 
@@ -19,12 +19,12 @@ ENV NODE_ENV=development \
     NX_DAEMON=false \
     NX_CACHE_DIRECTORY=/app/.nx/cache
 
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=3004
+EXPOSE 3004
 
 CMD ["/bin/sh","-lc","\
   echo 'Running nx sync to align TS project references...'; \
   npx nx sync --no-interactive --verbose || true; \
   echo 'Starting dev server...'; \
-  npx nx serve gateway-service --configuration=development --verbose \
+  npx nx serve email-service --configuration=development --verbose \
 "]

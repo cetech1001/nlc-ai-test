@@ -2,9 +2,11 @@ import { BaseClient } from "@nlc-ai/sdk-core";
 import { NLCClientConfig } from "@nlc-ai/sdk-main";
 import { AdminAnalyticsClient } from "./admin-analytics.client";
 import { CoachAnalyticsClient } from "./coach-analytics.client";
+import { CommunityAnalyticsClient } from "./community-analytics.client";
 import {
   ClientEmailAgentData,
-  ClientRetentionAgentData, CoachReplicaAgentData,
+  ClientRetentionAgentData,
+  CoachReplicaAgentData,
   ContentCreationAgentData,
   LeadFollowUpAgentData
 } from "../types";
@@ -12,6 +14,7 @@ import {
 export class AnalyticsClient extends BaseClient {
   public admin: AdminAnalyticsClient;
   public coach: CoachAnalyticsClient;
+  public community: CommunityAnalyticsClient;
 
   constructor(config: NLCClientConfig) {
     super(config);
@@ -24,6 +27,11 @@ export class AnalyticsClient extends BaseClient {
     this.coach = new CoachAnalyticsClient({
       ...config,
       baseURL: `${config.baseURL}/coach`,
+    });
+
+    this.community = new CommunityAnalyticsClient({
+      ...config,
+      baseURL: `${config.baseURL}/community`,
     });
   }
 

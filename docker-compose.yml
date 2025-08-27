@@ -1,4 +1,4 @@
-name: "NLC AI Dev"
+name: nlc-ai-services
 services:
   postgres:
     image: postgres:16
@@ -13,20 +13,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # One-off init job to create an extra DB in the primary Postgres (optional)
-  db_init:
-    image: postgres:16
-    container_name: db_init
-    depends_on:
-      - postgres
-    environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-    entrypoint: [ "bash", "-lc" ]
-    command: >-
-      "until pg_isready -h postgres -p 5432 -U ${POSTGRES_USER}; do sleep 1; done;
-      psql -h postgres -U ${POSTGRES_USER} -d postgres -c 'CREATE DATABASE ${POSTGRES_SHADOW_DB};' || true"
-    restart: "no"
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -40,22 +26,297 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  # Database migration service - runs once to apply migrations
-#  db_migrate:
-#    build:
-#      context: .
-#      dockerfile: ./apps/api/gateway/Dockerfile
-#    container_name: db_migrate
-#    depends_on:
-#      - postgres
+  db_init:
+    image: postgres:16
+    container_name: db_init
+    depends_on:
+      - postgres
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: [ "bash", "-lc" ]
+    command: >-
+      "until pg_isready -h postgres -p 5432 -U ${POSTGRES_USER}; do sleep 1; done;
+      psql -h postgres -U ${POSTGRES_USER} -d postgres -c 'CREATE DATABASE ${POSTGRES_SHADOW_DB};' || true"
+    restart: "no"
+
+  db_migrate:
+    build:
+      context: .
+      dockerfile: ./apps/api/gateway/dev.Dockerfile
+    container_name: db_migrate
+    depends_on:
+      - postgres
+      - db_init
+    volumes:
+      - ./.env:/app/.env
+      - ./libs/api:/app/libs/api
+    command: ["npm", "run", "db:deploy"]
+    restart: "no"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./apps/api/gateway/dev.Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - rabbitmq
 #      - db_init
-#    environment:
-#      - NODE_ENV=development
-#    volumes:
-#      - ./.env:/app/.env
-#      - ./libs/api:/app/libs/api
-#    command: ["npm", "run", "db:deploy"]
-#    restart: "no"
+#      - db_migrate
+    volumes:
+      - ./apps/api/gateway:/app/apps/api/gateway
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  agents-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/agents/dev.Dockerfile
+    container_name: agents-service
+    restart: unless-stopped
+    ports:
+      - "3011:3011"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/agents:/app/apps/api/agents
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/analytics/dev.Dockerfile
+    container_name: analytics-service
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/analytics:/app/apps/api/analytics
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/auth/dev.Dockerfile
+    container_name: auth-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/auth:/app/apps/api/auth
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/billing/dev.Dockerfile
+    container_name: billing-service
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/billing:/app/apps/api/billing
+      - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  community-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/community/dev.Dockerfile
+    container_name: community-service
+    restart: unless-stopped
+    ports:
+      - "3009:3009"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/community:/app/apps/api/community
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  email-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/email/dev.Dockerfile
+    container_name: email-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/email:/app/apps/api/email
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  integrations-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/integrations/dev.Dockerfile
+    container_name: integrations-service
+    restart: unless-stopped
+    ports:
+      - "3008:3008"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/integrations:/app/apps/api/integrations
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  leads-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/leads/dev.Dockerfile
+    container_name: leads-service
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/leads:/app/apps/api/leads
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  media-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/media/dev.Dockerfile
+    container_name: media-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/media:/app/apps/api/media
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/notifications/dev.Dockerfile
+    container_name: notifications-service
+    restart: unless-stopped
+    ports:
+      - "3007:3007"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/notifications:/app/apps/api/notifications
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
+  users-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/users/dev.Dockerfile
+    container_name: users-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+      - rabbitmq
+#      - db_init
+#      - db_migrate
+    volumes:
+      - ./apps/api/users:/app/apps/api/users
+      - ./libs/api:/app/libs/api
+#      - ./nx.json:/app/nx.json
+#      - ./tsconfig.json:/app/tsconfig.json
+#      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
 
 volumes:
   postgres_data:

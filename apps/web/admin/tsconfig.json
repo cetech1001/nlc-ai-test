@@ -57,6 +57,9 @@
       "path": "../../../libs/web/settings"
     },
     {
+      "path": "../../../libs/sdk/community"
+    },
+    {
       "path": "../../../libs/sdk/analytics"
     },
     {

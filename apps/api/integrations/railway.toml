@@ -1,0 +1,15 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "apps/api/integrations/Dockerfile"
+watchPatterns = [
+  "apps/api/integrations/**",
+  "libs/api/**",
+  "nx.json",
+  "package.json",
+  "tsconfig*.json"
+]
+
+[deploy]
+preDeployCommand = ["npm run db:deploy"]
+healthcheckPath = ""
+restartPolicyType = "never"

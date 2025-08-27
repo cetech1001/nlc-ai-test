@@ -2,17 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Lock, Globe, UserCheck, Save, X } from 'lucide-react';
+import { Users, Lock, Globe, UserCheck, Save, X, /*Palette*/ } from 'lucide-react';
 import { BackTo } from "@nlc-ai/web-shared";
 import { Button, Input, Textarea } from '@nlc-ai/web-ui';
 import { toast } from 'sonner';
-import {sdkClient} from "@/lib";
+import { sdkClient } from "@/lib";
+import { CommunityType, CommunityVisibility } from '@nlc-ai/sdk-community';
 
 interface CreateCommunityForm {
   name: string;
   description: string;
-  type: string;
-  visibility: string;
+  type: CommunityType;
+  visibility: CommunityVisibility;
   coachID: string;
   courseID: string;
   avatarUrl: string;
@@ -22,19 +23,43 @@ interface CreateCommunityForm {
     requireApproval: boolean;
     allowFileUploads: boolean;
     maxPostLength: number;
+    allowPolls: boolean;
+    allowEvents: boolean;
+    moderationLevel: string;
   };
 }
+
+interface FormErrors {
+  name?: string;
+  description?: string;
+  coachID?: string;
+  courseID?: string;
+  maxPostLength?: string;
+  general?: string;
+}
+
+const COMMUNITY_COLORS = [
+  { value: '#8B5CF6', label: 'Purple', class: 'bg-purple-500' },
+  { value: '#06B6D4', label: 'Cyan', class: 'bg-cyan-500' },
+  { value: '#10B981', label: 'Emerald', class: 'bg-emerald-500' },
+  { value: '#F59E0B', label: 'Amber', class: 'bg-amber-500' },
+  { value: '#EF4444', label: 'Red', class: 'bg-red-500' },
+  { value: '#3B82F6', label: 'Blue', class: 'bg-blue-500' },
+  { value: '#8B5CF6', label: 'Violet', class: 'bg-violet-500' },
+  { value: '#EC4899', label: 'Pink', class: 'bg-pink-500' },
+];
 
 const AdminCreateCommunityPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const [form, setForm] = useState<CreateCommunityForm>({
     name: '',
     description: '',
-    type: 'private',
-    visibility: 'private',
+    type: CommunityType.PRIVATE,
+    visibility: CommunityVisibility.PRIVATE,
     coachID: '',
     courseID: '',
     avatarUrl: '',
@@ -44,24 +69,68 @@ const AdminCreateCommunityPage = () => {
       requireApproval: false,
       allowFileUploads: true,
       maxPostLength: 5000,
+      allowPolls: true,
+      allowEvents: false,
+      moderationLevel: 'moderate',
     },
   });
 
   const communityTypes = [
-    { value: 'private', label: 'Private Community', icon: Lock, description: 'A private community for specific members' },
-    { value: 'coach_client', label: 'Coach-Client', icon: Users, description: 'Community for a coach and their clients' },
-    { value: 'coach_to_coach', label: 'Coach-to-Coach', icon: UserCheck, description: 'Professional network for coaches' },
-    { value: 'course', label: 'Course Community', icon: Users, description: 'Community tied to a specific course' },
+    {
+      value: CommunityType.PRIVATE,
+      label: 'Private Community',
+      icon: Lock,
+      description: 'A private community for specific members'
+    },
+    {
+      value: CommunityType.COACH_CLIENT,
+      label: 'Coach-Client',
+      icon: Users,
+      description: 'Community for a coach and their clients'
+    },
+    {
+      value: CommunityType.COACH_TO_COACH,
+      label: 'Coach-to-Coach',
+      icon: UserCheck,
+      description: 'Professional network for coaches'
+    },
+    {
+      value: CommunityType.COURSE,
+      label: 'Course Community',
+      icon: Users,
+      description: 'Community tied to a specific course'
+    },
   ];
 
   const visibilityOptions = [
-    { value: 'private', label: 'Private', icon: Lock, description: 'Only members can see and join' },
-    { value: 'public', label: 'Public', icon: Globe, description: 'Anyone can see and join' },
-    { value: 'invite_only', label: 'Invite Only', icon: UserCheck, description: 'Members must be invited' },
+    {
+      value: CommunityVisibility.PRIVATE,
+      label: 'Private',
+      icon: Lock,
+      description: 'Only members can see and join'
+    },
+    {
+      value: CommunityVisibility.PUBLIC,
+      label: 'Public',
+      icon: Globe,
+      description: 'Anyone can see and join'
+    },
+    {
+      value: CommunityVisibility.INVITE_ONLY,
+      label: 'Invite Only',
+      icon: UserCheck,
+      description: 'Members must be invited'
+    },
+  ];
+
+  const moderationLevels = [
+    { value: 'strict', label: 'Strict', description: 'All posts require approval' },
+    { value: 'moderate', label: 'Moderate', description: 'Some posts may require approval' },
+    { value: 'relaxed', label: 'Relaxed', description: 'Posts are published immediately' },
   ];
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: FormErrors = {};
 
     if (!form.name.trim()) {
       newErrors.name = 'Community name is required';
@@ -75,11 +144,11 @@ const AdminCreateCommunityPage = () => {
       newErrors.description = 'Description must be at least 10 characters';
     }
 
-    if (form.type === 'coach_client' && !form.coachID.trim()) {
+    if (form.type === CommunityType.COACH_CLIENT && !form.coachID.trim()) {
       newErrors.coachID = 'Coach ID is required for coach-client communities';
     }
 
-    if (form.type === 'course' && !form.courseID.trim()) {
+    if (form.type === CommunityType.COURSE && !form.courseID.trim()) {
       newErrors.courseID = 'Course ID is required for course communities';
     }
 
@@ -114,8 +183,7 @@ const AdminCreateCommunityPage = () => {
         settings: form.settings,
       };
 
-      // This would need to be implemented in the community SDK
-      await sdkClient.community.createCommunity(createRequest);
+      await sdkClient.community.createCommunityAsAdmin(createRequest);
 
       toast.success('Community created successfully!');
       router.push('/communities?success=created');
@@ -136,7 +204,7 @@ const AdminCreateCommunityPage = () => {
       [field]: value,
     }));
     // Clear error when field is updated
-    if (errors[field]) {
+    if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
         [field]: '',
@@ -153,6 +221,8 @@ const AdminCreateCommunityPage = () => {
       },
     }));
   };
+
+  const selectedColor = COMMUNITY_COLORS.find(color => color.value === form.avatarUrl) || COMMUNITY_COLORS[0];
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8">
@@ -299,9 +369,9 @@ const AdminCreateCommunityPage = () => {
             </div>
 
             {/* Conditional Fields */}
-            {(form.type === 'coach_client' || form.type === 'course') && (
+            {(form.type === CommunityType.COACH_CLIENT || form.type === CommunityType.COURSE) && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 pt-6 border-t border-neutral-700">
-                {form.type === 'coach_client' && (
+                {form.type === CommunityType.COACH_CLIENT && (
                   <div>
                     <label className="block text-stone-300 text-sm font-medium mb-2">
                       Coach ID *
@@ -320,7 +390,7 @@ const AdminCreateCommunityPage = () => {
                   </div>
                 )}
 
-                {form.type === 'course' && (
+                {form.type === CommunityType.COURSE && (
                   <div>
                     <label className="block text-stone-300 text-sm font-medium mb-2">
                       Course ID *
@@ -346,19 +416,25 @@ const AdminCreateCommunityPage = () => {
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
             <h2 className="text-xl font-bold text-white mb-6">Community Settings</h2>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-stone-300 font-medium">Allow Member Posts</div>
                     <div className="text-stone-400 text-sm">Members can create posts</div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={form.settings.allowMemberPosts}
-                    onChange={(e) => updateSettings('allowMemberPosts', e.target.checked)}
-                    className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => updateSettings('allowMemberPosts', !form.settings.allowMemberPosts)}
+                    disabled={isLoading}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      form.settings.allowMemberPosts
+                        ? "bg-purple-600 justify-end"
+                        : "bg-stone-400 justify-start"
+                    } flex items-center`}
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
+                  </button>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -366,12 +442,18 @@ const AdminCreateCommunityPage = () => {
                     <div className="text-stone-300 font-medium">Require Approval</div>
                     <div className="text-stone-400 text-sm">Posts need approval before publishing</div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={form.settings.requireApproval}
-                    onChange={(e) => updateSettings('requireApproval', e.target.checked)}
-                    className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => updateSettings('requireApproval', !form.settings.requireApproval)}
+                    disabled={isLoading}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      form.settings.requireApproval
+                        ? "bg-purple-600 justify-end"
+                        : "bg-stone-400 justify-start"
+                    } flex items-center`}
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
+                  </button>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -379,35 +461,103 @@ const AdminCreateCommunityPage = () => {
                     <div className="text-stone-300 font-medium">Allow File Uploads</div>
                     <div className="text-stone-400 text-sm">Members can upload files and images</div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={form.settings.allowFileUploads}
-                    onChange={(e) => updateSettings('allowFileUploads', e.target.checked)}
-                    className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => updateSettings('allowFileUploads', !form.settings.allowFileUploads)}
+                    disabled={isLoading}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      form.settings.allowFileUploads
+                        ? "bg-purple-600 justify-end"
+                        : "bg-stone-400 justify-start"
+                    } flex items-center`}
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-stone-300 font-medium">Allow Polls</div>
+                    <div className="text-stone-400 text-sm">Members can create polls</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateSettings('allowPolls', !form.settings.allowPolls)}
+                    disabled={isLoading}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      form.settings.allowPolls
+                        ? "bg-purple-600 justify-end"
+                        : "bg-stone-400 justify-start"
+                    } flex items-center`}
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-stone-300 font-medium">Allow Events</div>
+                    <div className="text-stone-400 text-sm">Members can create events</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateSettings('allowEvents', !form.settings.allowEvents)}
+                    disabled={isLoading}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      form.settings.allowEvents
+                        ? "bg-purple-600 justify-end"
+                        : "bg-stone-400 justify-start"
+                    } flex items-center`}
+                  >
+                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-stone-300 text-sm font-medium mb-2">
-                  Max Post Length
-                </label>
-                <Input
-                  type="number"
-                  value={form.settings.maxPostLength}
-                  onChange={(e) => updateSettings('maxPostLength', parseInt(e.target.value) || 5000)}
-                  min="100"
-                  max="10000"
-                  className={`bg-neutral-800/50 border-neutral-600 text-white ${
-                    errors.maxPostLength ? 'border-red-500' : ''
-                  }`}
-                />
-                {errors.maxPostLength && (
-                  <p className="text-red-400 text-sm mt-1">{errors.maxPostLength}</p>
-                )}
-                <p className="text-stone-400 text-xs mt-1">
-                  Characters (100 - 10,000)
-                </p>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-stone-300 text-sm font-medium mb-2">
+                    Max Post Length
+                  </label>
+                  <Input
+                    type="number"
+                    value={form.settings.maxPostLength}
+                    onChange={(e) => updateSettings('maxPostLength', parseInt(e.target.value) || 5000)}
+                    min="100"
+                    max="10000"
+                    className={`bg-neutral-800/50 border-neutral-600 text-white ${
+                      errors.maxPostLength ? 'border-red-500' : ''
+                    }`}
+                  />
+                  {errors.maxPostLength && (
+                    <p className="text-red-400 text-sm mt-1">{errors.maxPostLength}</p>
+                  )}
+                  <p className="text-stone-400 text-xs mt-1">
+                    Characters (100 - 10,000)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-stone-300 text-sm font-medium mb-4">
+                    Moderation Level
+                  </label>
+                  <div className="space-y-3">
+                    {moderationLevels.map((level) => (
+                      <div
+                        key={level.value}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                          form.settings.moderationLevel === level.value
+                            ? 'border-purple-500 bg-purple-600/20'
+                            : 'border-neutral-600 bg-neutral-800/50 hover:bg-neutral-700/50'
+                        }`}
+                        onClick={() => updateSettings('moderationLevel', level.value)}
+                      >
+                        <div className="text-white font-medium text-sm">{level.label}</div>
+                        <div className="text-stone-400 text-xs">{level.description}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -427,6 +577,7 @@ const AdminCreateCommunityPage = () => {
               onClick={handleCancel}
               variant="outline"
               className="flex-1"
+              disabled={isLoading}
             >
               <X className="w-4 h-4 mr-2" />
               Cancel

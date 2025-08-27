@@ -6,50 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import {TrendingUp, Users, MessageSquare, Heart, Calendar, Download, Shield} from 'lucide-react';
 import { BackTo, StatCard } from "@nlc-ai/web-shared";
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@nlc-ai/web-ui';
-
-interface CommunityAnalytics {
-  overview: {
-    totalMembers: number;
-    memberGrowth: number;
-    totalPosts: number;
-    postGrowth: number;
-    totalComments: number;
-    commentGrowth: number;
-    totalReactions: number;
-    reactionGrowth: number;
-    engagementRate: number;
-    activeMembers: number;
-  };
-  memberGrowth: Array<{
-    date: string;
-    members: number;
-    newMembers: number;
-  }>;
-  postActivity: Array<{
-    date: string;
-    posts: number;
-    comments: number;
-    reactions: number;
-  }>;
-  topMembers: Array<{
-    id: string;
-    name: string;
-    posts: number;
-    comments: number;
-    reactions: number;
-    score: number;
-  }>;
-  contentTypes: Array<{
-    type: string;
-    count: number;
-    percentage: number;
-  }>;
-  engagementMetrics: Array<{
-    metric: string;
-    value: number;
-    change: number;
-  }>;
-}
+import { CommunityAnalytics } from '@nlc-ai/sdk-analytics';
+import { sdkClient } from "@/lib";
 
 const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
 
@@ -71,7 +29,29 @@ const AdminCommunityAnalyticsPage = () => {
     try {
       setIsLoading(true);
 
-      // Mock analytics data - this would come from your API
+      // Calculate date range
+      let startDate: string | undefined;
+      const now = new Date();
+
+      if (timeRange === '7d') {
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      } else if (timeRange === '30d') {
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      } else if (timeRange === '90d') {
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
+      const analyticsData = await sdkClient.analytics.community.getCommunityAnalytics(
+        communityID,
+        startDate,
+        now.toISOString()
+      );
+
+      setAnalytics(analyticsData);
+    } catch (error: any) {
+      console.error('Failed to fetch analytics:', error);
+
+      // Fallback to mock data if API fails
       const mockAnalytics: CommunityAnalytics = {
         overview: {
           totalMembers: 89,
@@ -85,14 +65,14 @@ const AdminCommunityAnalyticsPage = () => {
           engagementRate: 68.5,
           activeMembers: 61,
         },
-        memberGrowth: [
+        memberGrowthData: [
           { date: '2024-01-01', members: 45, newMembers: 5 },
           { date: '2024-01-07', members: 52, newMembers: 7 },
           { date: '2024-01-14', members: 61, newMembers: 9 },
           { date: '2024-01-21', members: 73, newMembers: 12 },
           { date: '2024-01-28', members: 89, newMembers: 16 },
         ],
-        postActivity: [
+        activityData: [
           { date: '2024-01-01', posts: 12, comments: 34, reactions: 89 },
           { date: '2024-01-07', posts: 18, comments: 45, reactions: 123 },
           { date: '2024-01-14', posts: 15, comments: 52, reactions: 156 },
@@ -106,7 +86,7 @@ const AdminCommunityAnalyticsPage = () => {
           { id: '4', name: 'John Smith', posts: 8, comments: 29, reactions: 54, score: 91 },
           { id: '5', name: 'Lisa Wilson', posts: 6, comments: 22, reactions: 43, score: 71 },
         ],
-        contentTypes: [
+        contentTypeBreakdown: [
           { type: 'Text Posts', count: 89, percentage: 57.1 },
           { type: 'Images', count: 34, percentage: 21.8 },
           { type: 'Links', count: 21, percentage: 13.5 },
@@ -122,8 +102,6 @@ const AdminCommunityAnalyticsPage = () => {
       };
 
       setAnalytics(mockAnalytics);
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
     } finally {
       setIsLoading(false);
     }
@@ -231,83 +209,97 @@ const AdminCommunityAnalyticsPage = () => {
           </div>
 
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
-            <h3 className="text-xl font-bold text-white mb-6">
-              {activeChart === 'activity' ? 'Post Activity Over Time' : 'Member Growth Over Time'}
-            </h3>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-56 h-56 -right-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+            </div>
 
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                {activeChart === 'activity' ? (
-                  <BarChart data={analytics.postActivity}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="date" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                        color: '#F3F4F6'
-                      }}
-                    />
-                    <Bar dataKey="posts" fill="#8B5CF6" name="Posts" />
-                    <Bar dataKey="comments" fill="#06B6D4" name="Comments" />
-                    <Bar dataKey="reactions" fill="#10B981" name="Reactions" />
-                  </BarChart>
-                ) : (
-                  <LineChart data={analytics.memberGrowth}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="date" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                        color: '#F3F4F6'
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="members"
-                      stroke="#8B5CF6"
-                      strokeWidth={2}
-                      name="Total Members"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="newMembers"
-                      stroke="#06B6D4"
-                      strokeWidth={2}
-                      name="New Members"
-                    />
-                  </LineChart>
-                )}
-              </ResponsiveContainer>
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold text-white mb-6">
+                {activeChart === 'activity' ? 'Post Activity Over Time' : 'Member Growth Over Time'}
+              </h3>
+
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  {activeChart === 'activity' ? (
+                    <BarChart data={analytics.activityData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="date" stroke="#9CA3AF" />
+                      <YAxis stroke="#9CA3AF" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1F2937',
+                          border: '1px solid #374151',
+                          borderRadius: '8px',
+                          color: '#F3F4F6'
+                        }}
+                      />
+                      <Bar dataKey="posts" fill="#8B5CF6" name="Posts" />
+                      <Bar dataKey="comments" fill="#06B6D4" name="Comments" />
+                      <Bar dataKey="reactions" fill="#10B981" name="Reactions" />
+                    </BarChart>
+                  ) : (
+                    <LineChart data={analytics.memberGrowthData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="date" stroke="#9CA3AF" />
+                      <YAxis stroke="#9CA3AF" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1F2937',
+                          border: '1px solid #374151',
+                          borderRadius: '8px',
+                          color: '#F3F4F6'
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="members"
+                        stroke="#8B5CF6"
+                        strokeWidth={2}
+                        name="Total Members"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="newMembers"
+                        stroke="#06B6D4"
+                        strokeWidth={2}
+                        name="New Members"
+                      />
+                    </LineChart>
+                  )}
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
           {/* Engagement Metrics */}
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
-            <h3 className="text-xl font-bold text-white mb-6">Engagement Metrics</h3>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-48 h-48 -left-6 -top-10 bg-gradient-to-l from-emerald-200 via-emerald-600 to-blue-600 rounded-full blur-[56px]" />
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {analytics.engagementMetrics.map((metric, index) => (
-                <div key={metric.metric} className="flex items-center justify-between p-4 bg-neutral-800/50 rounded-lg">
-                  <div>
-                    <div className="text-stone-300 font-medium">{metric.metric}</div>
-                    <div className="text-2xl font-bold text-white">{metric.value}</div>
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold text-white mb-6">Engagement Metrics</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {analytics.engagementMetrics.map((metric, index) => (
+                  <div key={metric.metric} className="flex items-center justify-between p-4 bg-neutral-800/50 rounded-lg">
+                    <div>
+                      <div className="text-stone-300 font-medium">{metric.metric}</div>
+                      <div className="text-2xl font-bold text-white">{metric.value}</div>
+                    </div>
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
+                      metric.change > 0
+                        ? 'bg-green-600/20 text-green-400'
+                        : metric.change < 0
+                          ? 'bg-red-600/20 text-red-400'
+                          : 'bg-gray-600/20 text-gray-400'
+                    }`}>
+                      <TrendingUp className="w-3 h-3" />
+                      {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
+                    </div>
                   </div>
-                  <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
-                    metric.change > 0
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-red-600/20 text-red-400'
-                  }`}>
-                    <TrendingUp className="w-3 h-3" />
-                    {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -316,112 +308,130 @@ const AdminCommunityAnalyticsPage = () => {
         <div className="space-y-8">
           {/* Content Types */}
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6">
-            <h3 className="text-lg font-bold text-white mb-4">Content Types</h3>
-
-            <div className="h-48 mb-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={analytics.contentTypes}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="count"
-                  >
-                    {analytics.contentTypes.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1F2937',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#F3F4F6'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-violet-200 via-violet-600 to-purple-600 rounded-full blur-[56px]" />
             </div>
 
-            <div className="space-y-2">
-              {analytics.contentTypes.map((type, index) => (
-                <div key={type.type} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+            <div className="relative z-10">
+              <h3 className="text-lg font-bold text-white mb-4">Content Types</h3>
+
+              <div className="h-48 mb-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={analytics.contentTypeBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="count"
+                    >
+                      {analytics.contentTypeBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px',
+                        color: '#F3F4F6'
+                      }}
                     />
-                    <span className="text-stone-300">{type.type}</span>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="space-y-2">
+                {analytics.contentTypeBreakdown.map((type, index) => (
+                  <div key={type.type} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-stone-300">{type.type}</span>
+                    </div>
+                    <div className="text-stone-400">
+                      {type.count} ({type.percentage}%)
+                    </div>
                   </div>
-                  <div className="text-stone-400">
-                    {type.count} ({type.percentage}%)
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Top Members */}
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6">
-            <h3 className="text-lg font-bold text-white mb-4">Top Contributors</h3>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+            </div>
 
-            <div className="space-y-4">
-              {analytics.topMembers.map((member, index) => (
-                <div key={member.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="text-stone-200 font-medium text-sm">{member.name}</div>
-                      <div className="text-stone-400 text-xs">
-                        {member.posts}p • {member.comments}c • {member.reactions}r
+            <div className="relative z-10">
+              <h3 className="text-lg font-bold text-white mb-4">Top Contributors</h3>
+
+              <div className="space-y-4">
+                {analytics.topMembers.map((member, index) => (
+                  <div key={member.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="text-stone-200 font-medium text-sm">{member.name}</div>
+                        <div className="text-stone-400 text-xs">
+                          {member.posts}p • {member.comments}c • {member.reactions}r
+                        </div>
                       </div>
                     </div>
+                    <div className="text-purple-400 font-bold text-sm">
+                      {member.score}
+                    </div>
                   </div>
-                  <div className="text-purple-400 font-bold text-sm">
-                    {member.score}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Quick Actions */}
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6">
-            <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-blue-200 via-blue-600 to-cyan-600 rounded-full blur-[56px]" />
+            </div>
 
-            <div className="space-y-3">
-              <Button
-                onClick={() => router.push(`/communities/${communityID}/moderate`)}
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Moderate Community
-              </Button>
-              <Button
-                onClick={() => router.push(`/communities/${communityID}/members`)}
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Manage Members
-              </Button>
-              <Button
-                onClick={() => router.push(`/communities/${communityID}/settings`)}
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Community Settings
-              </Button>
+            <div className="relative z-10">
+              <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={() => router.push(`/communities/${communityID}/moderate`)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Moderate Community
+                </Button>
+                <Button
+                  onClick={() => router.push(`/communities/${communityID}/members`)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Manage Members
+                </Button>
+                <Button
+                  onClick={() => router.push(`/communities/${communityID}/settings`)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Community Settings
+                </Button>
+              </div>
             </div>
           </div>
         </div>

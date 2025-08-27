@@ -12,14 +12,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
-    "target": "es2021",
-    "paths": {
-      "@nlc-ai/api-types": ["../../../libs/api/types/src"],
-      "@nlc-ai/api-database": ["../../../libs/api/database/src"],
-      "@nlc-ai/api-messaging": ["../../../libs/api/messaging/src"],
-      "@nlc-ai/api-validation": ["../../../libs/api/validation/src"],
-      "@nlc-ai/api-auth": ["../../../libs/api/auth/src"]
-    }
+    "target": "es2021"
   },
   "include": [
     "src/**/*.ts"

@@ -1,4 +1,3 @@
-import { tableRenderers } from "@nlc-ai/web-shared";
 import {Cog, Eye, TrendingUp, Users} from "lucide-react";
 
 const colWidth = 100 / 8;
@@ -42,7 +41,6 @@ export const communityColumns = [
     header: 'Created',
     width: `${colWidth * (2 / 3)}%`,
     sortable: true,
-    render: tableRenderers.dateText
   },
   {
     key: 'isActive',
