@@ -1,4 +1,4 @@
-import {PostType, ReactionType} from "../../enums";
+import {PostType, ReactionType} from "./enums";
 
 export interface CreatePostRequest {
   communityID: string;

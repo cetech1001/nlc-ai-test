@@ -119,6 +119,9 @@
     },
     {
       "path": "./libs/types"
+    },
+    {
+      "path": "./apps/api/chat"
     }
   ]
 }

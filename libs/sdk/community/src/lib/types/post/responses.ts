@@ -1,4 +1,6 @@
-import {CommunityType, PostType, ReactionType, UserType} from "../../enums";
+import {PostType, ReactionType} from "./enums";
+import {UserType} from "@nlc-ai/sdk-users";
+import {CommunityType} from "../community";
 
 export interface Post {
   id: string;

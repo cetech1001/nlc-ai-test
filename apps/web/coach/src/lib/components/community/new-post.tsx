@@ -1,6 +1,6 @@
 import { Camera, Image, Send, Smile, X, Upload, AlertCircle } from "lucide-react";
 import React, { FC, useState, useRef } from "react";
-import { sdkClient } from "@/lib"; // Use your existing sdkClient
+import { sdkClient } from "@/lib";
 
 interface IProps {
   handleCreatePost: (post: string, mediaUrls?: string[]) => void;

@@ -10,7 +10,7 @@ export class MediaServiceClient extends BaseClient {
     if (options?.publicID) formData.append('publicID', options.publicID);
     if (options?.overwrite) formData.append('overwrite', String(options.overwrite));
     if (options?.tags) {
-      /*options.tags.forEach(tag => */formData.append('tags', options.tags)/*)*/;
+      formData.append('tags', options.tags.join(','));
     }
     if (options?.metadata) {
       formData.append('metadata', JSON.stringify(options.metadata));

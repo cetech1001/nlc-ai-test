@@ -165,6 +165,28 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
+  chat-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/chat/dev.Dockerfile
+    container_name: chat-service
+    restart: unless-stopped
+    ports:
+      - "3012:3012"
+    depends_on:
+      - postgres
+      - rabbitmq
+    #      - db_init
+    #      - db_migrate
+    volumes:
+      - ./apps/api/chat:/app/apps/api/chat
+      - ./libs/api:/app/libs/api
+      #      - ./nx.json:/app/nx.json
+      #      - ./tsconfig.json:/app/tsconfig.json
+      #      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
   community-service:
     build:
       context: .

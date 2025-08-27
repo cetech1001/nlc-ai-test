@@ -13,7 +13,6 @@ import {
 import {CommunityHeader, LoadMorePosts, NewPost, sdkClient, SinglePost} from "@/lib";
 import {
   PostResponse,
-  ConversationResponse,
   PostType,
   ReactionType,
 } from "@nlc-ai/sdk-community";
@@ -53,7 +52,7 @@ const VaultPage = () => {
       setError("");
 
       // Load coach-to-coach community
-      const communityData = await sdkClient.community.getCoachToCommunity();
+      const communityData = await sdkClient.community.communities.getCoachToCommunity();
       setCommunity(communityData);
 
       // Load posts and conversations concurrently
@@ -73,7 +72,7 @@ const VaultPage = () => {
     try {
       setPostsLoading(true);
 
-      const response = await sdkClient.community.getPosts({
+      const response = await sdkClient.community.posts.getPosts({
         communityID: communityID || community?.id,
         page,
         limit: 10,
@@ -113,7 +112,7 @@ const VaultPage = () => {
     if (!newPost.trim() || !community) return;
 
     try {
-      const newPostData = await sdkClient.community.createPost({
+      const newPostData = await sdkClient.community.posts.createPost({
         communityID: community.id,
         type: PostType.TEXT,
         content: newPost.trim(),
@@ -139,7 +138,7 @@ const VaultPage = () => {
       const isCurrentlyLiked = currentPost.userReaction === reactionType;
 
       // Call the API
-      await sdkClient.community.reactToPost(postID, { type: reactionType });
+      await sdkClient.community.posts.reactToPost(postID, { type: reactionType });
 
       // Update the local state based on the current reaction state
       setPosts(prev => prev.map(post =>
@@ -165,7 +164,7 @@ const VaultPage = () => {
     if (!newComment.trim()) return;
 
     try {
-      await sdkClient.community.createComment(postID, {
+      await sdkClient.community.posts.createComment(postID, {
         content: newComment.trim(),
         mediaUrls: []
       });
