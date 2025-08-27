@@ -36,7 +36,7 @@ export const SinglePost: FC<IProps> = (props) => {
     try {
       setLoadingComments(prev => ({ ...prev, [postID]: true }));
 
-      const response = await sdkClient.community.getComments(postID, page, 10);
+      const response = await sdkClient.community.posts.getComments(postID, page, 10);
 
       setComments(prev => ({
         ...prev,
@@ -77,7 +77,7 @@ export const SinglePost: FC<IProps> = (props) => {
 
   const handleReactToComment = async (commentID: string, reactionType: ReactionType) => {
     try {
-      await sdkClient.community.reactToComment(commentID, { type: reactionType });
+      await sdkClient.community.posts.reactToComment(commentID, { type: reactionType });
 
       // Update local comment state
       setComments(prev => ({
