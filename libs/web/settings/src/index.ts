@@ -7,6 +7,7 @@ export { ProfileSection } from './lib/components/profile-section';
 export { AdminIntegrations } from './lib/components/admin/admin-integrations';
 export { SocialIntegrations } from './lib/components/coach/social-integrations';
 export { CourseIntegrations } from './lib/components/coach/course-integrations';
+export { ImageCropper } from './lib/components/partials/image-cropper';
 
 export * from './lib/types/settings.types';
 

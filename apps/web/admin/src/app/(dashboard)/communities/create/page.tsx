@@ -1,59 +1,31 @@
 'use client'
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Lock, Globe, UserCheck, Save, X, /*Palette*/ } from 'lucide-react';
+import { Save, X, ChevronRight, ChevronLeft } from 'lucide-react';
 import { BackTo } from "@nlc-ai/web-shared";
-import { Button, Input, Textarea } from '@nlc-ai/web-ui';
+import { Button } from '@nlc-ai/web-ui';
 import { toast } from 'sonner';
-import { sdkClient } from "@/lib";
+import {
+  BasicCommunityInfoFormStep,
+  CommunityFormErrors, CommunitySettingsFormStep,
+  CommunityTypeAndAccessFormStep,
+  CreateCommunityForm,
+  sdkClient
+} from "@/lib";
 import { CommunityType, CommunityVisibility } from '@nlc-ai/sdk-community';
 
-interface CreateCommunityForm {
-  name: string;
-  description: string;
-  type: CommunityType;
-  visibility: CommunityVisibility;
-  coachID: string;
-  courseID: string;
-  avatarUrl: string;
-  bannerUrl: string;
-  settings: {
-    allowMemberPosts: boolean;
-    requireApproval: boolean;
-    allowFileUploads: boolean;
-    maxPostLength: number;
-    allowPolls: boolean;
-    allowEvents: boolean;
-    moderationLevel: string;
-  };
-}
-
-interface FormErrors {
-  name?: string;
-  description?: string;
-  coachID?: string;
-  courseID?: string;
-  maxPostLength?: string;
-  general?: string;
-}
-
-const COMMUNITY_COLORS = [
-  { value: '#8B5CF6', label: 'Purple', class: 'bg-purple-500' },
-  { value: '#06B6D4', label: 'Cyan', class: 'bg-cyan-500' },
-  { value: '#10B981', label: 'Emerald', class: 'bg-emerald-500' },
-  { value: '#F59E0B', label: 'Amber', class: 'bg-amber-500' },
-  { value: '#EF4444', label: 'Red', class: 'bg-red-500' },
-  { value: '#3B82F6', label: 'Blue', class: 'bg-blue-500' },
-  { value: '#8B5CF6', label: 'Violet', class: 'bg-violet-500' },
-  { value: '#EC4899', label: 'Pink', class: 'bg-pink-500' },
+const stepNames = [
+  "Basic Info",
+  "Type & Access",
+  "Settings"
 ];
 
 const AdminCreateCommunityPage = () => {
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [errors, setErrors] = useState<CommunityFormErrors>({});
 
   const [form, setForm] = useState<CreateCommunityForm>({
     name: '',
@@ -64,6 +36,8 @@ const AdminCreateCommunityPage = () => {
     courseID: '',
     avatarUrl: '',
     bannerUrl: '',
+    isPaid: false,
+    monthlyPrice: '',
     settings: {
       allowMemberPosts: true,
       requireApproval: false,
@@ -75,102 +49,71 @@ const AdminCreateCommunityPage = () => {
     },
   });
 
-  const communityTypes = [
-    {
-      value: CommunityType.PRIVATE,
-      label: 'Private Community',
-      icon: Lock,
-      description: 'A private community for specific members'
-    },
-    {
-      value: CommunityType.COACH_CLIENT,
-      label: 'Coach-Client',
-      icon: Users,
-      description: 'Community for a coach and their clients'
-    },
-    {
-      value: CommunityType.COACH_TO_COACH,
-      label: 'Coach-to-Coach',
-      icon: UserCheck,
-      description: 'Professional network for coaches'
-    },
-    {
-      value: CommunityType.COURSE,
-      label: 'Course Community',
-      icon: Users,
-      description: 'Community tied to a specific course'
-    },
+  const steps = [
+    { title: 'Basic Info', description: 'Name and description' },
+    { title: 'Type & Access', description: 'Community settings' },
+    { title: 'Settings', description: 'Features and moderation' },
   ];
 
-  const visibilityOptions = [
-    {
-      value: CommunityVisibility.PRIVATE,
-      label: 'Private',
-      icon: Lock,
-      description: 'Only members can see and join'
-    },
-    {
-      value: CommunityVisibility.PUBLIC,
-      label: 'Public',
-      icon: Globe,
-      description: 'Anyone can see and join'
-    },
-    {
-      value: CommunityVisibility.INVITE_ONLY,
-      label: 'Invite Only',
-      icon: UserCheck,
-      description: 'Members must be invited'
-    },
-  ];
+  const validateCurrentStep = () => {
+    const newErrors: CommunityFormErrors = {};
 
-  const moderationLevels = [
-    { value: 'strict', label: 'Strict', description: 'All posts require approval' },
-    { value: 'moderate', label: 'Moderate', description: 'Some posts may require approval' },
-    { value: 'relaxed', label: 'Relaxed', description: 'Posts are published immediately' },
-  ];
+    if (currentStep === 0) {
+      if (!form.name.trim()) {
+        newErrors.name = 'Community name is required';
+      } else if (form.name.length < 3) {
+        newErrors.name = 'Community name must be at least 3 characters';
+      }
 
-  const validateForm = () => {
-    const newErrors: FormErrors = {};
+      if (!form.description.trim()) {
+        newErrors.description = 'Description is required';
+      } else if (form.description.length < 10) {
+        newErrors.description = 'Description must be at least 10 characters';
+      }
+    } else if (currentStep === 1) {
+      if (form.type === CommunityType.COACH_CLIENT && !form.coachID.trim()) {
+        newErrors.coachID = 'Coach selection is required for coach-client communities';
+      }
 
-    if (!form.name.trim()) {
-      newErrors.name = 'Community name is required';
-    } else if (form.name.length < 3) {
-      newErrors.name = 'Community name must be at least 3 characters';
-    }
+      if (form.type === CommunityType.COURSE && !form.courseID.trim()) {
+        newErrors.courseID = 'Course selection is required for course communities';
+      }
 
-    if (!form.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (form.description.length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    }
-
-    if (form.type === CommunityType.COACH_CLIENT && !form.coachID.trim()) {
-      newErrors.coachID = 'Coach ID is required for coach-client communities';
-    }
-
-    if (form.type === CommunityType.COURSE && !form.courseID.trim()) {
-      newErrors.courseID = 'Course ID is required for course communities';
-    }
-
-    if (form.settings.maxPostLength < 100 || form.settings.maxPostLength > 10000) {
-      newErrors.maxPostLength = 'Max post length must be between 100 and 10,000 characters';
+      if (form.isPaid && (!form.monthlyPrice.trim() || parseFloat(form.monthlyPrice) <= 0)) {
+        newErrors.monthlyPrice = 'Valid monthly price is required for paid communities';
+      }
+    } else if (currentStep === 2) {
+      if (form.settings.maxPostLength < 100 || form.settings.maxPostLength > 10000) {
+        newErrors.maxPostLength = 'Max post length must be between 100 and 10,000 characters';
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNext = () => {
+    if (validateCurrentStep()) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      toast.error('Please fix the errors before continuing');
+    }
+  };
 
-    if (!validateForm()) {
+  const handlePrev = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateCurrentStep()) {
       toast.error('Please fix the errors in the form');
       return;
     }
 
     setIsLoading(true);
     try {
-      // Convert form to API request format
       const createRequest = {
         name: form.name,
         description: form.description,
@@ -180,10 +123,12 @@ const AdminCreateCommunityPage = () => {
         courseID: form.courseID || undefined,
         avatarUrl: form.avatarUrl || undefined,
         bannerUrl: form.bannerUrl || undefined,
+        isPaid: form.isPaid,
+        monthlyPrice: form.isPaid ? Math.round(parseFloat(form.monthlyPrice) * 100) : undefined,
         settings: form.settings,
       };
 
-      await sdkClient.community.createCommunityAsAdmin(createRequest);
+      await sdkClient.community.createCommunity(createRequest);
 
       toast.success('Community created successfully!');
       router.push('/communities?success=created');
@@ -203,8 +148,7 @@ const AdminCreateCommunityPage = () => {
       ...prev,
       [field]: value,
     }));
-    // Clear error when field is updated
-    if (errors[field as keyof FormErrors]) {
+    if (errors[field as keyof CommunityFormErrors]) {
       setErrors(prev => ({
         ...prev,
         [field]: '',
@@ -222,368 +166,144 @@ const AdminCreateCommunityPage = () => {
     }));
   };
 
-  const selectedColor = COMMUNITY_COLORS.find(color => color.value === form.avatarUrl) || COMMUNITY_COLORS[0];
+  // Mock upload function - replace with your actual upload implementation
+  const handleUploadImage = async (field: string, blob: Blob): Promise<string> => {
+    // This is where you'd upload the image to your backend/storage
+    // For now, return a mock URL
+    return URL.createObjectURL(blob);
+  };
+
+  const renderBasicInfo = () => (
+    <BasicCommunityInfoFormStep
+      form={form}
+      errors={errors}
+      updateForm={updateForm}
+      onUploadImage={handleUploadImage}
+    />
+  );
+
+  const renderTypeAndAccess = () => (
+    <CommunityTypeAndAccessFormStep form={form} errors={errors} updateForm={updateForm}/>
+  );
+
+  const renderSettings = () => (
+    <CommunitySettingsFormStep form={form} errors={errors} updateSettings={updateSettings}/>
+  );
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8">
       <BackTo title="Create Community" onClick={handleCancel} />
 
       <div className="max-w-4xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Basic Information */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-56 h-56 -right-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
-            </div>
-
-            <div className="relative z-10">
-              <h2 className="text-xl font-bold text-white mb-6">Basic Information</h2>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="lg:col-span-2">
-                  <label className="block text-stone-300 text-sm font-medium mb-2">
-                    Community Name *
-                  </label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => updateForm('name', e.target.value)}
-                    placeholder="Enter community name..."
-                    className={`bg-neutral-800/50 border-neutral-600 text-white ${
-                      errors.name ? 'border-red-500' : ''
-                    }`}
-                  />
-                  {errors.name && (
-                    <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+        {/* Step Progress - Quiz Style */}
+        <div className="mb-12">
+          <div className="flex items-center justify-center mb-8">
+            {steps.map((_, index) => {
+              const step = index + 1;
+              const isCompleted = index < currentStep;
+              const isActive = index === currentStep;
+              const isPrevActive = index - 1 === currentStep;
+              return (
+                <React.Fragment key={step}>
+                  {index > 0 && (
+                    <>
+                      <div
+                        key={`line-${step}`}
+                        className={`flex-1 h-0.5 ${
+                          isCompleted || isActive || isPrevActive
+                            ? 'bg-gradient-to-l from-[#7B21BA] to-fuchsia-500'
+                            : 'bg-gray-700'
+                        }`}
+                      />
+                      <div
+                        key={`line-${step}-x`}
+                        className={`flex-1 h-0.5 ${
+                          isCompleted || isActive
+                            ? 'bg-gradient-to-l from-[#7B21BA] to-fuchsia-500'
+                            : 'bg-gray-700'
+                        }`}
+                      />
+                    </>
                   )}
-                </div>
-
-                <div className="lg:col-span-2">
-                  <label className="block text-stone-300 text-sm font-medium mb-2">
-                    Description *
-                  </label>
-                  <Textarea
-                    value={form.description}
-                    onChange={(e) => updateForm('description', e.target.value)}
-                    placeholder="Describe your community..."
-                    rows={4}
-                    className={`bg-neutral-800/50 border-neutral-600 text-white resize-none ${
-                      errors.description ? 'border-red-500' : ''
+                  <div
+                    className={`w-36 h-10 flex items-center justify-center rounded ${
+                      isCompleted || isActive
+                        ? 'bg-gradient-to-r from-[#7B21BA] to-fuchsia-500 text-white'
+                        : 'border border-gray-700 text-white'
                     }`}
-                  />
-                  {errors.description && (
-                    <p className="text-red-400 text-sm mt-1">{errors.description}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-stone-300 text-sm font-medium mb-2">
-                    Avatar URL
-                  </label>
-                  <Input
-                    value={form.avatarUrl}
-                    onChange={(e) => updateForm('avatarUrl', e.target.value)}
-                    placeholder="https://example.com/avatar.jpg"
-                    className="bg-neutral-800/50 border-neutral-600 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-stone-300 text-sm font-medium mb-2">
-                    Banner URL
-                  </label>
-                  <Input
-                    value={form.bannerUrl}
-                    onChange={(e) => updateForm('bannerUrl', e.target.value)}
-                    placeholder="https://example.com/banner.jpg"
-                    className="bg-neutral-800/50 border-neutral-600 text-white"
-                  />
-                </div>
-              </div>
-            </div>
+                  >
+                    {stepNames[index]}
+                  </div>
+                </React.Fragment>
+              );
+            })}
           </div>
 
-          {/* Community Type & Visibility */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
-            <h2 className="text-xl font-bold text-white mb-6">Community Type & Access</h2>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-2">{steps[currentStep]?.title}</h2>
+            <p className="text-white/70">{steps[currentStep]?.description}</p>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <label className="block text-stone-300 text-sm font-medium mb-4">
-                  Community Type *
-                </label>
-                <div className="space-y-3">
-                  {communityTypes.map((type) => {
-                    const Icon = type.icon;
-                    return (
-                      <div
-                        key={type.value}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          form.type === type.value
-                            ? 'border-purple-500 bg-purple-600/20'
-                            : 'border-neutral-600 bg-neutral-800/50 hover:bg-neutral-700/50'
-                        }`}
-                        onClick={() => updateForm('type', type.value)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-5 h-5 text-purple-400" />
-                          <div>
-                            <div className="text-white font-medium">{type.label}</div>
-                            <div className="text-stone-400 text-sm">{type.description}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+        {errors?.general && (
+          <div className="mb-6 p-4 bg-red-800/20 border border-red-600 rounded-lg">
+            <p className="text-red-400 text-sm">{errors.general}</p>
+          </div>
+        )}
 
-              <div>
-                <label className="block text-stone-300 text-sm font-medium mb-4">
-                  Visibility *
-                </label>
-                <div className="space-y-3">
-                  {visibilityOptions.map((option) => {
-                    const Icon = option.icon;
-                    return (
-                      <div
-                        key={option.value}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          form.visibility === option.value
-                            ? 'border-purple-500 bg-purple-600/20'
-                            : 'border-neutral-600 bg-neutral-800/50 hover:bg-neutral-700/50'
-                        }`}
-                        onClick={() => updateForm('visibility', option.value)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-5 h-5 text-purple-400" />
-                          <div>
-                            <div className="text-white font-medium">{option.label}</div>
-                            <div className="text-stone-400 text-sm">{option.description}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+        {/* Form Content */}
+        <div className="mb-8">
+          {currentStep === 0 && renderBasicInfo()}
+          {currentStep === 1 && renderTypeAndAccess()}
+          {currentStep === 2 && renderSettings()}
+        </div>
 
-            {/* Conditional Fields */}
-            {(form.type === CommunityType.COACH_CLIENT || form.type === CommunityType.COURSE) && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 pt-6 border-t border-neutral-700">
-                {form.type === CommunityType.COACH_CLIENT && (
-                  <div>
-                    <label className="block text-stone-300 text-sm font-medium mb-2">
-                      Coach ID *
-                    </label>
-                    <Input
-                      value={form.coachID}
-                      onChange={(e) => updateForm('coachID', e.target.value)}
-                      placeholder="Enter coach ID..."
-                      className={`bg-neutral-800/50 border-neutral-600 text-white ${
-                        errors.coachID ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors.coachID && (
-                      <p className="text-red-400 text-sm mt-1">{errors.coachID}</p>
-                    )}
-                  </div>
-                )}
-
-                {form.type === CommunityType.COURSE && (
-                  <div>
-                    <label className="block text-stone-300 text-sm font-medium mb-2">
-                      Course ID *
-                    </label>
-                    <Input
-                      value={form.courseID}
-                      onChange={(e) => updateForm('courseID', e.target.value)}
-                      placeholder="Enter course ID..."
-                      className={`bg-neutral-800/50 border-neutral-600 text-white ${
-                        errors.courseID ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors.courseID && (
-                      <p className="text-red-400 text-sm mt-1">{errors.courseID}</p>
-                    )}
-                  </div>
-                )}
-              </div>
+        {/* Navigation */}
+        <div className="flex items-center justify-between">
+          <div>
+            {currentStep > 0 && (
+              <Button
+                onClick={handlePrev}
+                variant="outline"
+                className="bg-transparent border-[#3A3A3A] text-white hover:bg-background"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Previous
+              </Button>
             )}
           </div>
 
-          {/* Community Settings */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
-            <h2 className="text-xl font-bold text-white mb-6">Community Settings</h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-stone-300 font-medium">Allow Member Posts</div>
-                    <div className="text-stone-400 text-sm">Members can create posts</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings('allowMemberPosts', !form.settings.allowMemberPosts)}
-                    disabled={isLoading}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      form.settings.allowMemberPosts
-                        ? "bg-purple-600 justify-end"
-                        : "bg-stone-400 justify-start"
-                    } flex items-center`}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-stone-300 font-medium">Require Approval</div>
-                    <div className="text-stone-400 text-sm">Posts need approval before publishing</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings('requireApproval', !form.settings.requireApproval)}
-                    disabled={isLoading}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      form.settings.requireApproval
-                        ? "bg-purple-600 justify-end"
-                        : "bg-stone-400 justify-start"
-                    } flex items-center`}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-stone-300 font-medium">Allow File Uploads</div>
-                    <div className="text-stone-400 text-sm">Members can upload files and images</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings('allowFileUploads', !form.settings.allowFileUploads)}
-                    disabled={isLoading}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      form.settings.allowFileUploads
-                        ? "bg-purple-600 justify-end"
-                        : "bg-stone-400 justify-start"
-                    } flex items-center`}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-stone-300 font-medium">Allow Polls</div>
-                    <div className="text-stone-400 text-sm">Members can create polls</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings('allowPolls', !form.settings.allowPolls)}
-                    disabled={isLoading}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      form.settings.allowPolls
-                        ? "bg-purple-600 justify-end"
-                        : "bg-stone-400 justify-start"
-                    } flex items-center`}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-stone-300 font-medium">Allow Events</div>
-                    <div className="text-stone-400 text-sm">Members can create events</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings('allowEvents', !form.settings.allowEvents)}
-                    disabled={isLoading}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      form.settings.allowEvents
-                        ? "bg-purple-600 justify-end"
-                        : "bg-stone-400 justify-start"
-                    } flex items-center`}
-                  >
-                    <div className="w-4 h-4 bg-white rounded-full transition-transform" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-stone-300 text-sm font-medium mb-2">
-                    Max Post Length
-                  </label>
-                  <Input
-                    type="number"
-                    value={form.settings.maxPostLength}
-                    onChange={(e) => updateSettings('maxPostLength', parseInt(e.target.value) || 5000)}
-                    min="100"
-                    max="10000"
-                    className={`bg-neutral-800/50 border-neutral-600 text-white ${
-                      errors.maxPostLength ? 'border-red-500' : ''
-                    }`}
-                  />
-                  {errors.maxPostLength && (
-                    <p className="text-red-400 text-sm mt-1">{errors.maxPostLength}</p>
-                  )}
-                  <p className="text-stone-400 text-xs mt-1">
-                    Characters (100 - 10,000)
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-stone-300 text-sm font-medium mb-4">
-                    Moderation Level
-                  </label>
-                  <div className="space-y-3">
-                    {moderationLevels.map((level) => (
-                      <div
-                        key={level.value}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                          form.settings.moderationLevel === level.value
-                            ? 'border-purple-500 bg-purple-600/20'
-                            : 'border-neutral-600 bg-neutral-800/50 hover:bg-neutral-700/50'
-                        }`}
-                        onClick={() => updateSettings('moderationLevel', level.value)}
-                      >
-                        <div className="text-white font-medium text-sm">{level.label}</div>
-                        <div className="text-stone-400 text-xs">{level.description}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 pt-6">
+          <div className="flex gap-3">
             <Button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isLoading ? 'Creating...' : 'Create Community'}
-            </Button>
-            <Button
-              type="button"
               onClick={handleCancel}
               variant="outline"
-              className="flex-1"
+              className="bg-transparent border-[#3A3A3A] text-white hover:bg-background"
               disabled={isLoading}
             >
               <X className="w-4 h-4 mr-2" />
               Cancel
             </Button>
+
+            {currentStep < steps.length - 1 ? (
+              <Button
+                onClick={handleNext}
+                className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600"
+              >
+                Next Step
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isLoading ? 'Creating...' : 'Create Community'}
+              </Button>
+            )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

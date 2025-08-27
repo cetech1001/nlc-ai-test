@@ -51,10 +51,7 @@ export class AuthEventsHandler {
 
   private async handleCoachRegistered(payload: any) {
     try {
-      // Create coach's community
       await this.communityService.createCoachCommunity(payload.coachID);
-
-      // Add coach to the global coach-to-coach community
       await this.communityService.addCoachToCoachCommunity(payload.coachID);
 
       this.logger.log(`Communities created for new coach ${payload.coachID}`);

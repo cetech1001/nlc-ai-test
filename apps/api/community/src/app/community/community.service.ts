@@ -38,26 +38,26 @@ export class CommunityService {
           avatarUrl: createRequest.avatarUrl,
           bannerUrl: createRequest.bannerUrl,
           settings: createRequest.settings || {},
-          memberCount: 1, // Creator is automatically a member
+          memberCount: creatorType === UserType.coach ? 1 : 0,
         },
         include: {
           members: true,
         },
       });
 
-      // Add creator as owner
-      await this.prisma.communityMember.create({
-        data: {
-          communityID: community.id,
-          userID: creatorID,
-          userType: creatorType,
-          role: MemberRole.OWNER,
-          status: MemberStatus.ACTIVE,
-          permissions: ['all'],
-        },
-      });
+      if (creatorType !== UserType.admin) {
+        await this.prisma.communityMember.create({
+          data: {
+            communityID: community.id,
+            userID: creatorID,
+            userType: creatorType,
+            role: MemberRole.OWNER,
+            status: MemberStatus.ACTIVE,
+            permissions: ['all'],
+          },
+        });
+      }
 
-      // Publish event
       await this.outboxService.saveAndPublishEvent<CommunityEvent>({
         eventType: 'community.created',
         schemaVersion: 1,
@@ -94,7 +94,6 @@ export class CommunityService {
       return existingCommunity;
     }
 
-    // Get coach details for community name
     const coach = await this.prisma.coach.findUnique({
       where: { id: coachID },
       select: { firstName: true, lastName: true, businessName: true },
@@ -115,7 +114,7 @@ export class CommunityService {
     }, coachID, UserType.coach);
   }
 
-  async createCoachToCoachCommunity() {
+  /*async createCoachToCoachCommunity() {
     const existingCommunity = await this.prisma.community.findFirst({
       where: {
         type: CommunityType.COACH_TO_COACH,
@@ -133,7 +132,7 @@ export class CommunityService {
       type: CommunityType.COACH_TO_COACH,
       visibility: CommunityVisibility.PRIVATE,
     }, 'system', UserType.admin);
-  }
+  }*/
 
   async addMemberToCommunity(
     communityID: string,
@@ -220,15 +219,22 @@ export class CommunityService {
   }
 
   async addCoachToCoachCommunity(coachID: string) {
-    // Ensure the coach-to-coach community exists
-    const community = await this.createCoachToCoachCommunity();
+    const existingCommunity = await this.prisma.community.findFirst({
+      where: {
+        type: CommunityType.COACH_TO_COACH,
+      },
+    });
 
-    return this.addMemberToCommunity(
-      community.id,
-      coachID,
-      UserType.coach,
-      MemberRole.MEMBER
-    );
+    if (existingCommunity) {
+      return this.addMemberToCommunity(
+        existingCommunity.id,
+        coachID,
+        UserType.coach,
+        MemberRole.MEMBER
+      );
+    }
+
+    return {};
   }
 
   async addClientToCoachCommunity(clientID: string, coachID: string) {

@@ -13,9 +13,17 @@ interface ImageCropperProps {
   imageSrc: string;
   onCropComplete: (croppedImageBlob: Blob) => void;
   onCancel: () => void;
+  cropType?: 'square' | 'banner';
+  aspectRatio?: number;
 }
 
-export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, onCancel }) => {
+export const ImageCropper: FC<ImageCropperProps> = ({
+                                                      imageSrc,
+                                                      onCropComplete,
+                                                      onCancel,
+                                                      cropType = 'square',
+                                                      aspectRatio
+                                                    }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -27,8 +35,23 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageElement, setImageElement] = useState<HTMLImageElement | null>(null);
 
-  const CROP_SIZE = 300;
-  const CANVAS_SIZE = 400;
+  // Calculate crop dimensions based on type
+  const getCropDimensions = () => {
+    if (cropType === 'banner') {
+      const ratio = aspectRatio || 3; // Default to 3:1 for banners
+      return {
+        width: 480,
+        height: 480 / ratio,
+      };
+    }
+    return {
+      width: 300,
+      height: 300,
+    };
+  };
+
+  const cropDimensions = getCropDimensions();
+  const CANVAS_SIZE = Math.max(cropDimensions.width + 100, cropDimensions.height + 100);
 
   // Load image
   useEffect(() => {
@@ -40,8 +63,8 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
       imageRef.current = img;
 
       // Calculate initial scale to fit nicely in crop area
-      const scaleX = CROP_SIZE / img.naturalWidth;
-      const scaleY = CROP_SIZE / img.naturalHeight;
+      const scaleX = cropDimensions.width / img.naturalWidth;
+      const scaleY = cropDimensions.height / img.naturalHeight;
       const initialScale = Math.max(scaleX, scaleY) * 1.2;
 
       setScale(initialScale);
@@ -56,7 +79,7 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
     };
 
     img.src = imageSrc;
-  }, [imageSrc]);
+  }, [imageSrc, cropDimensions.width, cropDimensions.height]);
 
   // Draw on canvas
   const drawCanvas = useCallback(() => {
@@ -94,23 +117,23 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
     ctx.restore();
 
     // Draw crop overlay (but not over the crop area)
-    const cropX = (CANVAS_SIZE - CROP_SIZE) / 2;
-    const cropY = (CANVAS_SIZE - CROP_SIZE) / 2;
+    const cropX = (CANVAS_SIZE - cropDimensions.width) / 2;
+    const cropY = (CANVAS_SIZE - cropDimensions.height) / 2;
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     // Top
     ctx.fillRect(0, 0, CANVAS_SIZE, cropY);
     // Bottom
-    ctx.fillRect(0, cropY + CROP_SIZE, CANVAS_SIZE, CANVAS_SIZE - cropY - CROP_SIZE);
+    ctx.fillRect(0, cropY + cropDimensions.height, CANVAS_SIZE, CANVAS_SIZE - cropY - cropDimensions.height);
     // Left
-    ctx.fillRect(0, cropY, cropX, CROP_SIZE);
+    ctx.fillRect(0, cropY, cropX, cropDimensions.height);
     // Right
-    ctx.fillRect(cropX + CROP_SIZE, cropY, CANVAS_SIZE - cropX - CROP_SIZE, CROP_SIZE);
+    ctx.fillRect(cropX + cropDimensions.width, cropY, CANVAS_SIZE - cropX - cropDimensions.width, cropDimensions.height);
 
     // Draw crop border
     ctx.strokeStyle = '#8B5CF6';
     ctx.lineWidth = 2;
-    ctx.strokeRect(cropX, cropY, CROP_SIZE, CROP_SIZE);
+    ctx.strokeRect(cropX, cropY, cropDimensions.width, cropDimensions.height);
 
     // Draw corner handles
     const handleSize = 20;
@@ -126,54 +149,56 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
 
     // Top-right
     ctx.beginPath();
-    ctx.moveTo(cropX + CROP_SIZE - handleSize, cropY);
-    ctx.lineTo(cropX + CROP_SIZE, cropY);
-    ctx.lineTo(cropX + CROP_SIZE, cropY + handleSize);
+    ctx.moveTo(cropX + cropDimensions.width - handleSize, cropY);
+    ctx.lineTo(cropX + cropDimensions.width, cropY);
+    ctx.lineTo(cropX + cropDimensions.width, cropY + handleSize);
     ctx.stroke();
 
     // Bottom-left
     ctx.beginPath();
-    ctx.moveTo(cropX, cropY + CROP_SIZE - handleSize);
-    ctx.lineTo(cropX, cropY + CROP_SIZE);
-    ctx.lineTo(cropX + handleSize, cropY + CROP_SIZE);
+    ctx.moveTo(cropX, cropY + cropDimensions.height - handleSize);
+    ctx.lineTo(cropX, cropY + cropDimensions.height);
+    ctx.lineTo(cropX + handleSize, cropY + cropDimensions.height);
     ctx.stroke();
 
     // Bottom-right
     ctx.beginPath();
-    ctx.moveTo(cropX + CROP_SIZE - handleSize, cropY + CROP_SIZE);
-    ctx.lineTo(cropX + CROP_SIZE, cropY + CROP_SIZE);
-    ctx.lineTo(cropX + CROP_SIZE, cropY + CROP_SIZE - handleSize);
+    ctx.moveTo(cropX + cropDimensions.width - handleSize, cropY + cropDimensions.height);
+    ctx.lineTo(cropX + cropDimensions.width, cropY + cropDimensions.height);
+    ctx.lineTo(cropX + cropDimensions.width, cropY + cropDimensions.height - handleSize);
     ctx.stroke();
 
-    // Grid lines
-    ctx.strokeStyle = '#8B5CF6';
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.3;
+    // Grid lines (only if there's enough space)
+    if (cropDimensions.width > 100 && cropDimensions.height > 100) {
+      ctx.strokeStyle = '#8B5CF6';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
 
-    // Vertical lines
-    ctx.beginPath();
-    ctx.moveTo(cropX + CROP_SIZE / 3, cropY);
-    ctx.lineTo(cropX + CROP_SIZE / 3, cropY + CROP_SIZE);
-    ctx.stroke();
+      // Vertical lines
+      ctx.beginPath();
+      ctx.moveTo(cropX + cropDimensions.width / 3, cropY);
+      ctx.lineTo(cropX + cropDimensions.width / 3, cropY + cropDimensions.height);
+      ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(cropX + (CROP_SIZE * 2) / 3, cropY);
-    ctx.lineTo(cropX + (CROP_SIZE * 2) / 3, cropY + CROP_SIZE);
-    ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cropX + (cropDimensions.width * 2) / 3, cropY);
+      ctx.lineTo(cropX + (cropDimensions.width * 2) / 3, cropY + cropDimensions.height);
+      ctx.stroke();
 
-    // Horizontal lines
-    ctx.beginPath();
-    ctx.moveTo(cropX, cropY + CROP_SIZE / 3);
-    ctx.lineTo(cropX + CROP_SIZE, cropY + CROP_SIZE / 3);
-    ctx.stroke();
+      // Horizontal lines
+      ctx.beginPath();
+      ctx.moveTo(cropX, cropY + cropDimensions.height / 3);
+      ctx.lineTo(cropX + cropDimensions.width, cropY + cropDimensions.height / 3);
+      ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(cropX, cropY + (CROP_SIZE * 2) / 3);
-    ctx.lineTo(cropX + CROP_SIZE, cropY + (CROP_SIZE * 2) / 3);
-    ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cropX, cropY + (cropDimensions.height * 2) / 3);
+      ctx.lineTo(cropX + cropDimensions.width, cropY + (cropDimensions.height * 2) / 3);
+      ctx.stroke();
 
-    ctx.globalAlpha = 1;
-  }, [scale, rotation, position]);
+      ctx.globalAlpha = 1;
+    }
+  }, [scale, rotation, position, cropDimensions.width, cropDimensions.height, CANVAS_SIZE]);
 
   // Redraw canvas when values change
   useEffect(() => {
@@ -231,8 +256,8 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
   const handleReset = () => {
     if (!imageElement) return;
 
-    const scaleX = CROP_SIZE / imageElement.naturalWidth;
-    const scaleY = CROP_SIZE / imageElement.naturalHeight;
+    const scaleX = cropDimensions.width / imageElement.naturalWidth;
+    const scaleY = cropDimensions.height / imageElement.naturalHeight;
     const initialScale = Math.max(scaleX, scaleY) * 1.2;
 
     setScale(initialScale);
@@ -248,12 +273,12 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
     const cropCtx = cropCanvas.getContext('2d');
     if (!cropCtx) return;
 
-    cropCanvas.width = CROP_SIZE;
-    cropCanvas.height = CROP_SIZE;
+    cropCanvas.width = cropDimensions.width;
+    cropCanvas.height = cropDimensions.height;
 
     // Draw only the image without overlays
     cropCtx.save();
-    cropCtx.translate(CROP_SIZE / 2, CROP_SIZE / 2);
+    cropCtx.translate(cropDimensions.width / 2, cropDimensions.height / 2);
 
     // Calculate offset from crop area center to image center
     const offsetX = position.x;
@@ -295,7 +320,9 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-neutral-900 rounded-2xl border border-neutral-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-white">Crop Your Photo</h3>
+          <h3 className="text-xl font-semibold text-white">
+            Crop Your {cropType === 'banner' ? 'Banner' : 'Photo'}
+          </h3>
           <button
             onClick={onCancel}
             className="text-gray-400 hover:text-white transition-colors"
@@ -384,7 +411,7 @@ export const ImageCropper: FC<ImageCropperProps> = ({ imageSrc, onCropComplete, 
                     <div>• Drag the image to position it within the crop area</div>
                     <div>• Use zoom controls to resize the image</div>
                     <div>• Use rotation controls to rotate the image</div>
-                    <div>• The purple square shows what will be cropped</div>
+                    <div>• The purple {cropType === 'banner' ? 'rectangle' : 'square'} shows what will be cropped</div>
                   </div>
                 </div>
               </div>
