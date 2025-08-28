@@ -6,6 +6,7 @@ import {
   CommunityPricingType
 } from './enums';
 import { UserType } from '../../auth';
+import {CommunitySettings} from "./responses";
 
 export interface CommunityPricing {
   type: CommunityPricingType;
@@ -24,15 +25,7 @@ export interface CreateCommunityRequest {
   avatarUrl?: string;
   bannerUrl?: string;
   pricing?: CommunityPricing;
-  settings?: {
-    allowMemberPosts?: boolean;
-    requireApproval?: boolean;
-    allowFileUploads?: boolean;
-    maxPostLength?: number;
-    allowPolls?: boolean;
-    allowEvents?: boolean;
-    moderationLevel?: string;
-  };
+  settings?: CommunitySettings;
   isSystemCreated?: boolean;
 }
 

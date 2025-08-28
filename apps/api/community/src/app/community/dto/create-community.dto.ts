@@ -3,12 +3,12 @@ import {
   IsString, IsOptional, IsEnum, IsUrl, IsUUID, Length, IsBoolean, IsInt, Min, ValidateNested, IsIn, Max, Matches
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {CommunityPricingTypes, CommunityType, CommunityVisibility} from '@nlc-ai/api-types';
+import {CommunityPricingType, CommunityType, CommunityVisibility} from '@nlc-ai/api-types';
 
 class CommunityPricingDto {
-  @ApiProperty({ enum: CommunityPricingTypes, description: 'Pricing model for the community' })
-  @IsEnum(CommunityPricingTypes)
-  type: CommunityPricingTypes;
+  @ApiProperty({ enum: CommunityPricingType, description: 'Pricing model for the community' })
+  @IsEnum(CommunityPricingType)
+  type: CommunityPricingType;
 
   @ApiProperty({ description: 'Price in cents', required: false })
   @IsOptional()

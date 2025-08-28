@@ -61,15 +61,15 @@ const getUserTypeColor = (userType: string) => {
 const colWidth = 100 / 9;
 export const memberColumns = [
   {
-    key: 'name',
+    key: 'userName',
     header: 'Member',
     width: `${colWidth * (5 / 3)}%`,
     render: (value: string, row: ExtendedCommunityMember) => (
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          {row.avatarUrl ? (
+          {row.userAvatarUrl ? (
             <img
-              src={row.avatarUrl}
+              src={row.userAvatarUrl}
               alt={value}
               className="w-full h-full rounded-full object-cover"
             />
@@ -79,7 +79,7 @@ export const memberColumns = [
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-stone-200 font-medium truncate">{value}</div>
-          <div className="text-stone-400 text-sm truncate">{row.email}</div>
+          <div className="text-stone-400 text-sm truncate">{row.userEmail}</div>
         </div>
       </div>
     ),
@@ -118,21 +118,21 @@ export const memberColumns = [
     ),
   },
   {
-    key: 'postCount',
+    key: 'posts',
     header: 'Posts',
     width: `${colWidth * (2 / 3)}%`,
     sortable: true,
-    render: (value: number) => (
-      <span className="text-stone-300 font-medium">{value}</span>
+    render: (_: string, row: ExtendedCommunityMember) => (
+      <span className="text-stone-300 font-medium">{row._count.posts}</span>
     ),
   },
   {
-    key: 'commentCount',
+    key: 'comments',
     header: 'Comments',
     width: `${colWidth * (2 / 3)}%`,
     sortable: true,
-    render: (value: number) => (
-      <span className="text-stone-300 font-medium">{value}</span>
+    render: (_: string, row: ExtendedCommunityMember) => (
+      <span className="text-stone-300 font-medium">{row._count.comments}</span>
     ),
   },
   {
@@ -226,19 +226,19 @@ export const MembersMobileCard = ({ members, onRowAction, emptyMessage }: Member
               {/* Header */}
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                  {member.avatarUrl ? (
+                  {member.userAvatarUrl ? (
                     <img
-                      src={member.avatarUrl}
-                      alt={member.name}
+                      src={member.userAvatarUrl}
+                      alt={member.userName}
                       className="w-full h-full rounded-full object-cover"
                     />
                   ) : (
-                    getInitials(member.name)
+                    getInitials(member.userName)
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-medium truncate">{member.name}</div>
-                  <div className="text-stone-400 text-sm truncate">{member.email}</div>
+                  <div className="text-white font-medium truncate">{member.userName}</div>
+                  <div className="text-stone-400 text-sm truncate">{member.userEmail}</div>
                 </div>
               </div>
 

@@ -69,13 +69,11 @@ export interface CommunityResponse extends Community {
 }
 
 export interface ExtendedCommunityMember extends CommunityMember {
-  name: string;
-  email: string;
-  avatarUrl?: string;
+  _count: {
+    posts: number;
+    comments: number;
+  };
   isOnline: boolean;
-  lastActiveAt?: Date;
-  postCount?: number;
-  commentCount?: number;
 }
 
 export interface CommunityStats {

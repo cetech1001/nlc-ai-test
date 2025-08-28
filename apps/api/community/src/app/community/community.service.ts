@@ -5,10 +5,9 @@ import {
   AuthUser,
   COMMUNITY_ROUTING_KEYS,
   CommunityEvent,
-  CommunityFilters,
-  CommunityMember,
+  CommunityFilters, CommunityMember,
   CommunityMemberFilters,
-  CommunityPricingTypes,
+  CommunityPricingType,
   CommunitySettings,
   CommunityType,
   CommunityVisibility,
@@ -55,7 +54,7 @@ export class CommunityService {
 
       const isSystemCreated = createRequest.isSystemCreated === true && creatorType === UserType.admin;
 
-      const pricingType = createRequest.pricing?.type || CommunityPricingTypes.FREE;
+      const pricingType = createRequest.pricing?.type || CommunityPricingType.FREE;
       const pricingAmount = createRequest.pricing?.amount || null;
       const pricingCurrency = createRequest.pricing?.currency || 'USD';
 
@@ -166,7 +165,7 @@ export class CommunityService {
       visibility: CommunityVisibility.INVITE_ONLY,
       coachID: coachID,
       pricing: {
-        type: CommunityPricingTypes.FREE,
+        type: CommunityPricingType.FREE,
         currency: 'USD'
       }
     }, coachID, UserType.coach);

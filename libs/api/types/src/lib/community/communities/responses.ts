@@ -30,15 +30,15 @@ export interface CommunityResponse {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  userMembership?: CommunityMemberResponse;
-  members?: CommunityMemberResponse[];
+  userMembership?: CommunityMember;
+  members?: CommunityMember[];
   _count?: {
     members: number;
     posts: number;
   };
 }
 
-export interface CommunityMemberResponse {
+export interface CommunityMember {
   id: string;
   communityID: string;
   userID: string;
@@ -68,4 +68,14 @@ export interface CommunityInviteResponse {
   expiresAt: Date;
   acceptedAt?: Date;
   createdAt: Date;
+}
+
+export interface CommunitySettings {
+  allowMemberPosts?: boolean;
+  requireApproval?: boolean;
+  allowFileUploads?: boolean;
+  maxPostLength?: number;
+  allowPolls?: boolean;
+  allowEvents?: boolean;
+  moderationLevel?: 'strict' | 'moderate' | 'relaxed';
 }
