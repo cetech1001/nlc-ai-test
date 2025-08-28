@@ -13,7 +13,7 @@ export class PostFiltersDto extends PaginationDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
-  authorID?: string;
+  communityMemberID?: string;
 
   @ApiProperty({ enum: PostType, required: false })
   @IsOptional()

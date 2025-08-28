@@ -3,6 +3,7 @@ import {
   CreatePostRequest,
   UpdatePostRequest,
   PostFilters,
+  CommentFilters,
   PostResponse,
   CreateCommentRequest,
   ReactToPostRequest,
@@ -54,8 +55,17 @@ export class PostsClient extends BaseClient {
     return response.data!;
   }
 
-  async getComments(postID: string, page = 1, limit = 20): Promise<Paginated<PostComment>> {
-    const response = await this.request<Paginated<PostComment>>('GET', `/${postID}/comments?page=${page}&limit=${limit}`);
+  async getComments(postID: string, filters?: CommentFilters): Promise<Paginated<PostComment>> {
+    const searchParams = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, String(value));
+        }
+      });
+    }
+
+    const response = await this.request<Paginated<PostComment>>('GET', `/${postID}/comments?${searchParams}`);
     return response.data!;
   }
 

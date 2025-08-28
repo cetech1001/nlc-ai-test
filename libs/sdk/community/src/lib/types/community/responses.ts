@@ -29,6 +29,11 @@ export interface Community {
   courseID?: string;
   avatarUrl?: string;
   bannerUrl?: string;
+  slug: string;
+  pricingType: CommunityPricingTypes;
+  pricingAmount?: number | null;
+  pricingCurrency?: string;
+  isSystemCreated: boolean;
   settings: Record<string, any>;
   memberCount: number;
   postCount: number;
@@ -49,6 +54,9 @@ export interface CommunityMember {
   invitedBy?: string;
   customTitle?: string;
   permissions: string[];
+  userName: string;
+  userEmail: string;
+  userAvatarUrl?: string;
 }
 
 export interface CommunityResponse extends Community {
@@ -66,6 +74,8 @@ export interface ExtendedCommunityMember extends CommunityMember {
   avatarUrl?: string;
   isOnline: boolean;
   lastActiveAt?: Date;
+  postCount?: number;
+  commentCount?: number;
 }
 
 export interface CommunityStats {

@@ -1,4 +1,7 @@
-import {PostType, ReactionType} from "./enums";
+import {
+  PostType,
+  ReactionType,
+} from './enums';
 
 export interface CreatePostRequest {
   communityID: string;
@@ -23,7 +26,7 @@ export interface UpdatePostRequest {
 
 export interface PostFilters {
   communityID?: string;
-  authorID?: string;
+  communityMemberID?: string;
   type?: PostType;
   search?: string;
   isPinned?: boolean;

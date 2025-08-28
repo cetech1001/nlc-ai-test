@@ -5,7 +5,7 @@ export enum CommunityType {
   PRIVATE = 'private',
 }
 
-export enum CommunityPricingTypes {
+export enum CommunityPricingType {
   FREE = 'free',
   MONTHLY = 'monthly',
   ANNUAL = 'annual',
@@ -30,22 +30,4 @@ export enum MemberStatus {
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
   PENDING = 'pending',
-}
-
-export enum PostType {
-  TEXT = 'text',
-  IMAGE = 'image',
-  VIDEO = 'video',
-  LINK = 'link',
-  POLL = 'poll',
-  EVENT = 'event',
-}
-
-export enum ReactionType {
-  LIKE = 'like',
-  LOVE = 'love',
-  LAUGH = 'laugh',
-  ANGRY = 'angry',
-  SAD = 'sad',
-  CELEBRATE = 'celebrate',
 }

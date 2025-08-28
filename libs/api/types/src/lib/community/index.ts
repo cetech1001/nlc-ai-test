@@ -1,5 +1,3 @@
-export * from './enums';
-export * from './community.types';
+export * from './communities';
+export * from './posts';
 export * from './events';
-export * from './requests';
-export * from './responses';

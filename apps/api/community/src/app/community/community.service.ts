@@ -2,11 +2,14 @@ import {BadRequestException, ForbiddenException, Injectable, Logger, NotFoundExc
 import {PrismaService} from '@nlc-ai/api-database';
 import {OutboxService} from '@nlc-ai/api-messaging';
 import {
+  AuthUser,
   COMMUNITY_ROUTING_KEYS,
   CommunityEvent,
   CommunityFilters,
   CommunityMember,
+  CommunityMemberFilters,
   CommunityPricingTypes,
+  CommunitySettings,
   CommunityType,
   CommunityVisibility,
   CreateCommunityRequest,
@@ -15,16 +18,6 @@ import {
   UpdateCommunityRequest,
   UserType
 } from '@nlc-ai/api-types';
-
-interface CommunitySettings {
-  allowMemberPosts?: boolean;
-  requireApproval?: boolean;
-  allowFileUploads?: boolean;
-  maxPostLength?: number;
-  allowPolls?: boolean;
-  allowEvents?: boolean;
-  moderationLevel?: string;
-}
 
 @Injectable()
 export class CommunityService {
@@ -103,6 +96,9 @@ export class CommunityService {
             role: MemberRole.OWNER,
             status: MemberStatus.ACTIVE,
             permissions: ['all'],
+            userName: await this.getUserName(creatorID, creatorType),
+            userEmail: await this.getUserEmail(creatorID, creatorType),
+            userAvatarUrl: await this.getUserAvatarUrl(creatorID, creatorType),
           },
         });
       }
@@ -211,8 +207,8 @@ export class CommunityService {
     }
 
     return this.prisma.paginate(this.prisma.community, {
-      page: filters.page,
-      limit: filters.limit,
+      page: filters.page || 1,
+      limit: filters.limit || 10,
       where,
       include: {
         members: {
@@ -314,25 +310,78 @@ export class CommunityService {
 
   async getCommunityMembers(
     communityID: string,
-    page = 1,
-    limit = 20,
-    userID: string,
-    userType: UserType
+    filters: CommunityMemberFilters,
+    user: AuthUser
   ) {
-    if (userType !== UserType.admin) {
-      await this.checkCommunityMembership(communityID, userID, userType);
+    if (user.type !== UserType.admin) {
+      await this.checkCommunityMembership(communityID, user.id, user.type);
+    }
+
+    const where: any = {
+      communityID,
+      status: MemberStatus.ACTIVE,
+    };
+
+    if (filters.role) {
+      where.role = filters.role;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.userType) {
+      where.userType = filters.userType;
+    }
+
+    if (filters.search) {
+      where.OR = [
+        { userName: { contains: filters.search, mode: 'insensitive' } },
+        { userEmail: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (filters.joinedDateStart) {
+      where.joinedAt = {
+        ...where.joinedAt,
+        gte: new Date(filters.joinedDateStart),
+      };
+    }
+
+    if (filters.joinedDateEnd) {
+      where.joinedAt = {
+        ...where.joinedAt,
+        lte: new Date(filters.joinedDateEnd),
+      };
+    }
+
+    if (filters.lastActiveDateStart) {
+      where.lastActiveAt = {
+        ...where.lastActiveAt,
+        gte: new Date(filters.lastActiveDateStart),
+      };
+    }
+
+    if (filters.lastActiveDateEnd) {
+      where.lastActiveAt = {
+        ...where.lastActiveAt,
+        lte: new Date(filters.lastActiveDateEnd),
+      };
+    }
+
+    if (user.id) {
+      where.NOT = {
+        AND: [
+          { userID: user.id },
+          { userType: user.type }
+        ]
+      };
     }
 
     return this.prisma.paginate<CommunityMember>(this.prisma.communityMember, {
-      page,
-      limit,
-      where: {
-        communityID,
-        status: MemberStatus.ACTIVE,
-        userID: {
-          not: userID,
-        },
-      },
+      page: filters.page || 1,
+      limit: filters.limit || 10,
+      where,
       include: {
         _count: {
           select: {
@@ -468,6 +517,11 @@ export class CommunityService {
       return updatedMember;
     }
 
+    // Get user info for denormalized fields
+    const userName = await this.getUserName(userID, userType);
+    const userEmail = await this.getUserEmail(userID, userType);
+    const userAvatarUrl = await this.getUserAvatarUrl(userID, userType);
+
     // Add new member
     const member = await this.prisma.communityMember.create({
       data: {
@@ -478,6 +532,9 @@ export class CommunityService {
         status: MemberStatus.ACTIVE,
         invitedBy: inviterID,
         permissions: this.getDefaultPermissions(role),
+        userName,
+        userEmail,
+        userAvatarUrl,
       },
     });
 
@@ -577,5 +634,105 @@ export class CommunityService {
     this.logger.log(`User ${targetUserType} ${targetUserID} removed from community ${communityID} by ${actionByType} ${actionByID}`);
 
     return { message: 'Member removed successfully' };
+  }
+
+  // Helper methods for getting user info
+  private async getUserName(userID: string, userType: UserType): Promise<string> {
+    try {
+      switch (userType) {
+        case UserType.coach:
+          const coach = await this.prisma.coach.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true, businessName: true },
+          });
+          return coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach';
+
+        case UserType.client:
+          const client = await this.prisma.client.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true },
+          });
+          return `${client?.firstName} ${client?.lastName}` || 'Unknown Client';
+
+        case UserType.admin:
+          const admin = await this.prisma.admin.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true },
+          });
+          return `${admin?.firstName} ${admin?.lastName}` || 'Admin';
+
+        default:
+          return '';
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get user email for ${userType} ${userID}`, error);
+      return '';
+    }
+  }
+
+  private async getUserEmail(userID: string, userType: UserType): Promise<string> {
+    try {
+      switch (userType) {
+      case UserType.coach:
+        const coach = await this.prisma.coach.findUnique({
+          where: { id: userID },
+          select: { email: true },
+        });
+        return coach?.email || '';
+
+      case UserType.client:
+        const client = await this.prisma.client.findUnique({
+          where: { id: userID },
+          select: { email: true },
+        });
+        return client?.email || '';
+
+      case UserType.admin:
+        const admin = await this.prisma.admin.findUnique({
+          where: { id: userID },
+          select: { email: true },
+        });
+        return admin?.email || '';
+
+      default:
+        return 'Unknown User';
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get user name for ${userType} ${userID}`, error);
+      return 'Unknown User';
+    }
+  }
+
+  private async getUserAvatarUrl(userID: string, userType: UserType): Promise<string | null> {
+    try {
+      switch (userType) {
+        case UserType.coach:
+          const coach = await this.prisma.coach.findUnique({
+            where: { id: userID },
+            select: { avatarUrl: true },
+          });
+          return coach?.avatarUrl || null;
+
+        case UserType.client:
+          const client = await this.prisma.client.findUnique({
+            where: { id: userID },
+            select: { avatarUrl: true },
+          });
+          return client?.avatarUrl || null;
+
+        case UserType.admin:
+          const admin = await this.prisma.admin.findUnique({
+            where: { id: userID },
+            select: { avatarUrl: true },
+          });
+          return admin?.avatarUrl || null;
+
+        default:
+          return null;
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get user avatar for ${userType} ${userID}`, error);
+      return null;
+    }
   }
 }

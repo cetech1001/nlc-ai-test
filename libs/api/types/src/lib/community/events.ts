@@ -1,7 +1,8 @@
 import { BaseEvent } from '@nlc-ai/api-messaging';
 import {UserType} from "../auth";
-import {CommunityType, MemberRole, MessageType, PostType, ReactionType} from "./enums";
-import {CommunityPricing} from "./requests";
+import {CommunityType, MemberRole, CommunityPricing} from "./communities";
+import {PostType, ReactionType} from "./posts";
+
 
 export interface CommunityCreatedEvent extends BaseEvent {
   eventType: 'community.created';
@@ -81,22 +82,6 @@ export interface PostCommentedEvent extends BaseEvent {
   };
 }
 
-export interface DirectMessageSentEvent extends BaseEvent {
-  eventType: 'community.message.sent';
-  payload: {
-    messageID: string;
-    conversationID: string;
-    senderID: string;
-    senderType: UserType;
-    senderName: string;
-    recipientID: string;
-    recipientType: UserType;
-    type: MessageType;
-    content: string;
-    sentAt: string;
-  };
-}
-
 export interface CommunityMemberInvitedEvent extends BaseEvent {
   eventType: 'community.member.invited';
   payload: {
@@ -119,10 +104,8 @@ export type CommunityEvent =
   | PostCreatedEvent
   | PostLikedEvent
   | PostCommentedEvent
-  | DirectMessageSentEvent
   | CommunityMemberInvitedEvent;
 
-// Constants for routing keys
 export const COMMUNITY_ROUTING_KEYS = {
   CREATED: 'community.created',
   MEMBER_JOINED: 'community.member.joined',
@@ -130,5 +113,4 @@ export const COMMUNITY_ROUTING_KEYS = {
   POST_CREATED: 'community.post.created',
   POST_LIKED: 'community.post.liked',
   POST_COMMENTED: 'community.post.commented',
-  MESSAGE_SENT: 'community.message.sent',
 } as const;

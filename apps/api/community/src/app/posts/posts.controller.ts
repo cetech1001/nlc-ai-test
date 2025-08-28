@@ -25,8 +25,8 @@ import {
   PostFiltersDto,
   CreateCommentDto,
   ReactToPostDto,
+  CommentFiltersDto,
 } from './dto';
-import {PaginationDto} from "@nlc-ai/api-dto";
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -43,7 +43,7 @@ export class PostsController {
     @Body() createDto: CreatePostDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.createPost(createDto, user.id, user.type);
+    return this.postsService.createPost(createDto, user);
   }
 
   @Get()
@@ -53,7 +53,7 @@ export class PostsController {
     @Query() filters: PostFiltersDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.getPosts(filters, user.id, user.type);
+    return this.postsService.getPosts(filters, user);
   }
 
   @Get(':id')
@@ -64,7 +64,7 @@ export class PostsController {
     @Param('id') id: string,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.getPost(id, user.id, user.type);
+    return this.postsService.getPost(id, user);
   }
 
   @Put(':id')
@@ -76,7 +76,7 @@ export class PostsController {
     @Body() updateDto: UpdatePostDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.updatePost(id, updateDto, user.id, user.type);
+    return this.postsService.updatePost(id, updateDto, user);
   }
 
   @Delete(':id')
@@ -87,7 +87,7 @@ export class PostsController {
     @Param('id') id: string,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.deletePost(id, user.id, user.type);
+    return this.postsService.deletePost(id, user);
   }
 
   @Post(':id/reactions')
@@ -99,7 +99,7 @@ export class PostsController {
     @Body() reactionDto: ReactToPostDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.reactToPost(postID, reactionDto, user.id, user.type);
+    return this.postsService.reactToPost(postID, reactionDto, user);
   }
 
   @Post(':id/comments')
@@ -111,7 +111,7 @@ export class PostsController {
     @Body() createDto: CreateCommentDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.createComment(postID, createDto, user.id, user.type);
+    return this.postsService.createComment(postID, createDto, user);
   }
 
   @Get(':id/comments')
@@ -120,10 +120,10 @@ export class PostsController {
   @ApiResponse({ status: 200, description: 'Comments retrieved successfully' })
   async getComments(
     @Param('id') postID: string,
-    @Query() query: PaginationDto,
+    @Query() filters: CommentFiltersDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.getComments(postID, query.page, query.limit, user.id, user.type);
+    return this.postsService.getComments(postID, filters, user);
   }
 
   @Post('comments/:commentID/reactions')
@@ -135,6 +135,6 @@ export class PostsController {
     @Body() reactionDto: ReactToPostDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.reactToComment(commentID, reactionDto, user.id, user.type);
+    return this.postsService.reactToComment(commentID, reactionDto, user);
   }
 }

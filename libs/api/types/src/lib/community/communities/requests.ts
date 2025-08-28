@@ -1,6 +1,17 @@
-import {UserType} from "@nlc-ai/sdk-users";
-import {CommunityType, CommunityVisibility, MemberRole, MemberStatus} from "./enums";
-import {CommunityPricing} from "./responses";
+import {
+  CommunityType,
+  CommunityVisibility,
+  MemberRole,
+  MemberStatus,
+  CommunityPricingType
+} from './enums';
+import { UserType } from '../../auth';
+
+export interface CommunityPricing {
+  type: CommunityPricingType;
+  amount?: number | null;
+  currency?: string;
+}
 
 export interface CreateCommunityRequest {
   name: string;
@@ -12,27 +23,28 @@ export interface CreateCommunityRequest {
   courseID?: string;
   avatarUrl?: string;
   bannerUrl?: string;
-  isSystemCreated: boolean;
-  pricing: CommunityPricing;
-  settings?: Record<string, any>;
+  pricing?: CommunityPricing;
+  settings?: {
+    allowMemberPosts?: boolean;
+    requireApproval?: boolean;
+    allowFileUploads?: boolean;
+    maxPostLength?: number;
+    allowPolls?: boolean;
+    allowEvents?: boolean;
+    moderationLevel?: string;
+  };
+  isSystemCreated?: boolean;
 }
 
 export interface UpdateCommunityRequest {
   name?: string;
   description?: string;
   visibility?: CommunityVisibility;
+  pricing?: CommunityPricing;
   avatarUrl?: string;
   bannerUrl?: string;
-  pricing?: CommunityPricing;
   settings?: Record<string, any>;
   isActive?: boolean;
-}
-
-export interface AddMemberRequest {
-  userID: string;
-  userType: UserType;
-  role?: MemberRole;
-  customTitle?: string;
 }
 
 export interface CommunityFilters {
@@ -56,4 +68,18 @@ export interface CommunityMemberFilters {
   lastActiveDateEnd?: string;
   page?: number;
   limit?: number;
+}
+
+export interface AddMemberRequest {
+  userID: string;
+  userType: UserType;
+  role?: MemberRole;
+  customTitle?: string;
+}
+
+export interface InviteMemberRequest {
+  userID: string;
+  userType: UserType;
+  role?: MemberRole;
+  message?: string;
 }

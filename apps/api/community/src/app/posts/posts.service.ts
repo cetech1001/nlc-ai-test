@@ -11,8 +11,12 @@ import {
   CreatePostRequest,
   UpdatePostRequest,
   PostFilters,
+  CommentFilters,
   CreateCommentRequest,
-  ReactToPostRequest, Post, PostComment
+  ReactToPostRequest,
+  Post,
+  PostComment,
+  AuthUser
 } from '@nlc-ai/api-types';
 
 @Injectable()
@@ -25,16 +29,13 @@ export class PostsService {
     private readonly configService: ConfigService
   ) {}
 
-  async createPost(createRequest: CreatePostRequest, authorID: string, authorType: UserType) {
-    // Check if user is a member of the community
-    const member = await this.checkCommunityMembership(createRequest.communityID, authorID, authorType);
+  async createPost(createRequest: CreatePostRequest, user: AuthUser) {
+    const member = await this.checkCommunityMembership(createRequest.communityID, user);
 
     const maxLength = this.configService.get<number>('community.features.maxPostLength', 5000);
     if (createRequest.content.length > maxLength) {
       throw new ForbiddenException(`Post content exceeds maximum length of ${maxLength} characters`);
     }
-
-    const authorInfo = await this.getAuthorInfo(authorID, authorType);
 
     const post = await this.prisma.post.create({
       data: {
@@ -52,6 +53,9 @@ export class PostsService {
         community: {
           select: { name: true },
         },
+        communityMember: {
+          select: { userName: true },
+        },
       },
     });
 
@@ -60,8 +64,6 @@ export class PostsService {
       data: { postCount: { increment: 1 } },
     });
 
-    const authorName = await this.getUserName(authorID, authorType);
-
     await this.outboxService.saveAndPublishEvent<CommunityEvent>({
       eventType: 'community.post.created',
       schemaVersion: 1,
@@ -69,23 +71,23 @@ export class PostsService {
         postID: post.id,
         communityID: post.communityID,
         communityName: post.community.name,
-        authorID,
-        authorType,
-        authorName,
+        authorID: user.id,
+        authorType: user.type,
+        authorName: post.communityMember.userName,
         type: post.type as PostType,
         content: post.content,
         createdAt: post.createdAt.toISOString(),
       },
     }, COMMUNITY_ROUTING_KEYS.POST_CREATED);
 
-    this.logger.log(`Post created: ${post.id} in community ${createRequest.communityID} by ${authorType} ${authorID}`);
+    this.logger.log(`Post created: ${post.id} in community ${createRequest.communityID} by ${user.type} ${user.id}`);
 
     return post;
   }
 
-  async getPosts(filters: PostFilters, userID: string, userType: UserType) {
+  async getPosts(filters: PostFilters, user: AuthUser) {
     if (filters.communityID) {
-      await this.checkCommunityMembership(filters.communityID, userID, userType);
+      await this.checkCommunityMembership(filters.communityID, user);
     }
 
     const where: any = {};
@@ -115,22 +117,23 @@ export class PostsService {
 
     const orderBy: any = [];
 
-    // Pinned posts first
     orderBy.push({ isPinned: 'desc' });
 
-    // Then by creation date
     orderBy.push({ createdAt: filters.sortOrder || 'desc' });
 
     const result = await this.prisma.paginate<Post>(this.prisma.post, {
-      page: filters.page,
-      limit: filters.limit,
+      page: filters.page || 1,
+      limit: filters.limit || 10,
       where,
       include: {
         community: {
           select: { name: true, type: true },
         },
+        communityMember: {
+          select: { userName: true, userAvatarUrl: true, role: true },
+        },
         reactions: {
-          where: { userID, userType },
+          where: { userID: user.id, userType: user.type },
           select: { type: true },
         },
         _count: {
@@ -153,25 +156,34 @@ export class PostsService {
     };
   }
 
-  async getPost(id: string, userID: string, userType: UserType) {
+  async getPost(id: string, user: AuthUser) {
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: {
         community: {
           select: { name: true, type: true },
         },
+        communityMember: {
+          select: { userName: true, userAvatarUrl: true, role: true },
+        },
         comments: {
-          where: { parentCommentID: null }, // Top-level comments only
+          where: { parentCommentID: null },
           include: {
+            communityMember: {
+              select: { userName: true, userAvatarUrl: true, role: true },
+            },
             reactions: {
-              where: { userID, userType },
+              where: { userID: user.id, userType: user.type },
               select: { type: true },
             },
             replies: {
-              take: 3, // Limited replies
+              take: 3,
               include: {
+                communityMember: {
+                  select: { userName: true, userAvatarUrl: true, role: true },
+                },
                 reactions: {
-                  where: { userID, userType },
+                  where: { userID: user.id, userType: user.type },
                   select: { type: true },
                 },
               },
@@ -182,10 +194,10 @@ export class PostsService {
             },
           },
           orderBy: { createdAt: 'asc' },
-          take: 20, // Limit comments for performance
+          take: 20,
         },
         reactions: {
-          where: { userID, userType },
+          where: { userID: user.id, userType: user.type },
           select: { type: true },
         },
         _count: {
@@ -201,8 +213,7 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    // Check if user has access to the community
-    await this.checkCommunityMembership(post.communityID, userID, userType);
+    await this.checkCommunityMembership(post.communityID, user);
 
     return {
       ...post,
@@ -221,18 +232,20 @@ export class PostsService {
     };
   }
 
-  async updatePost(id: string, updateRequest: UpdatePostRequest, userID: string, userType: UserType) {
+  async updatePost(id: string, updateRequest: UpdatePostRequest, user: AuthUser) {
     const post = await this.prisma.post.findUnique({
       where: { id },
+      include: {
+        communityMember: true,
+      },
     });
 
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    // Check if user is the author or has moderator permissions
-    if (post.authorID !== userID || post.authorType !== userType) {
-      await this.checkCommunityPermission(post.communityID, userID, userType, 'moderate_posts');
+    if (post.communityMember.userID !== user.id || post.communityMember.userType !== user.type) {
+      await this.checkCommunityPermission(post.communityID, user, 'moderate_posts');
     }
 
     const updatedPost = await this.prisma.post.update({
@@ -244,45 +257,16 @@ export class PostsService {
       },
     });
 
-    this.logger.log(`Post ${id} updated by ${userType} ${userID}`);
+    this.logger.log(`Post ${id} updated by ${user.type} ${user.id}`);
 
     return updatedPost;
   }
 
-  async deletePost(id: string, userID: string, userType: UserType) {
+  async deletePost(id: string, user: AuthUser) {
     const post = await this.prisma.post.findUnique({
       where: { id },
-    });
-
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-
-    // Check if user is the author or has moderator permissions
-    if (post.authorID !== userID || post.authorType !== userType) {
-      await this.checkCommunityPermission(post.communityID, userID, userType, 'moderate_posts');
-    }
-
-    await this.prisma.post.delete({
-      where: { id },
-    });
-
-    // Update community post count
-    await this.prisma.community.update({
-      where: { id: post.communityID },
-      data: { postCount: { decrement: 1 } },
-    });
-
-    this.logger.log(`Post ${id} deleted by ${userType} ${userID}`);
-
-    return { message: 'Post deleted successfully' };
-  }
-
-  async reactToPost(postID: string, reactionRequest: ReactToPostRequest, userID: string, userType: UserType) {
-    const post = await this.prisma.post.findUnique({
-      where: { id: postID },
       include: {
-        community: { select: { name: true } },
+        communityMember: true,
       },
     });
 
@@ -290,15 +274,45 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    // Check if user has access to the community
-    await this.checkCommunityMembership(post.communityID, userID, userType);
+    if (post.communityMember.userID !== user.id || post.communityMember.userType !== user.type) {
+      await this.checkCommunityPermission(post.communityID, user, 'moderate_posts');
+    }
+
+    await this.prisma.post.delete({
+      where: { id },
+    });
+
+    await this.prisma.community.update({
+      where: { id: post.communityID },
+      data: { postCount: { decrement: 1 } },
+    });
+
+    this.logger.log(`Post ${id} deleted by ${user.type} ${user.id}`);
+
+    return { message: 'Post deleted successfully' };
+  }
+
+  async reactToPost(postID: string, reactionRequest: ReactToPostRequest, user: AuthUser) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postID },
+      include: {
+        community: { select: { name: true } },
+        communityMember: { select: { userID: true, userType: true, userName: true } },
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    await this.checkCommunityMembership(post.communityID, user);
 
     const existingReaction = await this.prisma.postReaction.findUnique({
       where: {
         postID_userID_userType: {
           postID,
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
         },
       },
     });
@@ -307,32 +321,28 @@ export class PostsService {
 
     if (existingReaction) {
       if (existingReaction.type === reactionRequest.type) {
-        // Remove reaction
         await this.prisma.postReaction.delete({
           where: { id: existingReaction.id },
         });
         reactionChange = -1;
       } else {
-        // Update reaction type
         await this.prisma.postReaction.update({
           where: { id: existingReaction.id },
           data: { type: reactionRequest.type },
         });
       }
     } else {
-      // Create new reaction
       await this.prisma.postReaction.create({
         data: {
           postID,
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
           type: reactionRequest.type,
         },
       });
       reactionChange = 1;
     }
 
-    // Update post like count
     if (reactionChange !== 0) {
       await this.prisma.post.update({
         where: { id: postID },
@@ -340,9 +350,8 @@ export class PostsService {
       });
     }
 
-    // Only publish event for new reactions (not updates or removals)
     if (!existingReaction && reactionChange > 0) {
-      const userName = await this.getUserName(userID, userType);
+      const userName = await this.getUserName(user);
 
       await this.outboxService.saveAndPublishEvent<CommunityEvent>({
         eventType: 'community.post.liked',
@@ -351,10 +360,10 @@ export class PostsService {
           postID,
           communityID: post.communityID,
           communityName: post.community.name,
-          postAuthorID: post.authorID,
-          postAuthorType: post.authorType as UserType,
-          likedByID: userID,
-          likedByType: userType,
+          postAuthorID: post.communityMember.userID,
+          postAuthorType: post.communityMember.userType as UserType,
+          likedByID: user.id,
+          likedByType: user.type,
           likedByName: userName,
           reactionType: reactionRequest.type,
           likedAt: new Date().toISOString(),
@@ -362,16 +371,17 @@ export class PostsService {
       }, COMMUNITY_ROUTING_KEYS.POST_LIKED);
     }
 
-    this.logger.log(`Post ${postID} reacted to by ${userType} ${userID} with ${reactionRequest.type}`);
+    this.logger.log(`Post ${postID} reacted to by ${user.type} ${user.id} with ${reactionRequest.type}`);
 
     return { message: 'Reaction updated successfully' };
   }
 
-  async createComment(postID: string, createRequest: CreateCommentRequest, authorID: string, authorType: UserType) {
+  async createComment(postID: string, createRequest: CreateCommentRequest, user: AuthUser) {
     const post = await this.prisma.post.findUnique({
       where: { id: postID },
       include: {
         community: { select: { name: true } },
+        communityMember: { select: { userID: true, userType: true } },
       },
     });
 
@@ -379,31 +389,23 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    // Check if user has access to the community
-    await this.checkCommunityMembership(post.communityID, authorID, authorType);
-
-    const authorInfo = await this.getAuthorInfo(authorID, authorType);
+    const commenterMember = await this.checkCommunityMembership(post.communityID, user);
 
     const comment = await this.prisma.postComment.create({
       data: {
         postID,
-        authorID,
-        authorType,
-        authorName: authorInfo.name,           // NEW FIELD
-        authorAvatarUrl: authorInfo.avatarUrl,
+        communityMemberID: commenterMember.id,
         content: createRequest.content,
         mediaUrls: createRequest.mediaUrls || [],
         parentCommentID: createRequest.parentCommentID,
       },
     });
 
-    // Update post comment count
     await this.prisma.post.update({
       where: { id: postID },
       data: { commentCount: { increment: 1 } },
     });
 
-    // Update parent comment reply count if this is a reply
     if (createRequest.parentCommentID) {
       await this.prisma.postComment.update({
         where: { id: createRequest.parentCommentID },
@@ -411,10 +413,6 @@ export class PostsService {
       });
     }
 
-    // Get author name
-    const authorName = await this.getUserName(authorID, authorType);
-
-    // Publish event
     await this.outboxService.saveAndPublishEvent<CommunityEvent>({
       eventType: 'community.post.commented',
       schemaVersion: 1,
@@ -423,22 +421,22 @@ export class PostsService {
         postID,
         communityID: post.communityID,
         communityName: post.community.name,
-        postAuthorID: post.authorID,
-        postAuthorType: post.authorType as UserType,
-        commentAuthorID: authorID,
-        commentAuthorType: authorType,
-        commentAuthorName: authorName,
+        postAuthorID: post.communityMember.userID,
+        postAuthorType: post.communityMember.userType as UserType,
+        commentAuthorID: commenterMember.userID,
+        commentAuthorType: commenterMember.userType as UserType,
+        commentAuthorName: commenterMember.userName,
         content: comment.content,
         commentedAt: comment.createdAt.toISOString(),
       },
     }, COMMUNITY_ROUTING_KEYS.POST_COMMENTED);
 
-    this.logger.log(`Comment created: ${comment.id} on post ${postID} by ${authorType} ${authorID}`);
+    this.logger.log(`Comment created: ${comment.id} on post ${postID} by ${user.type} ${user.id}`);
 
     return comment;
   }
 
-  async getComments(postID: string, page = 1, limit = 20, userID: string, userType: UserType) {
+  async getComments(postID: string, filters: CommentFilters, user: AuthUser) {
     const post = await this.prisma.post.findUnique({
       where: { id: postID },
       select: { communityID: true },
@@ -448,26 +446,45 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    // Check if user has access to the community
-    await this.checkCommunityMembership(post.communityID, userID, userType);
+    await this.checkCommunityMembership(post.communityID, user);
+
+    const where: any = {
+      postID,
+    };
+
+    if (filters.parentCommentID !== undefined) {
+      where.parentCommentID = filters.parentCommentID;
+    } else {
+      where.parentCommentID = null;
+    }
+
+    if (filters.search) {
+      where.content = {
+        contains: filters.search,
+        mode: 'insensitive',
+      };
+    }
 
     const result = await this.prisma.paginate<PostComment>(this.prisma.postComment, {
-      page,
-      limit,
-      where: {
-        postID,
-        parentCommentID: null, // Top-level comments only
-      },
+      page: filters.page || 1,
+      limit: filters.limit || 20,
+      where,
       include: {
+        communityMember: {
+          select: { userName: true, userAvatarUrl: true, role: true },
+        },
         reactions: {
-          where: { userID, userType },
+          where: { userID: user.id, userType: user.type },
           select: { type: true },
         },
         replies: {
-          take: 3, // Limited replies per comment
+          take: 3,
           include: {
+            communityMember: {
+              select: { userName: true, userAvatarUrl: true, role: true },
+            },
             reactions: {
-              where: { userID, userType },
+              where: { userID: user.id, userType: user.type },
               select: { type: true },
             },
           },
@@ -477,7 +494,7 @@ export class PostsService {
           select: { replies: true, reactions: true },
         },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: filters.sortOrder || 'asc' },
     });
 
     return {
@@ -495,7 +512,7 @@ export class PostsService {
     };
   }
 
-  async reactToComment(commentID: string, reactionRequest: ReactToPostRequest, userID: string, userType: UserType) {
+  async reactToComment(commentID: string, reactionRequest: ReactToPostRequest, user: AuthUser) {
     const comment = await this.prisma.postComment.findUnique({
       where: { id: commentID },
       include: {
@@ -511,15 +528,14 @@ export class PostsService {
       throw new NotFoundException('Comment not found');
     }
 
-    // Check if user has access to the community
-    await this.checkCommunityMembership(comment.post.communityID, userID, userType);
+    await this.checkCommunityMembership(comment.post.communityID, user);
 
     const existingReaction = await this.prisma.postReaction.findUnique({
       where: {
         commentID_userID_userType: {
           commentID,
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
         },
       },
     });
@@ -528,32 +544,28 @@ export class PostsService {
 
     if (existingReaction) {
       if (existingReaction.type === reactionRequest.type) {
-        // Remove reaction
         await this.prisma.postReaction.delete({
           where: { id: existingReaction.id },
         });
         reactionChange = -1;
       } else {
-        // Update reaction type
         await this.prisma.postReaction.update({
           where: { id: existingReaction.id },
           data: { type: reactionRequest.type },
         });
       }
     } else {
-      // Create new reaction
       await this.prisma.postReaction.create({
         data: {
           commentID,
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
           type: reactionRequest.type,
         },
       });
       reactionChange = 1;
     }
 
-    // Update comment like count
     if (reactionChange !== 0) {
       await this.prisma.postComment.update({
         where: { id: commentID },
@@ -561,18 +573,18 @@ export class PostsService {
       });
     }
 
-    this.logger.log(`Comment ${commentID} reacted to by ${userType} ${userID} with ${reactionRequest.type}`);
+    this.logger.log(`Comment ${commentID} reacted to by ${user.type} ${user.id} with ${reactionRequest.type}`);
 
     return { message: 'Reaction updated successfully' };
   }
 
-  private async checkCommunityMembership(communityID: string, userID: string, userType: UserType) {
+  private async checkCommunityMembership(communityID: string, user: AuthUser) {
     const member = await this.prisma.communityMember.findUnique({
       where: {
         communityID_userID_userType: {
           communityID,
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
         },
       },
     });
@@ -584,8 +596,8 @@ export class PostsService {
     return member;
   }
 
-  private async checkCommunityPermission(communityID: string, userID: string, userType: UserType, permission: string) {
-    const member = await this.checkCommunityMembership(communityID, userID, userType);
+  private async checkCommunityPermission(communityID: string, user: AuthUser, permission: string) {
+    const member = await this.checkCommunityMembership(communityID, user);
 
     if (!member.permissions.includes(permission) && !member.permissions.includes('all')) {
       throw new ForbiddenException('Insufficient permissions');
@@ -594,26 +606,26 @@ export class PostsService {
     return true;
   }
 
-  private async getUserName(userID: string, userType: UserType): Promise<string> {
+  private async getUserName(user: AuthUser): Promise<string> {
     try {
-      switch (userType) {
+      switch (user.type) {
         case UserType.coach:
           const coach = await this.prisma.coach.findUnique({
-            where: { id: userID },
+            where: { id: user.id },
             select: { firstName: true, lastName: true, businessName: true },
           });
           return coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach';
 
         case UserType.client:
           const client = await this.prisma.client.findUnique({
-            where: { id: userID },
+            where: { id: user.id },
             select: { firstName: true, lastName: true },
           });
           return `${client?.firstName} ${client?.lastName}` || 'Unknown Client';
 
         case UserType.admin:
           const admin = await this.prisma.admin.findUnique({
-            where: { id: userID },
+            where: { id: user.id },
             select: { firstName: true, lastName: true },
           });
           return `${admin?.firstName} ${admin?.lastName}` || 'Admin';
@@ -622,50 +634,8 @@ export class PostsService {
           return 'Unknown User';
       }
     } catch (error) {
-      this.logger.warn(`Failed to get user name for ${userType} ${userID}`, error);
+      this.logger.warn(`Failed to get user name for ${user.type} ${user.id}`, error);
       return 'Unknown User';
-    }
-  }
-
-  private async getAuthorInfo(authorID: string, authorType: UserType): Promise<{ name: string; avatarUrl: string | null }> {
-    try {
-      switch (authorType) {
-        case UserType.coach:
-          const coach = await this.prisma.coach.findUnique({
-            where: { id: authorID },
-            select: { firstName: true, lastName: true, businessName: true, avatarUrl: true },
-          });
-          return {
-            name: coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach',
-            avatarUrl: coach?.avatarUrl || null,
-          };
-
-        case UserType.client:
-          const client = await this.prisma.client.findUnique({
-            where: { id: authorID },
-            select: { firstName: true, lastName: true, avatarUrl: true },
-          });
-          return {
-            name: `${client?.firstName} ${client?.lastName}` || 'Unknown Client',
-            avatarUrl: client?.avatarUrl || null,
-          };
-
-        case UserType.admin:
-          const admin = await this.prisma.admin.findUnique({
-            where: { id: authorID },
-            select: { firstName: true, lastName: true, avatarUrl: true },
-          });
-          return {
-            name: `${admin?.firstName} ${admin?.lastName}` || 'Admin',
-            avatarUrl: admin?.avatarUrl || null,
-          };
-
-        default:
-          return { name: 'Unknown User', avatarUrl: null };
-      }
-    } catch (error) {
-      this.logger.warn(`Failed to get author info for ${authorType} ${authorID}`, error);
-      return { name: 'Unknown User', avatarUrl: null };
     }
   }
 }
