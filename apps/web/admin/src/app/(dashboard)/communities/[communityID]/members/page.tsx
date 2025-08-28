@@ -2,10 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Users, Crown, Shield, UserPlus, Search } from 'lucide-react';
-import { BackTo, DataTable, Pagination, StatCard } from "@nlc-ai/web-shared";
+import { Users, Shield, Mail, Plus, Search } from 'lucide-react';
+import { BackTo, DataTable, Pagination, StatCard, DataFilter, PageHeader } from "@nlc-ai/web-shared";
 import { Button, Skeleton } from '@nlc-ai/web-ui';
-import { formatDate } from "@nlc-ai/web-utils";
+import { FilterValues } from "@nlc-ai/sdk-core";
+import { toast } from 'sonner';
+import {
+  sdkClient,
+  InviteMemberModal,
+  AddMemberModal,
+  memberColumns,
+  MembersMobileCard,
+  memberFilters,
+  emptyMemberFilterValues
+} from "@/lib";
+import {ExtendedCommunityMember} from "@nlc-ai/sdk-community";
 
 interface MemberStats {
   totalMembers: number;
@@ -18,31 +29,18 @@ interface MemberStats {
   pendingMembers: number;
 }
 
-interface CommunityMember {
-  id: string;
-  userID: string;
-  userName: string;
-  userType: 'coach' | 'client' | 'admin';
-  role: 'owner' | 'admin' | 'moderator' | 'member';
-  status: 'active' | 'inactive' | 'suspended' | 'pending';
-  joinedAt: string;
-  lastActiveAt?: string;
-  permissions: string[];
-  postCount: number;
-  commentCount: number;
-}
-
 const AdminCommunityMembersPage = () => {
   const router = useRouter();
   const params = useParams();
   const communityID = params.communityID as string;
 
   const [stats, setStats] = useState<MemberStats | null>(null);
-  const [members, setMembers] = useState<CommunityMember[]>([]);
+  const [members, setMembers] = useState<ExtendedCommunityMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyMemberFilterValues);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -53,208 +51,127 @@ const AdminCommunityMembersPage = () => {
     hasPrev: false,
   });
 
+  // Modal states
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+
+  // Effects
   useEffect(() => {
     fetchMembersData();
-  }, [communityID, currentPage, searchQuery, roleFilter, statusFilter]);
+    fetchStats();
+  }, [communityID]);
+
+  useEffect(() => {
+    fetchMembersData();
+  }, [currentPage, searchQuery, filterValues]);
+
+  // Data fetching functions
+  const fetchStats = async () => {
+    try {
+      setIsStatsLoading(true);
+      const stats = await sdkClient.community.communities.getCommunityMemberStats(communityID);
+      setStats(stats);
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+      toast.error('Failed to load member statistics');
+    } finally {
+      setIsStatsLoading(false);
+    }
+  };
 
   const fetchMembersData = async () => {
     try {
       setIsLoading(true);
 
-      // Mock data - this would come from your API
-      const mockStats: MemberStats = {
-        totalMembers: 89,
-        activeMembers: 82,
-        owners: 1,
-        admins: 2,
-        moderators: 5,
-        regularMembers: 74,
-        suspendedMembers: 3,
-        pendingMembers: 4,
-      };
+      const response = await sdkClient.community.communities.getCommunityMembers(
+        communityID,
+        {
+          page: currentPage,
+          limit: 10,
+          search: searchQuery,
+        },
+        filterValues
+      );
 
-      const mockMembers: CommunityMember[] = [
-        {
-          id: '1',
-          userID: 'user1',
-          userName: 'Sarah Johnson',
-          userType: 'coach',
-          role: 'owner',
-          status: 'active',
-          joinedAt: new Date('2024-01-01').toISOString(),
-          lastActiveAt: new Date('2024-01-20').toISOString(),
-          permissions: ['all'],
-          postCount: 25,
-          commentCount: 67,
-        },
-        {
-          id: '2',
-          userID: 'user2',
-          userName: 'Mike Thompson',
-          userType: 'coach',
-          role: 'admin',
-          status: 'active',
-          joinedAt: new Date('2024-01-05').toISOString(),
-          lastActiveAt: new Date('2024-01-19').toISOString(),
-          permissions: ['manage_community', 'moderate_posts', 'manage_members'],
-          postCount: 18,
-          commentCount: 45,
-        },
-        {
-          id: '3',
-          userID: 'user3',
-          userName: 'Emily Davis',
-          userType: 'client',
-          role: 'member',
-          status: 'active',
-          joinedAt: new Date('2024-01-10').toISOString(),
-          lastActiveAt: new Date('2024-01-18').toISOString(),
-          permissions: ['create_posts', 'comment', 'react'],
-          postCount: 8,
-          commentCount: 23,
-        },
-        {
-          id: '4',
-          userID: 'user4',
-          userName: 'John Smith',
-          userType: 'client',
-          role: 'member',
-          status: 'suspended',
-          joinedAt: new Date('2024-01-15').toISOString(),
-          lastActiveAt: new Date('2024-01-16').toISOString(),
-          permissions: [],
-          postCount: 3,
-          commentCount: 8,
-        },
-      ];
-
-      setStats(mockStats);
-      setMembers(mockMembers);
-      setPagination({
-        page: currentPage,
-        limit: 10,
-        total: mockMembers.length,
-        totalPages: Math.ceil(mockMembers.length / 10),
-        hasNext: false,
-        hasPrev: false,
-      });
+      setMembers(response.data);
+      setPagination(response.pagination);
     } catch (error) {
       console.error('Failed to fetch members data:', error);
+      toast.error('Failed to load community members');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleMemberAction = async (memberID: string, action: string) => {
-    console.log(`${action} member:`, memberID);
-    // Implement member actions
-  };
+  // Event handlers
+  const handleMemberAction = async (action: string, member: ExtendedCommunityMember) => {
+    console.log(`${action} member:`, member?.id);
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'owner':
-        return <Crown className="w-4 h-4" />;
-      case 'admin':
-        return <Shield className="w-4 h-4" />;
-      case 'moderator':
-        return <Users className="w-4 h-4" />;
+    switch (action) {
+      case 'view-profile':
+        toast.info('View profile functionality to be implemented');
+        break;
+      case 'change-role':
+        toast.info('Change role functionality to be implemented');
+        break;
+      case 'suspend':
+        toast.info('Suspend member functionality to be implemented');
+        break;
+      case 'activate':
+        toast.info('Activate member functionality to be implemented');
+        break;
+      case 'remove':
+        if (confirm('Are you sure you want to remove this member?')) {
+          try {
+            const member: ExtendedCommunityMember | undefined = members.find(m => m.id === member?.id);
+            if (member) {
+              await sdkClient.community.communities.removeMember(
+                communityID,
+                member.userID,
+                member.userType
+              );
+              toast.success('Member removed successfully');
+              await fetchMembersData();
+              await fetchStats();
+            }
+          } catch (error: any) {
+            toast.error(error.message || 'Failed to remove member');
+          }
+        }
+        break;
       default:
-        return null;
+        toast.info(`${action} functionality to be implemented`);
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'owner':
-        return 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30';
-      case 'admin':
-        return 'bg-purple-600/20 text-purple-400 border-purple-600/30';
-      case 'moderator':
-        return 'bg-blue-600/20 text-blue-400 border-blue-600/30';
-      case 'member':
-        return 'bg-gray-600/20 text-gray-400 border-gray-600/30';
-      default:
-        return 'bg-gray-600/20 text-gray-400 border-gray-600/30';
-    }
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-600/20 text-green-400 border-green-600/30';
-      case 'inactive':
-        return 'bg-gray-600/20 text-gray-400 border-gray-600/30';
-      case 'suspended':
-        return 'bg-red-600/20 text-red-400 border-red-600/30';
-      case 'pending':
-        return 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30';
-      default:
-        return 'bg-gray-600/20 text-gray-400 border-gray-600/30';
-    }
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters);
+    setCurrentPage(1);
   };
 
-  const memberColumns = [
-    {
-      key: 'userName',
-      header: 'Member',
-      render: (value: string, row: CommunityMember) => (
-        <div className="flex items-center gap-2">
-          <div>
-            <div className="text-stone-200 font-medium">{value}</div>
-            <div className="text-stone-400 text-sm">{row.userType}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'role',
-      header: 'Role',
-      render: (value: string) => (
-        <div className="flex items-center gap-2">
-          {getRoleIcon(value)}
-          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(value)}`}>
-            {value}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (value: string) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(value)}`}>
-          {value}
-        </span>
-      ),
-    },
-    {
-      key: 'postCount',
-      header: 'Posts',
-    },
-    {
-      key: 'commentCount',
-      header: 'Comments',
-    },
-    {
-      key: 'joinedAt',
-      header: 'Joined',
-      render: (value: string) => formatDate(value),
-    },
-    {
-      key: 'lastActiveAt',
-      header: 'Last Active',
-      render: (value?: string) => value ? formatDate(value) : 'Never',
-    },
-  ];
+  const handleResetFilters = () => {
+    setFilterValues(emptyMemberFilterValues);
+    setSearchQuery('');
+    setCurrentPage(1);
+  };
 
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = member.userName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || member.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  const onMemberAdded = () => {
+    fetchMembersData();
+    fetchStats();
+  };
 
-  if (isLoading) {
+  const onMemberInvited = () => {
+    // Could fetch pending invitations if we had that feature
+    fetchStats();
+  };
+
+  // Loading state
+  if (isLoading && !members.length) {
     return (
       <div className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="animate-pulse space-y-8">
@@ -272,118 +189,143 @@ const AdminCommunityMembersPage = () => {
   }
 
   return (
-    <div className="flex-1 p-4 sm:p-6 lg:p-8">
-      <BackTo
-        title="Community Members"
-        onClick={() => router.push(`/communities/${communityID}`)}
-      />
+    <div className={`flex flex-col ${isFilterOpen ? 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' : ''}`}>
+      <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
+        <BackTo
+          title="Community Members"
+          onClick={() => router.push(`/communities/${communityID}`)}
+        />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          title="Total Members"
-          value={stats?.totalMembers}
-          subtitle={`${stats?.activeMembers} active`}
-          icon={Users}
-          iconBgColor="from-blue-600/20 to-cyan-600/20"
-          isLoading={!stats}
-        />
-        <StatCard
-          title="Admins & Mods"
-          value={(stats?.admins || 0) + (stats?.moderators || 0)}
-          subtitle={`${stats?.owners} owner`}
-          icon={Shield}
-          iconBgColor="from-purple-600/20 to-violet-600/20"
-          isLoading={!stats}
-        />
-        <StatCard
-          title="Regular Members"
-          value={stats?.regularMembers}
-          subtitle="Community members"
-          icon={Users}
-          iconBgColor="from-green-600/20 to-emerald-600/20"
-          isLoading={!stats}
-        />
-        <StatCard
-          title="Pending/Suspended"
-          value={(stats?.pendingMembers || 0) + (stats?.suspendedMembers || 0)}
-          subtitle="Need attention"
-          icon={Users}
-          iconBgColor="from-red-600/20 to-pink-600/20"
-          isLoading={!stats}
-        />
-      </div>
-
-      {/* Filters and Actions */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder="Search members..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg px-4 py-2 pl-10 text-white placeholder:text-stone-400"
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            title="Total Members"
+            value={stats?.totalMembers}
+            subtitle={`${stats?.activeMembers} active`}
+            icon={Users}
+            iconBgColor="from-blue-600/20 to-cyan-600/20"
+            isLoading={isStatsLoading}
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <StatCard
+            title="Admins & Mods"
+            value={(stats?.admins || 0) + (stats?.moderators || 0)}
+            subtitle={`${stats?.owners} owner`}
+            icon={Shield}
+            iconBgColor="from-purple-600/20 to-violet-600/20"
+            isLoading={isStatsLoading}
+          />
+          <StatCard
+            title="Regular Members"
+            value={stats?.regularMembers}
+            subtitle="Community members"
+            icon={Users}
+            iconBgColor="from-green-600/20 to-emerald-600/20"
+            isLoading={isStatsLoading}
+          />
+          <StatCard
+            title="Pending/Suspended"
+            value={(stats?.pendingMembers || 0) + (stats?.suspendedMembers || 0)}
+            subtitle="Need attention"
+            icon={Users}
+            iconBgColor="from-red-600/20 to-pink-600/20"
+            isLoading={isStatsLoading}
+          />
         </div>
 
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-neutral-800/50 border border-neutral-600 rounded-lg px-4 py-2 text-white"
+        {/* Page Header with Search and Actions */}
+        <PageHeader
+          title="Member Management"
+          actionButton={{
+            label: 'Invite Member',
+            onClick: () => setShowInviteModal(true),
+            icon: <Mail className="w-4 h-4" />,
+          }}
+          showActionOnMobile={true}
         >
-          <option value="all">All Roles</option>
-          <option value="owner">Owner</option>
-          <option value="admin">Admin</option>
-          <option value="moderator">Moderator</option>
-          <option value="member">Member</option>
-        </select>
+          <>
+            <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
+              <input
+                type="text"
+                placeholder="Search members..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="flex-1 bg-transparent text-white placeholder:text-white/50 text-base font-normal leading-tight outline-none"
+              />
+              <Search className="w-5 h-5 text-white" />
+            </div>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-neutral-800/50 border border-neutral-600 rounded-lg px-4 py-2 text-white"
-        >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="suspended">Suspended</option>
-          <option value="pending">Pending</option>
-        </select>
+            <DataFilter
+              filters={memberFilters}
+              values={filterValues}
+              onChange={handleFilterChange}
+              onReset={handleResetFilters}
+              setIsFilterOpen={setIsFilterOpen}
+            />
 
-        <Button
-          onClick={() => console.log('Invite member')}
-          className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Invite Member
-        </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowInviteModal(true)}
+                className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Invite Member
+              </Button>
+              <Button
+                onClick={() => setShowAddMemberModal(true)}
+                variant="outline"
+                className="hidden sm:flex"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Member
+              </Button>
+            </div>
+          </>
+        </PageHeader>
+
+        <MembersMobileCard
+          members={members}
+          onRowAction={handleMemberAction}
+          emptyMessage="No members found matching your criteria"
+        />
+
+        <DataTable
+          columns={memberColumns}
+          data={members}
+          showMobileCards={false}
+          emptyMessage="No members found matching your criteria"
+          isLoading={isLoading}
+          actions={[
+            { action: 'view-profile', label: 'View Profile' },
+            { action: 'change-role', label: 'Change Role' },
+            { action: 'suspend', label: 'Suspend' },
+            { action: 'remove', label: 'Remove' },
+          ]}
+          onRowAction={handleMemberAction}
+        />
+
+        {/* Pagination */}
+        <Pagination
+          totalPages={pagination.totalPages}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          isLoading={isLoading}
+        />
+
+        {/* Modals */}
+        <InviteMemberModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          communityID={communityID}
+          onInviteSuccess={onMemberInvited}
+        />
+
+        <AddMemberModal
+          isOpen={showAddMemberModal}
+          onClose={() => setShowAddMemberModal(false)}
+          communityID={communityID}
+          onAddSuccess={onMemberAdded}
+        />
       </div>
-
-      {/* Members Table */}
-      <DataTable
-        columns={memberColumns}
-        data={filteredMembers}
-        showMobileCards={true}
-        emptyMessage="No members found matching your criteria"
-        isLoading={false}
-        actions={[
-          { action: 'view-profile', label: 'View Profile' },
-          { action: 'change-role', label: 'Change Role' },
-          { action: 'suspend', label: 'Suspend' },
-          { action: 'remove', label: 'Remove' },
-        ]}
-        onRowAction={(action, row) => {
-          handleMemberAction(row.id, action);
-        }}
-      />
-
-      <Pagination
-        totalPages={pagination.totalPages}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        isLoading={false}
-      />
     </div>
   );
 };

@@ -383,28 +383,6 @@ model Community {
   @@map("communities")
 }
 
-model CommunityMember {
-  id           String       @id @default(uuid()) @db.Uuid
-  communityID  String       @db.Uuid
-  userID       String       @db.Uuid
-  userType     String       @db.VarChar(20) // 'coach', 'admin', 'client'
-  role         MemberRole   @default(member)
-  status       MemberStatus @default(active)
-  joinedAt     DateTime     @default(now()) @db.Timestamptz(6)
-  lastActiveAt DateTime?    @db.Timestamptz(6)
-  invitedBy    String?      @db.Uuid
-  customTitle  String?      @db.VarChar(100)
-  permissions  String[]     @default([])
-
-  community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
-
-  @@unique([communityID, userID, userType])
-  @@index([userID, userType])
-  @@index([communityID])
-  @@index([status])
-  @@map("community_members")
-}
-
 model CommunityInvite {
   id          String    @id @default(uuid()) @db.Uuid
   communityID String    @db.Uuid
@@ -427,35 +405,64 @@ model CommunityInvite {
   @@map("community_invites")
 }
 
-model Post {
-  id              String   @id @default(uuid()) @db.Uuid
-  communityID     String   @db.Uuid
-  authorID        String   @db.Uuid
-  authorType      String   @db.VarChar(20)
-  authorName      String   @db.VarChar(255) // NEW FIELD
-  authorAvatarUrl String?  @db.Text // NEW FIELD
-  type            PostType @default(text)
-  content         String   @db.Text
-  mediaUrls       String[] @default([])
-  linkUrl         String?
-  linkPreview     Json?    @default("{}")
-  pollOptions     String[] @default([])
-  eventData       Json?    @default("{}")
-  isPinned        Boolean  @default(false)
-  isEdited        Boolean  @default(false)
-  likeCount       Int      @default(0)
-  commentCount    Int      @default(0)
-  shareCount      Int      @default(0)
-  createdAt       DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+model CommunityMember {
+  id           String       @id @default(uuid()) @db.Uuid
+  communityID  String       @db.Uuid
+  userID       String       @db.Uuid
+  userType     String       @db.VarChar(20)
+  role         MemberRole   @default(member)
+  status       MemberStatus @default(active)
+  joinedAt     DateTime     @default(now()) @db.Timestamptz(6)
+  lastActiveAt DateTime?    @db.Timestamptz(6)
+  invitedBy    String?      @db.Uuid
+  customTitle  String?      @db.VarChar(100)
+  permissions  String[]     @default([])
 
-  community Community      @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  userName      String  @db.VarChar(255)
+  userEmail     String  @db.VarChar(255)
+  userAvatarUrl String?
+
+  community Community     @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  posts     Post[]
   comments  PostComment[]
-  reactions PostReaction[]
+
+  @@unique([communityID, userID, userType])
+  @@index([userID, userType])
+  @@index([communityID])
+  @@index([status])
+  @@index([userName])
+  @@index([userEmail])
+  @@map("community_members")
+}
+
+model Post {
+  id          String @id @default(uuid()) @db.Uuid
+  communityID String @db.Uuid
+
+  communityMemberID String @db.Uuid
+
+  type         PostType @default(text)
+  content      String   @db.Text
+  mediaUrls    String[] @default([])
+  linkUrl      String?
+  linkPreview  Json?    @default("{}")
+  pollOptions  String[] @default([])
+  eventData    Json?    @default("{}")
+  isPinned     Boolean  @default(false)
+  isEdited     Boolean  @default(false)
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  shareCount   Int      @default(0)
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  community       Community       @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  communityMember CommunityMember @relation(fields: [communityMemberID], references: [id], onDelete: Cascade)
+  comments        PostComment[]
+  reactions       PostReaction[]
 
   @@index([communityID])
-  @@index([authorID, authorType])
-  @@index([authorName]) // NEW INDEX
+  @@index([communityMemberID])
   @@index([type])
   @@index([createdAt])
   @@index([isPinned])
@@ -463,12 +470,11 @@ model Post {
 }
 
 model PostComment {
-  id              String   @id @default(uuid()) @db.Uuid
-  postID          String   @db.Uuid
-  authorID        String   @db.Uuid
-  authorType      String   @db.VarChar(20)
-  authorName      String   @db.VarChar(255) // NEW FIELD
-  authorAvatarUrl String?  @db.Text // NEW FIELD
+  id     String @id @default(uuid()) @db.Uuid
+  postID String @db.Uuid
+
+  communityMemberID String @db.Uuid
+
   content         String   @db.Text
   mediaUrls       String[] @default([])
   parentCommentID String?  @db.Uuid
@@ -478,25 +484,27 @@ model PostComment {
   createdAt       DateTime @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 
-  post          Post           @relation(fields: [postID], references: [id], onDelete: Cascade)
-  parentComment PostComment?   @relation("CommentReplies", fields: [parentCommentID], references: [id])
-  replies       PostComment[]  @relation("CommentReplies")
-  reactions     PostReaction[]
+  post            Post            @relation(fields: [postID], references: [id], onDelete: Cascade)
+  communityMember CommunityMember @relation(fields: [communityMemberID], references: [id], onDelete: Cascade)
+  parentComment   PostComment?    @relation("CommentReplies", fields: [parentCommentID], references: [id])
+  replies         PostComment[]   @relation("CommentReplies")
+  reactions       PostReaction[]
 
   @@index([postID])
-  @@index([authorID, authorType])
-  @@index([authorName]) // NEW INDEX
+  @@index([communityMemberID])
   @@index([parentCommentID])
   @@index([createdAt])
   @@map("post_comments")
 }
 
 model PostReaction {
-  id        String       @id @default(uuid()) @db.Uuid
-  postID    String?      @db.Uuid
-  commentID String?      @db.Uuid
-  userID    String       @db.Uuid
-  userType  String       @db.VarChar(20)
+  id        String  @id @default(uuid()) @db.Uuid
+  postID    String? @db.Uuid
+  commentID String? @db.Uuid
+
+  userID   String @db.Uuid
+  userType String @db.VarChar(20)
+
   type      ReactionType @default(like)
   createdAt DateTime     @default(now()) @db.Timestamptz(6)
 

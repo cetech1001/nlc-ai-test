@@ -4,7 +4,8 @@ import {OutboxService} from '@nlc-ai/api-messaging';
 import {
   COMMUNITY_ROUTING_KEYS,
   CommunityEvent,
-  CommunityFilters, CommunityMember,
+  CommunityFilters,
+  CommunityMember,
   CommunityPricingTypes,
   CommunityType,
   CommunityVisibility,
@@ -36,7 +37,6 @@ export class CommunityService {
 
   async createCommunity(createRequest: CreateCommunityRequest, creatorID: string, creatorType: UserType) {
     try {
-      // Check if slug already exists
       const existingCommunity = await this.prisma.community.findUnique({
         where: { slug: createRequest.slug },
       });
@@ -45,7 +45,6 @@ export class CommunityService {
         throw new BadRequestException('A community with this URL slug already exists');
       }
 
-      // Prepare default settings
       const defaultSettings: CommunitySettings = {
         allowMemberPosts: true,
         requireApproval: false,
@@ -56,16 +55,13 @@ export class CommunityService {
         moderationLevel: 'moderate',
       };
 
-      // Merge with provided settings
       const settings: CommunitySettings = {
         ...defaultSettings,
         ...createRequest.settings,
       };
 
-      // Determine if this should be marked as system-created
       const isSystemCreated = createRequest.isSystemCreated === true && creatorType === UserType.admin;
 
-      // Prepare pricing data
       const pricingType = createRequest.pricing?.type || CommunityPricingTypes.FREE;
       const pricingAmount = createRequest.pricing?.amount || null;
       const pricingCurrency = createRequest.pricing?.currency || 'USD';
@@ -84,15 +80,13 @@ export class CommunityService {
           avatarUrl: createRequest.avatarUrl,
           bannerUrl: createRequest.bannerUrl,
 
-          // Pricing fields
-          pricingType: pricingType as any, // Cast for Prisma enum
+          pricingType: pricingType as any,
           pricingAmount,
           pricingCurrency,
 
-          // System tracking
           isSystemCreated,
 
-          settings: settings as any, // Cast to any for Prisma JSON field
+          settings: settings as any,
           memberCount: (!isSystemCreated && creatorType === UserType.coach) ? 1 : 0,
         },
         include: {
@@ -100,7 +94,6 @@ export class CommunityService {
         },
       });
 
-      // Only auto-add creator as member if not system-created and not admin
       if (!isSystemCreated && creatorType !== UserType.admin) {
         await this.prisma.communityMember.create({
           data: {
@@ -114,7 +107,6 @@ export class CommunityService {
         });
       }
 
-      // Publish creation event
       await this.outboxService.saveAndPublishEvent<CommunityEvent>({
         eventType: 'community.created',
         schemaVersion: 1,
@@ -189,7 +181,6 @@ export class CommunityService {
       isActive: true,
     };
 
-    // Filter by user's memberships
     if (filters.memberOf) {
       where.members = {
         some: {
@@ -267,7 +258,6 @@ export class CommunityService {
 
     let membership;
 
-    // Check if user has access
     if (userType !== UserType.admin) {
       membership = await this.prisma.communityMember.findUnique({
         where: {
@@ -299,16 +289,13 @@ export class CommunityService {
       throw new NotFoundException('Community not found');
     }
 
-    // Check permissions
     await this.checkPermission(id, userID, userType, 'manage_community');
 
-    // Prepare update data
     const updateData: any = {
       ...updateRequest,
       updatedAt: new Date(),
     };
 
-    // Handle pricing updates if provided
     if (updateRequest.pricing) {
       updateData.pricingType = updateRequest.pricing.type;
       updateData.pricingAmount = updateRequest.pricing.amount;
@@ -332,96 +319,33 @@ export class CommunityService {
     userID: string,
     userType: UserType
   ) {
-    // Check if user has access to the community
-    await this.checkCommunityMembership(communityID, userID, userType);
+    if (userType !== UserType.admin) {
+      await this.checkCommunityMembership(communityID, userID, userType);
+    }
 
-    const result = await this.prisma.paginate<CommunityMember>(this.prisma.communityMember, {
+    return this.prisma.paginate<CommunityMember>(this.prisma.communityMember, {
       page,
       limit,
       where: {
         communityID,
         status: MemberStatus.ACTIVE,
         userID: {
-          not: userID, // exclude this user
+          not: userID,
         },
       },
       include: {
-        // Include user details based on userType
+        _count: {
+          select: {
+            posts: true,
+            comments: true,
+          }
+        }
       },
       orderBy: [
-        { role: 'asc' }, // Owners first, then admins, etc.
+        { role: 'asc' },
         { joinedAt: 'asc' }
       ],
     });
-
-    // Transform the data to include user names and avatars
-    const transformedData = await Promise.all(
-      result.data.map(async (member) => {
-        const userInfo = await this.getUserInfo(member.userID, member.userType);
-        return {
-          ...member,
-          name: userInfo.name,
-          avatarUrl: userInfo.avatarUrl,
-          isOnline: this.isUserOnline(member.userID, member.userType), // Implement this method
-        };
-      })
-    );
-
-    return {
-      ...result,
-      data: transformedData,
-    };
-  }
-
-  private async getUserInfo(userID: string, userType: UserType): Promise<{ name: string; avatarUrl: string | null }> {
-    try {
-      switch (userType) {
-        case UserType.coach:
-          const coach = await this.prisma.coach.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true, businessName: true, avatarUrl: true },
-          });
-          return {
-            name: coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach',
-            avatarUrl: coach?.avatarUrl || null,
-          };
-
-        case UserType.client:
-          const client = await this.prisma.client.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true, avatarUrl: true },
-          });
-          return {
-            name: `${client?.firstName} ${client?.lastName}` || 'Unknown Client',
-            avatarUrl: client?.avatarUrl || null,
-          };
-
-        case UserType.admin:
-          const admin = await this.prisma.admin.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true, avatarUrl: true },
-          });
-          return {
-            name: `${admin?.firstName} ${admin?.lastName}` || 'Admin',
-            avatarUrl: admin?.avatarUrl || null,
-          };
-
-        default:
-          return { name: 'Unknown User', avatarUrl: null };
-      }
-    } catch (error) {
-      this.logger.warn(`Failed to get user info for ${userType} ${userID}`, error);
-      return { name: 'Unknown User', avatarUrl: null };
-    }
-  }
-
-  private isUserOnline(userID: string, userType: UserType): boolean {
-    // Implement online status logic - could be based on:
-    // 1. WebSocket connections
-    // 2. Recent activity timestamps
-    // 3. Cache/Redis with TTL
-    // For now, return mock data
-    return Math.random() > 0.5;
   }
 
   private async checkCommunityMembership(communityID: string, userID: string, userType: UserType) {

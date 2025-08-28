@@ -27,7 +27,7 @@ export class PostsService {
 
   async createPost(createRequest: CreatePostRequest, authorID: string, authorType: UserType) {
     // Check if user is a member of the community
-    await this.checkCommunityMembership(createRequest.communityID, authorID, authorType);
+    const member = await this.checkCommunityMembership(createRequest.communityID, authorID, authorType);
 
     const maxLength = this.configService.get<number>('community.features.maxPostLength', 5000);
     if (createRequest.content.length > maxLength) {
@@ -39,10 +39,7 @@ export class PostsService {
     const post = await this.prisma.post.create({
       data: {
         communityID: createRequest.communityID,
-        authorID,
-        authorType,
-        authorName: authorInfo.name,           // NEW FIELD
-        authorAvatarUrl: authorInfo.avatarUrl,
+        communityMemberID: member.id,
         type: createRequest.type || PostType.TEXT,
         content: createRequest.content,
         mediaUrls: createRequest.mediaUrls || [],
@@ -58,16 +55,13 @@ export class PostsService {
       },
     });
 
-    // Update community post count
     await this.prisma.community.update({
       where: { id: createRequest.communityID },
       data: { postCount: { increment: 1 } },
     });
 
-    // Get author name
     const authorName = await this.getUserName(authorID, authorType);
 
-    // Publish event
     await this.outboxService.saveAndPublishEvent<CommunityEvent>({
       eventType: 'community.post.created',
       schemaVersion: 1,
@@ -90,7 +84,6 @@ export class PostsService {
   }
 
   async getPosts(filters: PostFilters, userID: string, userType: UserType) {
-    // Check if user has access to the community
     if (filters.communityID) {
       await this.checkCommunityMembership(filters.communityID, userID, userType);
     }
@@ -101,9 +94,9 @@ export class PostsService {
       where.communityID = filters.communityID;
     }
 
-    /*if (filters.authorID) {
-      where.authorID = filters.authorID;
-    }*/
+    if (filters.communityMemberID) {
+      where.communityMemberID = filters.communityMemberID;
+    }
 
     if (filters.type) {
       where.type = filters.type;

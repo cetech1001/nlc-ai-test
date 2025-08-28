@@ -62,6 +62,7 @@ export interface CommunityResponse extends Community {
 
 export interface ExtendedCommunityMember extends CommunityMember {
   name: string;
+  email: string;
   avatarUrl?: string;
   isOnline: boolean;
   lastActiveAt?: Date;
@@ -72,4 +73,15 @@ export interface CommunityStats {
   totalPosts: number;
   activeMembers: number;
   onlineMembers: number;
+}
+
+export interface MemberStats {
+  totalMembers: number;
+  activeMembers: number;
+  owners: number;
+  admins: number;
+  moderators: number;
+  regularMembers: number;
+  suspendedMembers: number;
+  pendingMembers: number;
 }

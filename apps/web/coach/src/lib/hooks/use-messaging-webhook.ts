@@ -30,6 +30,7 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
   const token = localStorage.getItem(appConfig.auth.tokenKey);
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isGatewayReady, setIsGatewayReady] = useState(false);
   const [typingUsers, setTypingUsers] = useState<TypingUsers>({});
   const [joinedConversations, setJoinedConversations] = useState<Set<string>>(new Set());
   const [connectionAttempts, setConnectionAttempts] = useState(0);
@@ -64,8 +65,8 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
 
   // Stable callback functions using useCallback
   const joinConversation = useCallback((conversationID: string) => {
-    if (!socketRef.current?.connected) {
-      console.warn('⚠️ Socket not connected, cannot join conversation');
+    if (!socketRef.current?.connected || !isGatewayReady) {
+      console.warn('⚠️ Socket not connected or gateway not ready, cannot join conversation');
       return;
     }
 
@@ -76,7 +77,7 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
 
     console.log('🚪 Joining conversation:', conversationID);
     socketRef.current.emit('join_conversation', { conversationID });
-  }, [joinedConversations]);
+  }, [joinedConversations, isGatewayReady]);
 
   const leaveConversation = useCallback((conversationID: string) => {
     if (!socketRef.current?.connected) {
@@ -142,10 +143,12 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
 
     socket.on('gateway_ready', (data) => {
       console.log('🚀 Gateway ready:', data);
+      setIsGatewayReady(true); // NEW: Set gateway as ready
     });
 
     socket.on('disconnect', (reason) => {
       setIsConnected(false);
+      setIsGatewayReady(false); // NEW: Reset gateway readiness
       setJoinedConversations(new Set());
       console.log('❌ Disconnected from messaging WebSocket:', reason);
     });
@@ -159,6 +162,7 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
     socket.on('service_disconnected', (data) => {
       console.warn('⚠️ Service disconnected:', data);
       setIsConnected(false);
+      setIsGatewayReady(false); // NEW: Reset gateway readiness
     });
 
     // Message events
@@ -242,11 +246,12 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
       console.log('🔌 Disconnecting WebSocket...');
       socket.disconnect();
       socketRef.current = null;
+      setIsGatewayReady(false); // NEW: Reset on cleanup
     };
   }, [options.enabled, token, user?.id, options.onNewMessage, options.onMessageUpdated, options.onMessageDeleted, options.onMessagesRead, options.onUserTyping, options.onError]);
 
   return {
-    isConnected,
+    isConnected: isConnected && isGatewayReady,
     joinConversation,
     leaveConversation,
     sendTypingStatus,

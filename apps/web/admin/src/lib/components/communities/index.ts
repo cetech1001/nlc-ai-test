@@ -1,3 +1,4 @@
-export * from './form';
 export * from './filters';
-export * from './table';
+export * from './form';
+export * from './modals';
+export * from './tables';
