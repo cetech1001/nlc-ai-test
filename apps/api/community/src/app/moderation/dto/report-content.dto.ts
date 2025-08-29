@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import {IsString, IsOptional, IsEnum, IsUUID, IsIn} from 'class-validator';
 import { ViolationType } from '@nlc-ai/api-types';
 
 export class ReportContentDto {
