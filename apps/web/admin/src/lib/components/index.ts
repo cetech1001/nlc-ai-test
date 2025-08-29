@@ -3,6 +3,7 @@ export * from './coaches';
 export * from './communities';
 export * from './home';
 export * from './leads';
+export * from './messages';
 export * from './plans';
 export * from './sidebar';
 export * from './transactions';

@@ -39,20 +39,6 @@ services:
       psql -h postgres -U ${POSTGRES_USER} -d postgres -c 'CREATE DATABASE ${POSTGRES_SHADOW_DB};' || true"
     restart: "no"
 
-  db_migrate:
-    build:
-      context: .
-      dockerfile: ./apps/api/gateway/dev.Dockerfile
-    container_name: db_migrate
-    depends_on:
-      - postgres
-      - db_init
-    volumes:
-      - ./.env:/app/.env
-      - ./libs/api:/app/libs/api
-    command: ["npm", "run", "db:deploy"]
-    restart: "no"
-
   api-gateway:
     build:
       context: .
@@ -65,7 +51,7 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
+      - db_init
 #      - db_migrate
     volumes:
       - ./apps/api/gateway:/app/apps/api/gateway

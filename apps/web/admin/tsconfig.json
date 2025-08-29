@@ -57,6 +57,9 @@
       "path": "../../../libs/web/settings"
     },
     {
+      "path": "../../../libs/sdk/messaging"
+    },
+    {
       "path": "../../../libs/sdk/community"
     },
     {

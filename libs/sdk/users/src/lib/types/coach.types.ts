@@ -87,6 +87,7 @@ export interface Admin {
   email: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string | null;
   role?: string | null;
   isActive?: boolean | null;
   lastLoginAt?: Date | null;

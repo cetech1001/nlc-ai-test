@@ -1,267 +1,192 @@
 'use client'
 
-import { useState } from 'react';
-import {
-  GraduationCap,
-  Video,
-  Users,
-  BarChart3,
-  DollarSign,
-  Clock,
-  PlayCircle,
-  BookOpen,
-  Trophy,
-  ArrowRight,
-  CheckCircle,
-  Star
-} from "lucide-react";
+import React, { useState } from 'react';
+import { Plus, BookOpen, Users, Calendar, MoreVertical, Edit, Trash2, Copy, Eye } from 'lucide-react';
 import {appConfig} from "@nlc-ai/web-shared";
+import {CoursesLanding} from "./landing";
 
-const CoursesLanding = () => {
-  const [activeFeature, setActiveFeature] = useState('course-builder');
+// Mock data for courses
+const mockCourses = [
+  {
+    courseID: '1',
+    title: 'Instagram Marketing Mastery',
+    description: 'Complete guide to growing your Instagram presence and monetizing your content',
+    totalChapters: 8,
+    totalLessons: 32,
+    enrolledStudents: 245,
+    status: 'Published',
+    createdAt: '2024-01-15',
+    updatedAt: '2024-02-20',
+    thumbnail: '/api/placeholder/300/200'
+  },
+  {
+    courseID: '2',
+    title: 'Life Coaching Fundamentals',
+    description: 'Essential skills and techniques for becoming an effective life coach',
+    totalChapters: 12,
+    totalLessons: 48,
+    enrolledStudents: 189,
+    status: 'Published',
+    createdAt: '2024-01-10',
+    updatedAt: '2024-02-18',
+    thumbnail: '/api/placeholder/300/200'
+  },
+  {
+    courseID: '3',
+    title: 'TikTok Growth Strategy',
+    description: 'Advanced strategies for viral content creation and audience building',
+    totalChapters: 6,
+    totalLessons: 24,
+    enrolledStudents: 0,
+    status: 'Draft',
+    createdAt: '2024-02-01',
+    updatedAt: '2024-02-22',
+    thumbnail: '/api/placeholder/300/200'
+  },
+  {
+    courseID: '4',
+    title: 'Personal Branding Blueprint',
+    description: 'Build a powerful personal brand that attracts your ideal clients',
+    totalChapters: 10,
+    totalLessons: 40,
+    enrolledStudents: 156,
+    status: 'Published',
+    createdAt: '2024-01-20',
+    updatedAt: '2024-02-15',
+    thumbnail: '/api/placeholder/300/200'
+  }
+];
 
-  const features = [
-    {
-      id: 'course-builder',
-      icon: BookOpen,
-      title: "Course Builder",
-      description: "Create professional courses with our intuitive drag-and-drop builder",
-      benefits: [
-        "Easy lesson creation with rich media support",
-        "Quiz and assessment builder",
-        "Progress tracking and certificates",
-        "Mobile-optimized student experience"
-      ]
-    },
-    {
-      id: 'student-management',
-      icon: Users,
-      title: "Student Management",
-      description: "Track student progress and engagement across all your courses",
-      benefits: [
-        "Real-time progress monitoring",
-        "Automated completion certificates",
-        "Student communication tools",
-        "Performance analytics and insights"
-      ]
-    },
-    {
-      id: 'monetization',
-      icon: DollarSign,
-      title: "Monetization Tools",
-      description: "Multiple pricing models and payment options for your courses",
-      benefits: [
-        "One-time, subscription, and payment plan options",
-        "Coupon and discount management",
-        "Revenue analytics and reporting",
-        "Integrated payment processing"
-      ]
-    }
-  ];
+const statusColors: Record<string, string> = {
+  Published: 'bg-green-600/20 text-green-400 border-green-600/50',
+  Draft: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/50',
+  Archived: 'bg-gray-600/20 text-gray-400 border-gray-600/50'
+};
 
-  const stats = [
-    { label: "Course Creation", value: "10x Faster", icon: Clock },
-    { label: "Student Engagement", value: "85% Higher", icon: Trophy },
-    { label: "Revenue Growth", value: "3x Average", icon: BarChart3 },
-  ];
+const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) => {
+  const [showDropdown, setShowDropdown] = useState(false);
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-8 max-w-full overflow-hidden">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 overflow-hidden">
-        <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
-        <div className="absolute w-64 h-64 right-20 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
-
-        <div className="relative z-10 text-center max-w-4xl mx-auto">
-          <div className="w-20 h-20 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <GraduationCap className="w-10 h-10 text-fuchsia-400" />
-          </div>
-
-          <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-            Course Creation & Management
-          </h1>
-          <p className="text-xl text-stone-300 mb-8">
-            Build, sell, and manage online courses with our comprehensive platform.
-            Turn your expertise into scalable digital products.
-          </p>
-
-          <div className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/20 border border-fuchsia-400/30 rounded-full text-fuchsia-300 text-lg font-medium">
-            <Clock className="w-5 h-5" />
-            Coming Soon - Beta Access Available Q2 2025
-          </div>
+    <div className="relative group">
+      {/* Status Badge */}
+      <div className="absolute -top-2 -right-2 z-10">
+        <div className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[course.status]}`}>
+          {course.status}
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden text-center">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-            </div>
+      {/* More Actions Dropdown */}
+      <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="relative">
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="p-2 bg-black/20 hover:bg-black/30 text-white rounded-lg transition-colors backdrop-blur-sm"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
 
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <stat.icon className="w-6 h-6 text-fuchsia-400" />
-              </div>
-              <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
-              <div className="text-stone-300">{stat.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Features Section */}
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Everything You Need to Create Amazing Courses</h2>
-          <p className="text-stone-300 text-lg">From content creation to student management and revenue optimization</p>
-        </div>
-
-        <div className="flex flex-wrap gap-2 justify-center">
-          {features.map((feature) => (
-            <button
-              key={feature.id}
-              onClick={() => setActiveFeature(feature.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
-                activeFeature === feature.id
-                  ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white'
-                  : 'bg-neutral-800/50 text-stone-300 hover:bg-neutral-700/50'
-              }`}
-            >
-              <feature.icon className="w-4 h-4" />
-              {feature.title}
-            </button>
-          ))}
-        </div>
-
-        {/* Feature Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-            </div>
-
-            <div className="relative z-10">
-              {features.map((feature) => (
-                <div
-                  key={feature.id}
-                  className={`${activeFeature === feature.id ? 'block' : 'hidden'}`}
+          {showDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-lg overflow-hidden">
+              <button
+                onClick={() => {
+                  onEdit(course);
+                  setShowDropdown(false);
+                }}
+                className="w-full px-4 py-2 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Edit Course
+              </button>
+              <button
+                onClick={() => {
+                  onPreview(course);
+                  setShowDropdown(false);
+                }}
+                className="w-full px-4 py-2 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                Preview
+              </button>
+              <button
+                onClick={() => {
+                  onDuplicate(course);
+                  setShowDropdown(false);
+                }}
+                className="w-full px-4 py-2 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                Duplicate
+              </button>
+              <div className="border-t border-[#3A3A3A]">
+                <button
+                  onClick={() => {
+                    onDelete(course);
+                    setShowDropdown(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-600/10 flex items-center gap-2"
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center">
-                      <feature.icon className="w-6 h-6 text-fuchsia-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">{feature.title}</h3>
-                  </div>
-
-                  <p className="text-stone-300 text-lg mb-6">{feature.description}</p>
-
-                  <div className="space-y-3">
-                    {feature.benefits.map((benefit, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-stone-200">{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Course Creation Flow */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-            </div>
-
-            <div className="relative z-10">
-              <h4 className="text-lg font-semibold text-white mb-4">Course Creation Made Simple</h4>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
-                  <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold">1</div>
-                  <div>
-                    <div className="text-white font-medium">Upload Content</div>
-                    <div className="text-stone-400 text-sm">Videos, PDFs, quizzes, and more</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
-                  <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 font-bold">2</div>
-                  <div>
-                    <div className="text-white font-medium">Structure & Organize</div>
-                    <div className="text-stone-400 text-sm">Drag-and-drop course builder</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
-                  <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 font-bold">3</div>
-                  <div>
-                    <div className="text-white font-medium">Price & Publish</div>
-                    <div className="text-stone-400 text-sm">Set pricing and go live instantly</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 bg-gradient-to-r from-yellow-600/10 to-orange-600/10 border border-yellow-600/20 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Star className="w-4 h-4 text-yellow-400" />
-                  <span className="text-yellow-400 font-medium">Pro Tip</span>
-                </div>
-                <p className="text-stone-300 text-sm">
-                  Use our AI content suggestions to create engaging course material that keeps students coming back.
-                </p>
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Course Types */}
-      <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-white text-center">Perfect for Any Type of Course</h3>
+      {/* Course Card */}
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden">
+        {/* Glow Effect */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { icon: Video, title: "Video Courses", desc: "HD video lessons with interactive elements" },
-            { icon: BookOpen, title: "Text-Based", desc: "Rich text content with downloadable resources" },
-            { icon: PlayCircle, title: "Live Sessions", desc: "Scheduled live coaching calls and Q&As" },
-            { icon: Trophy, title: "Cohort Programs", desc: "Group-based learning with peer interaction" }
-          ].map((type, index) => (
-            <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden text-center">
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute w-24 h-24 -left-4 -top-6 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px]" />
-              </div>
+        <div className="relative z-10 p-6">
+          {/* Thumbnail */}
+          <div className="w-full h-40 bg-gradient-to-br from-purple-600/20 to-violet-800/20 rounded-2xl mb-4 flex items-center justify-center border border-purple-600/20">
+            <BookOpen className="w-12 h-12 text-purple-400" />
+          </div>
 
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <type.icon className="w-6 h-6 text-fuchsia-400" />
+          {/* Course Info */}
+          <div className="space-y-3">
+            <h3 className="text-white text-xl font-semibold leading-tight">
+              {course.title}
+            </h3>
+            <p className="text-stone-300 text-sm leading-relaxed line-clamp-2">
+              {course.description}
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-stone-400" />
+                <div>
+                  <div className="text-white text-sm font-medium">{course.totalChapters}</div>
+                  <div className="text-stone-400 text-xs">Chapters</div>
                 </div>
-                <h4 className="text-white font-semibold mb-2">{type.title}</h4>
-                <p className="text-stone-400 text-sm">{type.desc}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-stone-400" />
+                <div>
+                  <div className="text-white text-sm font-medium">{course.totalLessons}</div>
+                  <div className="text-stone-400 text-xs">Lessons</div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* CTA Section */}
-      <div className="text-center space-y-4">
-        <h3 className="text-2xl font-bold text-white">Ready to Launch Your First Course?</h3>
-        <p className="text-stone-300 text-lg">
-          Join our beta program and get early access to the complete course creation platform.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
-            Request Beta Access
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button className="px-8 py-3 border border-neutral-600 text-stone-300 rounded-lg hover:border-fuchsia-400 hover:text-white transition-colors">
-            See Demo
-          </button>
+            {/* Enrollment */}
+            <div className="flex items-center justify-between pt-2 border-t border-neutral-700">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-stone-400" />
+                <span className="text-stone-300 text-sm">
+                  {course.enrolledStudents} enrolled
+                </span>
+              </div>
+              <div className="text-stone-400 text-xs">
+                Updated {new Date(course.updatedAt).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -273,7 +198,143 @@ const CoursesPage = () => {
     return <CoursesLanding />;
   }
 
-  return <div/>;
+  const [courses, setCourses] = useState(mockCourses);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreateNewCourse = () => {
+    // Navigate to course creation page
+    console.log('Navigate to course creation');
+  };
+
+  const handleEditCourse = (course: any) => {
+    // Navigate to course edit page
+    console.log('Edit course:', course.courseID);
+  };
+
+  const handleDeleteCourse = (course: any) => {
+    if (confirm(`Are you sure you want to delete "${course.title}"? This action cannot be undone.`)) {
+      setCourses(courses.filter(c => c.courseID !== course.courseID));
+      setIsLoading(false);
+    }
+  };
+
+  const handleDuplicateCourse = (course: any) => {
+    const duplicatedCourse = {
+      ...course,
+      courseID: Date.now().toString(),
+      title: `${course.title} (Copy)`,
+      status: 'Draft',
+      enrolledStudents: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+    setCourses([duplicatedCourse, ...courses]);
+  };
+
+  const handlePreviewCourse = (course: any) => {
+    // Open course preview
+    console.log('Preview course:', course.courseID);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] flex items-center justify-center">
+        <div className="text-white">Loading courses...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]">
+      <div className="pt-8 pb-16">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-white text-3xl font-bold mb-2">My Courses</h1>
+              <p className="text-stone-300 text-lg">
+                Create and manage your course content
+              </p>
+            </div>
+
+            <button
+              onClick={handleCreateNewCourse}
+              className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-opacity"
+            >
+              <Plus className="w-5 h-5" />
+              Create New Course
+            </button>
+          </div>
+
+          {/* Course Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+              </div>
+              <div className="relative z-10">
+                <div className="text-stone-300 text-sm mb-2">Total Courses</div>
+                <div className="text-white text-2xl font-bold">{courses.length}</div>
+              </div>
+            </div>
+
+            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-green-200 via-green-600 to-emerald-600 rounded-full blur-[56px]" />
+              </div>
+              <div className="relative z-10">
+                <div className="text-stone-300 text-sm mb-2">Published</div>
+                <div className="text-white text-2xl font-bold">
+                  {courses.filter(c => c.status === 'Published').length}
+                </div>
+              </div>
+            </div>
+
+            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-blue-200 via-blue-600 to-indigo-600 rounded-full blur-[56px]" />
+              </div>
+              <div className="relative z-10">
+                <div className="text-stone-300 text-sm mb-2">Total Enrollments</div>
+                <div className="text-white text-2xl font-bold">
+                  {courses.reduce((sum, course) => sum + course.enrolledStudents, 0)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Courses Grid */}
+          {courses.length === 0 ? (
+            <div className="text-center py-16">
+              <BookOpen className="w-16 h-16 text-stone-400 mx-auto mb-4" />
+              <h2 className="text-white text-xl font-semibold mb-2">No courses yet</h2>
+              <p className="text-stone-300 mb-6">Create your first course to get started</p>
+              <button
+                onClick={handleCreateNewCourse}
+                className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 mx-auto transition-opacity"
+              >
+                <Plus className="w-5 h-5" />
+                Create Your First Course
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {courses.map((course) => (
+                <CourseCard
+                  key={course.courseID}
+                  course={course}
+                  onEdit={handleEditCourse}
+                  onDelete={handleDeleteCourse}
+                  onDuplicate={handleDuplicateCourse}
+                  onPreview={handlePreviewCourse}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default CoursesPage;

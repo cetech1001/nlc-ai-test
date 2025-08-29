@@ -2,6 +2,7 @@
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { composePlugins, withNx } = require('@nx/next');
+const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 
 
 /**
@@ -14,23 +15,25 @@ const nextConfig = {
     svgr: false,
   },
 
-  /*experimental: {
-    optimizeCss: true,
-  },*/
-
   images: {
     domains: [],
   },
 
   env: {},
 
-  webpack: (config, { isServer }) => {
+  webpack: (config, { dev, isServer }) => {
+    if (dev) {
+      config.plugins.push(new CaseSensitivePathsPlugin());
+      config.cache = { type: 'memory' };
+    }
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
       };
     }
+
     return config;
   },
 };

@@ -12,6 +12,7 @@ export interface Client {
   engagementScore?: number;
   isActive?: boolean;
   isVerified?: boolean;
+  lastLoginAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
   courseEnrollments?: any[];
