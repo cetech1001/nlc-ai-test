@@ -3,8 +3,8 @@ import {CommunityType, CommunityVisibility, MemberRole, MemberStatus, CommunityP
 
 export interface CommunityPricing {
   type: CommunityPricingTypes;
-  amount?: number;
-  currency?: string;
+  amount?: number | null;
+  currency?: string | null;
 }
 
 export interface CommunitySettings {

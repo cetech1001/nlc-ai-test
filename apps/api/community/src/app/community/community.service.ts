@@ -163,7 +163,7 @@ export class CommunityService {
     return this.createCommunity({
       name: communityName,
       description: `Welcome to ${communityName}! This is your space to connect with your coach and fellow community members.`,
-      slug: communityName.toLowerCase() + '-' + 'community',
+      slug: communityName.toLowerCase().replace(' ', '-'),
       type: CommunityType.COACH_CLIENT,
       visibility: CommunityVisibility.INVITE_ONLY,
       coachID: coachID,
