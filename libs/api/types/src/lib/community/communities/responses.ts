@@ -70,6 +70,27 @@ export interface CommunityInviteResponse {
   createdAt: Date;
 }
 
+export interface CommunityActivity {
+  id: string;
+  type: 'post_created' | 'member_joined' | 'comment_added' | 'reaction_added';
+  userID: string;
+  userName: string;
+  userAvatarUrl?: string | null;
+  description: string;
+  createdAt: Date;
+  metadata?: Record<string, any>;
+}
+
+export interface CommunityDetailStats {
+  memberGrowth: number;
+  postGrowth: number;
+  engagementRate: number;
+  activeMembers: number;
+  totalPosts: number;
+  totalComments: number;
+  averagePostsPerDay: number;
+}
+
 export interface CommunitySettings {
   allowMemberPosts?: boolean;
   requireApproval?: boolean;

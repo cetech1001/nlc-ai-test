@@ -4,8 +4,10 @@ import {OutboxService} from '@nlc-ai/api-messaging';
 import {
   AuthUser,
   COMMUNITY_ROUTING_KEYS,
+  CommunityActivity,
   CommunityEvent,
-  CommunityFilters, CommunityMember,
+  CommunityFilters,
+  CommunityMember,
   CommunityMemberFilters,
   CommunityPricingType,
   CommunitySettings,
@@ -27,7 +29,7 @@ export class CommunityService {
     private readonly outboxService: OutboxService,
   ) {}
 
-  async createCommunity(createRequest: CreateCommunityRequest, creatorID: string, creatorType: UserType) {
+  async createCommunity(createRequest: CreateCommunityRequest, user: AuthUser) {
     try {
       const existingCommunity = await this.prisma.community.findUnique({
         where: { slug: createRequest.slug },
@@ -52,7 +54,7 @@ export class CommunityService {
         ...createRequest.settings,
       };
 
-      const isSystemCreated = createRequest.isSystemCreated === true && creatorType === UserType.admin;
+      const isSystemCreated = createRequest.isSystemCreated === true && user.type === UserType.admin;
 
       const pricingType = createRequest.pricing?.type || CommunityPricingType.FREE;
       const pricingAmount = createRequest.pricing?.amount || null;
@@ -65,8 +67,8 @@ export class CommunityService {
           slug: createRequest.slug,
           type: createRequest.type,
           visibility: createRequest.visibility || CommunityVisibility.PRIVATE,
-          ownerID: creatorID,
-          ownerType: creatorType,
+          ownerID: user.id,
+          ownerType: user.type,
           coachID: createRequest.coachID,
           courseID: createRequest.courseID,
           avatarUrl: createRequest.avatarUrl,
@@ -79,25 +81,26 @@ export class CommunityService {
           isSystemCreated,
 
           settings: settings as any,
-          memberCount: (!isSystemCreated && creatorType === UserType.coach) ? 1 : 0,
+          memberCount: (!isSystemCreated && user.type === UserType.coach) ? 1 : 0,
         },
         include: {
           members: true,
         },
       });
 
-      if (!isSystemCreated && creatorType !== UserType.admin) {
+      if (!isSystemCreated && user.type !== UserType.admin) {
+        const { name, email, avatarUrl } = await this.getUserInfo(user);
         await this.prisma.communityMember.create({
           data: {
             communityID: community.id,
-            userID: creatorID,
-            userType: creatorType,
+            userID: user.id,
+            userType: user.type,
             role: MemberRole.OWNER,
             status: MemberStatus.ACTIVE,
             permissions: ['all'],
-            userName: await this.getUserName(creatorID, creatorType),
-            userEmail: await this.getUserEmail(creatorID, creatorType),
-            userAvatarUrl: await this.getUserAvatarUrl(creatorID, creatorType),
+            userName: name,
+            userEmail: email,
+            userAvatarUrl: avatarUrl,
           },
         });
       }
@@ -109,8 +112,8 @@ export class CommunityService {
           communityID: community.id,
           name: community.name,
           type: community.type as CommunityType,
-          ownerID: creatorID,
-          ownerType: creatorType,
+          ownerID: user.id,
+          ownerType: user.type,
           coachID: community.coachID,
           courseID: community.courseID,
           isSystemCreated,
@@ -124,7 +127,7 @@ export class CommunityService {
       }, COMMUNITY_ROUTING_KEYS.CREATED);
 
       this.logger.log(
-        `Community created: ${community.id} by ${creatorType} ${creatorID}${isSystemCreated ? ' (system)' : ''} - ${pricingType} pricing`
+        `Community created: ${community.id} by ${user.type} ${user.id}${isSystemCreated ? ' (system)' : ''} - ${pricingType} pricing`
       );
 
       return community;
@@ -168,10 +171,10 @@ export class CommunityService {
         type: CommunityPricingType.FREE,
         currency: 'USD'
       }
-    }, coachID, UserType.coach);
+    }, { id: coachID, type: UserType.coach, sub: coachID, email: '' });
   }
 
-  async getCommunities(filters: CommunityFilters, userID: string, userType: UserType) {
+  async getCommunities(filters: CommunityFilters, user: AuthUser) {
     const where: any = {
       isActive: true,
     };
@@ -179,8 +182,8 @@ export class CommunityService {
     if (filters.memberOf) {
       where.members = {
         some: {
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
           status: MemberStatus.ACTIVE,
         },
       };
@@ -211,7 +214,7 @@ export class CommunityService {
       where,
       include: {
         members: {
-          where: {userID, userType},
+          where: {userID: user.id, userType: user.type},
           select: {role: true, status: true, joinedAt: true},
         },
         _count: {
@@ -227,7 +230,7 @@ export class CommunityService {
     });
   }
 
-  async getCommunity(id: string, userID: string, userType: UserType) {
+  async getCommunity(id: string, user: AuthUser) {
     const community = await this.prisma.community.findUnique({
       where: { id },
       include: {
@@ -253,13 +256,13 @@ export class CommunityService {
 
     let membership;
 
-    if (userType !== UserType.admin) {
+    if (user.type !== UserType.admin) {
       membership = await this.prisma.communityMember.findUnique({
         where: {
           communityID_userID_userType: {
             communityID: id,
-            userID,
-            userType,
+            userID: user.id,
+            userType: user.type,
           },
         },
       });
@@ -275,7 +278,7 @@ export class CommunityService {
     };
   }
 
-  async updateCommunity(id: string, updateRequest: UpdateCommunityRequest, userID: string, userType: UserType) {
+  async updateCommunity(id: string, updateRequest: UpdateCommunityRequest, user: AuthUser) {
     const community = await this.prisma.community.findUnique({
       where: { id },
     });
@@ -284,7 +287,7 @@ export class CommunityService {
       throw new NotFoundException('Community not found');
     }
 
-    await this.checkPermission(id, userID, userType, 'manage_community');
+    await this.checkPermission(id, user, 'manage_community');
 
     const updateData: any = {
       ...updateRequest,
@@ -302,7 +305,7 @@ export class CommunityService {
       data: updateData,
     });
 
-    this.logger.log(`Community ${id} updated by ${userType} ${userID}`);
+    this.logger.log(`Community ${id} updated by ${user.type} ${user.id}`);
 
     return updatedCommunity;
   }
@@ -313,7 +316,7 @@ export class CommunityService {
     user: AuthUser
   ) {
     if (user.type !== UserType.admin) {
-      await this.checkCommunityMembership(communityID, user.id, user.type);
+      await this.checkCommunityMembership(communityID, user);
     }
 
     const where: any = {
@@ -396,13 +399,220 @@ export class CommunityService {
     });
   }
 
-  private async checkCommunityMembership(communityID: string, userID: string, userType: UserType) {
+  async getCommunityActivity(communityID: string, limit: number, user: AuthUser) {
+    if (user.type !== UserType.admin) {
+      await this.checkCommunityMembership(communityID, user);
+    }
+
+    const recentPosts = await this.prisma.post.findMany({
+      where: { communityID/*, isDeleted: false*/ },
+      include: {
+        communityMember: {
+          select: {
+            id: true,
+            userName: true,
+            userAvatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Math.floor(limit * 0.4),
+    });
+
+    const recentMembers = await this.prisma.communityMember.findMany({
+      where: { communityID, status: MemberStatus.ACTIVE },
+      orderBy: { joinedAt: 'desc' },
+      take: Math.floor(limit * 0.3),
+    });
+
+    const recentComments = await this.prisma.postComment.findMany({
+      where: {
+        post: { communityID },
+        // isDeleted: false,
+      },
+      include: {
+        communityMember: {
+          select: {
+            id: true,
+            userName: true,
+            userAvatarUrl: true,
+          },
+        },
+        post: {
+          select: { id: true/*, title: true*/ },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Math.floor(limit * 0.3),
+    });
+
+    const activities: Array<CommunityActivity> = [];
+
+    recentPosts.forEach(post => {
+      activities.push({
+        id: `post-${post.id}`,
+        type: 'post_created',
+        userID: post.communityMemberID,
+        userName: post.communityMember?.userName,
+        userAvatarUrl: post.communityMember?.userAvatarUrl,
+        description: `created a new post`,
+        createdAt: post.createdAt,
+        metadata: {
+          postID: post.id,
+        },
+      });
+    });
+
+    recentMembers.forEach(member => {
+      activities.push({
+        id: `member-${member.id}`,
+        type: 'member_joined',
+        userID: member.userID,
+        userName: member.userName,
+        userAvatarUrl: member.userAvatarUrl,
+        description: `joined the community`,
+        createdAt: member.joinedAt,
+        metadata: {
+          memberRole: member.role,
+        },
+      });
+    });
+
+    recentComments.forEach(comment => {
+      activities.push({
+        id: `comment-${comment.id}`,
+        type: 'comment_added',
+        userID: comment.communityMemberID,
+        userName: comment.communityMember?.userName,
+        userAvatarUrl: comment.communityMember?.userAvatarUrl,
+        description: `commented on a post`,
+        createdAt: comment.createdAt,
+        metadata: {
+          postID: comment.postID,
+        },
+      });
+    });
+
+    return activities
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  async getCommunityAnalytics(communityID: string, period: '7d' | '30d' | '90d', user: AuthUser) {
+    await this.checkPermission(communityID, user, 'view_analytics');
+
+    const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get member growth
+    /*const totalMembers = await this.prisma.communityMember.count({
+      where: { communityID, status: MemberStatus.ACTIVE },
+    });*/
+
+    const newMembers = await this.prisma.communityMember.count({
+      where: {
+        communityID,
+        status: MemberStatus.ACTIVE,
+        joinedAt: { gte: startDate },
+      },
+    });
+
+    const totalPosts = await this.prisma.post.count({
+      where: { communityID, /*isDeleted: false*/ },
+    });
+
+    const newPosts = await this.prisma.post.count({
+      where: {
+        communityID,
+        // isDeleted: false,
+        createdAt: { gte: startDate },
+      },
+    });
+
+    const totalComments = await this.prisma.postComment.count({
+      where: {
+        post: { communityID },
+        // isDeleted: false,
+      },
+    });
+
+    const newComments = await this.prisma.postComment.count({
+      where: {
+        post: { communityID },
+        // isDeleted: false,
+        createdAt: { gte: startDate },
+      },
+    });
+
+    const activeMembers = await this.prisma.communityMember.count({
+      where: {
+        communityID,
+        status: MemberStatus.ACTIVE,
+        OR: [
+          {
+            posts: {
+              some: {
+                createdAt: { gte: startDate },
+                // isDeleted: false,
+              },
+            },
+          },
+          {
+            comments: {
+              some: {
+                createdAt: { gte: startDate },
+                // isDeleted: false,
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    // Calculate growth percentages
+    const previousPeriodStart = new Date(startDate);
+    previousPeriodStart.setDate(previousPeriodStart.getDate() - days);
+
+    const previousMembers = await this.prisma.communityMember.count({
+      where: {
+        communityID,
+        status: MemberStatus.ACTIVE,
+        joinedAt: { gte: previousPeriodStart, lt: startDate },
+      },
+    });
+
+    const previousPosts = await this.prisma.post.count({
+      where: {
+        communityID,
+        // isDeleted: false,
+        createdAt: { gte: previousPeriodStart, lt: startDate },
+      },
+    });
+
+    const memberGrowth = previousMembers === 0 ? 100 : ((newMembers - previousMembers) / previousMembers) * 100;
+    const postGrowth = previousPosts === 0 ? 100 : ((newPosts - previousPosts) / previousPosts) * 100;
+
+    const engagementRate = newPosts === 0 ? 0 : newComments / newPosts;
+
+    return {
+      memberGrowth: Math.round(memberGrowth * 100) / 100,
+      postGrowth: Math.round(postGrowth * 100) / 100,
+      engagementRate: Math.round(engagementRate * 100) / 100,
+      activeMembers,
+      totalPosts,
+      totalComments,
+      averagePostsPerDay: Math.round((newPosts / days) * 100) / 100,
+    };
+  }
+
+  private async checkCommunityMembership(communityID: string, user: AuthUser) {
     const member = await this.prisma.communityMember.findUnique({
       where: {
         communityID_userID_userType: {
           communityID,
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
         },
       },
     });
@@ -428,13 +638,13 @@ export class CommunityService {
     });
   }
 
-  private async checkPermission(communityID: string, userID: string, userType: UserType, permission: string) {
+  private async checkPermission(communityID: string, user: AuthUser, permission: string) {
     const member = await this.prisma.communityMember.findUnique({
       where: {
         communityID_userID_userType: {
           communityID,
-          userID,
-          userType,
+          userID: user.id,
+          userType: user.type,
         },
       },
     });
@@ -443,12 +653,10 @@ export class CommunityService {
       throw new ForbiddenException('Access denied');
     }
 
-    // Owners and admins have all permissions
     if (member.role === MemberRole.OWNER || member.role === MemberRole.ADMIN) {
       return true;
     }
 
-    // Check specific permissions
     if (!member.permissions.includes(permission) && !member.permissions.includes('all')) {
       throw new ForbiddenException('Insufficient permissions');
     }
@@ -516,12 +724,8 @@ export class CommunityService {
       return updatedMember;
     }
 
-    // Get user info for denormalized fields
-    const userName = await this.getUserName(userID, userType);
-    const userEmail = await this.getUserEmail(userID, userType);
-    const userAvatarUrl = await this.getUserAvatarUrl(userID, userType);
+    const { name, email, avatarUrl } = await this.getUserInfo({ id: userID, type: userType });
 
-    // Add new member
     const member = await this.prisma.communityMember.create({
       data: {
         communityID,
@@ -531,15 +735,14 @@ export class CommunityService {
         status: MemberStatus.ACTIVE,
         invitedBy: inviterID,
         permissions: this.getDefaultPermissions(role),
-        userName,
-        userEmail,
-        userAvatarUrl,
+        userName: name,
+        userEmail: email,
+        userAvatarUrl: avatarUrl,
       },
     });
 
     await this.updateMemberCount(communityID);
 
-    // Publish event
     await this.outboxService.saveAndPublishEvent<CommunityEvent>({
       eventType: 'community.member.joined',
       schemaVersion: 1,
@@ -580,7 +783,6 @@ export class CommunityService {
   }
 
   async addClientToCoachCommunity(clientID: string, coachID: string) {
-    // Find or create the coach's community
     let community = await this.prisma.community.findFirst({
       where: {
         type: CommunityType.COACH_CLIENT,
@@ -601,9 +803,8 @@ export class CommunityService {
     );
   }
 
-  async removeMemberFromCommunity(communityID: string, targetUserID: string, targetUserType: UserType, actionByID: string, actionByType: UserType) {
-    // Check permissions
-    await this.checkPermission(communityID, actionByID, actionByType, 'remove_members');
+  async removeMemberFromCommunity(communityID: string, targetUserID: string, targetUserType: UserType, user: AuthUser) {
+    await this.checkPermission(communityID, user, 'remove_members');
 
     const member = await this.prisma.communityMember.findUnique({
       where: {
@@ -630,108 +831,65 @@ export class CommunityService {
 
     await this.updateMemberCount(communityID);
 
-    this.logger.log(`User ${targetUserType} ${targetUserID} removed from community ${communityID} by ${actionByType} ${actionByID}`);
+    this.logger.log(`User ${targetUserType} ${targetUserID} removed from community ${communityID} by ${user.type} ${user.id}`);
 
     return { message: 'Member removed successfully' };
   }
 
-  // Helper methods for getting user info
-  private async getUserName(userID: string, userType: UserType): Promise<string> {
+  private async getUserInfo(user: { id: string; type: string; }): Promise<{
+    name: string;
+    email: string;
+    avatarUrl: string;
+  }> {
     try {
-      switch (userType) {
+      switch (user.type) {
         case UserType.coach:
           const coach = await this.prisma.coach.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true, businessName: true },
+            where: { id: user.id },
+            select: { firstName: true, lastName: true, email: true, avatarUrl: true, businessName: true },
           });
-          return coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach';
+          return {
+            name: coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach',
+            email: coach?.email || '',
+            avatarUrl: coach?.avatarUrl || '',
+          };
 
         case UserType.client:
           const client = await this.prisma.client.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true },
+            where: { id: user.id },
+            select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
-          return `${client?.firstName} ${client?.lastName}` || 'Unknown Client';
+          return {
+            name: `${client?.firstName} ${client?.lastName}` || 'Unknown Client',
+            email: client?.email || '',
+            avatarUrl: client?.avatarUrl || '',
+          };
 
         case UserType.admin:
           const admin = await this.prisma.admin.findUnique({
-            where: { id: userID },
-            select: { firstName: true, lastName: true },
+            where: { id: user.id },
+            select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
-          return `${admin?.firstName} ${admin?.lastName}` || 'Admin';
+          return {
+            name: `${admin?.firstName} ${admin?.lastName}` || 'Admin',
+            email: admin?.email || '',
+            avatarUrl: admin?.avatarUrl || '',
+          };
 
         default:
-          return '';
+          return {
+            name: '',
+            email: '',
+            avatarUrl: '',
+          };
       }
     } catch (error) {
-      this.logger.warn(`Failed to get user email for ${userType} ${userID}`, error);
-      return '';
-    }
-  }
-
-  private async getUserEmail(userID: string, userType: UserType): Promise<string> {
-    try {
-      switch (userType) {
-      case UserType.coach:
-        const coach = await this.prisma.coach.findUnique({
-          where: { id: userID },
-          select: { email: true },
-        });
-        return coach?.email || '';
-
-      case UserType.client:
-        const client = await this.prisma.client.findUnique({
-          where: { id: userID },
-          select: { email: true },
-        });
-        return client?.email || '';
-
-      case UserType.admin:
-        const admin = await this.prisma.admin.findUnique({
-          where: { id: userID },
-          select: { email: true },
-        });
-        return admin?.email || '';
-
-      default:
-        return 'Unknown User';
-      }
-    } catch (error) {
-      this.logger.warn(`Failed to get user name for ${userType} ${userID}`, error);
-      return 'Unknown User';
-    }
-  }
-
-  private async getUserAvatarUrl(userID: string, userType: UserType): Promise<string | null> {
-    try {
-      switch (userType) {
-        case UserType.coach:
-          const coach = await this.prisma.coach.findUnique({
-            where: { id: userID },
-            select: { avatarUrl: true },
-          });
-          return coach?.avatarUrl || null;
-
-        case UserType.client:
-          const client = await this.prisma.client.findUnique({
-            where: { id: userID },
-            select: { avatarUrl: true },
-          });
-          return client?.avatarUrl || null;
-
-        case UserType.admin:
-          const admin = await this.prisma.admin.findUnique({
-            where: { id: userID },
-            select: { avatarUrl: true },
-          });
-          return admin?.avatarUrl || null;
-
-        default:
-          return null;
-      }
-    } catch (error) {
-      this.logger.warn(`Failed to get user avatar for ${userType} ${userID}`, error);
-      return null;
+      this.logger.warn(`Failed to get user info for ${user.type} ${user.id}`, error);
+      return {
+        name: '',
+        email: '',
+        avatarUrl: '',
+      };
     }
   }
 }

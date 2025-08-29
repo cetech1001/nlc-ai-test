@@ -2,54 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Users, MessageSquare, Calendar, Settings, Shield, Eye } from 'lucide-react';
+import { Users, MessageSquare, Calendar, Shield, TrendingUp } from 'lucide-react';
 import { BackTo } from "@nlc-ai/web-shared";
 import { Button, Skeleton } from '@nlc-ai/web-ui';
 import { formatDate } from "@nlc-ai/web-utils";
-import { sdkClient } from "@/lib";
-
-interface CommunityDetail {
-  id: string;
-  name: string;
-  description?: string;
-  type: string;
-  visibility: string;
-  ownerID: string;
-  ownerType: string;
-  memberCount: number;
-  postCount: number;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  coachID?: string;
-  courseID?: string;
-  avatarUrl?: string;
-  bannerUrl?: string;
-  settings: Record<string, any>;
-  members: Array<{
-    id: string;
-    userID: string;
-    userType: string;
-    role: string;
-    status: string;
-    joinedAt: Date;
-  }>;
-  recentPosts: Array<{
-    id: string;
-    content: string;
-    authorName: string;
-    createdAt: Date;
-    likeCount: number;
-    commentCount: number;
-  }>;
-}
+import {
+  CommunityDetailsInfo, CommunityDetailsQuickActions, CommunityDetailsRecentActivity, CommunityDetailsRecentMembers,
+  CommunityDetailsSettingsPreview, sdkClient
+} from "@/lib";
+import {CommunityActivity, CommunityResponse} from '@nlc-ai/sdk-community';
 
 const AdminCommunityDetailPage = () => {
   const router = useRouter();
   const params = useParams();
   const communityID = params.communityID as string;
 
-  const [community, setCommunity] = useState<CommunityDetail | null>(null);
+  const [community, setCommunity] = useState<CommunityResponse | null>(null);
+  const [activities, setActivities] = useState<CommunityActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -62,36 +31,13 @@ const AdminCommunityDetailPage = () => {
       setIsLoading(true);
       setError('');
 
-      const response = await sdkClient.community.communities.getCommunity(communityID);
+      const [communityResponse, activitiesResponse] = await Promise.all([
+        sdkClient.community.communities.getCommunity(communityID),
+        sdkClient.community.communities.getCommunityActivity(communityID, 6)
+      ]);
 
-      // Mock additional data that would come from the API
-      const mockDetail: CommunityDetail = {
-        ...response,
-        members: [
-          {
-            id: '1',
-            userID: 'user1',
-            userType: 'coach',
-            role: 'owner',
-            status: 'active',
-            joinedAt: new Date('2024-01-15'),
-          },
-          // Add more mock members...
-        ],
-        recentPosts: [
-          {
-            id: '1',
-            content: 'Welcome to our community! Let\'s share knowledge and grow together.',
-            authorName: 'Coach Sarah',
-            createdAt: new Date('2024-01-20'),
-            likeCount: 15,
-            commentCount: 8,
-          },
-          // Add more mock posts...
-        ],
-      };
-
-      setCommunity(mockDetail);
+      setCommunity(communityResponse);
+      setActivities(activitiesResponse);
     } catch (error: any) {
       setError(error.message || 'Failed to load community details');
     } finally {
@@ -100,8 +46,17 @@ const AdminCommunityDetailPage = () => {
   };
 
   const handleToggleStatus = async () => {
-    // Implement toggle status
-    console.log('Toggle status');
+    if (!community) return;
+
+    try {
+      await sdkClient.community.communities.updateCommunity(community.id, {
+        isActive: !community.isActive
+      });
+
+      setCommunity(prev => prev ? { ...prev, isActive: !prev.isActive } : null);
+    } catch (error) {
+      console.error('Failed to toggle status:', error);
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -137,12 +92,18 @@ const AdminCommunityDetailPage = () => {
       <div className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="animate-pulse space-y-8">
           <Skeleton className="h-8 w-1/3" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-64 rounded-2xl" />
-              <Skeleton className="h-96 rounded-2xl" />
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <div className="xl:col-span-3 space-y-6">
+              <Skeleton className="h-80 rounded-2xl" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Skeleton className="h-64 rounded-2xl" />
+                <Skeleton className="h-64 rounded-2xl" />
+              </div>
             </div>
-            <Skeleton className="h-96 rounded-2xl" />
+            <div className="space-y-6">
+              <Skeleton className="h-96 rounded-2xl" />
+              <Skeleton className="h-64 rounded-2xl" />
+            </div>
           </div>
         </div>
       </div>
@@ -168,181 +129,127 @@ const AdminCommunityDetailPage = () => {
     <div className="flex-1 p-4 sm:p-6 lg:p-8">
       <BackTo title="Community Details" onClick={router.back} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Community Header */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-56 h-56 -right-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="xl:col-span-3 space-y-6">
+          <div className="relative bg-gradient-to-br from-neutral-800/40 to-neutral-900/60 rounded-2xl border border-neutral-700/50 overflow-hidden">
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute w-96 h-96 -right-24 -top-32 bg-gradient-to-l from-fuchsia-400 via-purple-500 to-violet-600 rounded-full blur-3xl" />
             </div>
 
-            <div className="relative z-10 p-6 lg:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-                <div className="flex-1">
-                  <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
-                    {community.name}
-                  </h1>
-                  {community.description && (
-                    <p className="text-stone-300 text-lg leading-relaxed mb-4">
-                      {community.description}
-                    </p>
-                  )}
+            {community.bannerUrl && (
+              <div className="relative h-32 sm:h-72">
+                <img
+                  src={community.bannerUrl}
+                  alt={`${community.name} banner`}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              </div>
+            )}
 
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(community.type)}`}>
-                      {community.type.replace('_', ' ')}
+            <div className="relative z-10 p-6 lg:p-8">
+              <div className="flex flex-col sm:flex-row gap-6 mb-8">
+                <div className="flex-shrink-0">
+                  {community.avatarUrl ? (
+                    <img
+                      src={community.avatarUrl}
+                      alt={community.name}
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-neutral-600"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-white">
+                        {community.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                    <div>
+                      <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
+                        {community.name}
+                      </h1>
+                      {community.description && (
+                        <p className="text-stone-300 text-base leading-relaxed max-w-2xl">
+                          {community.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => router.push(`/communities/${communityID}/moderate`)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Moderate
+                      </Button>
+                      <Button
+                        onClick={handleToggleStatus}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {community.isActive ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${getTypeColor(community.type)}`}>
+                      {community.type.replace('_', ' ').toUpperCase()}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getVisibilityColor(community.visibility)}`}>
-                      {community.visibility.replace('_', ' ')}
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${getVisibilityColor(community.visibility)}`}>
+                      {community.visibility.replace('_', ' ').toUpperCase()}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
                       community.isActive
                         ? 'bg-green-600/20 text-green-400 border-green-600/30'
                         : 'bg-red-600/20 text-red-400 border-red-600/30'
                     }`}>
-                      {community.isActive ? 'Active' : 'Inactive'}
+                      {community.isActive ? 'ACTIVE' : 'INACTIVE'}
                     </span>
                   </div>
-                </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => router.push(`/communities/${communityID}/moderate`)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Moderate
-                  </Button>
-                  <Button
-                    onClick={handleToggleStatus}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {community.isActive ? 'Deactivate' : 'Activate'}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">{community.memberCount}</div>
-                  <div className="text-stone-400 text-sm">Members</div>
-                </div>
-                <div className="text-center">
-                  <MessageSquare className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">{community.postCount}</div>
-                  <div className="text-stone-400 text-sm">Posts</div>
-                </div>
-                <div className="text-center">
-                  <Calendar className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">{formatDate(community.createdAt)}</div>
-                  <div className="text-stone-400 text-sm">Created</div>
-                </div>
-                <div className="text-center">
-                  <Eye className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white">{formatDate(community.updatedAt)}</div>
-                  <div className="text-stone-400 text-sm">Updated</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-neutral-800/30 rounded-xl p-4 border border-neutral-700/50">
+                      <Users className="w-6 h-6 text-blue-400 mb-2" />
+                      <div className="text-xl font-bold text-white">{community.memberCount}</div>
+                      <div className="text-stone-400 text-sm">Members</div>
+                    </div>
+                    <div className="bg-neutral-800/30 rounded-xl p-4 border border-neutral-700/50">
+                      <MessageSquare className="w-6 h-6 text-green-400 mb-2" />
+                      <div className="text-xl font-bold text-white">{community.postCount}</div>
+                      <div className="text-stone-400 text-sm">Posts</div>
+                    </div>
+                    <div className="bg-neutral-800/30 rounded-xl p-4 border border-neutral-700/50">
+                      <Calendar className="w-6 h-6 text-purple-400 mb-2" />
+                      <div className="text-xl font-bold text-white">{formatDate(community.createdAt)}</div>
+                      <div className="text-stone-400 text-sm">Created</div>
+                    </div>
+                    <div className="bg-neutral-800/30 rounded-xl p-4 border border-neutral-700/50">
+                      <TrendingUp className="w-6 h-6 text-orange-400 mb-2" />
+                      <div className="text-xl font-bold text-white">{formatDate(community.updatedAt)}</div>
+                      <div className="text-stone-400 text-sm">Updated</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Recent Posts */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
-            <h2 className="text-xl font-bold text-white mb-6">Recent Posts</h2>
-
-            <div className="space-y-4">
-              {community.recentPosts.map((post) => (
-                <div key={post.id} className="border-b border-neutral-700 last:border-b-0 pb-4 last:pb-0">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-stone-300 font-medium">{post.authorName}</span>
-                    <span className="text-stone-400 text-sm">{formatDate(post.createdAt)}</span>
-                  </div>
-                  <p className="text-stone-200 mb-3 line-clamp-2">{post.content}</p>
-                  <div className="flex gap-4 text-stone-400 text-sm">
-                    <span>{post.likeCount} likes</span>
-                    <span>{post.commentCount} comments</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CommunityDetailsRecentActivity communityID={communityID} activities={activities}/>
+            <CommunityDetailsSettingsPreview community={community}/>
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Member List */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6">
-            <h3 className="text-lg font-bold text-white mb-4">Recent Members</h3>
-
-            <div className="space-y-3">
-              {community.members.slice(0, 5).map((member) => (
-                <div key={member.id} className="flex items-center justify-between">
-                  <div>
-                    <div className="text-stone-200 font-medium">{member.userType} {member.userID}</div>
-                    <div className="text-stone-400 text-sm">{member.role}</div>
-                  </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    member.status === 'active'
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-red-600/20 text-red-400'
-                  }`}>
-                    {member.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <Button
-              onClick={() => router.push(`/communities/${communityID}/members`)}
-              variant="outline"
-              size="sm"
-              className="w-full mt-4"
-            >
-              View All Members
-            </Button>
-          </div>
-
-          {/* Community Settings */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6">
-            <h3 className="text-lg font-bold text-white mb-4">Settings</h3>
-
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-stone-400">Owner Type:</span>
-                <span className="text-stone-200">{community.ownerType}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-stone-400">Owner ID:</span>
-                <span className="text-stone-200 truncate ml-2">{community.ownerID}</span>
-              </div>
-              {community.coachID && (
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Coach ID:</span>
-                  <span className="text-stone-200 truncate ml-2">{community.coachID}</span>
-                </div>
-              )}
-              {community.courseID && (
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Course ID:</span>
-                  <span className="text-stone-200 truncate ml-2">{community.courseID}</span>
-                </div>
-              )}
-            </div>
-
-            <Button
-              onClick={() => router.push(`/communities/${communityID}/settings`)}
-              variant="outline"
-              size="sm"
-              className="w-full mt-4"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Edit Settings
-            </Button>
-          </div>
+          <CommunityDetailsQuickActions communityID={communityID}/>
+          <CommunityDetailsInfo community={community}/>
+          <CommunityDetailsRecentMembers community={community}/>
         </div>
       </div>
     </div>

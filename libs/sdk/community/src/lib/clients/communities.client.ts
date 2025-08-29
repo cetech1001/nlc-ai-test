@@ -8,7 +8,7 @@ import {
   CommunityType,
   CommunityMember,
   ExtendedCommunityMember,
-  MemberStats
+  MemberStats, CommunityActivity, CommunityDetailStats
 } from '../types';
 
 export class CommunitiesClient extends BaseClient {
@@ -114,6 +114,19 @@ export class CommunitiesClient extends BaseClient {
       'GET',
       `/${communityID}/members?${params.toString()}`
     );
+    return response.data!;
+  }
+
+  async getCommunityActivity(communityID: string, limit: number = 10): Promise<CommunityActivity[]> {
+    const response = await this.request<CommunityActivity[]>(
+      'GET',
+      `/${communityID}/activity?limit=${limit}`
+    );
+    return response.data!;
+  }
+
+  async getCommunityAnalytics(communityID: string, period: '7d' | '30d' | '90d' = '30d') {
+    const response = await this.request<CommunityDetailStats>('GET', `/${communityID}/analytics?period=${period}`);
     return response.data!;
   }
 

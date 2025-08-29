@@ -81,3 +81,15 @@ export interface DataTableCoach {
   rawStatus: string;
   originalID: string;
 }
+
+export interface Admin {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role?: string | null;
+  isActive?: boolean | null;
+  lastLoginAt?: Date | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+}

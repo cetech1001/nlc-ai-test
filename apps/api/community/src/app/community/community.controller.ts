@@ -43,7 +43,7 @@ export class CommunityController {
     @Body() createDto: CreateCommunityDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.communityService.createCommunity(createDto, user.id, user.type);
+    return this.communityService.createCommunity(createDto, user);
   }
 
   @Get()
@@ -53,7 +53,7 @@ export class CommunityController {
     @Query() filters: CommunityFiltersDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.communityService.getCommunities(filters, user.id, user.type);
+    return this.communityService.getCommunities(filters, user);
   }
 
   @Get(':id')
@@ -64,7 +64,7 @@ export class CommunityController {
     @Param('id') id: string,
     @CurrentUser() user: AuthUser
   ) {
-    return this.communityService.getCommunity(id, user.id, user.type);
+    return this.communityService.getCommunity(id, user);
   }
 
   @Put(':id')
@@ -77,7 +77,7 @@ export class CommunityController {
     @Body() updateDto: UpdateCommunityDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.communityService.updateCommunity(id, updateDto, user.id, user.type);
+    return this.communityService.updateCommunity(id, updateDto, user);
   }
 
   @Post(':id/members')
@@ -111,6 +111,31 @@ export class CommunityController {
     return this.communityService.getCommunityMembers(id, filters, user);
   }
 
+  @Get(':id/activity')
+  @ApiOperation({ summary: 'Get community activity feed' })
+  @ApiParam({ name: 'id', description: 'Community ID' })
+  @ApiResponse({ status: 200, description: 'Activity feed retrieved successfully' })
+  async getCommunityActivity(
+    @Param('id') id: string,
+    @Query('limit') limit: number = 10,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.getCommunityActivity(id, limit, user);
+  }
+
+  @Get(':id/analytics')
+  @ApiOperation({ summary: 'Get community analytics' })
+  @ApiParam({ name: 'id', description: 'Community ID' })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
+  @UserTypes(UserType.coach, UserType.admin)
+  async getCommunityAnalytics(
+    @Param('id') id: string,
+    @Query('period') period: '7d' | '30d' | '90d' = '30d',
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.getCommunityAnalytics(id, period, user);
+  }
+
   @Delete(':id/members/:userID/:userType')
   @ApiOperation({ summary: 'Remove member from community' })
   @ApiParam({ name: 'id', description: 'Community ID' })
@@ -128,8 +153,7 @@ export class CommunityController {
       communityID,
       userID,
       userType,
-      user.id,
-      user.type
+      user,
     );
   }
 }

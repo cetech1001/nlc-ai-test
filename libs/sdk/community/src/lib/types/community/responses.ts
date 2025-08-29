@@ -35,6 +35,7 @@ export interface Community {
   pricingCurrency?: string;
   isSystemCreated: boolean;
   settings: Record<string, any>;
+  members?: CommunityMember[];
   memberCount: number;
   postCount: number;
   isActive: boolean;
@@ -92,4 +93,25 @@ export interface MemberStats {
   regularMembers: number;
   suspendedMembers: number;
   pendingMembers: number;
+}
+
+export interface CommunityActivity {
+  id: string;
+  type: 'post_created' | 'member_joined' | 'comment_added' | 'reaction_added';
+  userID: string;
+  userName: string;
+  userAvatarUrl?: string;
+  description: string;
+  createdAt: Date;
+  metadata?: Record<string, any>;
+}
+
+export interface CommunityDetailStats {
+  memberGrowth: number;
+  postGrowth: number;
+  engagementRate: number;
+  activeMembers: number;
+  totalPosts: number;
+  totalComments: number;
+  averagePostsPerDay: number;
 }

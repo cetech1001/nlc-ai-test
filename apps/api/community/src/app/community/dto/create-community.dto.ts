@@ -59,7 +59,7 @@ class CommunitySettingsDto {
   @ApiProperty({ enum: ['strict', 'moderate', 'relaxed'], required: false, default: 'moderate' })
   @IsOptional()
   @IsIn(['strict', 'moderate', 'relaxed'])
-  moderationLevel?: string;
+  moderationLevel?: 'strict' | 'moderate' | 'relaxed';
 }
 
 export class CreateCommunityDto {
