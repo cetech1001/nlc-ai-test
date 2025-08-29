@@ -342,6 +342,214 @@ enum CommunityPricingType {
   one_time
 }
 
+// Add these models to libs/api/database/prisma/schema.prisma
+
+enum ModerationStatus {
+  pending
+  approved
+  removed
+  dismissed
+}
+
+enum ModerationPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum ViolationType {
+  spam
+  harassment
+  inappropriate
+  hate_speech
+  misinformation
+  copyright
+}
+
+enum ModerationActionType {
+  content_approved
+  content_removed
+  content_dismissed
+  member_warned
+  member_suspended
+  member_banned
+  auto_flagged
+  user_reported
+}
+
+model FlaggedContent {
+  id          String @id @default(uuid()) @db.Uuid
+  contentID   String @db.Uuid
+  contentType String @db.VarChar(20) // 'post', 'comment', 'message'
+  communityID String @db.Uuid
+
+  // Content details (denormalized for performance)
+  content    String @db.Text
+  authorID   String @db.Uuid
+  authorName String @db.VarChar(255)
+  authorType String @db.VarChar(20)
+
+  // Moderation details
+  status    ModerationStatus   @default(pending)
+  priority  ModerationPriority @default(medium)
+  flagCount Int                @default(1)
+  reasons   ViolationType[]    @default([])
+
+  // AI analysis
+  aiScore  Float?  @db.Real // 0.0 - 1.0 confidence score
+  aiReason String? @db.Text
+
+  // Resolution details
+  reportedAt     DateTime  @default(now()) @db.Timestamptz(6)
+  resolvedAt     DateTime? @db.Timestamptz(6)
+  resolvedBy     String?   @db.Uuid
+  resolvedByType String?   @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  community Community          @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  reports   ContentReport[]
+  actions   ModerationAction[]
+
+  @@index([communityID])
+  @@index([status])
+  @@index([priority])
+  @@index([contentType])
+  @@index([authorID, authorType])
+  @@index([reportedAt])
+  @@map("flagged_content")
+}
+
+model ContentReport {
+  id               String @id @default(uuid()) @db.Uuid
+  flaggedContentID String @db.Uuid
+  communityID      String @db.Uuid
+
+  // Reporter details
+  reporterID   String @db.Uuid
+  reporterType String @db.VarChar(20)
+  reporterName String @db.VarChar(255)
+
+  // Report details
+  reason      ViolationType
+  details     String?       @db.Text
+  isAnonymous Boolean       @default(false)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  flaggedContent FlaggedContent @relation(fields: [flaggedContentID], references: [id], onDelete: Cascade)
+  community      Community      @relation(fields: [communityID], references: [id], onDelete: Cascade)
+
+  @@index([flaggedContentID])
+  @@index([communityID])
+  @@index([reporterID, reporterType])
+  @@index([reason])
+  @@map("content_reports")
+}
+
+model ModerationAction {
+  id               String  @id @default(uuid()) @db.Uuid
+  communityID      String  @db.Uuid
+  flaggedContentID String? @db.Uuid
+
+  type           ModerationActionType
+  targetType     String               @db.VarChar(20) // 'post', 'comment', 'message', 'member'
+  targetID       String               @db.Uuid
+  targetUser     String               @db.Uuid
+  targetUserType String               @db.VarChar(20)
+
+  // Target info (denormalized)
+  targetInfo Json? @default("{}")
+
+  // Moderator details
+  moderatorID   String @db.Uuid
+  moderatorName String @db.VarChar(255)
+  moderatorType String @db.VarChar(20)
+
+  reason   String @db.Text
+  metadata Json?  @default("{}")
+
+  // For temporary actions
+  expiresAt DateTime? @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  community      Community       @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  flaggedContent FlaggedContent? @relation(fields: [flaggedContentID], references: [id], onDelete: SetNull)
+
+  @@index([communityID])
+  @@index([type])
+  @@index([targetType])
+  @@index([targetID])
+  @@index([moderatorID, moderatorType])
+  @@index([createdAt])
+  @@map("moderation_actions")
+}
+
+model ModerationRule {
+  id          String @id @default(uuid()) @db.Uuid
+  communityID String @db.Uuid
+
+  name        String @db.VarChar(255)
+  description String @db.Text
+  type        String @db.VarChar(50) // 'keyword', 'ai', 'pattern', 'user_reports'
+
+  conditions Json @default("{}")
+  actions    Json @default("{}")
+
+  isEnabled Boolean @default(true)
+
+  // Usage statistics
+  triggerCount  Int       @default(0)
+  lastTriggered DateTime? @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
+
+  @@index([communityID])
+  @@index([isEnabled])
+  @@index([type])
+  @@map("moderation_rules")
+}
+
+model ModerationStats {
+  id          String   @id @default(uuid()) @db.Uuid
+  communityID String   @db.Uuid
+  date        DateTime @db.Date
+
+  // Content stats
+  totalPosts      Int @default(0)
+  totalComments   Int @default(0)
+  flaggedPosts    Int @default(0)
+  flaggedComments Int @default(0)
+
+  // Action stats
+  contentApproved  Int @default(0)
+  contentRemoved   Int @default(0)
+  contentDismissed Int @default(0)
+
+  // Member stats
+  membersWarned    Int @default(0)
+  membersSuspended Int @default(0)
+  membersBanned    Int @default(0)
+
+  // AI stats
+  aiScanned      Int @default(0)
+  aiAutoResolved Int @default(0)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
+
+  @@unique([communityID, date])
+  @@index([date])
+  @@map("moderation_stats")
+}
+
 model Community {
   id          String              @id @default(uuid()) @db.Uuid
   name        String              @db.VarChar(255)
@@ -361,6 +569,7 @@ model Community {
   pricingCurrency String?              @default("USD") @db.VarChar(3)
 
   isSystemCreated Boolean @default(false)
+  isDeleted       Boolean @default(false)
 
   settings    Json     @default("{}")
   memberCount Int      @default(0)
@@ -368,6 +577,12 @@ model Community {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  flaggedContent    FlaggedContent[]
+  contentReports    ContentReport[]
+  moderationActions ModerationAction[]
+  moderationRules   ModerationRule[]
+  moderationStats   ModerationStats[]
 
   members CommunityMember[]
   posts   Post[]
@@ -455,6 +670,8 @@ model Post {
   shareCount   Int      @default(0)
   createdAt    DateTime @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  isDeleted Boolean @default(false)
 
   community       Community       @relation(fields: [communityID], references: [id], onDelete: Cascade)
   communityMember CommunityMember @relation(fields: [communityMemberID], references: [id], onDelete: Cascade)

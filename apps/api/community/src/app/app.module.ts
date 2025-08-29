@@ -11,6 +11,7 @@ import { PostsModule } from './posts/posts.module';
 import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
 import communityConfig from './config/community.config';
+import {ModerationModule} from "./moderation/moderation.module";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import communityConfig from './config/community.config';
     HealthModule,
     CommunityModule,
     PostsModule,
+    ModerationModule,
     EventHandlersModule,
   ],
   providers: [

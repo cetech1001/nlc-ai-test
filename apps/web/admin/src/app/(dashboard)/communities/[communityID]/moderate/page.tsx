@@ -1,412 +1,392 @@
+
 'use client'
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Flag, MessageSquare, Users, Search } from 'lucide-react';
-import { BackTo, DataTable, StatCard } from "@nlc-ai/web-shared";
-import { Button, Badge, Skeleton } from '@nlc-ai/web-ui';
-import { formatDate } from "@nlc-ai/web-utils";
-
-interface ModerationStats {
-  totalPosts: number;
-  flaggedPosts: number;
-  totalComments: number;
-  flaggedComments: number;
-  activeMembers: number;
-  suspendedMembers: number;
-}
-
-interface FlaggedContent {
-  id: string;
-  type: 'post' | 'comment';
-  content: string;
-  authorName: string;
-  authorType: string;
-  flagCount: number;
-  reasons: string[];
-  createdAt: Date;
-  status: 'pending' | 'resolved' | 'dismissed';
-}
-
-interface MemberAction {
-  id: string;
-  memberName: string;
-  memberType: string;
-  action: string;
-  reason: string;
-  performedBy: string;
-  createdAt: Date;
-}
+import { Flag, Users, CheckCircle, AlertTriangle, Shield, Search } from 'lucide-react';
+import { BackTo, DataTable, Pagination, StatCard, DataFilter, PageHeader } from "@nlc-ai/web-shared";
+import { Button } from '@nlc-ai/web-ui';
+import { FilterValues } from '@nlc-ai/sdk-core';
+import { toast } from 'sonner';
+import {moderationActionColumns, moderationContentColumns, sdkClient} from "@/lib";
+import { ModerationStats, FlaggedContent, ModerationAction } from '@nlc-ai/sdk-community';
+import { moderationFilters, emptyModerationFilterValues } from '@/lib/components/communities/filters';
 
 const AdminCommunityModeratePage = () => {
   const router = useRouter();
   const params = useParams();
   const communityID = params.communityID as string;
 
-  const [activeTab, setActiveTab] = useState<'content' | 'members' | 'actions'>('content');
+  // State
+  const [activeTab, setActiveTab] = useState<'content' | 'actions' | 'settings'>('content');
   const [stats, setStats] = useState<ModerationStats | null>(null);
   const [flaggedContent, setFlaggedContent] = useState<FlaggedContent[]>([]);
-  const [memberActions, setMemberActions] = useState<MemberAction[]>([]);
+  const [moderationActions, setModerationActions] = useState<ModerationAction[]>([]);
+
+  // Loading states
   const [isLoading, setIsLoading] = useState(true);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [_, setIsProcessing] = useState<string | null>(null);
+
+  // Filter and search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved' | 'dismissed'>('all');
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyModerationFilterValues);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
 
   useEffect(() => {
     fetchModerationData();
   }, [communityID]);
 
+  useEffect(() => {
+    if (activeTab === 'content') {
+      fetchFlaggedContent();
+    } else if (activeTab === 'actions') {
+      fetchModerationActions();
+    }
+  }, [communityID, activeTab, searchQuery, filterValues, currentPage]);
+
   const fetchModerationData = async () => {
+    try {
+      setIsStatsLoading(true);
+      const statsResponse = await sdkClient.community.moderation.getModerationStats(communityID);
+      setStats(statsResponse);
+    } catch (error: any) {
+      console.error('Failed to fetch moderation data:', error);
+      toast.error('Failed to load moderation statistics');
+    } finally {
+      setIsStatsLoading(false);
+    }
+  };
+
+  const fetchFlaggedContent = async () => {
     try {
       setIsLoading(true);
 
-      // Mock data - this would come from your API
-      const mockStats: ModerationStats = {
-        totalPosts: 143,
-        flaggedPosts: 7,
-        totalComments: 456,
-        flaggedComments: 12,
-        activeMembers: 89,
-        suspendedMembers: 3,
-      };
+      const response = await sdkClient.community.moderation.getFlaggedContent(
+        communityID,
+        { page: currentPage, limit: 10, search: searchQuery },
+        filterValues
+      );
 
-      const mockFlaggedContent: FlaggedContent[] = [
-        {
-          id: '1',
-          type: 'post',
-          content: 'This is a potentially inappropriate post that has been flagged by multiple users...',
-          authorName: 'John Doe',
-          authorType: 'client',
-          flagCount: 3,
-          reasons: ['Inappropriate content', 'Spam'],
-          createdAt: new Date('2024-01-20'),
-          status: 'pending',
-        },
-        {
-          id: '2',
-          type: 'comment',
-          content: 'This comment contains potentially offensive language...',
-          authorName: 'Jane Smith',
-          authorType: 'coach',
-          flagCount: 2,
-          reasons: ['Harassment'],
-          createdAt: new Date('2024-01-19'),
-          status: 'pending',
-        },
-      ];
+      setFlaggedContent(response.data);
+      setPagination(response.pagination);
+    } catch (error: any) {
+      console.error('Failed to fetch flagged content:', error);
+      toast.error('Failed to load flagged content');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      const mockMemberActions: MemberAction[] = [
-        {
-          id: '1',
-          memberName: 'John Doe',
-          memberType: 'client',
-          action: 'suspended',
-          reason: 'Multiple violations',
-          performedBy: 'Admin',
-          createdAt: new Date('2024-01-18'),
-        },
-      ];
+  const fetchModerationActions = async () => {
+    try {
+      setIsLoading(true);
 
-      setStats(mockStats);
-      setFlaggedContent(mockFlaggedContent);
-      setMemberActions(mockMemberActions);
-    } catch (error) {
-      console.error('Failed to fetch moderation data:', error);
+      const response = await sdkClient.community.moderation.getModerationActions(
+        communityID,
+        { page: currentPage, limit: 10 }
+      );
+
+      setModerationActions(response.data);
+      setPagination(response.pagination);
+    } catch (error: any) {
+      console.error('Failed to fetch moderation actions:', error);
+      toast.error('Failed to load moderation actions');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleContentAction = async (contentID: string, action: 'approve' | 'remove' | 'dismiss') => {
-    console.log(`${action} content:`, contentID);
-    // Implement content moderation actions
+    try {
+      setIsProcessing(contentID);
+
+      await sdkClient.community.moderation.moderateContent(communityID, contentID, {
+        action,
+        reason: `Content ${action}d by moderator`
+      });
+
+      toast.success(`Content ${action}d successfully`);
+
+      // Refresh the content list and stats
+      await fetchFlaggedContent();
+      await fetchModerationData();
+
+    } catch (error: any) {
+      console.error(`Failed to ${action} content:`, error);
+      toast.error(`Failed to ${action} content`);
+    } finally {
+      setIsProcessing(null);
+    }
   };
 
-  /*const handleMemberAction = async (memberID: string, action: 'warn' | 'suspend' | 'ban') => {
-    console.log(`${action} member:`, memberID);
-    // Implement member moderation actions
-  };*/
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
 
-  const contentColumns = [
-    {
-      key: 'type',
-      header: 'Type',
-      render: (value: string) => (
-        <Badge variant={value === 'post' ? 'default' : 'secondary'}>
-          {value}
-        </Badge>
-      ),
-    },
-    {
-      key: 'content',
-      header: 'Content',
-      render: (value: string) => (
-        <div className="max-w-md truncate">{value}</div>
-      ),
-    },
-    {
-      key: 'authorName',
-      header: 'Author',
-    },
-    {
-      key: 'flagCount',
-      header: 'Flags',
-      render: (value: number) => (
-        <Badge variant={value > 2 ? 'destructive' : 'secondary'}>
-          {value}
-        </Badge>
-      ),
-    },
-    {
-      key: 'reasons',
-      header: 'Reasons',
-      render: (value: string[]) => (
-        <div className="flex flex-wrap gap-1">
-          {value.slice(0, 2).map((reason, index) => (
-            <Badge key={index} variant="outline" className="text-xs">
-              {reason}
-            </Badge>
-          ))}
-          {value.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{value.length - 2}
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (value: string) => {
-        const colors = {
-          pending: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30',
-          resolved: 'bg-green-600/20 text-green-400 border-green-600/30',
-          dismissed: 'bg-gray-600/20 text-gray-400 border-gray-600/30',
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${colors[value as keyof typeof colors]}`}>
-            {value}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'createdAt',
-      header: 'Flagged',
-      render: (value: Date) => formatDate(value),
-    },
-  ];
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters);
+    setCurrentPage(1);
+  };
 
-  const actionColumns = [
-    {
-      key: 'memberName',
-      header: 'Member',
-    },
-    {
-      key: 'memberType',
-      header: 'Type',
-      render: (value: string) => (
-        <Badge variant="outline">{value}</Badge>
-      ),
-    },
-    {
-      key: 'action',
-      header: 'Action',
-      render: (value: string) => {
-        const colors = {
-          warned: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30',
-          suspended: 'bg-orange-600/20 text-orange-400 border-orange-600/30',
-          banned: 'bg-red-600/20 text-red-400 border-red-600/30',
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${colors[value as keyof typeof colors]}`}>
-            {value}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'reason',
-      header: 'Reason',
-    },
-    {
-      key: 'performedBy',
-      header: 'By',
-    },
-    {
-      key: 'createdAt',
-      header: 'Date',
-      render: (value: Date) => formatDate(value),
-    },
-  ];
+  const handleResetFilters = () => {
+    setFilterValues(emptyModerationFilterValues);
+    setSearchQuery('');
+    setCurrentPage(1);
+  };
 
-  const filteredContent = flaggedContent.filter(item => {
-    const matchesSearch = item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.authorName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="animate-pulse space-y-8">
-          <Skeleton className="h-8 w-1/3" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Skeleton className="h-32 rounded-2xl" />
-            <Skeleton className="h-32 rounded-2xl" />
-            <Skeleton className="h-32 rounded-2xl" />
-          </div>
-          <Skeleton className="h-96 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
+  const handleTabChange = (tab: 'content' | 'actions' | 'settings') => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    setSearchQuery('');
+    setFilterValues(emptyModerationFilterValues);
+  };
 
   return (
-    <div className="flex-1 p-4 sm:p-6 lg:p-8">
-      <BackTo
-        title="Community Moderation"
-        onClick={() => router.push(`/communities/${communityID}`)}
-      />
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          title="Flagged Posts"
-          value={stats?.flaggedPosts}
-          subtitle={`${stats?.totalPosts} total posts`}
-          icon={Flag}
-          iconBgColor="from-red-600/20 to-pink-600/20"
-          isLoading={!stats}
+    <div className={`flex flex-col ${isFilterOpen ? 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' : ''}`}>
+      <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
+        <BackTo
+          title="Community Moderation"
+          onClick={() => router.push(`/communities/${communityID}`)}
         />
-        <StatCard
-          title="Flagged Comments"
-          value={stats?.flaggedComments}
-          subtitle={`${stats?.totalComments} total comments`}
-          icon={MessageSquare}
-          iconBgColor="from-orange-600/20 to-yellow-600/20"
-          isLoading={!stats}
-        />
-        <StatCard
-          title="Suspended Members"
-          value={stats?.suspendedMembers}
-          subtitle={`${stats?.activeMembers} active members`}
-          icon={Users}
-          iconBgColor="from-purple-600/20 to-violet-600/20"
-          isLoading={!stats}
-        />
-      </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-neutral-700 mb-6">
-        <button
-          onClick={() => setActiveTab('content')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'content'
-              ? 'border-purple-500 text-purple-400'
-              : 'border-transparent text-stone-400 hover:text-stone-300'
-          }`}
-        >
-          Flagged Content
-        </button>
-        <button
-          onClick={() => setActiveTab('members')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'members'
-              ? 'border-purple-500 text-purple-400'
-              : 'border-transparent text-stone-400 hover:text-stone-300'
-          }`}
-        >
-          Member Management
-        </button>
-        <button
-          onClick={() => setActiveTab('actions')}
-          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-            activeTab === 'actions'
-              ? 'border-purple-500 text-purple-400'
-              : 'border-transparent text-stone-400 hover:text-stone-300'
-          }`}
-        >
-          Moderation Log
-        </button>
-      </div>
-
-      {/* Content Tab */}
-      {activeTab === 'content' && (
-        <div className="space-y-6">
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Search flagged content..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg px-4 py-2 pl-10 text-white placeholder:text-stone-400"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-xl bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-600/30">
+              <Shield className="w-6 h-6 text-red-400" />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-neutral-800/50 border border-neutral-600 rounded-lg px-4 py-2 text-white"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="resolved">Resolved</option>
-              <option value="dismissed">Dismissed</option>
-            </select>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Content Moderation</h1>
+              <p className="text-stone-400">Review flagged content and manage community safety</p>
+            </div>
           </div>
 
-          <DataTable
-            columns={contentColumns}
-            data={filteredContent}
-            showMobileCards={true}
-            emptyMessage="No flagged content found"
-            isLoading={false}
-            actions={[
-              { action: 'view', label: 'View Details' },
-              { action: 'approve', label: 'Approve' },
-              { action: 'remove', label: 'Remove' },
-              { action: 'dismiss', label: 'Dismiss' },
-            ]}
-            onRowAction={(action, row) => {
-              if (action === 'approve' || action === 'remove' || action === 'dismiss') {
-                handleContentAction(row.id, action as any);
-              }
-            }}
-          />
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <StatCard
+              title="Pending Reports"
+              value={stats?.pendingReports}
+              subtitle="Needs review"
+              icon={Flag}
+              iconBgColor="from-red-600/20 to-pink-600/20"
+              isLoading={isStatsLoading}
+              growth={stats?.pendingReportsTrend}
+            />
+            <StatCard
+              title="Total Flags"
+              value={stats?.totalFlags}
+              subtitle="All time"
+              icon={AlertTriangle}
+              iconBgColor="from-orange-600/20 to-yellow-600/20"
+              isLoading={isStatsLoading}
+              growth={stats?.totalFlagsTrend}
+            />
+            <StatCard
+              title="Actions Taken"
+              value={stats?.actionsTaken}
+              subtitle="Last 30 days"
+              icon={Shield}
+              iconBgColor="from-blue-600/20 to-purple-600/20"
+              isLoading={isStatsLoading}
+              growth={stats?.actionsTakenTrend}
+            />
+            <StatCard
+              title="Auto-Resolved"
+              value={stats?.autoResolved}
+              subtitle="By AI moderation"
+              icon={CheckCircle}
+              iconBgColor="from-green-600/20 to-emerald-600/20"
+              isLoading={isStatsLoading}
+              growth={stats?.autoResolvedTrend}
+            />
+          </div>
         </div>
-      )}
 
-      {/* Members Tab */}
-      {activeTab === 'members' && (
-        <div className="text-center py-12">
-          <Users className="w-16 h-16 text-stone-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-stone-300 mb-2">Member Management</h3>
-          <p className="text-stone-400 mb-4">Manage community members, roles, and permissions</p>
-          <Button
-            onClick={() => router.push(`/communities/${communityID}/members`)}
-            variant="outline"
-          >
-            View All Members
-          </Button>
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-neutral-700 mb-6">
+          {[
+            { key: 'content', label: 'Flagged Content', icon: Flag },
+            { key: 'actions', label: 'Moderation Log', icon: Shield },
+            { key: 'settings', label: 'Auto-Moderation', icon: Users },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => handleTabChange(tab.key as any)}
+                className={`flex items-center gap-2 px-4 py-3 font-medium border-b-2 transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-purple-500 text-purple-400 bg-purple-600/5'
+                    : 'border-transparent text-stone-400 hover:text-stone-300 hover:bg-neutral-800/30'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      {/* Actions Tab */}
-      {activeTab === 'actions' && (
-        <div className="space-y-6">
-          <DataTable
-            columns={actionColumns}
-            data={memberActions}
-            showMobileCards={true}
-            emptyMessage="No moderation actions found"
-            isLoading={false}
-          />
-        </div>
-      )}
+        {/* Content Tab */}
+        {activeTab === 'content' && (
+          <>
+            {/* Search and Filters */}
+            <PageHeader title="" showActionOnMobile={false}>
+              <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
+                <input
+                  type="text"
+                  placeholder="Search content, authors, or violations..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-white placeholder:text-white/50 text-base font-normal leading-tight outline-none"
+                />
+                <Search className="w-5 h-5 text-white" />
+              </div>
+
+              <DataFilter
+                filters={moderationFilters}
+                values={filterValues}
+                onChange={handleFilterChange}
+                onReset={handleResetFilters}
+                setIsFilterOpen={setIsFilterOpen}
+              />
+            </PageHeader>
+
+            <DataTable
+              columns={moderationContentColumns}
+              data={flaggedContent}
+              showMobileCards={true}
+              emptyMessage="No flagged content found"
+              isLoading={isLoading}
+              actions={[
+                { action: 'view', label: 'View Details' },
+                { action: 'approve', label: 'Approve' },
+                { action: 'remove', label: 'Remove' },
+                { action: 'dismiss', label: 'Dismiss' },
+              ]}
+              onRowAction={(action, row) => {
+                if (action === 'view') {
+                  router.push(`/communities/${communityID}/posts/${row.contentID}`);
+                } else if (['approve', 'remove', 'dismiss'].includes(action)) {
+                  handleContentAction(row.id, action as any);
+                }
+              }}
+            />
+
+            <Pagination
+              totalPages={pagination.totalPages}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              isLoading={isLoading}
+            />
+          </>
+        )}
+
+        {/* Actions Tab */}
+        {activeTab === 'actions' && (
+          <>
+            <DataTable
+              columns={moderationActionColumns}
+              data={moderationActions}
+              showMobileCards={true}
+              emptyMessage="No moderation actions found"
+              isLoading={isLoading}
+            />
+
+            <Pagination
+              totalPages={pagination.totalPages}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              isLoading={isLoading}
+            />
+          </>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="max-w-4xl">
+            <div className="bg-gradient-to-br from-neutral-800/40 to-neutral-900/60 rounded-2xl border border-neutral-700/50 p-6 lg:p-8">
+              <div className="relative">
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute w-64 h-64 -right-16 -top-24 bg-gradient-to-l from-blue-400 via-purple-500 to-fuchsia-600 rounded-full blur-3xl" />
+                </div>
+
+                <div className="relative z-10">
+                  <h2 className="text-xl font-bold text-white mb-6">Auto-Moderation Settings</h2>
+
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="p-4 bg-neutral-800/30 border border-neutral-700/50 rounded-xl">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-white font-medium">AI Content Analysis</h3>
+                          <div className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs font-medium">
+                            Active
+                          </div>
+                        </div>
+                        <p className="text-stone-400 text-sm mb-4">
+                          Automatically detect spam, harassment, and inappropriate content
+                        </p>
+                        <div className="text-xs text-stone-500">
+                          Sensitivity: High • Auto-action: Flag for review
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-neutral-800/30 border border-neutral-700/50 rounded-xl">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-white font-medium">Spam Detection</h3>
+                          <div className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs font-medium">
+                            Active
+                          </div>
+                        </div>
+                        <p className="text-stone-400 text-sm mb-4">
+                          Identify and handle repetitive or promotional content
+                        </p>
+                        <div className="text-xs text-stone-500">
+                          Auto-action: Remove • Appeal: Available
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border border-neutral-600/50 rounded-xl p-4 bg-blue-600/5">
+                      <div className="flex items-start gap-3">
+                        <div className="text-blue-400 text-lg">🤖</div>
+                        <div>
+                          <div className="text-blue-400 font-medium text-sm mb-1">AI Moderation Status</div>
+                          <p className="text-blue-300 text-xs leading-relaxed">
+                            AI moderation is processing content in real-time. {stats?.autoResolved || 0} items
+                            automatically resolved today with 94% accuracy rate.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => router.push(`/communities/${communityID}/settings`)}
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                    >
+                      Configure Advanced Settings
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
