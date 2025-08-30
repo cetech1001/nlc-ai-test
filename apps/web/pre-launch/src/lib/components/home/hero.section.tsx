@@ -7,7 +7,7 @@ export const HeroSection = () => {
         <>
             <div className="relative">
                 <div className="absolute top-6 left-0 px-3 z-20 w-full">
-                    <div className="flex items-center justify-between w-full space-x-3">
+                    <div className="flex items-center justify-between w-full space-x-3 sm:px-8">
                         <Image src={'/images/logo-large.png'} height={192} width={192} alt={'Logo'}/>
                         <button onClick={() => {
                             redirect(process.env.NEXT_PUBLIC_COACH_PLATFORM_URL || '');
@@ -21,7 +21,7 @@ export const HeroSection = () => {
                     </div>
                 </div>
 
-                <div className="container mx-auto px-6 pt-24">
+                <div className="container mx-auto px-6 pt-36 sm:pt-24">
                     <div className="text-center max-w-6xl mx-auto">
                         <h1 className="text-[40px] md:text-6xl lg:text-[76px] font-bold mb-6 leading-tight">
                             <span className="text-white">Your Coaching Business.</span>

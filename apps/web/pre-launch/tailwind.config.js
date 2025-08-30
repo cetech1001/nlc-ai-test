@@ -5,11 +5,12 @@ module.exports = {
     content: [
       join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'),
       ...createGlobPatternsForDependencies(__dirname),
+      './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     ],
     theme: {
         extend: {
             colors: {
-                purple: "hsl(280 80% 43.5%)",
+                // purple: "hsl(280 80% 43.5%)",
                 "magenta-light": "hsl(290 100% 72%)",
                 magenta: "hsl(286 73% 55%)",
                 brand: {
