@@ -11,14 +11,14 @@ export const calculateQualification = (answers: Answers): boolean => {
         if (Array.isArray(answer)) {
             answer.forEach(value => {
                 const cleanValue = value.startsWith('other:') ? 'other' : value;
-                const option = question.options.find(opt => opt.value === cleanValue);
+                const option = question.options?.find(opt => opt.value === cleanValue);
                 if (option?.disqualifies) {
                     disqualifyingAnswers++;
                 }
             });
         } else {
             const cleanValue = answer.startsWith('other:') ? 'other' : answer;
-            const option = question.options.find(opt => opt.value === cleanValue);
+            const option = question.options?.find(opt => opt.value === cleanValue);
             if (option?.disqualifies) {
                 disqualifyingAnswers++;
             }
