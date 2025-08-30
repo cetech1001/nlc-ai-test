@@ -76,7 +76,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
 
   // Filter members based on search
   const filteredMembers = members.filter(member =>
-    member.name.toLowerCase().includes(searchQuery.toLowerCase())
+    member.userName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Group members by role
@@ -168,8 +168,8 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
                   >
                     <div className="relative">
                       <img
-                        src={member.avatarUrl || '/api/placeholder/40/40'}
-                        alt={member.name}
+                        src={member.userAvatarUrl || '/api/placeholder/40/40'}
+                        alt={member.userName}
                         className="w-10 h-10 rounded-full object-cover border border-neutral-600"
                       />
                       <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
@@ -178,7 +178,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-white text-sm font-medium truncate">{member.name}</h3>
+                        <h3 className="text-white text-sm font-medium truncate">{member.userName}</h3>
                         {getRoleIcon(member.role)}
                       </div>
                       <div className="flex items-center justify-between">

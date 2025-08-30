@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Plus, BookOpen, Users, Calendar, MoreVertical, Edit, Trash2, Copy, Eye } from 'lucide-react';
-import {appConfig} from "@nlc-ai/web-shared";
-import {CoursesLanding} from "./landing";
+import { appConfig } from "@nlc-ai/web-shared";
+import {CoursesLanding} from "@/app/(dashboard)/courses/landing";
+import {useRouter} from "next/navigation";
 
 // Mock data for courses
 const mockCourses = [
@@ -66,8 +67,24 @@ const statusColors: Record<string, string> = {
 const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showDropdown) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
+
   return (
-    <div className="relative group">
+    <div className="relative group h-full">
       {/* Status Badge */}
       <div className="absolute -top-2 -right-2 z-10">
         <div className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[course.status]}`}>
@@ -80,53 +97,57 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="p-2 bg-black/20 hover:bg-black/30 text-white rounded-lg transition-colors backdrop-blur-sm"
+            className="p-2 bg-black/20 hover:bg-black/30 cursor-pointer text-white rounded-lg transition-colors backdrop-blur-sm"
           >
-            <MoreVertical className="w-4 h-4" />
+            <MoreVertical className="w-4 h-4 cursor-pointer" />
           </button>
 
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-lg overflow-hidden">
+            <div className="absolute right-0 mt-2 w-48 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg shadow-lg overflow-hidden z-20">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onEdit(course);
                   setShowDropdown(false);
                 }}
-                className="w-full px-4 py-2 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-2"
+                className="w-full px-4 py-3 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-3 transition-colors"
               >
                 <Edit className="w-4 h-4" />
-                Edit Course
+                <span className="text-sm">Edit Course</span>
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onPreview(course);
                   setShowDropdown(false);
                 }}
-                className="w-full px-4 py-2 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-2"
+                className="w-full px-4 py-3 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-3 transition-colors"
               >
                 <Eye className="w-4 h-4" />
-                Preview
+                <span className="text-sm">Preview Course</span>
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onDuplicate(course);
                   setShowDropdown(false);
                 }}
-                className="w-full px-4 py-2 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-2"
+                className="w-full px-4 py-3 text-left text-white hover:bg-[#3A3A3A] flex items-center gap-3 transition-colors"
               >
                 <Copy className="w-4 h-4" />
-                Duplicate
+                <span className="text-sm">Duplicate</span>
               </button>
               <div className="border-t border-[#3A3A3A]">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onDelete(course);
                     setShowDropdown(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-600/10 flex items-center gap-2"
+                  className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-600/10 flex items-center gap-3 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  <span className="text-sm">Delete Course</span>
                 </button>
               </div>
             </div>
@@ -135,29 +156,29 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
       </div>
 
       {/* Course Card */}
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden h-full flex flex-col">
         {/* Glow Effect */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
         </div>
 
-        <div className="relative z-10 p-6">
+        <div className="relative z-10 p-6 flex flex-col h-full">
           {/* Thumbnail */}
           <div className="w-full h-40 bg-gradient-to-br from-purple-600/20 to-violet-800/20 rounded-2xl mb-4 flex items-center justify-center border border-purple-600/20">
             <BookOpen className="w-12 h-12 text-purple-400" />
           </div>
 
           {/* Course Info */}
-          <div className="space-y-3">
+          <div className="space-y-3 flex-grow flex flex-col">
             <h3 className="text-white text-xl font-semibold leading-tight">
               {course.title}
             </h3>
-            <p className="text-stone-300 text-sm leading-relaxed line-clamp-2">
+            <p className="text-stone-300 text-sm leading-relaxed line-clamp-2 flex-grow">
               {course.description}
             </p>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-2 gap-4 pt-2 mt-auto">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-stone-400" />
                 <div>
@@ -195,15 +216,16 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
 
 const CoursesPage = () => {
   if (appConfig.features.enableLanding) {
-    return <CoursesLanding />;
+    return <CoursesLanding/>
   }
+
+  const router = useRouter();
 
   const [courses, setCourses] = useState(mockCourses);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateNewCourse = () => {
-    // Navigate to course creation page
-    console.log('Navigate to course creation');
+    router.push('/courses/new');
   };
 
   const handleEditCourse = (course: any) => {
@@ -238,18 +260,18 @@ const CoursesPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-violet-900 flex items-center justify-center">
         <div className="text-white">Loading courses...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-violet-900">
       <div className="pt-8 pb-16">
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+        <div className="w-full px-6">
+          {/* Header - Mobile responsive */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-white text-3xl font-bold mb-2">My Courses</h1>
               <p className="text-stone-300 text-lg">
@@ -257,9 +279,10 @@ const CoursesPage = () => {
               </p>
             </div>
 
+            {/* Create button - full width on mobile */}
             <button
               onClick={handleCreateNewCourse}
-              className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-opacity"
+              className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-opacity w-full lg:w-auto justify-center lg:justify-start"
             >
               <Plus className="w-5 h-5" />
               Create New Course

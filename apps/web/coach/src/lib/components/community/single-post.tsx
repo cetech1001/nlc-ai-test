@@ -36,7 +36,7 @@ export const SinglePost: FC<IProps> = (props) => {
     try {
       setLoadingComments(prev => ({ ...prev, [postID]: true }));
 
-      const response = await sdkClient.community.posts.getComments(postID, page, 10);
+      const response = await sdkClient.community.posts.getComments(postID, {page, limit: 10});
 
       setComments(prev => ({
         ...prev,
