@@ -27,7 +27,7 @@ html, body {
 
 .glass-card {
   background: linear-gradient(198deg, rgba(38, 38, 38, 0.30) 10.03%, rgba(19, 19, 19, 0.30) 75.61%);
-  backdrop-filter: blur(20px);
+  /*backdrop-filter: blur(20px);*/
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -46,10 +46,8 @@ html, body {
   background: linear-gradient(19deg, #FEBEFA 6.78%, #B339D4 34.87%, #7B21BA 61.32%, #7B26F0 91.07%);
   cursor: pointer;
   font-family: 'Poppins', sans-serif;
-  /*font-weight: 700;*/
   padding: 0.75rem 3rem;
   border-radius: 0.75rem;
-  /*font-size: 1.25rem;*/
   position: relative;
   overflow: hidden;
 
@@ -62,17 +60,6 @@ html, body {
   transform: scale(1.05);
   box-shadow: 0 8px 30px 0 rgba(168, 85, 247, 0.6);
 }
-
-/*.btn-primary {
-  background: linear-gradient(19deg, #FEBEFA 6.78%, #B339D4 34.87%, #7B21BA 61.32%, #7B26F0 91.07%);
-  transition: all 0.3s ease;
-    color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0px 8px 25px 0px rgba(212, 151, 255, 0.6);
-}*/
 
 @keyframes corners {
   0% {
@@ -133,57 +120,6 @@ html, body {
     transform: translate(100%, -65%) rotate(0turn);
   }
 }
-
-/*.video-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 2%;
-  width: 20%;
-  height: 2px;
-  background: linear-gradient(90deg, #d946ef, #f5d0fe, #4c1d95);
-  transform: translateX(-100%);
-  animation: slideGradient 5s ease-in-out infinite alternate;
-}
-
-@keyframes slideGradient {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(480%); }
-}*/
-
-/*.video-box::before {
-  content: '';
-  background: conic-gradient(
-    from 0deg,
-    transparent 0%,
-    transparent 75%,
-    #d946ef 75%,
-    #f5d0fe 85%,
-    #4c1d95 95%,
-    transparent 100%
-  );
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-100%, -65%);
-  aspect-ratio: 1;
-  width: 50%;
-  animation: rotate 3s ease-in-out infinite alternate;
-}
-
-.video-box::after {
-  content: '';
-  background: inherit;
-  border-radius: inherit;
-  position: absolute;
-  inset: 5px;
-  height: calc(100% - 2 * 5px);
-  width: calc(100% - 2 * 5px);
-}
-
-.animate-shimmer {
-  animation: shimmer 4s ease-in-out infinite;
-}*/
 
 .animate-shimmer-reverse {
   animation: shimmer-reverse 5s ease-in-out infinite;

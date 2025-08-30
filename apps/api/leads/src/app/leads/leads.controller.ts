@@ -40,6 +40,14 @@ export class LeadsController {
     });
   }
 
+  @Get('qualified')
+  @Public()
+  @ApiOperation({ summary: 'Get qualified leads count' })
+  @ApiResponse({ status: 200, description: 'Qualified leads count retrieved successfully' })
+  getQualifiedLeads() {
+    return this.leadsService.getQualifiedLeads();
+  }
+
   @Get('stats')
   @UseGuards(JwtAuthGuard, UserTypesGuard)
   @UserTypes(UserType.coach, UserType.admin)

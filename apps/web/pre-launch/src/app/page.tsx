@@ -18,7 +18,7 @@ const Home = () => {
   };
 
   return (
-      <PageBackground>
+      <PageBackground displayDots={true}>
         <HeroSection />
         <ExclusiveAccessSection />
         <UrgencySection />

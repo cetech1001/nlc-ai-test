@@ -3,14 +3,19 @@ import {Question} from "@/lib/types";
 export const questions: Question[] = [
     {
         id: 1,
-        text: "How many clients do you currently have?",
-        options: [
-            { text: "0 - 10", value: "under10", disqualifies: true },
-            { text: "10 - 25", value: "10-25", qualifies: true },
-            { text: "25 - 50", value: "25-50", qualifies: true },
-            { text: "50+", value: "50+", qualifies: true }
-        ]
+        text: "What industry are you in?",
+        textOnly: true,
     },
+  {
+    id: 1,
+    text: "How many clients do you currently have?",
+    options: [
+      { text: "0 - 10", value: "under10", disqualifies: true },
+      { text: "10 - 25", value: "10-25", qualifies: true },
+      { text: "25 - 50", value: "25-50", qualifies: true },
+      { text: "50+", value: "50+", qualifies: true }
+    ]
+  },
     {
         id: 2,
         text: "Which platform do you host your course on?",

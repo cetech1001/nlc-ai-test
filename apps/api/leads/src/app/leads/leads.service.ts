@@ -125,6 +125,14 @@ export class LeadsService {
     });
   }
 
+  async getQualifiedLeads() {
+    return this.prisma.lead.count({
+      where: {
+        qualified: true,
+      }
+    });
+  }
+
   async findOne(id: string) {
     const lead = await this.prisma.lead.findUnique({
       where: { id },

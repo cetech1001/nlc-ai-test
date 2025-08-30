@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface Dot {
     id: number;
@@ -10,17 +10,13 @@ interface Dot {
     speedY: number;
 }
 
-const DOT_COUNT = 60
-const SPEED_RANGE = 8
-
 export const AnimatedDots: React.FC = () => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const rafId = useRef<number | null>(null);
     const lastTs = useRef<number | null>(null);
 
-    // Many dots; adjust density as needed
     const DOT_COUNT = 320;
-    const SPEED_RANGE = 14; // px per second in percentage units (~faster)
+    const SPEED_RANGE = 10;
 
     type LiveDot = Dot & { node: HTMLDivElement };
     const liveDots = useRef<LiveDot[]>([]);
@@ -29,19 +25,16 @@ export const AnimatedDots: React.FC = () => {
         const container = containerRef.current;
         if (!container) return;
 
-        // Create dots imperatively for perf (avoid React re-render every frame)
         const created: LiveDot[] = [];
         for (let i = 0; i < DOT_COUNT; i++) {
-            const size = Math.random() * 1 + 0.5; // 0.5px – 1.5px
+            const size = Math.random() + 0.5;
             const dot: LiveDot = {
                 id: i,
                 x: Math.random() * 100,
                 y: Math.random() * 100,
                 size,
-                opacity: Math.random() * 0.5 + 0.3, // 0.3 – 0.8
-                // subtle horizontal drift
+                opacity: Math.random() * 0.5 + 0.3,
                 speedX: (Math.random() - 0.5) * (SPEED_RANGE * 0.3),
-                // always move upwards (negative Y). ensure a non-trivial speed
                 speedY: - (Math.random() * (SPEED_RANGE * 0.8) + SPEED_RANGE * 0.2),
                 node: document.createElement('div'),
             };
@@ -54,7 +47,7 @@ export const AnimatedDots: React.FC = () => {
             node.style.width = `${dot.size}px`;
             node.style.height = `${dot.size}px`;
             node.style.opacity = `${dot.opacity}`;
-            node.style.background = '#ffffff'; // white dots
+            node.style.background = '#ffffff';
             node.style.filter = 'blur(0.5px)';
             node.style.willChange = 'left, top, transform';
             node.style.transform = 'translateZ(0)';
@@ -69,7 +62,6 @@ export const AnimatedDots: React.FC = () => {
             const dt = (ts - lastTs.current) / 1000; // seconds
             lastTs.current = ts;
 
-            // update positions and apply styles directly
             for (const d of liveDots.current) {
                 d.x = (d.x + d.speedX * dt + 100) % 100;
                 d.y = (d.y + d.speedY * dt + 100) % 100;
@@ -84,7 +76,6 @@ export const AnimatedDots: React.FC = () => {
 
         return () => {
             if (rafId.current != null) cancelAnimationFrame(rafId.current);
-            // Clean up DOM nodes
             for (const d of liveDots.current) {
                 if (d.node && d.node.parentNode === container) {
                     container.removeChild(d.node);
@@ -110,10 +101,12 @@ export const GlowOrbs: React.FC = () => (
   </>
 );
 
-export const PageBackground: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const PageBackground: React.FC<{ children: React.ReactNode, displayDots?: boolean; }> = ({ children, displayDots = false }) => {
     return (
         <div className="relative min-h-screen bg-black text-white overflow-hidden" style={{ background: '#070300' }}>
-            <AnimatedDots />
+            {displayDots && (
+              <AnimatedDots />
+            )}
 
             <GlowOrbs />
 

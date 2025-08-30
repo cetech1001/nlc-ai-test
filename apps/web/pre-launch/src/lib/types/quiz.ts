@@ -2,8 +2,10 @@ export interface Question {
     id: number;
     text: string;
     subtitle?: string;
-    options: QuestionOption[];
+    options?: QuestionOption[];
     multiSelect?: boolean;
+    textOnly?: boolean;
+    placeholder?: string;
 }
 
 export interface QuestionOption {
