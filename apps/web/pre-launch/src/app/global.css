@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Prevent horizontal scroll on mobile due to decorative absolute elements */
+html, body {
+  overflow-x: hidden;
+}
+
+.glass-card {
+  background: linear-gradient(198deg, rgba(38, 38, 38, 0.30) 10.03%, rgba(19, 19, 19, 0.30) 75.61%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+* {
+  transition: all 0.2s ease;
+}
+
+.text-primary {
+  background: linear-gradient(5.46deg, #FEBEFA 10.93%, #B339D4 36.68%, #7B21BA 60.9%, #7B26F0 88.16%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(19deg, #FEBEFA 6.78%, #B339D4 34.87%, #7B21BA 61.32%, #7B26F0 91.07%);
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  /*font-weight: 700;*/
+  padding: 0.75rem 3rem;
+  border-radius: 0.75rem;
+  /*font-size: 1.25rem;*/
+  position: relative;
+  overflow: hidden;
+
+  transition: all 0.3s ease;
+  transform: scale(1);
+  box-shadow: 0 4px 20px 0 rgba(168, 85, 247, 0.4);
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 30px 0 rgba(168, 85, 247, 0.6);
+}
+
+/*.btn-primary {
+  background: linear-gradient(19deg, #FEBEFA 6.78%, #B339D4 34.87%, #7B21BA 61.32%, #7B26F0 91.07%);
+  transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 8px 25px 0px rgba(212, 151, 255, 0.6);
+}*/
+
+@keyframes shimmer-reverse {
+  0% { transform: translateX(0%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(0%) }
+}
+
+@keyframes rotate {
+  from {
+    transform: translate(-100%, -65%) rotate(0turn);
+  }
+  to {
+    transform: translate(100%, -65%) rotate(0turn);
+  }
+}
+
+.video-box::before {
+  content: '';
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 75%,
+    #d946ef 75%,
+    #f5d0fe 85%,
+    #4c1d95 95%,
+    transparent 100%
+  );
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-100%, -65%);
+  aspect-ratio: 1;
+  width: 50%;
+  animation: rotate 3s ease-in-out infinite alternate;
+}
+
+.video-box::after {
+  content: '';
+  background: inherit;
+  border-radius: inherit;
+  position: absolute;
+  inset: 5px;
+  height: calc(100% - 2 * 5px);
+  width: calc(100% - 2 * 5px);
+}
+
+.animate-shimmer {
+  animation: shimmer 4s ease-in-out infinite;
+}
+
+.animate-shimmer-reverse {
+  animation: shimmer-reverse 5s ease-in-out infinite;
+}
+
+.bg-gradient-exclusive {
+  background: url('/images/bg/exclusive-bg.jpg') center;
+}
+
+.border-qualified {
+  border: 1px solid #7B26F0;
+  background-image: linear-gradient(
+    17.78deg,
+    rgba(254, 190, 250, 0.2) 17.09%,
+    rgba(179, 57, 212, 0.2) 56.18%,
+    rgba(123, 33, 186, 0.2) 92.97%,
+    rgba(123, 38, 240, 0.2) 100%
+  );
+  border-image-slice: 1;
+}
+
+
+/* Mobile typography request */
+@media (max-width: 640px) {
+  body {
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    letter-spacing: 0;
+    vertical-align: middle;
+  }
+}
+
+/* Decorative glow orb used on Results screens */
+.glow-orb {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 9999px; /* full */
+  filter: blur(40px);
+  opacity: 0.85;
+  background: radial-gradient(closest-side, rgba(217, 70, 239, 0.55), rgba(168, 85, 247, 0.28) 55%, rgba(0,0,0,0) 75%);
+}
+.glow-orb--sm { width: 240px; height: 240px; }
+.glow-orb--md { width: 340px; height: 340px; }
+.glow-orb--lg { width: 460px; height: 460px; }
+.glow-orb--xl { width: 720px; height: 720px; }
+.glow-orb--xxl { width: 1200px; height: 1200px; overflow-x: hidden }
+
+/* Subtle darker purple accent */
+.glow-orb--purple {
+  background: radial-gradient(closest-side, rgba(139, 92, 246, 0.45), rgba(88, 28, 135, 0.22) 55%, rgba(0,0,0,0) 75%);
+}
