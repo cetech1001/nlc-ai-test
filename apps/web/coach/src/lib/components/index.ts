@@ -1,3 +1,4 @@
+export * from './account';
 export * from './billing';
 export * from './calendar';
 export * from './chat';

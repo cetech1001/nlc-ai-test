@@ -16,7 +16,7 @@ import {
   emptyPaymentHistoryFilterValues,
   PaymentHistoryData,
   CurrentPlanCard,
-  BillingTabs, SubscriptionPlans, sdkClient
+  BillingTabs, SubscriptionPlans, sdkClient, CancelSubscriptionFlow
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
 
@@ -160,6 +160,22 @@ export default function Billing() {
     setCurrentPage(1);
   };
 
+  const handleCancelSubscription = async (reason: string, feedback?: string) => {
+    try {
+      /*await sdkClient.billing.subscriptions.cancelSubscription(coach?.subscriptions?.[0]?.id!, {
+        reason,
+        feedback
+      });*/
+
+      // Refresh coach data to get updated subscription status
+      await fetchCoachData();
+      setSuccessMessage("Subscription cancelled successfully. You'll continue to have access until your next billing date.");
+    } catch (error: any) {
+      setError(error.message || "Failed to cancel subscription");
+      throw error; // Re-throw so the modal can handle it
+    }
+  };
+
   const handlePaymentAction = async (action: string, payment: PaymentHistoryData) => {
     if (action === 'download') {
       try {
@@ -198,7 +214,17 @@ export default function Billing() {
         <BillingTabs activeTab={activeTab} setActiveTab={handleTabChange}/>
 
         {activeTab === 'subscription' && (
-          <SubscriptionPlans plans={plans} handleUpgrade={handleUpgrade} coach={coach} isLoading={isPlansLoading}/>
+          <>
+            <SubscriptionPlans plans={plans} handleUpgrade={handleUpgrade} coach={coach} isLoading={isPlansLoading}/>
+            {coach?.subscriptions?.[0] && (
+              <div className="mt-8">
+                <CancelSubscriptionFlow
+                  subscription={coach.subscriptions[0]}
+                  onCancelSubscription={handleCancelSubscription}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {activeTab === 'history' && (
