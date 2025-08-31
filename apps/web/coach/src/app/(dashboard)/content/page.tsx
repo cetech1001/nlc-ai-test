@@ -9,7 +9,6 @@ import {
   Clock,
   Target,
   BarChart3,
-  ArrowRight,
   CheckCircle
 } from "lucide-react";
 import {appConfig} from "@nlc-ai/web-shared";
@@ -82,7 +81,7 @@ const ContentManagementLanding = () => {
 
           <div className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/20 border border-fuchsia-400/30 rounded-full text-fuchsia-300 text-lg font-medium">
             <Clock className="w-5 h-5" />
-            Coming Soon - Launch Expected in Q2 2025
+            Coming Soon - Private Beta
           </div>
         </div>
       </div>
@@ -190,24 +189,6 @@ const ContentManagementLanding = () => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="text-center space-y-4">
-        <h3 className="text-2xl font-bold text-white">Ready to Transform Your Content Strategy?</h3>
-        <p className="text-stone-300 text-lg">
-          Join our waitlist to be notified when Content Management launches.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
-            Join Waitlist
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button className="px-8 py-3 border border-neutral-600 text-stone-300 rounded-lg hover:border-fuchsia-400 hover:text-white transition-colors">
-            Learn More
-          </button>
         </div>
       </div>
     </div>

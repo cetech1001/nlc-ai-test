@@ -4,10 +4,9 @@ import {useEffect, useMemo, useState} from 'react';
 import {Search} from "lucide-react";
 import {StatCard} from "@nlc-ai/web-shared";
 import {AlertBanner} from '@nlc-ai/web-ui';
-import {coachesAPI} from "@nlc-ai/web-api-client";
 import {useAuth} from "@nlc-ai/web-auth";
-import {CoachPaymentRequest, CoachPaymentRequestStats,} from "@nlc-ai/types";
-import {PaymentRequestCard} from "@/lib";
+import {CoachPaymentRequest, CoachPaymentRequestStats} from "@nlc-ai/types";
+import {PaymentRequestCard, sdkClient} from "@/lib";
 
 
 const PaymentRequests = () => {
@@ -52,8 +51,8 @@ const PaymentRequests = () => {
     }
 
     try {
-      const data = await coachesAPI.getCoachPaymentRequestStats(user.id);
-      setStats(data);
+      const response = await sdkClient.billing.payments.getPaymentRequestStats(user.id);
+      setStats(response);
     } catch (error) {
       console.error('Failed to fetch payment request stats:', error);
     } finally {
@@ -67,12 +66,14 @@ const PaymentRequests = () => {
     try {
       setError("");
 
-      const response = await coachesAPI.getCoachPaymentRequests(
+      const response = await sdkClient.billing.payments.getPaymentRequests(
         user.id,
-        currentPage,
-        pagination.limit,
-        { status: activeTab },
-        searchQuery
+        {
+          page: currentPage,
+          limit: pagination.limit,
+          search: searchQuery
+        },
+        { status: activeTab }
       );
 
       setPaymentRequests(response.data);
@@ -94,7 +95,7 @@ const PaymentRequests = () => {
   };
 
   const filteredRequests = useMemo(() => {
-    return paymentRequests.filter(request => {
+    return paymentRequests?.filter(request => {
       return searchQuery === "" ||
         request.planName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (request.description && request.description.toLowerCase().includes(searchQuery.toLowerCase()));

@@ -2,9 +2,12 @@ import {BaseClient} from "@nlc-ai/sdk-core";
 import {Paginated} from "@nlc-ai/types";
 import {NLCClientConfig} from "@nlc-ai/sdk-main";
 import {PlansClient} from "./plans.client";
+import {PaymentsClient} from "./payments.client";
+
 
 export class BillingClient extends BaseClient {
   public plans: PlansClient;
+  public payments: PaymentsClient;
 
   constructor(config: NLCClientConfig) {
     super(config);
@@ -13,10 +16,14 @@ export class BillingClient extends BaseClient {
       ...config,
       baseURL: `${config.baseURL}/plans`
     });
+
+    this.payments = new PaymentsClient({
+      ...config,
+      baseURL: `${config.baseURL}/payments`
+    });
   }
 
 
-  // Transactions methods
   async getTransactions(
     page = 1,
     limit = 10,

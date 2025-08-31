@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CoachesService } from './coaches.service';
-import { CreateCoachDto, UpdateCoachDto, PaymentLinksQueryDto, CoachQueryDto } from './dto';
+import { CreateCoachDto, UpdateCoachDto, CoachQueryDto } from './dto';
 import { JwtAuthGuard, UserTypesGuard } from '@nlc-ai/api-auth';
 import { UserTypes } from '@nlc-ai/api-auth';
 import { CurrentUser } from '@nlc-ai/api-auth';
@@ -119,40 +119,5 @@ export class CoachesController {
   @ApiResponse({ status: 404, description: 'Coach not found' })
   remove(@Param('id') id: string) {
     return this.coachesService.remove(id);
-  }
-
-  @Get(':id/payment-requests')
-  @UseGuards(JwtAuthGuard, UserTypesGuard)
-  @UserTypes(UserType.admin, UserType.coach)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get payment requests for a specific coach' })
-  @ApiResponse({ status: 200, description: 'Payment requests retrieved successfully' })
-  async getCoachPaymentRequests(
-    @Param('id') coachID: string,
-    @Query() query: PaymentLinksQueryDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    return this.coachesService.getCoachPaymentRequests(coachID, query);
-  }
-
-  @Get(':id/payment-requests/stats')
-  @UseGuards(JwtAuthGuard, UserTypesGuard)
-  @UserTypes(UserType.admin, UserType.coach)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get payment request statistics for a coach' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  async getCoachPaymentRequestStats(
-    @Param('id') coachID: string,
-    @CurrentUser() user: AuthUser
-  ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    return this.coachesService.getCoachPaymentRequestStats(coachID);
   }
 }

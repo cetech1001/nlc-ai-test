@@ -5,12 +5,16 @@ import {
   Headers,
   Req,
   Get,
-  Param, BadRequestException, Patch,
+  Param, BadRequestException, Patch, UseGuards, Query, ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import {Public} from "@nlc-ai/api-auth";
+import {CurrentUser, Public, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
 import { PaymentsService } from './payments.service';
-import {CreatePaymentIntentDto, CreateSetupIntentDto, ProcessPaymentRequestDto, SendPaymentRequestDto} from "./dto";
+import {
+  CreatePaymentIntentDto, CreateSetupIntentDto,
+  PaymentLinksQueryDto, ProcessPaymentRequestDto, SendPaymentRequestDto
+} from "./dto";
+import {type AuthUser, UserType} from "@nlc-ai/types";
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -106,5 +110,38 @@ export class PaymentsController {
       console.error('Webhook processing error:', error);
       throw error;
     }
+  }
+
+  @Get('requests/:coachID')
+  @UseGuards(UserTypesGuard)
+  @UserTypes(UserType.coach)
+  @ApiOperation({ summary: 'Get payment requests for a specific coach' })
+  @ApiResponse({ status: 200, description: 'Payment requests retrieved successfully' })
+  async getCoachPaymentRequests(
+    @Param('coachID') coachID: string,
+    @Query() query: PaymentLinksQueryDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    if (user.type === UserType.coach && user.id !== coachID) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.paymentsService.getCoachPaymentRequests(coachID, query);
+  }
+
+  @Get('requests/:coachID/stats')
+  @UseGuards(UserTypesGuard)
+  @UserTypes(UserType.coach)
+  @ApiOperation({ summary: 'Get payment request statistics for a coach' })
+  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  async getCoachPaymentRequestStats(
+    @Param('coachID') coachID: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    if (user.type === UserType.coach && user.id !== coachID) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.paymentsService.getCoachPaymentRequestStats(coachID);
   }
 }
