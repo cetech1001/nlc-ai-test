@@ -6,12 +6,10 @@ import {
   CogIcon as HiCog,
 } from "@heroicons/react/24/outline";
 import {
-  Bot,
   TvMinimalPlay,
   Users,
   ShieldUser,
   Wallet,
-  MessageSquare,
   UserCheck,
   GraduationCap,
   Calendar,
@@ -19,47 +17,46 @@ import {
   Globe,
   Heart,
   Target,
-  Mail,
   Zap,
   MessageCircleReply,
 } from "lucide-react";
 import {MenuItemType} from "@nlc-ai/types";
+import {RetentionIcon, CoachReplicaIcon, EmailAgentIcon} from "./icons";
 
-// Updated menu items with better names and more appropriate icons
 export const menuItems: MenuItemType[] = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
-  { icon: Users, label: "Client Management", path: "/clients" }, // Better name
-  { icon: TvMinimalPlay, label: "Social Content Hub", path: "/content" }, // More specific name
-  { icon: GraduationCap, label: "Course Studio", path: "/courses" }, // More creative name
-  { icon: Target, label: "Lead Pipeline", path: "/leads" }, // More specific than "Lead Follow-up"
+  { icon: Users, label: "Clients", path: "/clients" },
+  { icon: GraduationCap, label: "Courses", path: "/courses" },
+  { icon: Target, label: "Leads", path: "/leads" },
+  { icon: TvMinimalPlay, label: "Content Management", path: "/content" },
+  { icon: Calendar, label: "Calendar", path: "/calendar" },
   {
     icon: HiSparkles,
-    label: 'AI Assistants', // More user-friendly than "AI Agents"
+    label: 'AI Agents',
     dropdown: [
-      { icon: Mail, label: "Lead Nurturing", path: "/agents/lead-followup" },
-      { icon: MessageSquare, label: "Email Assistant", path: "/agents/client-email" },
-      { icon: UserCheck, label: "Retention Helper", path: "/agents/client-retention" },
-      { icon: Zap, label: "Content Ideas", path: "/agents/content-suggestion" },
-      { icon: Bot, label: "AI Coach", path: "/agents/coach-replica" },
+      { icon: CoachReplicaIcon, label: "Coach Replica", path: "/agents/coach-replica" },
+      { icon: RetentionIcon, label: "Retention", path: "/agents/client-retention" },
+      { icon: UserCheck, label: "Lead Follow-up", path: "/agents/lead-followup" },
+      { icon: EmailAgentIcon, label: "Email", path: "/agents/client-email" },
+      { icon: Zap, label: "Content Creation", path: "/agents/content-suggestion" },
     ]
   },
   {
     icon: HiInsights,
-    label: 'Assistant Analytics', // More specific than "AI Agent Insights"
+    label: 'Agent Analytics',
     dropdown: [
-      { icon: Target, label: "Lead Nurturing", path: "/insights/lead-followup" },
-      { icon: MessageSquare, label: "Email Assistant", path: "/insights/client-email" },
-      { icon: UserCheck, label: "Retention Helper", path: "/insights/client-retention" },
-      { icon: Zap, label: "Content Ideas", path: "/insights/content-suggestion" },
-      { icon: Bot, label: "AI Coach", path: "/insights/coach-replica" },
+      { icon: CoachReplicaIcon, label: "Coach Replica", path: "/analytics/coach-replica" },
+      { icon: RetentionIcon, label: "Retention", path: "/analytics/client-retention" },
+      { icon: UserCheck, label: "Lead Follow-up", path: "/analytics/lead-followup" },
+      { icon: EmailAgentIcon, label: "Email", path: "/analytics/client-email" },
+      { icon: Zap, label: "Content Creation", path: "/analytics/content-suggestion" },
     ]
   },
-  { icon: Calendar, label: "Smart Booking", path: "/calendar" }, // More descriptive
-  { icon: Globe, label: "AI Vault", path: "/vault" }, // Keep as is since it's unique
-  { icon: Heart, label: "Client Community", path: "/community" }, // More specific
+  { icon: Globe, label: "AI Vault", path: "/vault" },
+  { icon: Heart, label: "Client Community", path: "/community" },
   { icon: MessageCircleReply, label: "Chat", path: "/messages" },
-  { icon: Quote, label: "Success Stories", path: "/testimonials" }, // More engaging name
-  { icon: HiCurrencyDollar, label: "Payment Hub", path: "/payment/requests" }, // Cleaner name
+  { icon: Quote, label: "Testimonials", path: "/testimonials" },
+  { icon: HiCurrencyDollar, label: "Payments", path: "/payment/requests" },
 ];
 
 export const settingsItems = [
