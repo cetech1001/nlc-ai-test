@@ -2,6 +2,7 @@ export interface AppConfig {
   publicUrl: string;
   api: {
     baseURL: string;
+    leadsPublicToken?: string;
     timeout: number;
     services: {
       users: string;

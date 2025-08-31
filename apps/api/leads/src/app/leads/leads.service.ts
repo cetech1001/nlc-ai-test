@@ -39,7 +39,6 @@ export class LeadsService {
       },
     });
 
-    // Emit event
     await this.outbox.saveAndPublishEvent<LeadEvent>(
       {
         eventType: 'lead.landing.submitted',
@@ -126,11 +125,14 @@ export class LeadsService {
   }
 
   async getQualifiedLeads() {
-    return this.prisma.lead.count({
+    const qualifiedLeads = await this.prisma.lead.count({
       where: {
         qualified: true,
       }
     });
+    return {
+      remainingSpots: 100 - qualifiedLeads,
+    }
   }
 
   async findOne(id: string) {

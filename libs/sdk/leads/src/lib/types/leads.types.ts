@@ -46,6 +46,17 @@ export interface CreateLead {
   notes?: string;
 }
 
+export interface CreateLandingLead {
+  lead: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  answers: Record<string, unknown>;
+  qualified: boolean;
+  submittedAt: string;
+}
+
 export interface UpdateLead {
   name?: string;
   email?: string;

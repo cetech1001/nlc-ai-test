@@ -3,11 +3,18 @@ import {
   Lead,
   CreateLead,
   UpdateLead,
-  LeadStats,
+  LeadStats, CreateLandingLead,
 } from '../types';
+import {NLCClientConfig} from "@nlc-ai/sdk-main";
 
 
 export class LeadsServiceClient extends BaseClient {
+  constructor(props: NLCClientConfig) {
+    super(props);
+    console.log("Props: ", props);
+  }
+
+
   async getLeads(searchOptions: SearchQuery = {}, filters: FilterValues = {}): Promise<Paginated<Lead>> {
     const { page = 1, limit = 10, search } = searchOptions;
     const params = new URLSearchParams({
@@ -64,8 +71,40 @@ export class LeadsServiceClient extends BaseClient {
     return response.data!;
   }
 
+  async getQualifiedLeadCount(): Promise<{ remainingSpots: number; }> {
+    const response = await this.request<{ remainingSpots: number; }>('GET', '/qualified');
+    return response.data!;
+  }
+
   async createLead(data: CreateLead): Promise<Lead> {
     const response = await this.request<Lead>('POST', '', { body: data });
+    return response.data!;
+  }
+
+  async createLeadFromLanding(data: CreateLandingLead): Promise<Lead> {
+    const method = 'POST';
+    const path = '/api/leads/landing';
+    const rawBody = JSON.stringify(data);
+    const timestamp = Date.now();
+    const token = this.leadsPublicToken || '';
+
+    console.log("Token: ", this.leadsPublicToken);
+
+    const dataToSign = `${method}|${path}|${rawBody}|${timestamp}`;
+    const signature = await this.hmacSha256Hex(token, dataToSign);
+
+    const response = await this.request<Lead>(
+      method,
+      '/landing',
+      {
+        body: data,
+        headers: {
+          'X-Landing-Token': token,
+          'X-Landing-Timestamp': String(timestamp),
+          'X-Landing-Signature': signature,
+        }
+      }
+    );
     return response.data!;
   }
 
@@ -97,5 +136,12 @@ export class LeadsServiceClient extends BaseClient {
       body: { meetingDate, meetingTime }
     });
     return response.data!;
+  }
+
+  private async hmacSha256Hex(key: string, message: string) {
+    const crypto = require('crypto') as typeof import('crypto');
+    return crypto.createHmac('sha256', Buffer.from(key, 'utf8'))
+      .update(Buffer.from(message, 'utf8'))
+      .digest('hex');
   }
 }

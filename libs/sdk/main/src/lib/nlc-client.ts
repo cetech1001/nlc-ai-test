@@ -25,8 +25,11 @@ export class NLCClient {
   constructor(config: NLCClientConfig) {
     const baseConfig = {
       apiKey: config.apiKey,
+      leadsPublicToken: config.leadsPublicToken,
       timeout: config.timeout,
     };
+
+    console.log("Base config: ", baseConfig);
 
     this.users = new UsersClient({
       ...baseConfig,

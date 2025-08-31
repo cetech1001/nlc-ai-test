@@ -81,6 +81,8 @@ export interface CreateLeadRequest {
   notes?: string;
 }
 
+
+
 export interface UpdateLeadRequest extends Partial<CreateLeadRequest> {}
 
 export interface LeadFilters {

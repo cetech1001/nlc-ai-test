@@ -1,6 +1,7 @@
 export interface NLCClientConfig {
   baseURL: string;
   apiKey?: string;
+  leadsPublicToken?: string
   timeout?: number;
   services?: {
     auth?: string;

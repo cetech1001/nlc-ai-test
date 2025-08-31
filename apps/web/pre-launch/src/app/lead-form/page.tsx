@@ -6,8 +6,8 @@ import { Mail, Phone, User } from 'lucide-react';
 import { PageBackground } from '@/lib/components';
 import { type Answers, type LeadInfo } from '@/lib/types';
 import { calculateQualification, hashString } from "@/lib/utils";
-
 import Image from "next/image";
+import {sdkClient} from "@/lib";
 
 const isValidEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -27,37 +27,31 @@ const LeadFormPage = () => {
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);
   const [spotsLoading, setSpotsLoading] = useState(true);
 
-  const nameError = useMemo(() => !leadInfo.name.trim() ? 'Name is required' : '', [leadInfo.name]);
-  const emailError = useMemo(() => !leadInfo.email.trim() ? 'Email is required' : (!isValidEmail(leadInfo.email) ? 'Enter a valid email address' : ''), [leadInfo.email]);
-  const phoneError = useMemo(() => !leadInfo.phone.trim() ? 'Phone number is required' : (!isValidPhone(leadInfo.phone) ? 'Enter a valid phone number' : ''), [leadInfo.phone]);
+  const nameError = useMemo(() =>
+    !leadInfo.name.trim() ? 'Name is required' : '', [leadInfo.name]);
+  const emailError = useMemo(() =>
+    !leadInfo.email.trim() ? 'Email is required'
+      : (!isValidEmail(leadInfo.email) ? 'Enter a valid email address' : ''), [leadInfo.email]);
+  const phoneError = useMemo(() =>
+    !leadInfo.phone.trim() ? 'Phone number is required'
+      : (!isValidPhone(leadInfo.phone) ? 'Enter a valid phone number' : ''), [leadInfo.phone]);
 
-  const canSubmit = useMemo(() => !nameError && !emailError && !phoneError, [nameError, emailError, phoneError]);
+  const canSubmit = useMemo(() =>
+    !nameError && !emailError && !phoneError, [nameError, emailError, phoneError]);
 
-  // Fetch spots remaining on component mount
   useEffect(() => {
-    const fetchSpotsRemaining = async () => {
+    (async () => {
       try {
         setSpotsLoading(true);
-        const response = await fetch('/api/leads/qualified');
-        if (response.ok) {
-          const data = await response.json();
-          // Assuming your API returns something like { qualifiedCount: 45, totalSpots: 100 }
-          // Adjust based on your actual API response structure
-          const remaining = data.totalSpots - data.qualifiedCount;
-          setSpotsRemaining(Math.max(0, remaining)); // Ensure it doesn't go negative
-        } else {
-          console.warn('Failed to fetch spots remaining');
-          setSpotsRemaining(100);
-        }
+        const response = await sdkClient.leads.getQualifiedLeadCount();
+        setSpotsRemaining(Math.max(0, response.remainingSpots));
       } catch (error) {
         console.error('Error fetching spots remaining:', error);
-        setSpotsRemaining(100);
+        setSpotsRemaining(null);
       } finally {
         setSpotsLoading(false);
       }
-    };
-
-    fetchSpotsRemaining();
+    })();
   }, []);
 
   const handleSubmit = async () => {
@@ -84,23 +78,13 @@ const LeadFormPage = () => {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/leads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          lead: leadInfo,
-          answers,
-          qualified: isQualified,
-          submittedAt: new Date().toISOString()
-        })
-      });
-      const data = await res.json();
 
-      if (!data.success) {
-        throw data.error.details.message;
-      }
+      await sdkClient.leads.createLeadFromLanding({
+        lead: leadInfo,
+        answers,
+        qualified: isQualified,
+        submittedAt: new Date().toISOString()
+      });
 
       sessionStorage.setItem('leadInfo', JSON.stringify(leadInfo));
       sessionStorage.setItem('qualified', JSON.stringify(isQualified));
@@ -136,15 +120,15 @@ const LeadFormPage = () => {
     const urgencyBg = spotsRemaining <= 10 ? 'bg-red-500/10 border-red-500/20' : spotsRemaining <= 25 ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-green-500/10 border-green-500/20';
 
     return (
-      <div className={`text-center mb-8 p-4 rounded-xl border ${urgencyBg}`}>
-        <p className={`text-lg font-semibold ${urgencyColor}`}>
+      <div className={`text-center mb-8`}>
+        <span className={`px-2.5 py-0.5 border ${urgencyBg} rounded-full text-sm font-medium w-auto ${urgencyColor}`}>
           {spotsRemaining} spots remaining
-        </p>
-        {spotsRemaining <= 10 && (
+        </span>
+        {/*{spotsRemaining <= 10 && (
           <p className="text-sm text-white/60 mt-1">
             Limited availability - secure your spot now
           </p>
-        )}
+        )}*/}
       </div>
     );
   };

@@ -8,11 +8,11 @@ export const QualifiedScreen = () => (
         <h2 className="text-4xl font-semibold bg-clip-text text-transparent bg-gradient-to-l from-fuchsia-200 via-fuchsia-400 to-purple-600 mb-6">
             Welcome to the<br className={"block sm:hidden"}/> Inner Circle
         </h2>
-        <p className="text-lg sm:text-2xl text-white/90 mb-4">
+        <p className="text-lg sm:text-xl text-white/90 mb-4">
             Based on your answers, you're exactly the kind of coach we built this for.
         </p>
         <p className="text-[16px] sm:text-xl mb-8 text-white/80">
-            You've officially secured your spot inside the Next Level Coach Vault, <span className={"text-primary"}>one of only 100 coaches</span> to gain early access.
+            You've officially secured your spot inside the Next Level Coach Vault,<br className={"hidden sm:block"}/> <span className={"text-primary"}>one of only 100 coaches</span> to gain early access.
         </p>
         <p className="text-[16px] sm:text-xl mb-8 text-white/80">
             This is your invite into the room where the future of coaching is being built.

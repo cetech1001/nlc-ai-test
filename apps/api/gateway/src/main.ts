@@ -22,7 +22,14 @@ async function bootstrap() {
     origin: corsOrigins,
     credentials: corsCredentials,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'x-landing-token',
+      'x-landing-signature',
+      'x-landing-timestamp',
+    ],
   });
 
   app.setGlobalPrefix('api');

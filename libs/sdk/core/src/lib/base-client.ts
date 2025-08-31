@@ -4,11 +4,13 @@ import {ApiResponse, RequestOptions, ServiceClientConfig} from "./types";
 export abstract class BaseClient {
   protected baseURL: string;
   protected apiKey?: string;
+  protected leadsPublicToken?: string;
   protected timeout: number = 30000;
 
   constructor(config: ServiceClientConfig) {
     this.baseURL = config.baseURL;
     this.apiKey = config.apiKey;
+    this.leadsPublicToken = config.leadsPublicToken;
     this.timeout = config.timeout || 30000;
   }
 
@@ -19,7 +21,6 @@ export abstract class BaseClient {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${path}`;
 
-    // Handle different body types
     const isFormData = options?.body instanceof FormData;
 
     const headers: Record<string, string> = {
@@ -27,7 +28,6 @@ export abstract class BaseClient {
       ...options?.headers,
     };
 
-    // Don't set Content-Type for FormData - let browser handle it
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
@@ -35,9 +35,9 @@ export abstract class BaseClient {
     let body: any;
     if (options?.body) {
       if (isFormData) {
-        body = options.body; // FormData
+        body = options.body;
       } else {
-        body = JSON.stringify(options.body); // JSON
+        body = JSON.stringify(options.body);
       }
     }
 
@@ -66,7 +66,6 @@ export abstract class BaseClient {
         }
         return data;
       } else {
-        // Handle non-JSON responses
         return {
           success: true,
           data: await response.text() as any,
