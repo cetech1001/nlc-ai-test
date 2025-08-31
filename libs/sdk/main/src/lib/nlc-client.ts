@@ -29,8 +29,6 @@ export class NLCClient {
       timeout: config.timeout,
     };
 
-    console.log("Base config: ", baseConfig);
-
     this.users = new UsersClient({
       ...baseConfig,
       baseURL: config.services?.users || `${config.baseURL}/users`,

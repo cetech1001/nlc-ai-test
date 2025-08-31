@@ -5,16 +5,9 @@ import {
   UpdateLead,
   LeadStats, CreateLandingLead,
 } from '../types';
-import {NLCClientConfig} from "@nlc-ai/sdk-main";
 
 
 export class LeadsServiceClient extends BaseClient {
-  constructor(props: NLCClientConfig) {
-    super(props);
-    console.log("Props: ", props);
-  }
-
-
   async getLeads(searchOptions: SearchQuery = {}, filters: FilterValues = {}): Promise<Paginated<Lead>> {
     const { page = 1, limit = 10, search } = searchOptions;
     const params = new URLSearchParams({
@@ -87,8 +80,6 @@ export class LeadsServiceClient extends BaseClient {
     const rawBody = JSON.stringify(data);
     const timestamp = Date.now();
     const token = this.leadsPublicToken || '';
-
-    console.log("Token: ", this.leadsPublicToken);
 
     const dataToSign = `${method}|${path}|${rawBody}|${timestamp}`;
     const signature = await this.hmacSha256Hex(token, dataToSign);
