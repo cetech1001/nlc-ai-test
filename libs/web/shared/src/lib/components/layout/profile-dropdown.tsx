@@ -1,21 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, CreditCard, LogOut, ChevronDown } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 interface ProfileDropdownProps {
   user: any;
   userInitials: string | React.ReactNode;
   onLogout: () => void;
+  handleRouterNav: (path: string) => void;
 }
 
 export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   user,
   userInitials,
   onLogout,
+  handleRouterNav
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -31,7 +31,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   const handleNavigation = (path: string) => {
     setIsOpen(false);
-    router.push(path);
+    handleRouterNav(path);
   };
 
   const handleLogout = () => {

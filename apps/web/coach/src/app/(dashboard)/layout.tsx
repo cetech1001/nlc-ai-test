@@ -75,6 +75,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
             isLoading={isLoading}
             title={currentConfig.title}
             goToNotifications={goToNotifications}
+            handleNavRouter={router.push}
             onLogout={handleLogout}
           />
         </div>

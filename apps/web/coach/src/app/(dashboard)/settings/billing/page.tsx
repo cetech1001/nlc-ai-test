@@ -124,11 +124,13 @@ export default function Billing() {
       setIsHistoryLoading(true);
       setError("");
 
-      const response = await transactionsAPI.getTransactions(
-        currentPage,
-        paymentsPerPage,
+      const response = await sdkClient.billing.transactions.getTransactions(
+        {
+          page: currentPage,
+          limit: paymentsPerPage,
+          search: searchQuery
+        },
         filterValues,
-        searchQuery
       );
 
       setPaymentHistory(response.data);

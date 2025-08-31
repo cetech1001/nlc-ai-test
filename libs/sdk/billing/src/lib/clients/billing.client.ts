@@ -1,13 +1,14 @@
 import {BaseClient} from "@nlc-ai/sdk-core";
-import {Paginated} from "@nlc-ai/types";
 import {NLCClientConfig} from "@nlc-ai/sdk-main";
 import {PlansClient} from "./plans.client";
 import {PaymentsClient} from "./payments.client";
+import {TransactionsClient} from "./transactions.client";
 
 
 export class BillingClient extends BaseClient {
   public plans: PlansClient;
   public payments: PaymentsClient;
+  public transactions: TransactionsClient;
 
   constructor(config: NLCClientConfig) {
     super(config);
@@ -21,31 +22,11 @@ export class BillingClient extends BaseClient {
       ...config,
       baseURL: `${config.baseURL}/payments`
     });
-  }
 
-
-  async getTransactions(
-    page = 1,
-    limit = 10,
-    filters?: any,
-    search?: string
-  ): Promise<Paginated<any>> {
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: String(limit),
+    this.transactions = new TransactionsClient({
+      ...config,
+      baseURL: `${config.baseURL}/transactions`
     });
-
-    if (search) params.append('search', search);
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          params.append(key, String(value));
-        }
-      });
-    }
-
-    const response = await this.request<Paginated<any>>('GET', `/billing/transactions?${params}`);
-    return response.data!;
   }
 
   async downloadTransaction(transactionID: string) {

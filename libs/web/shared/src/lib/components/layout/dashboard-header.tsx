@@ -8,6 +8,7 @@ interface DashboardHeaderProps {
   user: any;
   isLoading: boolean;
   goToNotifications: () => void;
+  handleNavRouter: (path: string) => void;
   sdkClient: NLCClient;
   onLogout: () => void;
 }
@@ -39,6 +40,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   title,
   user,
   isLoading,
+  handleNavRouter,
   onLogout,
 }) => {
   const userInitials = useMemo(() => {
@@ -67,6 +69,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <ProfileDropdown
             user={user}
             userInitials={userInitials}
+            handleRouterNav={handleNavRouter}
             onLogout={onLogout}
           />
         </div>

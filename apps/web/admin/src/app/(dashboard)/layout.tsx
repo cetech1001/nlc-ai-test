@@ -68,6 +68,7 @@ const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
             user={user}
             isLoading={isLoading}
             title={currentConfig.title}
+            handleNavRouter={router.push}
             onLogout={handleLogout}
           />
         </div>

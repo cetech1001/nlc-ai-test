@@ -1,11 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {IsOptional, IsString, IsUUID, IsEnum, ValidateNested} from 'class-validator';
 import {Type} from "class-transformer";
-import { TransactionStatus, PaymentMethodType } from '@prisma/client';
 import {TransactionFilters} from '@nlc-ai/api-types';
-import {AmountRangeDto, DateRangeDto} from "@nlc-ai/api-dto";
+import {AmountRangeDto, DateRangeDto, PaginationDto} from "@nlc-ai/api-dto";
+import {PaymentMethodType, TransactionStatus} from "@nlc-ai/types";
 
-export class TransactionFiltersDto implements TransactionFilters {
+export class TransactionFiltersDto extends PaginationDto implements TransactionFilters {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

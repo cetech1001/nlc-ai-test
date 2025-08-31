@@ -16,7 +16,7 @@ export const AnimatedDots: React.FC = () => {
     const lastTs = useRef<number | null>(null);
 
     const DOT_COUNT = 320;
-    const SPEED_RANGE = 10;
+    const SPEED_RANGE = 8;
 
     type LiveDot = Dot & { node: HTMLDivElement };
     const liveDots = useRef<LiveDot[]>([]);

@@ -1,5 +1,5 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
-import {PaymentMethodType, Prisma, Transaction, TransactionStatus} from '@prisma/client';
+import {Prisma} from '@prisma/client';
 import {v4 as uuid} from "uuid";
 import {ConfigService} from "@nestjs/config";
 import {
@@ -8,11 +8,11 @@ import {
   TransactionFilters,
   TransactionWithDetails,
   UpdateTransactionRequest,
-  BillingPaymentCompletedEvent
+  BillingPaymentCompletedEvent, Paginated
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
 import {OutboxService} from "@nlc-ai/api-messaging";
-import {RevenueGrowthData} from "@nlc-ai/types";
+import {RevenueGrowthData, Transaction, TransactionStatus} from "@nlc-ai/types";
 
 
 @Injectable()
@@ -78,7 +78,7 @@ export class TransactionsService {
           paymentMethodID: data.paymentMethodID,
           amount: data.amount,
           currency: data.currency || 'USD',
-          status: TransactionStatus.pending,
+          status: TransactionStatus.PENDING,
           paymentMethodType: data.paymentMethodType,
           stripePaymentID: data.stripePaymentID,
           paypalOrderID: data.paypalOrderID,
@@ -98,6 +98,9 @@ export class TransactionsService {
           subscription: {
             select: {status: true, billingCycle: true},
           },
+          paymentMethod: {
+            select: {id: true}
+          }
         },
       });
     } catch (error: any) {
@@ -105,8 +108,8 @@ export class TransactionsService {
     }
   }
 
-  async findAllTransactions(filters: TransactionFilters = {}): Promise<TransactionWithDetails[]> {
-    const where: Prisma.TransactionWhereInput = {};
+  async findAllTransactions(filters: TransactionFilters = {}): Promise<Paginated<TransactionWithDetails>> {
+    const where: any = {};
 
     if (filters.coachID) {
       where.coachID = filters.coachID;
@@ -150,7 +153,7 @@ export class TransactionsService {
       };
     }
 
-    return this.prisma.transaction.findMany({
+    return this.prisma.paginate(this.prisma.transaction, {
       where,
       include: {
         coach: {
@@ -241,7 +244,7 @@ export class TransactionsService {
 
   async markTransactionCompleted(id: string, paidAt?: Date): Promise<Transaction> {
     const transaction = await this.updateTransaction(id, {
-      status: TransactionStatus.completed,
+      status: TransactionStatus.COMPLETED,
       paidAt: paidAt || new Date(),
     });
 
@@ -274,7 +277,7 @@ export class TransactionsService {
 
   async markTransactionFailed(id: string, failureReason: string): Promise<Transaction> {
     return this.updateTransaction(id, {
-      status: TransactionStatus.failed,
+      status: TransactionStatus.FAILED,
       failureReason,
     });
   }
