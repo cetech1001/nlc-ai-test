@@ -31,7 +31,7 @@ const CalendarLanding = () => {
       benefits: [
         "24/7 online booking availability",
         "Smart conflict detection and prevention",
-        "Buffer time and travel time management",
+        "Custom buffer times between appointments",
         "Multiple service types and durations"
       ]
     },
@@ -44,7 +44,7 @@ const CalendarLanding = () => {
         "Automated confirmation and reminder emails",
         "SMS notifications and follow-ups",
         "Custom intake forms and questionnaires",
-        "Payment collection at booking"
+        "Follow-up sequences for missed sessions"
       ]
     },
     {
@@ -53,18 +53,18 @@ const CalendarLanding = () => {
       title: "Calendar Integration",
       description: "Sync with your existing calendars and tools",
       benefits: [
-        "Google Calendar, Outlook, Apple Calendar sync",
-        "Zoom, Teams, and other video platform integration",
-        "CRM and client management system sync",
-        "Mobile app for on-the-go management"
+        "Calendly sync",
+        // "Zoom, Teams, and other video platform integration",
+        // "CRM and client management system sync",
+        // "Mobile app for on-the-go management"
       ]
     }
   ];
 
   const stats = [
     { label: "Booking Efficiency", value: "+90%", icon: Timer },
-    { label: "No-Show Reduction", value: "-75%", icon: Bell },
-    { label: "Admin Time Saved", value: "20hrs/week", icon: Clock },
+    { label: "Fewer No-Shows", value: "60%", icon: Bell },
+    { label: "Time Saved Weekly", value: "20hrs+", icon: Clock },
   ];
 
   const bookingTypes = [
@@ -104,8 +104,8 @@ const CalendarLanding = () => {
             Smart Calendar & Booking
           </h1>
           <p className="text-xl text-stone-300 mb-8">
-            Streamline your appointment booking with intelligent scheduling, automated reminders,
-            and seamless calendar integration. Never miss a booking or deal with scheduling conflicts again.
+            Smart scheduling that saves time, fills your calendar, and keeps clients showing up. With our seamless
+            {' '} calendar integration, never miss a booking or deal with a scheduling conflict again.
           </p>
 
           <div className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/20 border border-fuchsia-400/30 rounded-full text-fuchsia-300 text-lg font-medium">
@@ -258,8 +258,8 @@ const CalendarLanding = () => {
                 <div className="flex items-center gap-3 p-3 bg-neutral-800/50 rounded-lg">
                   <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 font-bold">3</div>
                   <div>
-                    <div className="text-white font-medium">Confirm & Pay</div>
-                    <div className="text-stone-400 text-sm">Instant confirmation with payment processing</div>
+                    <div className="text-white font-medium">Confirmed</div>
+                    <div className="text-stone-400 text-sm">Instant confirmation with options for the client to add to their calendar</div>
                   </div>
                 </div>
               </div>
@@ -268,10 +268,10 @@ const CalendarLanding = () => {
                 <div className="bg-gradient-to-r from-green-600/10 to-emerald-600/10 border border-green-600/20 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Shield className="w-4 h-4 text-green-400" />
-                    <span className="text-green-400 font-medium">Secure Payments</span>
+                    <span className="text-green-400 font-medium">Secure Bookings</span>
                   </div>
                   <p className="text-stone-300 text-sm">
-                    Integrated payment processing with industry-standard security.
+                    Reliable scheduling with built-in security and privacy.
                   </p>
                 </div>
 

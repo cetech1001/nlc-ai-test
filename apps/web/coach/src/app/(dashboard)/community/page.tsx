@@ -69,8 +69,8 @@ const CommunityLanding = () => {
   ];
 
   const stats = [
-    { label: "Client Engagement", value: "+85%", icon: Activity },
-    { label: "Retention Rate", value: "+70%", icon: Heart },
+    { label: "Client Engagement", value: "+70%", icon: Activity },
+    { label: "Retention Rate", value: "+50%", icon: Heart },
     { label: "Community Growth", value: "3x Faster", icon: TrendingUp },
   ];
 

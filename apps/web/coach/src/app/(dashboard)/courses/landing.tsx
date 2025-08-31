@@ -23,10 +23,10 @@ export const CoursesLanding = () => {
       title: "Course Builder",
       description: "Create professional courses with our intuitive drag-and-drop builder",
       benefits: [
-        "Easy lesson creation with rich media support",
-        "Quiz and assessment builder",
-        "Progress tracking and certificates",
-        "Mobile-optimized student experience"
+        "Simple lesson creation with video & PDF uploads",
+        "AI Powered content suggestions for engaging lessons",
+        "Progress tracking and certificates of completion",
+        "Visual builder to structure and organize your course"
       ]
     },
     {
@@ -35,9 +35,9 @@ export const CoursesLanding = () => {
       title: "Student Management",
       description: "Track student progress and engagement across all your courses",
       benefits: [
-        "Real-time progress monitoring",
-        "Automated completion certificates",
-        "Student communication tools",
+        "Gamified client experience that keeps students logging in daily",
+        "Progress tracking, achievements, built-in streaks, badges, and milestones to drive engagement",
+        "Course design that rewards progress and builds habits",
         "Performance analytics and insights"
       ]
     },
@@ -56,8 +56,8 @@ export const CoursesLanding = () => {
   ];
 
   const stats = [
-    { label: "Course Creation", value: "10x Faster", icon: Clock },
-    { label: "Student Engagement", value: "85% Higher", icon: Trophy },
+    { label: "Course Creation", value: "5x Faster", icon: Clock },
+    { label: "Student Engagement", value: "2x More", icon: Trophy },
     { label: "Revenue Growth", value: "3x Average", icon: BarChart3 },
   ];
 
@@ -110,7 +110,7 @@ export const CoursesLanding = () => {
       {/* Features Section */}
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Everything You Need to Create Amazing Courses</h2>
+          <h2 className="text-3xl font-bold text-white mb-4">Everything You Need to Create Profitable Courses</h2>
           <p className="text-stone-300 text-lg">From content creation to student management and revenue optimization</p>
         </div>
 
@@ -180,7 +180,7 @@ export const CoursesLanding = () => {
                   <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold">1</div>
                   <div>
                     <div className="text-white font-medium">Upload Content</div>
-                    <div className="text-stone-400 text-sm">Videos, PDFs, quizzes, and more</div>
+                    <div className="text-stone-400 text-sm">Photos, Videos, PDFs, Links, and more</div>
                   </div>
                 </div>
 
@@ -188,7 +188,7 @@ export const CoursesLanding = () => {
                   <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 font-bold">2</div>
                   <div>
                     <div className="text-white font-medium">Structure & Organize</div>
-                    <div className="text-stone-400 text-sm">Drag-and-drop course builder</div>
+                    <div className="text-stone-400 text-sm">Design your course layout with a simple visual builder</div>
                   </div>
                 </div>
 

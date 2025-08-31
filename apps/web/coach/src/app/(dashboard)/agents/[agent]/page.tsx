@@ -16,71 +16,19 @@ import {
   BarChart3
 } from "lucide-react";
 import {appConfig} from "@nlc-ai/web-shared";
+import {useParams} from "next/navigation";
 
 const AIAgentsLanding = () => {
-  const [activeAgent, setActiveAgent] = useState('lead-followup');
+  const params = useParams();
+  const agent = params.agent as string;
+
+  const [activeAgent, setActiveAgent] = useState(agent);
 
   const agents = [
     {
-      id: 'lead-followup',
-      icon: Mail,
-      title: "Lead Follow-up Agent",
-      description: "Automatically nurture leads with personalized email sequences",
-      features: [
-        "Smart lead scoring and segmentation",
-        "Personalized email sequences based on lead behavior",
-        "Automated follow-up scheduling",
-        "Integration with your CRM and email platforms"
-      ],
-      benefits: "Convert 40% more leads into paying clients",
-      color: "from-blue-600 to-cyan-600"
-    },
-    {
-      id: 'client-email',
-      icon: MessageSquare,
-      title: "Client Email Assistant",
-      description: "AI-powered email responses for your existing clients",
-      features: [
-        "Context-aware email responses",
-        "Maintains your unique coaching voice",
-        "Learns from your past client interactions",
-        "Smart escalation for complex queries"
-      ],
-      benefits: "Save 10+ hours per week on email management",
-      color: "from-green-600 to-emerald-600"
-    },
-    {
-      id: 'client-retention',
-      icon: UserCheck,
-      title: "Client Retention Agent",
-      description: "Proactively identify and re-engage at-risk clients",
-      features: [
-        "Early warning system for client churn",
-        "Automated check-in sequences",
-        "Personalized re-engagement campaigns",
-        "Progress milestone celebrations"
-      ],
-      benefits: "Reduce client churn by up to 60%",
-      color: "from-purple-600 to-violet-600"
-    },
-    {
-      id: 'content-suggestion',
-      icon: MailQuestion,
-      title: "Content Suggestion Agent",
-      description: "AI-powered content ideas tailored to your coaching niche",
-      features: [
-        "Trending topic analysis in your niche",
-        "Content calendar planning",
-        "Platform-specific content optimization",
-        "Engagement prediction and optimization"
-      ],
-      benefits: "2x your content engagement rates",
-      color: "from-orange-600 to-red-600"
-    },
-    {
       id: 'coach-replica',
       icon: Bot,
-      title: "Coach Replica Agent",
+      title: "Coach Replica",
       description: "Your AI twin that handles routine client questions 24/7",
       features: [
         "Trained on your coaching methodology",
@@ -89,13 +37,79 @@ const AIAgentsLanding = () => {
         "Continuous learning from interactions"
       ],
       benefits: "Scale your coaching without losing the personal touch",
-      color: "from-fuchsia-600 to-pink-600"
-    }
+      color: "from-violet-600 via-purple-600 to-fuchsia-500",
+      textColor: "text-violet-200", // Light violet text
+      iconColor: "text-violet-300"
+    },
+    {
+      id: 'client-retention',
+      icon: UserCheck,
+      title: "Retention",
+      description: "Proactively identify and re-engage at-risk clients",
+      features: [
+        "Early warning system for client churn",
+        "Automated check-in sequences",
+        "Personalized re-engagement campaigns",
+        "Progress milestone celebrations"
+      ],
+      benefits: "Reduce client churn by up to 60%",
+      color: "from-purple-600 via-violet-500 to-pink-500",
+      textColor: "text-purple-200", // Light purple text
+      iconColor: "text-purple-300"
+    },
+    {
+      id: 'lead-followup',
+      icon: Mail,
+      title: "Lead Follow-up",
+      description: "Automatically nurture leads with personalized email sequences",
+      features: [
+        "Smart lead scoring and segmentation",
+        "Personalized email sequences based on lead behavior",
+        "Automated follow-up scheduling",
+        "Integration with your CRM and email platforms"
+      ],
+      benefits: "Convert 50% more leads into paying clients",
+      color: "from-blue-700 via-indigo-600 to-purple-600",
+      textColor: "text-blue-200", // Light blue text
+      iconColor: "text-blue-300"
+    },
+    {
+      id: 'client-email',
+      icon: MessageSquare,
+      title: "Email",
+      description: "AI-powered email responses for your existing clients",
+      features: [
+        "Context-aware email responses",
+        "Maintains your unique coaching voice",
+        "Learns from your past client interactions",
+        "Smart escalation for complex queries"
+      ],
+      benefits: "Save 10+ hours per week on email management",
+      color: "from-emerald-600 via-teal-500 to-purple-600",
+      textColor: "text-emerald-200", // Light emerald text
+      iconColor: "text-emerald-300"
+    },
+    {
+      id: 'content-suggestion',
+      icon: MailQuestion,
+      title: "Content Creation",
+      description: "AI-powered content ideas tailored to your coaching niche",
+      features: [
+        "Trending topic analysis in your niche",
+        "Content calendar planning",
+        "Platform-specific content optimization",
+        "Engagement prediction and optimization"
+      ],
+      benefits: "5x your content engagement rates",
+      color: "from-orange-500 via-amber-400 to-purple-600",
+      textColor: "text-orange-200", // Light orange text
+      iconColor: "text-orange-100"
+    },
   ];
 
   const stats = [
-    { label: "Time Saved Weekly", value: "15+ Hours", icon: Clock },
-    { label: "Lead Conversion", value: "+40%", icon: Target },
+    { label: "Time Saved Weekly", value: "30+ Hours", icon: Clock },
+    { label: "Lead Conversion", value: "+50%", icon: Target },
     { label: "Client Retention", value: "+60%", icon: TrendingUp },
   ];
 
@@ -184,7 +198,7 @@ const AIAgentsLanding = () => {
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`w-12 h-12 bg-gradient-to-br ${agent.color}/20 rounded-xl flex items-center justify-center`}>
-                      <agent.icon className="w-6 h-6 text-fuchsia-400" />
+                      <agent.icon className={`w-6 h-6 ${agent.iconColor}`} />
                     </div>
                     <h3 className="text-2xl font-bold text-white">{agent.title}</h3>
                   </div>
@@ -202,8 +216,8 @@ const AIAgentsLanding = () => {
 
                   <div className={`p-4 bg-gradient-to-r ${agent.color}/10 border border-current/20 rounded-lg`}>
                     <div className="flex items-center gap-2 mb-2">
-                      <BarChart3 className="w-4 h-4 text-fuchsia-400" />
-                      <span className="text-fuchsia-400 font-medium">Expected Impact</span>
+                      <BarChart3 className={`w-4 h-4 ${agent.iconColor}`} />
+                      <span className={`${agent.textColor} font-medium`}>Expected Impact</span>
                     </div>
                     <p className="text-white font-semibold">{agent.benefits}</p>
                   </div>
@@ -263,7 +277,7 @@ const AIAgentsLanding = () => {
 
       {/* AI Agent Comparison */}
       <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-white text-center">Deploy Multiple Agents for Maximum Impact</h3>
+        <h3 className="text-2xl font-bold text-white text-center">Deploy Multiple Agents For Maximum Impact</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {agents.map((agent, index) => (
@@ -274,7 +288,7 @@ const AIAgentsLanding = () => {
 
               <div className="relative z-10">
                 <div className={`w-12 h-12 bg-gradient-to-br ${agent.color}/20 rounded-xl flex items-center justify-center mx-auto mb-3`}>
-                  <agent.icon className="w-6 h-6 text-fuchsia-400" />
+                  <agent.icon className={`w-6 h-6 ${agent.iconColor}`} />
                 </div>
                 <h4 className="text-white font-semibold mb-2 text-sm">{agent.title}</h4>
                 <p className="text-stone-400 text-xs">{agent.benefits}</p>

@@ -24,7 +24,7 @@ const ContentManagementLanding = () => {
       description: "Plan and schedule your social media content across all platforms",
       benefits: [
         "Visual content calendar with drag-and-drop scheduling",
-        "Multi-platform posting (Instagram, LinkedIn, Twitter, Facebook)",
+        "Tailored posts for each individual platform (Instagram, Facebook, X, TikTok, YouTube)",
         "Content templates and coaching-focused post ideas",
         "Optimal posting time recommendations"
       ]
@@ -113,30 +113,37 @@ const ContentManagementLanding = () => {
             </div>
 
             <div className="relative z-10">
-              {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className={`${activeTab === feature.title.toLowerCase().replace(' ', '-') ? 'block' : 'hidden'}`}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center">
-                      <feature.icon className="w-6 h-6 text-fuchsia-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">{feature.title}</h3>
-                  </div>
+              {features.map((feature) => {
+                let tabMatch = false;
+                if (activeTab === 'content-calendar' && feature.title === 'Content Calendar') tabMatch = true;
+                if (activeTab === 'analytics' && feature.title === 'Performance Analytics') tabMatch = true;
+                if (activeTab === 'ai-generation' && feature.title === 'AI Content Generation') tabMatch = true;
 
-                  <p className="text-stone-300 text-lg mb-6">{feature.description}</p>
-
-                  <div className="space-y-3">
-                    {feature.benefits.map((benefit, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-stone-200">{benefit}</span>
+                return (
+                  <div
+                    key={feature.title}
+                    className={`${tabMatch ? 'block' : 'hidden'}`}
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center">
+                        <feature.icon className="w-6 h-6 text-fuchsia-400" />
                       </div>
-                    ))}
+                      <h3 className="text-2xl font-bold text-white">{feature.title}</h3>
+                    </div>
+
+                    <p className="text-stone-300 text-lg mb-6">{feature.description}</p>
+
+                    <div className="space-y-3">
+                      {feature.benefits.map((benefit, index) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                          <span className="text-stone-200">{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
