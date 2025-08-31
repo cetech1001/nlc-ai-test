@@ -1,6 +1,5 @@
-import {Lead, LeadAnswers} from "@nlc-ai/sdk-leads";
+import {Lead, LeadAnswers, questions} from "@nlc-ai/sdk-leads";
 import {CheckCircle, XCircle} from "lucide-react";
-import {questions} from "./questions";
 
 export const QualificationSummary = ({ lead }: { lead: Lead }) => {
   const calculateQualificationDetails = () => {
@@ -18,7 +17,7 @@ export const QualificationSummary = ({ lead }: { lead: Lead }) => {
       if (Array.isArray(answer)) {
         answer.forEach(value => {
           const cleanValue = value.startsWith('other:') ? 'other' : value;
-          const option = question.options.find(opt => opt.value === cleanValue);
+          const option = question.options?.find(opt => opt.value === cleanValue);
           if (option?.disqualifies) {
             disqualifying++;
             details.push(`❌ Q${questionID}: ${option.text}`);
@@ -34,7 +33,7 @@ export const QualificationSummary = ({ lead }: { lead: Lead }) => {
         });
       } else {
         const cleanValue = answer.startsWith('other:') ? 'other' : answer;
-        const option = question.options.find(opt => opt.value === cleanValue);
+        const option = question.options?.find(opt => opt.value === cleanValue);
         if (option?.disqualifies) {
           disqualifying++;
           details.push(`❌ Q${questionID}: ${option.text}`);

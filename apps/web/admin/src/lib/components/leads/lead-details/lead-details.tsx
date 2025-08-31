@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import {sdkClient, LeadDetailsSkeleton} from "@/lib";
 import {QualificationSummary} from "./qualification-summary";
-import {QualificationBadge} from "./qualification-badge";
+import {QualificationBadge} from "@/lib";
 import {StatusBadge} from "./status-badge";
 import {QuickActions} from "@/lib/components/leads/lead-details/quick-actions";
 import {FormResponses} from "@/lib/components/leads/lead-details/form-responses";

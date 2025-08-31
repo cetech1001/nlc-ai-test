@@ -1,7 +1,7 @@
-import {Answers} from "@/lib/types";
-import {questions} from "@/lib/data";
+import {LeadAnswers} from "../types";
+import {questions} from "../data";
 
-export const calculateQualification = (answers: Answers): boolean => {
+export const calculateQualification = (answers: LeadAnswers): boolean => {
     let disqualifyingAnswers = 0;
 
     Object.entries(answers).forEach(([questionID, answer]) => {

@@ -68,19 +68,6 @@ export interface UpdateLead {
   notes?: string;
 }
 
-export interface LeadQueryParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  source?: string;
-  startDate?: string;
-  endDate?: string;
-  meetingStartDate?: string;
-  meetingEndDate?: string;
-  coachID?: string;
-}
-
 export interface LeadStats {
   total: number;
   contacted: number;
@@ -134,8 +121,10 @@ export interface LeadQuestion {
   id: number;
   text: string;
   subtitle?: string;
-  options: LeadQuestionOption[];
+  options?: LeadQuestionOption[];
   multiSelect?: boolean;
+  textOnly?: boolean;
+  placeholder?: string;
 }
 
 export interface LeadQuestionOption {
@@ -147,3 +136,9 @@ export interface LeadQuestionOption {
 }
 
 export type LeadAnswers = Record<number, string | string[]>;
+
+export interface LeadInfo {
+  name: string;
+  email: string;
+  phone: string;
+}

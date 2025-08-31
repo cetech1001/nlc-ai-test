@@ -1,5 +1,5 @@
 import {CheckCircle, Star, XCircle} from "lucide-react";
-import {questions} from "./questions";
+import {questions} from "@nlc-ai/sdk-leads";
 
 export const FormAnswer = ({ questionNumber, answer }: { questionNumber: string, answer: any }) => {
   const questionID = parseInt(questionNumber);
@@ -19,7 +19,7 @@ export const FormAnswer = ({ questionNumber, answer }: { questionNumber: string,
     if (Array.isArray(answer)) {
       const formattedAnswers = answer.map(value => {
         const cleanValue = value.startsWith('other:') ? 'other' : value;
-        const option = question.options.find(opt => opt.value === cleanValue);
+        const option = question.options?.find(opt => opt.value === cleanValue);
 
         if (option) {
           // Track qualification indicators
@@ -36,7 +36,7 @@ export const FormAnswer = ({ questionNumber, answer }: { questionNumber: string,
 
     if (typeof answer === 'string') {
       const cleanValue = answer.startsWith('other:') ? 'other' : answer;
-      const option = question.options.find(opt => opt.value === cleanValue);
+      const option = question.options?.find(opt => opt.value === cleanValue);
 
       if (option) {
         // Track qualification indicators

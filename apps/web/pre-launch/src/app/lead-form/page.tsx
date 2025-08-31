@@ -4,10 +4,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, User } from 'lucide-react';
 import { PageBackground } from '@/lib/components';
-import { type Answers, type LeadInfo } from '@/lib/types';
-import { calculateQualification, hashString } from "@/lib/utils";
 import Image from "next/image";
 import {sdkClient} from "@/lib";
+import {calculateQualification, hashString, LeadAnswers, LeadInfo} from "@nlc-ai/sdk-leads";
 
 const isValidEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -73,7 +72,7 @@ const LeadFormPage = () => {
       return;
     }
 
-    const answers: Answers = JSON.parse(storedAnswers);
+    const answers: LeadAnswers = JSON.parse(storedAnswers);
     const isQualified = calculateQualification(answers);
 
     try {
@@ -124,11 +123,6 @@ const LeadFormPage = () => {
         <span className={`px-2.5 py-0.5 border ${urgencyBg} rounded-full text-sm font-medium w-auto ${urgencyColor}`}>
           {spotsRemaining} spots remaining
         </span>
-        {/*{spotsRemaining <= 10 && (
-          <p className="text-sm text-white/60 mt-1">
-            Limited availability - secure your spot now
-          </p>
-        )}*/}
       </div>
     );
   };

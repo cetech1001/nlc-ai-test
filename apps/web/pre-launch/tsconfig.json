@@ -48,5 +48,16 @@
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     ".next"
+  ],
+  "references": [
+    {
+      "path": "../../../libs/sdk/main"
+    },
+    {
+      "path": "../../../libs/web/shared"
+    },
+    {
+      "path": "../../../libs/sdk/leads"
+    }
   ]
 }

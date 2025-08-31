@@ -4,11 +4,9 @@ import React, {memo, useState, useCallback} from 'react';
 import { useRouter } from 'next/navigation';
 import {ChevronRight, CheckCircle, ChevronLeft} from 'lucide-react';
 import { PageBackground } from '@/lib/components';
-import { type Answers, type QuestionOption } from '@/lib/types';
-import { questions } from "@/lib/data";
-import {hashString} from "@/lib/utils";
+import {hashString, LeadAnswers, LeadQuestionOption, questions} from "@nlc-ai/sdk-leads";
 
-const persistAnswersWithHash = (answers: Answers) => {
+const persistAnswersWithHash = (answers: LeadAnswers) => {
   const serialized = JSON.stringify(answers);
   const checksum = hashString(serialized);
   sessionStorage.setItem('quizAnswers', serialized);
@@ -71,12 +69,12 @@ const ProgressBar = memo(({ currentQuestion }: { currentQuestion: number }) => (
 const QuizPage = () => {
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Answers>({});
+  const [answers, setAnswers] = useState<LeadAnswers>({});
   const [otherText, setOtherText] = useState<string>('');
   const [textAnswers, setTextAnswers] = useState<Record<number, string>>({});
   const [showOtherInput, setShowOtherInput] = useState<boolean>(false);
 
-  const handleAnswer = (questionID: number, option: QuestionOption, isMultiSelect = false) => {
+  const handleAnswer = (questionID: number, option: LeadQuestionOption, isMultiSelect = false) => {
     if (option.value === 'other') {
       setShowOtherInput(true);
       if (!isMultiSelect) {
@@ -114,7 +112,6 @@ const QuizPage = () => {
         [questionID]: option.value
       }));
 
-      // Remove the setTimeout - make it instant
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
         setShowOtherInput(false);
@@ -135,7 +132,6 @@ const QuizPage = () => {
       [questionID]: value
     }));
 
-    // Also update the main answers object
     setAnswers(prev => ({
       ...prev,
       [questionID]: value
@@ -153,7 +149,6 @@ const QuizPage = () => {
   const handleNextMultiSelect = () => {
     const currentQ = questions[currentQuestion];
 
-    // Handle text-only questions
     if (currentQ?.textOnly) {
       const textAnswer = textAnswers[currentQ.id] || '';
       const finalAnswers = {
