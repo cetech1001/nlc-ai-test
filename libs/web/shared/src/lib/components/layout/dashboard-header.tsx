@@ -1,7 +1,16 @@
-import {useMemo} from "react";
-import {Skeleton} from "@nlc-ai/web-ui";
-// import {NotificationBell} from "./notification-bell";
-import {NLCClient} from "@nlc-ai/sdk-main";
+import React, { useMemo } from 'react';
+import { Skeleton } from "@nlc-ai/web-ui";
+import { NLCClient } from "@nlc-ai/sdk-main";
+import {ProfileDropdown} from "./profile-dropdown";
+
+interface DashboardHeaderProps {
+  title: string;
+  user: any;
+  isLoading: boolean;
+  goToNotifications: () => void;
+  sdkClient: NLCClient;
+  onLogout: () => void;
+}
 
 const UserDisplaySection = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const userFullName = useMemo(() => {
@@ -26,50 +35,42 @@ const UserDisplaySection = ({ user, isLoading }: { user: any; isLoading: boolean
   );
 };
 
-interface IProps {
-  title: string;
-  user: any;
-  isLoading: boolean;
-  goToNotifications: () => void;
-  sdkClient: NLCClient;
-}
-
-export const DashboardHeader = (props: IProps) => {
-  const { user } = props;
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  title,
+  user,
+  isLoading,
+  onLogout,
+}) => {
   const userInitials = useMemo(() => {
     if (user?.avatarUrl) {
       return (
         <img
           src={user?.avatarUrl}
           alt={'Avatar'}
-          className={"w-full h-full rounded-full"}
-          // style={"w-full h-full"}
+          className={"w-full h-full rounded-full object-cover"}
         />
       )
     }
     if (!user?.firstName || !user?.lastName) return '';
     return `${user.firstName[0]}${user.lastName[0]}`;
-  }, [user?.firstName, user?.lastName]);
+  }, [user?.firstName, user?.lastName, user?.avatarUrl]);
 
   return (
     <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
       <div className="flex items-center gap-x-4 lg:gap-x-6">
-        <h1 className="text-white text-xl sm:text-2xl font-semibold">{props.title}</h1>
+        <h1 className="text-white text-xl sm:text-2xl font-semibold">{title}</h1>
       </div>
 
       <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
-        {/*<NotificationBell sdkClient={props.sdkClient} goToNotifications={props.goToNotifications}/>*/}
         <div className="flex items-center gap-3">
-          <UserDisplaySection user={user} isLoading={props.isLoading} />
-          <div
-            className="w-8 h-8 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center"
-          >
-            <span className="text-white text-sm font-medium">
-              {userInitials}
-            </span>
-          </div>
+          <UserDisplaySection user={user} isLoading={isLoading} />
+          <ProfileDropdown
+            user={user}
+            userInitials={userInitials}
+            onLogout={onLogout}
+          />
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
