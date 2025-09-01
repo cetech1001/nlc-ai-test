@@ -21,7 +21,7 @@ import {
   MessageCircleReply,
 } from "lucide-react";
 import {MenuItemType} from "@nlc-ai/types";
-import {RetentionIcon, CoachReplicaIcon, EmailAgentIcon} from "./icons";
+import {RetentionIcon, CoachReplicaIcon, EmailAgentIcon} from "../icons";
 
 export const menuItems: MenuItemType[] = [
   { icon: HiHome, label: "Dashboard", path: "/home" },

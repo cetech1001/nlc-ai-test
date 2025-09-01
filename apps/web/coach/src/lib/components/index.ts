@@ -6,6 +6,7 @@ export * from './clients';
 export * from './community';
 export * from './content';
 export * from './home';
+export * from './icons';
 export * from './leads';
 export * from './retention';
 export * from './sidebar';

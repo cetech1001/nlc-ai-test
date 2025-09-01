@@ -1,7 +1,9 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
 import { TableColumn } from "@nlc-ai/types";
-import { Edit3, Mailbox } from "lucide-react";
+import { Edit3 } from "lucide-react";
 import {ExtendedClient} from "@nlc-ai/sdk-users";
+import {formatDate} from "@nlc-ai/sdk-core";
+import {EmailAgentIcon} from "@/lib";
 
 const colWidth = 100 / 6;
 
@@ -24,8 +26,7 @@ export const clientColumns: TableColumn<ExtendedClient>[] = [
     key: 'createdAt',
     header: 'Date Joined',
     width: `${colWidth}%`,
-    render: (_, client: ExtendedClient) =>
-      client.createdAt ? tableRenderers.dateText(client.createdAt.toString()) : 'N/A'
+    render: (value: string) => formatDate(value)
   },
   {
     key: 'coursesBought',
@@ -60,7 +61,7 @@ export const clientColumns: TableColumn<ExtendedClient>[] = [
             className="px-3 py-1 rounded text-sm bg-purple-600/20 text-fuchsia-400 hover:bg-purple-600/30 transition-colors"
             title="View Emails"
           >
-            <Mailbox className="w-4 h-4"/>
+            <EmailAgentIcon className="w-4 h-4"/>
           </button>
           <button
             onClick={() => onRowAction?.('view-details', client)}

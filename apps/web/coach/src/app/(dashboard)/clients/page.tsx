@@ -15,7 +15,7 @@ import { FilterValues } from "@nlc-ai/types";
 import {clientColumns, clientFilters, emptyClientFilterValues, sdkClient} from "@/lib";
 import {ExtendedClient} from "@nlc-ai/sdk-users";
 
-const Clients = () => {
+const ClientsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -42,10 +42,7 @@ const Clients = () => {
     const success = searchParams.get('success');
     if (success) {
       setSuccessMessage(success);
-      // Clean URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete('success');
-      window.history.replaceState({}, '', url.toString());
+      router.replace(window.location.href, {});
     }
   }, [searchParams]);
 
@@ -172,4 +169,4 @@ const Clients = () => {
   );
 }
 
-export default Clients;
+export default ClientsPage;
