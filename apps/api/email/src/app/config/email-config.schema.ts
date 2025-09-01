@@ -46,4 +46,7 @@ export class EmailConfigSchema {
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   EMAIL_RETENTION_DAYS?: number = 90;
+
+  @IsString()
+  AUTH_SERVICE_URL: string;
 }

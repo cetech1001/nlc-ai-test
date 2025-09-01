@@ -185,7 +185,6 @@ export class AuthService {
     }
 
     if (!user) {
-      // Don't reveal whether user exists
       return { message: 'If the email exists, a verification code has been sent.' };
     }
 
@@ -211,13 +210,11 @@ export class AuthService {
   async verifyCode(verifyCodeDto: VerifyCodeRequest) {
     const { email, code } = verifyCodeDto;
 
-    // Check for email verification first
     const isEmailVerification = await this.tokenService.verifyToken(email, code, 'verification');
     if (isEmailVerification) {
       return this.handleEmailVerification(email);
     }
 
-    // Check for password reset
     const isPasswordReset = await this.tokenService.verifyToken(email, code, 'reset');
     if (isPasswordReset) {
       const resetToken = await this.tokenService.generateResetToken(email);
@@ -251,7 +248,6 @@ export class AuthService {
 
     await this.tokenService.invalidateTokens(email);
 
-    // Emit password reset event
     await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.password.reset',

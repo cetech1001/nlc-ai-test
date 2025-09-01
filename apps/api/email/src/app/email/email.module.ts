@@ -8,6 +8,7 @@ import { EmailStatsController } from './email-stats.controller';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import {EmailIntegrationService} from "./email-integration.service";
+import {TemplatesModule} from "../templates/templates.module";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import {EmailIntegrationService} from "./email-integration.service";
     ScheduleModule,
     DatabaseModule,
     MessagingModule,
+    TemplatesModule,
   ],
   controllers: [
     EmailEventController,
@@ -28,6 +30,7 @@ import {EmailIntegrationService} from "./email-integration.service";
   exports: [
     EmailService,
     EmailSchedulerService,
+    EmailIntegrationService,
   ],
 })
 export class EmailModule {}

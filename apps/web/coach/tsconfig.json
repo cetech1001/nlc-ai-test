@@ -60,6 +60,9 @@
       "path": "../../../libs/sdk/community"
     },
     {
+      "path": "../../../libs/sdk/core"
+    },
+    {
       "path": "../../../libs/sdk/billing"
     },
     {

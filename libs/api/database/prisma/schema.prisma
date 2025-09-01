@@ -808,7 +808,7 @@ model EmailMessage {
   id                String      @id @default(uuid()) @db.Uuid
   threadID          String      @db.Uuid
   emailTemplateID   String?     @db.Uuid
-  providerMessageID String      @unique @db.VarChar(255)
+  providerMessageID String?     @unique @db.VarChar(255)
   to                String      @db.VarChar(255)
   from              String      @db.VarChar(255)
   // recipientEmails  String[]

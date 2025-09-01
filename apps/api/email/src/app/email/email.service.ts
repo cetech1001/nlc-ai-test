@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
+import {v4 as uuid} from "uuid";
 import FormData from 'form-data';
 import Mailgun from 'mailgun.js';
 import { getPasswordResetEmailTemplate, getVerificationEmailTemplate, getWelcomeEmailTemplate } from "./templates/auth";
@@ -45,10 +46,10 @@ export class EmailService {
   }
 
   async sendEmail(request: SendEmailRequest): Promise<{ messageID: string; status: number; message: string }> {
-    const { to, subject, html, text, from, templateID, metadata, replyTo, cc, bcc } = request;
+    const { to, subject, html, text, from, templateID, /*metadata, */replyTo, cc, bcc } = request;
 
     // Store email record
-    const emailRecord = await this.prisma.emailMessage.create({
+    /*const emailRecord = await this.prisma.emailMessage.create({
       // @ts-ignore
       data: {
         to,
@@ -60,19 +61,21 @@ export class EmailService {
         metadata: metadata || {},
         status: 'pending',
       },
-    });
+    });*/
+
+    const messageID = uuid();
 
     if (!this.mailgun) {
       this.logger.log(`📧 Email would be sent to ${to}`);
       this.logger.log(`Subject: ${subject}`);
 
-      await this.prisma.emailMessage.update({
+      /*await this.prisma.emailMessage.update({
         where: { id: emailRecord.id },
         data: { status: 'simulated' },
-      });
+      });*/
 
       return {
-        messageID: emailRecord.id,
+        messageID/*: emailRecord.id*/,
         status: 200,
         message: 'Email simulated (development mode)',
       };
@@ -98,21 +101,21 @@ export class EmailService {
       mailgunMessage['o:tracking-opens'] = true;
 
       // Add custom variables for tracking
-      if (emailRecord.id) {
-        mailgunMessage['v:email-record-id'] = emailRecord.id;
+      if (/*emailRecord.id*/messageID) {
+        mailgunMessage['v:email-record-id'] = /*emailRecord.id*/messageID;
       }
 
       const result = await this.mailgun.messages.create(this.domain, mailgunMessage);
       const sentAt = new Date();
 
-      await this.prisma.emailMessage.update({
-        where: { id: emailRecord.id },
+      /*await this.prisma.emailMessage.update({
+        where: { id: /!*emailRecord.id*!/messageID },
         data: {
           status: 'sent',
           sentAt,
           providerMessageID: result.id,
         },
-      });
+      });*/
 
       // Emit email sent event
       await this.outbox.saveAndPublishEvent<EmailEvent>(
@@ -120,7 +123,7 @@ export class EmailService {
           eventType: EMAIL_ROUTING_KEYS.SENT,
           schemaVersion: 1,
           payload: {
-            emailID: emailRecord.id,
+            emailID: /*emailRecord.id*/messageID,
             to,
             subject,
             templateID,
@@ -140,7 +143,7 @@ export class EmailService {
       };
     } catch (error) {
       await this.prisma.emailMessage.update({
-        where: { id: emailRecord.id },
+        where: { id: /*emailRecord.id*/messageID },
         data: {
           status: 'failed',
           errorMessage: error instanceof Error ? error.message : String(error),
@@ -153,7 +156,7 @@ export class EmailService {
           eventType: EMAIL_ROUTING_KEYS.FAILED,
           schemaVersion: 1,
           payload: {
-            emailID: emailRecord.id,
+            emailID: /*emailRecord.id*/messageID,
             to,
             subject,
             error: error instanceof Error ? error.message : String(error),
@@ -171,7 +174,7 @@ export class EmailService {
       }
 
       return {
-        messageID: emailRecord.id,
+        messageID: /*emailRecord.id*/messageID,
         status: 500,
         message: error instanceof Error ? error.message : 'Failed to send email',
       };

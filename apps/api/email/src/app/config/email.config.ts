@@ -44,5 +44,8 @@ export default registerAs('email', () => {
       batchSize: config.EMAIL_BATCH_SIZE,
       retentionDays: config.EMAIL_RETENTION_DAYS,
     },
+    services: {
+      auth: config.AUTH_SERVICE_URL,
+    },
   };
 });

@@ -1,7 +1,6 @@
 import {Injectable, Logger} from "@nestjs/common";
 import {EventBusService} from "@nlc-ai/api-messaging";
 import {EmailService} from "../../email/email.service";
-import {EmailIntegrationService} from "../../email/email-integration.service";
 
 @Injectable()
 export class AuthEventsHandler {
@@ -10,41 +9,35 @@ export class AuthEventsHandler {
   constructor(
     private readonly eventBus: EventBusService,
     private readonly emailService: EmailService,
-    private readonly emailIntegrationService: EmailIntegrationService,
   ) {
     this.subscribeToEvents();
   }
 
   private async subscribeToEvents() {
-    // Subscribe to auth verification events
     await this.eventBus.subscribe(
       'email-service.auth-verification',
       ['auth.verification.requested'],
       this.handleVerificationRequested.bind(this)
     );
 
-    // Subscribe to coach registration events
     await this.eventBus.subscribe(
       'email-service.coach-registration',
       ['auth.coach.registered'],
       this.handleCoachRegistered.bind(this)
     );
 
-    // Subscribe to coach verification events
     await this.eventBus.subscribe(
       'email-service.coach-verification',
       ['auth.coach.verified'],
       this.handleCoachVerified.bind(this)
     );
 
-    // Subscribe to password reset events
     await this.eventBus.subscribe(
       'email-service.password-reset',
       ['auth.password.reset'],
       this.handlePasswordReset.bind(this)
     );
 
-    // Subscribe to client invitation events
     await this.eventBus.subscribe(
       'email-service.client-invitations',
       ['auth.client.invited'],
@@ -85,7 +78,6 @@ export class AuthEventsHandler {
     try {
       const { email, coachID } = event.payload;
 
-      // Send onboarding sequence or additional welcome materials
       await this.sendOnboardingSequence(coachID, email);
       this.logger.log(`Onboarding sequence initiated for ${email}`);
     } catch (error) {
@@ -97,7 +89,6 @@ export class AuthEventsHandler {
     try {
       const { email, userType } = event.payload;
 
-      // Send password reset confirmation
       await this.sendPasswordResetConfirmation(email, userType);
       this.logger.log(`Password reset confirmation sent to ${email}`);
     } catch (error) {
@@ -132,8 +123,7 @@ export class AuthEventsHandler {
   }
 
   private async sendOnboardingSequence(coachID: string, email: string) {
-    // Create a series of onboarding emails
-    const onboardingEmails = [
+    /*const onboardingEmails = [
       {
         delay: 1, // 1 day
         subject: 'Getting Started with Next Level Coach AI',
@@ -155,8 +145,8 @@ export class AuthEventsHandler {
       const scheduledFor = new Date(Date.now() + emailData.delay * 24 * 60 * 60 * 1000);
 
       // Schedule onboarding email (you'd need to implement this)
-      // await this.scheduleOnboardingEmail(coachID, email, emailData, scheduledFor);
-    }
+      await this.scheduleOnboardingEmail(coachID, email, emailData, scheduledFor);
+    }*/
   }
 
   private async sendPasswordResetConfirmation(email: string, userType: string) {
