@@ -23,50 +23,6 @@ enum LeadType {
   admin_lead
 }
 
-enum TransactionStatus {
-  pending
-  processing
-  completed
-  failed
-  canceled
-  refunded
-  partially_refunded
-}
-
-enum PaymentMethodType {
-  credit_card
-  debit_card
-  paypal
-  bank_transfer
-  stripe
-  manual
-}
-
-enum InvoiceStatus {
-  draft
-  sent
-  paid
-  overdue
-  canceled
-  refunded
-}
-
-enum SubscriptionStatus {
-  active
-  canceled
-  expired
-  past_due
-  trialing
-  incomplete
-  incomplete_expired
-  unpaid
-}
-
-enum BillingCycle {
-  monthly
-  annual
-}
-
 model Admin {
   id             String          @id @default(uuid()) @db.Uuid
   email          String          @unique @db.VarChar(255)
@@ -275,11 +231,7 @@ model Coach {
   emailThreads       EmailThread[]
   integrations       Integration[]
   paymentMethods     PaymentMethod[]
-  transactions       Transaction[]
-  invoices           Invoice[]
-  subscriptions      Subscription[]
   leads              Lead[]
-  paymentLinks       PaymentLink[]
   contentCategories  ContentCategory[]
   emailSequences     EmailSequence[]
   scheduledEmails    ScheduledEmail[]
@@ -553,54 +505,6 @@ model ModerationStats {
   @@map("moderation_stats")
 }
 
-model Community {
-  id          String              @id @default(uuid()) @db.Uuid
-  name        String              @db.VarChar(255)
-  description String?             @db.Text
-  type        CommunityType
-  visibility  CommunityVisibility @default(private)
-  ownerID     String              @db.Uuid
-  ownerType   String              @db.VarChar(20)
-  coachID     String?             @db.Uuid
-  courseID    String?             @db.Uuid
-  avatarUrl   String?
-  bannerUrl   String?
-  slug        String              @unique @db.VarChar(100)
-
-  pricingType     CommunityPricingType @default(free)
-  pricingAmount   Int?
-  pricingCurrency String?              @default("USD") @db.VarChar(3)
-
-  isSystemCreated Boolean @default(false)
-  isDeleted       Boolean @default(false)
-
-  settings    Json     @default("{}")
-  memberCount Int      @default(0)
-  postCount   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
-
-  flaggedContent    FlaggedContent[]
-  contentReports    ContentReport[]
-  moderationActions ModerationAction[]
-  moderationRules   ModerationRule[]
-  moderationStats   ModerationStats[]
-
-  members CommunityMember[]
-  posts   Post[]
-  invites CommunityInvite[]
-
-  @@index([type])
-  @@index([pricingType])
-  @@index([coachID])
-  @@index([courseID])
-  @@index([ownerID, ownerType])
-  @@index([isSystemCreated])
-  @@index([createdAt])
-  @@map("communities")
-}
-
 model CommunityInvite {
   id          String    @id @default(uuid()) @db.Uuid
   communityID String    @db.Uuid
@@ -828,63 +732,6 @@ model ContentSuggestion {
   coach           Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("content_suggestions")
-}
-
-model CourseEnrollment {
-  id                    String    @id @default(uuid()) @db.Uuid
-  courseID              String    @db.Uuid
-  clientID              String    @db.Uuid
-  enrolledByCoachID     String?   @db.Uuid // Which coach enrolled this client
-  enrolledAt            DateTime? @default(now()) @db.Timestamptz(6)
-  startedAt             DateTime? @db.Timestamptz(6)
-  completedAt           DateTime? @db.Timestamptz(6)
-  progressPercentage    Decimal?  @default(0.00) @db.Decimal(5, 2)
-  currentModule         Int?      @default(1)
-  modulesCompleted      Int?      @default(0)
-  lastActivityAt        DateTime? @db.Timestamptz(6)
-  totalTimeSpentMinutes Int?      @default(0)
-  loginCount            Int?      @default(0)
-  daysSinceLastLogin    Int?      @default(0)
-  status                String?   @default("active") @db.VarChar(50)
-  dropoutRiskScore      Decimal?  @default(0.00) @db.Decimal(3, 2)
-  recommendedActions    Json?     @default("[]")
-  createdAt             DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime? @default(now()) @db.Timestamptz(6)
-
-  client Client @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  course Course @relation(fields: [courseID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([courseID, clientID])
-  @@index([clientID], map: "idx_course_enrollments_client_id")
-  @@index([courseID], map: "idx_course_enrollments_course_id")
-  @@index([status], map: "idx_course_enrollments_status")
-  @@map("course_enrollments")
-}
-
-model Course {
-  id                     String             @id @default(uuid()) @db.Uuid
-  coachID                String             @db.Uuid
-  title                  String             @db.VarChar(255)
-  description            String?
-  category               String?            @db.VarChar(100)
-  difficultyLevel        String?            @db.VarChar(50)
-  platform               String?            @db.VarChar(50)
-  platformCourseID       String?            @db.VarChar(255)
-  platformUrl            String?
-  totalModules           Int?               @default(0)
-  estimatedDurationHours Int?
-  thumbnailUrl           String
-  totalEnrollments       Int?               @default(0)
-  activeEnrollments      Int?               @default(0)
-  completionRate         Decimal?           @default(0.00) @db.Decimal(5, 2)
-  isActive               Boolean?           @default(true)
-  createdAt              DateTime?          @default(now()) @db.Timestamptz(6)
-  updatedAt              DateTime?          @default(now()) @db.Timestamptz(6)
-  courseEnrollments      CourseEnrollment[]
-  coach                  Coach              @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([coachID], map: "idx_courses_coach_id")
-  @@map("courses")
 }
 
 model DailyKPI {
@@ -1275,116 +1122,6 @@ model WebhookEvent {
   @@map("webhook_events")
 }
 
-model Transaction {
-  id                String            @id @default(uuid()) @db.Uuid
-  coachID           String            @db.Uuid
-  subscriptionID    String?           @db.Uuid
-  planID            String            @db.Uuid
-  paymentMethodID   String?           @db.Uuid // NEW FIELD
-  amount            Int
-  currency          String            @default("USD")
-  status            TransactionStatus @default(pending)
-  paymentMethodType PaymentMethodType @default(stripe) // Keep for backward compatibility
-  stripePaymentID   String?
-  paypalOrderID     String?
-  invoiceNumber     String?           @unique
-  invoiceDate       DateTime
-  dueDate           DateTime?
-  paidAt            DateTime?
-  description       String?
-  metadata          Json?
-  failureReason     String?
-  refundReason      String?
-  refundedAmount    Int?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  subscription  Subscription?  @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
-  plan          Plan           @relation(fields: [planID], references: [id], onDelete: Restrict)
-  paymentMethod PaymentMethod? @relation(fields: [paymentMethodID], references: [id], onDelete: SetNull) // NEW RELATION
-  invoices      Invoice[]
-
-  @@index([paymentMethodID], map: "idx_transactions_payment_method_id")
-  @@map("transactions")
-}
-
-model PaymentMethod {
-  id                    String            @id @default(uuid()) @db.Uuid
-  coachID               String?           @db.Uuid
-  clientID              String?           @db.Uuid
-  type                  PaymentMethodType
-  isDefault             Boolean           @default(false)
-  isActive              Boolean           @default(true)
-  cardLast4             String?
-  cardBrand             String?
-  cardExpMonth          Int?
-  cardExpYear           Int?
-  stripePaymentMethodID String?
-  paypalEmail           String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  coach        Coach?        @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  client       Client?       @relation(fields: [clientID], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-
-  @@map("payment_methods")
-}
-
-model Invoice {
-  id             String        @id @default(uuid()) @db.Uuid
-  coachID        String        @db.Uuid
-  subscriptionID String?       @db.Uuid
-  transactionID  String?       @db.Uuid
-  invoiceNumber  String        @unique
-  amount         Int
-  currency       String        @default("USD")
-  status         InvoiceStatus @default(draft)
-  issueDate      DateTime      @default(now())
-  dueDate        DateTime
-  paidAt         DateTime?
-  lineItems      Json
-  subtotal       Int
-  taxRate        Float?
-  taxAmount      Int?
-  discountAmount Int?
-  total          Int
-  notes          String?
-  metadata       Json?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  coach          Coach         @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  subscription   Subscription? @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
-  transaction    Transaction?  @relation(fields: [transactionID], references: [id], onDelete: SetNull)
-
-  @@map("invoices")
-}
-
-model Plan {
-  id           String    @id @default(uuid()) @db.Uuid
-  name         String    @unique
-  description  String?
-  monthlyPrice Int
-  annualPrice  Int
-  color        String?   @default("#7B21BA") @db.VarChar(50)
-  maxClients   Int?
-  maxAiAgents  Int?
-  features     Json?
-  isActive     Boolean   @default(true)
-  isDeleted    Boolean   @default(false)
-  deletedAt    DateTime? @db.Timestamptz(6)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  subscriptions Subscription[]
-  transactions  Transaction[]
-  paymentLinks  PaymentLink[]
-  planAiAgents  PlanAiAgent[]
-
-  @@map("plans")
-}
-
 model PlanAiAgent {
   id       String  @id @default(uuid()) @db.Uuid
   planID   String  @db.Uuid
@@ -1400,29 +1137,6 @@ model PlanAiAgent {
   @@map("plan_ai_agents")
 }
 
-model Subscription {
-  id                 String             @id @default(uuid()) @db.Uuid
-  coachID            String             @db.Uuid
-  planID             String             @db.Uuid
-  status             SubscriptionStatus @default(active)
-  billingCycle       BillingCycle       @default(monthly)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  canceledAt         DateTime?
-  cancelReason       String?
-  trialStart         DateTime?
-  trialEnd           DateTime?
-  nextBillingDate    DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  coach              Coach              @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  plan               Plan               @relation(fields: [planID], references: [id], onDelete: Restrict)
-  transactions       Transaction[]
-  invoices           Invoice[]
-
-  @@map("subscription")
-}
-
 enum MessageType {
   text
   image
@@ -1433,13 +1147,13 @@ enum MessageType {
 
 model Conversation {
   id               String    @id @default(uuid()) @db.Uuid
-  type             String    @db.VarChar(20) // 'direct', 'group'
+  type             String    @db.VarChar(20)
   name             String?   @db.VarChar(255)
-  participantIDs   String[] // Array of user IDs
-  participantTypes String[] // Array of user types ('coach', 'admin', 'client')
+  participantIDs   String[]
+  participantTypes String[]
   lastMessageID    String?   @db.Uuid
   lastMessageAt    DateTime? @db.Timestamptz(6)
-  unreadCount      Json      @default("{}") // Object with userType:userID as keys
+  unreadCount      Json      @default("{}")
   isActive         Boolean   @default(true)
   createdAt        DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
@@ -1577,27 +1291,6 @@ model SystemSetting {
   @@map("system_settings")
 }
 
-model PaymentLink {
-  id                  String    @id @default(uuid()) @db.Uuid
-  coachID             String    @db.Uuid
-  planID              String    @db.Uuid
-  stripePaymentLinkID String    @unique
-  paymentLinkUrl      String
-  amount              Int
-  currency            String    @default("USD")
-  description         String?
-  isActive            Boolean   @default(true)
-  paymentsReceived    Int       @default(0)
-  totalAmountReceived Int       @default(0)
-  expiresAt           DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  coach               Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  plan                Plan      @relation(fields: [planID], references: [id], onDelete: Restrict)
-
-  @@map("payment_links")
-}
-
 model ScheduledEmail {
   id                String    @id @default(uuid()) @db.Uuid
   emailSequenceID   String?   @db.Uuid // Add this field
@@ -1656,4 +1349,517 @@ model EmailSequence {
   @@index([leadID])
   @@index([clientID])
   @@map("email_sequences")
+}
+
+enum TransactionStatus {
+  pending
+  processing
+  completed
+  failed
+  canceled
+  refunded
+  partially_refunded
+}
+
+enum PaymentMethodType {
+  credit_card
+  debit_card
+  paypal
+  bank_transfer
+  stripe
+  manual
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+  canceled
+  refunded
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  expired
+  past_due
+  trialing
+  incomplete
+  incomplete_expired
+  unpaid
+}
+
+enum BillingCycle {
+  monthly
+  annual
+}
+
+enum PricingType {
+  one_time
+  recurring
+  installment
+}
+
+enum PaymentRequestStatus {
+  pending
+  paid
+  expired
+  canceled
+}
+
+enum PaymentRequestType {
+  plan_payment
+  course_payment
+  community_payment
+  custom_payment
+}
+
+model PaymentMethod {
+  id String @id @default(uuid()) @db.Uuid
+
+  coachID   String?           @db.Uuid
+  clientID  String?           @db.Uuid
+  type      PaymentMethodType
+  isDefault Boolean           @default(false)
+  isActive  Boolean           @default(true)
+
+  cardLast4    String?
+  cardBrand    String?
+  cardExpMonth Int?
+  cardExpYear  Int?
+
+  stripePaymentMethodID String?
+  paypalEmail           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coach        Coach?        @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  client       Client?       @relation(fields: [clientID], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("payment_methods")
+}
+
+model Transaction {
+  id String @id @default(uuid()) @db.Uuid
+
+  payerID   String @db.Uuid
+  payerType String @db.VarChar(20)
+
+  payeeID   String? @db.Uuid
+  payeeType String? @db.VarChar(20)
+
+  planID           String? @db.Uuid
+  courseID         String? @db.Uuid
+  communityID      String? @db.Uuid
+  subscriptionID   String? @db.Uuid
+  paymentRequestID String? @db.Uuid
+
+  paymentMethodID   String?           @db.Uuid
+  amount            Int
+  currency          String            @default("USD")
+  status            TransactionStatus @default(pending)
+  paymentMethodType PaymentMethodType @default(stripe)
+
+  stripePaymentID String?
+  paypalOrderID   String?
+
+  invoiceID     String?   @db.Uuid
+  invoiceNumber String?   @unique
+  invoiceDate   DateTime
+  dueDate       DateTime?
+  paidAt        DateTime?
+
+  description    String?
+  metadata       Json?
+  failureReason  String?
+  refundReason   String?
+  refundedAmount Int?
+
+  platformFeeAmount Int?   @default(0)
+  platformFeeRate   Float? @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription   Subscription?   @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
+  plan           Plan?           @relation(fields: [planID], references: [id], onDelete: Restrict)
+  course         Course?         @relation(fields: [courseID], references: [id], onDelete: Restrict)
+  community      Community?      @relation(fields: [communityID], references: [id], onDelete: Restrict)
+  paymentMethod  PaymentMethod?  @relation(fields: [paymentMethodID], references: [id], onDelete: SetNull)
+  paymentRequest PaymentRequest? @relation(fields: [paymentRequestID], references: [id], onDelete: SetNull)
+  invoice        Invoice?        @relation(fields: [invoiceID], references: [id], onDelete: SetNull)
+
+  @@index([payerID, payerType])
+  @@index([payeeID, payeeType])
+  @@index([status])
+  @@index([paymentMethodID])
+  @@map("transactions")
+}
+
+model Subscription {
+  id String @id @default(uuid()) @db.Uuid
+
+  subscriberID   String @db.Uuid
+  subscriberType String @db.VarChar(20)
+
+  planID      String? @db.Uuid
+  communityID String? @db.Uuid
+  courseID    String? @db.Uuid
+
+  status       SubscriptionStatus @default(active)
+  billingCycle BillingCycle       @default(monthly)
+
+  amount   Int
+  currency String @default("USD")
+
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  nextBillingDate    DateTime?
+
+  canceledAt   DateTime?
+  cancelReason String?
+
+  trialStart DateTime?
+  trialEnd   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plan         Plan?         @relation(fields: [planID], references: [id], onDelete: Restrict)
+  community    Community?    @relation(fields: [communityID], references: [id], onDelete: Restrict)
+  course       Course?       @relation(fields: [courseID], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+  invoices     Invoice[]
+
+  @@index([subscriberID, subscriberType])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id String @id @default(uuid()) @db.Uuid
+
+  customerID   String @db.Uuid
+  customerType String @db.VarChar(20)
+
+  subscriptionID String?       @db.Uuid
+  invoiceNumber  String        @unique
+  amount         Int
+  currency       String        @default("USD")
+  status         InvoiceStatus @default(draft)
+  issueDate      DateTime      @default(now())
+  dueDate        DateTime
+  paidAt         DateTime?
+  lineItems      Json
+  subtotal       Int
+  taxRate        Float?
+  taxAmount      Int?
+  discountAmount Int?
+  total          Int
+  notes          String?
+  metadata       Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription Subscription? @relation(fields: [subscriptionID], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+
+  @@index([customerID, customerType])
+  @@index([status])
+  @@map("invoices")
+}
+
+model PaymentRequest {
+  id String @id @default(uuid()) @db.Uuid
+
+  createdByID   String @db.Uuid
+  createdByType String @db.VarChar(20)
+
+  payerID   String @db.Uuid
+  payerType String @db.VarChar(20)
+
+  type PaymentRequestType
+
+  planID      String? @db.Uuid
+  courseID    String? @db.Uuid
+  communityID String? @db.Uuid
+
+  amount      Int
+  currency    String  @default("USD")
+  description String?
+  notes       String?
+
+  stripePaymentLinkID String? @unique
+  paymentLinkUrl      String?
+
+  status PaymentRequestStatus @default(pending)
+
+  paidAt     DateTime?
+  paidAmount Int?
+
+  expiresAt DateTime?
+
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plan         Plan?         @relation(fields: [planID], references: [id], onDelete: Restrict)
+  course       Course?       @relation(fields: [courseID], references: [id], onDelete: Restrict)
+  community    Community?    @relation(fields: [communityID], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@index([payerID, payerType])
+  @@index([createdByID, createdByType])
+  @@index([status])
+  @@map("payment_requests")
+}
+
+model Plan {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @unique
+  description  String?
+  monthlyPrice Int
+  annualPrice  Int
+  color        String?   @default("#7B21BA") @db.VarChar(50)
+  maxClients   Int?
+  maxAiAgents  Int?
+  features     Json?
+  isActive     Boolean   @default(true)
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  subscriptions   Subscription[]
+  transactions    Transaction[]
+  paymentRequests PaymentRequest[]
+  planAiAgents    PlanAiAgent[]
+
+  @@map("plans")
+}
+
+model Course {
+  id              String  @id @default(uuid()) @db.Uuid
+  coachID         String  @db.Uuid
+  title           String  @db.VarChar(255)
+  description     String?
+  category        String? @db.VarChar(100)
+  difficultyLevel String? @db.VarChar(50)
+
+  pricingType PricingType @default(one_time)
+  price       Int?
+  currency    String      @default("USD")
+
+  installmentCount    Int?
+  installmentAmount   Int?
+  installmentInterval String? @db.VarChar(20)
+
+  monthlyPrice Int?
+  annualPrice  Int?
+
+  thumbnailUrl           String?
+  estimatedDurationHours Int?
+  totalChapters          Int?    @default(0)
+  totalLessons           Int?    @default(0)
+
+  totalEnrollments  Int?     @default(0)
+  activeEnrollments Int?     @default(0)
+  completionRate    Decimal? @default(0.00) @db.Decimal(5, 2)
+
+  isActive           Boolean @default(true)
+  isPublished        Boolean @default(false)
+  allowInstallments  Boolean @default(false)
+  allowSubscriptions Boolean @default(false)
+
+  isDripEnabled Boolean @default(false)
+  dripInterval  String? @db.VarChar(20)
+  dripCount     Int?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  coach           Coach              @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  chapters        CourseChapter[]
+  enrollments     CourseEnrollment[]
+  subscriptions   Subscription[]
+  transactions    Transaction[]
+  paymentRequests PaymentRequest[]
+
+  @@index([coachID])
+  @@index([isActive, isPublished])
+  @@index([pricingType])
+  @@map("courses")
+}
+
+model CourseChapter {
+  id          String  @id @default(uuid()) @db.Uuid
+  courseID    String  @db.Uuid
+  title       String  @db.VarChar(255)
+  description String?
+  orderIndex  Int
+
+  dripDelay Int?    @default(0)
+  isLocked  Boolean @default(false)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  course  Course         @relation(fields: [courseID], references: [id], onDelete: Cascade)
+  lessons CourseLesson[]
+
+  @@unique([courseID, orderIndex])
+  @@index([courseID])
+  @@map("course_chapters")
+}
+
+model CourseLesson {
+  id          String  @id @default(uuid()) @db.Uuid
+  chapterID   String  @db.Uuid
+  title       String  @db.VarChar(255)
+  description String?
+  orderIndex  Int
+
+  lessonType    String  @db.VarChar(20)
+  content       String? @db.Text
+  videoUrl      String?
+  videoDuration Int?
+  pdfUrl        String?
+
+  dripDelay Int?    @default(0)
+  isLocked  Boolean @default(false)
+
+  estimatedMinutes Int? @default(0)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  chapter  CourseChapter    @relation(fields: [chapterID], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+
+  @@unique([chapterID, orderIndex])
+  @@index([chapterID])
+  @@map("course_lessons")
+}
+
+model CourseEnrollment {
+  id       String @id @default(uuid()) @db.Uuid
+  courseID String @db.Uuid
+  clientID String @db.Uuid
+
+  paymentType      PricingType
+  totalPaid        Int         @default(0)
+  remainingBalance Int         @default(0)
+  nextPaymentDue   DateTime?
+
+  enrolledAt  DateTime  @default(now()) @db.Timestamptz(6)
+  startedAt   DateTime? @db.Timestamptz(6)
+  completedAt DateTime? @db.Timestamptz(6)
+
+  progressPercentage Decimal @default(0.00) @db.Decimal(5, 2)
+  currentChapterID   String? @db.Uuid
+  currentLessonID    String? @db.Uuid
+  chaptersCompleted  Int     @default(0)
+  lessonsCompleted   Int     @default(0)
+
+  lastActivityAt        DateTime? @db.Timestamptz(6)
+  totalTimeSpentMinutes Int       @default(0)
+  loginCount            Int       @default(0)
+
+  status           String  @default("active") @db.VarChar(50)
+  dropoutRiskScore Decimal @default(0.00) @db.Decimal(3, 2)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  client         Client           @relation(fields: [clientID], references: [id], onDelete: Cascade)
+  course         Course           @relation(fields: [courseID], references: [id], onDelete: Cascade)
+  lessonProgress LessonProgress[]
+
+  @@unique([courseID, clientID])
+  @@index([clientID])
+  @@index([courseID])
+  @@index([status])
+  @@index([nextPaymentDue])
+  @@map("course_enrollments")
+}
+
+model LessonProgress {
+  id           String @id @default(uuid()) @db.Uuid
+  enrollmentID String @db.Uuid
+  lessonID     String @db.Uuid
+
+  isCompleted        Boolean   @default(false)
+  completedAt        DateTime? @db.Timestamptz(6)
+  timeSpentMinutes   Int       @default(0)
+  progressPercentage Decimal   @default(0.00) @db.Decimal(5, 2)
+
+  videoWatchedSeconds  Int? @default(0)
+  videoDurationSeconds Int?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  enrollment CourseEnrollment @relation(fields: [enrollmentID], references: [id], onDelete: Cascade)
+  lesson     CourseLesson     @relation(fields: [lessonID], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentID, lessonID])
+  @@index([lessonID])
+  @@map("lesson_progress")
+}
+
+model Community {
+  id          String              @id @default(uuid()) @db.Uuid
+  name        String              @db.VarChar(255)
+  description String?             @db.Text
+  type        CommunityType
+  visibility  CommunityVisibility @default(private)
+  ownerID     String              @db.Uuid
+  ownerType   String              @db.VarChar(20)
+  coachID     String?             @db.Uuid
+  courseID    String?             @db.Uuid
+  avatarUrl   String?
+  bannerUrl   String?
+  slug        String              @unique @db.VarChar(100)
+
+  pricingType  CommunityPricingType @default(free)
+  oneTimePrice Int?
+  monthlyPrice Int?
+  annualPrice  Int?
+  currency     String?              @default("USD") @db.VarChar(3)
+
+  isSystemCreated Boolean @default(false)
+  isDeleted       Boolean @default(false)
+
+  settings    Json     @default("{}")
+  memberCount Int      @default(0)
+  postCount   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  flaggedContent    FlaggedContent[]
+  contentReports    ContentReport[]
+  moderationActions ModerationAction[]
+  moderationRules   ModerationRule[]
+  moderationStats   ModerationStats[]
+
+  members         CommunityMember[]
+  posts           Post[]
+  invites         CommunityInvite[]
+  subscriptions   Subscription[]
+  transactions    Transaction[]
+  paymentRequests PaymentRequest[]
+
+  @@index([type])
+  @@index([pricingType])
+  @@index([coachID])
+  @@index([courseID])
+  @@index([ownerID, ownerType])
+  @@index([isSystemCreated])
+  @@index([createdAt])
+  @@map("communities")
 }

@@ -1,19 +1,32 @@
 import {PaymentMethodType, TransactionStatus} from "@prisma/client";
 
 export interface CreateTransactionRequest {
-  coachID: string;
-  planID: string;
+  payerID: string;
+  payerType: 'coach' | 'client';
+  payeeID?: string;
+  payeeType?: 'coach' | 'platform';
+
+  planID?: string;
+  courseID?: string;
+  communityID?: string;
   subscriptionID?: string;
+  paymentRequestID?: string;
   paymentMethodID?: string;
+
   amount: number;
   currency?: string;
   paymentMethodType: PaymentMethodType;
+
   stripePaymentID?: string;
   paypalOrderID?: string;
   description?: string;
   metadata?: Record<string, any>;
+
   invoiceDate?: Date;
   dueDate?: Date;
+
+  platformFeeAmount?: number;
+  platformFeeRate?: number;
 }
 
 export interface UpdateTransactionRequest {
@@ -26,12 +39,20 @@ export interface UpdateTransactionRequest {
 }
 
 export interface TransactionFilters {
-  coachID?: string;
+  payerID?: string;
+  payerType?: 'coach' | 'client';
+  payeeID?: string;
+  payeeType?: 'coach' | 'platform';
+
   planID?: string;
+  courseID?: string;
+  communityID?: string;
   subscriptionID?: string;
   paymentMethodID?: string;
+
   status?: TransactionStatus;
   paymentMethodType?: PaymentMethodType;
+
   amountRange?: {
     min?: number;
     max?: number;

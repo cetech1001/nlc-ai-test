@@ -4,7 +4,7 @@ import {Invoice, InvoiceStatus, Prisma} from '@prisma/client';
 import {
   CreateInvoiceRequest,
   InvoiceFilters, InvoiceLineItem,
-  InvoiceWithDetails,
+  ExtendedInvoice,
   UpdateInvoiceRequest
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
@@ -97,7 +97,7 @@ export class InvoicesService {
     }
   }
 
-  async findAllInvoices(filters: InvoiceFilters = {}): Promise<InvoiceWithDetails[]> {
+  async findAllInvoices(filters: InvoiceFilters = {}): Promise<ExtendedInvoice[]> {
     const where: Prisma.InvoiceWhereInput = {};
 
     if (filters.coachID) {
@@ -167,7 +167,7 @@ export class InvoicesService {
     });
   }
 
-  async findInvoiceById(id: string): Promise<InvoiceWithDetails> {
+  async findInvoiceById(id: string): Promise<ExtendedInvoice> {
     const invoice = await this.prisma.invoice.findUnique({
       where: { id },
       include: {
@@ -194,7 +194,7 @@ export class InvoicesService {
     return invoice;
   }
 
-  async findInvoiceByNumber(invoiceNumber: string): Promise<InvoiceWithDetails> {
+  async findInvoiceByNumber(invoiceNumber: string): Promise<ExtendedInvoice> {
     const invoice = await this.prisma.invoice.findUnique({
       where: { invoiceNumber },
       include: {
@@ -318,7 +318,7 @@ export class InvoicesService {
     });
   }
 
-  async getOverdueInvoices(daysOverdue = 0): Promise<InvoiceWithDetails[]> {
+  async getOverdueInvoices(daysOverdue = 0): Promise<ExtendedInvoice[]> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOverdue);
 
@@ -328,14 +328,14 @@ export class InvoicesService {
     });
   }
 
-  async getDraftInvoices(coachID?: string): Promise<InvoiceWithDetails[]> {
+  async getDraftInvoices(coachID?: string): Promise<ExtendedInvoice[]> {
     return this.findAllInvoices({
       coachID,
       status: InvoiceStatus.draft,
     });
   }
 
-  async getInvoicesByCoach(coachID: string, limit = 50): Promise<InvoiceWithDetails[]> {
+  async getInvoicesByCoach(coachID: string, limit = 50): Promise<ExtendedInvoice[]> {
     return this.prisma.invoice.findMany({
       where: { coachID },
       include: {

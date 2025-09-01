@@ -1,18 +1,36 @@
-import {Subscription, Transaction} from "@prisma/client";
-import {Coach, Invoice, PaymentMethodType, Plan} from "@nlc-ai/types";
+import {Transaction, Subscription} from "@prisma/client";
 
 export interface ExtendedTransaction extends Transaction {
-  coach: {
-    firstName: string;
-    lastName: string;
+  payer?: {
+    id: string;
+    type: string;
+    name: string;
     email: string;
   };
-  plan: {
+  payee?: {
+    id: string;
+    type: string;
+    name: string;
+    email: string;
+  };
+  plan?: {
     name: string;
     monthlyPrice: number;
     annualPrice: number;
   };
+  course?: {
+    title: string;
+    price: number;
+  };
+  community?: {
+    name: string;
+    pricingType: string;
+  };
   subscription?: Pick<Subscription, 'status' | 'billingCycle'> | null;
+  invoice?: {
+    invoiceNumber: string;
+    status: string;
+  } | null;
 }
 
 export interface RevenueData {
@@ -41,32 +59,4 @@ export enum TransactionStatus {
   CANCELED = 'canceled',
   REFUNDED = 'refunded',
   PARTIALLY_REFUNDED = 'partially_refunded'
-}
-
-export interface Transaction {
-  id: string;
-  coachID: string;
-  subscriptionID?: string | null;
-  planID: string;
-  amount: number;
-  currency: string;
-  status: TransactionStatus;
-  paymentMethod: PaymentMethodType;
-  stripePaymentID?: string | null;
-  paypalOrderID?: string | null;
-  invoiceNumber?: string | null;
-  invoiceDate: Date;
-  dueDate?: Date | null;
-  paidAt?: Date | null;
-  description?: string | null;
-  metadata?: any | null;
-  failureReason?: string | null;
-  refundReason?: string | null;
-  refundedAmount?: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-  coach?: Coach;
-  subscription?: Subscription | null;
-  plan?: Plan;
-  invoices?: Invoice[];
 }

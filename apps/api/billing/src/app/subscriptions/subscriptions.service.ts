@@ -3,7 +3,7 @@ import {Prisma, Subscription, SubscriptionStatus} from '@prisma/client';
 import {
   CreateSubscriptionRequest,
   SubscriptionFilters,
-  SubscriptionWithDetails,
+  ExtendedSubscription,
   UpdateSubscriptionRequest
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
@@ -96,7 +96,7 @@ export class SubscriptionsService {
     }
   }
 
-  async findAllSubscriptions(filters: SubscriptionFilters = {}): Promise<SubscriptionWithDetails[]> {
+  async findAllSubscriptions(filters: SubscriptionFilters = {}): Promise<ExtendedSubscription[]> {
     const where: Prisma.SubscriptionWhereInput = {};
 
     if (filters.coachID) {
@@ -141,7 +141,7 @@ export class SubscriptionsService {
     });
   }
 
-  async findSubscriptionById(id: string): Promise<SubscriptionWithDetails> {
+  async findSubscriptionById(id: string): Promise<ExtendedSubscription> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id },
       include: {
@@ -165,7 +165,7 @@ export class SubscriptionsService {
     return subscription;
   }
 
-  async findCoachActiveSubscription(coachID: string): Promise<SubscriptionWithDetails | null> {
+  async findCoachActiveSubscription(coachID: string): Promise<ExtendedSubscription | null> {
     return this.prisma.subscription.findFirst({
       where: {
         coachID,
@@ -292,7 +292,7 @@ export class SubscriptionsService {
     });
   }
 
-  async getExpiringSubscriptions(daysAhead = 7): Promise<SubscriptionWithDetails[]> {
+  async getExpiringSubscriptions(daysAhead = 7): Promise<ExtendedSubscription[]> {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
 

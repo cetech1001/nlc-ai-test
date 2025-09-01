@@ -1,4 +1,5 @@
 import {PaymentMethodType} from "@prisma/client";
+import {UserType} from "../../auth";
 
 export interface CreatePaymentMethodRequest {
   coachID?: string;
@@ -26,6 +27,7 @@ export interface UpdatePaymentMethodRequest {
 
 export interface PaymentMethodFilters {
   userID?: string;
+  userType?: UserType;
   type?: PaymentMethodType;
   isDefault?: boolean;
   isActive?: boolean;
