@@ -1,22 +1,52 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {IsOptional, IsString, IsUUID, IsEnum, ValidateNested} from 'class-validator';
-import {Type} from "class-transformer";
-import {TransactionFilters} from '@nlc-ai/api-types';
-import {AmountRangeDto, DateRangeDto, PaginationDto} from "@nlc-ai/api-dto";
-import {PaymentMethodType, TransactionStatus} from "@nlc-ai/types";
+import { IsOptional, IsString, IsUUID, IsEnum, ValidateNested, IsIn } from 'class-validator';
+import { Type } from "class-transformer";
+import {TransactionFilters, UserType} from '@nlc-ai/api-types';
+import { AmountRangeDto, DateRangeDto, PaginationDto } from "@nlc-ai/api-dto";
+import { PaymentMethodType, TransactionStatus } from "@prisma/client";
 
 export class TransactionFiltersDto extends PaginationDto implements TransactionFilters {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @IsUUID()
-  coachID?: string;
+  payerID?: string;
+
+  @ApiProperty({ enum: [UserType.coach, UserType.client], required: false })
+  @IsOptional()
+  @IsString()
+  @IsIn([UserType.coach, UserType.client])
+  payerType?: UserType;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  payeeID?: string;
+
+  @ApiProperty({ enum: [UserType.coach, 'platform'], required: false })
+  @IsOptional()
+  @IsString()
+  @IsIn([UserType.coach, 'platform'])
+  payeeType?: UserType.coach | 'platform';
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @IsUUID()
   planID?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  courseID?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  communityID?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()

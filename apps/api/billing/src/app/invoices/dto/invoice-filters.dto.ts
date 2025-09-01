@@ -6,18 +6,25 @@ import {
   IsEnum,
   IsBoolean,
   ValidateNested,
+  IsIn,
 } from 'class-validator';
-import {Type, Transform} from "class-transformer";
+import { Type, Transform } from "class-transformer";
 import { InvoiceStatus } from '@prisma/client';
-import {InvoiceFilters} from '@nlc-ai/api-types';
-import {AmountRangeDto, DateRangeDto} from "@nlc-ai/api-dto";
+import {InvoiceFilters, UserType} from '@nlc-ai/api-types';
+import { AmountRangeDto, DateRangeDto } from "@nlc-ai/api-dto";
 
 export class InvoiceFiltersDto implements InvoiceFilters {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @IsUUID()
-  coachID?: string;
+  customerID?: string;
+
+  @ApiProperty({ enum: [UserType.coach, UserType.client], required: false })
+  @IsOptional()
+  @IsString()
+  @IsIn([UserType.coach, UserType.client])
+  customerType?: UserType;
 
   @ApiProperty({ required: false })
   @IsOptional()

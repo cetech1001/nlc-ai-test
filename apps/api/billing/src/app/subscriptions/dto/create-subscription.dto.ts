@@ -1,23 +1,51 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, IsEnum, IsOptional, IsNumber, IsDateString, Min, Max } from 'class-validator';
-import {Type, Transform} from "class-transformer";
+import { IsString, IsUUID, IsEnum, IsOptional, IsNumber, IsDateString, Min, Max, IsIn } from 'class-validator';
+import { Type, Transform } from "class-transformer";
 import { BillingCycle } from '@prisma/client';
-import { CreateSubscriptionRequest } from '@nlc-ai/api-types';
+import {CreateSubscriptionRequest, UserType} from '@nlc-ai/api-types';
 
 export class CreateSubscriptionDto implements CreateSubscriptionRequest {
   @ApiProperty({ example: 'coach_123456789' })
   @IsString()
   @IsUUID()
-  coachID: string;
+  subscriberID: string;
 
-  @ApiProperty({ example: 'plan_123456789' })
+  @ApiProperty({ example: UserType.coach, enum: [UserType.coach, UserType.client] })
+  @IsString()
+  @IsIn([UserType.coach, UserType.client])
+  subscriberType: UserType;
+
+  @ApiProperty({ example: 'plan_123456789', required: false })
+  @IsOptional()
   @IsString()
   @IsUUID()
-  planID: string;
+  planID?: string;
+
+  @ApiProperty({ example: 'community_123456789', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  communityID?: string;
+
+  @ApiProperty({ example: 'course_123456789', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  courseID?: string;
 
   @ApiProperty({ enum: BillingCycle })
   @IsEnum(BillingCycle)
   billingCycle: BillingCycle;
+
+  @ApiProperty({ example: 2999, description: 'Subscription amount in cents' })
+  @IsNumber()
+  @Type(() => Number)
+  amount: number;
+
+  @ApiProperty({ example: 'USD', required: false })
+  @IsOptional()
+  @IsString()
+  currency?: string;
 
   @ApiProperty({ example: 14, required: false, description: 'Trial period in days' })
   @IsOptional()

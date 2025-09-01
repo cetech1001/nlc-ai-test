@@ -8,16 +8,22 @@ import {
   IsArray,
   ValidateNested,
   IsObject,
+  IsIn,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import {CreateInvoiceRequest, InvoiceLineItem} from '@nlc-ai/api-types';
-import {InvoiceLineItemDto} from "./invoice-line-item.dto";
+import {CreateInvoiceRequest, InvoiceLineItem, UserType} from '@nlc-ai/api-types';
+import { InvoiceLineItemDto } from "./invoice-line-item.dto";
 
 export class CreateInvoiceDto implements CreateInvoiceRequest {
   @ApiProperty({ example: 'coach_123456789' })
   @IsString()
   @IsUUID()
-  coachID: string;
+  customerID: string;
+
+  @ApiProperty({ example: UserType.coach, enum: [UserType.coach, UserType.client] })
+  @IsString()
+  @IsIn([UserType.coach, UserType.client])
+  customerType: UserType;
 
   @ApiProperty({ example: 'sub_123456789', required: false })
   @IsOptional()

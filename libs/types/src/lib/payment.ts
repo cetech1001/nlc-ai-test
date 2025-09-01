@@ -1,5 +1,6 @@
 import {Coach} from "./coach";
 import {Plan} from "./plan";
+import {UserType} from "./auth";
 
 export enum PaymentMethodType {
   CREDIT_CARD = 'credit_card',
@@ -47,8 +48,9 @@ export interface PaymentLink {
 }
 
 export interface CreatePaymentIntentRequest {
-  coachID: string;
-  planID: string;
+  payerID: string;
+  payerType: UserType;
+  planID?: string;
   amount: number;
   currency?: string;
   description?: string;
@@ -69,8 +71,9 @@ export interface PaymentIntentResponse {
 }
 
 export interface ProcessPaymentRequest {
-  coachID: string;
-  planID: string;
+  payerID: string;
+  payerType: UserType;
+  planID?: string;
   amount: number;
   paymentMethodID: string;
   description?: string;

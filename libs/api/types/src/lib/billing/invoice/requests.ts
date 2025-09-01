@@ -1,9 +1,10 @@
 import {InvoiceStatus} from "@prisma/client";
 import {InvoiceLineItem} from "./common";
+import {UserType} from "../../auth";
 
 export interface CreateInvoiceRequest {
   customerID: string;
-  customerType: 'coach' | 'client';
+  customerType: UserType;
   subscriptionID?: string;
   transactionID?: string;
   amount: number;
@@ -34,7 +35,7 @@ export interface UpdateInvoiceRequest {
 
 export interface InvoiceFilters {
   customerID?: string;
-  customerType?: 'coach' | 'client';
+  customerType?: UserType;
   subscriptionID?: string;
   transactionID?: string;
   status?: InvoiceStatus;

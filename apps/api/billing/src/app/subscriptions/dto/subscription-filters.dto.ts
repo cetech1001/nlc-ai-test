@@ -1,21 +1,39 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID, IsEnum, IsDateString } from 'class-validator';
-import {Transform} from "class-transformer";
+import { IsOptional, IsString, IsUUID, IsEnum, IsDateString, IsIn } from 'class-validator';
+import { Transform } from "class-transformer";
 import { BillingCycle, SubscriptionStatus } from '@prisma/client';
-import { SubscriptionFilters } from '@nlc-ai/api-types';
+import {SubscriptionFilters, UserType} from '@nlc-ai/api-types';
 
 export class SubscriptionFiltersDto implements SubscriptionFilters {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @IsUUID()
-  coachID?: string;
+  subscriberID?: string;
+
+  @ApiProperty({ enum: [UserType.coach, UserType.client], required: false })
+  @IsOptional()
+  @IsString()
+  @IsIn([UserType.coach, UserType.client])
+  subscriberType?: UserType;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @IsUUID()
   planID?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  communityID?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  courseID?: string;
 
   @ApiProperty({ enum: SubscriptionStatus, required: false })
   @IsOptional()

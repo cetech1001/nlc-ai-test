@@ -1,8 +1,9 @@
 import {BillingCycle, SubscriptionStatus} from "@prisma/client";
+import {UserType} from "../../auth";
 
 export interface CreateSubscriptionRequest {
   subscriberID: string;
-  subscriberType: 'coach' | 'client';
+  subscriberType: UserType;
 
   planID?: string;
   communityID?: string;
@@ -31,7 +32,7 @@ export interface UpdateSubscriptionRequest {
 
 export interface SubscriptionFilters {
   subscriberID?: string;
-  subscriberType?: 'coach' | 'client';
+  subscriberType?: UserType;
 
   planID?: string;
   communityID?: string;

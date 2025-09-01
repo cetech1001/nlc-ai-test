@@ -1,10 +1,11 @@
 import {PaymentMethodType, TransactionStatus} from "@prisma/client";
+import {UserType} from "../../auth";
 
 export interface CreateTransactionRequest {
   payerID: string;
-  payerType: 'coach' | 'client';
+  payerType: UserType;
   payeeID?: string;
-  payeeType?: 'coach' | 'platform';
+  payeeType?: UserType.coach | 'platform';
 
   planID?: string;
   courseID?: string;
@@ -40,9 +41,9 @@ export interface UpdateTransactionRequest {
 
 export interface TransactionFilters {
   payerID?: string;
-  payerType?: 'coach' | 'client';
+  payerType?: UserType;
   payeeID?: string;
-  payeeType?: 'coach' | 'platform';
+  payeeType?: UserType.coach | 'platform';
 
   planID?: string;
   courseID?: string;

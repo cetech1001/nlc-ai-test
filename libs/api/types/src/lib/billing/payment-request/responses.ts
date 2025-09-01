@@ -15,6 +15,7 @@ export interface ExtendedPaymentRequest {
 
   status: PaymentRequestStatus;
   paymentLinkUrl?: string;
+  stripePaymentLinkID?: string;
 
   paidAt?: Date;
   paidAmount?: number;

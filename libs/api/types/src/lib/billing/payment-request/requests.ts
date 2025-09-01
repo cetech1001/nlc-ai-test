@@ -1,11 +1,13 @@
+import {UserType} from "../../auth";
+
 export type PaymentRequestType = 'plan_payment' | 'course_payment' | 'community_payment' | 'custom_payment';
 export type PaymentRequestStatus = 'pending' | 'paid' | 'expired' | 'canceled';
 
 export interface CreatePaymentRequestRequest {
   createdByID: string;
-  createdByType: 'coach' | 'admin';
+  createdByType: UserType;
   payerID: string;
-  payerType: 'coach' | 'client';
+  payerType: UserType;
 
   type: PaymentRequestType;
   planID?: string;
@@ -24,15 +26,17 @@ export interface UpdatePaymentRequestRequest {
   description?: string;
   notes?: string;
   expiresAt?: Date;
+  paidAt?: Date;
+  paidAmount?: number;
   status?: PaymentRequestStatus;
   metadata?: Record<string, any>;
 }
 
 export interface PaymentRequestFilters {
   payerID?: string;
-  payerType?: 'coach' | 'client';
+  payerType?: UserType;
   createdByID?: string;
-  createdByType?: 'coach' | 'admin';
+  createdByType?: UserType;
   type?: PaymentRequestType;
   status?: PaymentRequestStatus;
   expiringBefore?: Date;

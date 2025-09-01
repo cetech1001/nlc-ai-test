@@ -1,19 +1,49 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, IsOptional, IsNumber, IsEnum, IsDateString, IsObject } from 'class-validator';
-import {Type, Transform} from "class-transformer";
+import { IsString, IsUUID, IsOptional, IsNumber, IsEnum, IsDateString, IsObject, IsIn } from 'class-validator';
+import { Type, Transform } from "class-transformer";
 import { PaymentMethodType } from '@prisma/client';
-import { CreateTransactionRequest } from '@nlc-ai/api-types';
+import {CreateTransactionRequest, UserType} from '@nlc-ai/api-types';
 
 export class CreateTransactionDto implements CreateTransactionRequest {
   @ApiProperty({ example: 'coach_123456789' })
   @IsString()
   @IsUUID()
-  coachID: string;
+  payerID: string;
 
-  @ApiProperty({ example: 'plan_123456789' })
+  @ApiProperty({ example: UserType.coach, enum: [UserType.coach, UserType.client] })
+  @IsString()
+  @IsIn([UserType.coach, UserType.client])
+  payerType: UserType;
+
+  @ApiProperty({ example: 'coach_123456789', required: false })
+  @IsOptional()
   @IsString()
   @IsUUID()
-  planID: string;
+  payeeID?: string;
+
+  @ApiProperty({ example: UserType.coach, enum: [UserType.coach, 'platform'], required: false })
+  @IsOptional()
+  @IsString()
+  @IsIn([UserType.coach, 'platform'])
+  payeeType?: UserType.coach | 'platform';
+
+  @ApiProperty({ example: 'plan_123456789', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  planID?: string;
+
+  @ApiProperty({ example: 'course_123456789', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  courseID?: string;
+
+  @ApiProperty({ example: 'community_123456789', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  communityID?: string;
 
   @ApiProperty({ example: 'sub_123456789', required: false })
   @IsOptional()
@@ -21,7 +51,13 @@ export class CreateTransactionDto implements CreateTransactionRequest {
   @IsUUID()
   subscriptionID?: string;
 
-  @ApiProperty({ example: 'pm_123456789', required: false, description: 'Saved payment method ID' })
+  @ApiProperty({ example: 'req_123456789', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  paymentRequestID?: string;
+
+  @ApiProperty({ example: 'pm_123456789', required: false })
   @IsOptional()
   @IsString()
   @IsUUID()
@@ -72,4 +108,16 @@ export class CreateTransactionDto implements CreateTransactionRequest {
   @IsDateString()
   @Transform(({ value }) => value ? new Date(value) : undefined)
   dueDate?: Date;
+
+  @ApiProperty({ example: 100, required: false, description: 'Platform fee in cents' })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  platformFeeAmount?: number;
+
+  @ApiProperty({ example: 0.05, required: false, description: 'Platform fee rate (5%)' })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  platformFeeRate?: number;
 }
