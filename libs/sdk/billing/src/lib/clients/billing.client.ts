@@ -29,22 +29,6 @@ export class BillingClient extends BaseClient {
     });
   }
 
-  async downloadTransaction(transactionID: string) {
-    const response = await this.request('GET', `/billing/transactions/${transactionID}/download`);
-    return response.data!;
-  }
-
-  // Revenue methods
-  async getRevenueStats() {
-    const response = await this.request('GET', '/billing/revenue/stats');
-    return response.data!;
-  }
-
-  async getRevenueByPeriod(period: 'week' | 'month' | 'year') {
-    const response = await this.request('GET', `/billing/revenue/${period}`);
-    return response.data!;
-  }
-
   // Legacy subscription methods (keeping these for compatibility)
   async createSubscription(coachID: string, planID: string, billingCycle: string) {
     const response = await this.request('POST', '/billing/subscriptions', {

@@ -2,9 +2,10 @@
 
 import {useEffect, useState} from "react";
 import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/web-shared";
-import {transactionsAPI} from "@nlc-ai/web-api-client";
+// import {transactionsAPI} from "@nlc-ai/web-api-client";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {FilterValues, TransactionWithDetails} from "@nlc-ai/types";
+import {ExtendedTransaction} from "@nlc-ai/sdk-billing";
+import {FilterValues} from "@nlc-ai/sdk-core";
 import { useAuth } from "@nlc-ai/web-auth";
 import { Search } from "lucide-react";
 import {Plan} from "@nlc-ai/sdk-billing";
@@ -16,7 +17,10 @@ import {
   emptyPaymentHistoryFilterValues,
   PaymentHistoryData,
   CurrentPlanCard,
-  BillingTabs, SubscriptionPlans, sdkClient, CancelSubscriptionFlow
+  BillingTabs,
+  SubscriptionPlans,
+  sdkClient,
+  CancelSubscriptionFlow
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
 
@@ -40,7 +44,7 @@ export default function Billing() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [paymentHistory, setPaymentHistory] = useState<TransactionWithDetails[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<ExtendedTransaction[]>([]);
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyPaymentHistoryFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -181,7 +185,7 @@ export default function Billing() {
   const handlePaymentAction = async (action: string, payment: PaymentHistoryData) => {
     if (action === 'download') {
       try {
-        await transactionsAPI.downloadTransaction(payment.id);
+        await sdkClient.billing.transactions.downloadTransaction(payment.id);
         setSuccessMessage("Invoice downloaded successfully!");
         setTimeout(() => setSuccessMessage(""), 3000);
       } catch (error: any) {

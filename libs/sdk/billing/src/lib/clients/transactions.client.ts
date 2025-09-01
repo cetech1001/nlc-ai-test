@@ -1,5 +1,5 @@
 import {BaseClient, FilterValues, Paginated, SearchQuery} from "@nlc-ai/sdk-core";
-import {TransactionWithDetails} from "../types";
+import {ExtendedTransaction} from "../types";
 
 export class TransactionsClient extends BaseClient{
   async getTransactions(
@@ -18,7 +18,23 @@ export class TransactionsClient extends BaseClient{
       params.append('status', filters.status);
     }
 
-    const response = await this.request<Paginated<TransactionWithDetails>>('GET', `?${params}`);
+    const response = await this.request<Paginated<ExtendedTransaction>>('GET', `?${params}`);
+    return response.data!;
+  }
+
+  async downloadTransaction(transactionID: string) {
+    const response = await this.request('GET', `/billing/transactions/${transactionID}/download`);
+    return response.data!;
+  }
+
+  // Revenue methods
+  async getRevenueStats() {
+    const response = await this.request('GET', '/billing/revenue/stats');
+    return response.data!;
+  }
+
+  async getRevenueByPeriod(period: 'week' | 'month' | 'year') {
+    const response = await this.request('GET', `/billing/revenue/${period}`);
     return response.data!;
   }
 }

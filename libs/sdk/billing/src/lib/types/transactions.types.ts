@@ -112,9 +112,10 @@ export interface DataTableTransaction {
   invoiceNumber?: string;
 }
 
-export interface TransactionWithDetails {
+export interface ExtendedTransaction {
   id: string;
-  coachID: string;
+  coachID?: string;
+  clientID?: string;
   coachName: string;
   coachEmail: string;
   planName: string;

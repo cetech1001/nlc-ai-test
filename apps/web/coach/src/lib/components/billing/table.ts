@@ -1,9 +1,10 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import {DataTableTransaction, TableColumn, TransactionWithDetails} from "@nlc-ai/types";
+import {DataTableTransaction, ExtendedTransaction} from "@nlc-ai/sdk-billing";
 import { formatCurrency } from "@nlc-ai/web-utils";
+import {TableColumn} from "@nlc-ai/types";
 
-export const transformPaymentHistoryData = (transactions: TransactionWithDetails[]): DataTableTransaction[] => {
-  return transactions.map((transaction: TransactionWithDetails) => ({
+export const transformPaymentHistoryData = (transactions: ExtendedTransaction[]): DataTableTransaction[] => {
+  return transactions.map((transaction: ExtendedTransaction) => ({
     id: transaction.id,
     invoiceNumber: transaction.invoiceNumber,
     planName: transaction.planName,
