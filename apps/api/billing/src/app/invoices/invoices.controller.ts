@@ -1,12 +1,17 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
+import {Controller, Get, Post, Put, Body, Param, Query, Res} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
 import {CreateInvoiceDto, InvoiceFiltersDto, UpdateInvoiceDto} from "./dto";
+import type {Response} from "express";
+import {TransactionsService} from "../transactions/transactions.service";
 
 @ApiTags('Invoices')
 @Controller('invoices')
 export class InvoicesController {
-  constructor(private readonly invoicesService: InvoicesService) {}
+  constructor(
+    private readonly invoicesService: InvoicesService,
+    private readonly transactionsService: TransactionsService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new invoice' })
@@ -138,5 +143,19 @@ export class InvoicesController {
   @ApiResponse({ status: 200, description: 'Overdue invoices processed successfully' })
   async processOverdueInvoices() {
     return this.invoicesService.processOverdueInvoices();
+  }
+
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download invoice PDF for transaction' })
+  @ApiResponse({ status: 200, description: 'Invoice PDF generated successfully' })
+  async downloadInvoice(@Param('id') id: string, @Res() res: Response) {
+    const pdfBuffer = await this.invoicesService.generateInvoicePDF(id);
+    const transaction = await this.transactionsService.findTransactionByID(id);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-${transaction.invoiceNumber || id}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    res.end(pdfBuffer);
   }
 }

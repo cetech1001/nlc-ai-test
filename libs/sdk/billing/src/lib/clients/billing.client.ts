@@ -5,9 +5,11 @@ import {PaymentsClient} from "./payments.client";
 import {TransactionsClient} from "./transactions.client";
 import {PaymentMethodsClient} from "./payment-methods.client";
 import { SubscriptionsClient } from "./subscriptions.client";
+import { InvoicesClient } from "./invoices.client";
 
 
 export class BillingClient extends BaseClient {
+  public invoices: InvoicesClient;
   public plans: PlansClient;
   public payments: PaymentsClient;
   public paymentMethods: PaymentMethodsClient;
@@ -16,6 +18,11 @@ export class BillingClient extends BaseClient {
 
   constructor(config: NLCClientConfig) {
     super(config);
+
+    this.invoices = new InvoicesClient({
+      ...config,
+      baseURL: `${config.baseURL}/plans`
+    });
 
     this.plans = new PlansClient({
       ...config,

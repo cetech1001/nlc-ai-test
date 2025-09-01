@@ -1,4 +1,5 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import PDFDocument from 'pdfkit';
 import {Invoice, InvoiceStatus, Prisma} from '@prisma/client';
 import {
   CreateInvoiceRequest,
@@ -7,10 +8,14 @@ import {
   UpdateInvoiceRequest
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
+import {TransactionsService} from "../transactions/transactions.service";
 
 @Injectable()
 export class InvoicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private transactionService: TransactionsService,
+  ) {}
 
   async createInvoice(data: CreateInvoiceRequest): Promise<Invoice> {
     // Validate coach exists
@@ -514,5 +519,164 @@ export class InvoicesService {
     }
 
     return { processed, errors };
+  }
+
+  async generateInvoicePDF(transactionID: string): Promise<Buffer> {
+    const transaction = await this.transactionService.findTransactionByID(transactionID);
+
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          margin: 50,
+          size: 'A4'
+        });
+        const chunks: Buffer[] = [];
+
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+        doc.fontSize(20)
+          .fillColor('#7B21BA')
+          .text('NLC AI PLATFORM', 50, 50);
+
+        doc.fontSize(10)
+          .fillColor('#666666')
+          .text('AI-Powered Coaching Solutions', 50, 75)
+          .text('support@nextlevelcoach.ai', 50, 90)
+          .text('nextlevelcoach.ai', 50, 105);
+
+        doc.fontSize(24)
+          .fillColor('#000000')
+          .text('INVOICE', 400, 50);
+
+        doc.fontSize(12)
+          .text(`Invoice #: ${transaction.invoiceNumber || transaction.id.slice(0, 8).toUpperCase()}`, 400, 80)
+          .text(`Date: ${new Date(transaction.invoiceDate).toLocaleDateString()}`, 400, 100)
+          .text(`Due Date: ${transaction.dueDate ? new Date(transaction.dueDate).toLocaleDateString() : 'N/A'}`, 400, 120)
+          .text(`Status: ${transaction.status.toUpperCase()}`, 400, 140);
+
+        doc.fontSize(14)
+          .fillColor('#7B21BA')
+          .text('BILL TO:', 50, 180);
+
+        doc.fontSize(11)
+          .fillColor('#000000')
+          .text(transaction.coachName, 50, 205)
+          .text(transaction.coach.email, 50, 220);
+
+        if (transaction.coach.businessName) {
+          doc.text(transaction.coach.businessName, 50, 235);
+        }
+
+        doc.strokeColor('#cccccc')
+          .lineWidth(1)
+          .moveTo(50, 280)
+          .lineTo(550, 280)
+          .stroke();
+
+        const tableTop = 300;
+        const itemCodeX = 50;
+        const descriptionX = 150;
+        const quantityX = 350;
+        const priceX = 400;
+        const amountX = 480;
+
+        doc.fontSize(12)
+          .fillColor('#7B21BA')
+          .text('Item', itemCodeX, tableTop)
+          .text('Description', descriptionX, tableTop)
+          .text('Qty', quantityX, tableTop)
+          .text('Price', priceX, tableTop)
+          .text('Amount', amountX, tableTop);
+
+        doc.strokeColor('#cccccc')
+          .lineWidth(1)
+          .moveTo(50, tableTop + 20)
+          .lineTo(550, tableTop + 20)
+          .stroke();
+
+        const itemY = tableTop + 35;
+        doc.fontSize(10)
+          .fillColor('#000000')
+          .text('PLAN-001', itemCodeX, itemY)
+          .text(transaction.plan.name || 'Subscription Plan', descriptionX, itemY)
+          .text('1', quantityX, itemY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, priceX, itemY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, amountX, itemY);
+
+        let nextY = itemY + 15;
+        if (transaction.plan.description) {
+          doc.fontSize(8)
+            .fillColor('#666666')
+            .text(transaction.plan.description, descriptionX, nextY, { width: 180 });
+          nextY += 25;
+        } else {
+          nextY += 10;
+        }
+
+        const subtotalY = nextY + 30;
+        const totalX = 450;
+
+        doc.fontSize(11)
+          .fillColor('#000000')
+          .text('Subtotal:', 400, subtotalY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, totalX, subtotalY);
+
+        const taxY = subtotalY + 20;
+        doc.text('Tax (0%):', 400, taxY)
+          .text('$0.00', totalX, taxY);
+
+        doc.strokeColor('#7B21BA')
+          .lineWidth(2)
+          .moveTo(400, taxY + 25)
+          .lineTo(550, taxY + 25)
+          .stroke();
+
+        const totalY = taxY + 35;
+        doc.fontSize(14)
+          .fillColor('#7B21BA')
+          .text('TOTAL:', 400, totalY)
+          .text(`$${(transaction.amount / 100).toFixed(2)}`, totalX, totalY);
+
+        const paymentY = totalY + 50;
+        doc.fontSize(12)
+          .fillColor('#7B21BA')
+          .text('PAYMENT INFORMATION:', 50, paymentY);
+
+        let paymentInfoY = paymentY + 20;
+        doc.fontSize(10)
+          .fillColor('#000000')
+          .text(`Payment Method: ${transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`, 50, paymentInfoY);
+
+        if (transaction.paidAt) {
+          paymentInfoY += 15;
+          doc.text(`Paid On: ${new Date(transaction.paidAt).toLocaleDateString()}`, 50, paymentInfoY);
+        }
+
+        if (transaction.stripePaymentID) {
+          paymentInfoY += 15;
+          doc.text(`Transaction ID: ${transaction.stripePaymentID}`, 50, paymentInfoY);
+        }
+
+        const footerY = Math.max(paymentInfoY + 40, 650);
+        doc.fontSize(8)
+          .fillColor('#666666')
+          .text('Thank you for choosing NLC AI Platform for your coaching needs.', 50, footerY)
+          .text('For support, please contact us at support@nextlevelcoach.ai', 50, footerY + 12)
+          .text('This invoice was generated automatically by the NLC AI Platform.', 50, footerY + 24);
+
+        if (transaction.status !== 'completed') {
+          doc.fontSize(60)
+            .fillColor('#ff0000', 0.1)
+            .rotate(-45, { origin: [300, 400] })
+            .text('UNPAID', 150, 350)
+            .rotate(45, { origin: [300, 400] });
+        }
+
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }

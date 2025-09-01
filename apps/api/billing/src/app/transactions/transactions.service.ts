@@ -337,7 +337,7 @@ export class TransactionsService {
 
     return this.prisma.transaction.findMany({
       where: {
-        status: TransactionStatus.pending,
+        status: TransactionStatus.PENDING,
         createdAt: { lte: cutoffTime },
       },
       include: {
@@ -788,5 +788,57 @@ export class TransactionsService {
 
   async getTransactionsByPaymentMethod(paymentMethodID: string, limit = 50): Promise<ExtendedTransaction[]> {
     return this.findAllTransactions({ paymentMethodID });
+  }
+
+  async bulkExportTransactions(filters: any = {}) {
+    const transactions = await this.prisma.transaction.findMany({
+      where: filters,
+      include: {
+        coach: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            businessName: true,
+          }
+        },
+        plan: {
+          select: {
+            name: true,
+            description: true,
+          }
+        },
+        subscription: {
+          select: {
+            id: true,
+            status: true,
+            billingCycle: true,
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return transactions.map((transaction: any) => ({
+      transactionID: transaction.id,
+      invoiceNumber: transaction.invoiceNumber,
+      coachName: `${transaction.coach?.firstName} ${transaction.coach?.lastName}`,
+      coachEmail: transaction.coach?.email,
+      coachBusinessName: transaction.coach?.businessName,
+      planName: transaction.plan?.name,
+      planDescription: transaction.plan?.description,
+      amount: (transaction.amount / 100), // Convert from cents
+      currency: transaction.currency,
+      status: transaction.status,
+      paymentMethod: transaction.paymentMethod,
+      invoiceDate: transaction.invoiceDate.toISOString(),
+      transactionDate: transaction.createdAt.toISOString(),
+      paidAt: transaction.paidAt?.toISOString() || null,
+      description: transaction.description,
+      subscriptionID: transaction.subscription?.id,
+      subscriptionStatus: transaction.subscription?.status,
+      subscriptionBillingCycle: transaction.subscription?.billingCycle,
+    }));
   }
 }

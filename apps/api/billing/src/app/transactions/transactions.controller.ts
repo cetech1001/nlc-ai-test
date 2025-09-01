@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
+import {Controller, Get, Post, Put, Body, Param, Query, Res} from '@nestjs/common';
 import {ApiTags, ApiOperation, ApiResponse, ApiQuery} from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import {CreateTransactionDto, RefundDto, TransactionFiltersDto, UpdateTransactionDto} from "./dto";
+import type {Response} from "express";
 
 @ApiTags('Transactions')
 @Controller('transactions')
@@ -133,5 +134,44 @@ export class TransactionsController {
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   async processRefund(@Param('id') id: string, @Body() refundData: RefundDto) {
     return this.transactionsService.processRefund(id, refundData);
+  }
+
+  @Get('export/bulk')
+  @ApiOperation({ summary: 'Bulk export transactions' })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Bulk transaction data exported successfully' })
+  async bulkExportTransactions(
+    @Res() res: Response,
+    @Query('status') status?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const filters: any = {};
+
+    if (status) filters.status = status;
+    if (startDate || endDate) {
+      filters.createdAt = {};
+      if (startDate) filters.createdAt.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filters.createdAt.lte = end;
+      }
+    }
+
+    const transactionsData = await this.transactionsService.bulkExportTransactions(filters);
+
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="transactions-export-${new Date().toISOString().split('T')[0]}.json"`);
+
+    return res.json({
+      exportDate: new Date().toISOString(),
+      totalTransactions: transactionsData.length,
+      filters: filters,
+      transactions: transactionsData,
+    });
   }
 }
