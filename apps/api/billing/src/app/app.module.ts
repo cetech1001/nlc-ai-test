@@ -15,6 +15,7 @@ import { EmailService } from './email/email.service';
 import {HealthModule} from "./health/health.module";
 import billingConfig from "./config/billing.config";
 import {MessagingModule} from "@nlc-ai/api-messaging";
+import {PaymentRequestsModule} from "./payment-requests/payment-requests.module";
 
 @Module({
   imports: [
@@ -35,6 +36,8 @@ import {MessagingModule} from "@nlc-ai/api-messaging";
     PlansModule,
     SubscriptionsModule,
     TransactionsModule,
+    InvoicesModule,
+    PaymentRequestsModule,
   ],
   providers: [
     {

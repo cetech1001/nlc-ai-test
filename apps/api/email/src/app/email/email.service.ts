@@ -197,7 +197,7 @@ export class EmailService {
 
   async sendPasswordResetEmail(email: string, code: string): Promise<void> {
     const subject = 'Reset Your Next Level Coach AI Password';
-    const html = getPasswordResetEmailTemplate(code);
+    const html = getPasswordResetEmailTemplate(code, this.configService.get('email.platforms.coach', ''), email);
     const text = `Your password reset code is: ${code}. This code expires in 10 minutes.`;
 
     await this.sendEmail({

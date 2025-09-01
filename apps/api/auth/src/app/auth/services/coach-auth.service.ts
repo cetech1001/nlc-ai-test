@@ -155,7 +155,7 @@ export class CoachAuthService {
           payload: {
             email: coach.email,
             code: code,
-            type: 'email_verification',
+            type: 'password_reset',
           },
         },
         'auth.verification.requested'

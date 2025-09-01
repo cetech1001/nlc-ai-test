@@ -47,6 +47,7 @@ export class AuthEventsHandler {
 
   private async handleVerificationRequested(event: any) {
     try {
+      this.logger.log(`This was called: ${event.payload}`);
       const { email, type, code } = event.payload;
 
       if (type === 'email_verification') {

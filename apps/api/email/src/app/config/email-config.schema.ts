@@ -49,4 +49,7 @@ export class EmailConfigSchema {
 
   @IsString()
   AUTH_SERVICE_URL: string;
+
+  @IsString()
+  COACH_DASHBOARD_URL: string;
 }

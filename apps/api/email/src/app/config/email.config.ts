@@ -47,5 +47,8 @@ export default registerAs('email', () => {
     services: {
       auth: config.AUTH_SERVICE_URL,
     },
+    platforms: {
+      coach: config.COACH_DASHBOARD_URL,
+    }
   };
 });

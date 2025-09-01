@@ -45,7 +45,7 @@ export const getVerificationEmailTemplate = (code: string): string => {
     `;
 }
 
-export const getPasswordResetEmailTemplate = (code: string): string => {
+export const getPasswordResetEmailTemplate = (code: string, coachDashboardUrl: string, email: string): string => {
   return `
       <!DOCTYPE html>
       <html lang="en">
@@ -61,6 +61,24 @@ export const getPasswordResetEmailTemplate = (code: string): string => {
           .content { padding: 40px 20px; color: #f5f5f4; }
           .code-box { background-color: #2a2a2a; border: 2px solid #7B21BA; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0; }
           .code { font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #FEBEFA; font-family: monospace; }
+          .verify-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #7B21BA 0%, #B339D4 50%, #FEBEFA 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(123, 33, 186, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+          .verify-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(123, 33, 186, 0.4);
+          }
+          .button-container { text-align: center; margin: 30px 0; }
           .footer { padding: 20px; text-align: center; color: #a0a0a0; font-size: 14px; border-top: 1px solid #2a2a2a; }
           .warning { background-color: #2a1a1a; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; border-radius: 4px; }
         </style>
@@ -77,6 +95,15 @@ export const getPasswordResetEmailTemplate = (code: string): string => {
             <div class="code-box">
               <div class="code">${code}</div>
             </div>
+
+            <div class="button-container">
+              <a href="${coachDashboardUrl}/account-verification?email=${email}&type=password_reset" class="verify-button">
+                Verify & Reset Password
+              </a>
+            </div>
+
+            <p style="color: #a0a0a0; font-size: 14px; text-align: center;">Or copy and paste this link into your browser:<br>
+            <span style="color: #B339D4; word-break: break-all;">${coachDashboardUrl}/account-verification?email=${email}&type=password_reset</span></p>
 
             <div class="warning">
               <p style="margin: 0; color: #fca5a5;"><strong>Security Notice:</strong> This code expires in 10 minutes. If you didn't request a password reset, please ignore this email and consider changing your password.</p>
