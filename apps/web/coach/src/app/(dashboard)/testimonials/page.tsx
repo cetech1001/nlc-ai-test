@@ -62,9 +62,9 @@ const TestimonialsLanding = () => {
   ];
 
   const stats = [
-    { label: "Conversion Increase", value: "+127%", icon: TrendingUp },
-    { label: "Collection Rate", value: "85%", icon: Trophy },
-    { label: "Time Saved", value: "12hrs/week", icon: Clock },
+    { label: "Conversion Increase", value: "+50%", icon: TrendingUp },
+    { label: "Testimonials Collected", value: "5x More", icon: Trophy },
+    { label: "Time Saved Weekly", value: "12+hrs", icon: Clock },
   ];
 
   const testimonialTypes = [
@@ -255,7 +255,7 @@ const TestimonialsLanding = () => {
                     <span className="text-yellow-400 font-medium">Conversion Boost</span>
                   </div>
                   <p className="text-stone-300 text-sm">
-                    Displaying testimonials can increase conversions by up to 127%.
+                    Displaying testimonials can increase conversions by up to 40%.
                   </p>
                 </div>
 
@@ -313,8 +313,8 @@ const TestimonialsLanding = () => {
             },
             {
               step: "4",
-              title: "Auto Display",
-              desc: "Testimonial appears on website and marketing materials",
+              title: "Easy Access",
+              desc: "Instantly download or copy testimonials for use anywhere",
               icon: Star,
               color: "bg-yellow-500/20 text-yellow-400"
             }
@@ -339,7 +339,7 @@ const TestimonialsLanding = () => {
 
       {/* Sample Testimonial Display */}
       <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-white text-center">Beautiful Display Options</h3>
+        <h3 className="text-2xl font-bold text-white text-center">Display Options</h3>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Testimonial Card Example */}

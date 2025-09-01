@@ -17,12 +17,11 @@ import {
   Trophy,
   Zap,
   Clock,
-  Star,
   UserPlus,
   Activity,
   CheckCircle,
   Lock,
-  Globe, TrendingUp
+  TrendingUp
 } from 'lucide-react';
 import {appConfig} from "@nlc-ai/web-shared";
 
@@ -65,6 +64,19 @@ const CommunityLanding = () => {
         "Leaderboards and competitions",
         "Reward system integration"
       ]
+    },
+    {
+      id: 'community',
+      icon: Lock,
+      title: "Private Community",
+      description: "Exclusive space for your paying clients",
+      benefits: [
+        "Invitation-only access",
+        "Premium content sharing",
+        "Public discussions",
+        "Brand Building",
+        "Exclusive content"
+      ]
     }
   ];
 
@@ -74,30 +86,8 @@ const CommunityLanding = () => {
     { label: "Community Growth", value: "3x Faster", icon: TrendingUp },
   ];
 
-  const communityTypes = [
-    {
-      icon: Lock,
-      title: "Private Community",
-      description: "Exclusive space for your paying clients",
-      features: ["Invitation-only access", "Premium content sharing", "Direct coach interaction"]
-    },
-    {
-      icon: Globe,
-      title: "Public Community",
-      description: "Open community to attract new clients",
-      features: ["Public discussions", "Lead generation", "Brand building"]
-    },
-    {
-      icon: Star,
-      title: "Tiered Access",
-      description: "Different levels based on membership",
-      features: ["VIP sections", "Graduated access", "Exclusive content"]
-    }
-  ];
-
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-8 max-w-full overflow-hidden">
-      {/* Hero Section */}
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 overflow-hidden">
         <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
         <div className="absolute w-64 h-64 right-20 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
@@ -122,7 +112,6 @@ const CommunityLanding = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, index) => (
           <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden text-center">
@@ -141,43 +130,6 @@ const CommunityLanding = () => {
         ))}
       </div>
 
-      {/* Community Types */}
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Choose Your Community Style</h2>
-          <p className="text-stone-300 text-lg">Flexible options to match your coaching business model</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {communityTypes.map((type, index) => (
-            <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-              </div>
-
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mb-4">
-                  <type.icon className="w-6 h-6 text-fuchsia-400" />
-                </div>
-
-                <h3 className="text-xl font-bold text-white mb-2">{type.title}</h3>
-                <p className="text-stone-300 mb-4">{type.description}</p>
-
-                <div className="space-y-2">
-                  {type.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                      <span className="text-stone-200 text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Features Section */}
       <div className="space-y-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Everything You Need for a Thriving Community</h2>
