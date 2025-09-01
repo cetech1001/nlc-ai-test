@@ -30,6 +30,13 @@ export class PlansController {
     return this.plansService.findActivePlans();
   }
 
+  @Get('ai-agents')
+  @ApiOperation({ summary: 'Get all available AI agents' })
+  @ApiResponse({ status: 200, description: 'AI agents retrieved successfully' })
+  async getAllAiAgents() {
+    return this.plansService.getAllAiAgents();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get plan by ID' })
   @ApiResponse({ status: 200, description: 'Plan retrieved successfully' })

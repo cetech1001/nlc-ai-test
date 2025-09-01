@@ -1,16 +1,15 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { PlanForm } from "@/lib/components/plans/plan-form";
-import { plansAPI } from "@nlc-ai/web-api-client";
-import {CreatePlanRequest} from "@nlc-ai/types";
+import { PlanForm, sdkClient } from "@/lib"
+import {CreatePlanRequest} from "@nlc-ai/sdk-billing";
 import { BackTo } from "@nlc-ai/web-shared";
 
 const CreateNewPlan = () => {
   const router = useRouter();
 
   const handleCreatePlan = async (requestData: CreatePlanRequest) => {
-    await plansAPI.createPlan(requestData);
+    await sdkClient.billing.plans.createPlan(requestData);
     router.push("/plans?success=Plan created successfully");
   };
 

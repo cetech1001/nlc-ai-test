@@ -7,6 +7,8 @@ export interface CreatePlanRequest {
   maxClients?: number;
   maxAiAgents?: number;
   features?: Record<string, any>;
+  isActive?: boolean;
+  accessibleAiAgents?: string[];
 }
 
 export interface UpdatePlanRequest {
@@ -18,6 +20,7 @@ export interface UpdatePlanRequest {
   maxClients?: number;
   maxAiAgents?: number;
   features?: Record<string, any>;
+  accessibleAiAgents?: string[];
   isActive?: boolean;
 }
 

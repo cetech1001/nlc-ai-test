@@ -17,6 +17,8 @@ async function bootstrap() {
     transform: true,
   }));
 
+  app.setGlobalPrefix('api/billing');
+
   const config = new DocumentBuilder()
     .setTitle('NLC AI Billing Service')
     .setDescription('Subscriptions and Payment management')
@@ -31,8 +33,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.setGlobalPrefix('api/billing');
 
   const port = process.env.PORT || 3005;
   await app.listen(port);

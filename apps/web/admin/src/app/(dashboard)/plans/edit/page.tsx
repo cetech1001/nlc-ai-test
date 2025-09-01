@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {Plan, UpdatePlanRequest} from "@nlc-ai/types";
 import { BackTo } from "@nlc-ai/web-shared";
 import {sdkClient, PlanFormSkeleton, PlanForm} from "@/lib";
+import {Plan, UpdatePlanRequest} from "@nlc-ai/sdk-billing";
 
 const AdminEditPlanPage = () => {
   const router = useRouter();

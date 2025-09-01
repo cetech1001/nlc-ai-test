@@ -6,7 +6,7 @@ import {
   CreateTransactionRequest,
   RefundRequest,
   TransactionFilters,
-  TransactionWithDetails,
+  ExtendedTransaction,
   UpdateTransactionRequest,
   BillingPaymentCompletedEvent, Paginated
 } from "@nlc-ai/api-types";
@@ -24,7 +24,6 @@ export class TransactionsService {
   ) {}
 
   async createTransaction(data: CreateTransactionRequest): Promise<Transaction> {
-    // Validate coach exists
     const coach = await this.prisma.coach.findUnique({
       where: { id: data.coachID },
     });
@@ -33,7 +32,6 @@ export class TransactionsService {
       throw new NotFoundException('Coach not found');
     }
 
-    // Validate plan exists
     const plan = await this.prisma.plan.findUnique({
       where: { id: data.planID },
     });
@@ -42,7 +40,6 @@ export class TransactionsService {
       throw new NotFoundException('Plan not found');
     }
 
-    // Validate subscription if provided
     if (data.subscriptionID) {
       const subscription = await this.prisma.subscription.findUnique({
         where: { id: data.subscriptionID },
@@ -108,7 +105,7 @@ export class TransactionsService {
     }
   }
 
-  async findAllTransactions(filters: TransactionFilters = {}): Promise<Paginated<TransactionWithDetails>> {
+  async findAllTransactions(filters: TransactionFilters = {}): Promise<Paginated<ExtendedTransaction>> {
     const where: any = {};
 
     if (filters.coachID) {
@@ -179,7 +176,7 @@ export class TransactionsService {
     });
   }
 
-  async findTransactionByID(id: string): Promise<TransactionWithDetails> {
+  async findTransactionByID(id: string): Promise<ExtendedTransaction> {
     const transaction = await this.prisma.transaction.findUnique({
       where: { id },
       include: {
@@ -203,7 +200,7 @@ export class TransactionsService {
     return transaction;
   }
 
-  async findTransactionByInvoiceNumber(invoiceNumber: string): Promise<TransactionWithDetails> {
+  async findTransactionByInvoiceNumber(invoiceNumber: string): Promise<ExtendedTransaction> {
     const transaction = await this.prisma.transaction.findUnique({
       where: { invoiceNumber },
       include: {
@@ -311,11 +308,11 @@ export class TransactionsService {
     });
   }
 
-  async getTransactionsByCoach(coachID: string, limit = 50): Promise<TransactionWithDetails[]> {
+  async getTransactionsByCoach(coachID: string, limit = 50): Promise<ExtendedTransaction[]> {
     return this.findAllTransactions({ coachID });
   }
 
-  async getFailedTransactions(limit = 100): Promise<TransactionWithDetails[]> {
+  async getFailedTransactions(limit = 100): Promise<ExtendedTransaction[]> {
     return this.prisma.transaction.findMany({
       where: { status: TransactionStatus.failed },
       include: {
@@ -334,7 +331,7 @@ export class TransactionsService {
     });
   }
 
-  async getPendingTransactions(olderThanMinutes = 60): Promise<TransactionWithDetails[]> {
+  async getPendingTransactions(olderThanMinutes = 60): Promise<ExtendedTransaction[]> {
     const cutoffTime = new Date();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - olderThanMinutes);
 
@@ -789,7 +786,7 @@ export class TransactionsService {
     }));
   }
 
-  async getTransactionsByPaymentMethod(paymentMethodID: string, limit = 50): Promise<TransactionWithDetails[]> {
+  async getTransactionsByPaymentMethod(paymentMethodID: string, limit = 50): Promise<ExtendedTransaction[]> {
     return this.findAllTransactions({ paymentMethodID });
   }
 }

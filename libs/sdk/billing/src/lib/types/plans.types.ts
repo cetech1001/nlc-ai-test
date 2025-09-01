@@ -2,6 +2,21 @@ import {Transaction} from "./transactions.types";
 import {Subscription} from "./subscriptions.types";
 import {PaymentLink} from "./payments.types";
 
+export interface AiAgent {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+}
+
+export interface PlanAiAgent {
+  id: string;
+  planID: string;
+  agentID: string;
+  isActive: boolean;
+  aiAgent: AiAgent;
+}
+
 export interface Plan {
   id: string;
   name: string;
@@ -20,6 +35,7 @@ export interface Plan {
   subscriptions?: Subscription[];
   transactions?: Transaction[];
   paymentLinks?: PaymentLink[];
+  planAiAgents?: PlanAiAgent[];
   _count?: {
     subscriptions: number;
     transactions: number;
@@ -35,6 +51,7 @@ export interface TransformedPlan {
   billingCycle: string;
   monthlyBilling: string;
   features: string[];
+  aiAgents: AiAgent[];
   isCurrentPlan: boolean;
   colorClass: string;
   isDeleted: boolean;
@@ -50,6 +67,7 @@ export interface CreatePlanRequest {
   maxAiAgents?: number;
   features?: string[];
   isActive?: boolean;
+  accessibleAiAgents?: string[];
 }
 
 export interface UpdatePlanRequest extends Partial<CreatePlanRequest> {}
@@ -74,6 +92,7 @@ export interface PlanFormData {
   features: string[];
   color: string;
   isActive: boolean;
+  accessibleAiAgents: string[];
 }
 
 export interface PlanFormErrors {
@@ -84,5 +103,6 @@ export interface PlanFormErrors {
   maxAiAgents?: string;
   features?: string;
   color?: string;
+  accessibleAiAgents?: string;
   general?: string;
 }

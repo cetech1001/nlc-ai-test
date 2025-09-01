@@ -1,10 +1,9 @@
 'use client'
 
 import { Plus, Trash2, ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import { Button } from "@nlc-ai/web-ui";
 import { useEffect, useState } from "react";
-import { plansAPI } from "@nlc-ai/web-api-client";
 import { PageHeader, DataFilter, PlanCard } from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import {Plan, TransformedPlan} from "@nlc-ai/sdk-billing";
@@ -13,6 +12,7 @@ import {emptyPlanFilterValues, planFilters, PlansPageSkeleton, sdkClient} from "
 
 const SubscriptionPlans = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -23,8 +23,7 @@ const SubscriptionPlans = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const successParam = urlParams.get('success');
+    const successParam = searchParams.get('success');
     if (successParam) {
       setSuccessMessage(successParam);
       router.replace(window.location.pathname);
@@ -98,7 +97,7 @@ const SubscriptionPlans = () => {
 
   const handleToggleStatus = async (planID: string) => {
     try {
-      await plansAPI.togglePlanStatus(planID);
+      await sdkClient.billing.plans.togglePlanStatus(planID);
       setSuccessMessage("Plan status updated successfully!");
       await fetchPlans();
     } catch (error: any) {
@@ -112,7 +111,7 @@ const SubscriptionPlans = () => {
     }
 
     try {
-      await plansAPI.deletePlan(planID);
+      await sdkClient.billing.plans.deletePlan(planID);
       setSuccessMessage("Plan deleted successfully!");
       await fetchPlans();
     } catch (error: any) {
@@ -126,7 +125,7 @@ const SubscriptionPlans = () => {
     }
 
     try {
-      await plansAPI.restorePlan(planID);
+      await sdkClient.billing.plans.restorePlan(planID);
       setSuccessMessage("Plan restored successfully!");
       await fetchPlans();
     } catch (error: any) {

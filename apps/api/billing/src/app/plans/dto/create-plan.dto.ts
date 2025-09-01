@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsObject, Min, MaxLength } from 'class-validator';
+import {IsString, IsNumber, IsOptional, Min, MaxLength, IsArray, IsBoolean} from 'class-validator';
 import { CreatePlanRequest } from '@nlc-ai/api-types';
 
 export class CreatePlanDto implements CreatePlanRequest {
@@ -42,8 +42,31 @@ export class CreatePlanDto implements CreatePlanRequest {
   @Min(0)
   maxAiAgents?: number;
 
-  @ApiProperty({ example: { emailSupport: true, analytics: true }, required: false })
+  @ApiProperty({
+    example: [
+      'AI Email Management',
+      'Client Retention Tools',
+      'Advanced Analytics'
+    ],
+    required: false
+  })
   @IsOptional()
-  @IsObject()
-  features?: Record<string, any>;
+  @IsArray()
+  @IsString({ each: true })
+  features?: string[];
+
+  @ApiProperty({
+    example: ['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002'],
+    required: false,
+    description: 'Array of AI agent IDs accessible with this plan'
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  accessibleAiAgents?: string[];
+
+  @ApiProperty({ example: true, required: false })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

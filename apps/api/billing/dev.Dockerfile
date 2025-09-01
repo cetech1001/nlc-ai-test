@@ -17,7 +17,6 @@ COPY eslint.config.mjs tsconfig.json ./
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
 
 ENV NODE_ENV=development \
-    NX_DAEMON=false \
     NX_CACHE_DIRECTORY=/app/.nx/cache
 
 ENV PORT=3005

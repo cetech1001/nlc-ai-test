@@ -9,18 +9,32 @@ export class PlansService {
 
   async createPlan(data: CreatePlanRequest): Promise<Plan> {
     try {
-      return this.prisma.plan.create({
-        data: {
-          name: data.name,
-          description: data.description,
-          monthlyPrice: data.monthlyPrice,
-          annualPrice: data.annualPrice,
-          color: data.color || '#7B21BA',
-          maxClients: data.maxClients,
-          maxAiAgents: data.maxAiAgents,
-          features: data.features || {},
-          isActive: true,
-        },
+      return await this.prisma.$transaction(async (prisma) => {
+        const plan = await prisma.plan.create({
+          data: {
+            name: data.name,
+            description: data.description,
+            monthlyPrice: data.monthlyPrice,
+            annualPrice: data.annualPrice,
+            color: data.color || '#7B21BA',
+            maxClients: data.maxClients,
+            maxAiAgents: data.maxAiAgents,
+            features: data.features || [],
+            isActive: true,
+          },
+        });
+
+        if (data.accessibleAiAgents && data.accessibleAiAgents.length > 0) {
+          await prisma.planAiAgent.createMany({
+            data: data.accessibleAiAgents.map(agentID => ({
+              planID: plan.id,
+              agentID,
+              isActive: true,
+            })),
+          });
+        }
+
+        return plan;
       });
     } catch (error: any) {
       if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
@@ -57,6 +71,27 @@ export class PlansService {
 
     return this.prisma.plan.findMany({
       where,
+      include: {
+        planAiAgents: {
+          where: { isActive: true },
+          include: {
+            aiAgent: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                description: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            subscriptions: true,
+            transactions: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -67,6 +102,21 @@ export class PlansService {
         isActive: true,
         isDeleted: false,
       },
+      include: {
+        planAiAgents: {
+          where: { isActive: true },
+          include: {
+            aiAgent: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                description: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: { monthlyPrice: 'asc' },
     });
   }
@@ -75,6 +125,19 @@ export class PlansService {
     const plan = await this.prisma.plan.findUnique({
       where: { id },
       include: {
+        planAiAgents: {
+          where: { isActive: true },
+          include: {
+            aiAgent: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                description: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             subscriptions: true,
@@ -93,14 +156,35 @@ export class PlansService {
 
   async updatePlan(id: string, data: UpdatePlanRequest): Promise<Plan> {
     await this.findPlanById(id);
+    const { accessibleAiAgents, ...updateData } = data;
 
     try {
-      return this.prisma.plan.update({
-        where: {id},
-        data: {
-          ...data,
-          updatedAt: new Date(),
-        },
+      return await this.prisma.$transaction(async (prisma) => {
+        const plan = await prisma.plan.update({
+          where: {id},
+          data: {
+            ...updateData,
+            updatedAt: new Date(),
+          },
+        });
+
+        if (accessibleAiAgents !== undefined) {
+          await prisma.planAiAgent.deleteMany({
+            where: { planID: id },
+          });
+
+          if (accessibleAiAgents.length > 0) {
+            await prisma.planAiAgent.createMany({
+              data: accessibleAiAgents.map(agentID => ({
+                planID: id,
+                agentID,
+                isActive: true,
+              })),
+            });
+          }
+        }
+
+        return plan;
       });
     } catch (error: any) {
       if (error.code === 'P2002' && error.meta?.target?.includes('name')) {
@@ -113,7 +197,6 @@ export class PlansService {
   async deactivatePlan(id: string): Promise<Plan> {
     await this.findPlanById(id);
 
-    // Check if plan has active subscription
     const activeSubscriptions = await this.prisma.subscription.count({
       where: {
         planID: id,
@@ -137,7 +220,6 @@ export class PlansService {
   async softDeletePlan(id: string): Promise<Plan> {
     await this.findPlanById(id);
 
-    // Check if plan has any subscription or transactions
     const hasRelatedRecords = await this.prisma.plan.findUnique({
       where: { id },
       select: {
@@ -193,7 +275,6 @@ export class PlansService {
     const totalSubscriptions = subscriptionStats.reduce((sum, stat) => sum + stat._count.id, 0);
     const activeSubscriptions = subscriptionStats.find(stat => stat.status === 'active')?._count.id || 0;
 
-    // Calculate monthly revenue based on active subscription
     const monthlyRevenue = activeSubscriptions * plan.monthlyPrice;
 
     return {
@@ -202,5 +283,20 @@ export class PlansService {
       totalRevenue: revenueStats._sum.amount || 0,
       monthlyRevenue,
     };
+  }
+
+  async getAllAiAgents() {
+    return this.prisma.aiAgent.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        description: true,
+      },
+      orderBy: { name: 'asc' },
+    });
   }
 }

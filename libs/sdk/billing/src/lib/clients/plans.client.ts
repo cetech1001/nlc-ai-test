@@ -1,5 +1,5 @@
 import {BaseClient} from "@nlc-ai/sdk-core";
-import {Plan} from "../types";
+import {AiAgent, Plan, CreatePlanRequest} from "../types";
 
 export class PlansClient extends BaseClient{
   async getPlans(includeInactive = false, includeDeleted = false) {
@@ -16,13 +16,13 @@ export class PlansClient extends BaseClient{
     return response.data!;
   }
 
-  async createPlan(data: any) {
+  async createPlan(data: CreatePlanRequest) {
     const response = await this.request('POST', '', { body: data });
     return response.data!;
   }
 
   async updatePlan(planID: string, data: any) {
-    const response = await this.request('PATCH', `/${planID}`, { body: data });
+    const response = await this.request('PUT', `/${planID}`, { body: data });
     return response.data!;
   }
 
@@ -38,6 +38,11 @@ export class PlansClient extends BaseClient{
 
   async togglePlanStatus(planID: string) {
     const response = await this.request('PATCH', `/${planID}/toggle-status`);
+    return response.data!;
+  }
+
+  async getAllAiAgents() {
+    const response = await this.request<AiAgent[]>('GET', '/ai-agents');
     return response.data!;
   }
 }

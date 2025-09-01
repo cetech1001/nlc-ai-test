@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PaymentMethodsService } from './payment-methods.service';
+import {Body, Controller, Delete, Get, Param, Post, Put, Query} from '@nestjs/common';
+import {ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
+import {PaymentMethodsService} from './payment-methods.service';
 import {CreatePaymentMethodDto, PaymentMethodFiltersDto, UpdatePaymentMethodDto} from "./dto";
+import {CurrentUser} from "@nlc-ai/api-auth";
+import {type AuthUser, UserType} from "@nlc-ai/api-types";
 
 @ApiTags('Payment Methods')
-@Controller('payment-method')
+@Controller('payment-methods')
 export class PaymentMethodsController {
   constructor(private readonly paymentMethodsService: PaymentMethodsService) {}
 
@@ -20,7 +22,19 @@ export class PaymentMethodsController {
   @Get()
   @ApiOperation({ summary: 'Get all payment methods with filtering' })
   @ApiResponse({ status: 200, description: 'Payment methods retrieved successfully' })
-  async findAllPaymentMethods(@Query() filters: PaymentMethodFiltersDto) {
+  async findAllPaymentMethods(
+    @Query() filters: PaymentMethodFiltersDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    if (user.type !== UserType.admin) {
+      if (user.type === UserType.coach) {
+        filters.coachID = user.id;
+        filters.clientID = undefined;
+      } else if (user.type === UserType.client) {
+        filters.clientID = user.id;
+        filters.coachID = undefined;
+      }
+    }
     return this.paymentMethodsService.findAllPaymentMethods(filters);
   }
 
@@ -45,19 +59,12 @@ export class PaymentMethodsController {
     return this.paymentMethodsService.getPaymentMethodUsageStats(paymentMethodID);
   }
 
-  @Get('coach/:coachID')
-  @ApiOperation({ summary: 'Get payment methods for a specific coach' })
-  @ApiResponse({ status: 200, description: 'Coach payment methods retrieved successfully' })
-  async findCoachPaymentMethods(@Param('coachID') coachID: string) {
-    return this.paymentMethodsService.findCoachPaymentMethods(coachID);
-  }
-
-  @Get('coach/:coachID/default')
-  @ApiOperation({ summary: 'Get default payment method for a coach' })
+  @Get('/default/:userID')
+  @ApiOperation({ summary: 'Get default payment method for a user' })
   @ApiResponse({ status: 200, description: 'Default payment method retrieved successfully' })
   @ApiResponse({ status: 404, description: 'No payment method found' })
-  async getCoachDefaultPaymentMethod(@Param('coachID') coachID: string) {
-    return this.paymentMethodsService.getCoachDefaultPaymentMethod(coachID);
+  async getCoachDefaultPaymentMethod(@Param('userID') userID: string) {
+    return this.paymentMethodsService.getDefaultPaymentMethod(userID);
   }
 
   @Get(':id')

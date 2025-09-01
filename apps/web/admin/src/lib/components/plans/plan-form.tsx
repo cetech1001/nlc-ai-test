@@ -4,10 +4,11 @@ import {
   Textarea,
   Label
 } from "@nlc-ai/web-ui";
-import { X, Plus, Palette } from "lucide-react";
+import { X, Plus, Palette, Bot } from "lucide-react";
 import {useEffect, useState} from "react";
 import {PLAN_COLORS} from "@nlc-ai/web-utils";
-import {CreatePlanRequest, Plan, PlanFormData, PlanFormErrors} from "@nlc-ai/types";
+import {CreatePlanRequest, Plan, PlanFormData, PlanFormErrors, AiAgent} from "@nlc-ai/sdk-billing";
+import {sdkClient} from "@/lib";
 
 interface IProps {
   type: "create" | "edit";
@@ -21,6 +22,8 @@ export const PlanForm = (props: IProps) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [errors, setErrors] = useState<PlanFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [aiAgents, setAiAgents] = useState<AiAgent[]>([]);
+  const [loadingAiAgents, setLoadingAiAgents] = useState(true);
 
   const [formData, setFormData] = useState<PlanFormData>({
     name: "",
@@ -32,7 +35,12 @@ export const PlanForm = (props: IProps) => {
     maxAiAgents: "",
     features: [],
     isActive: true,
+    accessibleAiAgents: [],
   });
+
+  useEffect(() => {
+    loadAiAgents();
+  }, []);
 
   useEffect(() => {
     if (props.originalPlan) {
@@ -47,9 +55,22 @@ export const PlanForm = (props: IProps) => {
         maxAiAgents: plan.maxAiAgents?.toString() || "",
         features: plan.features || [],
         isActive: plan.isActive,
+        accessibleAiAgents: plan.planAiAgents?.map(paa => paa.agentID) || [],
       });
     }
   }, [props.originalPlan]);
+
+  const loadAiAgents = async () => {
+    try {
+      setLoadingAiAgents(true);
+      const agents = await sdkClient.billing.plans.getAllAiAgents();
+      setAiAgents(agents);
+    } catch (error) {
+      console.error('Failed to load AI agents:', error);
+    } finally {
+      setLoadingAiAgents(false);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: PlanFormErrors = {};
@@ -124,6 +145,13 @@ export const PlanForm = (props: IProps) => {
     }
   };
 
+  const handleAiAgentToggle = (agentID: string) => {
+    const updatedAgents = formData.accessibleAiAgents.includes(agentID)
+      ? formData.accessibleAiAgents.filter(id => id !== agentID)
+      : [...formData.accessibleAiAgents, agentID];
+    handleInputChange("accessibleAiAgents", updatedAgents);
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -143,6 +171,7 @@ export const PlanForm = (props: IProps) => {
         maxAiAgents: formData.maxAiAgents.trim() ? parseInt(formData.maxAiAgents) : undefined,
         features: formData.features.length > 0 ? formData.features : undefined,
         isActive: formData.isActive,
+        accessibleAiAgents: formData.accessibleAiAgents.length > 0 ? formData.accessibleAiAgents : undefined,
       };
 
       await props.onAction(requestData);
@@ -161,7 +190,7 @@ export const PlanForm = (props: IProps) => {
     if (isLoading) return;
 
     const hasChanges = Object.values(formData).some((value, index) => {
-      const initialValues = ["", "", "", "", "", "", [], true];
+      const initialValues = ["", "", "", "", "", "", [], true, []];
       return JSON.stringify(value) !== JSON.stringify(initialValues[index]);
     });
 
@@ -358,6 +387,67 @@ export const PlanForm = (props: IProps) => {
               <p className="text-red-400 text-sm">{errors.maxAiAgents}</p>
             )}
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label className="text-white text-sm">
+              Accessible AI Agents
+            </Label>
+            <Bot className="w-4 h-4 text-[#7B21BA]" />
+          </div>
+
+          {loadingAiAgents ? (
+            <div className="p-4 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg">
+              <p className="text-[#A0A0A0] text-sm">Loading AI agents...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {aiAgents.map((agent) => (
+                <div
+                  key={agent.id}
+                  className={`p-4 bg-[#2A2A2A] border rounded-lg cursor-pointer transition-all ${
+                    formData.accessibleAiAgents.includes(agent.id)
+                      ? 'border-[#7B21BA] bg-[#7B21BA]/10'
+                      : 'border-[#3A3A3A] hover:border-[#7B21BA]/50'
+                  }`}
+                  onClick={() => handleAiAgentToggle(agent.id)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-4 h-4 mt-0.5 rounded border-2 flex items-center justify-center ${
+                      formData.accessibleAiAgents.includes(agent.id)
+                        ? 'bg-[#7B21BA] border-[#7B21BA]'
+                        : 'border-[#3A3A3A]'
+                    }`}>
+                      {formData.accessibleAiAgents.includes(agent.id) && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-white text-sm font-medium">{agent.name}</div>
+                      {agent.description && (
+                        <div className="text-[#A0A0A0] text-xs mt-1">{agent.description}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {formData.accessibleAiAgents.length > 0 && (
+            <div className="mt-3">
+              <p className="text-white text-sm">
+                Selected: {formData.accessibleAiAgents.length} AI agent{formData.accessibleAiAgents.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
+
+          {errors?.accessibleAiAgents && (
+            <p className="text-red-400 text-sm">{errors.accessibleAiAgents}</p>
+          )}
         </div>
 
         <div className="space-y-2">

@@ -1,7 +1,6 @@
 import { Button } from "@nlc-ai/web-ui";
-import {Check} from "lucide-react";
-import {Plan, TransformedPlan} from "@nlc-ai/sdk-billing";
-import {transformPlan} from "@nlc-ai/web-utils";
+import {Check, Bot} from "lucide-react";
+import {Plan, TransformedPlan, transformPlan} from "@nlc-ai/sdk-billing";
 
 interface IProps {
   plan: Plan;
@@ -26,10 +25,10 @@ export const PlanCard = ({ plan: rawPlan, currentPlan, action, onActionClick }: 
       return (
         <Button
           onClick={() => onActionClick(rawPlan)}
-          className={'w-full p-2.5 rounded-[10px] flex justify-center items-center border border-fuchsia-400'}
+          className={'w-full p-2.5 rounded-[10px] flex justify-center items-center border border-fuchsia-400 hover:border-background'}
         >
           <div
-            className={"text-fuchsia-400 text-base font-semibold font-['Inter'] leading-normal"}>Edit Plan</div>
+            className={"text-fuchsia-400 hover:text-white text-base font-semibold font-['Inter'] leading-normal"}>Edit Plan</div>
         </Button>
       );
     }
@@ -94,6 +93,31 @@ export const PlanCard = ({ plan: rawPlan, currentPlan, action, onActionClick }: 
               </div>
             ))}
           </div>
+
+          {/* AI Agents Section */}
+          {plan.aiAgents && plan.aiAgents.length > 0 && (
+            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-stone-50/10">
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-[#7B21BA]" />
+                <div className="text-stone-50 text-xs font-semibold font-['Inter']">AI Agents:</div>
+              </div>
+              <div className="flex flex-col gap-2">
+                {plan.aiAgents.map((agent, agentIndex) => (
+                  <div key={agentIndex} className="flex items-start gap-2">
+                    <div className="w-2 h-2 bg-[#7B21BA] rounded-full mt-2 flex-shrink-0"/>
+                    <div className="flex flex-col">
+                      <div className="text-stone-50 text-sm font-medium font-['Inter']">{agent.name}</div>
+                      {agent.description && (
+                        <div className="text-stone-50/70 text-xs font-normal font-['Inter'] mt-0.5">
+                          {agent.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,10 +1,10 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
-import {PaymentMethod, PaymentMethodType} from '@prisma/client';
+import {PaymentMethod, PaymentMethodType, Prisma} from '@prisma/client';
 import {
-  CreatePaymentMethodRequest,
+  CreatePaymentMethodRequest, Paginated,
   PaymentMethodFilters,
-  PaymentMethodWithDetails,
-  UpdatePaymentMethodRequest
+  ExtendedPaymentMethod,
+  UpdatePaymentMethodRequest, TransactionStatus
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
 
@@ -13,28 +13,30 @@ export class PaymentMethodsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createPaymentMethod(data: CreatePaymentMethodRequest): Promise<PaymentMethod> {
-    // Validate coach exists
-    const coach = await this.prisma.coach.findUnique({
-      where: { id: data.coachID },
-    });
+    if (data.coachID) {
+      const coach = await this.prisma.coach.findUnique({
+        where: { id: data.coachID },
+      });
 
-    if (!coach) {
-      throw new NotFoundException('Coach not found');
-    }
-
-    // Validate card expiration if provided
-    if (data.cardExpMonth && data.cardExpYear) {
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1; // getMonth() is 0-based
-      const currentYear = now.getFullYear();
-
-      if (data.cardExpYear < currentYear ||
-          (data.cardExpYear === currentYear && data.cardExpMonth < currentMonth)) {
-        throw new BadRequestException('Card expiration date is in the past');
+      if (!coach) {
+        throw new NotFoundException('Coach not found');
       }
     }
 
-    // If setting as default, unset other default payment methods for this coach
+    if (data.clientID) {
+      const client = await this.prisma.client.findUnique({
+        where: { id: data.clientID },
+      });
+
+      if (!client) {
+        throw new NotFoundException('Client not found');
+      }
+    }
+
+    if (data.cardExpMonth && data.cardExpYear) {
+      this.isCardValid(data.cardExpYear, data.cardExpMonth);
+    }
+
     if (data.isDefault) {
       await this.prisma.paymentMethod.updateMany({
         where: {
@@ -51,6 +53,7 @@ export class PaymentMethodsService {
       return this.prisma.paymentMethod.create({
         data: {
           coachID: data.coachID,
+          clientID: data.clientID,
           type: data.type,
           isDefault: data.isDefault || false,
           isActive: true,
@@ -72,11 +75,15 @@ export class PaymentMethodsService {
     }
   }
 
-  async findAllPaymentMethods(filters: PaymentMethodFilters = {}): Promise<PaymentMethodWithDetails[]> {
+  async findAllPaymentMethods(filters: PaymentMethodFilters = {}): Promise<Paginated<ExtendedPaymentMethod>> {
     const where: any = {};
 
     if (filters.coachID) {
       where.coachID = filters.coachID;
+    }
+
+    if (filters.clientID) {
+      where.clientID = filters.clientID;
     }
 
     if (filters.type) {
@@ -108,10 +115,13 @@ export class PaymentMethodsService {
       ];
     }
 
-    return this.prisma.paymentMethod.findMany({
+    return this.prisma.paginate(this.prisma.paymentMethod, {
       where,
       include: {
         coach: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+        client: {
           select: { firstName: true, lastName: true, email: true },
         },
       },
@@ -122,11 +132,14 @@ export class PaymentMethodsService {
     });
   }
 
-  async findPaymentMethodByID(id: string): Promise<PaymentMethodWithDetails> {
+  async findPaymentMethodByID(id: string): Promise<ExtendedPaymentMethod> {
     const paymentMethod = await this.prisma.paymentMethod.findUnique({
       where: { id },
       include: {
         coach: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+        client: {
           select: { firstName: true, lastName: true, email: true },
         },
       },
@@ -139,14 +152,13 @@ export class PaymentMethodsService {
     return paymentMethod;
   }
 
-  async findCoachPaymentMethods(coachID: string): Promise<PaymentMethodWithDetails[]> {
-    return this.findAllPaymentMethods({ coachID, isActive: true });
-  }
-
-  async findDefaultPaymentMethod(coachID: string): Promise<PaymentMethodWithDetails | null> {
-    return this.prisma.paymentMethod.findFirst({
+  async getDefaultPaymentMethod(userID: string): Promise<ExtendedPaymentMethod | null> {
+    const defaultMethod = await this.prisma.paymentMethod.findFirst({
       where: {
-        coachID,
+        OR: [
+          { coachID: userID },
+          { clientID: userID }
+        ],
         isDefault: true,
         isActive: true,
       },
@@ -154,40 +166,57 @@ export class PaymentMethodsService {
         coach: {
           select: { firstName: true, lastName: true, email: true },
         },
+        client: {
+          select: {firstName: true, lastName: true, email: true},
+        },
       },
     });
+
+    if (!defaultMethod) {
+      return this.prisma.paymentMethod.findFirst({
+        where: {
+          OR: [
+            { coachID: userID },
+            { clientID: userID }
+          ],
+          isActive: true,
+        },
+        include: {
+          coach: {
+            select: {firstName: true, lastName: true, email: true},
+          },
+          client: {
+            select: {firstName: true, lastName: true, email: true},
+          },
+        },
+        orderBy: {createdAt: 'desc'},
+      });
+    }
+
+    return defaultMethod;
   }
 
   async updatePaymentMethod(id: string, data: UpdatePaymentMethodRequest): Promise<PaymentMethod> {
     const existingPaymentMethod = await this.findPaymentMethodByID(id);
 
-    // Validate card expiration if updating
     if (data.cardExpMonth && data.cardExpYear) {
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
-
-      if (data.cardExpYear < currentYear ||
-          (data.cardExpYear === currentYear && data.cardExpMonth < currentMonth)) {
-        throw new BadRequestException('Card expiration date is in the past');
-      }
-    }
-
-    // If setting as default, unset other default payment methods for this coach
-    if (data.isDefault) {
-      await this.prisma.paymentMethod.updateMany({
-        where: {
-          coachID: existingPaymentMethod.coachID,
-          isDefault: true,
-          id: { not: id }, // Exclude the current payment method
-        },
-        data: {
-          isDefault: false,
-        },
-      });
+      this.isCardValid(data.cardExpYear, data.cardExpMonth);
     }
 
     try {
+      if (data.isDefault) {
+        await this.prisma.paymentMethod.updateMany({
+          where: {
+            coachID: existingPaymentMethod.coachID,
+            isDefault: true,
+            id: { not: id },
+          },
+          data: {
+            isDefault: false,
+          },
+        });
+      }
+
       return this.prisma.paymentMethod.update({
         where: { id },
         data: {
@@ -213,20 +242,8 @@ export class PaymentMethodsService {
   async deactivatePaymentMethod(id: string): Promise<PaymentMethod> {
     const paymentMethod = await this.findPaymentMethodByID(id);
 
-    // If this is the default payment method, find another active one to set as default
     if (paymentMethod.isDefault) {
-      const alternativePaymentMethod = await this.prisma.paymentMethod.findFirst({
-        where: {
-          coachID: paymentMethod.coachID,
-          isActive: true,
-          id: { not: id },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (alternativePaymentMethod) {
-        await this.updatePaymentMethod(alternativePaymentMethod.id, { isDefault: true });
-      }
+      await this.setAlternateDefaultPaymentMethod(id, (paymentMethod.coachID || paymentMethod.clientID)!);
     }
 
     return this.updatePaymentMethod(id, {
@@ -238,11 +255,10 @@ export class PaymentMethodsService {
   async deletePaymentMethod(id: string): Promise<void> {
     const paymentMethod = await this.findPaymentMethodByID(id);
 
-    // Check if this payment method is being used in any pending transactions
     const activeTransactions = await this.prisma.transaction.count({
       where: {
         paymentMethodID: paymentMethod.id,
-        status: { in: ['pending', 'processing'] },
+        status: { in: [TransactionStatus.PENDING, TransactionStatus.PROCESSING] },
       },
     });
 
@@ -250,20 +266,8 @@ export class PaymentMethodsService {
       throw new BadRequestException('Cannot delete payment method with pending transactions');
     }
 
-    // If this is the default payment method, find another active one to set as default
     if (paymentMethod.isDefault) {
-      const alternativePaymentMethod = await this.prisma.paymentMethod.findFirst({
-        where: {
-          coachID: paymentMethod.coachID,
-          isActive: true,
-          id: { not: id },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (alternativePaymentMethod) {
-        await this.updatePaymentMethod(alternativePaymentMethod.id, { isDefault: true });
-      }
+      await this.setAlternateDefaultPaymentMethod(id, (paymentMethod.coachID || paymentMethod.clientID)!);
     }
 
     await this.prisma.paymentMethod.delete({
@@ -271,7 +275,7 @@ export class PaymentMethodsService {
     });
   }
 
-  async getExpiringPaymentMethods(monthsAhead = 2): Promise<PaymentMethodWithDetails[]> {
+  async getExpiringPaymentMethods(monthsAhead = 2): Promise<Paginated<ExtendedPaymentMethod>> {
     const futureDate = new Date();
     futureDate.setMonth(futureDate.getMonth() + monthsAhead);
 
@@ -429,12 +433,10 @@ export class PaymentMethodsService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Check if payment method is active
     if (!paymentMethod.isActive) {
       errors.push('Payment method is inactive');
     }
 
-    // Check card expiration
     if (paymentMethod.type === PaymentMethodType.credit_card ||
         paymentMethod.type === PaymentMethodType.debit_card) {
       if (!paymentMethod.cardExpMonth || !paymentMethod.cardExpYear) {
@@ -456,7 +458,6 @@ export class PaymentMethodsService {
         }
       }
 
-      // Check for required card fields
       if (!paymentMethod.cardLast4) {
         warnings.push('Card last 4 digits are missing');
       }
@@ -465,12 +466,10 @@ export class PaymentMethodsService {
       }
     }
 
-    // Check PayPal email
     if (paymentMethod.type === PaymentMethodType.paypal && !paymentMethod.paypalEmail) {
       errors.push('PayPal email is missing');
     }
 
-    // Check Stripe payment method ID
     if (paymentMethod.type === PaymentMethodType.stripe && !paymentMethod.stripePaymentMethodID) {
       errors.push('Stripe payment method ID is missing');
     }
@@ -482,7 +481,7 @@ export class PaymentMethodsService {
     };
   }
 
-  async bulkValidatePaymentMethods(coachID?: string): Promise<{
+  async bulkValidatePaymentMethods(userID?: string): Promise<{
     valid: number;
     invalid: number;
     withWarnings: number;
@@ -493,7 +492,21 @@ export class PaymentMethodsService {
       warnings: string[];
     }>;
   }> {
-    const paymentMethods = await this.findAllPaymentMethods({ coachID, isActive: true });
+    let where: Prisma.PaymentMethodWhereInput = {
+      isActive: true,
+    }
+
+    if (userID) {
+      where = {
+        ...where,
+        OR: [
+          {coachID: userID},
+          {clientID: userID},
+        ]
+      }
+    }
+
+    const paymentMethods = await this.prisma.paymentMethod.findMany({ where });
 
     let valid = 0;
     let invalid = 0;
@@ -528,25 +541,34 @@ export class PaymentMethodsService {
     };
   }
 
-  async getCoachDefaultPaymentMethod(coachID: string): Promise<PaymentMethodWithDetails | null> {
-    const defaultMethod = await this.findDefaultPaymentMethod(coachID);
+  private isCardValid(year: number, month: number) {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
 
-    if (!defaultMethod) {
-      // If no default method, try to find any active payment method
-      return this.prisma.paymentMethod.findFirst({
-        where: {
-          coachID,
-          isActive: true,
-        },
-        include: {
-          coach: {
-            select: {firstName: true, lastName: true, email: true},
-          },
-        },
-        orderBy: {createdAt: 'desc'},
-      });
+    if (year < currentYear ||
+      (year === currentYear && month < currentMonth)) {
+      throw new BadRequestException('Card expiration date is in the past');
     }
 
-    return defaultMethod;
+    return true;
+  }
+
+  private async setAlternateDefaultPaymentMethod(id: string, userID: string) {
+    const alternativePaymentMethod = await this.prisma.paymentMethod.findFirst({
+      where: {
+        OR: [
+          { coachID: userID },
+          { clientID: userID },
+        ],
+        isActive: true,
+        id: { not: id },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (alternativePaymentMethod) {
+      await this.updatePaymentMethod(alternativePaymentMethod.id, { isDefault: true });
+    }
   }
 }
