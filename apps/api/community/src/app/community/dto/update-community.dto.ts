@@ -1,6 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, IsObject, IsUrl, IsBoolean } from 'class-validator';
-import { CommunityVisibility } from '@nlc-ai/api-types';
+import { CommunityVisibility, CommunityPricingType } from '@nlc-ai/api-types';
+
+class CommunityPricingDto {
+  @ApiProperty({ enum: CommunityPricingType, description: 'Pricing model for the community' })
+  @IsEnum(CommunityPricingType)
+  type: CommunityPricingType;
+
+  @ApiProperty({ description: 'Price amount', required: false })
+  @IsOptional()
+  amount?: number;
+
+  @ApiProperty({ description: 'Currency code', required: false, default: 'USD' })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+}
 
 export class UpdateCommunityDto {
   @ApiProperty({ required: false })
@@ -27,6 +42,10 @@ export class UpdateCommunityDto {
   @IsOptional()
   @IsUrl()
   bannerUrl?: string;
+
+  @ApiProperty({ description: 'Community pricing configuration', required: false })
+  @IsOptional()
+  pricing?: CommunityPricingDto;
 
   @ApiProperty({ required: false })
   @IsOptional()

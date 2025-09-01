@@ -1,9 +1,8 @@
 import {Coach} from "@nlc-ai/sdk-users";
 import {Plan} from "./plans.types";
 import {Invoice} from "./invoices.types";
-import {PaymentMethodType} from "./payments.types";
 import {Subscription} from "./subscriptions.types";
-// import {QueryParams} from "./query-params";
+import {PaymentMethodType} from "./payment-methods";
 
 export enum TransactionStatus {
   PENDING = 'pending',

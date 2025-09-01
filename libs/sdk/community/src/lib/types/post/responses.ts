@@ -1,14 +1,11 @@
 import {PostType, ReactionType} from "./enums";
+import {CommunityType, MemberRole} from "../community";
 import {UserType} from "@nlc-ai/sdk-users";
-import {CommunityType} from "../community";
 
 export interface Post {
   id: string;
   communityID: string;
-  authorID: string;
-  authorType: UserType;
-  authorName: string;
-  authorAvatarUrl: string;
+  communityMemberID: string;
   type: PostType;
   content: string;
   mediaUrls: string[];
@@ -18,35 +15,62 @@ export interface Post {
   eventData?: Record<string, any>;
   isPinned: boolean;
   isEdited: boolean;
+  isDeleted: boolean;
   likeCount: number;
   commentCount: number;
   shareCount: number;
   createdAt: Date;
   updatedAt: Date;
-  userReaction?: ReactionType;
+  reactions?: PostReaction[];
+}
+
+export interface PostResponse extends Post{
   community?: {
     name: string;
     type: CommunityType;
+  };
+  communityMember?: {
+    id: string;
+    userName: string;
+    userAvatarUrl?: string;
+    role: MemberRole;
+  };
+  userReaction?: ReactionType;
+  comments?: PostCommentResponse[];
+  _count?: {
+    reactions: number;
+    comments: number;
   };
 }
 
 export interface PostComment {
   id: string;
   postID: string;
-  authorID: string;
-  authorType: UserType;
-  authorName?: string;
-  authorAvatarUrl?: string;
+  communityMemberID: string;
   content: string;
   mediaUrls: string[];
   parentCommentID?: string;
   likeCount: number;
   replyCount: number;
   isEdited: boolean;
+  replies?: PostCommentResponse[];
+  reactions?: PostReaction[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface PostCommentResponse extends PostComment{
+  communityMember?: {
+    id: string;
+    userName: string;
+    userAvatarUrl?: string;
+    role: MemberRole;
+  };
   userReaction?: ReactionType;
-  replies?: PostComment[];
+  _count?: {
+    replies: number;
+    reactions: number;
+  };
 }
 
 export interface PostReaction {
@@ -57,12 +81,4 @@ export interface PostReaction {
   userType: UserType;
   type: ReactionType;
   createdAt: Date;
-}
-
-export interface PostResponse extends Post {
-  comments?: PostComment[];
-  _count?: {
-    reactions: number;
-    comments: number;
-  };
 }

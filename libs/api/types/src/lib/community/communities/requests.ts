@@ -6,7 +6,7 @@ import {
   CommunityPricingType
 } from './enums';
 import { UserType } from '../../auth';
-import {CommunitySettings} from "./responses";
+import { CommunitySettings } from "./responses";
 
 export interface CommunityPricing {
   type: CommunityPricingType;

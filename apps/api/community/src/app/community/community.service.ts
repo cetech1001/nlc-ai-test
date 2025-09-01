@@ -57,8 +57,26 @@ export class CommunityService {
       const isSystemCreated = createRequest.isSystemCreated === true && user.type === UserType.admin;
 
       const pricingType = createRequest.pricing?.type || CommunityPricingType.FREE;
-      const pricingAmount = createRequest.pricing?.amount || null;
-      const pricingCurrency = createRequest.pricing?.currency || 'USD';
+
+      let oneTimePrice = null;
+      let monthlyPrice = null;
+      let annualPrice = null;
+
+      if (createRequest.pricing) {
+        switch (createRequest.pricing.type) {
+          case CommunityPricingType.ONE_TIME:
+            oneTimePrice = createRequest.pricing.amount;
+            break;
+          case CommunityPricingType.MONTHLY:
+            monthlyPrice = createRequest.pricing.amount;
+            break;
+          case CommunityPricingType.ANNUAL:
+            annualPrice = createRequest.pricing.amount;
+            break;
+        }
+      }
+
+      const currency = createRequest.pricing?.currency || 'USD';
 
       const community = await this.prisma.community.create({
         data: {
@@ -75,8 +93,10 @@ export class CommunityService {
           bannerUrl: createRequest.bannerUrl,
 
           pricingType: pricingType as any,
-          pricingAmount,
-          pricingCurrency,
+          oneTimePrice,
+          monthlyPrice,
+          annualPrice,
+          currency,
 
           isSystemCreated,
 
@@ -119,8 +139,8 @@ export class CommunityService {
           isSystemCreated,
           pricing: {
             type: pricingType,
-            amount: pricingAmount,
-            currency: pricingCurrency
+            amount: oneTimePrice || monthlyPrice || annualPrice,
+            currency: currency
           },
           createdAt: community.createdAt.toISOString(),
         },
@@ -296,8 +316,26 @@ export class CommunityService {
 
     if (updateRequest.pricing) {
       updateData.pricingType = updateRequest.pricing.type;
-      updateData.pricingAmount = updateRequest.pricing.amount;
-      updateData.pricingCurrency = updateRequest.pricing.currency || 'USD';
+
+      // Reset all pricing fields
+      updateData.oneTimePrice = null;
+      updateData.monthlyPrice = null;
+      updateData.annualPrice = null;
+
+      // Set the appropriate pricing field based on type
+      switch (updateRequest.pricing.type) {
+        case CommunityPricingType.ONE_TIME:
+          updateData.oneTimePrice = updateRequest.pricing.amount;
+          break;
+        case CommunityPricingType.MONTHLY:
+          updateData.monthlyPrice = updateRequest.pricing.amount;
+          break;
+        case CommunityPricingType.ANNUAL:
+          updateData.annualPrice = updateRequest.pricing.amount;
+          break;
+      }
+
+      updateData.currency = updateRequest.pricing.currency || 'USD';
     }
 
     const updatedCommunity = await this.prisma.community.update({
@@ -405,7 +443,7 @@ export class CommunityService {
     }
 
     const recentPosts = await this.prisma.post.findMany({
-      where: { communityID/*, isDeleted: false*/ },
+      where: { communityID, isDeleted: false },
       include: {
         communityMember: {
           select: {
@@ -428,7 +466,6 @@ export class CommunityService {
     const recentComments = await this.prisma.postComment.findMany({
       where: {
         post: { communityID },
-        // isDeleted: false,
       },
       include: {
         communityMember: {
@@ -439,7 +476,7 @@ export class CommunityService {
           },
         },
         post: {
-          select: { id: true/*, title: true*/ },
+          select: { id: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -505,11 +542,6 @@ export class CommunityService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Get member growth
-    /*const totalMembers = await this.prisma.communityMember.count({
-      where: { communityID, status: MemberStatus.ACTIVE },
-    });*/
-
     const newMembers = await this.prisma.communityMember.count({
       where: {
         communityID,
@@ -519,13 +551,13 @@ export class CommunityService {
     });
 
     const totalPosts = await this.prisma.post.count({
-      where: { communityID, /*isDeleted: false*/ },
+      where: { communityID, isDeleted: false },
     });
 
     const newPosts = await this.prisma.post.count({
       where: {
         communityID,
-        // isDeleted: false,
+        isDeleted: false,
         createdAt: { gte: startDate },
       },
     });
@@ -533,14 +565,12 @@ export class CommunityService {
     const totalComments = await this.prisma.postComment.count({
       where: {
         post: { communityID },
-        // isDeleted: false,
       },
     });
 
     const newComments = await this.prisma.postComment.count({
       where: {
         post: { communityID },
-        // isDeleted: false,
         createdAt: { gte: startDate },
       },
     });
@@ -554,7 +584,7 @@ export class CommunityService {
             posts: {
               some: {
                 createdAt: { gte: startDate },
-                // isDeleted: false,
+                isDeleted: false,
               },
             },
           },
@@ -562,7 +592,6 @@ export class CommunityService {
             comments: {
               some: {
                 createdAt: { gte: startDate },
-                // isDeleted: false,
               },
             },
           },
@@ -585,7 +614,7 @@ export class CommunityService {
     const previousPosts = await this.prisma.post.count({
       where: {
         communityID,
-        // isDeleted: false,
+        isDeleted: false,
         createdAt: { gte: previousPeriodStart, lt: startDate },
       },
     });

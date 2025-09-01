@@ -31,9 +31,12 @@ export interface Community {
   bannerUrl?: string;
   slug: string;
   pricingType: CommunityPricingTypes;
-  pricingAmount?: number | null;
-  pricingCurrency?: string;
+  oneTimePrice?: number | null;
+  monthlyPrice?: number | null;
+  annualPrice?: number | null;
+  currency?: string;
   isSystemCreated: boolean;
+  isDeleted: boolean;
   settings: Record<string, any>;
   members?: CommunityMember[];
   memberCount: number;
@@ -99,7 +102,7 @@ export interface CommunityActivity {
   id: string;
   type: 'post_created' | 'member_joined' | 'comment_added' | 'reaction_added';
   userID: string;
-  userName: string;
+  userName?: string;
   userAvatarUrl?: string;
   description: string;
   createdAt: Date;

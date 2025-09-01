@@ -54,6 +54,9 @@
       "path": "../../../libs/sdk/main"
     },
     {
+      "path": "../../../libs/web/ui"
+    },
+    {
       "path": "../../../libs/web/shared"
     },
     {
