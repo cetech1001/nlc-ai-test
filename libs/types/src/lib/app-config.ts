@@ -1,5 +1,10 @@
 export interface AppConfig {
   publicUrl: string;
+  platforms: {
+    admin: string;
+    coach: string;
+    preLaunch: string;
+  }
   api: {
     baseURL: string;
     leadsPublicToken?: string;

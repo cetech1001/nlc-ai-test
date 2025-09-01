@@ -1,14 +1,17 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {PageBackground, QualifiedScreen, RejectedScreen} from '@/lib/components';
 import Image from "next/image";
 
 const ResultsPage = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+
     const [qualified, setQualified] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(true);
+    const [email, setEmail] = useState('');
 
     useEffect(() => {
         const storedQualified = sessionStorage.getItem('qualified');
@@ -18,6 +21,8 @@ const ResultsPage = () => {
             router.push('/quiz');
             return;
         }
+
+        setEmail(searchParams.get('email') as string);
 
         setQualified(JSON.parse(storedQualified));
         setLoading(false);
@@ -54,7 +59,7 @@ const ResultsPage = () => {
                                            className={"cursor-pointer"}
                                            onClick={() => router.push('/')}/>
                                 </div>
-                                {qualified ? <QualifiedScreen/> : <RejectedScreen />}
+                                {qualified ? <QualifiedScreen email={email}/> : <RejectedScreen />}
                             </div>
                         </div>
                     </div>

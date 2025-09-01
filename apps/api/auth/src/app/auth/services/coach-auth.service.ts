@@ -23,23 +23,19 @@ export class CoachAuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // STANDARDIZED LOGIN FLOW
   async login(loginDto: LoginRequest, provider?: 'google') {
     const { email, password } = loginDto;
 
     const coach = await this.findCoachByEmail(email);
 
-    // Check if user exists
     if (!coach) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if account is active
     if (!coach.isActive || coach.isDeleted) {
       throw new UnauthorizedException('Account is deactivated');
     }
 
-    // Validate authentication method
     if (provider === 'google') {
       if (coach.provider !== 'google') {
         throw new UnauthorizedException({
@@ -48,7 +44,6 @@ export class CoachAuthService {
         });
       }
     } else {
-      // Email/password login
       if (coach.provider && !coach.passwordHash) {
         throw new UnauthorizedException({
           code: 'ACCOUNT_CONFLICT',
@@ -66,7 +61,6 @@ export class CoachAuthService {
       }
     }
 
-    // Check email verification
     if (!coach.isVerified) {
       const code = this.tokenService.generateVerificationCode();
       await this.tokenService.storeVerificationToken(email, code, 'verification');
@@ -92,7 +86,6 @@ export class CoachAuthService {
       });
     }
 
-    // Successful login - update last login
     await this.prisma.coach.update({
       where: { id: coach.id },
       data: { lastLoginAt: new Date() },
@@ -101,11 +94,9 @@ export class CoachAuthService {
     return this.generateAuthResponse(coach, false);
   }
 
-  // STANDARDIZED REGISTRATION FLOW
   async register(registerDto: RegistrationRequest, provider?: 'google', googleData?: ValidatedGoogleUser) {
     const { email, firstName, lastName } = registerDto;
 
-    // Check if user already exists
     const existingCoach = await this.findCoachByEmail(email);
     if (existingCoach) {
       throw new ConflictException('Coach with this email already exists');
@@ -120,16 +111,14 @@ export class CoachAuthService {
     };
 
     if (provider === 'google' && googleData) {
-      // Google registration
       coachData = {
         ...coachData,
         avatarUrl: googleData.avatarUrl,
-        isVerified: true, // Google accounts are pre-verified
+        isVerified: true,
         provider: 'google',
         providerID: googleData.providerID,
       };
     } else {
-      // Email/password registration
       const { password } = registerDto;
       const passwordHash = await bcrypt.hash(password, 12);
       coachData = {
@@ -143,10 +132,9 @@ export class CoachAuthService {
       data: coachData,
     });
 
-    // Send verification email for email/password registration
     if (provider !== 'google') {
       const code = this.tokenService.generateVerificationCode();
-      await this.tokenService.storeVerificationToken(email, code, 'verification');
+      await this.tokenService.storeVerificationToken(email, code, 'reset');
 
       await this.outbox.saveAndPublishEvent<AuthEvent>(
         {
@@ -162,7 +150,6 @@ export class CoachAuthService {
       );
     }
 
-    // Emit registration event
     await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.coach.registered',
@@ -178,7 +165,6 @@ export class CoachAuthService {
     );
 
     if (provider === 'google') {
-      // Auto-login for Google registration
       return this.generateAuthResponse(coach, true);
     }
 
@@ -190,20 +176,17 @@ export class CoachAuthService {
     };
   }
 
-  // GOOGLE AUTH ENTRY POINT
   async googleAuth(googleUser: ValidatedGoogleUser) {
     const existingCoach = await this.findCoachByEmail(googleUser.email);
 
     if (existingCoach) {
-      // Login existing coach
       return this.login({ email: googleUser.email, password: '' }, 'google');
     } else {
-      // Register new coach
       return this.register({
         email: googleUser.email,
         firstName: googleUser.firstName,
         lastName: googleUser.lastName,
-        password: '', // Not used for Google auth
+        password: '',
       }, 'google', googleUser);
     }
   }
@@ -282,7 +265,6 @@ export class CoachAuthService {
       },
     });
 
-    // Emit verification completed event
     await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.coach.verified',
@@ -326,7 +308,6 @@ export class CoachAuthService {
     }
   }
 
-  // HELPER METHODS
   private async findCoachByEmail(email: string) {
     return this.prisma.coach.findUnique({
       where: { email },
@@ -334,7 +315,6 @@ export class CoachAuthService {
   }
 
   private async generateAuthResponse(coach: any, isNewUser: boolean) {
-    // Emit login event
     await this.outbox.saveAndPublishEvent<AuthEvent>(
       {
         eventType: 'auth.coach.login',

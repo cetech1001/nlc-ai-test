@@ -3,6 +3,11 @@ import {AppConfig} from "@nlc-ai/types";
 
 export const appConfig: AppConfig = {
   publicUrl: process.env.NEXT_PUBLIC_URL || 'http://localhost:4400',
+  platforms: {
+    admin: process.env.NEXT_PUBLIC_ADMIN_PLATFORM_URL || 'http://localhost:4200',
+    coach: process.env.NEXT_PUBLIC_COACH_PLATFORM_URL || 'http://localhost:4300',
+    preLaunch: process.env.NEXT_PUBLIC_PRE_LAUNCH_PLATFORM_URL || 'http://localhost:4400',
+  },
   api: {
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
     leadsPublicToken: process.env.LEADS_PUBLIC_TOKEN,

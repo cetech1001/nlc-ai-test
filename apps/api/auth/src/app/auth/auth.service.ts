@@ -217,6 +217,10 @@ export class AuthService {
 
     const isPasswordReset = await this.tokenService.verifyToken(email, code, 'reset');
     if (isPasswordReset) {
+      await this.prisma.coach.update({
+        where: { email },
+        data: { isVerified: true }
+      });
       const resetToken = await this.tokenService.generateResetToken(email);
       return {
         resetToken,

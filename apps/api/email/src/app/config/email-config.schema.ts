@@ -51,5 +51,5 @@ export class EmailConfigSchema {
   AUTH_SERVICE_URL: string;
 
   @IsString()
-  COACH_DASHBOARD_URL: string;
+  COACH_PLATFORM_URL: string;
 }
