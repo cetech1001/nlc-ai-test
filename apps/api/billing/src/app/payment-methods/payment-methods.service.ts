@@ -78,12 +78,11 @@ export class PaymentMethodsService {
   async findAllPaymentMethods(filters: PaymentMethodFilters = {}): Promise<Paginated<ExtendedPaymentMethod>> {
     const where: any = {};
 
-    if (filters.coachID) {
-      where.coachID = filters.coachID;
-    }
-
-    if (filters.clientID) {
-      where.clientID = filters.clientID;
+    if (filters.userID) {
+      where.OR = [
+        { coachID: filters.userID },
+        { clientID: filters.userID },
+      ];
     }
 
     if (filters.type) {

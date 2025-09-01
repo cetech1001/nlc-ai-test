@@ -25,8 +25,7 @@ export interface UpdatePaymentMethodRequest {
 }
 
 export interface PaymentMethodFilters {
-  coachID?: string;
-  clientID?: string;
+  userID?: string;
   type?: PaymentMethodType;
   isDefault?: boolean;
   isActive?: boolean;

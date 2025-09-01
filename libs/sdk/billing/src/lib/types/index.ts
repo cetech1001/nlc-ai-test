@@ -1,4 +1,5 @@
 export * from './invoices.types';
+export * from './payment-methods';
 export * from './payments.types';
 export * from './plans.types';
 export * from './subscriptions.types';

@@ -9,13 +9,7 @@ export class PaymentMethodFiltersDto implements PaymentMethodFilters {
   @IsOptional()
   @IsString()
   @IsUUID()
-  coachID?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  @IsUUID()
-  clientID?: string;
+  userID?: string;
 
   @ApiProperty({ enum: PaymentMethodType, required: false })
   @IsOptional()

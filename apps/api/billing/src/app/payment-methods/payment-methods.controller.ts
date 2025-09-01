@@ -27,13 +27,7 @@ export class PaymentMethodsController {
     @CurrentUser() user: AuthUser
   ) {
     if (user.type !== UserType.admin) {
-      if (user.type === UserType.coach) {
-        filters.coachID = user.id;
-        filters.clientID = undefined;
-      } else if (user.type === UserType.client) {
-        filters.clientID = user.id;
-        filters.coachID = undefined;
-      }
+      filters.userID = user.id;
     }
     return this.paymentMethodsService.findAllPaymentMethods(filters);
   }

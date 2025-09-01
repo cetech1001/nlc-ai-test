@@ -1,5 +1,17 @@
 import {BaseClient, FilterValues, Paginated, SearchQuery} from "@nlc-ai/sdk-core";
-import {CoachPaymentRequest, CoachPaymentRequestStats} from "@nlc-ai/types";
+import {
+  PaymentResult,
+  SendPaymentRequestResponse,
+  CreatePaymentIntentRequest,
+  PaymentLinkResponse,
+  ProcessPaymentRequest,
+  SendPaymentRequest,
+  PaymentIntentResponse,
+  PaymentLinkStatus,
+  PaymentRequest,
+  PaymentRequestStats
+} from "../types";
+
 
 export class PaymentsClient extends BaseClient{
   async getPaymentRequests(coachID: string, searchOptions: SearchQuery, filters: FilterValues) {
@@ -15,12 +27,57 @@ export class PaymentsClient extends BaseClient{
       params.append('status', filters.status);
     }
 
-    const response = await this.request<Paginated<CoachPaymentRequest>>('GET', `/requests/${coachID}?${params}`);
+    const response = await this.request<Paginated<PaymentRequest>>('GET', `/requests/${coachID}?${params}`);
     return response.data!;
   }
 
   async getPaymentRequestStats(coachID: string) {
-    const response = await this.request<CoachPaymentRequestStats>('GET', `/requests/${coachID}/stats`);
+    const response = await this.request<PaymentRequestStats>('GET', `/requests/${coachID}/stats`);
+    return response.data!;
+  }
+
+  async sendPaymentRequest(data: SendPaymentRequest): Promise<SendPaymentRequestResponse> {
+    const response = await this.request<SendPaymentRequestResponse>('POST', '/send-payment-request', {
+      body: data,
+    });
+    return response.data!;
+  }
+
+  async createPaymentLink(data: CreatePaymentIntentRequest): Promise<PaymentLinkResponse> {
+    const response = await this.request<PaymentLinkResponse>('POST', '/create-payment-link', {
+      body: data,
+    });
+    return response.data!;
+  }
+
+  async createPaymentIntent(data: CreatePaymentIntentRequest): Promise<PaymentIntentResponse> {
+    const response = await this.request<PaymentIntentResponse>('POST', '/create-payment-intent', {
+      body: data,
+    });
+    return response.data!;
+  }
+
+  async processPayment(data: ProcessPaymentRequest): Promise<PaymentResult> {
+    const response = await this.request<PaymentResult>('POST', '/process-payment', {
+      body: data,
+    });
+    return response.data!;
+  }
+
+  async getPaymentLinkStatus(linkID: string): Promise<PaymentLinkStatus> {
+    const response = await this.request<PaymentLinkStatus>('GET', `/payment-link/${linkID}/status`);
+    return response.data!;
+  }
+
+  async deactivatePaymentLink(linkID: string): Promise<{ message: string }> {
+    const response = await this.request<{ message: string }>('PATCH', `/payment-link/${linkID}/deactivate`);
+    return response.data!;
+  }
+
+  async createSetupIntent(customerID: string): Promise<{ client_secret: string }> {
+    const response = await this.request<{ client_secret: string }>('POST', '/setup-intent', {
+      body: { customerID },
+    });
     return response.data!;
   }
 }
