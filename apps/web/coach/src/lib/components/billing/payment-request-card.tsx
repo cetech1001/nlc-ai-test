@@ -106,7 +106,7 @@ export const PaymentRequestCard: FC<IProps> = ({ request, onMakePayment, isLoadi
         <div className="space-y-3 mb-6 flex-1">
           <div>
             <p className="text-stone-400 text-sm font-medium leading-tight mb-1">Plan</p>
-            <p className="text-stone-50 text-base font-semibold">{request.planName}</p>
+            <p className="text-stone-50 text-base font-semibold">{request.plan?.name}</p>
           </div>
 
           {request.description && (
@@ -133,7 +133,7 @@ export const PaymentRequestCard: FC<IProps> = ({ request, onMakePayment, isLoadi
         {request.status === 'paid' && (
           <div className="bg-green-700/20 border border-green-700/50 rounded-xl p-3 mb-4">
             <p className="text-green-400 text-sm font-medium">
-              Payment of ${(request.totalAmountReceived / 100).toFixed(2)} received successfully
+              Payment of ${((request.paidAmount || 0) / 100).toFixed(2)} received successfully
             </p>
           </div>
         )}
@@ -149,7 +149,7 @@ export const PaymentRequestCard: FC<IProps> = ({ request, onMakePayment, isLoadi
         {request.status === 'pending' && (
           <div className="bg-yellow-700/20 border border-yellow-700/50 rounded-xl p-3 mb-4">
             <p className="text-yellow-400 text-sm font-medium">
-              This payment will activate your {request.planName} subscription.
+              This payment will activate your {request.plan?.name} subscription.
             </p>
           </div>
         )}

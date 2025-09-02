@@ -96,7 +96,7 @@ const PaymentRequests = () => {
   const filteredRequests = useMemo(() => {
     return paymentRequests?.filter(request => {
       return searchQuery === "" ||
-        request.planName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        request.plan?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (request.description && request.description.toLowerCase().includes(searchQuery.toLowerCase()));
     });
   }, [paymentRequests, activeTab, searchQuery]);
