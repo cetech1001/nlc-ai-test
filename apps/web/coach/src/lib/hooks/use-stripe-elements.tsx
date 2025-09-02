@@ -1,52 +1,10 @@
-import React, {ReactNode, useEffect, useState} from 'react';
+import React, {ReactNode, useEffect, useState, useRef} from 'react';
 import {loadStripe} from '@stripe/stripe-js';
 import {Elements, PaymentElement, useStripe, useElements} from '@stripe/react-stripe-js';
 import {sdkClient} from "@/lib";
 import {UserType} from "@nlc-ai/types";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-// Create a separate component to handle Stripe operations
-const StripeConfirmationHandler = ({ onConfirm }: { onConfirm: (result: any) => void }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-
-  useEffect(() => {
-    // Expose the confirmation function to the parent component
-    if (stripe && elements) {
-      (window as any).stripeConfirmSetup = async () => {
-        if (!stripe || !elements) {
-          throw new Error('Stripe has not loaded yet');
-        }
-
-        const { error, setupIntent } = await stripe.confirmSetup({
-          elements,
-          confirmParams: {
-            return_url: `${window.location.origin}/settings/billing`,
-          },
-          redirect: 'if_required',
-        });
-
-        if (error) {
-          return { error, setupIntent: null, paymentMethod: null };
-        }
-
-        return {
-          error: null,
-          setupIntent,
-          paymentMethod: setupIntent?.payment_method
-        };
-      };
-    }
-
-    return () => {
-      // Clean up the function when component unmounts
-      delete (window as any).stripeConfirmSetup;
-    };
-  }, [stripe, elements]);
-
-  return null; // This component doesn't render anything
-};
 
 interface StripeElementsProviderProps {
   children: ReactNode;
@@ -57,6 +15,8 @@ interface StripeElementsProviderProps {
 
 export const useStripeElements = () => {
   const [isElementsLoading, setIsElementsLoading] = useState(false);
+  const confirmFunctionRef = useRef<(() => Promise<any>) | null>(null);
+  const [isPaymentElementReady, setIsPaymentElementReady] = useState(false);
 
   const StripeElementsProvider = ({
                                     children,
@@ -71,7 +31,6 @@ export const useStripeElements = () => {
       const createSetupIntent = async () => {
         try {
           setIsLoading(true);
-
           const response = await sdkClient.billing.payments.createSetupIntent({
             payerID: coachID,
             payerType: UserType.coach,
@@ -81,8 +40,7 @@ export const useStripeElements = () => {
             throw new Error('Failed to create setup intent');
           }
 
-          const { client_secret } = response.data!;
-          setClientSecret(client_secret);
+          setClientSecret(response.data!.client_secret);
         } catch (error) {
           console.error('Error creating setup intent:', error);
         } finally {
@@ -134,16 +92,59 @@ export const useStripeElements = () => {
 
     return (
       <Elements stripe={stripePromise} options={options}>
-        <StripeConfirmationHandler onConfirm={() => {}} />
+        <StripeHandler onPaymentElementReady={setIsPaymentElementReady} />
         {children}
       </Elements>
     );
+  };
+
+  const StripeHandler = ({ onPaymentElementReady }: { onPaymentElementReady: (ready: boolean) => void }) => {
+    const stripe = useStripe();
+    const elements = useElements();
+
+    useEffect(() => {
+      if (stripe && elements) {
+        confirmFunctionRef.current = async () => {
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          /*const paymentElement = elements.getElement('payment');
+          if (!paymentElement) {
+            throw new Error('Payment element is not mounted. Please try again.');
+          }*/
+
+          const { error, setupIntent } = await stripe.confirmSetup({
+            elements,
+            confirmParams: {
+              return_url: `${window.location.origin}/settings/billing`,
+            },
+            redirect: 'if_required',
+          });
+
+          if (error) {
+            return { error, setupIntent: null, paymentMethod: null };
+          }
+
+          return {
+            error: null,
+            setupIntent,
+            paymentMethod: setupIntent?.payment_method
+          };
+        };
+
+        onPaymentElementReady(true);
+      }
+    }, [stripe, elements, onPaymentElementReady]);
+
+    return null;
   };
 
   const PaymentElementComponent = () => {
     return (
       <div className="space-y-4">
         <PaymentElement
+          onReady={() => {
+            console.log('PaymentElement is ready');
+          }}
           options={{
             layout: {
               type: 'tabs',
@@ -172,20 +173,18 @@ export const useStripeElements = () => {
 
   const confirmPayment = async () => {
     setIsElementsLoading(true);
-    console.log("Came in here");
+    console.log('Came into confirm payment');
 
     try {
-      const confirmSetup = (window as any).stripeConfirmSetup;
-
-      if (!confirmSetup) {
-        throw new Error('Payment form not ready. Please wait and try again.');
+      if (!confirmFunctionRef.current) {
+        throw new Error('Payment form is not ready yet. Please wait and try again.');
       }
 
-      console.log("Confirm setup ran");
+      if (!isPaymentElementReady) {
+        throw new Error('Payment element is still loading. Please wait and try again.');
+      }
 
-      const result = await confirmSetup();
-
-      console.log("Result: ", result);
+      const result = await confirmFunctionRef.current();
 
       if (result.error) {
         return {
