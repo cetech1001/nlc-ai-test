@@ -2,12 +2,19 @@ import {BaseClient, FilterValues, Paginated, SearchQuery} from "@nlc-ai/sdk-core
 import {ExtendedTransaction, Transaction, TransactionStats, RevenueGrowthData, RevenueStats} from "../types";
 import {Coach} from "@nlc-ai/sdk-users";
 
+export interface TransactionSearchQuery extends SearchQuery {
+  payerID?: string;
+  payerType?: string;
+  payeeID?: string;
+  payeeType?: string;
+}
+
 export class TransactionsClient extends BaseClient{
   async getTransactions(
-    searchOptions: SearchQuery = {},
+    searchOptions: TransactionSearchQuery = {},
     filters: FilterValues = {},
   ): Promise<Paginated<ExtendedTransaction>> {
-    const { page = 1, limit = 10, search } = searchOptions;
+    const { page = 1, limit = 10, search, payerID, payerType, payeeID, payeeType } = searchOptions;
 
     const params = new URLSearchParams();
 
@@ -15,6 +22,10 @@ export class TransactionsClient extends BaseClient{
     params.append('limit', limit.toString());
 
     if (search) params.append('search', search);
+    if (payerID) params.append('payerID', payerID);
+    if (payerType) params.append('payerType', payerType);
+    if (payeeID) params.append('payeeID', payeeID);
+    if (payeeType) params.append('payeeType', payeeType);
 
     if (filters.status && filters.status !== '') {
       params.append('status', filters.status);
@@ -76,6 +87,8 @@ export class TransactionsClient extends BaseClient{
     if (filters.status) params.append('status', filters.status);
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.payerID) params.append('payerID', filters.payerID);
+    if (filters.payerType) params.append('payerType', filters.payerType);
 
     const response = await fetch(`${this.baseURL}/export/bulk?${params.toString()}`, {
       headers: {
@@ -110,5 +123,12 @@ export class TransactionsClient extends BaseClient{
   async getMonthlyRevenueComparison(): Promise<any> {
     const response = await this.request('GET', '/analytics/monthly-comparison');
     return response.data!
+  }
+
+  async refundTransaction(id: string, amount?: number, reason?: string): Promise<Transaction> {
+    const response = await this.request<Transaction>('POST', `/${id}/refund`, {
+      body: { amount, reason }
+    });
+    return response.data!;
   }
 }

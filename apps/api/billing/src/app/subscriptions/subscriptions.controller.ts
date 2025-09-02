@@ -1,12 +1,45 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
+import {Controller, Get, Post, Put, Body, Param, Query, ForbiddenException} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
 import {CreateSubscriptionDto, SubscriptionFiltersDto, UpdateSubscriptionDto} from "./dto";
+import {type AuthUser, UserType} from "@nlc-ai/api-types";
+import {CurrentUser, UserTypes} from "@nlc-ai/api-auth";
 
 @ApiTags('Subscriptions')
 @Controller('subscriptions')
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
+
+  @Get('current')
+  @UserTypes(UserType.admin, UserType.coach, UserType.client)
+  @ApiOperation({ summary: 'Get current active subscription for a user' })
+  @ApiResponse({ status: 200, description: 'Current subscription retrieved successfully' })
+  getCurrentSubscription(
+    @Query('subscriberID') subscriberID: string,
+    @Query('subscriberType') subscriberType: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    // Users can only view their own subscriptions, admins can view any
+    if (user.type !== UserType.admin && user.id !== subscriberID) {
+      throw new ForbiddenException('Access denied');
+    }
+    return this.subscriptionsService.getCurrentSubscription(subscriberID, subscriberType);
+  }
+
+  @Get('history')
+  @UserTypes(UserType.admin, UserType.coach, UserType.client)
+  @ApiOperation({ summary: 'Get subscription history for a user' })
+  @ApiResponse({ status: 200, description: 'Subscription history retrieved successfully' })
+  getSubscriptionHistory(
+    @Query('subscriberID') subscriberID: string,
+    @Query('subscriberType') subscriberType: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    if (user.type !== UserType.admin && user.id !== subscriberID) {
+      throw new ForbiddenException('Access denied');
+    }
+    return this.subscriptionsService.getSubscriptionHistory(subscriberID, subscriberType);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new subscription' })
@@ -31,27 +64,20 @@ export class SubscriptionsController {
     return this.subscriptionsService.getExpiringSubscriptions(daysAhead);
   }
 
-  @Get('stats')
-  @ApiOperation({ summary: 'Get subscription statistics' })
-  @ApiResponse({ status: 200, description: 'Subscription statistics retrieved successfully' })
-  async getSubscriptionStats() {
-    return this.subscriptionsService.getSubscriptionStats();
-  }
-
-  @Get('coach/:coachId/active')
+  @Get('coach/:coachID/active')
   @ApiOperation({ summary: 'Get active subscription for a coach' })
   @ApiResponse({ status: 200, description: 'Active subscription retrieved successfully' })
   @ApiResponse({ status: 404, description: 'No active subscription found' })
-  async findCoachActiveSubscription(@Param('coachId') coachId: string) {
-    return this.subscriptionsService.findCoachActiveSubscription(coachId);
+  async findCoachActiveSubscription(@Param('coachID') coachID: string) {
+    return this.subscriptionsService.findActiveSubscription(coachID, UserType.coach);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get subscription by ID' })
   @ApiResponse({ status: 200, description: 'Subscription retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Subscription not found' })
-  async findSubscriptionById(@Param('id') id: string) {
-    return this.subscriptionsService.findSubscriptionById(id);
+  async findSubscriptionByID(@Param('id') id: string) {
+    return this.subscriptionsService.findSubscriptionByID(id);
   }
 
   @Put(':id')

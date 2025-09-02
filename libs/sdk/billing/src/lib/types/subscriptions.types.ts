@@ -1,4 +1,4 @@
-import {Coach} from "@nlc-ai/sdk-users";
+import {Coach, Client} from "@nlc-ai/sdk-users";
 import {Plan} from "./plans.types";
 import {Transaction} from "./transactions.types";
 import {Invoice} from "./invoices.types";
@@ -21,21 +21,31 @@ export enum BillingCycle {
 
 export interface Subscription {
   id: string;
-  coachID: string;
-  planID: string;
+  subscriberID: string;
+  subscriberType: string; // 'coach' | 'client'
+  planID?: string;
+  communityID?: string;
+  courseID?: string;
   status: SubscriptionStatus;
   billingCycle: BillingCycle;
+  amount: number;
+  currency: string;
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
+  nextBillingDate?: Date;
   canceledAt?: Date | null;
   cancelReason?: string | null;
   trialStart?: Date | null;
   trialEnd?: Date | null;
-  nextBillingDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
+
+  // Relations - these will be populated based on subscriberType
   coach?: Coach;
+  client?: Client;
   plan?: Plan;
+  community?: any;
+  course?: any;
   transactions?: Transaction[];
   invoices?: Invoice[];
 }

@@ -1,4 +1,4 @@
-import {Coach} from "@nlc-ai/sdk-users";
+import {Coach, Client} from "@nlc-ai/sdk-users";
 import {Plan} from "./plans.types";
 import {Invoice} from "./invoices.types";
 import {Subscription} from "./subscriptions.types";
@@ -16,15 +16,23 @@ export enum TransactionStatus {
 
 export interface Transaction {
   id: string;
-  coachID: string;
-  subscriptionID?: string | null;
-  planID: string;
+  payerID: string;
+  payerType: string; // 'coach' | 'client'
+  payeeID?: string;
+  payeeType?: string;
+  planID?: string;
+  courseID?: string;
+  communityID?: string;
+  subscriptionID?: string;
+  paymentRequestID?: string;
+  paymentMethodID?: string;
   amount: number;
   currency: string;
   status: TransactionStatus;
-  paymentMethod: PaymentMethodType;
+  paymentMethodType: PaymentMethodType;
   stripePaymentID?: string | null;
   paypalOrderID?: string | null;
+  invoiceID?: string;
   invoiceNumber?: string | null;
   invoiceDate: Date;
   dueDate?: Date | null;
@@ -34,22 +42,22 @@ export interface Transaction {
   failureReason?: string | null;
   refundReason?: string | null;
   refundedAmount?: number | null;
+  platformFeeAmount?: number;
+  platformFeeRate?: number;
   createdAt: Date;
   updatedAt: Date;
+
+  // Relations
   coach?: Coach;
+  client?: Client;
   subscription?: Subscription | null;
   plan?: Plan;
-  invoices?: Invoice[];
+  course?: any;
+  community?: any;
+  paymentMethod?: any;
+  paymentRequest?: any;
+  invoice?: Invoice;
 }
-
-/*export interface TransactionsQueryParams extends QueryParams{
-  startDate?: string;
-  endDate?: string;
-  paymentMethod?: string;
-  minAmount?: number;
-  maxAmount?: number;
-  planNames?: string;
-}*/
 
 export interface RevenueData {
   period: string;
@@ -113,10 +121,14 @@ export interface DataTableTransaction {
 
 export interface ExtendedTransaction {
   id: string;
-  coachID?: string;
-  clientID?: string;
-  coachName: string;
-  coachEmail: string;
+  payerID: string;
+  payerType: string;
+  payeeID?: string;
+  payeeType?: string;
+  coachName?: string;
+  coachEmail?: string;
+  clientName?: string;
+  clientEmail?: string;
   planName: string;
   amount: number;
   currency: string;

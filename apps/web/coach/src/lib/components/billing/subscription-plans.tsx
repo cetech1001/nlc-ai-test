@@ -1,7 +1,6 @@
 import { PlanCard } from "@nlc-ai/web-shared";
 import {FC} from "react";
-import {ExtendedCoach} from "@nlc-ai/sdk-users";
-import {Plan, TransformedPlan} from "@nlc-ai/sdk-billing";
+import {Plan, Subscription, TransformedPlan} from "@nlc-ai/sdk-billing";
 
 
 const SubscriptionPlansSkeleton = () => {
@@ -24,11 +23,11 @@ const SubscriptionPlansSkeleton = () => {
 interface IProps {
   plans: Plan[];
   handleUpgrade: (plan: Plan) => void;
-  coach: ExtendedCoach | null;
+  currentSubscription?: Subscription | null;
   isLoading?: boolean;
 }
 
-export const SubscriptionPlans: FC<IProps> = ({ plans, coach, handleUpgrade, isLoading }) => {
+export const SubscriptionPlans: FC<IProps> = ({ plans, currentSubscription, handleUpgrade, isLoading }) => {
   if (isLoading) {
     return <SubscriptionPlansSkeleton/>
   }
@@ -47,9 +46,9 @@ export const SubscriptionPlans: FC<IProps> = ({ plans, coach, handleUpgrade, isL
         <PlanCard
           key={plan.id}
           plan={plan}
-          currentPlan={coach?.subscriptions?.[0]?.plan}
+          currentPlan={currentSubscription?.plan}
           action={(plan: TransformedPlan) => plan.isCurrentPlan ? 'Current Plan' : 'Upgrade Plan'}
-          onActionClick={coach?.subscriptions?.[0]?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
+          onActionClick={currentSubscription?.plan?.id === plan.id ? (_: Plan) => {} : handleUpgrade}
         />
       ))}
     </div>

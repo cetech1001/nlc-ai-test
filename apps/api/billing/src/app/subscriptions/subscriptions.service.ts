@@ -13,6 +13,45 @@ import {PrismaService} from "@nlc-ai/api-database";
 export class SubscriptionsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getCurrentSubscription(subscriberID: string, subscriberType: string) {
+    return this.prisma.subscription.findFirst({
+      where: {
+        subscriberID,
+        subscriberType,
+        status: 'active',
+      },
+      include: {
+        plan: true,
+        course: true,
+        community: true,
+        transactions: {
+          orderBy: {createdAt: 'desc'},
+          take: 5,
+        },
+      },
+      orderBy: {createdAt: 'desc'},
+    });
+  }
+
+  async getSubscriptionHistory(subscriberID: string, subscriberType: string) {
+    return this.prisma.subscription.findMany({
+      where: {
+        subscriberID,
+        subscriberType,
+      },
+      include: {
+        plan: true,
+        course: true,
+        community: true,
+        transactions: {
+          orderBy: {createdAt: 'desc'},
+          take: 3,
+        },
+      },
+      orderBy: {createdAt: 'desc'},
+    });
+  }
+
   async createSubscription(data: CreateSubscriptionRequest): Promise<Subscription> {
     await this.validateUser(data.subscriberID, data.subscriberType);
 

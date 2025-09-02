@@ -246,12 +246,6 @@ export class CoachesService {
     const coach = await this.prisma.coach.findUnique({
       where: { id },
       include: {
-        subscriptions: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            plan: true
-          }
-        },
         clientCoaches: {
           where: { status: 'active' },
           orderBy: { assignedAt: 'desc' },
@@ -268,15 +262,6 @@ export class CoachesService {
             }
           }
         },
-        transactions: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          include: {
-            plan: {
-              select: { name: true }
-            }
-          }
-        }
       },
     });
 
@@ -286,7 +271,7 @@ export class CoachesService {
 
     const totalRevenue = await this.prisma.transaction.aggregate({
       where: {
-        coachID: id,
+        payerID: id,
         status: 'completed'
       },
       _sum: { amount: true }
@@ -295,7 +280,6 @@ export class CoachesService {
     return {
       ...coach,
       status: this.determineCoachStatus(coach),
-      currentPlan: coach.subscriptions[0]?.plan?.name || 'No Plan',
       totalRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
     };
   }
@@ -354,21 +338,10 @@ export class CoachesService {
     const coach = await this.prisma.coach.findUnique({
       where: { id },
       include: {
-        subscriptions: {
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            plan: true
-          }
-        },
         clientCoaches: {
           where: { status: 'active' },
           select: { id: true }
         },
-        transactions: {
-          where: { status: 'completed' },
-          select: { amount: true }
-        }
       },
     });
 
@@ -401,27 +374,16 @@ export class CoachesService {
         updatedAt: new Date(),
       },
       include: {
-        subscriptions: {
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            plan: true
-          }
-        },
         clientCoaches: {
           where: { status: 'active' },
           select: { id: true }
         },
-        transactions: {
-          where: { status: 'completed' },
-          select: { amount: true }
-        }
       },
     });
 
     const totalRevenue = await this.prisma.transaction.aggregate({
       where: {
-        coachID: id,
+        payerID: id,
         status: 'completed'
       },
       _sum: { amount: true }
@@ -430,7 +392,6 @@ export class CoachesService {
     return {
       ...restoredCoach,
       status: this.determineCoachStatus(restoredCoach),
-      currentPlan: restoredCoach.subscriptions[0]?.plan?.name || 'No Plan',
       totalRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
     };
   }
@@ -466,7 +427,7 @@ export class CoachesService {
       }),
       this.prisma.transaction.aggregate({
         where: {
-          coachID,
+          payerID: coachID,
           status: 'completed',
           createdAt: { gte: startDate },
         },

@@ -79,23 +79,6 @@ export interface PaymentLinkStatus {
   totalAmount: number;
 }
 
-export interface PaymentRequest {
-  id: string;
-  coachID?: string;
-  clientID?: string;
-  planName: string;
-  amount: number;
-  currency: string;
-  description?: string | null;
-  paymentLinkUrl: string;
-  isActive: boolean;
-  paymentsReceived: number;
-  totalAmountReceived: number;
-  expiresAt?: Date | null;
-  createdAt: Date;
-  status: 'pending' | 'paid' | 'expired';
-}
-
 export interface PaymentRequestStats {
   total: number;
   pending: number;

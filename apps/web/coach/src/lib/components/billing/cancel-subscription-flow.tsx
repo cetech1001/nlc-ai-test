@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, X, XCircle, Calendar } from 'lucide-react';
 import { Button } from '@nlc-ai/web-ui';
-import { Subscription, BillingCycle } from '@nlc-ai/types';
+import { Subscription, BillingCycle } from '@nlc-ai/sdk-billing';
 import { formatCurrency } from '@nlc-ai/web-utils';
 
 interface CancelSubscriptionFlowProps {

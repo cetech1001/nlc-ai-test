@@ -3,11 +3,10 @@
 import {useEffect, useState} from "react";
 import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {ExtendedTransaction} from "@nlc-ai/sdk-billing";
+import {ExtendedTransaction, Plan, Subscription} from "@nlc-ai/sdk-billing";
 import {FilterValues} from "@nlc-ai/sdk-core";
 import { useAuth } from "@nlc-ai/web-auth";
 import { Search } from "lucide-react";
-import {Plan} from "@nlc-ai/sdk-billing";
 import {ExtendedCoach} from "@nlc-ai/sdk-users";
 import {
   paymentHistoryColumns,
@@ -19,9 +18,15 @@ import {
   BillingTabs,
   SubscriptionPlans,
   sdkClient,
-  CancelSubscriptionFlow
+  CancelSubscriptionFlow, PlanUpgradeModal
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
+
+interface CoachBillingData {
+  coach: ExtendedCoach;
+  currentSubscription: Subscription | null;
+  subscriptionHistory: Subscription[];
+}
 
 export default function Billing() {
   const { user } = useAuth();
@@ -31,12 +36,14 @@ export default function Billing() {
 
   const [activeTab, setActiveTab] = useState<'subscription' | 'history'>('subscription');
 
-  const [coach, setCoach] = useState<ExtendedCoach | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [billingData, setBillingData] = useState<CoachBillingData | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
 
   const [isPlansLoading, setIsPlansLoading] = useState(true);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
-  const [isCoachLoading, setIsCoachLoading] = useState(true);
+  const [isBillingDataLoading, setIsBillingDataLoading] = useState(true);
 
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
@@ -80,12 +87,17 @@ export default function Billing() {
       if (activeTab === 'history') {
         (async () => {
           await Promise.all([
-            fetchCoachData(),
+            fetchBillingData(),
             fetchTransactions(),
           ]);
         })();
       } else {
-        (() => fetchPlans())();
+        (async () => {
+          await Promise.all([
+            fetchBillingData(),
+            fetchPlans(),
+          ]);
+        })();
       }
     }
   }, [user?.id, activeTab]);
@@ -93,6 +105,32 @@ export default function Billing() {
   useEffect(() => {
     (() => fetchTransactions())();
   }, [currentPage, searchQuery, filterValues]);
+
+  const handleUpgrade = (plan: Plan) => {
+    setSelectedPlan(plan);
+    setUpgradeModalOpen(true);
+  };
+
+  const handleUpgradeSuccess = async () => {
+    setSuccessMessage("Plan upgraded successfully! Your new features are now available.");
+    await fetchBillingData();
+  };
+
+  const renderUpgradeModal = () => (
+    user && selectedPlan && billingData && (
+      <PlanUpgradeModal
+        plan={selectedPlan}
+        currentPlan={billingData.currentSubscription?.plan}
+        coachID={user.id}
+        isOpen={upgradeModalOpen}
+        onClose={() => {
+          setUpgradeModalOpen(false);
+          setSelectedPlan(null);
+        }}
+        onSuccess={handleUpgradeSuccess}
+      />
+    )
+  );
 
   const fetchPlans = async () => {
     try {
@@ -108,17 +146,35 @@ export default function Billing() {
     }
   }
 
-  const fetchCoachData = async () => {
+  const fetchBillingData = async () => {
     try {
-      setIsCoachLoading(true);
+      setIsBillingDataLoading(true);
       setError("");
 
+      // Fetch coach data
       const coachData = await sdkClient.users.coaches.getCoach(user?.id!);
-      setCoach(coachData);
+
+      // Fetch current active subscription
+      const currentSubscription = await sdkClient.billing.subscriptions.getCurrentSubscription(
+        user?.id!,
+        'coach'
+      );
+
+      // Fetch subscription history
+      const subscriptionHistory = await sdkClient.billing.subscriptions.getSubscriptionHistory(
+        user?.id!,
+        'coach'
+      );
+
+      setBillingData({
+        coach: coachData,
+        currentSubscription,
+        subscriptionHistory
+      });
     } catch (e: any) {
-      setError(e.message || 'Failed to fetch coach subscription data');
+      setError(e.message || 'Failed to fetch billing data');
     } finally {
-      setIsCoachLoading(false);
+      setIsBillingDataLoading(false);
     }
   }
 
@@ -131,7 +187,9 @@ export default function Billing() {
         {
           page: currentPage,
           limit: paymentsPerPage,
-          search: searchQuery
+          search: searchQuery,
+          payerID: user?.id,
+          payerType: 'coach'
         },
         filterValues,
       );
@@ -145,9 +203,32 @@ export default function Billing() {
     }
   };
 
-  const handleUpgrade = (plan: Plan) => {
-    console.log('Upgrading to:', plan.name);
-  };
+  /*const handleUpgrade = async (plan: Plan) => {
+    try {
+      setError("");
+      setSuccessMessage("");
+
+      // Create payment request for the new plan
+      const paymentRequest = await sdkClient.billing.paymentRequests.createPaymentRequest({
+        createdByID: user?.id!,
+        createdByType: 'coach',
+        payerID: user?.id!,
+        payerType: 'coach',
+        type: 'plan_payment',
+        planID: plan.id,
+        amount: plan.monthlyPrice, // or plan.annualPrice based on selection
+        currency: 'USD',
+        description: `Upgrade to ${plan.name} plan`,
+      });
+
+      // Redirect to payment link
+      if (paymentRequest.paymentLinkUrl) {
+        window.location.href = paymentRequest.paymentLinkUrl;
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to initiate plan upgrade');
+    }
+  };*/
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -167,13 +248,18 @@ export default function Billing() {
 
   const handleCancelSubscription = async (reason: string, feedback?: string) => {
     try {
-      /*await sdkClient.billing.subscriptions.cancelSubscription(coach?.subscriptions?.[0]?.id!, {
+      if (!billingData?.currentSubscription) {
+        throw new Error('No active subscription found');
+      }
+
+      await sdkClient.billing.subscriptions.cancelSubscription(
+        billingData.currentSubscription.id,
         reason,
         feedback
-      });*/
+      );
 
-      // Refresh coach data to get updated subscription status
-      await fetchCoachData();
+      // Refresh billing data to get updated subscription status
+      await fetchBillingData();
       setSuccessMessage("Subscription cancelled successfully. You'll continue to have access until your next billing date.");
     } catch (error: any) {
       setError(error.message || "Failed to cancel subscription");
@@ -220,24 +306,30 @@ export default function Billing() {
 
         {activeTab === 'subscription' && (
           <>
-            <SubscriptionPlans plans={plans} handleUpgrade={handleUpgrade} coach={coach} isLoading={isPlansLoading}/>
-            {coach?.subscriptions?.[0] && (
+            <SubscriptionPlans
+              plans={plans}
+              handleUpgrade={handleUpgrade}
+              currentSubscription={billingData?.currentSubscription}
+              isLoading={isPlansLoading || isBillingDataLoading}
+            />
+            {billingData?.currentSubscription && (
               <div className="mt-8">
                 <CancelSubscriptionFlow
-                  subscription={coach.subscriptions[0]}
+                  subscription={billingData.currentSubscription}
                   onCancelSubscription={handleCancelSubscription}
                 />
               </div>
             )}
+            {renderUpgradeModal()}
           </>
         )}
 
         {activeTab === 'history' && (
           <>
             <CurrentPlanCard
-              subscription={coach?.subscriptions?.[0]}
+              subscription={billingData?.currentSubscription}
               onChangePlan={handleChangePlan}
-              isLoading={isCoachLoading}
+              isLoading={isBillingDataLoading}
             />
 
             <PageHeader title="Billing History">

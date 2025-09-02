@@ -1,5 +1,5 @@
 import {FC} from 'react';
-import {BillingCycle, Subscription} from "@nlc-ai/types";
+import {BillingCycle, Subscription} from "@nlc-ai/sdk-billing";
 import {Button, Skeleton} from "@nlc-ai/web-ui";
 import { formatCurrency, toTitleCase } from '@nlc-ai/web-utils';
 
@@ -33,7 +33,7 @@ const CurrentPlanCardSkeleton: FC = () => {
 };
 
 interface IProps {
-  subscription?: Subscription;
+  subscription?: Subscription | null;
   onChangePlan?: () => void;
   isLoading?: boolean;
 }
@@ -45,6 +45,23 @@ export const CurrentPlanCard: FC<IProps> = ({
 }) => {
   if (isLoading) {
     return <CurrentPlanCardSkeleton/>
+  }
+
+  if (!subscription) {
+    return (
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-2">No Active Subscription</h3>
+        <p className="text-white/70 text-sm mb-4">
+          You don't have an active subscription. Choose a plan to get started.
+        </p>
+        <Button
+          onClick={onChangePlan}
+          className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex"
+        >
+          Choose Plan
+        </Button>
+      </div>
+    );
   }
 
   return (
