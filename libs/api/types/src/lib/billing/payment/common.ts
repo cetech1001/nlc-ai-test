@@ -39,6 +39,8 @@ export interface ProcessPaymentRequest {
   amount: number;
   paymentMethodID: string;
   description?: string;
+
+  returnUrl: string;
 }
 
 export interface CreateSetupIntentRequest {

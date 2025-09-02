@@ -10,6 +10,7 @@ import {
   UserType
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
+import {TransactionStatus} from "@prisma/client";
 
 @Injectable()
 export class PaymentsService {
@@ -148,7 +149,7 @@ export class PaymentsService {
         paymentIntentData.paymentIntentID,
         {
           payment_method: data.paymentMethodID,
-          return_url: `${this.configService.get('PLATFORM_URL')}/payments/completed`,
+          return_url: data.returnUrl,
         }
       );
 
@@ -168,7 +169,7 @@ export class PaymentsService {
       return {
         transaction,
         paymentIntent: confirmedPayment,
-        success: confirmedPayment.status === 'succeeded',
+        paymentSuccessful: confirmedPayment.status === 'succeeded',
       };
     } catch (error: any) {
       // Create failed transaction record
@@ -397,6 +398,35 @@ export class PaymentsService {
     }
   }
 
+  private mapStripeStatusToInternal(
+    status: Stripe.PaymentIntent.Status | 'failed'
+  ): TransactionStatus {
+    switch (status) {
+      case 'requires_payment_method':
+      case 'requires_confirmation':
+        return TransactionStatus.pending;
+
+      case 'requires_action':
+      case 'processing':
+        return TransactionStatus.processing;
+
+      case 'requires_capture':
+        return TransactionStatus.processing;
+
+      case 'succeeded':
+        return TransactionStatus.completed;
+
+      case 'canceled':
+        return TransactionStatus.canceled;
+
+      case 'failed':
+        return TransactionStatus.failed;
+
+      default:
+        return TransactionStatus.processing;
+    }
+  }
+
   private async createTransactionRecord(data: {
     payerID: string;
     payerType: UserType;
@@ -420,13 +450,18 @@ export class PaymentsService {
         communityID: data.communityID,
         amount: data.amount,
         currency: 'USD',
-        status: data.status as any,
+        status: this.mapStripeStatusToInternal(data.status as any),
         paymentMethodType: 'stripe',
         stripePaymentID: data.stripePaymentID,
         invoiceNumber,
         invoiceDate: new Date(),
         description: data.description,
         failureReason: data.failureReason,
+        metadata: {
+          provider: 'stripe',
+          providerStatus: data.status,
+          requiresCapture: data.status === 'requires_capture',
+        }
       },
     });
   }

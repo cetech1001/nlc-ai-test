@@ -2,6 +2,7 @@ import {Coach, Client} from "@nlc-ai/sdk-users";
 import {Plan} from "./plans.types";
 import {Transaction} from "./transactions.types";
 import {Invoice} from "./invoices.types";
+import {UserType} from "@nlc-ai/api-types";
 
 export enum SubscriptionStatus {
   ACTIVE = 'active',
@@ -17,6 +18,23 @@ export enum SubscriptionStatus {
 export enum BillingCycle {
   MONTHLY = 'monthly',
   ANNUAL = 'annual'
+}
+
+export interface CreateSubscriptionRequest {
+  subscriberID: string;
+  subscriberType: UserType;
+
+  planID?: string;
+  communityID?: string;
+  courseID?: string;
+
+  billingCycle: BillingCycle;
+  amount: number;
+  currency?: string;
+
+  trialDays?: number;
+  currentPeriodStart?: Date;
+  currentPeriodEnd?: Date;
 }
 
 export interface Subscription {

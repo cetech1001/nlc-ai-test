@@ -1,18 +1,16 @@
 import { useState, useCallback } from 'react';
-import {CreatePaymentMethodRequest, PaymentMethod, PaymentMethodType} from '@nlc-ai/sdk-billing';
+import { PaymentMethod, PaymentMethodType } from '@nlc-ai/sdk-billing';
 import { sdkClient } from '@/lib';
 
 interface CreatePaymentMethodData {
-  coachID?: string;
-  clientID?: string;
+  coachID: string;
   type: PaymentMethodType;
   isDefault?: boolean;
-  cardLast4?: string;
-  cardBrand?: string;
-  cardExpMonth?: number;
-  cardExpYear?: number;
-  stripePaymentMethodID?: string;
-  paypalEmail?: string;
+  cardLast4: string;
+  cardBrand: string;
+  cardExpMonth: number;
+  cardExpYear: number;
+  stripePaymentMethodID: string;
 }
 
 export const usePaymentMethods = () => {
@@ -26,40 +24,54 @@ export const usePaymentMethods = () => {
       setError('');
 
       const response = await sdkClient.billing.paymentMethods.getPaymentMethods(userID, userType);
-      setPaymentMethods(response.data);
+      const methods = response.data || [];
+      setPaymentMethods(methods);
+      return methods;
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch payment methods');
+      const errorMessage = err.message || 'Failed to fetch payment methods';
+      setError(errorMessage);
       console.error('Error fetching payment methods:', err);
+      return [];
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createPaymentMethod = useCallback(async (userID: string, data: CreatePaymentMethodData) => {
+  const savePaymentMethod = useCallback(async (data: CreatePaymentMethodData) => {
     try {
       setError('');
 
-      const newMethod: CreatePaymentMethodRequest = {
-        coachID: userID,
+      const savedMethod = await sdkClient.billing.paymentMethods.savePaymentMethod({
+        coachID: data.coachID,
         type: data.type,
-        isDefault: data.isDefault || false,
+        isDefault: data.isDefault ?? paymentMethods.length === 0,
         cardLast4: data.cardLast4,
         cardBrand: data.cardBrand,
         cardExpMonth: data.cardExpMonth,
         cardExpYear: data.cardExpYear,
         stripePaymentMethodID: data.stripePaymentMethodID,
-        paypalEmail: data.paypalEmail,
-      };
+      });
 
-      const method = await sdkClient.billing.paymentMethods.savePaymentMethod(newMethod);
+      // Update local state
+      setPaymentMethods(prev => {
+        const updated = [...prev, savedMethod];
+        // If this is the default, update other methods
+        if (savedMethod.isDefault) {
+          return updated.map(pm => ({
+            ...pm,
+            isDefault: pm.id === savedMethod.id
+          }));
+        }
+        return updated;
+      });
 
-      setPaymentMethods(prev => [...prev, method]);
-      return newMethod;
+      return savedMethod;
     } catch (err: any) {
-      setError(err.message || 'Failed to create payment method');
-      throw err;
+      const errorMessage = err.message || 'Failed to save payment method';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
-  }, []);
+  }, [paymentMethods.length]);
 
   const setDefaultPaymentMethod = useCallback(async (paymentMethodID: string) => {
     try {
@@ -67,6 +79,7 @@ export const usePaymentMethods = () => {
 
       await sdkClient.billing.paymentMethods.setDefaultPaymentMethod(paymentMethodID);
 
+      // Update local state
       setPaymentMethods(prev =>
         prev.map(pm => ({
           ...pm,
@@ -74,8 +87,9 @@ export const usePaymentMethods = () => {
         }))
       );
     } catch (err: any) {
-      setError(err.message || 'Failed to set default payment method');
-      throw err;
+      const errorMessage = err.message || 'Failed to set default payment method';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   }, []);
 
@@ -85,21 +99,29 @@ export const usePaymentMethods = () => {
 
       await sdkClient.billing.paymentMethods.deletePaymentMethod(paymentMethodID);
 
+      // Update local state
       setPaymentMethods(prev => prev.filter(pm => pm.id !== paymentMethodID));
     } catch (err: any) {
-      setError(err.message || 'Failed to delete payment method');
-      throw err;
+      const errorMessage = err.message || 'Failed to delete payment method';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   }, []);
+
+  const getDefaultPaymentMethod = useCallback(() => {
+    return paymentMethods.find(pm => pm.isDefault) || paymentMethods[0] || null;
+  }, [paymentMethods]);
 
   return {
     paymentMethods,
     loading,
     error,
+    hasPaymentMethods: paymentMethods.length > 0,
     fetchPaymentMethods,
-    createPaymentMethod,
+    savePaymentMethod,
     setDefaultPaymentMethod,
     deletePaymentMethod,
+    getDefaultPaymentMethod,
     clearError: () => setError('')
   };
 };

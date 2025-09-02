@@ -1,5 +1,5 @@
 import {ApiProperty} from "@nestjs/swagger";
-import {IsNumber, IsOptional, IsString, IsUUID, IsIn} from "class-validator";
+import {IsNumber, IsOptional, IsString, IsUUID, IsIn, /*IsUrl*/} from "class-validator";
 import {ProcessPaymentRequest} from "@nlc-ai/types";
 import {UserType} from "@nlc-ai/api-types";
 
@@ -44,4 +44,9 @@ export class ProcessPaymentRequestDto implements ProcessPaymentRequest {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({ example: 'https://exmaple.com/payment/successful' })
+  // @IsUrl()
+  @IsString()
+  returnUrl: string;
 }

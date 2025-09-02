@@ -18,7 +18,8 @@ import {
   BillingTabs,
   SubscriptionPlans,
   sdkClient,
-  CancelSubscriptionFlow, PlanUpgradeModal
+  CancelSubscriptionFlow,
+  PlanUpgradeModal
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
 
@@ -116,22 +117,6 @@ export default function Billing() {
     await fetchBillingData();
   };
 
-  const renderUpgradeModal = () => (
-    user && selectedPlan && (
-      <PlanUpgradeModal
-        plan={selectedPlan}
-        currentPlan={billingData?.currentSubscription?.plan}
-        coachID={user.id}
-        isOpen={upgradeModalOpen}
-        onClose={() => {
-          setUpgradeModalOpen(false);
-          setSelectedPlan(null);
-        }}
-        onSuccess={handleUpgradeSuccess}
-      />
-    )
-  );
-
   const fetchPlans = async () => {
     try {
       setIsPlansLoading(true);
@@ -203,33 +188,6 @@ export default function Billing() {
     }
   };
 
-  /*const handleUpgrade = async (plan: Plan) => {
-    try {
-      setError("");
-      setSuccessMessage("");
-
-      // Create payment request for the new plan
-      const paymentRequest = await sdkClient.billing.paymentRequests.createPaymentRequest({
-        createdByID: user?.id!,
-        createdByType: 'coach',
-        payerID: user?.id!,
-        payerType: 'coach',
-        type: 'plan_payment',
-        planID: plan.id,
-        amount: plan.monthlyPrice, // or plan.annualPrice based on selection
-        currency: 'USD',
-        description: `Upgrade to ${plan.name} plan`,
-      });
-
-      // Redirect to payment link
-      if (paymentRequest.paymentLinkUrl) {
-        window.location.href = paymentRequest.paymentLinkUrl;
-      }
-    } catch (error: any) {
-      setError(error.message || 'Failed to initiate plan upgrade');
-    }
-  };*/
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
@@ -263,7 +221,7 @@ export default function Billing() {
       setSuccessMessage("Subscription cancelled successfully. You'll continue to have access until your next billing date.");
     } catch (error: any) {
       setError(error.message || "Failed to cancel subscription");
-      throw error; // Re-throw so the modal can handle it
+      throw error;
     }
   };
 
@@ -320,7 +278,21 @@ export default function Billing() {
                 />
               </div>
             )}
-            {renderUpgradeModal()}
+
+            {/* Upgrade Modal */}
+            {user && selectedPlan && (
+              <PlanUpgradeModal
+                plan={selectedPlan}
+                currentPlan={billingData?.currentSubscription?.plan}
+                coachID={user.id}
+                isOpen={upgradeModalOpen}
+                onClose={() => {
+                  setUpgradeModalOpen(false);
+                  setSelectedPlan(null);
+                }}
+                onSuccess={handleUpgradeSuccess}
+              />
+            )}
           </>
         )}
 

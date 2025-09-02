@@ -55,6 +55,7 @@ export interface ProcessPaymentRequest {
   amount: number;
   paymentMethodID: string;
   description?: string;
+  returnUrl: string;
 }
 
 export interface PaymentLinkResponse {
@@ -65,7 +66,7 @@ export interface PaymentLinkResponse {
 export interface PaymentResult {
   transaction: any;
   paymentIntent: any;
-  success: boolean;
+  paymentSuccessful: boolean;
 }
 
 export interface SendPaymentRequestResponse {

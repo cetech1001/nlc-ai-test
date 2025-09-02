@@ -1,7 +1,7 @@
-import {useState} from 'react';
-import {sdkClient} from '@/lib';
-import {BillingCycle} from "@nlc-ai/sdk-billing";
-import {UserType} from "@nlc-ai/types";
+import { useState } from 'react';
+import { sdkClient } from '@/lib';
+import { BillingCycle } from '@nlc-ai/sdk-billing';
+import { UserType } from '@nlc-ai/sdk-users';
 
 export const useSubscription = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,16 +17,18 @@ export const useSubscription = () => {
       setIsLoading(true);
       setError('');
 
+      // Process payment first if payment method provided
       if (paymentMethodID) {
+        const plan = await sdkClient.billing.plans.getPlan(planID);
+        const amount = billingCycle === BillingCycle.ANNUAL ? plan.annualPrice : plan.monthlyPrice;
+
         const paymentResult = await sdkClient.billing.payments.processPayment({
           payerID: coachID,
           payerType: UserType.coach,
           planID,
-          amount: billingCycle === BillingCycle.ANNUAL ?
-            (await sdkClient.billing.plans.getPlan(planID)).annualPrice :
-            (await sdkClient.billing.plans.getPlan(planID)).monthlyPrice,
+          amount,
           paymentMethodID,
-          description: `Subscription to plan ${planID}`
+          description: `Subscription to ${plan.name} plan`
         });
 
         if (!paymentResult.success) {
@@ -34,12 +36,15 @@ export const useSubscription = () => {
         }
       }
 
-      return await sdkClient.billing.subscriptions.createSubscription(
+      // Create subscription after successful payment
+      const subscription = await sdkClient.billing.subscriptions.createSubscription(
         coachID,
         UserType.coach,
         planID,
         billingCycle
       );
+
+      return subscription;
     } catch (err: any) {
       setError(err.message || 'Failed to create subscription');
       throw err;
@@ -70,20 +75,6 @@ export const useSubscription = () => {
     }
   };
 
-  const reactivateSubscription = async (subscriptionID: string) => {
-    try {
-      setIsLoading(true);
-      setError('');
-
-      return await sdkClient.billing.subscriptions.reactivateSubscription(subscriptionID);
-    } catch (err: any) {
-      setError(err.message || 'Failed to reactivate subscription');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const updateBillingCycle = async (
     subscriptionID: string,
     billingCycle: BillingCycle
@@ -107,7 +98,6 @@ export const useSubscription = () => {
   return {
     createSubscription,
     cancelSubscription,
-    reactivateSubscription,
     updateBillingCycle,
     isLoading,
     error,

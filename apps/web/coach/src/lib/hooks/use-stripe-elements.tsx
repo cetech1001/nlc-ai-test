@@ -105,7 +105,7 @@ export const useStripeElements = () => {
     useEffect(() => {
       if (stripe && elements) {
         confirmFunctionRef.current = async () => {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 1000));
 
           /*const paymentElement = elements.getElement('payment');
           if (!paymentElement) {

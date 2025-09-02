@@ -1,10 +1,10 @@
 import {BaseClient} from "@nlc-ai/sdk-core";
-import {Subscription, BillingCycle} from "../types";
+import {Subscription, BillingCycle, CreateSubscriptionRequest} from "../types";
 
 export class SubscriptionsClient extends BaseClient{
-  async createSubscription(subscriberID: string, subscriberType: string, planID: string, billingCycle: BillingCycle) {
+  async createSubscription(data: CreateSubscriptionRequest) {
     const response = await this.request<Subscription>('POST', '/', {
-      body: { subscriberID, subscriberType, planID, billingCycle }
+      body: data
     });
     return response.data!;
   }
