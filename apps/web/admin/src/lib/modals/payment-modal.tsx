@@ -1,16 +1,12 @@
-import React, { useState, useEffect, Fragment } from "react";
-import { Dialog, Transition, Listbox, RadioGroup } from "@headlessui/react";
-import { Copy, ChevronDown, CheckIcon, CreditCard, Loader2 } from "lucide-react";
-import { Button } from "@nlc-ai/web-ui";
-import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements
-} from '@stripe/react-stripe-js';
-import { paymentsAPI, plansAPI } from "@nlc-ai/web-api-client";
+import React, {Fragment, useEffect, useState} from "react";
+import {Dialog, Listbox, RadioGroup, Transition} from "@headlessui/react";
+import {CheckIcon, ChevronDown, Copy, CreditCard, Loader2} from "lucide-react";
+import {Button} from "@nlc-ai/web-ui";
+import {loadStripe, StripeElementsOptions} from '@stripe/stripe-js';
+import {CardElement, Elements, useElements, useStripe} from '@stripe/react-stripe-js';
+import {paymentsAPI, plansAPI} from "@nlc-ai/web-api-client";
 import {PaymentModalSkeleton} from "@/lib";
+import {UserType} from "@nlc-ai/types";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -55,7 +51,8 @@ const StripePaymentForm: React.FC<{
     const createPaymentIntent = async () => {
       try {
         const response = await paymentsAPI.createPaymentIntent({
-          coachID: coachID,
+          payerID: coachID,
+          payerType: UserType.coach,
           planID: selectedPlan.id,
           amount: amount * 100, // Convert to cents
           description: `Payment for ${coachName} - ${selectedPlan.name} plan`,
@@ -252,7 +249,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
       if (!paymentLink) {
         const response = await paymentsAPI.sendPaymentRequest({
-          coachID: coachID,
+          payerID: coachID,
+          payerType: UserType.coach,
           planID: selectedPlanOption.id,
           amount: amount * 100, // Convert to cents
           description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
@@ -267,7 +265,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         }
       } else {
         await paymentsAPI.sendPaymentRequest({
-          coachID: coachID,
+          payerID: coachID,
+          payerType: UserType.coach,
           planID: selectedPlanOption.id,
           amount: amount * 100,
           description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,

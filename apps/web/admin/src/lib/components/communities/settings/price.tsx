@@ -60,6 +60,56 @@ export const PricingSettings = ({ community, errors, onUpdatePricing }: PricingS
 
   const isPaidCommunity = community.pricingType !== 'free';
 
+  // Get current price based on pricing type
+  const getCurrentPrice = () => {
+    switch (community.pricingType) {
+      case 'one_time':
+        return community.oneTimePrice || 0;
+      case 'monthly':
+        return community.monthlyPrice || 0;
+      case 'annual':
+        return community.annualPrice || 0;
+      default:
+        return 0;
+    }
+  };
+
+  // Get current price field name and error
+  const getCurrentPriceField = () => {
+    switch (community.pricingType) {
+      case 'one_time':
+        return { field: 'oneTimePrice', error: errors.oneTimePrice };
+      case 'monthly':
+        return { field: 'monthlyPrice', error: errors.monthlyPrice };
+      case 'annual':
+        return { field: 'annualPrice', error: errors.annualPrice };
+      default:
+        return { field: '', error: '' };
+    }
+  };
+
+  const { field: priceField, error: priceError } = getCurrentPriceField();
+  const currentPrice = getCurrentPrice();
+
+  const calculatePotentialRevenue = () => {
+    const price = getCurrentPrice();
+    if (!price || community.pricingType === 'free') return 0;
+    return price * community.memberCount;
+  };
+
+  const getRevenuePeriod = () => {
+    switch (community.pricingType) {
+      case 'monthly':
+        return 'monthly revenue';
+      case 'annual':
+        return 'annual revenue';
+      case 'one_time':
+        return 'revenue';
+      default:
+        return 'revenue';
+    }
+  };
+
   return (
     <div className="bg-gradient-to-br from-neutral-800/40 to-neutral-900/60 rounded-2xl border border-neutral-700/50 p-6 lg:p-8">
       <div className="relative">
@@ -127,7 +177,7 @@ export const PricingSettings = ({ community, errors, onUpdatePricing }: PricingS
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Price Amount */}
                   <div className="space-y-2">
-                    <Label htmlFor="pricingAmount" className="text-stone-300 text-sm font-medium">
+                    <Label htmlFor={priceField} className="text-stone-300 text-sm font-medium">
                       {community.pricingType === 'monthly' ? 'Monthly Price' :
                         community.pricingType === 'annual' ? 'Annual Price' :
                           'One-Time Price'} <span className="text-red-400">*</span>
@@ -135,49 +185,25 @@ export const PricingSettings = ({ community, errors, onUpdatePricing }: PricingS
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
                       <Input
-                        id="pricingAmount"
+                        id={priceField}
                         type="number"
                         min="0"
                         step="0.01"
-                        value={community.pricingAmount ? (community.pricingAmount / 100).toFixed(2) : ''}
+                        value={currentPrice ? (currentPrice / 100).toFixed(2) : ''}
                         onChange={(e) => {
                           const value = e.target.value;
                           const amount = value ? Math.round(parseFloat(value) * 100) : 0;
-                          onUpdatePricing('pricingAmount', amount);
+                          onUpdatePricing(priceField, amount);
                         }}
                         placeholder="0.00"
                         className={`bg-neutral-800/50 border-neutral-600 text-white placeholder:text-stone-400 focus:border-purple-500 focus:ring-purple-500/20 pl-10 ${
-                          errors.pricingAmount ? 'border-red-500' : ''
+                          priceError ? 'border-red-500' : ''
                         }`}
                       />
                     </div>
-                    {errors.pricingAmount && (
-                      <p className="text-red-400 text-sm">{errors.pricingAmount}</p>
+                    {priceError && (
+                      <p className="text-red-400 text-sm">{priceError}</p>
                     )}
-                    <p className="text-stone-400 text-xs">
-                      {community.pricingType === 'monthly' ? 'Amount charged every month' :
-                        community.pricingType === 'annual' ? 'Amount charged every year' :
-                          'One-time payment for lifetime access'}
-                    </p>
-                  </div>
-
-                  {/* Currency */}
-                  <div className="space-y-2">
-                    <Label htmlFor="pricingCurrency" className="text-stone-300 text-sm font-medium">
-                      Currency
-                    </Label>
-                    <select
-                      id="pricingCurrency"
-                      value={community.pricingCurrency || 'USD'}
-                      onChange={(e) => onUpdatePricing('pricingCurrency', e.target.value)}
-                      className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-3 py-3 focus:border-purple-500 focus:ring-purple-500/20 focus:outline-none"
-                    >
-                      {currencies.map((currency) => (
-                        <option key={currency.code} value={currency.code}>
-                          {currency.name} ({currency.symbol})
-                        </option>
-                      ))}
-                    </select>
                     <p className="text-stone-400 text-xs">
                       Choose the currency for your community pricing
                     </p>
@@ -195,7 +221,7 @@ export const PricingSettings = ({ community, errors, onUpdatePricing }: PricingS
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-white">
-                        {formatPrice(community.pricingAmount, community.pricingCurrency)}
+                        {formatPrice(currentPrice, community.currency)}
                       </div>
                       <div className="text-purple-400 text-xs font-medium">
                         {community.pricingType === 'monthly' ? 'per month' :
@@ -210,12 +236,10 @@ export const PricingSettings = ({ community, errors, onUpdatePricing }: PricingS
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 bg-neutral-800/50 rounded-lg">
                     <div className="text-lg font-bold text-green-400">
-                      {formatPrice((community.pricingAmount || 0) * community.memberCount, community.pricingCurrency)}
+                      {formatPrice(calculatePotentialRevenue(), community.currency)}
                     </div>
                     <div className="text-stone-400 text-xs">
-                      Current potential{' '}
-                      {community.pricingType === 'one_time' ? 'revenue' :
-                        community.pricingType === 'monthly' ? 'monthly revenue' : 'annual revenue'}
+                      Current potential {getRevenuePeriod()}
                     </div>
                   </div>
                   <div className="text-center p-3 bg-neutral-800/50 rounded-lg">

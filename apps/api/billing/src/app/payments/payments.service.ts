@@ -1,13 +1,14 @@
-import {Injectable, BadRequestException, NotFoundException, Logger} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { EmailService } from '../email/email.service';
+import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {ConfigService} from '@nestjs/config';
+import {EmailService} from '../email/email.service';
 import Stripe from 'stripe';
 import {
   CreatePaymentIntentRequest,
   PaymentIntentResponse,
-  PaymentMethodType,
-  ProcessPaymentRequest, SendPaymentRequest
-} from "@nlc-ai/types";
+  ProcessPaymentRequest,
+  SendPaymentRequest,
+  UserType
+} from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
@@ -29,39 +30,26 @@ export class PaymentsService {
   }
 
   async createPaymentLink(data: CreatePaymentIntentRequest): Promise<{ paymentLink: string; linkID: string }> {
-    const { coachID, planID, amount, currency = 'USD', description } = data;
+    // Validate payer
+    await this.validateAndGetUser(data.payerID, data.payerType);
 
-    const coach = await this.prisma.coach.findUnique({
-      where: { id: coachID },
-      select: { id: true, email: true, firstName: true, lastName: true }
-    });
-
-    if (!coach) {
-      throw new NotFoundException('Coach not found');
-    }
-
-    const plan = await this.prisma.plan.findUnique({
-      where: { id: planID },
-      select: { id: true, name: true }
-    });
-
-    if (!plan) {
-      throw new NotFoundException('Plan not found');
-    }
+    // Get payment context details
+    const context = await this.getPaymentContext(data);
 
     try {
       const price = await this.stripe.prices.create({
-        unit_amount: amount,
-        currency: currency.toLowerCase(),
+        unit_amount: data.amount,
+        currency: (data.currency || 'USD').toLowerCase(),
         product_data: {
-          name: `${plan.name} Plan Payment`,
+          name: context.name,
         },
         metadata: {
-          coachID,
-          planID,
-          planName: plan.name,
-          coachName: `${coach.firstName} ${coach.lastName}`,
-          description: description || `Payment for ${plan.name} plan for ${coach.firstName} ${coach.lastName}`,
+          payerID: data.payerID,
+          payerType: data.payerType,
+          planID: data.planID || '',
+          courseID: data.courseID || '',
+          communityID: data.communityID || '',
+          contextType: context.type,
         },
       });
 
@@ -73,52 +61,23 @@ export class PaymentsService {
           },
         ],
         metadata: {
-          coachID,
-          planID,
-          planName: plan.name,
-          coachName: `${coach.firstName} ${coach.lastName}`,
-          coachEmail: coach.email,
+          payerID: data.payerID,
+          payerType: data.payerType,
+          contextType: context.type,
         },
         after_completion: {
           type: 'redirect',
           redirect: {
-            url: `${this.configService.get('COACH_PLATFORM_URL')}/payments/completed?coachID=${coachID}&payment=success`,
+            url: `${this.configService.get('PLATFORM_URL')}/payments/success?payerType=${data.payerType}`,
           },
         },
         allow_promotion_codes: true,
         billing_address_collection: 'auto',
-        shipping_address_collection: {
-          allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL'],
-        },
-        phone_number_collection: {
-          enabled: true,
-        },
-        custom_fields: [
-          {
-            key: 'coach_reference',
-            label: {
-              type: 'custom',
-              custom: 'Coach Reference',
-            },
-            type: 'text',
-            optional: true,
-          },
-        ],
       });
 
-      await this.prisma.paymentLink.create({
-        data: {
-          coachID,
-          planID,
-          stripePaymentLinkID: paymentLink.id,
-          paymentLinkUrl: paymentLink.url,
-          amount,
-          currency: currency.toUpperCase(),
-          description,
-          isActive: true,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        },
-      });
+      // Save payment link to database - this would go in PaymentRequest table now
+      // Keeping for backward compatibility
+      // await this.prisma.paymentLink.create({ ... });
 
       return {
         paymentLink: paymentLink.url,
@@ -130,53 +89,42 @@ export class PaymentsService {
   }
 
   async createPaymentIntent(data: CreatePaymentIntentRequest): Promise<PaymentIntentResponse> {
-    const { coachID, planID, amount, currency = 'USD', description } = data;
+    // Validate payer
+    const payer = await this.validateAndGetUser(data.payerID, data.payerType);
 
-    const coach = await this.prisma.coach.findUnique({
-      where: { id: coachID },
-      select: { id: true, email: true, firstName: true, lastName: true, stripeCustomerID: true }
-    });
+    // Get payment context
+    const context = await this.getPaymentContext(data);
 
-    if (!coach) {
-      throw new NotFoundException('Coach not found');
-    }
-
-    const plan = await this.prisma.plan.findUnique({
-      where: { id: planID },
-      select: { id: true, name: true }
-    });
-
-    if (!plan) {
-      throw new NotFoundException('Plan not found');
-    }
-
-    let customerID = coach.stripeCustomerID;
+    // Get or create Stripe customer
+    let customerID = await this.getStripeCustomerID(payer, data.payerType);
     if (!customerID) {
       const customer = await this.stripe.customers.create({
-        email: coach.email,
-        name: `${coach.firstName} ${coach.lastName}`,
+        email: payer.email,
+        name: `${payer.firstName} ${payer.lastName}`,
         metadata: {
-          coachID: coach.id,
+          userID: data.payerID,
+          userType: data.payerType,
         },
       });
 
       customerID = customer.id;
 
-      await this.prisma.coach.update({
-        where: { id: coachID },
-        data: { stripeCustomerID: customerID },
-      });
+      // Update user record with Stripe customer ID
+      await this.updateUserStripeCustomerID(data.payerID, data.payerType, customerID);
     }
 
     const paymentIntent = await this.stripe.paymentIntents.create({
-      amount,
-      currency: currency.toLowerCase(),
+      amount: data.amount,
+      currency: (data.currency || 'USD').toLowerCase(),
       customer: customerID,
-      description: description || `Payment for ${plan.name} plan`,
+      description: data.description || `Payment for ${context.name}`,
       metadata: {
-        coachID,
-        planID,
-        planName: plan.name,
+        payerID: data.payerID,
+        payerType: data.payerType,
+        planID: data.planID || '',
+        courseID: data.courseID || '',
+        communityID: data.communityID || '',
+        contextType: context.type,
       },
       automatic_payment_methods: {
         enabled: true,
@@ -193,31 +141,28 @@ export class PaymentsService {
   }
 
   async processPayment(data: ProcessPaymentRequest): Promise<any> {
-    const { coachID, planID, amount, paymentMethodID, description } = data;
-
-    const paymentIntentData = await this.createPaymentIntent({
-      coachID: coachID,
-      planID,
-      amount,
-      description,
-    });
+    const paymentIntentData = await this.createPaymentIntent(data);
 
     try {
       const confirmedPayment = await this.stripe.paymentIntents.confirm(
         paymentIntentData.paymentIntentID,
         {
-          payment_method: paymentMethodID,
-          return_url: `${this.configService.get('ADMIN_PLATFORM_URL')}/coaches/make-payment`,
+          payment_method: data.paymentMethodID,
+          return_url: `${this.configService.get('PLATFORM_URL')}/payments/completed`,
         }
       );
 
+      // Create transaction record
       const transaction = await this.createTransactionRecord({
-        coachID: coachID,
-        planID,
-        amount,
+        payerID: data.payerID,
+        payerType: data.payerType,
+        planID: data.planID,
+        courseID: data.courseID,
+        communityID: data.communityID,
+        amount: data.amount,
         stripePaymentID: confirmedPayment.id,
         status: confirmedPayment.status,
-        description,
+        description: data.description,
       });
 
       return {
@@ -226,13 +171,17 @@ export class PaymentsService {
         success: confirmedPayment.status === 'succeeded',
       };
     } catch (error: any) {
+      // Create failed transaction record
       await this.createTransactionRecord({
-        coachID: coachID,
-        planID,
-        amount,
+        payerID: data.payerID,
+        payerType: data.payerType,
+        planID: data.planID,
+        courseID: data.courseID,
+        communityID: data.communityID,
+        amount: data.amount,
         stripePaymentID: paymentIntentData.paymentIntentID,
         status: 'failed',
-        description,
+        description: data.description,
         failureReason: error.message,
       });
 
@@ -249,7 +198,6 @@ export class PaymentsService {
 
     let event: Stripe.Event;
 
-    // Ensure we have a Buffer for Stripe verification
     const rawPayload: Buffer = Buffer.isBuffer(payload)
       ? payload
       : Buffer.from(typeof payload === 'string' ? payload : JSON.stringify(payload));
@@ -279,178 +227,26 @@ export class PaymentsService {
     }
   }
 
-  private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
-    const { coachID, planID } = session.metadata || {};
-
-    if (!coachID || !planID) {
-      console.error('Missing metadata in checkout session:', session.id);
-      return;
-    }
-
-    await this.createTransactionRecord({
-      coachID: coachID,
-      planID,
-      amount: session.amount_total || 0,
-      stripePaymentID: session.payment_intent as string,
-      status: 'completed',
-      description: `Payment via payment link - Session: ${session.id}`,
-    });
-
-    await this.createOrUpdateSubscription(coachID, planID);
-  }
-
-  private async handleSuccessfulPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    const { coachID, planID } = paymentIntent.metadata as any;
-
-    if (!coachID || !planID) {
-      console.error('Missing metadata in payment intent:', paymentIntent.id);
-      return;
-    }
-
-    try {
-      await this.prisma.transaction.updateMany({
-        where: {
-          stripePaymentID: paymentIntent.id,
-        },
-        data: {
-          status: 'completed',
-          paidAt: new Date(),
-        },
-      });
-
-      await this.createOrUpdateSubscription(coachID, planID);
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  private async handleFailedPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    await this.prisma.transaction.updateMany({
-      where: {
-        stripePaymentID: paymentIntent.id,
-      },
-      data: {
-        status: 'failed',
-        failureReason: paymentIntent.last_payment_error?.message || 'Payment failed',
-      },
-    });
-  }
-
-  private async createTransactionRecord(data: {
-    coachID: string;
-    planID: string;
-    amount: number;
-    stripePaymentID: string;
-    status: string;
-    description?: string;
-    failureReason?: string;
-  }) {
-    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    return this.prisma.transaction.create({
-      data: {
-        coachID: data.coachID,
-        planID: data.planID,
-        amount: data.amount,
-        currency: 'USD',
-        status: data.status as any,
-        paymentMethod: PaymentMethodType.STRIPE,
-        stripePaymentID: data.stripePaymentID,
-        invoiceNumber,
-        invoiceDate: new Date(),
-        description: data.description,
-        failureReason: data.failureReason,
-      },
-      include: {
-        coach: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        plan: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
-  }
-
-  private async createOrUpdateSubscription(coachID: string, planID: string): Promise<void> {
-    const existingSubscription = await this.prisma.subscription.findFirst({
-      where: {
-        coachID,
-        status: 'active',
-      },
-    });
-
-    if (existingSubscription) {
-      await this.prisma.subscription.update({
-        where: { id: existingSubscription.id },
-        data: {
-          planID,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        },
-      });
-    } else {
-      await this.prisma.subscription.create({
-        data: {
-          coachID,
-          planID,
-          status: 'active',
-          billingCycle: 'monthly',
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        },
-      });
-    }
-  }
-
-  async getPaymentMethods(customerID: string): Promise<Stripe.PaymentMethod[]> {
-    const paymentMethods = await this.stripe.paymentMethods.list({
-      customer: customerID,
-      type: 'card',
-    });
-
-    return paymentMethods.data;
-  }
-
   async sendPaymentRequest(data: SendPaymentRequest): Promise<{ paymentLink: string; linkID: string; emailSent: boolean }> {
     let paymentLink = data.paymentLink;
     let linkID = data.linkID;
+
     if (!paymentLink || !linkID) {
       const result = await this.createPaymentLink(data);
       paymentLink = result.paymentLink;
       linkID = result.linkID;
     }
 
-    const [coach, plan] = await Promise.all([
-      this.prisma.coach.findUnique({
-        where: { id: data.coachID },
-        select: { email: true, firstName: true, lastName: true }
-      }),
-      this.prisma.plan.findUnique({
-        where: { id: data.planID },
-        select: { name: true, description: true }
-      })
-    ]);
-
-    if (!coach || !plan) {
-      throw new NotFoundException('Coach or plan not found');
-    }
+    const payer = await this.validateAndGetUser(data.payerID, data.payerType);
+    const context = await this.getPaymentContext(data);
 
     let emailSent = false;
     try {
       await this.emailService.sendPaymentRequestEmail({
-        to: coach.email,
-        coachName: `${coach.firstName} ${coach.lastName}`,
-        planName: plan.name,
-        planDescription: plan.description || undefined,
+        to: payer.email,
+        payerName: `${payer.firstName} ${payer.lastName}`,
+        itemName: context.name,
+        itemDescription: context.description,
         amount: Math.floor(data.amount / 100),
         paymentLink,
         description: data.description,
@@ -467,22 +263,13 @@ export class PaymentsService {
     };
   }
 
-  async getPaymentLinkStatus(linkID: string): Promise<{
-    status: string;
-    paymentsCount: number;
-    totalAmount: number;
-  }> {
-    try {
-      const paymentLink = await this.stripe.paymentLinks.retrieve(linkID);
+  async getPaymentMethods(customerID: string): Promise<Stripe.PaymentMethod[]> {
+    const paymentMethods = await this.stripe.paymentMethods.list({
+      customer: customerID,
+      type: 'card',
+    });
 
-      return {
-        status: paymentLink.active ? 'active' : 'inactive',
-        paymentsCount: 0,
-        totalAmount: 0,
-      };
-    } catch (error: any) {
-      throw new BadRequestException(`Failed to retrieve payment link status: ${error.message}`);
-    }
+    return paymentMethods.data;
   }
 
   async createSetupIntent(customerID: string): Promise<{ client_secret: string }> {
@@ -500,161 +287,312 @@ export class PaymentsService {
         active: false,
       });
 
-      await this.prisma.paymentLink.updateMany({
-        where: { stripePaymentLinkID: linkID },
-        data: {
-          isActive: false,
-          updatedAt: new Date(),
-        },
-      });
+      // Update database record if it exists
+      // await this.prisma.paymentLink.updateMany({ ... });
     } catch (error: any) {
       throw new BadRequestException(`Failed to deactivate payment link: ${error.message}`);
     }
   }
 
-  async getCoachPaymentRequests(coachID: string, query: any) {
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      search,
-      startDate,
-      endDate,
-    } = query;
+  private async validateAndGetUser(userID: string, userType: UserType): Promise<any> {
+    let user;
 
-    const where: any = {
-      coachID,
-    };
-
-    if (status) {
-      switch (status) {
-        case 'active':
-          where.isActive = true;
-          where.paymentsReceived = 0;
-          where.expiresAt = { gt: new Date() };
-          break;
-        case 'inactive':
-          where.OR = [
-            { paymentsReceived: { gt: 0 } },
-            { isActive: false },
-            { expiresAt: { lte: new Date() } }
-          ];
-          break;
-      }
-    }
-
-    if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
-      }
-    }
-
-    if (search) {
-      where.OR = [
-        { description: { contains: search, mode: 'insensitive' } },
-        { plan: { name: { contains: search, mode: 'insensitive' } } },
-      ];
-    }
-
-    const result = await this.prisma.paginate(this.prisma.paymentLink, {
-      page,
-      limit,
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-          }
+    if (userType === UserType.coach) {
+      user = await this.prisma.coach.findUnique({
+        where: { id: userID },
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          stripeCustomerID: true
         }
-      }
-    });
+      });
+    } else {
+      user = await this.prisma.client.findUnique({
+        where: { id: userID },
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          stripeCustomerID: true
+        }
+      });
+    }
 
-    const paymentRequestsWithDetails = result.data.map((link: any) => ({
-      id: link.id,
-      coachID: link.coachID,
-      planName: link.plan?.name,
-      amount: link.amount,
-      currency: link.currency,
-      description: link.description,
-      paymentLinkUrl: link.paymentLinkUrl,
-      isActive: link.isActive,
-      paymentsReceived: link.paymentsReceived,
-      totalAmountReceived: link.totalAmountReceived,
-      expiresAt: link.expiresAt,
-      createdAt: link.createdAt,
-      status: this.getPaymentRequestStatus(link),
-    }));
+    if (!user) {
+      throw new NotFoundException(`${userType} not found`);
+    }
 
-    return {
-      data: paymentRequestsWithDetails,
-      pagination: result.pagination,
-    };
+    return user;
   }
 
-  async getCoachPaymentRequestStats(coachID: string) {
-    const now = new Date();
+  private async getPaymentContext(data: CreatePaymentIntentRequest): Promise<{
+    type: string;
+    name: string;
+    description?: string | null;
+  }> {
+    if (data.planID) {
+      const plan = await this.prisma.plan.findUnique({
+        where: { id: data.planID },
+        select: { name: true, description: true }
+      });
+      if (!plan) throw new NotFoundException('Plan not found');
+      return { type: 'plan', name: plan.name, description: plan.description };
+    }
 
-    const [total, pending, paid, expired] = await Promise.all([
-      this.prisma.paymentLink.count({ where: { coachID } }),
-      this.prisma.paymentLink.count({
-        where: {
-          coachID,
-          isActive: true,
-          paymentsReceived: 0,
-          expiresAt: { gt: now }
-        }
-      }),
-      this.prisma.paymentLink.count({
-        where: {
-          coachID,
-          paymentsReceived: { gt: 0 }
-        }
-      }),
-      this.prisma.paymentLink.count({
-        where: {
-          coachID,
-          OR: [
-            { isActive: false },
-            { expiresAt: { lte: now } }
-          ],
-          paymentsReceived: 0
-        }
-      })
-    ]);
+    if (data.courseID) {
+      const course = await this.prisma.course.findUnique({
+        where: { id: data.courseID },
+        select: { title: true, description: true }
+      });
+      if (!course) throw new NotFoundException('Course not found');
+      return { type: 'course', name: course.title, description: course.description };
+    }
 
-    const totalAmountPaid = await this.prisma.paymentLink.aggregate({
-      where: {
-        coachID,
-        paymentsReceived: { gt: 0 }
+    if (data.communityID) {
+      const community = await this.prisma.community.findUnique({
+        where: { id: data.communityID },
+        select: { name: true, description: true }
+      });
+      if (!community) throw new NotFoundException('Community not found');
+      return { type: 'community', name: community.name, description: community.description };
+    }
+
+    throw new BadRequestException('At least one of planID, courseID, or communityID must be provided');
+  }
+
+  private async getStripeCustomerID(user: any, userType: UserType): Promise<string | null> {
+    return user.stripeCustomerID || null;
+  }
+
+  private async updateUserStripeCustomerID(userID: string, userType: UserType, stripeCustomerID: string): Promise<void> {
+    if (userType === UserType.coach) {
+      await this.prisma.coach.update({
+        where: { id: userID },
+        data: { stripeCustomerID },
+      });
+    } else {
+      await this.prisma.client.update({
+        where: { id: userID },
+        data: { stripeCustomerID },
+      });
+    }
+  }
+
+  private async createTransactionRecord(data: {
+    payerID: string;
+    payerType: UserType;
+    planID?: string;
+    courseID?: string;
+    communityID?: string;
+    amount: number;
+    stripePaymentID: string;
+    status: string;
+    description?: string;
+    failureReason?: string;
+  }) {
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    return this.prisma.transaction.create({
+      data: {
+        payerID: data.payerID,
+        payerType: data.payerType,
+        planID: data.planID,
+        courseID: data.courseID,
+        communityID: data.communityID,
+        amount: data.amount,
+        currency: 'USD',
+        status: data.status as any,
+        paymentMethodType: 'stripe',
+        stripePaymentID: data.stripePaymentID,
+        invoiceNumber,
+        invoiceDate: new Date(),
+        description: data.description,
+        failureReason: data.failureReason,
       },
-      _sum: { totalAmountReceived: true }
     });
-
-    return {
-      total,
-      pending,
-      paid,
-      expired,
-      totalAmountPaid: Math.round((totalAmountPaid._sum.totalAmountReceived || 0) / 100),
-    };
   }
 
-  private getPaymentRequestStatus(paymentLink: any): string {
-    if (paymentLink.paymentsReceived > 0) {
-      return 'paid';
+  private async handleSuccessfulPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+    const { payerID, payerType, planID, courseID, communityID } = paymentIntent.metadata as any;
+
+    if (!payerID || !payerType) {
+      console.error('Missing metadata in payment intent:', paymentIntent.id);
+      return;
     }
 
-    if (!paymentLink.isActive || (paymentLink.expiresAt && new Date() > paymentLink.expiresAt)) {
-      return 'expired';
+    try {
+      // Update transaction status
+      await this.prisma.transaction.updateMany({
+        where: {
+          stripePaymentID: paymentIntent.id,
+        },
+        data: {
+          status: 'completed',
+          paidAt: new Date(),
+        },
+      });
+
+      // Handle post-payment actions based on context
+      if (planID) {
+        await this.createOrUpdateCoachSubscription(payerID, planID);
+      } else if (courseID) {
+        await this.createCourseEnrollment(payerID, courseID);
+      } else if (communityID) {
+        await this.createCommunitySubscription(payerID, communityID);
+      }
+    } catch (error: any) {
+      console.error('Error handling successful payment:', error);
+      throw error;
+    }
+  }
+
+  private async handleFailedPayment(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+    await this.prisma.transaction.updateMany({
+      where: {
+        stripePaymentID: paymentIntent.id,
+      },
+      data: {
+        status: 'failed',
+        failureReason: paymentIntent.last_payment_error?.message || 'Payment failed',
+      },
+    });
+  }
+
+  private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
+    const { payerID, payerType, contextType } = session.metadata || {};
+
+    if (!payerID || !payerType) {
+      console.error('Missing metadata in checkout session:', session.id);
+      return;
     }
 
-    return 'pending';
+    await this.createTransactionRecord({
+      payerID: payerID,
+      payerType: payerType as UserType,
+      planID: contextType === 'plan' ? session.metadata?.planID : undefined,
+      courseID: contextType === 'course' ? session.metadata?.courseID : undefined,
+      communityID: contextType === 'community' ? session.metadata?.communityID : undefined,
+      amount: session.amount_total || 0,
+      stripePaymentID: session.payment_intent as string,
+      status: 'completed',
+      description: `Payment via payment link - Session: ${session.id}`,
+    });
+
+    // Handle post-payment actions
+    if (contextType === 'plan' && session.metadata?.planID) {
+      await this.createOrUpdateCoachSubscription(payerID, session.metadata.planID);
+    } else if (contextType === 'course' && session.metadata?.courseID) {
+      await this.createCourseEnrollment(payerID, session.metadata.courseID);
+    } else if (contextType === 'community' && session.metadata?.communityID) {
+      await this.createCommunitySubscription(payerID, session.metadata.communityID);
+    }
+  }
+
+  private async createOrUpdateCoachSubscription(coachID: string, planID: string): Promise<void> {
+    const existingSubscription = await this.prisma.subscription.findFirst({
+      where: {
+        subscriberID: coachID,
+        subscriberType: 'coach',
+        status: 'active',
+      },
+    });
+
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: planID },
+      select: { monthlyPrice: true }
+    });
+
+    if (!plan) return;
+
+    if (existingSubscription) {
+      await this.prisma.subscription.update({
+        where: { id: existingSubscription.id },
+        data: {
+          planID,
+          amount: plan.monthlyPrice,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    } else {
+      await this.prisma.subscription.create({
+        data: {
+          subscriberID: coachID,
+          subscriberType: 'coach',
+          planID,
+          status: 'active',
+          billingCycle: 'monthly',
+          amount: plan.monthlyPrice,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+  }
+
+  private async createCourseEnrollment(clientID: string, courseID: string): Promise<void> {
+    const existingEnrollment = await this.prisma.courseEnrollment.findUnique({
+      where: {
+        courseID_clientID: {
+          courseID,
+          clientID,
+        },
+      },
+    });
+
+    if (!existingEnrollment) {
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseID },
+        select: { price: true }
+      });
+
+      await this.prisma.courseEnrollment.create({
+        data: {
+          courseID,
+          clientID,
+          paymentType: 'one_time',
+          totalPaid: course?.price || 0,
+          remainingBalance: 0,
+          status: 'active',
+        },
+      });
+    }
+  }
+
+  private async createCommunitySubscription(clientID: string, communityID: string): Promise<void> {
+    const existingSubscription = await this.prisma.subscription.findFirst({
+      where: {
+        subscriberID: clientID,
+        subscriberType: 'client',
+        communityID,
+        status: 'active',
+      },
+    });
+
+    if (!existingSubscription) {
+      const community = await this.prisma.community.findUnique({
+        where: { id: communityID },
+        select: { monthlyPrice: true }
+      });
+
+      if (!community || !community.monthlyPrice) return;
+
+      await this.prisma.subscription.create({
+        data: {
+          subscriberID: clientID,
+          subscriberType: 'client',
+          communityID,
+          status: 'active',
+          billingCycle: 'monthly',
+          amount: community.monthlyPrice,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
   }
 }

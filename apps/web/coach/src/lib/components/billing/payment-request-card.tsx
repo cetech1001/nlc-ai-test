@@ -1,9 +1,9 @@
-import {CoachPaymentRequest} from "@nlc-ai/types";
+import {PaymentRequest} from "@nlc-ai/sdk-billing";
 import {FC} from "react";
 
 interface IProps {
-  request?: CoachPaymentRequest;
-  onMakePayment?: (request: CoachPaymentRequest) => void;
+  request?: PaymentRequest;
+  onMakePayment?: (request: PaymentRequest) => void;
   isLoading?: boolean;
 }
 

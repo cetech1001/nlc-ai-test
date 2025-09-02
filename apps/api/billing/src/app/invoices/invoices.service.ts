@@ -1,31 +1,23 @@
+// apps/api/billing/src/app/invoices/invoices.service.ts
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 import {Invoice, InvoiceStatus, Prisma} from '@prisma/client';
 import {
   CreateInvoiceRequest,
-  InvoiceFilters, InvoiceLineItem,
+  InvoiceFilters,
+  InvoiceLineItem,
   ExtendedInvoice,
-  UpdateInvoiceRequest
+  UpdateInvoiceRequest, UserType
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
-import {TransactionsService} from "../transactions/transactions.service";
 
 @Injectable()
 export class InvoicesService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private transactionService: TransactionsService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async createInvoice(data: CreateInvoiceRequest): Promise<Invoice> {
-    // Validate coach exists
-    const coach = await this.prisma.coach.findUnique({
-      where: { id: data.coachID },
-    });
-
-    if (!coach) {
-      throw new NotFoundException('Coach not found');
-    }
+    // Validate customer exists
+    await this.validateUser(data.customerID, data.customerType);
 
     // Validate subscription if provided
     if (data.subscriptionID) {
@@ -33,8 +25,8 @@ export class InvoicesService {
         where: { id: data.subscriptionID },
       });
 
-      if (!subscription || subscription.coachID !== data.coachID) {
-        throw new NotFoundException('Subscription not found or does not belong to coach');
+      if (!subscription || subscription.subscriberID !== data.customerID) {
+        throw new NotFoundException('Subscription not found or does not belong to customer');
       }
     }
 
@@ -44,8 +36,8 @@ export class InvoicesService {
         where: { id: data.transactionID },
       });
 
-      if (!transaction || transaction.coachID !== data.coachID) {
-        throw new NotFoundException('Transaction not found or does not belong to coach');
+      if (!transaction || transaction.payerID !== data.customerID) {
+        throw new NotFoundException('Transaction not found or does not belong to customer');
       }
     }
 
@@ -54,9 +46,10 @@ export class InvoicesService {
     try {
       return this.prisma.invoice.create({
         data: {
-          coachID: data.coachID,
+          customerID: data.customerID,
+          customerType: data.customerType,
           subscriptionID: data.subscriptionID,
-          transactionID: data.transactionID,
+          // transactionID: data.transactionID,
           invoiceNumber,
           amount: data.amount,
           currency: data.currency || 'USD',
@@ -72,21 +65,6 @@ export class InvoicesService {
           notes: data.notes,
           metadata: data.metadata || {},
         },
-        include: {
-          coach: {
-            select: {firstName: true, lastName: true, email: true, businessName: true},
-          },
-          subscription: {
-            select: {
-              status: true,
-              billingCycle: true,
-              plan: {select: {name: true}}
-            },
-          },
-          transaction: {
-            select: {status: true, stripePaymentID: true},
-          },
-        },
       });
     } catch (error: any) {
       if (error.code === 'P2002' && error.meta?.target?.includes('invoiceNumber')) {
@@ -100,25 +78,12 @@ export class InvoicesService {
   async findAllInvoices(filters: InvoiceFilters = {}): Promise<ExtendedInvoice[]> {
     const where: Prisma.InvoiceWhereInput = {};
 
-    if (filters.coachID) {
-      where.coachID = filters.coachID;
-    }
-
-    if (filters.subscriptionID) {
-      where.subscriptionID = filters.subscriptionID;
-    }
-
-    if (filters.transactionID) {
-      where.transactionID = filters.transactionID;
-    }
-
-    if (filters.status) {
-      where.status = filters.status;
-    }
-
-    if (filters.currency) {
-      where.currency = filters.currency;
-    }
+    if (filters.customerID) where.customerID = filters.customerID;
+    if (filters.customerType) where.customerType = filters.customerType;
+    if (filters.subscriptionID) where.subscriptionID = filters.subscriptionID;
+    // if (filters.transactionID) where.transactionID = filters.transactionID;
+    if (filters.status) where.status = filters.status;
+    if (filters.currency) where.currency = filters.currency;
 
     if (filters.amountRange) {
       where.amount = {
@@ -146,83 +111,43 @@ export class InvoicesService {
       where.status = { not: InvoiceStatus.paid };
     }
 
-    return this.prisma.invoice.findMany({
+    const invoices = await this.prisma.invoice.findMany({
       where,
-      include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true, businessName: true },
-        },
-        subscription: {
-          select: {
-            status: true,
-            billingCycle: true,
-            plan: { select: { name: true } }
-          },
-        },
-        transaction: {
-          select: { status: true, stripePaymentID: true },
-        },
-      },
+      include: this.getInvoiceIncludes(),
       orderBy: { createdAt: 'desc' },
     });
+
+    return invoices.map(invoice => this.mapInvoiceWithDetails(invoice));
   }
 
-  async findInvoiceById(id: string): Promise<ExtendedInvoice> {
+  async findInvoiceByID(id: string): Promise<ExtendedInvoice> {
     const invoice = await this.prisma.invoice.findUnique({
       where: { id },
-      include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true, businessName: true },
-        },
-        subscription: {
-          select: {
-            status: true,
-            billingCycle: true,
-            plan: { select: { name: true } }
-          },
-        },
-        transaction: {
-          select: { status: true, stripePaymentID: true },
-        },
-      },
+      include: this.getInvoiceIncludes(),
     });
 
     if (!invoice) {
       throw new NotFoundException('Invoice not found');
     }
 
-    return invoice;
+    return this.mapInvoiceWithDetails(invoice);
   }
 
   async findInvoiceByNumber(invoiceNumber: string): Promise<ExtendedInvoice> {
     const invoice = await this.prisma.invoice.findUnique({
       where: { invoiceNumber },
-      include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true, businessName: true },
-        },
-        subscription: {
-          select: {
-            status: true,
-            billingCycle: true,
-            plan: { select: { name: true } }
-          },
-        },
-        transaction: {
-          select: { status: true, stripePaymentID: true },
-        },
-      },
+      include: this.getInvoiceIncludes(),
     });
 
     if (!invoice) {
       throw new NotFoundException('Invoice not found');
     }
 
-    return invoice;
+    return this.mapInvoiceWithDetails(invoice);
   }
 
   async updateInvoice(id: string, data: UpdateInvoiceRequest): Promise<Invoice> {
-    const existingInvoice = await this.findInvoiceById(id);
+    const existingInvoice = await this.findInvoiceByID(id);
 
     // Prevent updates to paid invoices except for notes and metadata
     if (existingInvoice.status === InvoiceStatus.paid) {
@@ -250,7 +175,7 @@ export class InvoicesService {
   }
 
   async sendInvoice(id: string): Promise<Invoice> {
-    const invoice = await this.findInvoiceById(id);
+    const invoice = await this.findInvoiceByID(id);
 
     if (invoice.status !== InvoiceStatus.draft) {
       throw new BadRequestException('Only draft invoices can be sent');
@@ -262,7 +187,7 @@ export class InvoicesService {
   }
 
   async markInvoicePaid(id: string, paidAt?: Date): Promise<Invoice> {
-    const invoice = await this.findInvoiceById(id);
+    const invoice = await this.findInvoiceByID(id);
 
     if (invoice.status === InvoiceStatus.paid) {
       throw new BadRequestException('Invoice is already paid');
@@ -279,7 +204,7 @@ export class InvoicesService {
   }
 
   async markInvoiceOverdue(id: string): Promise<Invoice> {
-    const invoice = await this.findInvoiceById(id);
+    const invoice = await this.findInvoiceByID(id);
 
     if (invoice.status === InvoiceStatus.paid) {
       throw new BadRequestException('Paid invoices cannot be marked as overdue');
@@ -295,7 +220,7 @@ export class InvoicesService {
   }
 
   async cancelInvoice(id: string): Promise<Invoice> {
-    const invoice = await this.findInvoiceById(id);
+    const invoice = await this.findInvoiceByID(id);
 
     if (invoice.status === InvoiceStatus.paid) {
       throw new BadRequestException('Paid invoices cannot be canceled');
@@ -307,7 +232,7 @@ export class InvoicesService {
   }
 
   async refundInvoice(id: string): Promise<Invoice> {
-    const invoice = await this.findInvoiceById(id);
+    const invoice = await this.findInvoiceByID(id);
 
     if (invoice.status !== InvoiceStatus.paid) {
       throw new BadRequestException('Only paid invoices can be refunded');
@@ -328,121 +253,26 @@ export class InvoicesService {
     });
   }
 
-  async getDraftInvoices(coachID?: string): Promise<ExtendedInvoice[]> {
+  async getDraftInvoices(customerID?: string, customerType?: UserType): Promise<ExtendedInvoice[]> {
     return this.findAllInvoices({
-      coachID,
+      customerID,
+      customerType,
       status: InvoiceStatus.draft,
     });
   }
 
-  async getInvoicesByCoach(coachID: string, limit = 50): Promise<ExtendedInvoice[]> {
-    return this.prisma.invoice.findMany({
-      where: { coachID },
-      include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true, businessName: true },
-        },
-        subscription: {
-          select: {
-            status: true,
-            billingCycle: true,
-            plan: { select: { name: true } }
-          },
-        },
-        transaction: {
-          select: { status: true, stripePaymentID: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
-  }
-
-  async getInvoiceStats(filters: {
-    coachID?: string;
-    dateRange?: { start: Date; end: Date };
-  } = {}): Promise<{
-    totalInvoices: number;
-    totalAmount: number;
-    paidAmount: number;
-    overdueAmount: number;
-    statusBreakdown: Record<InvoiceStatus, number>;
-    paymentRate: number;
-    averageInvoiceValue: number;
-    overdueCount: number;
-  }> {
-    const where: Prisma.InvoiceWhereInput = {};
-
-    if (filters.coachID) {
-      where.coachID = filters.coachID;
-    }
-
-    if (filters.dateRange) {
-      where.issueDate = {
-        gte: filters.dateRange.start,
-        lte: filters.dateRange.end,
-      };
-    }
-
-    const [
-      totalStats,
-      statusStats,
-      paidStats,
-      overdueStats,
-    ] = await Promise.all([
-      this.prisma.invoice.aggregate({
-        where,
-        _count: { id: true },
-        _sum: { amount: true },
-        _avg: { amount: true },
-      }),
-      this.prisma.invoice.groupBy({
-        by: ['status'],
-        where,
-        _count: { id: true },
-      }),
-      this.prisma.invoice.aggregate({
-        where: { ...where, status: InvoiceStatus.paid },
-        _sum: { amount: true },
-      }),
-      this.prisma.invoice.aggregate({
-        where: {
-          ...where,
-          status: InvoiceStatus.overdue,
-          dueDate: { lt: new Date() }
-        },
-        _sum: { amount: true },
-        _count: { id: true },
-      }),
-    ]);
-
-    const totalInvoices = totalStats._count.id;
-    const paidInvoices = statusStats.find(s => s.status === InvoiceStatus.paid)?._count.id || 0;
-    const paymentRate = totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0;
-
-    const statusBreakdown = statusStats.reduce((acc, stat) => {
-      acc[stat.status] = stat._count.id;
-      return acc;
-    }, {} as Record<InvoiceStatus, number>);
-
-    return {
-      totalInvoices,
-      totalAmount: totalStats._sum.amount || 0,
-      paidAmount: paidStats._sum.amount || 0,
-      overdueAmount: overdueStats._sum.amount || 0,
-      statusBreakdown,
-      paymentRate: Math.round(paymentRate * 100) / 100,
-      averageInvoiceValue: totalStats._avg.amount || 0,
-      overdueCount: overdueStats._count.id,
-    };
+  async getInvoicesByCustomer(customerID: string, customerType: UserType, limit = 50): Promise<ExtendedInvoice[]> {
+    const result = await this.findAllInvoices({ customerID, customerType });
+    return result.slice(0, limit);
   }
 
   async createInvoiceFromSubscription(subscriptionID: string, periodStart: Date, periodEnd: Date): Promise<Invoice> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id: subscriptionID },
       include: {
-        coach: true,
         plan: true,
+        community: true,
+        course: true,
       },
     });
 
@@ -450,15 +280,19 @@ export class InvoicesService {
       throw new NotFoundException('Subscription not found');
     }
 
-    const amount = subscription.billingCycle === 'monthly'
-      ? subscription.plan.monthlyPrice
-      : subscription.plan.annualPrice;
-
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 14); // 14 days payment terms
 
-    const lineItems: InvoiceLineItem[] = [
-      {
+    let lineItems: InvoiceLineItem[] = [];
+    let resourceName = '';
+
+    if (subscription.plan) {
+      const amount = subscription.billingCycle === 'monthly'
+        ? subscription.plan.monthlyPrice
+        : subscription.plan.annualPrice;
+
+      resourceName = subscription.plan.name;
+      lineItems = [{
         description: `${subscription.plan.name} Plan - ${subscription.billingCycle} billing`,
         quantity: 1,
         unitPrice: amount,
@@ -469,18 +303,55 @@ export class InvoicesService {
           periodEnd: periodEnd.toISOString(),
           billingCycle: subscription.billingCycle,
         },
-      },
-    ];
+      }];
+    } else if (subscription.community) {
+      const amount = subscription.billingCycle === 'monthly'
+        ? subscription.community.monthlyPrice || 0
+        : subscription.community.annualPrice || 0;
+
+      resourceName = subscription.community.name;
+      lineItems = [{
+        description: `${subscription.community.name} Community - ${subscription.billingCycle} access`,
+        quantity: 1,
+        unitPrice: amount,
+        amount,
+        metadata: {
+          periodStart: periodStart.toISOString(),
+          periodEnd: periodEnd.toISOString(),
+          billingCycle: subscription.billingCycle,
+        },
+      }];
+    } else if (subscription.course) {
+      const amount = subscription.billingCycle === 'monthly'
+        ? subscription.course.monthlyPrice || 0
+        : subscription.course.annualPrice || 0;
+
+      resourceName = subscription.course.title;
+      lineItems = [{
+        description: `${subscription.course.title} Course - ${subscription.billingCycle} access`,
+        quantity: 1,
+        unitPrice: amount,
+        amount,
+        metadata: {
+          periodStart: periodStart.toISOString(),
+          periodEnd: periodEnd.toISOString(),
+          billingCycle: subscription.billingCycle,
+        },
+      }];
+    }
+
+    const totalAmount = lineItems.reduce((sum, item) => sum + item.amount, 0);
 
     return this.createInvoice({
-      coachID: subscription.coachID,
+      customerID: subscription.subscriberID,
+      customerType: subscription.subscriberType as UserType,
       subscriptionID,
-      amount,
+      amount: totalAmount,
       dueDate,
       lineItems,
-      subtotal: amount,
-      total: amount,
-      notes: `Invoice for ${subscription.plan.name} plan subscription`,
+      subtotal: totalAmount,
+      total: totalAmount,
+      notes: `Invoice for ${resourceName} subscription`,
       metadata: {
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd.toISOString(),
@@ -489,16 +360,7 @@ export class InvoicesService {
     });
   }
 
-  private generateInvoiceNumber(): string {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `INV-${timestamp}-${random}`;
-  }
-
-  async processOverdueInvoices(): Promise<{
-    processed: number;
-    errors: string[];
-  }> {
+  async processOverdueInvoices(): Promise<{ processed: number; errors: string[] }> {
     const overdueInvoices = await this.prisma.invoice.findMany({
       where: {
         dueDate: { lt: new Date() },
@@ -521,8 +383,9 @@ export class InvoicesService {
     return { processed, errors };
   }
 
-  async generateInvoicePDF(transactionID: string): Promise<Buffer> {
-    const transaction = await this.transactionService.findTransactionByID(transactionID);
+  async generateInvoicePDF(invoiceID: string): Promise<Buffer> {
+    const invoice = await this.findInvoiceByID(invoiceID);
+    const customer = invoice.customer;
 
     return new Promise((resolve, reject) => {
       try {
@@ -535,6 +398,7 @@ export class InvoicesService {
         doc.on('data', (chunk) => chunks.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(chunks)));
 
+        // Header
         doc.fontSize(20)
           .fillColor('#7B21BA')
           .text('NLC AI PLATFORM', 50, 50);
@@ -545,127 +409,98 @@ export class InvoicesService {
           .text('support@nextlevelcoach.ai', 50, 90)
           .text('nextlevelcoach.ai', 50, 105);
 
+        // Invoice title and details
         doc.fontSize(24)
           .fillColor('#000000')
           .text('INVOICE', 400, 50);
 
         doc.fontSize(12)
-          .text(`Invoice #: ${transaction.invoiceNumber || transaction.id.slice(0, 8).toUpperCase()}`, 400, 80)
-          .text(`Date: ${new Date(transaction.invoiceDate).toLocaleDateString()}`, 400, 100)
-          .text(`Due Date: ${transaction.dueDate ? new Date(transaction.dueDate).toLocaleDateString() : 'N/A'}`, 400, 120)
-          .text(`Status: ${transaction.status.toUpperCase()}`, 400, 140);
+          .text(`Invoice #: ${invoice.invoiceNumber}`, 400, 80)
+          .text(`Date: ${invoice.issueDate.toLocaleDateString()}`, 400, 100)
+          .text(`Due Date: ${invoice.dueDate.toLocaleDateString()}`, 400, 120)
+          .text(`Status: ${invoice.status.toUpperCase()}`, 400, 140);
 
+        // Bill to section
         doc.fontSize(14)
           .fillColor('#7B21BA')
           .text('BILL TO:', 50, 180);
 
         doc.fontSize(11)
           .fillColor('#000000')
-          .text(transaction.coachName, 50, 205)
-          .text(transaction.coach.email, 50, 220);
+          .text(customer.name, 50, 205)
+          .text(customer.email, 50, 220);
 
-        if (transaction.coach.businessName) {
-          doc.text(transaction.coach.businessName, 50, 235);
-        }
+        // Line items table
+        const lineItems = JSON.parse(invoice.lineItems as string) as InvoiceLineItem[];
+        const tableTop = 300;
 
         doc.strokeColor('#cccccc')
           .lineWidth(1)
-          .moveTo(50, 280)
-          .lineTo(550, 280)
+          .moveTo(50, tableTop)
+          .lineTo(550, tableTop)
           .stroke();
 
-        const tableTop = 300;
-        const itemCodeX = 50;
-        const descriptionX = 150;
-        const quantityX = 350;
-        const priceX = 400;
-        const amountX = 480;
-
+        // Table header
         doc.fontSize(12)
           .fillColor('#7B21BA')
-          .text('Item', itemCodeX, tableTop)
-          .text('Description', descriptionX, tableTop)
-          .text('Qty', quantityX, tableTop)
-          .text('Price', priceX, tableTop)
-          .text('Amount', amountX, tableTop);
+          .text('Description', 50, tableTop + 10)
+          .text('Qty', 350, tableTop + 10)
+          .text('Price', 400, tableTop + 10)
+          .text('Amount', 480, tableTop + 10);
 
         doc.strokeColor('#cccccc')
           .lineWidth(1)
-          .moveTo(50, tableTop + 20)
-          .lineTo(550, tableTop + 20)
+          .moveTo(50, tableTop + 30)
+          .lineTo(550, tableTop + 30)
           .stroke();
 
-        const itemY = tableTop + 35;
-        doc.fontSize(10)
-          .fillColor('#000000')
-          .text('PLAN-001', itemCodeX, itemY)
-          .text(transaction.plan.name || 'Subscription Plan', descriptionX, itemY)
-          .text('1', quantityX, itemY)
-          .text(`$${(transaction.amount / 100).toFixed(2)}`, priceX, itemY)
-          .text(`$${(transaction.amount / 100).toFixed(2)}`, amountX, itemY);
+        // Line items
+        let yPosition = tableTop + 45;
+        lineItems.forEach((item) => {
+          doc.fontSize(10)
+            .fillColor('#000000')
+            .text(item.description, 50, yPosition)
+            .text(item.quantity.toString(), 350, yPosition)
+            .text(`$${(item.unitPrice / 100).toFixed(2)}`, 400, yPosition)
+            .text(`$${(item.amount / 100).toFixed(2)}`, 480, yPosition);
+          yPosition += 20;
+        });
 
-        let nextY = itemY + 15;
-        if (transaction.plan.description) {
-          doc.fontSize(8)
-            .fillColor('#666666')
-            .text(transaction.plan.description, descriptionX, nextY, { width: 180 });
-          nextY += 25;
-        } else {
-          nextY += 10;
+        // Totals
+        const totalsY = yPosition + 30;
+        doc.fontSize(11)
+          .text('Subtotal:', 400, totalsY)
+          .text(`$${(invoice.subtotal / 100).toFixed(2)}`, 480, totalsY);
+
+        if (invoice.taxAmount) {
+          doc.text('Tax:', 400, totalsY + 20)
+            .text(`${(invoice.taxAmount / 100).toFixed(2)}`, 480, totalsY + 20);
         }
 
-        const subtotalY = nextY + 30;
-        const totalX = 450;
-
-        doc.fontSize(11)
-          .fillColor('#000000')
-          .text('Subtotal:', 400, subtotalY)
-          .text(`$${(transaction.amount / 100).toFixed(2)}`, totalX, subtotalY);
-
-        const taxY = subtotalY + 20;
-        doc.text('Tax (0%):', 400, taxY)
-          .text('$0.00', totalX, taxY);
+        if (invoice.discountAmount) {
+          doc.text('Discount:', 400, totalsY + 40)
+            .text(`-${(invoice.discountAmount / 100).toFixed(2)}`, 480, totalsY + 40);
+        }
 
         doc.strokeColor('#7B21BA')
           .lineWidth(2)
-          .moveTo(400, taxY + 25)
-          .lineTo(550, taxY + 25)
+          .moveTo(400, totalsY + 65)
+          .lineTo(550, totalsY + 65)
           .stroke();
 
-        const totalY = taxY + 35;
         doc.fontSize(14)
           .fillColor('#7B21BA')
-          .text('TOTAL:', 400, totalY)
-          .text(`$${(transaction.amount / 100).toFixed(2)}`, totalX, totalY);
+          .text('TOTAL:', 400, totalsY + 75)
+          .text(`${(invoice.total / 100).toFixed(2)}`, 480, totalsY + 75);
 
-        const paymentY = totalY + 50;
-        doc.fontSize(12)
-          .fillColor('#7B21BA')
-          .text('PAYMENT INFORMATION:', 50, paymentY);
-
-        let paymentInfoY = paymentY + 20;
-        doc.fontSize(10)
-          .fillColor('#000000')
-          .text(`Payment Method: ${transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`, 50, paymentInfoY);
-
-        if (transaction.paidAt) {
-          paymentInfoY += 15;
-          doc.text(`Paid On: ${new Date(transaction.paidAt).toLocaleDateString()}`, 50, paymentInfoY);
-        }
-
-        if (transaction.stripePaymentID) {
-          paymentInfoY += 15;
-          doc.text(`Transaction ID: ${transaction.stripePaymentID}`, 50, paymentInfoY);
-        }
-
-        const footerY = Math.max(paymentInfoY + 40, 650);
+        // Footer
+        const footerY = totalsY + 120;
         doc.fontSize(8)
           .fillColor('#666666')
-          .text('Thank you for choosing NLC AI Platform for your coaching needs.', 50, footerY)
-          .text('For support, please contact us at support@nextlevelcoach.ai', 50, footerY + 12)
-          .text('This invoice was generated automatically by the NLC AI Platform.', 50, footerY + 24);
+          .text('Thank you for your business!', 50, footerY)
+          .text('For support, please contact us at support@nextlevelcoach.ai', 50, footerY + 12);
 
-        if (transaction.status !== 'completed') {
+        if (invoice.status !== 'paid') {
           doc.fontSize(60)
             .fillColor('#ff0000', 0.1)
             .rotate(-45, { origin: [300, 400] })
@@ -678,5 +513,63 @@ export class InvoicesService {
         reject(error);
       }
     });
+  }
+
+  private async validateUser(userID: string, userType: UserType): Promise<void> {
+    let user;
+    if (userType === UserType.coach) {
+      user = await this.prisma.coach.findUnique({
+        where: { id: userID },
+      });
+    } else {
+      user = await this.prisma.client.findUnique({
+        where: { id: userID },
+      });
+    }
+
+    if (!user) {
+      throw new NotFoundException(`${userType} not found`);
+    }
+  }
+
+  private generateInvoiceNumber(): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `INV-${timestamp}-${random}`;
+  }
+
+  private getInvoiceIncludes() {
+    return {
+      subscription: {
+        select: {
+          status: true,
+          billingCycle: true,
+          plan: { select: { name: true } },
+          community: { select: { name: true } },
+          course: { select: { title: true } },
+        },
+      },
+      transaction: {
+        select: { status: true, stripePaymentID: true },
+      },
+    };
+  }
+
+  private mapInvoiceWithDetails(invoice: any): ExtendedInvoice {
+    const getCustomerDetails = () => {
+      // In a real implementation, you'd include customer data in the query
+      // For now, return basic structure
+      return {
+        id: invoice.customerID,
+        type: invoice.customerType,
+        name: '', // Would be populated from join
+        email: '', // Would be populated from join
+      };
+    };
+
+    return {
+      ...invoice,
+      customer: getCustomerDetails(),
+    };
   }
 }

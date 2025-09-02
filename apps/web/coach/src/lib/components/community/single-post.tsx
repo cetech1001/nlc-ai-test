@@ -1,11 +1,11 @@
 import {Heart, MessageCircle, MoreHorizontal, Send, ChevronDown, ChevronUp} from "lucide-react";
-import {Post, PostComment, ReactionType} from "@nlc-ai/sdk-community";
+import {PostResponse, PostCommentResponse, ReactionType} from "@nlc-ai/sdk-community";
 import React, {FC, useState} from "react";
 import { formatTimeAgo, getInitials } from "@nlc-ai/web-utils";
 import { sdkClient } from "@/lib";
 
 interface IProps {
-  post: Post;
+  post: PostResponse;
   handleReactToPost: (postID: string, reactionType: ReactionType) => void;
   handleAddComment: (postID: string, newComment: string) => void;
 }
@@ -13,7 +13,7 @@ interface IProps {
 export const SinglePost: FC<IProps> = (props) => {
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState<{ [key: string]: PostComment[] }>({});
+  const [comments, setComments] = useState<{ [key: string]: PostCommentResponse[] }>({});
   const [loadingComments, setLoadingComments] = useState<{ [key: string]: boolean }>({});
   const [commentsPage, setCommentsPage] = useState<{ [key: string]: number }>({});
   const [hasMoreComments, setHasMoreComments] = useState<{ [key: string]: boolean }>({});
@@ -99,19 +99,19 @@ export const SinglePost: FC<IProps> = (props) => {
     }
   };
 
-  const renderComment = (comment: PostComment) => (
+  const renderComment = (comment: PostCommentResponse) => (
     <div key={comment.id} className="flex gap-3 py-3 border-b border-neutral-700/50 last:border-b-0">
       <div className="w-8 h-8 rounded-full flex-shrink-0">
-        {comment.authorAvatarUrl ? (
+        {comment.communityMember?.userAvatarUrl ? (
           <img
-            src={comment.authorAvatarUrl}
-            alt={comment.authorName || "User"}
+            src={comment.communityMember.userAvatarUrl}
+            alt={comment.communityMember.userName || "User"}
             className="w-8 h-8 rounded-full object-cover"
           />
         ) : (
           <div className="w-8 h-8 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
             <span className="text-white text-xs font-semibold">
-              {getInitials(comment.authorName)}
+              {getInitials(comment.communityMember?.userName)}
             </span>
           </div>
         )}
@@ -119,7 +119,7 @@ export const SinglePost: FC<IProps> = (props) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <h4 className="text-white text-sm font-medium">
-            {comment.authorName || 'Unknown User'}
+            {comment.communityMember?.userName || 'Unknown User'}
           </h4>
           <span className="text-stone-500 text-xs">
             {formatTimeAgo(comment.createdAt)}
@@ -172,16 +172,16 @@ export const SinglePost: FC<IProps> = (props) => {
             {comment.replies.map(reply => (
               <div key={reply.id} className="flex gap-2">
                 <div className="w-6 h-6 rounded-full flex-shrink-0">
-                  {reply.authorAvatarUrl ? (
+                  {reply.communityMember?.userAvatarUrl ? (
                     <img
-                      src={reply.authorAvatarUrl}
-                      alt={reply.authorName || "User"}
+                      src={reply.communityMember.userAvatarUrl}
+                      alt={reply.communityMember.userName || "User"}
                       className="w-6 h-6 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-6 h-6 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs">
-                        {getInitials(reply.authorName)}
+                        {getInitials(reply.communityMember?.userName)}
                       </span>
                     </div>
                   )}
@@ -189,7 +189,7 @@ export const SinglePost: FC<IProps> = (props) => {
                 <div className="flex-1">
                   <div className="flex items-center gap-1 mb-1">
                     <span className="text-white text-xs font-medium">
-                      {reply.authorName || 'Unknown User'}
+                      {reply.communityMember?.userName || 'Unknown User'}
                     </span>
                     <span className="text-stone-500 text-xs">
                       {formatTimeAgo(reply.createdAt)}
@@ -205,6 +205,19 @@ export const SinglePost: FC<IProps> = (props) => {
     </div>
   );
 
+  // Get current user avatar for comment input (this should come from user context)
+  const getCurrentUserAvatar = () => {
+    // This would typically come from a user context or current user state
+    // For now, we'll use a default or the post author's avatar as fallback
+    return props.post.communityMember?.userAvatarUrl;
+  };
+
+  const getCurrentUserInitials = () => {
+    // This would typically come from a user context
+    // For now, we'll use 'Y' for 'You' as placeholder
+    return 'Y';
+  };
+
   return (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[16px] sm:rounded-[20px] border border-neutral-700 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -215,24 +228,31 @@ export const SinglePost: FC<IProps> = (props) => {
         {/* Post Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full flex-shrink-0">
-            {props.post.authorAvatarUrl ? (
+            {props.post.communityMember?.userAvatarUrl ? (
               <img
-                src={props.post.authorAvatarUrl}
-                alt={props.post.authorName}
+                src={props.post.communityMember.userAvatarUrl}
+                alt={props.post.communityMember.userName}
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">
-                  {getInitials(props.post.authorName)}
+                  {getInitials(props.post.communityMember?.userName)}
                 </span>
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-white text-sm sm:text-base font-semibold truncate">
-              {props.post.authorName}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-white text-sm sm:text-base font-semibold truncate">
+                {props.post.communityMember?.userName || 'Unknown User'}
+              </h3>
+              {props.post.communityMember?.role && (
+                <span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs font-medium capitalize">
+                  {props.post.communityMember.role}
+                </span>
+              )}
+            </div>
             <p className="text-stone-400 text-xs sm:text-sm">
               {formatTimeAgo(props.post.createdAt)}
               {props.post.isEdited && <span className="ml-1">(edited)</span>}
@@ -326,15 +346,17 @@ export const SinglePost: FC<IProps> = (props) => {
             {/* Add Comment */}
             <div className="flex items-start gap-3 mb-4">
               <div className="w-8 h-8 rounded-full flex-shrink-0">
-                {props.post.authorAvatarUrl ? (
+                {getCurrentUserAvatar() ? (
                   <img
-                    src={props.post.authorAvatarUrl}
+                    src={getCurrentUserAvatar()}
                     alt="Your avatar"
                     className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
                   <div className="w-8 h-8 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-semibold">Y</span>
+                    <span className="text-white text-xs font-semibold">
+                      {getCurrentUserInitials()}
+                    </span>
                   </div>
                 )}
               </div>

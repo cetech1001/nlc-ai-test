@@ -19,6 +19,34 @@ export const CommunityDetailsInfo: FC<{ community: Community }> = ({ community }
     setOwner(owner);
   }
 
+  const getPriceDisplay = () => {
+    if (community.pricingType === 'free') {
+      return 'Free';
+    }
+
+    let amount = 0;
+    let period = '';
+
+    switch (community.pricingType) {
+      case 'one_time':
+        amount = community.oneTimePrice || 0;
+        period = 'one-time';
+        break;
+      case 'monthly':
+        amount = community.monthlyPrice || 0;
+        period = 'monthly';
+        break;
+      case 'annual':
+        amount = community.annualPrice || 0;
+        period = 'annually';
+        break;
+      default:
+        return 'Free';
+    }
+
+    return `${formatCurrency(amount, community.currency)} ${period}`;
+  };
+
   return (
     <div className="bg-gradient-to-br from-neutral-800/40 to-neutral-900/60 rounded-2xl border border-neutral-700/50 p-6">
       <h3 className="text-lg font-bold text-white mb-4">Information</h3>
@@ -64,15 +92,7 @@ export const CommunityDetailsInfo: FC<{ community: Community }> = ({ community }
         <div>
           <span className="text-stone-400 block">Pricing</span>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-stone-200 capitalize">{community.pricingType}</span>
-            {community.pricingAmount && (
-              <>
-                <span className="text-stone-400">•</span>
-                <span className="text-stone-200">
-                  {formatCurrency(community.pricingAmount)}
-                </span>
-              </>
-            )}
+            <span className="text-stone-200">{getPriceDisplay()}</span>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import {BaseClient} from "@nlc-ai/sdk-core";
 
 export class InvoicesClient extends BaseClient{
-  async downloadTransaction(id: string): Promise<void> {
+  async downloadInvoice(id: string): Promise<void> {
     try {
       const response = await fetch(`${this.baseURL}/${id}/download`, {
         headers: {

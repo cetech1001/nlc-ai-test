@@ -96,6 +96,7 @@ model Client {
   lastInteractionAt DateTime?  @db.Timestamptz(6)
   totalInteractions Int?       @default(0)
   engagementScore   Decimal?   @default(0.00) @db.Decimal(3, 2)
+  stripeCustomerID  String?    @db.VarChar(255)
   customFields      Json?      @default("{}")
   isActive          Boolean?   @default(true)
   isVerified        Boolean?   @default(false)

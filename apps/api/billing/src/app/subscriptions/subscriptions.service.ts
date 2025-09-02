@@ -2,9 +2,10 @@ import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common
 import {Prisma, Subscription, SubscriptionStatus} from '@prisma/client';
 import {
   CreateSubscriptionRequest,
-  SubscriptionFilters,
   ExtendedSubscription,
-  UpdateSubscriptionRequest
+  SubscriptionFilters,
+  UpdateSubscriptionRequest,
+  UserType
 } from "@nlc-ai/api-types";
 import {PrismaService} from "@nlc-ai/api-database";
 
@@ -13,34 +14,13 @@ export class SubscriptionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createSubscription(data: CreateSubscriptionRequest): Promise<Subscription> {
-    // Validate coach exists
-    const coach = await this.prisma.coach.findUnique({
-      where: { id: data.coachID },
-    });
+    await this.validateUser(data.subscriberID, data.subscriberType);
 
-    if (!coach) {
-      throw new NotFoundException('Coach not found');
-    }
+    await this.validateSubscriptionContext(data);
 
-    // Validate plan exists and is active
-    const plan = await this.prisma.plan.findUnique({
-      where: { id: data.planID },
-    });
-
-    if (!plan || !plan.isActive || plan.isDeleted) {
-      throw new NotFoundException('Plan not found or inactive');
-    }
-
-    // Check for existing active subscription
-    const existingSubscription = await this.prisma.subscription.findFirst({
-      where: {
-        coachID: data.coachID,
-        status: 'active',
-      },
-    });
-
+    const existingSubscription = await this.findExistingSubscription(data);
     if (existingSubscription) {
-      throw new BadRequestException('Coach already has an active subscription');
+      throw new BadRequestException('User already has an active subscription to this resource');
     }
 
     const now = new Date();
@@ -49,7 +29,6 @@ export class SubscriptionsService {
     let trialEnd: Date | null = null;
     let status: SubscriptionStatus = 'active';
 
-    // Handle trial period
     if (data.trialDays && data.trialDays > 0) {
       status = 'trialing';
       trialEnd = new Date(now);
@@ -57,7 +36,6 @@ export class SubscriptionsService {
       periodStart = trialEnd;
     }
 
-    // Calculate period end based on billing cycle
     if (!periodEnd) {
       periodEnd = new Date(periodStart);
       if (data.billingCycle === 'monthly') {
@@ -72,23 +50,20 @@ export class SubscriptionsService {
     try {
       return this.prisma.subscription.create({
         data: {
-          coachID: data.coachID,
+          subscriberID: data.subscriberID,
+          subscriberType: data.subscriberType,
           planID: data.planID,
+          communityID: data.communityID,
+          courseID: data.courseID,
           status,
           billingCycle: data.billingCycle,
+          amount: data.amount,
+          currency: data.currency || 'USD',
           currentPeriodStart: periodStart,
           currentPeriodEnd: periodEnd,
           trialStart: data.trialDays ? now : null,
           trialEnd,
           nextBillingDate,
-        },
-        include: {
-          coach: {
-            select: {firstName: true, lastName: true, email: true},
-          },
-          plan: {
-            select: {name: true, monthlyPrice: true, annualPrice: true},
-          },
         },
       });
     } catch (error: any) {
@@ -99,58 +74,43 @@ export class SubscriptionsService {
   async findAllSubscriptions(filters: SubscriptionFilters = {}): Promise<ExtendedSubscription[]> {
     const where: Prisma.SubscriptionWhereInput = {};
 
-    if (filters.coachID) {
-      where.coachID = filters.coachID;
-    }
-
-    if (filters.planID) {
-      where.planID = filters.planID;
-    }
-
-    if (filters.status) {
-      where.status = filters.status;
-    }
-
-    if (filters.billingCycle) {
-      where.billingCycle = filters.billingCycle;
-    }
+    if (filters.subscriberID) where.subscriberID = filters.subscriberID;
+    if (filters.subscriberType) where.subscriberType = filters.subscriberType;
+    if (filters.planID) where.planID = filters.planID;
+    if (filters.communityID) where.communityID = filters.communityID;
+    if (filters.courseID) where.courseID = filters.courseID;
+    if (filters.status) where.status = filters.status;
+    if (filters.billingCycle) where.billingCycle = filters.billingCycle;
 
     if (filters.expiringBefore) {
-      where.currentPeriodEnd = {
-        lte: filters.expiringBefore,
-      };
+      where.currentPeriodEnd = { lte: filters.expiringBefore };
     }
 
     if (filters.createdAfter) {
-      where.createdAt = {
-        gte: filters.createdAfter,
-      };
+      where.createdAt = { gte: filters.createdAfter };
     }
 
-    return this.prisma.subscription.findMany({
+    const subscriptions = await this.prisma.subscription.findMany({
       where,
-      include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true },
-        },
-        plan: {
-          select: { name: true, monthlyPrice: true, annualPrice: true },
-        },
-      },
+      include: this.getSubscriptionIncludes(),
       orderBy: { createdAt: 'desc' },
     });
+
+    let extendedSubscriptions: ExtendedSubscription[] = [];
+
+    for (const subscription of subscriptions) {
+      const extendedSub = await this.mapSubscriptionWithDetails(subscription);
+      extendedSubscriptions.push(extendedSub);
+    }
+
+    return extendedSubscriptions;
   }
 
-  async findSubscriptionById(id: string): Promise<ExtendedSubscription> {
+  async findSubscriptionByID(id: string): Promise<ExtendedSubscription> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id },
       include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true },
-        },
-        plan: {
-          select: { name: true, monthlyPrice: true, annualPrice: true },
-        },
+        ...this.getSubscriptionIncludes(),
         transactions: {
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -162,43 +122,40 @@ export class SubscriptionsService {
       throw new NotFoundException('Subscription not found');
     }
 
-    return subscription;
+    return this.mapSubscriptionWithDetails(subscription);
   }
 
-  async findCoachActiveSubscription(coachID: string): Promise<ExtendedSubscription | null> {
-    return this.prisma.subscription.findFirst({
+  async findActiveSubscription(subscriberID: string, subscriberType: 'coach' | 'client'): Promise<ExtendedSubscription | null> {
+    const subscription = await this.prisma.subscription.findFirst({
       where: {
-        coachID,
+        subscriberID,
+        subscriberType,
         status: 'active',
       },
-      include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true },
-        },
-        plan: {
-          select: { name: true, monthlyPrice: true, annualPrice: true },
-        },
-      },
+      include: this.getSubscriptionIncludes(),
     });
+
+    return subscription ? this.mapSubscriptionWithDetails(subscription) : null;
   }
 
   async updateSubscription(id: string, data: UpdateSubscriptionRequest): Promise<Subscription> {
-    const existingSubscription = await this.findSubscriptionById(id);
+    await this.findSubscriptionByID(id);
 
-    // Validate plan if changing
-    if (data.planID && data.planID !== existingSubscription.planID) {
-      const plan = await this.prisma.plan.findUnique({
-        where: { id: data.planID },
+    if (data.planID || data.communityID || data.courseID) {
+      await this.validateSubscriptionContext({
+        subscriberID: '',
+        subscriberType: UserType.coach,
+        planID: data.planID,
+        communityID: data.communityID,
+        courseID: data.courseID,
+        billingCycle: 'monthly',
+        amount: 0,
       });
-
-      if (!plan || !plan.isActive || plan.isDeleted) {
-        throw new NotFoundException('Plan not found or inactive');
-      }
     }
 
     try {
       return this.prisma.subscription.update({
-        where: {id},
+        where: { id },
         data: {
           ...data,
           updatedAt: new Date(),
@@ -210,7 +167,7 @@ export class SubscriptionsService {
   }
 
   async cancelSubscription(id: string, reason?: string, immediateCancel = false): Promise<Subscription> {
-    const subscription = await this.findSubscriptionById(id);
+    const subscription = await this.findSubscriptionByID(id);
 
     if (subscription.status === 'canceled') {
       throw new BadRequestException('Subscription is already canceled');
@@ -222,7 +179,7 @@ export class SubscriptionsService {
     return this.prisma.subscription.update({
       where: { id },
       data: {
-        status: immediateCancel ? 'canceled' : 'active', // Keep active until period ends
+        status: immediateCancel ? 'canceled' : 'active',
         canceledAt,
         cancelReason: reason,
         updatedAt: now,
@@ -231,7 +188,7 @@ export class SubscriptionsService {
   }
 
   async reactivateSubscription(id: string): Promise<Subscription> {
-    const subscription = await this.findSubscriptionById(id);
+    const subscription = await this.findSubscriptionByID(id);
 
     if (subscription.status === 'active') {
       throw new BadRequestException('Subscription is already active');
@@ -265,7 +222,7 @@ export class SubscriptionsService {
   }
 
   async renewSubscription(id: string): Promise<Subscription> {
-    const subscription = await this.findSubscriptionById(id);
+    const subscription = await this.findSubscriptionByID(id);
 
     if (subscription.status !== 'active') {
       throw new BadRequestException('Only active subscription can be renewed');
@@ -296,79 +253,131 @@ export class SubscriptionsService {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
 
-    return this.prisma.subscription.findMany({
-      where: {
-        status: 'active',
-        currentPeriodEnd: {
-          lte: futureDate,
-        },
-      },
-      include: {
-        coach: {
-          select: { firstName: true, lastName: true, email: true },
-        },
-        plan: {
-          select: { name: true, monthlyPrice: true, annualPrice: true },
-        },
-      },
-      orderBy: { currentPeriodEnd: 'asc' },
+    return this.findAllSubscriptions({
+      status: 'active',
+      expiringBefore: futureDate,
     });
   }
 
-  async getSubscriptionStats(): Promise<{
-    total: number;
-    active: number;
-    trialing: number;
-    canceled: number;
-    expired: number;
-    monthlyRecurringRevenue: number;
-    averageLifespan: number;
-  }> {
-    const [statusStats, revenueData, lifespanData] = await Promise.all([
-      this.prisma.subscription.groupBy({
-        by: ['status'],
-        _count: { id: true },
-      }),
-      this.prisma.subscription.findMany({
-        where: { status: 'active' },
-        include: { plan: { select: { monthlyPrice: true, annualPrice: true } } },
-      }),
-      this.prisma.subscription.findMany({
-        where: { status: 'canceled' },
-        select: { createdAt: true, canceledAt: true },
-      }),
-    ]);
+  private async validateUser(userID: string, userType: UserType): Promise<void> {
+    let user;
+    if (userType === UserType.coach) {
+      user = await this.prisma.coach.findUnique({
+        where: { id: userID },
+      });
+    } else {
+      user = await this.prisma.client.findUnique({
+        where: { id: userID },
+      });
+    }
 
-    const total = statusStats.reduce((sum, stat) => sum + stat._count.id, 0);
-    const active = statusStats.find(s => s.status === 'active')?._count.id || 0;
-    const trialing = statusStats.find(s => s.status === 'trialing')?._count.id || 0;
-    const canceled = statusStats.find(s => s.status === 'canceled')?._count.id || 0;
-    const expired = statusStats.find(s => s.status === 'expired')?._count.id || 0;
+    if (!user) {
+      throw new NotFoundException(`${userType} not found`);
+    }
+  }
 
-    const monthlyRecurringRevenue = revenueData.reduce((sum, sub) => {
-      const monthlyPrice = sub.billingCycle === 'monthly'
-        ? sub.plan.monthlyPrice
-        : sub.plan.annualPrice / 12;
-      return sum + monthlyPrice;
-    }, 0);
+  private async validateSubscriptionContext(data: Partial<CreateSubscriptionRequest>): Promise<void> {
+    if (data.planID) {
+      const plan = await this.prisma.plan.findUnique({
+        where: { id: data.planID },
+        select: { isActive: true, isDeleted: true }
+      });
+      if (!plan || !plan.isActive || plan.isDeleted) {
+        throw new NotFoundException('Plan not found or inactive');
+      }
+    }
 
-    const averageLifespan = lifespanData.length > 0
-      ? lifespanData.reduce((sum, sub) => {
-          const lifespan = sub.canceledAt
-            ? (sub.canceledAt.getTime() - sub.createdAt.getTime()) / (1000 * 60 * 60 * 24)
-            : 0;
-          return sum + lifespan;
-        }, 0) / lifespanData.length
-      : 0;
+    if (data.communityID) {
+      const community = await this.prisma.community.findUnique({
+        where: { id: data.communityID },
+        select: { isActive: true, isDeleted: true }
+      });
+      if (!community || !community.isActive || community.isDeleted) {
+        throw new NotFoundException('Community not found or inactive');
+      }
+    }
+
+    if (data.courseID) {
+      const course = await this.prisma.course.findUnique({
+        where: { id: data.courseID },
+        select: { isActive: true, isPublished: true }
+      });
+      if (!course || !course.isActive || !course.isPublished) {
+        throw new NotFoundException('Course not found or not available');
+      }
+    }
+
+    const targets = [data.planID, data.communityID, data.courseID].filter(Boolean);
+    if (targets.length !== 1) {
+      throw new BadRequestException('Exactly one of planID, communityID, or courseID must be specified');
+    }
+  }
+
+  private async findExistingSubscription(data: CreateSubscriptionRequest): Promise<Subscription | null> {
+    const where: any = {
+      subscriberID: data.subscriberID,
+      subscriberType: data.subscriberType,
+      status: 'active',
+    };
+
+    if (data.planID) where.planID = data.planID;
+    if (data.communityID) where.communityID = data.communityID;
+    if (data.courseID) where.courseID = data.courseID;
+
+    return this.prisma.subscription.findFirst({ where });
+  }
+
+  private getSubscriptionIncludes() {
+    return {
+      plan: {
+        select: { name: true, monthlyPrice: true, annualPrice: true }
+      },
+      community: {
+        select: { name: true, slug: true, pricingType: true }
+      },
+      course: {
+        select: { title: true, pricingType: true }
+      },
+    };
+  }
+
+  private async mapSubscriptionWithDetails(subscription: any): Promise<ExtendedSubscription> {
+    const getSubscriberDetails = async () => {
+      if (subscription.subscriberType === 'coach') {
+        const coach = await this.prisma.coach.findUnique({
+          where: { id: subscription.subscriberID },
+          select: { firstName: true, lastName: true, email: true }
+        });
+        return coach ? {
+          id: subscription.subscriberID,
+          type: 'coach',
+          name: `${coach.firstName} ${coach.lastName}`,
+          email: coach.email
+        } : null;
+      } else {
+        const client = await this.prisma.client.findUnique({
+          where: { id: subscription.subscriberID },
+          select: { firstName: true, lastName: true, email: true }
+        });
+        return client ? {
+          id: subscription.subscriberID,
+          type: 'client',
+          name: `${client.firstName} ${client.lastName}`,
+          email: client.email
+        } : null;
+      }
+    };
+
+    const subscriber = await getSubscriberDetails();
 
     return {
-      total,
-      active,
-      trialing,
-      canceled,
-      expired,
-      monthlyRecurringRevenue,
-      averageLifespan: Math.round(averageLifespan),
+      ...subscription,
+      subscriber: {
+        id: subscription.subscriberID,
+        type: subscription.subscriberType,
+        name: subscriber?.name,
+        email: subscriber?.email,
+      },
     };
   }
 }

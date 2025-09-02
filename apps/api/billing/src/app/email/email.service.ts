@@ -6,15 +6,15 @@ export class EmailService {
 
   async sendPaymentRequestEmail(data: {
     to: string;
-    coachName: string;
-    planName: string;
-    planDescription?: string;
+    payerName: string;
+    itemName: string;
+    itemDescription?: string | null;
     amount: number;
     paymentLink: string;
     description?: string;
   }): Promise<void> {
     // Minimal stub for Billing extraction: log-only behavior
-    this.logger.log(`sendPaymentRequestEmail -> to: ${data.to}, coach: ${data.coachName}, plan: ${data.planName}, amount: $${data.amount}`);
+    this.logger.log(`sendPaymentRequestEmail -> to: ${data.to}, coach: ${data.payerName}, plan: ${data.itemName}, amount: $${data.amount}`);
     this.logger.log(`Payment link: ${data.paymentLink}`);
   }
 }

@@ -80,14 +80,21 @@ const AdminCommunitySettingsPage = () => {
     if (!community) return;
 
     if (field === 'pricingType') {
+      // When changing pricing type, reset all price fields
       updateCommunity({
         pricingType: value,
-        pricingAmount: value === 'free' ? null : community.pricingAmount,
+        oneTimePrice: value === 'one_time' ? community.oneTimePrice : null,
+        monthlyPrice: value === 'monthly' ? community.monthlyPrice : null,
+        annualPrice: value === 'annual' ? community.annualPrice : null,
       });
-    } else if (field === 'pricingAmount') {
-      updateCommunity({ pricingAmount: value });
-    } else if (field === 'pricingCurrency') {
-      updateCommunity({ pricingCurrency: value });
+    } else if (field === 'oneTimePrice') {
+      updateCommunity({ oneTimePrice: value });
+    } else if (field === 'monthlyPrice') {
+      updateCommunity({ monthlyPrice: value });
+    } else if (field === 'annualPrice') {
+      updateCommunity({ annualPrice: value });
+    } else if (field === 'currency') {
+      updateCommunity({ currency: value });
     }
   };
 
@@ -106,8 +113,15 @@ const AdminCommunitySettingsPage = () => {
       newErrors.description = 'Description must be at least 10 characters';
     }
 
-    if (community.pricingType !== 'free' && (!community.pricingAmount || community.pricingAmount <= 0)) {
-      newErrors.pricingAmount = 'Valid price is required for paid communities';
+    // Validate pricing based on type
+    if (community.pricingType === 'one_time' && (!community.oneTimePrice || community.oneTimePrice <= 0)) {
+      newErrors.oneTimePrice = 'Valid one-time price is required';
+    }
+    if (community.pricingType === 'monthly' && (!community.monthlyPrice || community.monthlyPrice <= 0)) {
+      newErrors.monthlyPrice = 'Valid monthly price is required';
+    }
+    if (community.pricingType === 'annual' && (!community.annualPrice || community.annualPrice <= 0)) {
+      newErrors.annualPrice = 'Valid annual price is required';
     }
 
     if (community.settings?.maxPostLength && (community.settings.maxPostLength < 100 || community.settings.maxPostLength > 10000)) {
@@ -136,13 +150,25 @@ const AdminCommunitySettingsPage = () => {
         isActive: community.isActive,
       };
 
-      // Only include pricing if it's not free
+      // Include pricing based on the current type
       if (community.pricingType !== 'free') {
         updateRequest.pricing = {
           type: community.pricingType,
-          amount: community.pricingAmount,
-          currency: community.pricingCurrency || 'USD',
+          currency: community.currency || 'USD',
         };
+
+        // Set the appropriate amount based on pricing type
+        switch (community.pricingType) {
+          case 'one_time':
+            updateRequest.pricing.amount = community.oneTimePrice;
+            break;
+          case 'monthly':
+            updateRequest.pricing.amount = community.monthlyPrice;
+            break;
+          case 'annual':
+            updateRequest.pricing.amount = community.annualPrice;
+            break;
+        }
       }
 
       const updatedCommunity = await sdkClient.community.communities.updateCommunity(

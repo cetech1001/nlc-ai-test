@@ -5,19 +5,19 @@ import {Search} from "lucide-react";
 import {StatCard} from "@nlc-ai/web-shared";
 import {AlertBanner} from '@nlc-ai/web-ui';
 import {useAuth} from "@nlc-ai/web-auth";
-import {CoachPaymentRequest, CoachPaymentRequestStats} from "@nlc-ai/types";
+import {PaymentRequest, PaymentRequestStats} from "@nlc-ai/sdk-billing";
 import {PaymentRequestCard, sdkClient} from "@/lib";
 
 
 const PaymentRequests = () => {
   const { user } = useAuth();
 
-  const [stats, setStats] = useState<CoachPaymentRequestStats | null>(null);
+  const [stats, setStats] = useState<PaymentRequestStats | null>(null);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
 
-  const [paymentRequests, setPaymentRequests] = useState<CoachPaymentRequest[]>([]);
+  const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [isRequestsLoading, setIsRequestsLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
@@ -66,14 +66,13 @@ const PaymentRequests = () => {
     try {
       setError("");
 
-      const response = await sdkClient.billing.payments.getPaymentRequests(
-        user.id,
+      const response = await sdkClient.billing.paymentRequests.getPaymentRequests(
         {
           page: currentPage,
           limit: pagination.limit,
           search: searchQuery
         },
-        { status: activeTab }
+        { payerID: user.id, status: activeTab }
       );
 
       setPaymentRequests(response.data);
@@ -90,7 +89,7 @@ const PaymentRequests = () => {
     setCurrentPage(1);
   };
 
-  const handleMakePayment = (request: CoachPaymentRequest) => {
+  const handleMakePayment = (request: PaymentRequest) => {
     window.open(request.paymentLinkUrl, '_blank');
   };
 

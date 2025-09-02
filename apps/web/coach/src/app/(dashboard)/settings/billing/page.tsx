@@ -2,7 +2,6 @@
 
 import {useEffect, useState} from "react";
 import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/web-shared";
-// import {transactionsAPI} from "@nlc-ai/web-api-client";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import {ExtendedTransaction} from "@nlc-ai/sdk-billing";
 import {FilterValues} from "@nlc-ai/sdk-core";
@@ -185,7 +184,7 @@ export default function Billing() {
   const handlePaymentAction = async (action: string, payment: PaymentHistoryData) => {
     if (action === 'download') {
       try {
-        await sdkClient.billing.transactions.downloadTransaction(payment.id);
+        await sdkClient.billing.invoices.downloadInvoice(payment.id);
         setSuccessMessage("Invoice downloaded successfully!");
         setTimeout(() => setSuccessMessage(""), 3000);
       } catch (error: any) {

@@ -6,6 +6,7 @@ import {TransactionsClient} from "./transactions.client";
 import {PaymentMethodsClient} from "./payment-methods.client";
 import { SubscriptionsClient } from "./subscriptions.client";
 import { InvoicesClient } from "./invoices.client";
+import { PaymentRequestsClient } from "./payment-requests.client";
 
 
 export class BillingClient extends BaseClient {
@@ -13,6 +14,7 @@ export class BillingClient extends BaseClient {
   public plans: PlansClient;
   public payments: PaymentsClient;
   public paymentMethods: PaymentMethodsClient;
+  public paymentRequests: PaymentRequestsClient;
   public transactions: TransactionsClient;
   public subscriptions: SubscriptionsClient;
 
@@ -37,6 +39,11 @@ export class BillingClient extends BaseClient {
     this.paymentMethods = new PaymentMethodsClient({
       ...config,
       baseURL: `${config.baseURL}/payment-methods`
+    });
+
+    this.paymentRequests = new PaymentRequestsClient({
+      ...config,
+      baseURL: `${config.baseURL}/payment-requests`
     });
 
     this.subscriptions = new SubscriptionsClient({
