@@ -17,13 +17,13 @@ interface PlanUpgradeModalProps {
 type ModalStep = 'plan-details' | 'payment-method' | 'add-payment-method' | 'processing' | 'success' | 'error';
 
 export const PlanUpgradeModal = ({
-   plan,
-   currentPlan,
-   coachID,
-   isOpen,
-   onClose,
-   onSuccess
- }: PlanUpgradeModalProps) => {
+                                   plan,
+                                   currentPlan,
+                                   coachID,
+                                   isOpen,
+                                   onClose,
+                                   onSuccess
+                                 }: PlanUpgradeModalProps) => {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>(BillingCycle.ANNUAL);
   const [currentStep, setCurrentStep] = useState<ModalStep>('plan-details');
   const [selectedPaymentMethodID, setSelectedPaymentMethodID] = useState<string>('');
