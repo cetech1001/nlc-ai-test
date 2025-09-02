@@ -129,7 +129,6 @@ export interface ExtendedTransaction {
   coachEmail?: string;
   clientName?: string;
   clientEmail?: string;
-  planName: string;
   amount: number;
   currency: string;
   status: string;
@@ -139,4 +138,36 @@ export interface ExtendedTransaction {
   transactionDate: Date;
   paidAt?: Date;
   description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  payer?: {
+    id: string;
+    type: string;
+    name: string;
+    email: string;
+  };
+  payee?: {
+    id: string;
+    type: string;
+    name: string;
+    email: string;
+  };
+  plan?: {
+    name: string;
+    monthlyPrice: number;
+    annualPrice: number;
+  };
+  course?: {
+    title: string;
+    price: number;
+  };
+  community?: {
+    name: string;
+    pricingType: string;
+  };
+  subscription?: Pick<Subscription, 'status' | 'billingCycle'> | null;
+  invoice?: {
+    invoiceNumber: string;
+    status: string;
+  } | null;
 }

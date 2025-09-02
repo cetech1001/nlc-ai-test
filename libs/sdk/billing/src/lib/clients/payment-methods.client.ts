@@ -1,9 +1,18 @@
-import {BaseClient} from "@nlc-ai/sdk-core";
-import {PaymentMethod} from "../types";
+import {BaseClient, Paginated} from "@nlc-ai/sdk-core";
+import {CreatePaymentMethodRequest, PaymentMethod} from "../types";
 
 export class PaymentMethodsClient extends BaseClient {
-  async getPaymentMethods(userID: string, userType: string): Promise<PaymentMethod[]> {
-    const response = await this.request<PaymentMethod[]>(
+  async savePaymentMethod(data: CreatePaymentMethodRequest) {
+    const response = await this.request<PaymentMethod>(
+      'POST',
+      `/`,
+      { body: data }
+    );
+    return response.data!;
+  }
+
+  async getPaymentMethods(userID: string, userType: string) {
+    const response = await this.request<Paginated<PaymentMethod>>(
       'GET',
       `?userID=${userID}&userType=${userType}`
     );

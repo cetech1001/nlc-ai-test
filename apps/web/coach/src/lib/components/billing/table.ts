@@ -2,20 +2,17 @@ import { tableRenderers } from "@nlc-ai/web-shared";
 import {DataTableTransaction, ExtendedTransaction} from "@nlc-ai/sdk-billing";
 import { formatCurrency } from "@nlc-ai/web-utils";
 import {TableColumn} from "@nlc-ai/types";
+import {formatDate} from "@nlc-ai/sdk-core";
 
 export const transformPaymentHistoryData = (transactions: ExtendedTransaction[]): DataTableTransaction[] => {
   return transactions.map((transaction: ExtendedTransaction) => ({
     id: transaction.id,
     invoiceNumber: transaction.invoiceNumber,
-    planName: transaction.planName,
+    planName: transaction.plan?.name || '',
     amount: formatCurrency(transaction.amount),
     status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1),
-    paymentMethod: transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    transactionDate: new Date(transaction.transactionDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }),
+    paymentMethod: transaction.paymentMethod?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    transactionDate: formatDate(transaction.createdAt),
   }));
 };
 
@@ -25,13 +22,13 @@ export const paymentHistoryColumns: TableColumn<DataTableTransaction>[] = [
     key: 'id',
     header: 'Transaction ID',
     width: `${colWidth}%`,
-    // render: (value: string) => tableRenderers.truncateText(value, 12)
+    render: (value: string) => tableRenderers.truncateText(value, 12)
   },
   {
     key: 'invoiceNumber',
     header: 'Invoice #',
     width: `${colWidth}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 12)
+    // render: (value: string) => tableRenderers.truncateText(value, 12)
   },
   {
     key: 'planName',

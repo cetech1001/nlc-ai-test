@@ -39,26 +39,12 @@ export class PaymentMethodsController {
     return this.paymentMethodsService.getExpiringPaymentMethods(monthsAhead);
   }
 
-  @Get('stats')
-  @ApiOperation({ summary: 'Get payment method statistics' })
-  @ApiResponse({ status: 200, description: 'Payment method statistics retrieved successfully' })
-  async getPaymentMethodStats(@Query() filters: { coachID?: string }) {
-    return this.paymentMethodsService.getPaymentMethodStats(filters);
-  }
-
-  @Get(':paymentMethodID/usage')
-  @ApiOperation({ summary: 'Get payment method usage statistics' })
-  @ApiResponse({ status: 200, description: 'Payment method usage statistics retrieved successfully' })
-  async getPaymentMethodUsageStats(@Param('paymentMethodID') paymentMethodID: string) {
-    return this.paymentMethodsService.getPaymentMethodUsageStats(paymentMethodID);
-  }
-
   @Get('/default/:userID')
   @ApiOperation({ summary: 'Get default payment method for a user' })
   @ApiResponse({ status: 200, description: 'Default payment method retrieved successfully' })
   @ApiResponse({ status: 404, description: 'No payment method found' })
-  async getCoachDefaultPaymentMethod(@Param('userID') userID: string) {
-    return this.paymentMethodsService.getDefaultPaymentMethod(userID);
+  async getCoachDefaultPaymentMethod(@Param('userID') userID: string, @CurrentUser() user: AuthUser) {
+    return this.paymentMethodsService.getDefaultPaymentMethod(userID, user.type);
   }
 
   @Get(':id')

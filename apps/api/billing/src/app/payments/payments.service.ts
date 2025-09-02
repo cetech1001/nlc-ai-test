@@ -272,7 +272,25 @@ export class PaymentsService {
     return paymentMethods.data;
   }
 
-  async createSetupIntent(customerID: string): Promise<{ client_secret: string }> {
+  async createSetupIntent(payerID: string, payerType: UserType): Promise<{ client_secret: string }> {
+    const payer = await this.validateAndGetUser(payerID, payerType);
+
+    let customerID = await this.getStripeCustomerID(payer, payerType);
+    if (!customerID) {
+      const customer = await this.stripe.customers.create({
+        email: payer.email,
+        name: `${payer.firstName} ${payer.lastName}`,
+        metadata: {
+          userID: payerID,
+          userType: payerType,
+        },
+      });
+
+      customerID = customer.id;
+
+      await this.updateUserStripeCustomerID(payerID, payerType, customerID);
+    }
+
     const setupIntent = await this.stripe.setupIntents.create({
       customer: customerID,
       payment_method_types: ['card'],

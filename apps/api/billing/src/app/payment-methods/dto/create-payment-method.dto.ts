@@ -5,9 +5,16 @@ import { CreatePaymentMethodRequest } from '@nlc-ai/api-types';
 
 export class CreatePaymentMethodDto implements CreatePaymentMethodRequest {
   @ApiProperty({ example: 'coach_123456789' })
+  @IsOptional()
   @IsString()
   @IsUUID()
-  coachID: string;
+  coachID?: string;
+
+  @ApiProperty({ example: 'client_123456789' })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  clientID?: string;
 
   @ApiProperty({ enum: PaymentMethodType })
   @IsEnum(PaymentMethodType)

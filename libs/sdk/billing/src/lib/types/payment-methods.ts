@@ -27,3 +27,27 @@ export interface PaymentMethod {
   coach?: Coach;
   client?: Client;
 }
+
+export interface CreatePaymentMethodRequest {
+  coachID?: string;
+  clientID?: string;
+  type: PaymentMethodType;
+  isDefault?: boolean;
+  cardLast4?: string;
+  cardBrand?: string;
+  cardExpMonth?: number;
+  cardExpYear?: number;
+  stripePaymentMethodID?: string;
+  paypalEmail?: string;
+}
+
+export interface UpdatePaymentMethodRequest {
+  isDefault?: boolean;
+  isActive?: boolean;
+  cardLast4?: string;
+  cardBrand?: string;
+  cardExpMonth?: number;
+  cardExpYear?: number;
+  stripePaymentMethodID?: string;
+  paypalEmail?: string;
+}

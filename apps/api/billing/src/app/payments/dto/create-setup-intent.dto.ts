@@ -1,9 +1,16 @@
 import {ApiProperty} from "@nestjs/swagger";
-import {IsString} from "class-validator";
+import {IsIn, IsString, IsUUID} from "class-validator";
 import {CreateSetupIntentRequest} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/api-types";
 
 export class CreateSetupIntentDto implements CreateSetupIntentRequest {
-  @ApiProperty({ example: 'cus_1234567890abcdef' })
+  @ApiProperty({ example: 'coach_123456789' })
   @IsString()
-  customerID!: string;
+  @IsUUID()
+  payerID: string;
+
+  @ApiProperty({ example: UserType.coach, enum: [UserType.coach, UserType.client] })
+  @IsString()
+  @IsIn([UserType.coach, UserType.client])
+  payerType: UserType;
 }

@@ -117,10 +117,10 @@ export default function Billing() {
   };
 
   const renderUpgradeModal = () => (
-    user && selectedPlan && billingData && (
+    user && selectedPlan && (
       <PlanUpgradeModal
         plan={selectedPlan}
-        currentPlan={billingData.currentSubscription?.plan}
+        currentPlan={billingData?.currentSubscription?.plan}
         coachID={user.id}
         isOpen={upgradeModalOpen}
         onClose={() => {

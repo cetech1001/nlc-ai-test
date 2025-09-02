@@ -5,16 +5,17 @@ import {
   Headers,
   Req,
   Get,
-  Param, BadRequestException, Patch, UseGuards, Query, ForbiddenException,
+  Param,
+  BadRequestException,
+  Patch
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import {CurrentUser, Public, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
+import {Public} from "@nlc-ai/api-auth";
 import { PaymentsService } from './payments.service';
 import {
   CreatePaymentIntentDto, CreateSetupIntentDto,
-  PaymentLinksQueryDto, ProcessPaymentRequestDto, SendPaymentRequestDto
+  ProcessPaymentRequestDto, SendPaymentRequestDto
 } from "./dto";
-import {type AuthUser, UserType} from "@nlc-ai/types";
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -68,15 +69,15 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Create a setup intent for saving payment methods' })
   @ApiResponse({ status: 201, description: 'Setup intent created successfully' })
   async createSetupIntent(@Body() data: CreateSetupIntentDto) {
-    return this.paymentsService.createSetupIntent(data.customerID);
+    return this.paymentsService.createSetupIntent(data.payerID, data.payerType);
   }
 
-  @Get('payment-link/:linkID/status')
+  /*@Get('payment-link/:linkID/status')
   @ApiOperation({ summary: 'Get payment link status' })
   @ApiResponse({ status: 200, description: 'Payment link status retrieved successfully' })
   async getPaymentLinkStatus(@Param('linkID') linkID: string) {
     return this.paymentsService.getPaymentLinkStatus(linkID);
-  }
+  }*/
 
   @Patch('payment-link/:linkID/deactivate')
   @ApiOperation({ summary: 'Deactivate a payment link' })
@@ -110,38 +111,5 @@ export class PaymentsController {
       console.error('Webhook processing error:', error);
       throw error;
     }
-  }
-
-  @Get('requests/:coachID')
-  @UseGuards(UserTypesGuard)
-  @UserTypes(UserType.coach)
-  @ApiOperation({ summary: 'Get payment requests for a specific coach' })
-  @ApiResponse({ status: 200, description: 'Payment requests retrieved successfully' })
-  async getCoachPaymentRequests(
-    @Param('coachID') coachID: string,
-    @Query() query: PaymentLinksQueryDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    return this.paymentsService.getCoachPaymentRequests(coachID, query);
-  }
-
-  @Get('requests/:coachID/stats')
-  @UseGuards(UserTypesGuard)
-  @UserTypes(UserType.coach)
-  @ApiOperation({ summary: 'Get payment request statistics for a coach' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  async getCoachPaymentRequestStats(
-    @Param('coachID') coachID: string,
-    @CurrentUser() user: AuthUser
-  ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    return this.paymentsService.getCoachPaymentRequestStats(coachID);
   }
 }

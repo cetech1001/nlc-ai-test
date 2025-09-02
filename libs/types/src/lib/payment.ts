@@ -80,7 +80,8 @@ export interface ProcessPaymentRequest {
 }
 
 export interface CreateSetupIntentRequest {
-  customerID: string;
+  payerID: string;
+  payerType: UserType;
 }
 
 export interface PaymentLinkResponse {

@@ -1,4 +1,4 @@
-import {Coach} from "@nlc-ai/sdk-users";
+import {Coach, UserType} from "@nlc-ai/sdk-users";
 import {Plan} from "./plans.types";
 
 export interface PaymentLink {
@@ -21,13 +21,18 @@ export interface PaymentLink {
 }
 
 export interface CreatePaymentIntentRequest {
-  coachID?: string;
-  clientID?: string;
-  planID: string;
+  payerID: string;
+  payerType: UserType;
+  planID?: string;
   amount: number;
   currency?: string;
   description?: string;
   paymentMethodID?: string;
+}
+
+export interface CreateSetupIntentRequest {
+  payerID: string;
+  payerType: UserType;
 }
 
 export interface SendPaymentRequest extends CreatePaymentIntentRequest{
@@ -44,16 +49,12 @@ export interface PaymentIntentResponse {
 }
 
 export interface ProcessPaymentRequest {
-  coachID?: string;
-  clientID?: string;
-  planID: string;
+  payerID: string;
+  payerType: UserType;
+  planID?: string;
   amount: number;
   paymentMethodID: string;
   description?: string;
-}
-
-export interface CreateSetupIntentRequest {
-  customerID: string;
 }
 
 export interface PaymentLinkResponse {

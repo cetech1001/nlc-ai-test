@@ -9,7 +9,7 @@ import {
   PaymentIntentResponse,
   PaymentLinkStatus,
   PaymentRequest,
-  PaymentRequestStats
+  PaymentRequestStats, CreateSetupIntentRequest
 } from "../types";
 
 
@@ -50,11 +50,10 @@ export class PaymentsClient extends BaseClient{
     return response.data!;
   }
 
-  async createPaymentIntent(data: CreatePaymentIntentRequest): Promise<PaymentIntentResponse> {
-    const response = await this.request<PaymentIntentResponse>('POST', '/create-payment-intent', {
+  async createPaymentIntent(data: CreatePaymentIntentRequest) {
+    return this.request<PaymentIntentResponse>('POST', '/create-payment-intent', {
       body: data,
     });
-    return response.data!;
   }
 
   async processPayment(data: ProcessPaymentRequest): Promise<PaymentResult> {
@@ -74,10 +73,9 @@ export class PaymentsClient extends BaseClient{
     return response.data!;
   }
 
-  async createSetupIntent(customerID: string): Promise<{ client_secret: string }> {
-    const response = await this.request<{ client_secret: string }>('POST', '/setup-intent', {
-      body: { customerID },
+  async createSetupIntent(data: CreateSetupIntentRequest) {
+    return this.request<{ client_secret: string }>('POST', '/setup-intent', {
+      body: data,
     });
-    return response.data!;
   }
 }

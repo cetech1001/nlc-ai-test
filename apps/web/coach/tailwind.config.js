@@ -54,7 +54,7 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        purple: "hsl(var(--purple))",
+        // purple: "hsl(var(--purple))",
         "magenta-light": "hsl(var(--magenta-light))",
         magenta: "hsl(var(--magenta))",
         error: "hsl(var(--error))",
