@@ -7,7 +7,7 @@ import {sdkClient} from '@/lib';
 import {ExtendedCommunityMember} from '@nlc-ai/sdk-community';
 import {toast} from 'sonner';
 import {useAuth} from "@nlc-ai/web-auth";
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType, getInitials} from "@nlc-ai/sdk-users";
 
 interface CommunityMembersSidebarProps {
   communityID: string;
@@ -74,12 +74,10 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
     }
   };
 
-  // Filter members based on search
   const filteredMembers = members.filter(member =>
     member.userName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Group members by role
   const groupedMembers: GroupedMembers = filteredMembers.reduce((groups, member) => {
     const role = member.role;
     if (!groups[role]) {
@@ -135,7 +133,6 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
         )}
       </div>
 
-      {/* Search */}
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
         <input
@@ -147,7 +144,6 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
         />
       </div>
 
-      {/* Members List */}
       <div className="space-y-4 max-h-96 overflow-y-auto">
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -167,11 +163,17 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer group"
                   >
                     <div className="relative">
-                      <img
-                        src={member.userAvatarUrl || '/api/placeholder/40/40'}
-                        alt={member.userName}
-                        className="w-10 h-10 rounded-full object-cover border border-neutral-600"
-                      />
+                      {member.userAvatarUrl ? (
+                        <img
+                          src={member.userAvatarUrl || '/api/placeholder/40/40'}
+                          alt={member.userName}
+                          className="w-10 h-10 rounded-full object-cover border border-neutral-600"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full object-cover border border-neutral-600 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-purple-600">
+                          {getInitials(member.userName)}
+                        </div>
+                      )}
                       <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
                         member.isOnline ? 'bg-green-500' : 'bg-gray-500'
                       }`}></div>
@@ -204,7 +206,6 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
         )}
       </div>
 
-      {/* Footer */}
       <div className="border-t border-neutral-700 pt-4 mt-4">
         <p className="text-stone-500 text-xs text-center">
           Click any member to start a conversation
@@ -215,7 +216,6 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <div className="hidden lg:block w-96 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden h-fit">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
@@ -225,7 +225,6 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
         </div>
       </div>
 
-      {/* Mobile Toggle Button */}
       {!isMobileOpen && (
         <div className="lg:hidden fixed top-24 right-4 z-50">
           <button
@@ -237,7 +236,6 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
         </div>
       )}
 
-      {/* Mobile Overlay */}
       {isMobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm">
           <div className="absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-neutral-800 to-neutral-900 border-l border-neutral-700 overflow-hidden">

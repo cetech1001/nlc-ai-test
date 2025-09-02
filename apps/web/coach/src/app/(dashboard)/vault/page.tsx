@@ -18,7 +18,6 @@ const VaultPage = () => {
   const router = useRouter();
   const { user } = useAuth();
 
-  // State management
   const [community, setCommunity] = useState<CommunityResponse | null>(null);
   const [posts, setPosts] = useState<PostResponse[]>([]);
 
@@ -27,10 +26,8 @@ const VaultPage = () => {
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
 
-  // Mobile state
   const [showMembersSidebar, setShowMembersSidebar] = useState(false);
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
 
@@ -43,11 +40,9 @@ const VaultPage = () => {
       setIsLoading(true);
       setError("");
 
-      // Load coach-to-coach community
       const communityData = await sdkClient.community.communities.getCoachToCommunity();
       setCommunity(communityData);
 
-      // Load posts
       await loadPosts(communityData.id);
     } catch (error: any) {
       setError(error.message || "Failed to load community data");
@@ -152,10 +147,9 @@ const VaultPage = () => {
 
   const handleMemberClick = async (memberID: string, memberType: string) => {
     try {
-      // Create or find direct conversation with this member
       const conversation = await sdkClient.messaging.createConversation({
         type: 'direct',
-        participantIDs: [user?.id || '', memberID], // Replace with actual current user ID
+        participantIDs: [user?.id || '', memberID],
         participantTypes: ['coach', memberType as any]
       });
 
@@ -199,13 +193,11 @@ const VaultPage = () => {
       )}
 
       <div className="flex gap-3 sm:gap-4 lg:gap-6 h-full relative">
-        {/* Main Content */}
         <div className="flex-1 max-w-full lg:max-w-2xl px-2 sm:px-0">
           {community && <CommunityHeader community={community}/>}
 
           <NewPost handleCreatePost={handleCreatePost}/>
 
-          {/* Posts Feed */}
           <div className="space-y-4 sm:space-y-6">
             {posts.map(post => (
               <SinglePost
@@ -216,7 +208,6 @@ const VaultPage = () => {
               />
             ))}
 
-            {/* Load More Posts */}
             {hasMorePosts && (
               <LoadMorePosts loadMorePosts={loadMorePosts} isLoading={postsLoading}/>
             )}
@@ -231,7 +222,6 @@ const VaultPage = () => {
           </div>
         </div>
 
-        {/* Community Members Sidebar */}
         {community && (
           <CommunityMembersSidebar
             communityID={community.id}

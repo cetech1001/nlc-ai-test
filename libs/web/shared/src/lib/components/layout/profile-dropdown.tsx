@@ -17,7 +17,6 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -41,7 +40,6 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Profile Picture Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 group focus:outline-none"
@@ -58,10 +56,8 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         />
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-56 bg-neutral-900 border border-neutral-700 rounded-xl shadow-xl z-50 py-2">
-          {/* User Info Header */}
           <div className="px-4 py-3 border-b border-neutral-700">
             <div className="text-white text-sm font-medium truncate">
               {user?.firstName} {user?.lastName}
@@ -71,7 +67,6 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
             </div>
           </div>
 
-          {/* Menu Items */}
           <div className="py-2">
             <button
               onClick={() => handleNavigation('/settings/account')}
@@ -90,10 +85,8 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
             </button>
           </div>
 
-          {/* Separator */}
           <div className="border-t border-neutral-700 my-2"></div>
 
-          {/* Logout */}
           <div className="py-2">
             <button
               onClick={handleLogout}
