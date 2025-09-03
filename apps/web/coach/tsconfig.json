@@ -63,10 +63,10 @@
       "path": "../../../libs/sdk/core"
     },
     {
-      "path": "../../../libs/sdk/billing"
+      "path": "../../../libs/web/settings"
     },
     {
-      "path": "../../../libs/web/settings"
+      "path": "../../../libs/sdk/billing"
     },
     {
       "path": "../../../libs/sdk/notifications"
@@ -79,6 +79,12 @@
     },
     {
       "path": "../../../libs/sdk/analytics"
+    },
+    {
+      "path": "../../../libs/sdk/agents"
+    },
+    {
+      "path": "../../../libs/sdk/course"
     },
     {
       "path": "../../../libs/sdk/users"

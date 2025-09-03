@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CourseStructureRequestDto {
@@ -32,4 +32,31 @@ export class CourseStructureRequestDto {
   @IsOptional()
   @IsString()
   estimatedDuration?: string;
+
+  @ApiPropertyOptional({
+    description: 'Preferred content format for the course',
+    example: 'video',
+    enum: ['video', 'text', 'mixed', 'interactive'],
+  })
+  @IsOptional()
+  @IsString()
+  preferredFormat?: string;
+
+  @ApiPropertyOptional({
+    description: 'Budget considerations for course creation',
+    example: '$500-1000',
+  })
+  @IsOptional()
+  @IsString()
+  budget?: string;
+
+  @ApiPropertyOptional({
+    description: 'Special requirements or constraints for the course',
+    example: ['Must include practical exercises', 'Mobile-friendly content', 'Certification included'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  specialRequirements?: string[];
 }

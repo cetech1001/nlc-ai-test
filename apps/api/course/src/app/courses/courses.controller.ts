@@ -27,6 +27,8 @@ import {
   PaginatedCoursesResponseDto,
   CourseStatsResponseDto,
 } from './dto';
+import {CurrentUser} from "@nlc-ai/api-auth";
+import {type AuthUser} from "@nlc-ai/api-types";
 
 @ApiTags('Courses')
 @ApiBearerAuth()
@@ -41,8 +43,8 @@ export class CoursesController {
     description: 'Course created successfully',
     type: CourseResponseDto,
   })
-  async create(@Body() createCourseDto: CreateCourseDto) {
-    return this.coursesService.create(createCourseDto);
+  async create(@Body() createCourseDto: CreateCourseDto, @CurrentUser() user: AuthUser) {
+    return this.coursesService.create(createCourseDto, user.id);
   }
 
   @Get()

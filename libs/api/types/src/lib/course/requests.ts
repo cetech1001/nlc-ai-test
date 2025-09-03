@@ -28,7 +28,6 @@ export interface CreateCourseChapter {
 }
 
 export interface CreateCourse {
-  coachID?: string; // Will be set from auth context if not provided
   title: string;
   description?: string;
   category?: string;

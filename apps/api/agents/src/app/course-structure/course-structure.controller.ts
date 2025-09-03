@@ -10,6 +10,8 @@ import {
   CourseStructureRequestDto,
   CourseStructureSuggestionDto,
 } from './dto';
+import {CurrentUser} from "@nlc-ai/api-auth";
+import {type AuthUser} from "@nlc-ai/api-types";
 
 @ApiTags('Course Structure')
 @ApiBearerAuth()
@@ -37,7 +39,8 @@ export class CourseStructureController {
   })
   async suggestCourseStructure(
     @Body() request: CourseStructureRequestDto,
+    @CurrentUser() user: AuthUser
   ): Promise<CourseStructureSuggestionDto> {
-    return this.courseStructureService.generateCourseStructure(request);
+    return this.courseStructureService.generateCourseStructure(request, user.id);
   }
 }

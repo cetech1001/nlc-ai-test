@@ -101,7 +101,7 @@ const CourseCreateScreen = () => {
                       onChange={(e) => setCourseDescription(e.target.value)}
                       placeholder="Describe your course idea in detail. For example: 'I want to create a comprehensive Instagram marketing course that teaches coaches how to grow their following, create engaging content, use hashtags effectively, and convert followers into paying clients. The course should cover content strategy, analytics, Instagram ads, and monetization techniques.'"
                       rows={8}
-                      className="w-full bg-[#2A2A2A] border border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-2 focus:ring-[#7B21BA]/20 rounded-xl px-4 py-4 text-base resize-none outline-none transition-colors"
+                      className="w-full bg-background border border-[#3A3A3A] text-white placeholder:text-[#A0A0A0] focus:border-[#7B21BA] focus:ring-2 focus:ring-[#7B21BA]/20 rounded-xl px-4 py-4 text-base resize-none outline-none transition-colors"
                       disabled={isGenerating}
                     />
                     <div className="flex justify-between items-center">
@@ -127,7 +127,7 @@ const CourseCreateScreen = () => {
                           type="button"
                           onClick={() => setCourseDescription(example)}
                           disabled={isGenerating}
-                          className="text-left p-4 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-stone-300 hover:border-[#7B21BA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-left p-4 bg-background border border-[#3A3A3A] rounded-lg text-stone-300 hover:border-[#7B21BA] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <p className="text-sm">{example}</p>
                         </button>

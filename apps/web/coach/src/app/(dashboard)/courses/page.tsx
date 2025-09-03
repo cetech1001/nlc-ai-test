@@ -1,62 +1,12 @@
 'use client'
 
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, BookOpen, Users, Calendar, MoreVertical, Edit, Trash2, Copy, Eye } from 'lucide-react';
 import { appConfig } from "@nlc-ai/web-shared";
-import {CoursesLanding} from "@/app/(dashboard)/courses/landing";
-import {useRouter} from "next/navigation";
-
-// Mock data for courses
-const mockCourses = [
-  {
-    courseID: '1',
-    title: 'Instagram Marketing Mastery',
-    description: 'Complete guide to growing your Instagram presence and monetizing your content',
-    totalChapters: 8,
-    totalLessons: 32,
-    enrolledStudents: 245,
-    status: 'Published',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-02-20',
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    courseID: '2',
-    title: 'Life Coaching Fundamentals',
-    description: 'Essential skills and techniques for becoming an effective life coach',
-    totalChapters: 12,
-    totalLessons: 48,
-    enrolledStudents: 189,
-    status: 'Published',
-    createdAt: '2024-01-10',
-    updatedAt: '2024-02-18',
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    courseID: '3',
-    title: 'TikTok Growth Strategy',
-    description: 'Advanced strategies for viral content creation and audience building',
-    totalChapters: 6,
-    totalLessons: 24,
-    enrolledStudents: 0,
-    status: 'Draft',
-    createdAt: '2024-02-01',
-    updatedAt: '2024-02-22',
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    courseID: '4',
-    title: 'Personal Branding Blueprint',
-    description: 'Build a powerful personal brand that attracts your ideal clients',
-    totalChapters: 10,
-    totalLessons: 40,
-    enrolledStudents: 156,
-    status: 'Published',
-    createdAt: '2024-01-20',
-    updatedAt: '2024-02-15',
-    thumbnail: '/api/placeholder/300/200'
-  }
-];
+import { CoursesLanding } from "@/app/(dashboard)/courses/landing";
+import { useRouter } from "next/navigation";
+import { sdkClient } from "@/lib";
+import type { ExtendedCourse } from '@nlc-ai/sdk-course';
 
 const statusColors: Record<string, string> = {
   Published: 'bg-green-600/20 text-green-400 border-green-600/50',
@@ -64,7 +14,15 @@ const statusColors: Record<string, string> = {
   Archived: 'bg-gray-600/20 text-gray-400 border-gray-600/50'
 };
 
-const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) => {
+interface CourseCardProps {
+  course: ExtendedCourse;
+  onEdit: (course: ExtendedCourse) => void;
+  onDelete: (course: ExtendedCourse) => void;
+  onDuplicate: (course: ExtendedCourse) => void;
+  onPreview: (course: ExtendedCourse) => void;
+}
+
+const CourseCard: React.FC<CourseCardProps> = ({ course, onEdit, onDelete, onDuplicate, onPreview }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
@@ -83,12 +41,20 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
     };
   }, [showDropdown]);
 
+  const getStatusDisplay = (course: ExtendedCourse) => {
+    return course.isPublished ? 'Published' : 'Draft';
+  };
+
+  const formatDate = (date: Date | string) => {
+    return new Date(date).toLocaleDateString();
+  };
+
   return (
     <div className="relative group h-full">
       {/* Status Badge */}
       <div className="absolute -top-2 -right-2 z-10">
-        <div className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[course.status]}`}>
-          {course.status}
+        <div className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[getStatusDisplay(course)]}`}>
+          {getStatusDisplay(course)}
         </div>
       </div>
 
@@ -156,7 +122,10 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
       </div>
 
       {/* Course Card */}
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden h-full flex flex-col">
+      <div
+        className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden h-full flex flex-col cursor-pointer hover:border-purple-400/50 transition-all"
+        onClick={() => onEdit(course)}
+      >
         {/* Glow Effect */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
@@ -165,7 +134,15 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
         <div className="relative z-10 p-6 flex flex-col h-full">
           {/* Thumbnail */}
           <div className="w-full h-40 bg-gradient-to-br from-purple-600/20 to-violet-800/20 rounded-2xl mb-4 flex items-center justify-center border border-purple-600/20">
-            <BookOpen className="w-12 h-12 text-purple-400" />
+            {course.thumbnailUrl ? (
+              <img
+                src={course.thumbnailUrl}
+                alt={course.title}
+                className="w-full h-full object-cover rounded-2xl"
+              />
+            ) : (
+              <BookOpen className="w-12 h-12 text-purple-400" />
+            )}
           </div>
 
           {/* Course Info */}
@@ -174,8 +151,17 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
               {course.title}
             </h3>
             <p className="text-stone-300 text-sm leading-relaxed line-clamp-2 flex-grow">
-              {course.description}
+              {course.description || 'No description available'}
             </p>
+
+            {/* Category Badge */}
+            {course.category && (
+              <div className="flex">
+                <span className="inline-flex px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded-full capitalize">
+                  {course.category}
+                </span>
+              </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4 pt-2 mt-auto">
@@ -195,18 +181,32 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
               </div>
             </div>
 
-            {/* Enrollment */}
+            {/* Enrollment and Price */}
             <div className="flex items-center justify-between pt-2 border-t border-neutral-700">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-stone-400" />
                 <span className="text-stone-300 text-sm">
-                  {course.enrolledStudents} enrolled
+                  {course.totalEnrollments} enrolled
                 </span>
               </div>
               <div className="text-stone-400 text-xs">
-                Updated {new Date(course.updatedAt).toLocaleDateString()}
+                Updated {formatDate(course.updatedAt)}
               </div>
             </div>
+
+            {/* Price Display */}
+            {course.price && (
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-white font-medium">
+                  ${(course.price / 100).toFixed(2)}
+                </span>
+                {course.estimatedDurationHours && (
+                  <span className="text-stone-400 text-xs">
+                    {course.estimatedDurationHours}h duration
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -214,54 +214,220 @@ const CourseCard = ({ course, onEdit, onDelete, onDuplicate, onPreview }: any) =
   );
 };
 
+const LoadingSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {Array.from({ length: 8 }).map((_, i) => (
+      <div key={i} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden h-full flex flex-col">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+        </div>
+        <div className="relative z-10 p-6 flex flex-col h-full">
+          <div className="w-full h-40 bg-neutral-700/50 rounded-2xl mb-4 animate-pulse"></div>
+          <div className="space-y-3 flex-grow flex flex-col">
+            <div className="h-6 bg-neutral-700/50 rounded animate-pulse"></div>
+            <div className="h-4 bg-neutral-700/50 rounded animate-pulse w-3/4"></div>
+            <div className="h-4 bg-neutral-700/50 rounded animate-pulse w-1/2"></div>
+            <div className="grid grid-cols-2 gap-4 pt-2 mt-auto">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-neutral-700/50 rounded animate-pulse"></div>
+                <div className="space-y-1">
+                  <div className="h-4 w-8 bg-neutral-700/50 rounded animate-pulse"></div>
+                  <div className="h-3 w-12 bg-neutral-700/50 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-neutral-700/50 rounded animate-pulse"></div>
+                <div className="space-y-1">
+                  <div className="h-4 w-8 bg-neutral-700/50 rounded animate-pulse"></div>
+                  <div className="h-3 w-12 bg-neutral-700/50 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 const CoursesPage = () => {
   if (appConfig.features.enableLanding) {
-    return <CoursesLanding/>
+    return <CoursesLanding />
   }
 
   const router = useRouter();
 
-  const [courses, setCourses] = useState(mockCourses);
-  const [isLoading, setIsLoading] = useState(false);
+  const [courses, setCourses] = useState<ExtendedCourse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const [stats, setStats] = useState({
+    totalCourses: 0,
+    publishedCourses: 0,
+    totalEnrollments: 0,
+  });
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+
+      const response = await sdkClient.course.courses.getCourses({
+        page: 1,
+        limit: 100 // Get all courses for initial load
+      });
+
+      setCourses(response.data);
+
+      // Calculate stats
+      setStats({
+        totalCourses: response.data.length,
+        publishedCourses: response.data.filter(course => course.isPublished).length,
+        totalEnrollments: response.data.reduce((sum, course) => sum + course.totalEnrollments, 0),
+      });
+
+    } catch (error: any) {
+      console.error('Error loading courses:', error);
+      setError('Failed to load courses. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateNewCourse = () => {
     router.push('/courses/new');
   };
 
-  const handleEditCourse = (course: any) => {
-    // Navigate to course edit page
-    console.log('Edit course:', course.courseID);
+  const handleEditCourse = (course: ExtendedCourse) => {
+    router.push(`/courses/${course.id}/curriculum`);
   };
 
-  const handleDeleteCourse = (course: any) => {
+  const handleDeleteCourse = async (course: ExtendedCourse) => {
     if (confirm(`Are you sure you want to delete "${course.title}"? This action cannot be undone.`)) {
-      setCourses(courses.filter(c => c.courseID !== course.courseID));
-      setIsLoading(false);
+      try {
+        await sdkClient.course.courses.deleteCourse(course.id);
+        // Remove from local state
+        setCourses(prevCourses => prevCourses.filter(c => c.id !== course.id));
+
+        // Update stats
+        const updatedCourses = courses.filter(c => c.id !== course.id);
+        setStats({
+          totalCourses: updatedCourses.length,
+          publishedCourses: updatedCourses.filter(course => course.isPublished).length,
+          totalEnrollments: updatedCourses.reduce((sum, course) => sum + course.totalEnrollments, 0),
+        });
+      } catch (error: any) {
+        console.error('Error deleting course:', error);
+        alert('Failed to delete course. Please try again.');
+      }
     }
   };
 
-  const handleDuplicateCourse = (course: any) => {
-    const duplicatedCourse = {
-      ...course,
-      courseID: Date.now().toString(),
-      title: `${course.title} (Copy)`,
-      status: 'Draft',
-      enrolledStudents: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0]
-    };
-    setCourses([duplicatedCourse, ...courses]);
+  const handleDuplicateCourse = async (course: ExtendedCourse) => {
+    try {
+      // Create a new course based on the existing one
+      const duplicateData = {
+        title: `${course.title} (Copy)`,
+        description: course.description,
+        category: course.category,
+        difficultyLevel: course.difficultyLevel,
+        pricingType: course.pricingType as any,
+        price: course.price,
+        currency: course.currency,
+        estimatedDurationHours: course.estimatedDurationHours,
+        allowInstallments: course.allowInstallments,
+        allowSubscriptions: course.allowSubscriptions,
+        isDripEnabled: course.isDripEnabled,
+        dripInterval: course.dripInterval,
+        dripCount: course.dripCount,
+        // Note: chapters would need to be duplicated separately via chapter API
+      };
+
+      const newCourse = await sdkClient.course.courses.createCourse(duplicateData);
+
+      // Add to local state at the beginning
+      setCourses(prevCourses => [newCourse, ...prevCourses]);
+
+      // Update stats
+      setStats(prev => ({
+        totalCourses: prev.totalCourses + 1,
+        publishedCourses: prev.publishedCourses, // New course is draft by default
+        totalEnrollments: prev.totalEnrollments,
+      }));
+
+    } catch (error: any) {
+      console.error('Error duplicating course:', error);
+      alert('Failed to duplicate course. Please try again.');
+    }
   };
 
-  const handlePreviewCourse = (course: any) => {
-    // Open course preview
-    console.log('Preview course:', course.courseID);
+  const handlePreviewCourse = (course: ExtendedCourse) => {
+    // TODO: Implement course preview functionality
+    console.log('Preview course:', course.id);
+    // You might want to navigate to a preview URL or open in new tab
+    // window.open(`/courses/${course.id}/preview`, '_blank');
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-violet-900 flex items-center justify-center">
-        <div className="text-white">Loading courses...</div>
+      <div className="min-h-screen">
+        <div className="pt-8 pb-16">
+          <div className="w-full px-6">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+              <div>
+                <h1 className="text-white text-3xl font-bold mb-2">My Courses</h1>
+                <p className="text-stone-300 text-lg">
+                  Create and manage your course content
+                </p>
+              </div>
+              <div className="w-full lg:w-auto">
+                <div className="h-12 bg-neutral-700/50 rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Stats Loading */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
+                  <div className="absolute inset-0 opacity-20">
+                    <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+                  </div>
+                  <div className="relative z-10">
+                    <div className="h-4 w-24 bg-neutral-700/50 rounded animate-pulse mb-2"></div>
+                    <div className="h-8 w-16 bg-neutral-700/50 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Courses Loading */}
+            <LoadingSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen">
+        <div className="pt-8 pb-16">
+          <div className="w-full px-6">
+            <div className="text-center py-16">
+              <div className="text-red-400 text-lg mb-4">{error}</div>
+              <button
+                onClick={fetchCourses}
+                className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-3 rounded-lg font-semibold transition-opacity"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -297,7 +463,7 @@ const CoursesPage = () => {
               </div>
               <div className="relative z-10">
                 <div className="text-stone-300 text-sm mb-2">Total Courses</div>
-                <div className="text-white text-2xl font-bold">{courses.length}</div>
+                <div className="text-white text-2xl font-bold">{stats.totalCourses}</div>
               </div>
             </div>
 
@@ -307,9 +473,7 @@ const CoursesPage = () => {
               </div>
               <div className="relative z-10">
                 <div className="text-stone-300 text-sm mb-2">Published</div>
-                <div className="text-white text-2xl font-bold">
-                  {courses.filter(c => c.status === 'Published').length}
-                </div>
+                <div className="text-white text-2xl font-bold">{stats.publishedCourses}</div>
               </div>
             </div>
 
@@ -319,9 +483,7 @@ const CoursesPage = () => {
               </div>
               <div className="relative z-10">
                 <div className="text-stone-300 text-sm mb-2">Total Enrollments</div>
-                <div className="text-white text-2xl font-bold">
-                  {courses.reduce((sum, course) => sum + course.enrolledStudents, 0)}
-                </div>
+                <div className="text-white text-2xl font-bold">{stats.totalEnrollments}</div>
               </div>
             </div>
           </div>
@@ -344,7 +506,7 @@ const CoursesPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {courses.map((course) => (
                 <CourseCard
-                  key={course.courseID}
+                  key={course.id}
                   course={course}
                   onEdit={handleEditCourse}
                   onDelete={handleDeleteCourse}

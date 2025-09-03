@@ -23,6 +23,12 @@
   ],
   "references": [
     {
+      "path": "../course/tsconfig.lib.json"
+    },
+    {
+      "path": "../agents/tsconfig.lib.json"
+    },
+    {
       "path": "../messaging/tsconfig.lib.json"
     },
     {

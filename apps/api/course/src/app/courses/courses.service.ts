@@ -17,14 +17,14 @@ export class CoursesService {
     private readonly outboxService: OutboxService,
   ) {}
 
-  async create(createCourseDto: CreateCourse): Promise<ExtendedCourse> {
+  async create(createCourseDto: CreateCourse, coachID: string): Promise<ExtendedCourse> {
     const { chapters, ...courseData } = createCourseDto;
 
     const course = await this.prisma.$transaction(async (tx) => {
       const newCourse = await tx.course.create({
-        // @ts-ignore
         data: {
           ...courseData,
+          coach: { connect: { id: coachID } },
           totalChapters: chapters?.length || 0,
           totalLessons: chapters?.reduce((acc, chapter) => acc + (chapter.lessons?.length || 0), 0) || 0,
         },

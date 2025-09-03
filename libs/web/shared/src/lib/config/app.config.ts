@@ -11,7 +11,7 @@ export const appConfig: AppConfig = {
   api: {
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
     leadsPublicToken: process.env.LEADS_PUBLIC_TOKEN,
-    timeout: 30000,
+    timeout: 300000,
     services: {
       users: `${process.env.NEXT_PUBLIC_API_URL}/users`,
       leads: `${process.env.NEXT_PUBLIC_API_URL}/leads`,

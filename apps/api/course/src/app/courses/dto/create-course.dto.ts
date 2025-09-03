@@ -190,6 +190,11 @@ export class CreateCourseDto {
   @IsBoolean()
   isDripEnabled?: boolean;
 
+  @ApiPropertyOptional({ description: 'Is course active', default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
   @ApiPropertyOptional({ description: 'Drip interval (daily, weekly)' })
   @IsOptional()
   @IsString()

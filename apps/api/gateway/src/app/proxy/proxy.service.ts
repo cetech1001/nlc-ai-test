@@ -45,7 +45,7 @@ export class ProxyService {
     }
 
     const fullUrl = `${serviceConfig.url}${path}`;
-    const requestTimeout = serviceConfig.timeout || 30000;
+    const requestTimeout = serviceConfig.timeout || 300000;
 
     this.logger.debug(`Proxying ${request.method} request to: ${fullUrl}`);
 
