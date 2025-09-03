@@ -81,7 +81,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
 
         <main className="py-6 md:py-0">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto">
             {children}
           </div>
         </main>

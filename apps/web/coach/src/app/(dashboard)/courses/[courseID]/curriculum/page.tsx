@@ -82,8 +82,11 @@ const CurriculumScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-violet-900">
-      <div className="pt-8 pb-16 px-6 w-full">
+    <div className="min-h-screen w-full relative overflow-hidden">
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
+
+      <div className="pt-8 pb-16 px-6 w-full relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -93,7 +96,7 @@ const CurriculumScreen = () => {
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-white text-2xl font-bold">Communities</h1>
+            <h1 className="text-white text-2xl font-bold">Curriculum</h1>
           </div>
 
           {/* Action Buttons */}
@@ -129,11 +132,15 @@ const CurriculumScreen = () => {
           ))}
         </div>
 
-        {/* Main Content */}
-        <div className="flex gap-8 h-[calc(100vh-280px)]">
-          {/* Left Sidebar - Curriculum Tree */}
-          <div className="w-96 flex-shrink-0">
-            <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden">
+        {/* Main Content - Single unified card */}
+        <div className="h-[calc(100vh-280px)] relative">
+          {/* Background glow orbs */}
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-to-r from-purple-500/20 to-violet-600/20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-gradient-to-l from-fuchsia-500/20 to-purple-600/20 rounded-full blur-3xl"></div>
+
+          <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
+            {/* Left Sidebar - Curriculum Tree */}
+            <div className="w-96 flex-shrink-0 border-r border-neutral-700">
               <div className="p-6 h-full flex flex-col">
                 {/* Curriculum Tree - Scrollable */}
                 <div className="flex-1 overflow-y-auto -mr-2 pr-2">
@@ -211,50 +218,53 @@ const CurriculumScreen = () => {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Right Content Area */}
-          <div className="flex-1">
-            <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 p-8 flex flex-col">
-              <h2 className="text-white text-xl font-semibold mb-8">Lessons</h2>
+            {/* Right Content Area */}
+            <div className="flex-1">
+              <div className="h-full p-8 flex flex-col relative">
+                {/* Additional glow orb inside content area */}
+                <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-violet-500/10 rounded-full blur-2xl"></div>
 
-              {/* Lesson Type Cards */}
-              <div className="grid grid-cols-3 gap-6 mb-8">
-                <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                    <Video className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-white font-medium">Video</div>
-                </button>
+                <h2 className="text-white text-xl font-semibold mb-8 relative z-10">Lessons</h2>
 
-                <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-white font-medium">Text</div>
-                </button>
-
-                <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                    <FileDown className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-white font-medium">PDF</div>
-                </button>
-              </div>
-
-              {/* Upgrade Prompt */}
-              <div className="relative bg-gradient-to-r from-purple-600/20 via-fuchsia-600/20 to-violet-600/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 overflow-hidden">
-                <div className="absolute inset-0 opacity-30">
-                  <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-                </div>
-                <div className="relative z-10 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-white font-semibold mb-2">Upgrade to unlock more lesson types</h3>
-                    <p className="text-stone-300 text-sm">Access advanced lesson formats and interactive content</p>
-                  </div>
-                  <button className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-2 rounded-lg font-medium transition-opacity">
-                    Upgrade
+                {/* Lesson Type Cards */}
+                <div className="grid grid-cols-3 gap-6 mb-8 relative z-10">
+                  <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <Video className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="text-white font-medium">Video</div>
                   </button>
+
+                  <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <FileText className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="text-white font-medium">Text</div>
+                  </button>
+
+                  <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <FileDown className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="text-white font-medium">PDF</div>
+                  </button>
+                </div>
+
+                {/* Upgrade Prompt */}
+                <div className="relative bg-gradient-to-r from-purple-600/20 via-fuchsia-600/20 to-violet-600/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 overflow-hidden z-10">
+                  <div className="absolute inset-0 opacity-30">
+                    <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+                  </div>
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-semibold mb-2">Upgrade to unlock more lesson types</h3>
+                      <p className="text-stone-300 text-sm">Access advanced lesson formats and interactive content</p>
+                    </div>
+                    <button className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-2 rounded-lg font-medium transition-opacity">
+                      Upgrade
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -429,6 +429,7 @@ export class AdminAnalyticsService {
 
       return {
         ...coach,
+        totalClients: coach._count.clientCoaches,
         totalRevenue: Math.round(totalRevenue / 100)
       };
     });

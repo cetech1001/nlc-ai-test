@@ -38,7 +38,7 @@ export const RecentCoachesTable: FC<IProps> = (props) => {
       render: tableRenderers.basicText
     },
     {
-      key: 'clientCount',
+      key: 'totalClients',
       header: 'Total Clients',
       width: `${colWidth * (2 / 3)}%`,
     },
