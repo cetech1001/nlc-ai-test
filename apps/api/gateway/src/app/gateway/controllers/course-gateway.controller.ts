@@ -7,18 +7,18 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
-@ApiTags('Email')
-@Controller('email')
+@ApiTags('Course')
+@Controller('course')
 @ApiBearerAuth()
-export class EmailGatewayController {
+export class CourseGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToEmail(@Req() req: Request) {
-    const path = req.path.replace(/^\/email/, '');
+  async proxyToCourse(@Req() req: Request) {
+    const path = req.path.replace(/^\/course/, '');
 
     const response = await this.proxyService.proxyRequest(
-      'email',
+      'course',
       path,
       {
         method: req.method as any,

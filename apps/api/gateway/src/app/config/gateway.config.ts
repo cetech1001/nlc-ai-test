@@ -81,6 +81,10 @@ export default registerAs('gateway', () => {
         url: config.MESSAGING_SERVICE_URL,
         timeout: config.REQUEST_TIMEOUT,
       },
+      course: {
+        url: config.COURSE_SERVICE_URL,
+        timeout: config.REQUEST_TIMEOUT,
+      },
     },
     rateLimit: {
       ttl: config.RATE_LIMIT_TTL,

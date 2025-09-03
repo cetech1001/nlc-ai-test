@@ -1,0 +1,14 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "apps/api/course/Dockerfile"
+watchPatterns = [
+  "apps/api/course/**",
+  "libs/api/**",
+  "nx.json",
+  "package.json",
+  "tsconfig*.json"
+]
+
+[deploy]
+healthcheckPath = ""
+restartPolicyType = "never"
