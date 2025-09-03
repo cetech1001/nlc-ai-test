@@ -4,10 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ConversationList, ChatWindow, sdkClient, ConversationListSkeleton, ChatWindowSkeleton } from '@/lib';
 import { ConversationResponse } from '@nlc-ai/sdk-messaging';
+import { useAuth } from "@nlc-ai/web-auth";
 
 const MessagesPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const { user } = useAuth();
+
   const [selectedConversation, setSelectedConversation] = useState<ConversationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileView, setIsMobileView] = useState(false);
@@ -79,6 +83,7 @@ const MessagesPage = () => {
                 <>
                   {!selectedConversation ? (
                     <ConversationList
+                      user={user}
                       selectedConversationID=""
                       onConversationSelectAction={handleConversationSelect}
                       onBackClick={() => router.back()}
@@ -94,6 +99,7 @@ const MessagesPage = () => {
                 /* Desktop: Show both conversation list and chat window */
                 <>
                   <ConversationList
+                    user={user}
                     selectedConversationID={selectedConversation?.id}
                     onConversationSelectAction={handleConversationSelect}
                     onBackClick={() => router.back()}

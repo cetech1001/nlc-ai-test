@@ -7,7 +7,7 @@ import {sdkClient} from '@/lib';
 import {ExtendedCommunityMember} from '@nlc-ai/sdk-community';
 import {toast} from 'sonner';
 import {useAuth} from "@nlc-ai/web-auth";
-import {UserType, getInitials} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/sdk-users";
 
 interface CommunityMembersSidebarProps {
   communityID: string;
@@ -163,17 +163,11 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer group"
                   >
                     <div className="relative">
-                      {member.userAvatarUrl ? (
-                        <img
-                          src={member.userAvatarUrl || '/api/placeholder/40/40'}
-                          alt={member.userName}
-                          className="w-10 h-10 rounded-full object-cover border border-neutral-600"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full object-cover border border-neutral-600 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-purple-600">
-                          {getInitials(member.userName)}
-                        </div>
-                      )}
+                      <img
+                        src={member.userAvatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${member.userName.split(' ')[0]} ${member.userName.split(' ')[1]}`}
+                        alt={member.userName}
+                        className="w-10 h-10 rounded-full object-cover border border-neutral-600"
+                      />
                       <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
                         member.isOnline ? 'bg-green-500' : 'bg-gray-500'
                       }`}></div>

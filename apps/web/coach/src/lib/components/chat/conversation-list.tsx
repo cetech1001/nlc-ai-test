@@ -6,10 +6,11 @@ import { sdkClient } from '@/lib';
 import { ConversationResponse } from '@nlc-ai/sdk-messaging';
 import { toast } from 'sonner';
 import {UserType} from "@nlc-ai/sdk-users";
-import { useAuth } from "@nlc-ai/web-auth";
 import {ConversationListSkeleton} from "@/lib/components/chat/skeletons";
+import {LoginResponse} from "@nlc-ai/web-auth";
 
 interface ConversationListProps {
+  user: LoginResponse['user'] | null;
   selectedConversationID?: string;
   onConversationSelectAction: (conversation: ConversationResponse) => void;
   onBackClick?: () => void;
@@ -30,16 +31,15 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   selectedConversationID,
   onConversationSelectAction,
   onBackClick,
+  user,
 }) => {
-  const { user } = useAuth();
-
   const [conversations, setConversations] = useState<ConversationWithMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [user]);
 
   const loadConversations = async () => {
     try {
@@ -69,7 +69,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   const getConversationMetadata = async (conversation: ConversationResponse) => {
-    if (conversation.type === 'direct') {
+    if (conversation.type === 'direct' && user) {
       const otherUserID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
       const otherUserType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
