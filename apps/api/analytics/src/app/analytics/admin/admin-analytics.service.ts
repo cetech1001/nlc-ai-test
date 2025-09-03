@@ -396,29 +396,42 @@ export class AdminAnalyticsService {
             }
           }
         },
-        transactions: {
-          where: { status: 'completed' },
-          select: { amount: true }
-        }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    return coaches.map(coach => ({
-      id: coach.id,
-      firstName: coach.firstName,
-      lastName: coach.lastName,
-      email: coach.email,
-      businessName: coach.businessName,
-      isActive: coach.isActive,
-      isVerified: coach.isVerified,
-      createdAt: coach.createdAt,
-      subscriptionStatus: coach.subscriptionStatus,
-      clientCount: coach._count.clientCoaches,
-      totalRevenue: Math.round(
-        (coach.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)) / 100
-      )
-    }));
+    const coachIds = coaches.map(coach => coach.id);
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        payerID: {
+          in: coachIds
+        },
+        status: 'completed'
+      },
+      select: {
+        payerID: true,
+        amount: true
+      }
+    });
+
+    const transactionsByCoach = transactions.reduce((acc, tx) => {
+      if (!acc[tx.payerID]) {
+        acc[tx.payerID] = [];
+      }
+      acc[tx.payerID].push(tx);
+      return acc;
+    }, {} as Record<string, { payerID: string; amount: number }[]>);
+
+    return coaches.map(coach => {
+      const coachTransactions = transactionsByCoach[coach.id] || [];
+      const totalRevenue = coachTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+      return {
+        ...coach,
+        totalRevenue: Math.round(totalRevenue / 100)
+      };
+    });
   }
 
   async getTransactionStats() {
@@ -452,27 +465,49 @@ export class AdminAnalyticsService {
             clientCoaches: { where: { status: 'active' } }
           }
         },
-        transactions: {
-          where: { status: 'completed' },
-          select: { amount: true }
-        }
       },
       orderBy: {
         clientCoaches: { _count: 'desc' }
       }
     });
 
+    const coachIds = topPerformingCoaches.map(coach => coach.id);
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        payerID: {
+          in: coachIds
+        },
+        status: 'completed'
+      },
+      select: {
+        payerID: true,
+        amount: true
+      }
+    });
+
+    const transactionsByCoach = transactions.reduce((acc, tx) => {
+      if (!acc[tx.payerID]) {
+        acc[tx.payerID] = [];
+      }
+      acc[tx.payerID].push(tx);
+      return acc;
+    }, {} as Record<string, { payerID: string; amount: number }[]>);
+
     return {
-      topPerformingCoaches: topPerformingCoaches.map(coach => ({
-        id: coach.id,
-        name: `${coach.firstName} ${coach.lastName}`,
-        email: coach.email,
-        businessName: coach.businessName,
-        activeClients: coach._count.clientCoaches,
-        totalRevenue: Math.round(
-          (coach.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)) / 100
-        )
-      }))
+      topPerformingCoaches: topPerformingCoaches.map(coach => {
+        const coachTransactions = transactionsByCoach[coach.id] || [];
+        const totalRevenue = coachTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+        return {
+          id: coach.id,
+          name: `${coach.firstName} ${coach.lastName}`,
+          email: coach.email,
+          businessName: coach.businessName,
+          activeClients: coach._count.clientCoaches,
+          totalRevenue,
+        };
+      })
     };
   }
 

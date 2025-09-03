@@ -1,15 +1,17 @@
 'use client'
 
-import React, {useEffect, useRef, useState, useCallback} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Camera, Headphones, Info, MoreVertical, Phone, Send, Smile, User, Users, Video,} from 'lucide-react';
-import {sdkClient, useMessagingWebSocket} from '@/lib';
+import {ChatWindowSkeleton, sdkClient, useMessagingWebSocket} from '@/lib';
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messaging';
 import {toast} from 'sonner';
-import {useAuth} from "@nlc-ai/web-auth";
+import {LoginResponse} from "@nlc-ai/web-auth";
 import {UserType} from "@nlc-ai/sdk-users";
 
 interface ChatWindowProps {
+  user: LoginResponse['user'] | null;
   conversation: ConversationResponse | null;
+  isConvoLoading: boolean;
   onBack?: () => void;
 }
 
@@ -22,42 +24,32 @@ interface Participant {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
-                                                        conversation,
-                                                        onBack,
-                                                      }) => {
-  const { user } = useAuth();
-
+  user,
+  conversation,
+  onBack,
+  isConvoLoading,
+}) => {
   const [messages, setMessages] = useState<DirectMessageResponse[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(isConvoLoading);
   const [otherParticipant, setOtherParticipant] = useState<Participant | null>(null);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // WebSocket event handlers - use useCallback to prevent re-renders
   const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('📨 New message received:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev => {
-        // Check if message already exists to prevent duplicates
         const exists = prev.some(msg => msg.id === data.message.id);
         if (exists) {
-          console.log('Message already exists, skipping:', data.message.id);
           return prev;
         }
 
-        console.log('Adding new message to state:', data.message.id);
-        const newMessages = [...prev, data.message].sort(
+        return [...prev, data.message].sort(
           (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
-
-        return newMessages;
       });
 
-      // Auto-mark as read if message is not from current user
       if (data.message.senderID !== user?.id || data.message.senderType !== user?.type) {
-        console.log('Auto-marking message as read:', data.message.id);
         setTimeout(() => {
           markMessageAsRead([data.message.id]);
         }, 1000);
@@ -66,8 +58,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id, user?.id, user?.type]);
 
   const handleMessageUpdated = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('✏️ Message updated:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev =>
         prev.map(msg => msg.id === data.message.id ? data.message : msg)
@@ -76,16 +66,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id]);
 
   const handleMessageDeleted = useCallback((data: { conversationID: string; messageID: string }) => {
-    console.log('🗑️ Message deleted:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev => prev.filter(msg => msg.id !== data.messageID));
     }
   }, [conversation?.id]);
 
   const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
-    console.log('👁️ Messages read:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev =>
         prev.map(msg => {
@@ -99,7 +85,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id]);
 
   const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
-    console.log('👀 User typing:', data);
     // The typing state is managed by the hook itself
   }, []);
 
@@ -108,7 +93,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     toast.error('Connection error - messages may not update in real-time');
   }, []);
 
-  // WebSocket integration
   const {
     isConnected,
     joinConversation,
@@ -128,13 +112,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const typingUsers = conversation ? getTypingUsers(conversation.id) : [];
   const isTyping = typingUsers.length > 0;
 
-  // Load initial messages when conversation changes
   useEffect(() => {
     if (conversation) {
-      console.log('🔄 Loading messages for conversation:', conversation.id);
       loadMessages();
     }
-  }, [conversation?.id]); // Only depend on conversation ID
+  }, [conversation?.id]);
 
   // Join/leave conversation when connection status changes
   useEffect(() => {
@@ -320,12 +302,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
           <h3 className="text-white text-lg font-semibold mb-2">Select a conversation</h3>
           <p className="text-stone-400">Choose from admin support, clients, or community members</p>
-          {!isConnected && (
-            <p className="text-red-400 text-sm mt-2">⚠️ Real-time updates unavailable</p>
-          )}
         </div>
       </div>
     );
+  }
+
+  if (isLoading) {
+    return <ChatWindowSkeleton/>
   }
 
   return (

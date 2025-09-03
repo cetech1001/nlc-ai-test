@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ConversationList, ChatWindow, sdkClient, ConversationListSkeleton, ChatWindowSkeleton } from '@/lib';
+import { ConversationList, ChatWindow, sdkClient } from '@/lib';
 import { ConversationResponse } from '@nlc-ai/sdk-messaging';
 import { useAuth } from "@nlc-ai/web-auth";
 
@@ -64,51 +64,37 @@ const MessagesPage = () => {
         </div>
 
         <div className="relative z-10 flex w-full">
-          {isLoading && (
+          {isMobileView ? (
             <>
-              {isMobileView ? (
-                !selectedConversation ? <ConversationListSkeleton /> : <ChatWindowSkeleton />
+              {!selectedConversation ? (
+                <ConversationList
+                  user={user}
+                  selectedConversationID=""
+                  onConversationSelectAction={handleConversationSelect}
+                  onBackClick={() => router.back()}
+                />
               ) : (
-                <>
-                  <ConversationListSkeleton />
-                  <ChatWindowSkeleton />
-                </>
+                <ChatWindow
+                  isConvoLoading={isLoading}
+                  user={user}
+                  conversation={selectedConversation}
+                  onBack={handleBackToList}
+                />
               )}
             </>
-          )}
-
-          {!isLoading && (
+          ) : (
             <>
-              {isMobileView ? (
-                <>
-                  {!selectedConversation ? (
-                    <ConversationList
-                      user={user}
-                      selectedConversationID=""
-                      onConversationSelectAction={handleConversationSelect}
-                      onBackClick={() => router.back()}
-                    />
-                  ) : (
-                    <ChatWindow
-                      conversation={selectedConversation}
-                      onBack={handleBackToList}
-                    />
-                  )}
-                </>
-              ) : (
-                /* Desktop: Show both conversation list and chat window */
-                <>
-                  <ConversationList
-                    user={user}
-                    selectedConversationID={selectedConversation?.id}
-                    onConversationSelectAction={handleConversationSelect}
-                    onBackClick={() => router.back()}
-                  />
-                  <ChatWindow
-                    conversation={selectedConversation}
-                  />
-                </>
-              )}
+              <ConversationList
+                user={user}
+                selectedConversationID={selectedConversation?.id}
+                onConversationSelectAction={handleConversationSelect}
+                onBackClick={() => router.back()}
+              />
+              <ChatWindow
+                isConvoLoading={isLoading}
+                user={user}
+                conversation={selectedConversation}
+              />
             </>
           )}
         </div>
