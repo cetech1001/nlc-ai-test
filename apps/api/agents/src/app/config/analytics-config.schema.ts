@@ -44,4 +44,7 @@ export class AnalyticsConfigSchema {
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   CACHE_TTL?: number = 300; // 5 minutes
+
+  @IsString()
+  OPENAI_API_KEY: string;
 }

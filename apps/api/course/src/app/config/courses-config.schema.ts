@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class AnalyticsConfigSchema {
+export class CoursesConfigSchema {
   @IsString()
   DATABASE_URL: string;
 

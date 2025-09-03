@@ -1,10 +1,10 @@
 import { registerAs } from '@nestjs/config';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { AnalyticsConfigSchema } from './analytics-config.schema';
+import { CoursesConfigSchema } from './courses-config.schema';
 
 function validateConfig(config: Record<string, unknown>) {
-  const validatedConfig = plainToInstance(AnalyticsConfigSchema, config, {
+  const validatedConfig = plainToInstance(CoursesConfigSchema, config, {
     enableImplicitConversion: true,
   });
 
@@ -13,13 +13,13 @@ function validateConfig(config: Record<string, unknown>) {
   });
 
   if (errors.length > 0) {
-    throw new Error(`Users configuration validation error: ${errors.toString()}`);
+    throw new Error(`Courses configuration validation error: ${errors.toString()}`);
   }
 
   return validatedConfig;
 }
 
-export default registerAs('users', () => {
+export default registerAs('courses', () => {
   const config = validateConfig(process.env);
 
   return {

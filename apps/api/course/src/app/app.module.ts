@@ -3,17 +3,18 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HealthModule } from './health/health.module';
-import analyticsConfig from './config/analytics.config';
+import coursesConfig from './config/courses.config';
 import {DatabaseModule} from "@nlc-ai/api-database";
 import {MessagingModule} from "@nlc-ai/api-messaging";
 import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
+import {CoursesModule} from "./courses/courses.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [analyticsConfig],
+      load: [coursesConfig],
       cache: true,
       expandVariables: true,
     }),
@@ -22,6 +23,7 @@ import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/
     MessagingModule.forRoot(),
     AuthLibModule,
     HealthModule,
+    CoursesModule,
   ],
   providers: [
     {

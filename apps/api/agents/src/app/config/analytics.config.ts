@@ -13,13 +13,13 @@ function validateConfig(config: Record<string, unknown>) {
   });
 
   if (errors.length > 0) {
-    throw new Error(`Users configuration validation error: ${errors.toString()}`);
+    throw new Error(`Agents configuration validation error: ${errors.toString()}`);
   }
 
   return validatedConfig;
 }
 
-export default registerAs('users', () => {
+export default registerAs('openai', () => {
   const config = validateConfig(process.env);
 
   return {
@@ -44,5 +44,8 @@ export default registerAs('users', () => {
       maxRetries: config.MAX_RETRIES,
       cacheTTL: config.CACHE_TTL,
     },
+    openai: {
+      apiKey: config.OPENAI_API_KEY,
+    }
   };
 });

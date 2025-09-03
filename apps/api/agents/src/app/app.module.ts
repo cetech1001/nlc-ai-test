@@ -8,6 +8,7 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { HealthModule } from './health/health.module';
 import analyticsConfig from './config/analytics.config';
+import {CourseStructureModule} from "./course-structure/course-structure.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import analyticsConfig from './config/analytics.config';
     MessagingModule.forRoot(),
     AuthLibModule,
     HealthModule,
+    CourseStructureModule,
   ],
   providers: [
     {
