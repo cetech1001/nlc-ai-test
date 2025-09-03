@@ -195,6 +195,28 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
+  course-service:
+    build:
+      context: .
+      dockerfile: ./apps/api/course/dev.Dockerfile
+    container_name: course-service
+    restart: unless-stopped
+    ports:
+      - "3013:3013"
+    depends_on:
+      - postgres
+      - rabbitmq
+    #      - db_init
+    #      - db_migrate
+    volumes:
+      - ./apps/api/course:/app/apps/api/course
+      - ./libs/api:/app/libs/api
+      #      - ./nx.json:/app/nx.json
+      #      - ./tsconfig.json:/app/tsconfig.json
+      #      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./.env:/app/.env
+      - /app/node_modules
+
   email-service:
     build:
       context: .

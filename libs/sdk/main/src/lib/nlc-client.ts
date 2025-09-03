@@ -8,11 +8,14 @@ import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
 import {CommunityClient} from "@nlc-ai/sdk-community";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
-import {MessagingClient} from "../../../messaging";
+import {MessagingClient} from "@nlc-ai/sdk-messaging";
+import {AgentsClient} from "@nlc-ai/sdk-agents";
+import {CourseClient} from "@nlc-ai/sdk-course";
 
 export class NLCClient {
   public users: UsersClient;
   public auth: AuthServiceClient;
+  public agents: AgentsClient;
   public email: EmailServiceClient;
   public billing: BillingClient;
   public analytics: AnalyticsClient;
@@ -21,6 +24,7 @@ export class NLCClient {
   public media: MediaServiceClient;
   public notifications: NotificationsServiceClient;
   public messaging: MessagingClient;
+  public course: CourseClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -77,6 +81,16 @@ export class NLCClient {
     this.messaging = new MessagingClient({
       ...baseConfig,
       baseURL: config.services?.messaging || `${config.baseURL}/messages`,
+    });
+
+    this.course = new CourseClient({
+      ...baseConfig,
+      baseURL: config.services?.course || `${config.baseURL}/course`,
+    });
+
+    this.agents = new AgentsClient({
+      ...baseConfig,
+      baseURL: config.services?.agents || `${config.baseURL}/agents`,
     });
   }
 

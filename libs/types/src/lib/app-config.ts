@@ -21,6 +21,8 @@ export interface AppConfig {
       media: string;
       notifications: string;
       messaging: string;
+      course: string;
+      agents: string;
     };
   };
   auth: {

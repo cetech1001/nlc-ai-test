@@ -3,28 +3,53 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { BackTo } from "@nlc-ai/web-shared";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
+import { sdkClient } from "@/lib";
+import type { CourseStructureRequest } from '@nlc-ai/sdk-agents';
+import {transformSuggestionToCourse} from "@nlc-ai/sdk-course";
+
 
 const CourseCreateScreen = () => {
   const router = useRouter();
   const [courseDescription, setCourseDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const handleSubmit = async () => {
     if (!courseDescription.trim()) return;
 
     setIsGenerating(true);
+    setError('');
 
-    // Simulate AI generation
-    setTimeout(() => {
+    try {
+      // Step 1: Generate course structure using AI
+      const request: CourseStructureRequest = {
+        description: courseDescription,
+        targetAudience: 'Coaches and entrepreneurs',
+        difficultyLevel: 'beginner',
+        preferredFormat: 'mixed'
+      };
+
+      const suggestion = await sdkClient.agents.courseStructure.generateCourseStructure(request);
+
+      // Step 2: Transform AI suggestion to course data
+      const courseData = transformSuggestionToCourse(suggestion);
+
+      // Step 3: Create the actual course
+      const createdCourse = await sdkClient.course.courses.createCourse(courseData);
+
+      // Step 4: Navigate to curriculum page with the created course
+      router.push(`/courses/${createdCourse.id}/curriculum`);
+
+    } catch (error: any) {
+      console.error('Error creating course:', error);
+      setError(error.message || 'Failed to create course. Please try again.');
+    } finally {
       setIsGenerating(false);
-      // Navigate to curriculum screen with generated structure
-      console.log('Generated course structure for:', courseDescription);
-    }, 3000);
+    }
   };
 
   const handleBack = () => {
-    // Navigate back to courses page
     router.push('/courses');
   };
 
@@ -57,6 +82,13 @@ const CourseCreateScreen = () => {
                       Tell us about your course and we'll create a structured curriculum for you
                     </p>
                   </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                      <p className="text-red-400 text-sm">{error}</p>
+                    </div>
+                  )}
 
                   {/* Course Description Input */}
                   <div className="space-y-3">
@@ -114,12 +146,12 @@ const CourseCreateScreen = () => {
                       {isGenerating ? (
                         <>
                           <Loader2 className="w-5 h-5 animate-spin" />
-                          Generating...
+                          Creating Course...
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-5 h-5" />
-                          Generate Course Structure
+                          Generate & Create Course
                         </>
                       )}
                     </button>
@@ -131,7 +163,7 @@ const CourseCreateScreen = () => {
                       <div className="text-stone-300">
                         <p className="font-medium">Creating your course structure...</p>
                         <p className="text-sm text-stone-400 mt-1">
-                          This may take a few moments while our AI analyzes your description
+                          Our AI is analyzing your description and building the perfect curriculum
                         </p>
                       </div>
 

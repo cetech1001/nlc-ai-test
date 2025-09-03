@@ -4,6 +4,21 @@
   "include": [],
   "references": [
     {
+      "path": "../../../libs/api/types"
+    },
+    {
+      "path": "../../../libs/api/validation"
+    },
+    {
+      "path": "../../../libs/api/auth"
+    },
+    {
+      "path": "../../../libs/api/messaging"
+    },
+    {
+      "path": "../../../libs/api/database"
+    },
+    {
       "path": "./tsconfig.app.json"
     }
   ]

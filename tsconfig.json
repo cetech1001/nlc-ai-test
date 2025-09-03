@@ -131,6 +131,12 @@
     },
     {
       "path": "./apps/api/course"
+    },
+    {
+      "path": "./libs/sdk/agents"
+    },
+    {
+      "path": "./libs/sdk/course"
     }
   ]
 }

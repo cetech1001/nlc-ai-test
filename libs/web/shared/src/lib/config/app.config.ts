@@ -24,6 +24,8 @@ export const appConfig: AppConfig = {
       media: `${process.env.NEXT_PUBLIC_API_URL}/media`,
       notifications: `${process.env.NEXT_PUBLIC_API_URL}/notifications`,
       messaging: `${process.env.NEXT_PUBLIC_API_URL}/messages`,
+      agents: `${process.env.NEXT_PUBLIC_API_URL}/agents`,
+      course: `${process.env.NEXT_PUBLIC_API_URL}/course`,
     },
   },
   auth: {

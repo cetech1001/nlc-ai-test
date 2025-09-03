@@ -49,7 +49,9 @@
         "libs/sdk/community/*",
         "libs/sdk/media/*",
         "libs/sdk/notifications/*",
-        "libs/sdk/chat/*"
+        "libs/sdk/chat/*",
+        "libs/sdk/agents/*",
+        "libs/sdk/course/*"
       ]
     },
     {
@@ -120,7 +122,9 @@
         "libs/sdk/community/*",
         "libs/sdk/media/*",
         "libs/sdk/notifications/*",
-        "libs/sdk/chat/*"
+        "libs/sdk/chat/*",
+        "libs/sdk/agents/*",
+        "libs/sdk/course/*"
       ],
       "options": {
         "typecheck": {

@@ -29,7 +29,7 @@ async function bootstrap() {
     res.json(document);
   });
 
-  const port = process.env.PORT || 3011;
+  const port = process.env.PORT || 3013;
   await app.listen(port);
 
   Logger.log(`🚀 Course Service is running on: http://localhost:${port}/api/course`);

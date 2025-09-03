@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../../libs/api/types"
+    },
+    {
       "path": "../../../libs/api/messaging"
     },
     {

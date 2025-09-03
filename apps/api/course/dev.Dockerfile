@@ -19,8 +19,8 @@ ENV NODE_ENV=development \
     NX_DAEMON=false \
     NX_CACHE_DIRECTORY=/app/.nx/cache
 
-ENV PORT=3004
-EXPOSE 3004
+ENV PORT=3013
+EXPOSE 3013
 
 CMD ["/bin/sh","-lc","\
   echo 'Running nx sync to align TS project references...'; \
