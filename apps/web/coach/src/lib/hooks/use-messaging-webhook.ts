@@ -1,3 +1,4 @@
+// apps/web/coach/src/lib/hooks/use-messaging-websocket.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@nlc-ai/web-auth';
@@ -14,46 +15,53 @@ interface UseMessagingWebSocketOptions {
   onError?: (error: any) => void;
 }
 
-interface TypingUsers {
-  [conversationID: string]: {
-    [userKey: string]: {
-      userID: string;
-      userType: string;
-      isTyping: boolean;
-      timestamp: number;
-    };
-  };
+interface TypingUser {
+  userID: string;
+  userType: string;
+  isTyping: boolean;
+  timestamp: number;
 }
+
+const TYPING_TIMEOUT = 3000; // 3 seconds
+const RECONNECT_ATTEMPTS = 3;
+const RECONNECT_DELAY = 2000; // 2 seconds
 
 export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}) => {
   const { user } = useAuth();
   const token = localStorage.getItem(appConfig.auth.tokenKey);
+
   const socketRef = useRef<Socket | null>(null);
+  const typingTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const [isConnected, setIsConnected] = useState(false);
-  const [isGatewayReady, setIsGatewayReady] = useState(false);
-  const [typingUsers, setTypingUsers] = useState<TypingUsers>({});
-  const [joinedConversations, setJoinedConversations] = useState<Set<string>>(new Set());
+  const [isReady, setIsReady] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Map<string, Map<string, TypingUser>>>(new Map());
   const [connectionAttempts, setConnectionAttempts] = useState(0);
 
-  // Clean up expired typing indicators
+  // Clean up typing indicators periodically
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
       setTypingUsers(prev => {
-        const updated: TypingUsers = {};
+        const updated = new Map(prev);
         let hasChanges = false;
 
-        Object.keys(prev).forEach(conversationID => {
-          updated[conversationID] = {};
-          Object.keys(prev[conversationID]).forEach(userKey => {
-            const user = prev[conversationID][userKey];
-            // Remove typing indicators older than 3 seconds
-            if (now - user.timestamp < 3000) {
-              updated[conversationID][userKey] = user;
-            } else {
+        updated.forEach((conversationTyping, conversationID) => {
+          const updatedConversation = new Map(conversationTyping);
+
+          updatedConversation.forEach((typingUser, userKey) => {
+            if (now - typingUser.timestamp > TYPING_TIMEOUT) {
+              updatedConversation.delete(userKey);
               hasChanges = true;
             }
           });
+
+          if (updatedConversation.size === 0) {
+            updated.delete(conversationID);
+          } else {
+            updated.set(conversationID, updatedConversation);
+          }
         });
 
         return hasChanges ? updated : prev;
@@ -63,59 +71,225 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
     return () => clearInterval(interval);
   }, []);
 
-  // Stable callback functions using useCallback
-  const joinConversation = useCallback((conversationID: string) => {
-    if (!socketRef.current?.connected || !isGatewayReady) {
-      console.warn('⚠️ Socket not connected or gateway not ready, cannot join conversation');
+  // Memoized callback functions
+  const handleConnect = useCallback(() => {
+    console.log('✅ WebSocket connected');
+    setIsConnected(true);
+    setConnectionAttempts(0);
+
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleGatewayReady = useCallback((data: any) => {
+    console.log('🚀 Gateway ready:', data);
+    setIsReady(true);
+  }, []);
+
+  const handleDisconnect = useCallback((reason: string) => {
+    console.log('❌ WebSocket disconnected:', reason);
+    setIsConnected(false);
+    setIsReady(false);
+
+    // Clear typing states
+    setTypingUsers(new Map());
+
+    // Clear typing timeouts
+    typingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    typingTimeoutsRef.current.clear();
+  }, []);
+
+  const handleConnectError = useCallback((error: any) => {
+    console.error('🚫 WebSocket connection error:', error);
+    setConnectionAttempts(prev => {
+      const attempts = prev + 1;
+
+      // Implement exponential backoff
+      if (attempts < RECONNECT_ATTEMPTS) {
+        const delay = RECONNECT_DELAY * Math.pow(2, attempts - 1);
+        console.log(`🔄 Reconnecting in ${delay}ms (attempt ${attempts})`);
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          socketRef.current?.connect();
+        }, delay);
+      } else {
+        console.error('❌ Max reconnection attempts reached');
+        options.onError?.(new Error('Failed to establish WebSocket connection'));
+      }
+
+      return attempts;
+    });
+  }, [options.onError]);
+
+  const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
+    console.log('📨 New message received:', data.message.id);
+    options.onNewMessage?.(data);
+  }, [options.onNewMessage]);
+
+  const handleMessageUpdated = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
+    console.log('✏️ Message updated:', data.message.id);
+    options.onMessageUpdated?.(data);
+  }, [options.onMessageUpdated]);
+
+  const handleMessageDeleted = useCallback((data: { conversationID: string; messageID: string }) => {
+    console.log('🗑️ Message deleted:', data.messageID);
+    options.onMessageDeleted?.(data);
+  }, [options.onMessageDeleted]);
+
+  const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
+    console.log('👁️ Messages read:', data.messageIDs.length, 'messages');
+    options.onMessagesRead?.(data);
+  }, [options.onMessagesRead]);
+
+  const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
+    // Don't show typing for current user
+    if (data.userID === user?.id && data.userType === user?.type) {
       return;
     }
 
-    if (joinedConversations.has(conversationID)) {
-      console.log('ℹ️ Already joined conversation:', conversationID);
-      return;
+    console.log('👀 User typing:', data.userID, data.isTyping);
+
+    const userKey = `${data.userType}:${data.userID}`;
+
+    setTypingUsers(prev => {
+      const updated = new Map(prev);
+      const conversationTyping = updated.get(data.conversationID) || new Map();
+
+      if (data.isTyping) {
+        conversationTyping.set(userKey, {
+          userID: data.userID,
+          userType: data.userType,
+          isTyping: true,
+          timestamp: Date.now(),
+        });
+      } else {
+        conversationTyping.delete(userKey);
+      }
+
+      if (conversationTyping.size === 0) {
+        updated.delete(data.conversationID);
+      } else {
+        updated.set(data.conversationID, conversationTyping);
+      }
+
+      return updated;
+    });
+
+    options.onUserTyping?.(data);
+  }, [user?.id, user?.type, options.onUserTyping]);
+
+  const handleError = useCallback((error: any) => {
+    console.error('💥 WebSocket error:', error);
+    options.onError?.(error);
+  }, [options.onError]);
+
+  // Public API functions
+  const joinConversation = useCallback((conversationID: string) => {
+    if (!socketRef.current?.connected || !isReady) {
+      console.warn('⚠️ Cannot join conversation - not connected or ready');
+      return false;
     }
 
     console.log('🚪 Joining conversation:', conversationID);
     socketRef.current.emit('join_conversation', { conversationID });
-  }, [joinedConversations, isGatewayReady]);
+    return true;
+  }, [isReady]);
 
   const leaveConversation = useCallback((conversationID: string) => {
     if (!socketRef.current?.connected) {
-      return;
+      return false;
     }
 
     console.log('🚪 Leaving conversation:', conversationID);
     socketRef.current.emit('leave_conversation', { conversationID });
+
+    // Clear typing state for this conversation
+    setTypingUsers(prev => {
+      const updated = new Map(prev);
+      updated.delete(conversationID);
+      return updated;
+    });
+
+    return true;
   }, []);
 
   const sendTypingStatus = useCallback((conversationID: string, isTyping: boolean) => {
-    if (!socketRef.current?.connected) {
-      return;
+    if (!socketRef.current?.connected || !isReady) {
+      return false;
     }
 
+    const timeoutKey = `${conversationID}:${user?.id}`;
+
+    // Clear existing timeout
+    const existingTimeout = typingTimeoutsRef.current.get(timeoutKey);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      typingTimeoutsRef.current.delete(timeoutKey);
+    }
+
+    // Send typing status
     socketRef.current.emit('typing', { conversationID, isTyping });
-  }, []);
+
+    // If typing, set timeout to automatically stop typing indicator
+    if (isTyping) {
+      const timeout = setTimeout(() => {
+        if (socketRef.current?.connected) {
+          socketRef.current.emit('typing', { conversationID, isTyping: false });
+        }
+        typingTimeoutsRef.current.delete(timeoutKey);
+      }, TYPING_TIMEOUT - 500); // Send stop slightly before cleanup
+
+      typingTimeoutsRef.current.set(timeoutKey, timeout);
+    }
+
+    return true;
+  }, [isReady, user?.id]);
 
   const getTypingUsers = useCallback((conversationID: string) => {
-    const conversationTyping = typingUsers[conversationID] || {};
-    return Object.values(conversationTyping)
-      .filter(typingUser => typingUser.isTyping && typingUser.userID !== user?.id)
-      .map(typingUser => ({ userID: typingUser.userID, userType: typingUser.userType }));
-  }, [typingUsers, user?.id]);
+    const conversationTyping = typingUsers.get(conversationID);
+    if (!conversationTyping) return [];
 
+    return Array.from(conversationTyping.values())
+      .filter(typingUser => typingUser.isTyping)
+      .map(typingUser => ({
+        userID: typingUser.userID,
+        userType: typingUser.userType
+      }));
+  }, [typingUsers]);
+
+  const disconnect = useCallback(() => {
+    if (socketRef.current) {
+      console.log('🔌 Manually disconnecting WebSocket');
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+
+    // Clear all timeouts
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
+    typingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    typingTimeoutsRef.current.clear();
+
+    setIsConnected(false);
+    setIsReady(false);
+    setTypingUsers(new Map());
+  }, []);
+
+  // Initialize WebSocket connection
   useEffect(() => {
     if (!options.enabled || !token || !user) {
-      console.log('WebSocket not enabled or missing auth:', {
-        enabled: options.enabled,
-        hasToken: !!token,
-        hasUser: !!user
-      });
+      console.log('WebSocket not enabled or missing auth');
       return;
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:3000';
-
-    console.log('🔌 Connecting to WebSocket via gateway:', apiUrl);
+    console.log('🔌 Initializing WebSocket connection to:', apiUrl);
 
     const socket = io(apiUrl, {
       auth: { token },
@@ -123,140 +297,62 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
       path: '/api/messages/socket.io',
       forceNew: true,
       timeout: 10000,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnection: false, // We'll handle reconnection manually
+      autoConnect: true,
     });
 
     socketRef.current = socket;
 
-    // Connection events
-    socket.on('connect', () => {
-      setIsConnected(true);
-      setConnectionAttempts(0);
-      console.log('✅ Connected to messaging WebSocket via gateway');
+    // Register event handlers
+    socket.on('connect', handleConnect);
+    socket.on('gateway_ready', handleGatewayReady);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    socket.on('new_message', handleNewMessage);
+    socket.on('message_updated', handleMessageUpdated);
+    socket.on('message_deleted', handleMessageDeleted);
+    socket.on('messages_read', handleMessagesRead);
+    socket.on('user_typing', handleUserTyping);
+    socket.on('error', handleError);
+
+    // Connection success handlers
+    socket.on('connected', (data: any) => {
+      console.log('🎉 Gateway connection confirmed:', data);
     });
 
-    socket.on('connected', (data) => {
-      console.log('🎉 Gateway connection established:', data);
-    });
-
-    socket.on('gateway_ready', (data) => {
-      console.log('🚀 Gateway ready:', data);
-      setIsGatewayReady(true); // NEW: Set gateway as ready
-    });
-
-    socket.on('disconnect', (reason) => {
-      setIsConnected(false);
-      setIsGatewayReady(false); // NEW: Reset gateway readiness
-      setJoinedConversations(new Set());
-      console.log('❌ Disconnected from messaging WebSocket:', reason);
-    });
-
-    socket.on('connect_error', (error) => {
-      setConnectionAttempts(prev => prev + 1);
-      console.error('🚫 WebSocket connection error:', error);
-      options.onError?.(error);
-    });
-
-    socket.on('service_disconnected', (data) => {
-      console.warn('⚠️ Service disconnected:', data);
-      setIsConnected(false);
-      setIsGatewayReady(false); // NEW: Reset gateway readiness
-    });
-
-    // Message events
-    socket.on('new_message', (data: { conversationID: string; message: DirectMessageResponse }) => {
-      console.log('📨 Received new message:', data);
-      options.onNewMessage?.(data);
-    });
-
-    socket.on('message_updated', (data: { conversationID: string; message: DirectMessageResponse }) => {
-      console.log('✏️ Message updated:', data);
-      options.onMessageUpdated?.(data);
-    });
-
-    socket.on('message_deleted', (data: { conversationID: string; messageID: string }) => {
-      console.log('🗑️ Message deleted:', data);
-      options.onMessageDeleted?.(data);
-    });
-
-    socket.on('messages_read', (data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
-      console.log('👁️ Messages read:', data);
-      options.onMessagesRead?.(data);
-    });
-
-    // Typing events
-    socket.on('user_typing', (data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
-      console.log('👀 User typing:', data);
-
-      setTypingUsers(prev => {
-        const userKey = `${data.userType}:${data.userID}`;
-        const conversationTyping = prev[data.conversationID] || {};
-
-        if (data.isTyping) {
-          conversationTyping[userKey] = {
-            userID: data.userID,
-            userType: data.userType,
-            isTyping: true,
-            timestamp: Date.now(),
-          };
-        } else {
-          delete conversationTyping[userKey];
-        }
-
-        return {
-          ...prev,
-          [data.conversationID]: conversationTyping,
-        };
-      });
-
-      options.onUserTyping?.(data);
-    });
-
-    // Conversation events
     socket.on('joined_conversation', (data: { conversationID: string }) => {
-      setJoinedConversations(prev => new Set(prev).add(data.conversationID));
       console.log('✅ Successfully joined conversation:', data.conversationID);
     });
 
     socket.on('left_conversation', (data: { conversationID: string }) => {
-      setJoinedConversations(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(data.conversationID);
-        return newSet;
-      });
       console.log('👋 Left conversation:', data.conversationID);
     });
 
-    // Error handling
-    socket.on('error', (error: any) => {
-      console.error('💥 WebSocket error:', error);
-      options.onError?.(error);
-    });
-
-    // Debugging: Log all events in development
-    if (process.env.NODE_ENV === 'development') {
-      socket.onAny((eventName, ...args) => {
-        console.log('🔊 WebSocket event:', eventName, args);
-      });
-    }
-
-    return () => {
-      console.log('🔌 Disconnecting WebSocket...');
-      socket.disconnect();
-      socketRef.current = null;
-      setIsGatewayReady(false); // NEW: Reset on cleanup
-    };
-  }, [options.enabled, token, user?.id, options.onNewMessage, options.onMessageUpdated, options.onMessageDeleted, options.onMessagesRead, options.onUserTyping, options.onError]);
+    return disconnect;
+  }, [
+    options.enabled,
+    token,
+    user?.id,
+    handleConnect,
+    handleGatewayReady,
+    handleDisconnect,
+    handleConnectError,
+    handleNewMessage,
+    handleMessageUpdated,
+    handleMessageDeleted,
+    handleMessagesRead,
+    handleUserTyping,
+    handleError,
+    disconnect
+  ]);
 
   return {
-    isConnected: isConnected && isGatewayReady,
+    isConnected: isConnected && isReady,
     joinConversation,
     leaveConversation,
     sendTypingStatus,
     getTypingUsers,
-    joinedConversations: Array.from(joinedConversations),
+    disconnect,
     connectionAttempts,
   };
 };

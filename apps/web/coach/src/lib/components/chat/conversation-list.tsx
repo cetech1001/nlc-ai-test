@@ -7,6 +7,7 @@ import { ConversationResponse } from '@nlc-ai/sdk-messaging';
 import { toast } from 'sonner';
 import {UserType} from "@nlc-ai/sdk-users";
 import { useAuth } from "@nlc-ai/web-auth";
+import {ConversationListSkeleton} from "@/lib/components/chat/skeletons";
 
 interface ConversationListProps {
   selectedConversationID?: string;
@@ -48,15 +49,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         limit: 50,
       });
 
-      // Transform conversations to include metadata
       const conversationsWithMeta: ConversationWithMeta[] = await Promise.all(
         response.data.map(async (conv) => {
           const meta = await getConversationMetadata(conv);
           return {
             ...conv,
-            metadata: {
-              ...meta
-            },
+            metadata: meta,
           };
         })
       );
@@ -71,37 +69,41 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   const getConversationMetadata = async (conversation: ConversationResponse) => {
-    // For direct conversations, get the other participant's info
     if (conversation.type === 'direct') {
-      // Assuming current user is index 0, other participant is index 1
       const otherUserID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
       const otherUserType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
-      const userInfo = await getUserInfo(otherUserID, otherUserType);
+      try {
+        const userInfo = await sdkClient.users.profile.lookupProfile(otherUserType, otherUserID);
 
-      return {
-        displayName: userInfo.firstName + ' ' + userInfo.lastName,
-        displayAvatar: userInfo.avatarUrl || '',
-        isOnline: true,
-        lastMessage: getLastMessage(conversation),
-        unreadCount: getUserUnreadCount(conversation),
-        contactType: getContactType(otherUserType),
-      };
+        return {
+          displayName: `${userInfo.firstName} ${userInfo.lastName}`,
+          displayAvatar: userInfo.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${userInfo.firstName} ${userInfo.lastName}`,
+          isOnline: true,
+          lastMessage: getLastMessage(conversation),
+          unreadCount: getUserUnreadCount(conversation),
+          contactType: getContactType(otherUserType),
+        };
+      } catch (error) {
+        return {
+          displayName: otherUserType === UserType.admin ? 'Admin Support' : 'Unknown User',
+          displayAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=Unknown`,
+          isOnline: false,
+          lastMessage: getLastMessage(conversation),
+          unreadCount: getUserUnreadCount(conversation),
+          contactType: getContactType(otherUserType),
+        };
+      }
     }
 
-    // For group conversations
     return {
       displayName: conversation.name || 'Group Chat',
-      displayAvatar: '/api/placeholder/40/40',
+      displayAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=Group`,
       isOnline: true,
       lastMessage: getLastMessage(conversation),
       unreadCount: getUserUnreadCount(conversation),
       contactType: 'community' as const,
     };
-  };
-
-  const getUserInfo = async (userID: string, userType: UserType) => {
-    return sdkClient.users.profile.lookupProfile(userType, userID);
   };
 
   const getLastMessage = (conversation: ConversationResponse) => {
@@ -113,15 +115,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   const getUserUnreadCount = (conversation: ConversationResponse) => {
-    // This would be based on the current user key in unreadCount
-    const currentUserKey = `coach:${user?.id}`; // Replace with actual current user
+    const currentUserKey = `${user?.type}:${user?.id}`;
     return conversation.unreadCount[currentUserKey] || 0;
   };
 
   const getContactType = (userType: string) => {
     switch (userType) {
-      case 'admin': return 'admin' as const;
-      case 'client': return 'client' as const;
+      case UserType.admin: return 'admin' as const;
+      case UserType.client: return 'client' as const;
       default: return 'community' as const;
     }
   };
@@ -164,11 +165,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   if (isLoading) {
-    return (
-      <div className="w-80 border-r border-neutral-700 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fuchsia-500"></div>
-      </div>
-    );
+    return <ConversationListSkeleton />;
   }
 
   return (
