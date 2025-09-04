@@ -1,33 +1,123 @@
-// apps/web/coach/src/lib/components/chat/widget.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, MessageCircle, Send, Minimize2, Maximize2, Headphones, User } from 'lucide-react';
-import { sdkClient } from '@/lib';
+import { sdkClient, useMessagingWebSocket } from '@/lib';
 import { DirectMessageResponse, ConversationResponse, MessageType } from '@nlc-ai/sdk-messaging';
 import { toast } from 'sonner';
+import { useAuth } from '@nlc-ai/web-auth';
+import {UserType} from "@nlc-ai/sdk-users";
 
 interface ChatPopupWidgetProps {
   isOpen?: boolean;
   onToggle?: () => void;
-  userID: string;
 }
 
 export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                                                                   isOpen: controlledIsOpen,
                                                                   onToggle,
-                                                                  userID
                                                                 }) => {
+  const { user } = useAuth();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<DirectMessageResponse[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [conversation, setConversation] = useState<ConversationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Use controlled state if provided, otherwise use internal state
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const handleToggle = onToggle || (() => setInternalIsOpen(!internalIsOpen));
+
+  // WebSocket event handlers
+  const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev => {
+        // Check if message already exists (including optimistic messages)
+        const exists = prev.some(msg =>
+          msg.id === data.message.id ||
+          (msg.id.startsWith('optimistic-') && msg.content === data.message.content && msg.senderID === data.message.senderID)
+        );
+
+        if (exists) {
+          // Replace optimistic message with real one
+          return prev.map(msg =>
+            (msg.id.startsWith('optimistic-') && msg.content === data.message.content && msg.senderID === data.message.senderID)
+              ? data.message
+              : msg
+          );
+        }
+
+        return [...prev, data.message].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      });
+
+      // Auto-mark as read if message is not from current user
+      if (data.message.senderID !== user?.id || data.message.senderType !== user?.type) {
+        setTimeout(() => {
+          markMessageAsRead([data.message.id]);
+        }, 1000);
+      }
+    }
+  }, [conversation?.id, user?.id, user?.type]);
+
+  const handleMessageUpdated = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev =>
+        prev.map(msg => msg.id === data.message.id ? data.message : msg)
+      );
+    }
+  }, [conversation?.id]);
+
+  const handleMessageDeleted = useCallback((data: { conversationID: string; messageID: string }) => {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev => prev.filter(msg => msg.id !== data.messageID));
+    }
+  }, [conversation?.id]);
+
+  const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
+    if (data.conversationID === conversation?.id) {
+      setMessages(prev =>
+        prev.map(msg => {
+          if (data.messageIDs.includes(msg.id)) {
+            return { ...msg, isRead: true, readAt: new Date().toISOString() as any };
+          }
+          return msg;
+        })
+      );
+    }
+  }, [conversation?.id]);
+
+  const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
+    // Typing indicators managed by the hook
+  }, []);
+
+  const handleError = useCallback((error: any) => {
+    console.error('🚫 WebSocket error:', error);
+    toast.error('Connection error - messages may not update in real-time');
+  }, []);
+
+  // WebSocket integration
+  const {
+    isConnected,
+    joinConversation,
+    leaveConversation,
+    sendTypingStatus,
+    getTypingUsers,
+  } = useMessagingWebSocket({
+    enabled: !!conversation,
+    onNewMessage: handleNewMessage,
+    onMessageUpdated: handleMessageUpdated,
+    onMessageDeleted: handleMessageDeleted,
+    onMessagesRead: handleMessagesRead,
+    onUserTyping: handleUserTyping,
+    onError: handleError,
+  });
+
+  const typingUsers = conversation ? getTypingUsers(conversation.id) : [];
+  const isTyping = typingUsers.length > 0;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -35,7 +125,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
   useEffect(() => {
     if (isOpen && !conversation) {
@@ -43,14 +133,95 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!conversation || isOpen) {
+      setUnreadCount(0);
+      return;
+    }
+
+    // Calculate unread count when conversation changes or widget is closed
+    const currentUserKey = `${user?.type}:${user?.id}`;
+    const count = conversation.unreadCount[currentUserKey] || 0;
+    setUnreadCount(count);
+  }, [conversation, isOpen, user?.id, user?.type]);
+
+// Update unread count when new messages arrive and widget is closed
+  useEffect(() => {
+    if (!isOpen && conversation) {
+      const currentUserKey = `${user?.type}:${user?.id}`;
+      const count = conversation.unreadCount[currentUserKey] || 0;
+      setUnreadCount(count);
+    }
+  }, [messages, isOpen, conversation, user?.id, user?.type]);
+
+  // Clear unread count when widget opens
+  useEffect(() => {
+    if (isOpen && conversation && unreadCount > 0) {
+      setUnreadCount(0);
+      // Mark messages as read
+      const unreadMessages = messages.filter(msg =>
+        !msg.isRead &&
+        msg.senderID !== user?.id
+      );
+      if (unreadMessages.length > 0) {
+        markMessageAsRead(unreadMessages.map(msg => msg.id));
+      }
+    }
+  }, [isOpen, conversation, unreadCount, messages, user?.id]);
+
+  // Join/leave conversation when connection status changes
+  useEffect(() => {
+    if (conversation && isConnected) {
+      console.log('🚪 Widget joining conversation via WebSocket:', conversation.id);
+      joinConversation(conversation.id);
+
+      return () => {
+        console.log('🚪 Widget leaving conversation:', conversation.id);
+        leaveConversation(conversation.id);
+      };
+    }
+    return () => {};
+  }, [conversation?.id, isConnected, joinConversation, leaveConversation]);
+
+  // Clean up typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+    };
+  }, [typingTimeout]);
+
   const initializeSupportConversation = async () => {
+    if (!user?.id) return;
+
     setIsLoading(true);
     try {
-      const conv = await sdkClient.messaging.createSupportConversation();
-      setConversation(conv);
+      // First check if we already have an admin conversation
+      const conversations = await sdkClient.messaging.getConversations({
+        page: 1,
+        limit: 50,
+      });
 
-      if (conv.id) {
-        await loadMessages(conv.id);
+      // Look for existing admin conversation
+      const adminConversation = conversations.data.find(conv =>
+        conv.type === 'direct' &&
+        conv.participantTypes.includes(UserType.admin)
+      );
+
+      if (adminConversation) {
+        setConversation(adminConversation);
+        await loadMessages(adminConversation.id);
+      } else {
+        // Create new admin conversation
+        const newConversation = await sdkClient.messaging.createConversation({
+          type: 'direct',
+          participantIDs: [UserType.admin], // This should be handled by the backend to assign an available admin
+          participantTypes: [UserType.admin],
+        });
+
+        setConversation(newConversation);
+        await loadMessages(newConversation.id);
       }
     } catch (error: any) {
       console.error('Failed to initialize support conversation:', error);
@@ -67,7 +238,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         page: 1
       });
 
-      // Sort messages chronologically
       const sortedMessages = response.data.sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
@@ -79,100 +249,91 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !conversation) return;
+  const handleInputChange = (value: string) => {
+    setInputMessage(value);
 
-    // Create optimistic message
-    const tempMessage: DirectMessageResponse = {
-      id: `temp-${Date.now()}`,
+    if (!conversation || !isConnected) return;
+
+    // Send typing indicator
+    if (value.trim() && !typingTimeout) {
+      sendTypingStatus(conversation.id, true);
+    }
+
+    // Clear existing timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    // Set new timeout to stop typing indicator
+    const newTimeout = setTimeout(() => {
+      sendTypingStatus(conversation.id, false);
+      setTypingTimeout(null);
+    }, 1000);
+
+    setTypingTimeout(newTimeout);
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !conversation || !user?.id) return;
+
+    const messageContent = inputMessage.trim();
+    const tempID = `optimistic-${Date.now()}-${Math.random()}`;
+
+    // Create optimistic message for instant UI feedback
+    const optimisticMessage: DirectMessageResponse = {
+      id: tempID,
       conversationID: conversation.id,
-      senderID: userID,
-      senderType: 'coach',
+      senderID: user.id,
+      senderType: user.type as any,
       type: MessageType.TEXT,
-      content: inputMessage.trim(),
+      content: messageContent,
       mediaUrls: [],
       isRead: false,
       isEdited: false,
       createdAt: new Date(),
     };
 
-    setMessages(prev => [...prev, tempMessage]);
-    const messageContent = inputMessage.trim();
+    // Add optimistic message immediately
+    setMessages(prev => [...prev, optimisticMessage]);
     setInputMessage('');
 
+    // Clear typing status
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+      setTypingTimeout(null);
+    }
+    if (isConnected) {
+      sendTypingStatus(conversation.id, false);
+    }
+
     try {
-      const newMessage = await sdkClient.messaging.sendMessage(conversation.id, {
+      const sentMessage = await sdkClient.messaging.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
       });
 
-      // Replace temp message with real message
-      setMessages(prev => prev.map(msg =>
-        msg.id === tempMessage.id ? newMessage : msg
-      ));
+      // Replace optimistic message with real message
+      setMessages(prev =>
+        prev.map(msg => msg.id === tempID ? sentMessage : msg)
+      );
 
-      // Simulate admin response (in real app, this would come from WebSocket/SSE)
-      simulateAdminResponse(messageContent);
+      console.log('✅ Widget message sent successfully:', sentMessage.id);
     } catch (error: any) {
-      console.error('Failed to send message:', error);
+      console.error('❌ Failed to send message:', error);
       toast.error('Failed to send message');
-      // Remove temp message on error
-      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+
+      // Remove optimistic message on error and restore input
+      setMessages(prev => prev.filter(msg => msg.id !== tempID));
+      setInputMessage(messageContent);
     }
   };
 
-  const simulateAdminResponse = (userMessage: string) => {
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const adminResponse: DirectMessageResponse = {
-        id: `admin-${Date.now()}`,
-        conversationID: conversation!.id,
-        senderID: 'admin-support',
-        senderType: 'admin',
-        type: MessageType.TEXT,
-        content: getAdminResponse(userMessage),
-        mediaUrls: [],
-        isRead: false,
-        isEdited: false,
-        createdAt: new Date(),
-      };
-
-      setMessages(prev => [...prev, adminResponse]);
-      setIsTyping(false);
-    }, 1500 + Math.random() * 1000); // Random delay between 1.5-2.5 seconds
-  };
-
-  const getAdminResponse = (userInput: string): string => {
-    const lowerInput = userInput.toLowerCase();
-
-    // Simple keyword-based responses
-    if (lowerInput.includes('email') || lowerInput.includes('automation')) {
-      return "I can help you with email automation issues. Let me check your email settings and sequences. Can you tell me which specific email isn't being sent?";
+  const markMessageAsRead = async (messageIDs: string[]) => {
+    try {
+      await sdkClient.messaging.markAsRead({ messageIDs });
+    } catch (error) {
+      console.error('❌ Failed to mark messages as read:', error);
     }
-
-    if (lowerInput.includes('client') || lowerInput.includes('student')) {
-      return "I see you're having issues with client management. Are you looking to add new clients, manage existing ones, or having trouble with client communications?";
-    }
-
-    if (lowerInput.includes('payment') || lowerInput.includes('billing')) {
-      return "For payment and billing issues, I'll need to verify your account details. Are you experiencing issues with processing payments or with your subscription?";
-    }
-
-    if (lowerInput.includes('course') || lowerInput.includes('content')) {
-      return "I can assist with course creation and content management. Are you trying to upload new content, organize existing materials, or having technical difficulties?";
-    }
-
-    // Generic responses for other cases
-    const responses = [
-      "Thank you for reaching out! I'm here to help you with any questions about Next Level Coach AI. What specific area can I assist you with?",
-      "I understand your concern. Let me look into this for you and provide you with the best solution. Can you provide me with more details?",
-      "That's a great question! I'd be happy to walk you through this feature. Let me gather some information to give you the most accurate guidance.",
-      "I can definitely help you resolve this issue. To provide you with the best assistance, could you share more context about what you're experiencing?",
-      "Thanks for the feedback! I'm making note of this for our development team. In the meantime, let me see what alternatives or workarounds I can offer you."
-    ];
-
-    return responses[Math.floor(Math.random() * responses.length)];
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -189,6 +350,10 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     });
   };
 
+  const isCurrentUserMessage = (message: DirectMessageResponse) => {
+    return message.senderID === user?.id && message.senderType === user?.type;
+  };
+
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
@@ -198,8 +363,15 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
           aria-label="Open support chat"
         >
           <MessageCircle className="w-6 h-6 text-white" />
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"
-               title="Support available"></div>
+          {unreadCount > 0 ? (
+            <div className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center"
+                 title={`${unreadCount} unread messages`}>
+              <span className="text-white text-xs font-bold px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>
+            </div>
+          ) : (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"
+                 title="Support available"></div>
+          )}
         </button>
       </div>
     );
@@ -224,8 +396,10 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
             <div>
               <h3 className="text-white font-semibold text-sm">Admin Support</h3>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-stone-400 text-xs">Available 24/7</span>
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
+                <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+                  {isConnected ? 'Live' : 'Connecting...'}
+                </span>
               </div>
             </div>
           </div>
@@ -250,7 +424,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         {!isMinimized && (
           <>
             {/* Messages */}
-            <div className="relative z-10 flex-1 p-4 space-y-4 overflow-y-auto h-80">
+            <div className="relative z-10 flex-1 p-4 space-y-4 overflow-y-auto" style={{ height: 'calc(32rem - 8rem - 6rem)' }}>
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fuchsia-500"></div>
@@ -262,23 +436,27 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                     <Headphones className="w-8 h-8 text-white" />
                   </div>
                   <h4 className="text-white font-medium mb-2">Welcome to Admin Support!</h4>
-                  <p className="text-stone-400 text-sm">How can we help you today? Ask about features, billing, technical issues, or anything else.</p>
+                  <p className="text-stone-400 text-sm">How can we help you today? Our support team is here to assist with any questions or issues.</p>
                 </div>
               ) : (
                 messages.map((message) => {
-                  const isUserMessage = message.senderType === 'coach';
+                  const isUserMessage = isCurrentUserMessage(message);
+                  const isOptimistic = message.id.startsWith('optimistic-');
+
                   return (
                     <div key={message.id} className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] ${isUserMessage ? 'order-2' : 'order-1'}`}>
-                        <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
+                        <div className={`p-3 rounded-2xl text-sm leading-relaxed transition-opacity ${
+                          isOptimistic ? 'opacity-70' : 'opacity-100'
+                        } ${
                           isUserMessage
                             ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-br-md'
-                            : 'bg-neutral-700/80 text-white rounded-bl-md'
+                            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-bl-md'
                         }`}>
                           {!isUserMessage && (
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 opacity-90">
                               <User className="w-3 h-3" />
-                              <span className="text-xs opacity-75">Admin Support</span>
+                              <span className="text-xs font-medium">Admin Support</span>
                             </div>
                           )}
                           <div className="whitespace-pre-line">{message.content}</div>
@@ -286,8 +464,14 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                             <div className="text-xs opacity-60 mt-1">(edited)</div>
                           )}
                         </div>
-                        <div className={`text-xs text-stone-500 mt-1 ${isUserMessage ? 'text-right' : 'text-left'}`}>
-                          {formatMessageTime(message.createdAt)}
+                        <div className={`text-xs text-stone-500 mt-1 flex items-center gap-2 ${isUserMessage ? 'justify-end' : 'justify-start'}`}>
+                          <span>{formatMessageTime(message.createdAt)}</span>
+                          {isUserMessage && message.isRead && !isOptimistic && (
+                            <span className="text-blue-400">✓</span>
+                          )}
+                          {isOptimistic && (
+                            <span className="text-stone-400">Sending...</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -296,16 +480,16 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
               )}
 
               {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-neutral-700/80 text-white p-3 rounded-2xl rounded-bl-md">
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="flex justify-start mb-4">
+                  <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 rounded-2xl rounded-bl-md">
+                    <div className="flex items-center gap-2 mb-1 opacity-90">
                       <User className="w-3 h-3" />
-                      <span className="text-xs opacity-75">Admin Support</span>
+                      <span className="text-xs font-medium">Admin Support</span>
                     </div>
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
                   </div>
                 </div>
@@ -319,7 +503,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                 <div className="flex-1">
                   <textarea
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
+                    onChange={(e) => handleInputChange(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="Describe your question or issue..."
                     disabled={isLoading}
@@ -337,7 +521,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                 </button>
               </div>
               <div className="text-xs text-stone-500 mt-2 text-center">
-                Powered by Next Level Coach AI • Typically responds in minutes
+                Direct line to admin support • Real-time messaging
               </div>
             </div>
           </>
