@@ -85,7 +85,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
             {children}
           </div>
         </main>
-        <ChatPopupWidget userID={user?.id || ''}/>
+        <ChatPopupWidget/>
       </div>
     </div>
   );
