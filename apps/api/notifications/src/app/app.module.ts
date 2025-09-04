@@ -8,12 +8,8 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 
 import { NotificationsModule } from './notifications/notifications.module';
-import { PreferencesModule } from './preferences/preferences.module';
-import { ChannelsModule } from './channels/channels.module';
-import { OrchestratorModule } from './orchestrator/orchestrator.module';
 import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
-import { NotificationsGateway } from './gateways/notifications.gateway';
 import notificationsConfig from './config/notifications.config';
 
 @Module({
@@ -30,9 +26,6 @@ import notificationsConfig from './config/notifications.config';
     AuthLibModule,
     HealthModule,
     NotificationsModule,
-    PreferencesModule,
-    ChannelsModule,
-    OrchestratorModule,
     EventHandlersModule,
   ],
   providers: [
@@ -52,8 +45,6 @@ import notificationsConfig from './config/notifications.config';
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
-    NotificationsGateway,
   ],
-  exports: [NotificationsGateway],
 })
 export class AppModule {}

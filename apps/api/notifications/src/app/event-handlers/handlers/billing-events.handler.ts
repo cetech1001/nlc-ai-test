@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
 import { UserType } from '@nlc-ai/api-types';
-import { OrchestratorService } from '../../orchestrator/orchestrator.service';
+import {NotificationsService} from "../../notifications/notifications.service";
+import {NotificationPriority} from "../../notifications/dto";
 
 @Injectable()
 export class BillingEventsHandler {
@@ -9,7 +10,7 @@ export class BillingEventsHandler {
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly orchestrator: OrchestratorService,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.subscribeToEvents();
   }
@@ -57,7 +58,7 @@ export class BillingEventsHandler {
   private async handlePaymentCompleted(payload: any) {
     const amount = (payload.amount / 100).toFixed(2);
 
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'payment_success',
@@ -79,19 +80,21 @@ export class BillingEventsHandler {
   private async handlePaymentFailed(payload: any) {
     const amount = (payload.amount / 100).toFixed(2);
 
-    await this.orchestrator.sendUrgentNotification(
-      payload.coachID,
-      UserType.coach,
-      'Payment Failed - Action Required ⚠️',
-      `Your payment of $${amount} could not be processed. Please update your payment method to avoid service interruption.`,
-      '/dashboard/billing/payment-methods'
-    );
+    await this.notificationsService.createNotification({
+      userID: payload.coachID,
+      userType: UserType.coach,
+      type: 'urgent',
+      title: 'Payment Failed - Action Required ⚠️',
+      message: `Your payment of $${amount} could not be processed. Please update your payment method to avoid service interruption.`,
+      actionUrl: '/dashboard/billing/payment-methods',
+      priority: NotificationPriority.URGENT,
+  });
 
     this.logger.log(`Payment failure notification sent to coach ${payload.coachID}`);
   }
 
   private async handleSubscriptionActivated(payload: any) {
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'subscription_active',
@@ -111,7 +114,7 @@ export class BillingEventsHandler {
   }
 
   private async handleSubscriptionCancelled(payload: any) {
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'subscription_cancelled',
@@ -133,7 +136,7 @@ export class BillingEventsHandler {
     const amount = (payload.amount / 100).toFixed(2);
     const dueDate = new Date(payload.dueDate).toLocaleDateString();
 
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'invoice_issued',

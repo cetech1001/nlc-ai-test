@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
 import { UserType } from '@nlc-ai/api-types';
-import { OrchestratorService } from '../../orchestrator/orchestrator.service';
+import {NotificationsService} from "../../notifications/notifications.service";
 
 @Injectable()
 export class AuthEventsHandler {
@@ -9,7 +9,7 @@ export class AuthEventsHandler {
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly orchestrator: OrchestratorService,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.subscribeToEvents();
   }
@@ -55,7 +55,7 @@ export class AuthEventsHandler {
   }
 
   private async handleCoachRegistered(payload: any) {
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'welcome',
@@ -73,7 +73,7 @@ export class AuthEventsHandler {
   }
 
   private async handleCoachVerified(payload: any) {
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'verification',
@@ -90,7 +90,7 @@ export class AuthEventsHandler {
   }
 
   private async handleClientRegistered(payload: any) {
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.clientID,
       userType: UserType.client,
       type: 'welcome',
@@ -110,7 +110,7 @@ export class AuthEventsHandler {
 
   private async handleClientInvited(payload: any) {
     // Note: This goes to the coach, not the invited client
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'client_invite',

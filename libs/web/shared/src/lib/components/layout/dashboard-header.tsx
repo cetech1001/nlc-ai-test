@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Skeleton } from "@nlc-ai/web-ui";
 import { NLCClient } from "@nlc-ai/sdk-main";
 import {ProfileDropdown} from "./profile-dropdown";
+import {NotificationBell} from "./notification-bell";
 
 interface DashboardHeaderProps {
   title: string;
@@ -42,6 +43,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isLoading,
   handleNavRouter,
   onLogout,
+  goToNotifications,
+  sdkClient,
 }) => {
   const userInitials = useMemo(() => {
     if (user?.avatarUrl) {
@@ -65,6 +68,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
       <div className="flex flex-1 justify-end items-center gap-x-4 lg:gap-x-6">
         <div className="flex items-center gap-3">
+          <NotificationBell
+            goToNotifications={goToNotifications}
+            sdkClient={sdkClient}
+          />
           <UserDisplaySection user={user} isLoading={isLoading} />
           <ProfileDropdown
             user={user}

@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
 import { UserType } from '@nlc-ai/api-types';
-import { OrchestratorService } from '../../orchestrator/orchestrator.service';
+import {NotificationsService} from "../../notifications/notifications.service";
+import {NotificationPriority} from "../../notifications/dto";
 
 @Injectable()
 export class EmailEventsHandler {
@@ -9,7 +10,7 @@ export class EmailEventsHandler {
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly orchestrator: OrchestratorService,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.subscribeToEvents();
   }
@@ -51,7 +52,7 @@ export class EmailEventsHandler {
   }
 
   private async handleSequenceCompleted(payload: any) {
-    await this.orchestrator.sendNotification({
+    await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'email_sequence',
@@ -72,20 +73,22 @@ export class EmailEventsHandler {
   }
 
   private async handleEmergencyPaused(payload: any) {
-    await this.orchestrator.sendUrgentNotification(
-      payload.coachID,
-      UserType.coach,
-      'Email System Emergency Pause ⚠️',
-      `Your email system has been paused due to: ${payload.reason}. ${payload.pausedCount} emails were paused.`,
-      '/dashboard/email/settings'
-    );
+    await this.notificationsService.createNotification({
+      userID: payload.coachID,
+      userType: UserType.coach,
+      type: 'urgent',
+      title: 'Email System Emergency Pause ⚠️',
+      message: `Your email system has been paused due to: ${payload.reason}. ${payload.pausedCount} emails were paused.`,
+      actionUrl: '/dashboard/email/settings',
+      priority: NotificationPriority.URGENT,
+  });
 
     this.logger.log(`Emergency pause notification sent to coach ${payload.coachID}`);
   }
 
   private async handleBulkOperationCompleted(payload: any) {
     if (payload.coachID) {
-      await this.orchestrator.sendNotification({
+      await this.notificationsService.createNotification({
         userID: payload.coachID,
         userType: UserType.coach,
         type: 'email_bulk_operation',

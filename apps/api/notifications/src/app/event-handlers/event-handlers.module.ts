@@ -2,19 +2,25 @@ import { Module } from '@nestjs/common';
 import { AuthEventsHandler } from './handlers/auth-events.handler';
 import { BillingEventsHandler } from './handlers/billing-events.handler';
 import { EmailEventsHandler } from './handlers/email-events.handler';
-import { OrchestratorModule } from '../orchestrator/orchestrator.module';
+import {NotificationsModule} from "../notifications/notifications.module";
+import {CommunityEventsHandler} from "./handlers/community-events.handler";
+import {MessagingEventsHandler} from "./handlers/messaging-events.handler";
 
 @Module({
-  imports: [OrchestratorModule],
+  imports: [NotificationsModule],
   providers: [
     AuthEventsHandler,
     BillingEventsHandler,
+    CommunityEventsHandler,
     EmailEventsHandler,
+    MessagingEventsHandler
   ],
   exports: [
     AuthEventsHandler,
     BillingEventsHandler,
+    CommunityEventsHandler,
     EmailEventsHandler,
+    MessagingEventsHandler
   ],
 })
 export class EventHandlersModule {}

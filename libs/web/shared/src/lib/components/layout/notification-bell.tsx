@@ -1,12 +1,24 @@
-// File: libs/web/shared/src/lib/components/layout/notification-bell.tsx
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, X, Clock, CheckCircle, MessageSquare, Heart, Users, DollarSign, AlertCircle } from 'lucide-react';
-import { useNotifications } from '../../hooks';
-import { NotificationResponse, NotificationPriority } from '@nlc-ai/sdk-notifications';
-import {NLCClient} from "@nlc-ai/sdk-main";
+import { Bell, X, Clock, MessageSquare, Heart, Users, DollarSign, AlertCircle } from 'lucide-react';
+import { NLCClient } from "@nlc-ai/sdk-main";
+
+interface Notification {
+  id: string;
+  userID: string;
+  userType: string;
+  type: string;
+  title: string;
+  message: string;
+  actionUrl?: string;
+  priority: string;
+  metadata?: Record<string, any>;
+  isRead: boolean;
+  readAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 interface NotificationBellProps {
   goToNotifications: () => void;
@@ -15,21 +27,12 @@ interface NotificationBellProps {
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifications, sdkClient }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Use the actual notifications hook
-  const {
-    notifications,
-    unreadCount,
-    loading,
-    markAsRead,
-    markAllAsRead
-  } = useNotifications(sdkClient, {
-    autoConnect: true,
-    playSound: true,
-    showToast: true,
-  });
+  const pollInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -43,6 +46,39 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const [notificationsResponse, unreadResponse] = await Promise.all([
+        sdkClient.notifications.getNotifications({ limit: 10 }),
+        sdkClient.notifications.getUnreadCount()
+      ]);
+
+      setNotifications(notificationsResponse.data || []);
+      setUnreadCount(unreadResponse.unreadCount || 0);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+      // Don't show error to user, just fail silently
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Start polling for new notifications
+  useEffect(() => {
+    fetchNotifications();
+
+    // Poll every 30 seconds
+    pollInterval.current = setInterval(fetchNotifications, 30000);
+
+    return () => {
+      if (pollInterval.current) {
+        clearInterval(pollInterval.current);
+      }
+    };
+  }, []);
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'post_liked':
@@ -54,14 +90,12 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
         return <MessageSquare className="w-4 h-4 text-blue-400" />;
       case 'member_joined':
       case 'member_left':
+      case 'member_invited':
         return <Users className="w-4 h-4 text-purple-400" />;
       case 'payment_success':
       case 'payment_failed':
       case 'invoice_issued':
         return <DollarSign className="w-4 h-4 text-green-400" />;
-      case 'client_booking':
-      case 'booking':
-        return <CheckCircle className="w-4 h-4 text-indigo-400" />;
       case 'system':
       case 'urgent':
         return <AlertCircle className="w-4 h-4 text-orange-400" />;
@@ -88,10 +122,20 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
     }
   };
 
-  const handleNotificationClick = async (notification: NotificationResponse) => {
+  const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
-      await markAsRead(notification.id);
+      try {
+        await sdkClient.notifications.markAsRead(notification.id);
+        // Update local state
+        setNotifications(prev =>
+          prev.map(n => n.id === notification.id ? { ...n, isRead: true, readAt: new Date() } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
     }
+
     if (notification.actionUrl) {
       window.location.href = notification.actionUrl;
       setIsOpen(false);
@@ -99,7 +143,13 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
   };
 
   const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
+    try {
+      await sdkClient.notifications.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true, readAt: new Date() })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
   };
 
   const filteredNotifications = filter === 'unread'
@@ -108,10 +158,10 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case NotificationPriority.URGENT: return 'bg-red-500';
-      case NotificationPriority.HIGH: return 'bg-orange-500';
-      case NotificationPriority.NORMAL: return 'bg-blue-500';
-      case NotificationPriority.LOW: return 'bg-gray-500';
+      case 'urgent': return 'bg-red-500';
+      case 'high': return 'bg-orange-500';
+      case 'normal': return 'bg-blue-500';
+      case 'low': return 'bg-gray-500';
       default: return 'bg-gray-500';
     }
   };
@@ -128,14 +178,14 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
 
         {/* Unread Count Badge */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white text-xs font-semibold rounded-full flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white text-xs font-semibold rounded-full flex items-center justify-center">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
 
         {/* Glow effect for new notifications */}
         {unreadCount > 0 && (
-          <div className="absolute inset-0 rounded-lg bg-fuchsia-500/20 blur-xl animate-pulse pointer-events-none" />
+          <div className="absolute inset-0 rounded-lg bg-purple-500/20 blur-xl animate-pulse pointer-events-none" />
         )}
       </button>
 
@@ -160,7 +210,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
                 onClick={() => setFilter('all')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   filter === 'all'
-                    ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white'
+                    ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white'
                     : 'bg-neutral-800 text-stone-400 hover:text-white'
                 }`}
               >
@@ -170,7 +220,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
                 onClick={() => setFilter('unread')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   filter === 'unread'
-                    ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white'
+                    ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white'
                     : 'bg-neutral-800 text-stone-400 hover:text-white'
                 }`}
               >
@@ -179,7 +229,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="ml-auto px-3 py-1.5 rounded-lg text-sm font-medium bg-neutral-800 text-fuchsia-400 hover:bg-neutral-700 transition-colors"
+                  className="ml-auto px-3 py-1.5 rounded-lg text-sm font-medium bg-neutral-800 text-purple-400 hover:bg-neutral-700 transition-colors"
                 >
                   Mark all read
                 </button>
@@ -191,7 +241,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
           <div className="overflow-y-auto max-h-[480px]">
             {loading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fuchsia-500 mx-auto mb-3"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-3"></div>
                 <p className="text-stone-400">Loading notifications...</p>
               </div>
             ) : filteredNotifications.length === 0 ? (
@@ -203,7 +253,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
               </div>
             ) : (
               <div className="divide-y divide-neutral-800">
-                {filteredNotifications.slice(0, 10).map((notification) => (
+                {filteredNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
@@ -242,7 +292,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
                             {formatTime(notification.createdAt)}
                           </span>
                           {!notification.isRead && (
-                            <span className="text-xs text-fuchsia-400 font-medium">• New</span>
+                            <span className="text-xs text-purple-400 font-medium">• New</span>
                           )}
                         </div>
                       </div>
@@ -260,7 +310,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
                 goToNotifications();
                 setIsOpen(false);
               }}
-              className="w-full py-2 text-center text-sm text-fuchsia-400 hover:text-fuchsia-300 font-medium transition-colors"
+              className="w-full py-2 text-center text-sm text-purple-400 hover:text-purple-300 font-medium transition-colors"
             >
               View All Notifications
             </button>

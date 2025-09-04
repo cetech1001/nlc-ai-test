@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Put, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
-import { UserType } from '@nlc-ai/api-types';
+import {type AuthUser, UserType} from '@nlc-ai/api-types';
 import { NotificationsService } from './notifications.service';
-import { NotificationFiltersDto, CreateNotificationDto } from './dto';
+import {NotificationFiltersDto} from "./dto";
 
 @ApiTags('Notifications')
 @Controller('notifications')
@@ -17,11 +17,10 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get notifications for current user' })
   @ApiResponse({ status: 200, description: 'Notifications retrieved successfully' })
   async getNotifications(
-    @CurrentUser('id') userID: string,
-    @CurrentUser('type') userType: UserType,
+    @CurrentUser() user: AuthUser,
     @Query() filters: NotificationFiltersDto,
   ) {
-    return this.notificationsService.getNotifications(userID, userType, filters);
+    return this.notificationsService.getNotifications(user, filters);
   }
 
   @Get('unread-count')
@@ -58,11 +57,15 @@ export class NotificationsController {
     return this.notificationsService.markAllAsRead(userID, userType);
   }
 
-  @Post()
-  @UserTypes(UserType.admin)
-  @ApiOperation({ summary: 'Create notification (admin only)' })
-  @ApiResponse({ status: 201, description: 'Notification created successfully' })
-  async createNotification(@Body() createDto: CreateNotificationDto) {
-    return this.notificationsService.createNotification(createDto);
+  @Delete(':notificationID')
+  @UserTypes(UserType.coach, UserType.admin, UserType.client)
+  @ApiOperation({ summary: 'Delete notification' })
+  @ApiResponse({ status: 200, description: 'Notification deleted successfully' })
+  async deleteNotification(
+    @CurrentUser('id') userID: string,
+    @CurrentUser('type') userType: UserType,
+    @Param('notificationID') notificationID: string,
+  ) {
+    return this.notificationsService.deleteNotification(userID, userType, notificationID);
   }
 }

@@ -54,7 +54,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   private connections = new Map<string, ConnectionInfo>();
   private roomMembers = new Map<string, Set<string>>();
   private typingStates = new Map<string, Map<string, NodeJS.Timeout>>();
-  private cleanupInterval: NodeJS.Timeout;
+  private readonly cleanupInterval: NodeJS.Timeout;
 
   constructor(
     private readonly jwtService: JwtService,

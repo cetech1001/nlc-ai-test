@@ -1,40 +1,76 @@
-import {Injectable, NotFoundException} from '@nestjs/common';
-import {PrismaService} from '@nlc-ai/api-database';
-import {UserType} from '@nlc-ai/api-types';
-import {CreateNotificationDto, NotificationFiltersDto} from './dto';
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@nlc-ai/api-database';
+import {AuthUser, UserType} from '@nlc-ai/api-types';
+import {NotificationFiltersDto} from "./dto";
+
+export interface CreateNotificationData {
+  userID: string;
+  userType: UserType;
+  type: string;
+  title: string;
+  message: string;
+  actionUrl?: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  metadata?: Record<string, any>;
+}
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
+  async createNotification(data: CreateNotificationData) {
+    try {
+      const notification = await this.prisma.notification.create({
+        data: {
+          userID: data.userID,
+          userType: data.userType.toString(),
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          actionUrl: data.actionUrl,
+          priority: data.priority || 'normal',
+          metadata: data.metadata || {},
+          isRead: false,
+        },
+      });
+
+      this.logger.log(`Created notification: ${notification.id} for user ${data.userID}`);
+      return notification;
+    } catch (error) {
+      this.logger.error('Failed to create notification:', error);
+      throw error;
+    }
+  }
+
   async getNotifications(
-    userID: string,
-    userType: UserType,
-    filters: NotificationFiltersDto,
+    user: AuthUser,
+    options: NotificationFiltersDto = {}
   ) {
     const {
       isRead,
-      priority,
       type,
+      priority,
       page = 1,
       limit = 20,
-    } = filters;
+    } = options;
 
     const where: any = {
-      userID,
-      userType,
+      userID: user.id,
+      userType: user.type.toString(),
     };
 
     if (typeof isRead === 'boolean') {
       where.isRead = isRead;
     }
 
-    if (priority) {
-      where.priority = priority;
-    }
-
     if (type) {
       where.type = type;
+    }
+
+    if (priority) {
+      where.priority = priority;
     }
 
     const [notifications, totalCount] = await Promise.all([
@@ -51,7 +87,7 @@ export class NotificationsService {
     ]);
 
     return {
-      notifications,
+      data: notifications,
       pagination: {
         page,
         limit,
@@ -67,7 +103,7 @@ export class NotificationsService {
     const count = await this.prisma.notification.count({
       where: {
         userID,
-        userType,
+        userType: userType.toString(),
         isRead: false,
       },
     });
@@ -80,12 +116,12 @@ export class NotificationsService {
       where: {
         id: notificationID,
         userID,
-        userType,
+        userType: userType.toString(),
       },
     });
 
     if (!notification) {
-      throw new NotFoundException('Notification not found');
+      throw new Error('Notification not found');
     }
 
     await this.prisma.notification.update({
@@ -103,7 +139,7 @@ export class NotificationsService {
     const result = await this.prisma.notification.updateMany({
       where: {
         userID,
-        userType,
+        userType: userType.toString(),
         isRead: false,
       },
       data: {
@@ -118,38 +154,38 @@ export class NotificationsService {
     };
   }
 
-  async createNotification(createDto: CreateNotificationDto) {
-    const notification = await this.prisma.notification.create({
-      data: {
-        ...createDto,
-        isRead: false,
+  async deleteNotification(userID: string, userType: UserType, notificationID: string) {
+    const notification = await this.prisma.notification.findFirst({
+      where: {
+        id: notificationID,
+        userID,
+        userType: userType.toString(),
       },
     });
 
-    return {
-      message: 'Notification created successfully',
-      notification,
-    };
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
+
+    await this.prisma.notification.delete({
+      where: { id: notificationID },
+    });
+
+    return { message: 'Notification deleted' };
   }
 
-  // Internal method for orchestrator
-  async createInternalNotification(data: {
-    userID: string;
-    userType: UserType;
-    type: string;
-    title: string;
-    message: string;
-    actionUrl?: string;
-    priority?: string;
-    metadata?: Record<string, any>;
-  }) {
-    return this.prisma.notification.create({
-      data: {
-        ...data,
-        isRead: false,
-        priority: data.priority || 'normal',
-        metadata: data.metadata || {},
+  async cleanupOldNotifications(daysOld: number = 30) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+    const result = await this.prisma.notification.deleteMany({
+      where: {
+        createdAt: { lt: cutoffDate },
+        isRead: true,
       },
     });
+
+    this.logger.log(`Cleaned up ${result.count} old notifications`);
+    return result.count;
   }
 }
