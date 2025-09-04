@@ -1,26 +1,17 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Info,
-  MoreVertical,
-  Send,
-  Smile,
-  UserCircle,
-  Users,
-  Shield,
-  Paperclip,
-  ArrowLeft
-} from 'lucide-react';
-import { sdkClient } from '@/lib/sdk-client';
-import { useMessagingWebSocket } from '@/lib/hooks';
-import { ConversationResponse, DirectMessageResponse, MessageType } from '@nlc-ai/sdk-messaging';
-import { toast } from 'sonner';
-import { useAuth } from "@nlc-ai/web-auth";
-import { UserType } from "@nlc-ai/sdk-users";
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {Camera, Headphones, Info, MoreVertical, Phone, Send, Smile, User, Users, Video,} from 'lucide-react';
+import {ChatWindowSkeleton, sdkClient, useMessagingWebSocket} from '@/lib';
+import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messaging';
+import {toast} from 'sonner';
+import {LoginResponse} from "@nlc-ai/web-auth";
+import {UserType} from "@nlc-ai/sdk-users";
 
 interface ChatWindowProps {
+  user: LoginResponse['user'] | null;
   conversation: ConversationResponse | null;
+  isConvoLoading: boolean;
   onBack?: () => void;
 }
 
@@ -30,45 +21,35 @@ interface Participant {
   type: UserType;
   avatar: string;
   isOnline: boolean;
-  email?: string;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
+                                                        user,
                                                         conversation,
                                                         onBack,
+                                                        isConvoLoading,
                                                       }) => {
-  const { user } = useAuth();
   const [messages, setMessages] = useState<DirectMessageResponse[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(isConvoLoading);
   const [otherParticipant, setOtherParticipant] = useState<Participant | null>(null);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // WebSocket event handlers - use useCallback to prevent re-renders
   const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('📨 New message received:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev => {
-        // Check if message already exists to prevent duplicates
         const exists = prev.some(msg => msg.id === data.message.id);
         if (exists) {
-          console.log('Message already exists, skipping:', data.message.id);
           return prev;
         }
 
-        console.log('Adding new message to state:', data.message.id);
-        const newMessages = [...prev, data.message].sort(
+        return [...prev, data.message].sort(
           (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
-
-        return newMessages;
       });
 
-      // Auto-mark as read if message is not from current user
       if (data.message.senderID !== user?.id || data.message.senderType !== user?.type) {
-        console.log('Auto-marking message as read:', data.message.id);
         setTimeout(() => {
           markMessageAsRead([data.message.id]);
         }, 1000);
@@ -77,8 +58,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id, user?.id, user?.type]);
 
   const handleMessageUpdated = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('✏️ Message updated:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev =>
         prev.map(msg => msg.id === data.message.id ? data.message : msg)
@@ -87,16 +66,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id]);
 
   const handleMessageDeleted = useCallback((data: { conversationID: string; messageID: string }) => {
-    console.log('🗑️ Message deleted:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev => prev.filter(msg => msg.id !== data.messageID));
     }
   }, [conversation?.id]);
 
   const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
-    console.log('👁️ Messages read:', data);
-
     if (data.conversationID === conversation?.id) {
       setMessages(prev =>
         prev.map(msg => {
@@ -110,7 +85,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id]);
 
   const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
-    console.log('👀 User typing:', data);
     // The typing state is managed by the hook itself
   }, []);
 
@@ -119,7 +93,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     toast.error('Connection error - messages may not update in real-time');
   }, []);
 
-  // WebSocket integration
   const {
     isConnected,
     joinConversation,
@@ -139,10 +112,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const typingUsers = conversation ? getTypingUsers(conversation.id) : [];
   const isTyping = typingUsers.length > 0;
 
-  // Load initial messages when conversation changes
   useEffect(() => {
     if (conversation) {
-      console.log('🔄 Loading messages for conversation:', conversation.id);
       loadMessages();
     }
   }, [conversation?.id]);
@@ -159,14 +130,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       };
     }
     return () => {};
-  }, [conversation?.id, isConnected, joinConversation, leaveConversation]);
+  }, [conversation?.id, isConnected, joinConversation, leaveConversation]); // Remove the function dependencies
 
   // Get other participant info when conversation or user changes
   useEffect(() => {
     if (user?.id && conversation) {
       getOtherParticipant();
     }
-  }, [user?.id, conversation?.id]);
+  }, [user?.id, conversation?.id]); // Only depend on IDs, not the functions
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -264,6 +235,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       console.log('✅ Message sent successfully:', sentMessage.id);
 
+      // Note: Don't manually add the message here - let WebSocket handle it
+      // This prevents race conditions and duplicate messages
+
     } catch (error: any) {
       console.error('❌ Failed to send message:', error);
       toast.error('Failed to send message');
@@ -287,78 +261,54 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const isAdminConversation = () => {
+    if (!conversation) return false;
+    return conversation.participantTypes.includes(UserType.admin);
+  };
+
   const getOtherParticipant = async () => {
     if (!conversation || conversation.type !== 'direct') return null;
 
-    // Find the non-admin participant
-    let otherUserID = '';
-    let otherUserType: UserType = UserType.coach;
-
-    for (let i = 0; i < conversation.participantIDs.length; i++) {
-      if (conversation.participantIDs[i] !== user?.id || conversation.participantTypes[i] !== 'admin') {
-        otherUserID = conversation.participantIDs[i];
-        otherUserType = conversation.participantTypes[i] as UserType;
-        break;
-      }
-    }
+    const userID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
+    const userType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
     try {
-      const participant = await sdkClient.users.profile.lookupProfile(otherUserType, otherUserID);
+      const participant = await sdkClient.users.profile.lookupProfile(userType, userID);
 
       setOtherParticipant({
         id: participant.id,
-        type: otherUserType,
+        type: userType,
         name: participant.firstName + ' ' + participant.lastName,
-        avatar: participant.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${participant.firstName}${participant.lastName}`,
+        avatar: participant.avatarUrl || '',
         isOnline: isConnected, // Use WebSocket connection status as proxy
-        email: participant.email,
       });
     } catch (error) {
       console.error('❌ Failed to load participant info:', error);
+    } finally {
+      return ;
     }
-
-    return;
   };
 
   const isCurrentUserMessage = (message: DirectMessageResponse) => {
     return message.senderID === user?.id && message.senderType === user?.type;
   };
 
-  const getParticipantTypeIcon = (userType: UserType) => {
-    switch (userType) {
-      case UserType.coach:
-        return <UserCircle className="w-4 h-4 text-blue-400" />;
-      case UserType.client:
-        return <Users className="w-4 h-4 text-green-400" />;
-      default:
-        return <Shield className="w-4 h-4 text-purple-400" />;
-    }
-  };
-
-  const getParticipantTypeLabel = (userType: UserType) => {
-    switch (userType) {
-      case UserType.coach: return 'Coach';
-      case UserType.client: return 'Client';
-      case UserType.admin: return 'Admin';
-      default: return '';
-    }
-  };
-
   if (!conversation) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-xl font-bold">💬</span>
           </div>
           <h3 className="text-white text-lg font-semibold mb-2">Select a conversation</h3>
-          <p className="text-stone-400">Choose from coaches, clients, or start a new conversation</p>
-          {!isConnected && (
-            <p className="text-red-400 text-sm mt-2">⚠️ Real-time updates unavailable</p>
-          )}
+          <p className="text-stone-400">Choose from admin support, clients, or community members</p>
         </div>
       </div>
     );
+  }
+
+  if (isLoading) {
+    return <ChatWindowSkeleton/>
   }
 
   return (
@@ -371,14 +321,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               onClick={onBack}
               className="p-2 text-stone-300 hover:text-white transition-colors rounded-lg hover:bg-neutral-800/50 lg:hidden"
             >
-              <ArrowLeft className="w-5 h-5" />
+              ←
             </button>
           )}
           {otherParticipant && (
             <>
               <div className="relative">
                 <img
-                  src={otherParticipant.avatar}
+                  src={otherParticipant.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${otherParticipant.name}`}
                   alt={otherParticipant.name}
                   className="w-10 h-10 rounded-full object-cover border border-neutral-600"
                 />
@@ -387,24 +337,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 )}
               </div>
               <div>
-                <h3 className="text-white font-semibold flex items-center gap-2">
-                  {otherParticipant.name}
-                  {getParticipantTypeIcon(otherParticipant.type)}
-                </h3>
+                <h3 className="text-white font-semibold">{otherParticipant.name}</h3>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-stone-500'}`}>
                     {isConnected ? 'Online' : 'Offline'}
                   </span>
                   <span className="text-stone-500">•</span>
-                  <span className="text-xs text-stone-500">
-                    {getParticipantTypeLabel(otherParticipant.type)}
+                  <span className="text-xs text-stone-500 capitalize">
+                    {otherParticipant.type}
                   </span>
-                  {otherParticipant.email && (
-                    <>
-                      <span className="text-stone-500">•</span>
-                      <span className="text-xs text-stone-500">{otherParticipant.email}</span>
-                    </>
-                  )}
                   {!isConnected && (
                     <>
                       <span className="text-stone-500">•</span>
@@ -417,6 +358,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {!isAdminConversation() && (
+            <>
+              <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
+                <Phone className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
+                <Video className="w-5 h-5" />
+              </button>
+            </>
+          )}
           <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
             <Info className="w-5 h-5" />
           </button>
@@ -430,39 +381,52 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <div className="flex-1 p-6 space-y-4 overflow-y-auto">
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fuchsia-500"></div>
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              {otherParticipant?.type === UserType.coach ? (
-                <UserCircle className="w-8 h-8 text-white" />
-              ) : (
-                <Users className="w-8 h-8 text-white" />
-              )}
-            </div>
-            <h4 className="text-white font-medium mb-2">Admin Support Chat</h4>
-            <p className="text-stone-400 text-sm">
-              Start a conversation with {otherParticipant?.name}
-            </p>
+            {isAdminConversation() ? (
+              <>
+                <div className="w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Headphones className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="text-white font-medium mb-2">Admin Support</h4>
+                <p className="text-stone-400 text-sm">Get help with your account, features, or technical issues.</p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="text-white font-medium mb-2">Start Conversation</h4>
+                <p className="text-stone-400 text-sm">Send a message to {otherParticipant?.name}</p>
+              </>
+            )}
           </div>
         ) : (
           messages.map((message) => (
             <div key={message.id} className={`flex ${isCurrentUserMessage(message) ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[70%] ${isCurrentUserMessage(message) ? 'order-2' : 'order-1'}`}>
                 <div className="text-xs text-stone-500 mb-1">
-                  {isCurrentUserMessage(message) ? 'You' : otherParticipant?.name}
-                  {message.senderType === 'admin' && ' (Admin Support)'}
-                  • {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {message.senderType === 'admin' ? 'Admin Support' :
+                    isCurrentUserMessage(message) ? 'You' : otherParticipant?.name} • {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   {message.isRead && isCurrentUserMessage(message) && (
                     <span className="ml-2 text-blue-400">✓</span>
                   )}
                 </div>
                 <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
                   isCurrentUserMessage(message)
-                    ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white rounded-br-md'
-                    : 'bg-neutral-700/80 text-white rounded-bl-md'
+                    ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-br-md'
+                    : message.senderType === 'admin'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-bl-md'
+                      : 'bg-neutral-700/80 text-white rounded-bl-md'
                 }`}>
+                  {message.senderType === 'admin' && (
+                    <div className="flex items-center gap-2 mb-2 opacity-90">
+                      <User className="w-3 h-3" />
+                      <span className="text-xs font-medium">Support Team</span>
+                    </div>
+                  )}
                   <div className="whitespace-pre-line">{message.content}</div>
                   {message.isEdited && (
                     <div className="text-xs opacity-60 mt-1">(edited)</div>
@@ -475,7 +439,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
         {isTyping && (
           <div className="flex justify-start">
-            <div className="p-3 rounded-2xl rounded-bl-md bg-neutral-700/80 text-white">
+            <div className={`p-3 rounded-2xl rounded-bl-md ${
+              isAdminConversation()
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600'
+                : 'bg-neutral-700/80'
+            } text-white`}>
+              {isAdminConversation() && (
+                <div className="flex items-center gap-2 mb-2 opacity-90">
+                  <User className="w-3 h-3" />
+                  <span className="text-xs font-medium">Support Team</span>
+                </div>
+              )}
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -491,15 +465,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <div className="p-6 border-t border-neutral-700">
         <div className="flex items-center gap-3">
           <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
-            <Paperclip className="w-5 h-5" />
+            <Camera className="w-5 h-5" />
           </button>
           <div className="flex-1">
             <textarea
               value={inputMessage}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder={`Message ${otherParticipant?.name || 'user'}...`}
-              className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-purple-500 resize-none max-h-32"
+              placeholder={isAdminConversation() ? 'Describe your issue or question...' : 'Type your message...'}
+              className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 resize-none max-h-32"
               rows={1}
             />
           </div>
@@ -509,15 +483,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim()}
-            className="bg-gradient-to-r from-purple-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
         <div className="flex items-center justify-between mt-2">
-          <div className="text-xs text-stone-500 text-center flex-1">
-            Administrative support chat - messages are monitored
-          </div>
+          {isAdminConversation() && (
+            <div className="text-xs text-stone-500 text-center flex-1">
+              Our support team typically responds within a few minutes
+            </div>
+          )}
           <div className="flex items-center gap-2 text-xs">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
             <span className={isConnected ? 'text-green-400' : 'text-red-400'}>

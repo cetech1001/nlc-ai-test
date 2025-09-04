@@ -33,7 +33,7 @@ export class CoachesService {
       limit = 10,
       status,
       search,
-      subscriptionPlan,
+      // subscriptionPlan,
       dateJoinedStart,
       dateJoinedEnd,
       lastActiveStart,
@@ -137,7 +137,7 @@ export class CoachesService {
       where.isVerified = isVerified;
     }
 
-    if (subscriptionPlan) {
+    /*if (subscriptionPlan) {
       const planNames = subscriptionPlan.split(',').map(p => p.trim());
       where.subscriptions = {
         some: {
@@ -147,7 +147,7 @@ export class CoachesService {
           }
         }
       };
-    }
+    }*/
 
     const result = await this.prisma.paginate(this.prisma.coach, {
       page,
@@ -155,24 +155,10 @@ export class CoachesService {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        subscriptions: {
-          where: { status: 'active' },
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            plan: {
-              select: { name: true }
-            }
-          }
-        },
         clientCoaches: {
           where: { status: 'active' },
           select: { id: true }
         },
-        transactions: {
-          where: { status: 'completed' },
-          select: { amount: true }
-        }
       },
     });
 
@@ -183,8 +169,8 @@ export class CoachesService {
       return {
         ...coach,
         status: calculatedStatus,
-        currentPlan: coach.subscriptions?.[0]?.plan?.name || 'No Plan',
-        subscriptionStatus: coach.subscriptions?.[0]?.status || 'none',
+        // currentPlan: coach.subscriptions?.[0]?.plan?.name || 'No Plan',
+        // subscriptionStatus: coach.subscriptions?.[0]?.status || 'none',
         clientCount: coach.clientCoaches?.length || 0,
         totalRevenue: Math.round(totalRevenue / 100),
       };

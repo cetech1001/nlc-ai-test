@@ -1,4 +1,3 @@
-// apps/web/coach/src/lib/hooks/use-messaging-websocket.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@nlc-ai/web-auth';
@@ -22,9 +21,9 @@ interface TypingUser {
   timestamp: number;
 }
 
-const TYPING_TIMEOUT = 3000; // 3 seconds
+const TYPING_TIMEOUT = 3000;
 const RECONNECT_ATTEMPTS = 3;
-const RECONNECT_DELAY = 2000; // 2 seconds
+const RECONNECT_DELAY = 2000;
 
 export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}) => {
   const { user } = useAuth();
@@ -73,7 +72,6 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
 
   // Memoized callback functions
   const handleConnect = useCallback(() => {
-    console.log('✅ WebSocket connected');
     setIsConnected(true);
     setConnectionAttempts(0);
 
@@ -85,12 +83,10 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
   }, []);
 
   const handleGatewayReady = useCallback((data: any) => {
-    console.log('🚀 Gateway ready:', data);
     setIsReady(true);
   }, []);
 
   const handleDisconnect = useCallback((reason: string) => {
-    console.log('❌ WebSocket disconnected:', reason);
     setIsConnected(false);
     setIsReady(false);
 
@@ -110,7 +106,6 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
       // Implement exponential backoff
       if (attempts < RECONNECT_ATTEMPTS) {
         const delay = RECONNECT_DELAY * Math.pow(2, attempts - 1);
-        console.log(`🔄 Reconnecting in ${delay}ms (attempt ${attempts})`);
 
         reconnectTimeoutRef.current = setTimeout(() => {
           socketRef.current?.connect();
@@ -125,22 +120,18 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
   }, [options.onError]);
 
   const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('📨 New message received:', data.message.id);
     options.onNewMessage?.(data);
   }, [options.onNewMessage]);
 
   const handleMessageUpdated = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('✏️ Message updated:', data.message.id);
     options.onMessageUpdated?.(data);
   }, [options.onMessageUpdated]);
 
   const handleMessageDeleted = useCallback((data: { conversationID: string; messageID: string }) => {
-    console.log('🗑️ Message deleted:', data.messageID);
     options.onMessageDeleted?.(data);
   }, [options.onMessageDeleted]);
 
   const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
-    console.log('👁️ Messages read:', data.messageIDs.length, 'messages');
     options.onMessagesRead?.(data);
   }, [options.onMessagesRead]);
 
@@ -150,7 +141,6 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
       return;
     }
 
-    console.log('👀 User typing:', data.userID, data.isTyping);
 
     const userKey = `${data.userType}:${data.userID}`;
 
@@ -193,7 +183,6 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
       return false;
     }
 
-    console.log('🚪 Joining conversation:', conversationID);
     socketRef.current.emit('join_conversation', { conversationID });
     return true;
   }, [isReady]);
@@ -203,7 +192,6 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
       return false;
     }
 
-    console.log('🚪 Leaving conversation:', conversationID);
     socketRef.current.emit('leave_conversation', { conversationID });
 
     // Clear typing state for this conversation
@@ -262,7 +250,6 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
 
   const disconnect = useCallback(() => {
     if (socketRef.current) {
-      console.log('🔌 Manually disconnecting WebSocket');
       socketRef.current.disconnect();
       socketRef.current = null;
     }
@@ -284,12 +271,10 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
   // Initialize WebSocket connection
   useEffect(() => {
     if (!options.enabled || !token || !user) {
-      console.log('WebSocket not enabled or missing auth');
       return;
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_BASE_API_URL || 'http://localhost:3000';
-    console.log('🔌 Initializing WebSocket connection to:', apiUrl);
 
     const socket = io(apiUrl, {
       auth: { token },
@@ -317,15 +302,12 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
 
     // Connection success handlers
     socket.on('connected', (data: any) => {
-      console.log('🎉 Gateway connection confirmed:', data);
     });
 
     socket.on('joined_conversation', (data: { conversationID: string }) => {
-      console.log('✅ Successfully joined conversation:', data.conversationID);
     });
 
     socket.on('left_conversation', (data: { conversationID: string }) => {
-      console.log('👋 Left conversation:', data.conversationID);
     });
 
     return disconnect;
