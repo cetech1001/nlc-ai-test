@@ -68,7 +68,7 @@ export class MessagingEventsHandler implements OnApplicationBootstrap {
         type: 'message_received',
         title: 'New message 📨',
         message: `${payload.senderName || 'Someone'} sent you a message`,
-        actionUrl: `/messages/${payload.conversationID}`,
+        actionUrl: `/messages?conversationID=${payload.conversationID}`,
         metadata: {
           conversationID: payload.conversationID,
           messageID: payload.messageID,

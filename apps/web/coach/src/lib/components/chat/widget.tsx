@@ -133,41 +133,34 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
   }, [isOpen]);
 
+  // Replace the existing useEffect for unread count with this improved version
   useEffect(() => {
-    if (!conversation || isOpen) {
+    if (!conversation) {
       setUnreadCount(0);
       return;
     }
 
-    // Calculate unread count when conversation changes or widget is closed
-    const currentUserKey = `${user?.type}:${user?.id}`;
-    const count = conversation.unreadCount[currentUserKey] || 0;
-    setUnreadCount(count);
-  }, [conversation, isOpen, user?.id, user?.type]);
-
-// Update unread count when new messages arrive and widget is closed
-  useEffect(() => {
-    if (!isOpen && conversation) {
-      const currentUserKey = `${user?.type}:${user?.id}`;
-      const count = conversation.unreadCount[currentUserKey] || 0;
-      setUnreadCount(count);
-    }
-  }, [messages, isOpen, conversation, user?.id, user?.type]);
-
-  // Clear unread count when widget opens
-  useEffect(() => {
-    if (isOpen && conversation && unreadCount > 0) {
+    if (isOpen) {
+      // Reset unread count when widget is opened
       setUnreadCount(0);
-      // Mark messages as read
+
+      // Mark unread messages as read
       const unreadMessages = messages.filter(msg =>
         !msg.isRead &&
-        msg.senderID !== user?.id
+        msg.senderID !== user?.id &&
+        msg.senderType !== user?.type
       );
+
       if (unreadMessages.length > 0) {
         markMessageAsRead(unreadMessages.map(msg => msg.id));
       }
+    } else {
+      // Calculate unread count from conversation data when widget is closed
+      const currentUserKey = `${user?.type}:${user?.id}`;
+      const count = (conversation.unreadCount as Record<string, number>)[currentUserKey] || 0;
+      setUnreadCount(count);
     }
-  }, [isOpen, conversation, unreadCount, messages, user?.id]);
+  }, [isOpen, conversation?.id, conversation?.unreadCount, messages, user?.id, user?.type]);
 
   // Join/leave conversation when connection status changes
   useEffect(() => {
@@ -407,7 +400,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
             <button
               onClick={() => setIsMinimized(!isMinimized)}
               className="p-1.5 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50"
-              aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
+              aria-label={isMinimized ? "Expand messaging" : "Minimize messaging"}
             >
               {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
             </button>

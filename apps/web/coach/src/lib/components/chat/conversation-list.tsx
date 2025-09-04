@@ -115,8 +115,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   const getUserUnreadCount = (conversation: ConversationResponse) => {
-    const currentUserKey = `${user?.type}:${user?.id}`;
-    return conversation.unreadCount[currentUserKey] || 0;
+    if (!user?.id || !user?.type) return 0;
+
+    const currentUserKey = `${user.type}:${user.id}`;
+    const count = (conversation.unreadCount as Record<string, number>)[currentUserKey] || 0;
+    return Math.max(0, count);
   };
 
   const getContactType = (userType: string) => {

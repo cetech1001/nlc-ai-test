@@ -6,7 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { MessageType, UserType } from '@nlc-ai/api-types';
+import { MessageType, UserType, MessagingEvent, MESSAGING_ROUTING_KEYS } from '@nlc-ai/api-types';
+import { OutboxService } from '@nlc-ai/api-messaging';
 import {
   CreateConversationDto,
   CreateMessageDto,
@@ -23,6 +24,7 @@ export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly messagesGateway: MessagesGateway,
+    private readonly outboxService: OutboxService,
   ) {}
 
   async createConversation(
@@ -31,18 +33,15 @@ export class MessagesService {
     userType: UserType
   ) {
     try {
-      // Ensure creator is in participants
       if (!createDto.participantIDs.includes(userID)) {
         createDto.participantIDs.push(userID);
         createDto.participantTypes.push(userType);
       }
 
-      // For direct conversations, ensure only 2 participants
       if (createDto.type === 'direct' && createDto.participantIDs.length !== 2) {
         throw new BadRequestException('Direct conversations must have exactly 2 participants');
       }
 
-      // Check if direct conversation already exists
       if (createDto.type === 'direct') {
         const existingConversation = await this.findExistingDirectConversation(
           createDto.participantIDs,
@@ -69,6 +68,24 @@ export class MessagesService {
         },
       });
 
+      const creatorName = await this.getUserName(userID, userType);
+
+      await this.outboxService.saveAndPublishEvent<MessagingEvent>({
+        eventType: 'messaging.conversation.created',
+        schemaVersion: 1,
+        payload: {
+          conversationID: conversation.id,
+          type: conversation.type as 'direct' | 'group',
+          name: conversation.name,
+          participantIDs: conversation.participantIDs,
+          participantTypes: conversation.participantTypes as UserType[],
+          creatorID: userID,
+          creatorType: userType,
+          creatorName,
+          createdAt: conversation.createdAt.toISOString(),
+        },
+      }, MESSAGING_ROUTING_KEYS.CONVERSATION_CREATED);
+
       this.logger.log(`Conversation created: ${conversation.id}`);
       return conversation;
     } catch (error) {
@@ -82,8 +99,6 @@ export class MessagesService {
     userID: string,
     userType: UserType
   ) {
-    const userKey = `${userType}:${userID}`;
-
     const where: any = {
       participantIDs: { has: userID },
       participantTypes: { has: userType },
@@ -96,6 +111,7 @@ export class MessagesService {
     }
 
     if (filters.unreadOnly) {
+      const userKey = `${userType}:${userID}`;
       where.unreadCount = {
         path: [userKey],
         gt: 0,
@@ -135,6 +151,8 @@ export class MessagesService {
       throw new ForbiddenException('Access denied to this conversation');
     }
 
+    await this.resetUnreadCount(conversationID, userID, userType);
+
     return conversation;
   }
 
@@ -143,7 +161,6 @@ export class MessagesService {
     createDto: CreateMessageDto,
     senderID: string,
     senderType: UserType,
-    senderName: string,
   ) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationID },
@@ -156,6 +173,8 @@ export class MessagesService {
     if (!this.isParticipant(conversation, senderID, senderType)) {
       throw new ForbiddenException('Not authorized to send messages in this conversation');
     }
+
+    const senderName = await this.getUserName(senderID, senderType);
 
     const message = await this.prisma.directMessage.create({
       data: {
@@ -184,7 +203,6 @@ export class MessagesService {
       },
     });
 
-    // Update conversation
     const updatedUnreadCount = this.incrementUnreadCount(
       conversation.unreadCount as Record<string, number>,
       senderID,
@@ -202,8 +220,41 @@ export class MessagesService {
       },
     });
 
-    // Broadcast the new message via WebSocket
     await this.messagesGateway.broadcastNewMessage(conversationID, message, conversation);
+
+    for (let i = 0; i < conversation.participantIDs.length; i++) {
+      const participantID = conversation.participantIDs[i];
+      const participantType = conversation.participantTypes[i] as UserType;
+
+      if (participantID === senderID && participantType === senderType) {
+        continue;
+      }
+
+      const isRecipientViewing = this.messagesGateway.isUserViewingConversation(conversationID, participantID, participantType);
+
+      if (!isRecipientViewing) {
+        const recipientName = await this.getUserName(participantID, participantType);
+
+        await this.outboxService.saveAndPublishEvent<MessagingEvent>({
+          eventType: 'messaging.message.created',
+          schemaVersion: 1,
+          payload: {
+            messageID: message.id,
+            conversationID,
+            senderID,
+            senderType,
+            senderName,
+            recipientID: participantID,
+            recipientType: participantType,
+            recipientName,
+            type: message.type as MessageType,
+            content: message.content,
+            isRead: false,
+            createdAt: message.createdAt.toISOString(),
+          },
+        }, MESSAGING_ROUTING_KEYS.MESSAGE_CREATED);
+      }
+    }
 
     this.logger.log(`Message sent: ${message.id} in conversation ${conversationID}`);
     return message;
@@ -294,6 +345,20 @@ export class MessagesService {
     // Broadcast the message update via WebSocket
     await this.messagesGateway.broadcastMessageUpdate(message.conversationID, updatedMessage);
 
+    // Emit message updated event
+    await this.outboxService.saveAndPublishEvent<MessagingEvent>({
+      eventType: 'messaging.message.updated',
+      schemaVersion: 1,
+      payload: {
+        messageID,
+        conversationID: message.conversationID,
+        senderID: userID,
+        senderType: userType,
+        newContent: updateDto.content,
+        editedAt: updatedMessage.editedAt!.toISOString(),
+      },
+    }, MESSAGING_ROUTING_KEYS.MESSAGE_UPDATED);
+
     this.logger.log(`Message edited: ${messageID}`);
     return updatedMessage;
   }
@@ -317,6 +382,19 @@ export class MessagesService {
 
     // Broadcast the message deletion via WebSocket
     await this.messagesGateway.broadcastMessageDelete(message.conversationID, messageID);
+
+    // Emit message deleted event
+    await this.outboxService.saveAndPublishEvent<MessagingEvent>({
+      eventType: 'messaging.message.deleted',
+      schemaVersion: 1,
+      payload: {
+        messageID,
+        conversationID: message.conversationID,
+        senderID: userID,
+        senderType: userType,
+        deletedAt: new Date().toISOString(),
+      },
+    }, MESSAGING_ROUTING_KEYS.MESSAGE_DELETED);
 
     this.logger.log(`Message deleted: ${messageID}`);
     return { message: 'Message deleted successfully' };
@@ -352,18 +430,22 @@ export class MessagesService {
         userID,
         userType
       );
-    }
 
-    // Update conversation unread counts
-    const messages = await this.prisma.directMessage.findMany({
-      where: { id: { in: messageIDs } },
-      select: { conversationID: true },
-    });
+      // Update conversation unread count
+      await this.updateConversationUnreadCount(firstMessage.conversationID, userID, userType);
 
-    const conversationIDs = [...new Set(messages.map(m => m.conversationID))];
-
-    for (const conversationID of conversationIDs) {
-      await this.updateConversationUnreadCount(conversationID, userID, userType);
+      // Emit message read event
+      await this.outboxService.saveAndPublishEvent<MessagingEvent>({
+        eventType: 'messaging.message.read',
+        schemaVersion: 1,
+        payload: {
+          messageIDs,
+          conversationID: firstMessage.conversationID,
+          readerID: userID,
+          readerType: userType,
+          readAt: new Date().toISOString(),
+        },
+      }, MESSAGING_ROUTING_KEYS.MESSAGE_READ);
     }
 
     this.logger.log(`Messages marked as read: ${messageIDs.length} messages`);
@@ -480,6 +562,26 @@ export class MessagesService {
     return updatedCount;
   }
 
+  private async resetUnreadCount(conversationID: string, userID: string, userType: UserType) {
+    const userKey = `${userType}:${userID}`;
+
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationID },
+    });
+
+    if (conversation) {
+      const updatedUnreadCount = {
+        ...(conversation.unreadCount as Record<string, number>),
+        [userKey]: 0,
+      };
+
+      await this.prisma.conversation.update({
+        where: { id: conversationID },
+        data: { unreadCount: updatedUnreadCount },
+      });
+    }
+  }
+
   private async updateConversationUnreadCount(conversationID: string, userID: string, userType: UserType) {
     const unreadCount = await this.prisma.directMessage.count({
       where: {
@@ -508,6 +610,39 @@ export class MessagesService {
         where: { id: conversationID },
         data: { unreadCount: updatedUnreadCount },
       });
+    }
+  }
+
+  private async getUserName(userID: string, userType: UserType): Promise<string> {
+    try {
+      switch (userType) {
+        case UserType.coach:
+          const coach = await this.prisma.coach.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true, businessName: true },
+          });
+          return coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach';
+
+        case UserType.client:
+          const client = await this.prisma.client.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true },
+          });
+          return `${client?.firstName} ${client?.lastName}` || 'Unknown Client';
+
+        case UserType.admin:
+          const admin = await this.prisma.admin.findUnique({
+            where: { id: userID },
+            select: { firstName: true, lastName: true },
+          });
+          return `${admin?.firstName} ${admin?.lastName}` || 'Admin';
+
+        default:
+          return 'Unknown User';
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get user name for ${userType} ${userID}`, error);
+      return 'Unknown User';
     }
   }
 }

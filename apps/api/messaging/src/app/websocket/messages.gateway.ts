@@ -51,9 +51,11 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(MessagesGateway.name);
 
+  private conversationViewers = new Map<string, Set<string>>();
   private connections = new Map<string, ConnectionInfo>();
   private roomMembers = new Map<string, Set<string>>();
   private typingStates = new Map<string, Map<string, NodeJS.Timeout>>();
+
   private readonly cleanupInterval: NodeJS.Timeout;
 
   constructor(
@@ -70,6 +72,14 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       clearInterval(this.cleanupInterval);
     }
     this.cleanup();
+  }
+
+  public isUserViewingConversation(conversationID: string, userID: string, userType: UserType): boolean {
+    const viewers = this.conversationViewers.get(conversationID);
+    if (!viewers) return false;
+
+    const userKey = `${userType}:${userID}`;
+    return viewers.has(userKey);
   }
 
   async handleConnection(client: Socket) {
@@ -127,6 +137,8 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     const connectionInfo = this.connections.get(client.id);
 
     if (connectionInfo) {
+      const userKey = `${connectionInfo.userType}:${connectionInfo.userID}`;
+
       connectionInfo.joinedRooms.forEach(roomID => {
         const roomMembers = this.roomMembers.get(roomID);
         if (roomMembers) {
@@ -135,10 +147,21 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
             this.roomMembers.delete(roomID);
           }
         }
+
+        // Clean up conversation viewers
+        if (roomID.startsWith('conversation:')) {
+          const conversationID = roomID.replace('conversation:', '');
+          const viewers = this.conversationViewers.get(conversationID);
+          if (viewers) {
+            viewers.delete(userKey);
+            if (viewers.size === 0) {
+              this.conversationViewers.delete(conversationID);
+            }
+          }
+        }
       });
 
       this.cleanupTypingForUser(connectionInfo.userID, connectionInfo.userType);
-
       this.connections.delete(client.id);
       this.logger.log(`🔌 User ${connectionInfo.userID} (${connectionInfo.userType}) disconnected`);
     } else {
@@ -165,6 +188,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       const roomID = `conversation:${conversationID}`;
+      const userKey = `${client.userType}:${client.userID}`;
 
       await client.join(roomID);
 
@@ -177,6 +201,12 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         this.roomMembers.set(roomID, new Set());
       }
       this.roomMembers.get(roomID)!.add(client.id);
+
+      // Track conversation viewers
+      if (!this.conversationViewers.has(conversationID)) {
+        this.conversationViewers.set(conversationID, new Set());
+      }
+      this.conversationViewers.get(conversationID)!.add(userKey);
 
       client.emit('joined_conversation', { conversationID });
       this.logger.log(`✅ User ${client.userID} joined conversation ${conversationID}`);
@@ -195,6 +225,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     const { conversationID } = payload;
     const roomID = `conversation:${conversationID}`;
+    const userKey = `${client.userType}:${client.userID}`;
 
     await client.leave(roomID);
 
@@ -208,6 +239,15 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       roomMembers.delete(client.id);
       if (roomMembers.size === 0) {
         this.roomMembers.delete(roomID);
+      }
+    }
+
+    // Remove from conversation viewers
+    const viewers = this.conversationViewers.get(conversationID);
+    if (viewers) {
+      viewers.delete(userKey);
+      if (viewers.size === 0) {
+        this.conversationViewers.delete(conversationID);
       }
     }
 
@@ -414,6 +454,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.connections.clear();
     this.roomMembers.clear();
     this.typingStates.clear();
+    this.conversationViewers.clear();
   }
 
   getConnectionStats() {

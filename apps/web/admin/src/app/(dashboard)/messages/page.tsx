@@ -122,7 +122,7 @@ const MessagesPage = () => {
         </div>
 
         <div className="relative z-10 flex w-full">
-          {/* Mobile: Show either conversation list OR chat window */}
+          {/* Mobile: Show either conversation list OR messaging window */}
           {isMobileView ? (
             <>
               {!selectedConversation ? (
@@ -139,7 +139,7 @@ const MessagesPage = () => {
               )}
             </>
           ) : (
-            /* Desktop: Show both conversation list and chat window */
+            /* Desktop: Show both conversation list and messaging window */
             <>
               <ConversationList
                 selectedConversationID={selectedConversation?.id}

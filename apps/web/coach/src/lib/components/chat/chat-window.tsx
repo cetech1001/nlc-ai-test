@@ -153,7 +153,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
   // Clean up typing timeout on unmount
   useEffect(() => {
@@ -163,6 +163,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
     };
   }, [typingTimeout]);
+
+  // Add this after the existing useEffect hooks, around line 85
+  useEffect(() => {
+    // Reset unread count when conversation is opened
+    if (conversation?.id && user?.id) {
+      const resetUnreadCount = async () => {
+        try {
+          // Mark unread messages as read when opening conversation
+          const unreadMessages = messages.filter(msg =>
+            !msg.isRead &&
+            msg.senderID !== user.id &&
+            msg.senderType !== user.type
+          );
+
+          if (unreadMessages.length > 0) {
+            await markMessageAsRead(unreadMessages.map(msg => msg.id));
+          }
+        } catch (error) {
+          console.error('Failed to reset unread count:', error);
+        }
+      };
+
+      resetUnreadCount();
+    }
+  }, [conversation?.id, user?.id]);
 
   const loadMessages = async () => {
     if (!conversation) return;
