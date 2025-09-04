@@ -64,54 +64,10 @@ export interface NotificationResponse {
 
 export interface NotificationFilters {
   isRead?: boolean;
-  priority?: NotificationPriority;
   type?: string;
+  priority?: string;
   page?: number;
   limit?: number;
-}
-
-export interface NotificationPreferences {
-  id: string;
-  userID: string;
-  userType: string;
-  emailEnabled: boolean;
-  pushEnabled: boolean;
-  webhookUrl?: string;
-  preferences: {
-    digestFrequency?: 'immediate' | 'hourly' | 'daily' | 'weekly';
-    quietHours?: {
-      start: string;
-      end: string;
-    };
-    categories?: Record<string, boolean>;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface UpdatePreferencesRequest {
-  emailEnabled?: boolean;
-  pushEnabled?: boolean;
-  webhookUrl?: string;
-  preferences?: {
-    digestFrequency?: 'immediate' | 'hourly' | 'daily' | 'weekly';
-    quietHours?: {
-      start: string;
-      end: string;
-    };
-    categories?: Record<string, boolean>;
-  };
-}
-
-export interface CreateNotificationRequest {
-  userID: string;
-  userType: string;
-  type: string;
-  title: string;
-  message: string;
-  actionUrl?: string;
-  priority?: NotificationPriority;
-  metadata?: Record<string, any>;
 }
 
 export interface UnreadCountResponse {
@@ -120,4 +76,5 @@ export interface UnreadCountResponse {
 
 export interface ActionResponse {
   message: string;
+  updatedCount?: number;
 }

@@ -8,5 +8,6 @@ export * from './content';
 export * from './home';
 export * from './icons';
 export * from './leads';
+export * from './notifications';
 export * from './retention';
 export * from './sidebar';

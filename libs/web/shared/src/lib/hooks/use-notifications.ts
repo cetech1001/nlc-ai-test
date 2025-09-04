@@ -1,21 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { NLCClient } from "@nlc-ai/sdk-main";
-
-interface Notification {
-  id: string;
-  userID: string;
-  userType: string;
-  type: string;
-  title: string;
-  message: string;
-  actionUrl?: string;
-  priority: string;
-  metadata?: Record<string, any>;
-  isRead: boolean;
-  readAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import {NotificationResponse} from "@nlc-ai/sdk-notifications";
 
 interface UseNotificationsOptions {
   autoFetch?: boolean;
@@ -31,7 +16,7 @@ export const useNotifications = (
     pollIntervalMs = 30000, // 30 seconds
   } = options;
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

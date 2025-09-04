@@ -1,37 +1,5 @@
 import { BaseClient, Paginated } from '@nlc-ai/sdk-core';
-
-export interface NotificationResponse {
-  id: string;
-  userID: string;
-  userType: string;
-  type: string;
-  title: string;
-  message: string;
-  actionUrl?: string;
-  priority: string;
-  metadata?: Record<string, any>;
-  isRead: boolean;
-  readAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface NotificationFilters {
-  isRead?: boolean;
-  type?: string;
-  priority?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface UnreadCountResponse {
-  unreadCount: number;
-}
-
-export interface ActionResponse {
-  message: string;
-  updatedCount?: number;
-}
+import {ActionResponse, NotificationFilters, NotificationResponse, UnreadCountResponse} from "./notifications.types";
 
 export class NotificationsServiceClient extends BaseClient {
 
