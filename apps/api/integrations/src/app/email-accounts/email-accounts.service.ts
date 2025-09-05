@@ -9,7 +9,7 @@ import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import {
   EmailAccount, EmailAccountActionResponse, EmailAccountStatsResponse, INTEGRATION_ROUTING_KEYS,
-  IntegrationEvent
+  IntegrationEvent, UserType
 } from '@nlc-ai/api-types';
 
 interface EmailProviderConfig {
@@ -66,10 +66,10 @@ export class EmailAccountsService {
     };
   }
 
-  async getEmailAccounts(coachID: string): Promise<EmailAccount[]> {
+  async getEmailAccounts(userID: string): Promise<EmailAccount[]> {
     try {
       const emailAccounts = await this.prisma.emailAccount.findMany({
-        where: { coachID },
+        where: { userID },
         orderBy: [
           { isPrimary: 'desc' },
           { createdAt: 'desc' },
@@ -86,13 +86,13 @@ export class EmailAccountsService {
     }
   }
 
-  async getEmailAuthUrl(coachID: string, provider: string): Promise<{ authUrl: string; state: string }> {
+  async getEmailAuthUrl(userID: string, provider: string): Promise<{ authUrl: string; state: string }> {
     const config = this.emailProviderConfigs[provider];
     if (!config) {
       throw new BadRequestException(`Unsupported email provider: ${provider}`);
     }
 
-    const state = `${coachID}${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const state = `${userID}${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const params = new URLSearchParams({
       client_id: config.clientID,
@@ -109,7 +109,8 @@ export class EmailAccountsService {
   }
 
   async handleEmailOAuthCallback(
-    coachID: string,
+    userID: string,
+    userType: UserType,
     provider: string,
     code: string,
     state?: string,
@@ -119,21 +120,22 @@ export class EmailAccountsService {
       throw new BadRequestException(`Unsupported email provider: ${provider}`);
     }
 
-    if (state && !state.startsWith(coachID)) {
+    if (state && !state.startsWith(userID)) {
       throw new BadRequestException('Invalid state parameter');
     }
 
     try {
       const tokenResponse = await this.exchangeCodeForToken(provider, code, config);
       const profileData = await this.getEmailProfile(provider, tokenResponse.access_token, config);
-      const emailAccount = await this.saveEmailAccount(coachID, provider, tokenResponse, profileData);
+      const emailAccount = await this.saveEmailAccount(userID, userType, provider, tokenResponse, profileData);
 
       await this.outbox.saveAndPublishEvent<IntegrationEvent>(
         {
           eventType: 'email.account.connected',
           payload: {
             accountID: emailAccount.id,
-            coachID,
+            userID,
+            userType,
             emailAddress: emailAccount.emailAddress,
             provider,
             isPrimary: emailAccount.isPrimary || false,
@@ -150,14 +152,14 @@ export class EmailAccountsService {
     }
   }
 
-  async setPrimaryEmailAccount(coachID: string, accountID: string): Promise<EmailAccountActionResponse> {
-    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
+  async setPrimaryEmailAccount(userID: string, accountID: string): Promise<EmailAccountActionResponse> {
+    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, userID);
 
     try {
       await this.prisma.$transaction(async (prisma) => {
         await prisma.emailAccount.updateMany({
           where: {
-            coachID,
+            userID,
             id: { not: accountID },
           },
           data: { isPrimary: false },
@@ -178,8 +180,8 @@ export class EmailAccountsService {
     }
   }
 
-  async syncEmailAccount(coachID: string, accountID: string): Promise<EmailAccountActionResponse> {
-    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
+  async syncEmailAccount(userID: string, userType: UserType, accountID: string): Promise<EmailAccountActionResponse> {
+    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, userID);
 
     try {
       await this.refreshTokenIfNeeded(emailAccount);
@@ -194,10 +196,11 @@ export class EmailAccountsService {
           eventType: 'email.account.sync.completed',
           payload: {
             accountID,
-            coachID,
+            userID,
+            userType,
             emailAddress: emailAccount.emailAddress,
             syncStats: {
-              threadsCount: 0, // Would be populated by actual sync logic
+              threadsCount: 0,
               messagesCount: 0,
             },
             syncedAt: new Date().toISOString(),
@@ -216,8 +219,8 @@ export class EmailAccountsService {
     }
   }
 
-  async testEmailAccount(coachID: string, accountID: string): Promise<EmailAccountActionResponse> {
-    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
+  async testEmailAccount(userID: string, accountID: string): Promise<EmailAccountActionResponse> {
+    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, userID);
 
     try {
       const config = this.emailProviderConfigs[emailAccount.provider];
@@ -239,8 +242,8 @@ export class EmailAccountsService {
     }
   }
 
-  async disconnectEmailAccount(coachID: string, accountID: string): Promise<EmailAccountActionResponse> {
-    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
+  async disconnectEmailAccount(userID: string, userType: UserType, accountID: string): Promise<EmailAccountActionResponse> {
+    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, userID);
 
     try {
       await this.prisma.emailAccount.delete({
@@ -252,7 +255,8 @@ export class EmailAccountsService {
           eventType: 'email.account.disconnected',
           payload: {
             accountID,
-            coachID,
+            userID,
+            userType,
             emailAddress: emailAccount.emailAddress,
             provider: emailAccount.provider,
             disconnectedAt: new Date().toISOString(),
@@ -272,11 +276,11 @@ export class EmailAccountsService {
   }
 
   async toggleEmailAccountSync(
-    coachID: string,
+    userID: string,
     accountID: string,
     syncEnabled: boolean,
   ): Promise<EmailAccountActionResponse> {
-    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
+    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, userID);
 
     try {
       await this.prisma.emailAccount.update({
@@ -295,11 +299,11 @@ export class EmailAccountsService {
   }
 
   async getEmailAccountStats(
-    coachID: string,
+    userID: string,
     accountID: string,
     days: number = 30,
   ): Promise<EmailAccountStatsResponse> {
-    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, coachID);
+    const emailAccount = await this.findEmailAccountByIDAndCoach(accountID, userID);
 
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - days);
@@ -337,11 +341,11 @@ export class EmailAccountsService {
     };
   }
 
-  private async findEmailAccountByIDAndCoach(accountID: string, coachID: string): Promise<EmailAccount> {
+  private async findEmailAccountByIDAndCoach(accountID: string, userID: string): Promise<EmailAccount> {
     const emailAccount = await this.prisma.emailAccount.findFirst({
       where: {
         id: accountID,
-        coachID,
+        userID,
       },
     });
 
@@ -419,7 +423,8 @@ export class EmailAccountsService {
   }
 
   private async saveEmailAccount(
-    coachID: string,
+    userID: string,
+    userType: UserType,
     provider: string,
     tokenData: any,
     profileData: any,
@@ -428,19 +433,20 @@ export class EmailAccountsService {
 
     const existingAccount = await this.prisma.emailAccount.findFirst({
       where: {
-        coachID,
+        userID,
         emailAddress,
       },
     });
 
     const anyConnectedAccount = await this.prisma.emailAccount.findFirst({
       where: {
-        coachID,
+        userID,
       }
     });
 
     const accountData = {
-      coachID,
+      userID,
+      userType,
       emailAddress,
       provider,
       accessToken: tokenData.access_token,

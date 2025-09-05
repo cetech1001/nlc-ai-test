@@ -49,6 +49,7 @@ export class EmailAccountsController {
   ) {
     return this.emailAccountsService.handleEmailOAuthCallback(
       user.id,
+      user.type,
       provider,
       body.code,
       body.state
@@ -72,7 +73,7 @@ export class EmailAccountsController {
     @CurrentUser() user: AuthUser,
     @Param('accountID') accountID: string
   ) {
-    return this.emailAccountsService.syncEmailAccount(user.id, accountID);
+    return this.emailAccountsService.syncEmailAccount(user.id, user.type, accountID);
   }
 
   @Post(':accountID/test')
@@ -92,7 +93,7 @@ export class EmailAccountsController {
     @CurrentUser() user: AuthUser,
     @Param('accountID') accountID: string
   ) {
-    return this.emailAccountsService.disconnectEmailAccount(user.id, accountID);
+    return this.emailAccountsService.disconnectEmailAccount(user.id, user.type, accountID);
   }
 
   @Post(':accountID/toggle')
