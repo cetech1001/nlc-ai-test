@@ -1,5 +1,37 @@
 import { BaseEvent } from '@nlc-ai/api-messaging';
 
+export interface EmailSyncEvent extends BaseEvent{
+  eventType: string;
+  schemaVersion: number;
+  payload: EmailSyncPayload;
+}
+
+export interface EmailSyncPayload {
+  coachID: string;
+  totalProcessed: number;
+  clientEmailsFound: number;
+  syncedAt: string;
+}
+
+export interface ClientEmailReceivedEvent extends BaseEvent{
+  eventType: 'email.client.received';
+  schemaVersion: number;
+  payload: {
+    coachID: string;
+    clientID: string;
+    threadID: string;
+    emailID: string;
+    subject: string;
+    receivedAt: string;
+  };
+}
+
+export const EMAIL_SYNC_ROUTING_KEYS = {
+  SYNC_COMPLETED: 'email.sync.completed',
+  CLIENT_EMAIL_RECEIVED: 'email.client.received',
+  RESPONSE_GENERATED: 'client.email.response.generated',
+} as const;
+
 export interface IntegrationConnectedEvent extends BaseEvent {
   eventType: 'integration.connected';
   payload: {

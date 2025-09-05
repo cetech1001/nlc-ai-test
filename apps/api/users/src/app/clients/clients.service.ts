@@ -213,7 +213,6 @@ export class ClientsService {
                 title: true,
                 description: true,
                 thumbnailUrl: true,
-                totalModules: true,
                 estimatedDurationHours: true
               }
             }

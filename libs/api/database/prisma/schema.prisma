@@ -74,9 +74,12 @@ model AiInteraction {
   status           String?   @default("completed") @db.VarChar(50)
   errorMessage     String?
   createdAt        DateTime? @default(now()) @db.Timestamptz(6)
-  aiAgent          AiAgent   @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  client           Client?   @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coach            Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  generatedEmailResponses GeneratedEmailResponse[]
+
+  aiAgent AiAgent @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  client  Client? @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach   Coach   @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([agentID], map: "idx_ai_interactions_agent_id")
   @@index([coachID], map: "idx_ai_interactions_coach_id")
@@ -109,13 +112,14 @@ model Client {
   createdAt         DateTime?  @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime?  @default(now()) @db.Timestamptz(6)
 
-  aiInteractions    AiInteraction[]
-  courseEnrollments CourseEnrollment[]
-  emailThreads      EmailThread[]
-  scheduledEmails   ScheduledEmail[]
-  clientCoaches     ClientCoach[]
-  emailSequences    EmailSequence[]
-  paymentMethods    PaymentMethod[]
+  aiInteractions          AiInteraction[]
+  courseEnrollments       CourseEnrollment[]
+  emailThreads            EmailThread[]
+  scheduledEmails         ScheduledEmail[]
+  clientCoaches           ClientCoach[]
+  emailSequences          EmailSequence[]
+  paymentMethods          PaymentMethod[]
+  generatedEmailResponses GeneratedEmailResponse[]
 
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
@@ -224,19 +228,21 @@ model Coach {
   createdAt           DateTime?  @default(now()) @db.Timestamptz(6)
   updatedAt           DateTime?  @default(now()) @db.Timestamptz(6)
 
-  aiInteractions     AiInteraction[]
-  coachAiAgents      CoachAiAgent[]
-  contentPieces      ContentPiece[]
-  contentSuggestions ContentSuggestion[]
-  courses            Course[]
-  dailyKPIs          DailyKPI[]
-  emailTemplates     EmailTemplate[]
-  emailThreads       EmailThread[]
-  paymentMethods     PaymentMethod[]
-  leads              Lead[]
-  contentCategories  ContentCategory[]
-  emailSequences     EmailSequence[]
-  scheduledEmails    ScheduledEmail[]
+  aiInteractions          AiInteraction[]
+  coachAiAgents           CoachAiAgent[]
+  contentPieces           ContentPiece[]
+  contentSuggestions      ContentSuggestion[]
+  courses                 Course[]
+  dailyKPIs               DailyKPI[]
+  emailTemplates          EmailTemplate[]
+  emailThreads            EmailThread[]
+  paymentMethods          PaymentMethod[]
+  leads                   Lead[]
+  contentCategories       ContentCategory[]
+  emailSequences          EmailSequence[]
+  scheduledEmails         ScheduledEmail[]
+  generatedEmailResponses GeneratedEmailResponse[]
+  deliverabilityAnalyses  DeliverabilityAnalysis[]
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
@@ -298,8 +304,6 @@ enum CommunityPricingType {
   annual
   one_time
 }
-
-// Add these models to libs/api/database/prisma/schema.prisma
 
 enum ModerationStatus {
   pending
@@ -866,24 +870,28 @@ model EmailTemplate {
 }
 
 model EmailThread {
-  id             String         @id @default(uuid()) @db.Uuid
-  coachID        String         @db.Uuid
-  clientID       String?        @db.Uuid
-  emailAccountID String         @db.Uuid
-  threadID       String         @db.VarChar(255)
-  subject        String?        @db.VarChar(500)
+  id             String    @id @default(uuid()) @db.Uuid
+  coachID        String    @db.Uuid
+  clientID       String?   @db.Uuid
+  emailAccountID String    @db.Uuid
+  threadID       String    @db.VarChar(255)
+  subject        String?   @db.VarChar(500)
   participants   String[]
-  status         String?        @default("active") @db.VarChar(50)
-  isRead         Boolean?       @default(false)
-  priority       String?        @default("normal") @db.VarChar(20)
-  messageCount   Int?           @default(0)
-  lastMessageAt  DateTime?      @db.Timestamptz(6)
-  createdAt      DateTime?      @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime?      @default(now()) @db.Timestamptz(6)
-  emailMessages  EmailMessage[]
-  client         Client?        @relation(fields: [clientID], references: [id], onUpdate: NoAction)
-  coach          Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  emailAccount   EmailAccount   @relation(fields: [emailAccountID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  status         String?   @default("active") @db.VarChar(50)
+  isRead         Boolean?  @default(false)
+  priority       String?   @default("normal") @db.VarChar(20)
+  messageCount   Int?      @default(0)
+  tags           String[]  @default([])
+  lastMessageAt  DateTime? @db.Timestamptz(6)
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @db.Timestamptz(6)
+
+  emailMessages           EmailMessage[]
+  generatedEmailResponses GeneratedEmailResponse[]
+
+  client       Client?      @relation(fields: [clientID], references: [id], onUpdate: NoAction)
+  coach        Coach        @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailAccount EmailAccount @relation(fields: [emailAccountID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([clientID], map: "idx_email_threads_client_id")
   @@index([coachID], map: "idx_email_threads_coach_id")
@@ -942,6 +950,60 @@ model Integration {
   @@index([userID, userType], map: "idx_integrations_user")
   @@index([platformName], map: "idx_integrations_platform")
   @@map("integrations")
+}
+
+// Add these new models to your existing schema.prisma
+
+model GeneratedEmailResponse {
+  id                  String    @id @default(uuid()) @db.Uuid
+  coachID             String    @db.Uuid
+  threadID            String    @db.Uuid
+  clientID            String    @db.Uuid
+  interactionID       String?   @db.Uuid
+  subject             String    @db.VarChar(500)
+  body                String    @db.Text
+  actualSubject       String?   @db.VarChar(500) // Final subject if modified
+  actualBody          String?   @db.Text // Final body if modified
+  confidence          Decimal?  @default(0.8) @db.Decimal(3, 2)
+  deliverabilityScore Int?
+  status              String    @default("generated") @db.VarChar(50) // generated, updated, scheduled, sent, failed, cancelled, superseded
+  sentAt              DateTime? @db.Timestamptz(6)
+  scheduledFor        DateTime? @db.Timestamptz(6)
+  metadata            Json?     @default("{}")
+  createdAt           DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(6)
+
+  coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  thread        EmailThread    @relation(fields: [threadID], references: [id], onDelete: Cascade)
+  client        Client         @relation(fields: [clientID], references: [id], onDelete: Cascade)
+  aiInteraction AiInteraction? @relation(fields: [interactionID], references: [id], onDelete: SetNull)
+
+  @@index([coachID, status])
+  @@index([threadID])
+  @@index([createdAt])
+  @@map("generated_email_responses")
+}
+
+model DeliverabilityAnalysis {
+  id                      String    @id @default(uuid()) @db.Uuid
+  coachID                 String?   @db.Uuid
+  subject                 String    @db.VarChar(500)
+  body                    String    @db.Text
+  recipientType           String    @default("general") @db.VarChar(20)
+  overallScore            Int?
+  primaryInboxProbability Int?
+  spamTriggers            Json?     @default("[]")
+  recommendations         Json?     @default("[]")
+  improvements            Json?     @default("[]")
+  status                  String    @default("processing") @db.VarChar(20)
+  completedAt             DateTime? @db.Timestamptz(6)
+  createdAt               DateTime  @default(now()) @db.Timestamptz(6)
+
+  coach Coach? @relation(fields: [coachID], references: [id], onDelete: SetNull)
+
+  @@index([coachID])
+  @@index([createdAt])
+  @@map("deliverability_analyses")
 }
 
 enum MediaProvider {
@@ -1298,10 +1360,11 @@ model SystemSetting {
 
 model ScheduledEmail {
   id                String    @id @default(uuid()) @db.Uuid
-  emailSequenceID   String?   @db.Uuid // Add this field
+  emailSequenceID   String?   @db.Uuid
   leadID            String?   @db.Uuid
   coachID           String?   @db.Uuid
   clientID          String?   @db.Uuid
+  threadID          String?   @db.Uuid
   to                String    @db.VarChar(255)
   subject           String    @db.VarChar(500)
   body              String    @db.Text

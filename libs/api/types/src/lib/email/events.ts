@@ -227,22 +227,6 @@ export interface EmailTemplateUpdatedEvent extends BaseEvent {
   };
 }
 
-// Client Email Response Events
-export interface ClientEmailResponseGeneratedEvent extends BaseEvent {
-  eventType: 'email.client.response.generated';
-  payload: {
-    responseID: string;
-    threadID: string;
-    clientID: string;
-    coachID: string;
-    originalEmailID: string;
-    subject: string;
-    aiConfidence: number;
-    deliverabilityScore: number;
-    generatedAt: string;
-  };
-}
-
 export interface ClientEmailResponseApprovedEvent extends BaseEvent {
   eventType: 'email.client.response.approved';
   payload: {
@@ -393,7 +377,7 @@ export type EmailEvent =
   | EmailTemplateCreatedEvent
   | EmailTemplateUsedEvent
   | EmailTemplateUpdatedEvent
-  | ClientEmailResponseGeneratedEvent
+  // | ClientEmailResponseGeneratedEvent
   | ClientEmailResponseApprovedEvent
   | ClientEmailResponseRejectedEvent
   | EmailSystemHealthEvent
@@ -424,7 +408,7 @@ export interface EmailEventPayloads {
   'email.template.created': EmailTemplateCreatedEvent['payload'];
   'email.template.used': EmailTemplateUsedEvent['payload'];
   'email.template.updated': EmailTemplateUpdatedEvent['payload'];
-  'email.client.response.generated': ClientEmailResponseGeneratedEvent['payload'];
+  // 'email.client.response.generated': ClientEmailResponseGeneratedEvent['payload'];
   'email.client.response.approved': ClientEmailResponseApprovedEvent['payload'];
   'email.client.response.rejected': ClientEmailResponseRejectedEvent['payload'];
   'email.system.health': EmailSystemHealthEvent['payload'];

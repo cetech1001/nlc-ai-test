@@ -9,6 +9,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { EmailAccountsModule } from './email-accounts/email-accounts.module';
 import { HealthModule } from './health/health.module';
 import integrationsConfig from './config/integrations.config';
+import {EmailSyncModule} from "./email-sync/email-sync.module";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import integrationsConfig from './config/integrations.config';
     HealthModule,
     IntegrationsModule,
     EmailAccountsModule,
+    EmailSyncModule,
   ],
   providers: [
     {

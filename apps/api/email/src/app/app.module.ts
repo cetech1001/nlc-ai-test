@@ -14,6 +14,7 @@ import { HealthModule } from './health/health.module';
 import emailConfig from './config/email.config';
 import {WebhooksModule} from "./webhooks/webhooks.module";
 import {AnalyticsModule} from "./analytics/analytics.module";
+import {ClientEmailSendModule} from "./client-email-send/client-email-send.module";
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import {AnalyticsModule} from "./analytics/analytics.module";
     SequencesModule,
     EventHandlersModule,
     WebhooksModule,
-    AnalyticsModule
+    AnalyticsModule,
+    ClientEmailSendModule,
   ],
   providers: [
     {

@@ -308,6 +308,18 @@ export interface AgentErrorRateHighEvent extends BaseEvent {
   };
 }
 
+export interface ClientEmailResponseGeneratedEvent extends BaseEvent {
+  eventType: 'client.email.response.generated';
+  payload: {
+    responseID: string;
+    coachID: string;
+    clientID: string;
+    threadID: string;
+    confidence: number;
+    generatedAt: string;
+  };
+}
+
 // =============================================================================
 // UNION TYPES AND EXPORTS
 // =============================================================================
