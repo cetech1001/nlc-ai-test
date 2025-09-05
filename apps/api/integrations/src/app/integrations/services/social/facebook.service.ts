@@ -7,7 +7,7 @@ import {
   OAuthCredentials,
   SocialPlatform,
   SyncResult,
-  TestResult
+  TestResult, UserType
 } from "@nlc-ai/api-types";
 
 @Injectable()
@@ -16,11 +16,12 @@ export class FacebookService extends BaseIntegrationService {
   integrationType = IntegrationType.SOCIAL;
   authType = AuthType.OAUTH;
 
-  async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
+  async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getFacebookProfile(credentials.accessToken);
 
     return this.saveIntegration({
-      coachID,
+      userID,
+      userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
       accessToken: credentials.accessToken,
@@ -84,13 +85,13 @@ export class FacebookService extends BaseIntegrationService {
     }
   }
 
-  async getAuthUrl(coachID: string): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(coachID, this.platformName);
+  async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
+    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('META_CLIENT_ID', ''),
+      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
       scope: ['pages_read_engagement', 'pages_show_list', 'email'].join(','),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/facebook/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
       response_type: 'code',
       state,
     });
@@ -101,17 +102,17 @@ export class FacebookService extends BaseIntegrationService {
     };
   }
 
-  async handleCallback(coachID: string, code: string, state: string): Promise<Integration> {
+  async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
-    return this.connect(coachID, tokenData);
+    return this.connect(userID, userType, tokenData);
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('META_CLIENT_ID', ''),
-      client_secret: this.configService.get('META_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.meta.clientSecret', ''),
       code,
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/facebook/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
     });
 
     const response = await fetch(`https://graph.facebook.com/v18.0/oauth/access_token?${params}`);

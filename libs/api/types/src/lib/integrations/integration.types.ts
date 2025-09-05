@@ -2,7 +2,8 @@ import {AuthType, IntegrationType} from "./enums";
 
 export interface Integration {
   id: string;
-  coachID: string;
+  userID: string;
+  userType: string;
   integrationType: IntegrationType;
   platformName: string;
   accessToken?: string | null;
@@ -21,7 +22,8 @@ export interface Integration {
 
 export interface EmailAccount {
   id: string;
-  coachID: string;
+  userID: string;
+  userType: string;
   emailAddress: string;
   provider: string;
   accessToken?: string | null;
@@ -54,7 +56,8 @@ export interface SyncResult {
 }
 
 export interface CreateIntegrationData {
-  coachID: string;
+  userID: string;
+  userType: string;
   integrationType: IntegrationType;
   platformName: string;
   accessToken: string;
@@ -72,13 +75,13 @@ export interface IntegrationProvider {
   integrationType: IntegrationType;
   authType: AuthType;
 
-  connect(coachID: string, credentials: any): Promise<Integration>;
+  connect(userID: string, userType: string, credentials: any): Promise<Integration>;
   test(integration: Integration): Promise<TestResult>;
   sync(integration: Integration): Promise<SyncResult>;
   disconnect(integration: Integration): Promise<void>;
 
-  getAuthUrl?(coachID: string): Promise<{ authUrl: string; state: string }>;
-  handleCallback?(coachID: string, code: string, state: string): Promise<Integration>;
+  getAuthUrl?(userID: string, userType: string): Promise<{ authUrl: string; state: string }>;
+  handleCallback?(userID: string, userType: string, code: string, state: string): Promise<Integration>;
   refreshToken?(integration: Integration): Promise<string>;
   fetchScheduledEvents?(accessToken: string, userUri: string, startDate?: string, endDate?: string): Promise<any[]>;
 }

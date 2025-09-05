@@ -7,7 +7,7 @@ import {
   OAuthCredentials,
   IntegrationType,
   AuthType,
-  SocialPlatform, IntegrationEvent
+  SocialPlatform, IntegrationEvent, UserType
 } from "@nlc-ai/api-types";
 import {google} from "googleapis";
 import {IntegrationError} from "../../errors/integration.error";
@@ -22,13 +22,14 @@ export class YoutubeService extends BaseIntegrationService {
   private youtube = google.youtube('v3');
   private youtubeAnalytics = google.youtubeAnalytics('v2');
 
-  async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
+  async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     await this.testCredentials(credentials.accessToken);
 
     const channelData = await this.getChannelInfo(credentials.accessToken);
 
     return this.saveIntegration({
-      coachID,
+      userID,
+      userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
       accessToken: credentials.accessToken,
@@ -45,13 +46,13 @@ export class YoutubeService extends BaseIntegrationService {
     });
   }
 
-  async getAuthUrl(coachID: string): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(coachID, this.platformName);
+  async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
+    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
+      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
       scope: 'https://www.googleapis.com/auth/youtube.readonly',
-      redirect_uri: this.configService.get('YOUTUBE_REDIRECT_URI', ''),
+      redirect_uri: this.configService.get('integrations.oauth.google.youtubeRedirectUri', ''),
       response_type: 'code',
       state,
     });
@@ -62,9 +63,9 @@ export class YoutubeService extends BaseIntegrationService {
     };
   }
 
-  async handleCallback(coachID: string, code: string, state: string): Promise<Integration> {
+  async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
-    return this.connect(coachID, tokenData);
+    return this.connect(userID, userType, tokenData);
   }
 
   async test(integration: Integration): Promise<TestResult> {
@@ -112,7 +113,8 @@ export class YoutubeService extends BaseIntegrationService {
           eventType: 'integration.sync.completed',
           payload: {
             integrationID: integration.id,
-            coachID: integration.coachID,
+            userID: integration.userID,
+            userType: integration.userType,
             platformName: integration.platformName,
             syncData: { channelStats, analytics },
             syncedAt: new Date().toISOString(),
@@ -138,7 +140,8 @@ export class YoutubeService extends BaseIntegrationService {
           eventType: 'integration.sync.failed',
           payload: {
             integrationID: integration.id,
-            coachID: integration.coachID,
+            userID: integration.userID,
+            userType: integration.userType,
             platformName: integration.platformName,
             error: error.message,
             failedAt: new Date().toISOString(),
@@ -164,8 +167,8 @@ export class YoutubeService extends BaseIntegrationService {
     }
 
     const auth = new google.auth.OAuth2(
-      this.configService.get('GOOGLE_CLIENT_ID'),
-      this.configService.get('GOOGLE_CLIENT_SECRET')
+      this.configService.get('integrations.oauth.google.clientID'),
+      this.configService.get('integrations.oauth.google.clientSecret')
     );
 
     auth.setCredentials({ refresh_token: refreshToken });
@@ -197,8 +200,8 @@ export class YoutubeService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
-      client_secret: this.configService.get('GOOGLE_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.google.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
       redirect_uri: this.configService.get('YOUTUBE_REDIRECT_URI', ''),

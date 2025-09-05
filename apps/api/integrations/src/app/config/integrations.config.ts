@@ -23,6 +23,7 @@ export default registerAs('integrations', () => {
   const config = validateConfig(process.env);
 
   return {
+    baseUrl: config.API_BASE_URL,
     database: {
       url: config.DATABASE_URL,
       schema: config.DATABASE_SCHEMA,
@@ -54,10 +55,6 @@ export default registerAs('integrations', () => {
       meta: {
         clientID: config.META_CLIENT_ID,
         clientSecret: config.META_CLIENT_SECRET,
-      },
-      linkedin: {
-        clientID: config.LINKEDIN_CLIENT_ID,
-        clientSecret: config.LINKEDIN_CLIENT_SECRET,
       },
       twitter: {
         clientID: config.TWITTER_CLIENT_ID,

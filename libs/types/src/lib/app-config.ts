@@ -23,6 +23,7 @@ export interface AppConfig {
       messaging: string;
       course: string;
       agents: string;
+      integrations: string;
     };
   };
   auth: {

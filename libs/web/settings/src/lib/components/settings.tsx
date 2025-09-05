@@ -7,11 +7,14 @@ import { AdminIntegrations } from './admin/admin-integrations';
 import { SocialIntegrations } from './coach/social-integrations';
 import { CourseIntegrations } from './coach/course-integrations';
 import { ProfileFormData, PasswordFormData } from '../types/settings.types';
-import {UserType} from "@nlc-ai/types";
+import {UserType} from "@nlc-ai/sdk-users";
+import {NLCClient} from "@nlc-ai/sdk-main";
+
 
 interface SettingsProps {
   userType: UserType;
   activeTab: string;
+  sdkClient: NLCClient;
   handleTabChange: (tabID: string) => void;
 
   // Profile functions
@@ -51,6 +54,7 @@ interface SettingsProps {
 
 const SettingsContent: FC<SettingsProps> = ({
   userType,
+  sdkClient,
   activeTab,
   handleTabChange,
   updateProfile,
@@ -133,10 +137,7 @@ const SettingsContent: FC<SettingsProps> = ({
 
       {activeTab === 'integrations' && userType === 'coach' && (
         <SocialIntegrations
-          onConnectSocial={connectSocial!}
-          onDisconnectSocial={disconnectSocial!}
-          onTestSocial={testSocial!}
-          getSocialIntegrations={getSocialIntegrations!}
+          sdkClient={sdkClient}
         />
       )}
 

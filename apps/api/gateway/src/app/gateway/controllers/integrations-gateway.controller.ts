@@ -2,10 +2,9 @@ import {
   Controller,
   All,
   Req,
-  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
 @ApiTags('Integrations')
@@ -15,8 +14,7 @@ export class IntegrationsGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToIntegrations(@Req() req: Request, @Res() res: Response) {
-    // Extract the path after /api/integrations
+  async proxyToIntegrations(@Req() req: Request) {
     const path = req.path.replace(/^\/integrations/, '');
 
     const response = await this.proxyService.proxyRequest(
@@ -30,9 +28,7 @@ export class IntegrationsGatewayController {
       }
     );
 
-    res.status(response.status)
-
-return response.data;
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

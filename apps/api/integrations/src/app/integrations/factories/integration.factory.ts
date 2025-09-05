@@ -6,7 +6,6 @@ import { FacebookService } from "../services/social/facebook.service";
 import { InstagramService } from "../services/social/instagram.service";
 import { TwitterService } from "../services/social/twitter.service";
 import { TiktokService } from "../services/social/tiktok.service";
-import { LinkedinService } from "../services/social/linkedin.service";
 import { CalendlyService } from "../services/apps/calendly.service";
 import { GmailService } from "../services/apps/gmail.service";
 import { OutlookService } from "../services/apps/outlook.service";
@@ -21,7 +20,6 @@ export class IntegrationFactory {
     private readonly instagramService: InstagramService,
     private readonly twitterService: TwitterService,
     private readonly tiktokService: TiktokService,
-    private readonly linkedinService: LinkedinService,
     private readonly calendlyService: CalendlyService,
     private readonly gmailService: GmailService,
     private readonly outlookService: OutlookService,
@@ -35,7 +33,6 @@ export class IntegrationFactory {
     this.providers.set('instagram', this.instagramService);
     this.providers.set('twitter', this.twitterService);
     this.providers.set('tiktok', this.tiktokService);
-    this.providers.set('linkedin', this.linkedinService);
 
     this.providers.set('calendly', this.calendlyService);
     this.providers.set('gmail', this.gmailService);

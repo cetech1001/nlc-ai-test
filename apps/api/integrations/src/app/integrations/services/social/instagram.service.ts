@@ -5,7 +5,7 @@ import {
   OAuthCredentials,
   SocialPlatform,
   SyncResult,
-  TestResult
+  TestResult, UserType
 } from "@nlc-ai/api-types";
 import {Injectable} from "@nestjs/common";
 import {BaseIntegrationService} from "../base-integration.service";
@@ -16,11 +16,12 @@ export class InstagramService extends BaseIntegrationService {
   integrationType = IntegrationType.SOCIAL;
   authType = AuthType.OAUTH;
 
-  async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
+  async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getInstagramProfile(credentials.accessToken);
 
     return this.saveIntegration({
-      coachID,
+      userID,
+      userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
       accessToken: credentials.accessToken,
@@ -83,13 +84,13 @@ export class InstagramService extends BaseIntegrationService {
     }
   }
 
-  async getAuthUrl(coachID: string): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(coachID, this.platformName);
+  async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
+    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('META_CLIENT_ID', ''),
+      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
       scope: ['instagram_basic', 'instagram_content_publish'].join(','),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/instagram/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
       response_type: 'code',
       state,
     });
@@ -100,18 +101,18 @@ export class InstagramService extends BaseIntegrationService {
     };
   }
 
-  async handleCallback(coachID: string, code: string, state: string): Promise<Integration> {
+  async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
-    return this.connect(coachID, tokenData);
+    return this.connect(userID, userType, tokenData);
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('META_CLIENT_ID', ''),
-      client_secret: this.configService.get('META_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.meta.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/instagram/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
     });
 
     const response = await fetch('https://api.instagram.com/oauth/access_token', {

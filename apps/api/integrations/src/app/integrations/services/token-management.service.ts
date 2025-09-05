@@ -36,8 +36,8 @@ export class TokenManagementService {
 
   private async refreshGoogleToken(integration: Integration, refreshToken: string): Promise<string> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
-      client_secret: this.configService.get('GOOGLE_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.google.clientSecret', ''),
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     });

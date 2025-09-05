@@ -4,7 +4,8 @@ export interface IntegrationConnectedEvent extends BaseEvent {
   eventType: 'integration.connected';
   payload: {
     integrationID: string;
-    coachID: string;
+    userID: string;
+    userType: string;
     platformName: string;
     integrationType: string;
     connectedAt: string;
@@ -15,7 +16,8 @@ export interface IntegrationDisconnectedEvent extends BaseEvent {
   eventType: 'integration.disconnected';
   payload: {
     integrationID: string;
-    coachID: string;
+    userID: string;
+    userType: string;
     platformName: string;
     integrationType: string;
     disconnectedAt: string;
@@ -26,7 +28,8 @@ export interface IntegrationSyncCompletedEvent extends BaseEvent {
   eventType: 'integration.sync.completed';
   payload: {
     integrationID: string;
-    coachID: string;
+    userID: string;
+    userType: string;
     platformName: string;
     syncData: any;
     syncedAt: string;
@@ -37,7 +40,8 @@ export interface IntegrationSyncFailedEvent extends BaseEvent {
   eventType: 'integration.sync.failed';
   payload: {
     integrationID: string;
-    coachID: string;
+    userID: string;
+    userType: string;
     platformName: string;
     error: string;
     failedAt: string;
@@ -48,7 +52,8 @@ export interface EmailAccountConnectedEvent extends BaseEvent {
   eventType: 'email.account.connected';
   payload: {
     accountID: string;
-    coachID: string;
+    userID: string;
+    userType: string;
     emailAddress: string;
     provider: string;
     isPrimary: boolean;
@@ -60,7 +65,8 @@ export interface EmailAccountDisconnectedEvent extends BaseEvent {
   eventType: 'email.account.disconnected';
   payload: {
     accountID: string;
-    coachID: string;
+    userID: string;
+    userType: string;
     emailAddress: string;
     provider: string;
     disconnectedAt: string;
@@ -71,7 +77,8 @@ export interface EmailAccountSyncCompletedEvent extends BaseEvent {
   eventType: 'email.account.sync.completed';
   payload: {
     accountID: string;
-    coachID: string;
+    userID: string;
+    userType: string;
     emailAddress: string;
     syncStats: {
       threadsCount: number;

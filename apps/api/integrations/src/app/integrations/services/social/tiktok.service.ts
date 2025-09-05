@@ -7,7 +7,7 @@ import {
   OAuthCredentials,
   SocialPlatform,
   SyncResult,
-  TestResult
+  TestResult, UserType
 } from "@nlc-ai/api-types";
 
 @Injectable()
@@ -16,11 +16,12 @@ export class TiktokService extends BaseIntegrationService {
   integrationType = IntegrationType.SOCIAL;
   authType = AuthType.OAUTH;
 
-  async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
+  async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getTiktokProfile(credentials.accessToken);
 
     return this.saveIntegration({
-      coachID,
+      userID,
+      userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
       accessToken: credentials.accessToken,
@@ -88,11 +89,11 @@ export class TiktokService extends BaseIntegrationService {
     }
   }
 
-  async getAuthUrl(coachID: string): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(coachID, this.platformName);
+  async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
+    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_key: process.env.TIKTOK_CLIENT_ID!,
+      client_key: this.configService.get('integrations.oauth.tiktok.clientID', ''),
       scope: [
         'user.info.basic',
         'user.info.profile',
@@ -100,7 +101,7 @@ export class TiktokService extends BaseIntegrationService {
         'video.list',
         'video.insights'
       ].join(','),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/tiktok/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/tiktok/callback`,
       response_type: 'code',
       state,
     });
@@ -111,18 +112,18 @@ export class TiktokService extends BaseIntegrationService {
     };
   }
 
-  async handleCallback(coachID: string, code: string, state: string): Promise<Integration> {
+  async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
-    return this.connect(coachID, tokenData);
+    return this.connect(userID, userType, tokenData);
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_key: process.env.TIKTOK_CLIENT_ID!,
-      client_secret: process.env.TIKTOK_CLIENT_SECRET!,
+      client_key: this.configService.get('integrations.oauth.tiktok.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.tiktok.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/tiktok/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/tiktok/callback`,
     });
 
     const response = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {

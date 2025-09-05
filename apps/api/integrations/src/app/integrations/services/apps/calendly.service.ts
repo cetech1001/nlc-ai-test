@@ -7,7 +7,7 @@ import {
   IntegrationType,
   OAuthCredentials,
   SyncResult,
-  TestResult
+  TestResult, UserType
 } from "@nlc-ai/api-types";
 
 @Injectable()
@@ -16,11 +16,12 @@ export class CalendlyService extends BaseIntegrationService {
   integrationType = IntegrationType.APP;
   authType = AuthType.OAUTH;
 
-  async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
+  async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getCalendlyProfile(credentials.accessToken);
 
     return this.saveIntegration({
-      coachID,
+      userID,
+      userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
       accessToken: credentials.accessToken,
@@ -75,7 +76,8 @@ export class CalendlyService extends BaseIntegrationService {
           eventType: 'integration.sync.completed',
           payload: {
             integrationID: integration.id,
-            coachID: integration.coachID,
+            userID: integration.userID,
+            userType: integration.userType,
             platformName: integration.platformName,
             syncData: { eventCount: events.length },
             syncedAt: new Date().toISOString(),
@@ -96,7 +98,8 @@ export class CalendlyService extends BaseIntegrationService {
           eventType: 'integration.sync.failed',
           payload: {
             integrationID: integration.id,
-            coachID: integration.coachID,
+            userID: integration.userID,
+            userType: integration.userType,
             platformName: integration.platformName,
             error: error.message,
             failedAt: new Date().toISOString(),
@@ -110,12 +113,12 @@ export class CalendlyService extends BaseIntegrationService {
     }
   }
 
-  async getAuthUrl(coachID: string): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(coachID, this.platformName);
+  async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
+    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('CALENDLY_CLIENT_ID', ''),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/calendly/callback`,
+      client_id: this.configService.get('integrations.oauth.calendly.clientID', ''),
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/calendly/callback`,
       response_type: 'code',
       state,
     });
@@ -126,9 +129,9 @@ export class CalendlyService extends BaseIntegrationService {
     };
   }
 
-  async handleCallback(coachID: string, code: string, state: string): Promise<Integration> {
+  async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
-    return this.connect(coachID, tokenData);
+    return this.connect(userID, userType, tokenData);
   }
 
   async fetchScheduledEvents(
@@ -153,11 +156,11 @@ export class CalendlyService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('CALENDLY_CLIENT_ID', ''),
-      client_secret: this.configService.get('CALENDLY_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.calendly.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.calendly.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/calendly/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/calendly/callback`,
     });
 
     const response = await fetch('https://auth.calendly.com/oauth/token', {

@@ -7,7 +7,7 @@ import {
   OAuthCredentials,
   SocialPlatform,
   SyncResult,
-  TestResult
+  TestResult, UserType
 } from "@nlc-ai/api-types";
 
 @Injectable()
@@ -16,11 +16,12 @@ export class TwitterService extends BaseIntegrationService {
   integrationType = IntegrationType.SOCIAL;
   authType = AuthType.OAUTH;
 
-  async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
+  async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getTwitterProfile(credentials.accessToken);
 
     return this.saveIntegration({
-      coachID,
+      userID,
+      userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
       accessToken: credentials.accessToken,
@@ -88,13 +89,13 @@ export class TwitterService extends BaseIntegrationService {
     }
   }
 
-  async getAuthUrl(coachID: string): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(coachID, this.platformName);
+  async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
+    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('TWITTER_CLIENT_ID', ''),
+      client_id: this.configService.get('integrations.oauth.twitter.clientID', ''),
       scope: ['tweet.read', 'users.read', 'offline.access'].join(' '),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/twitter/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/twitter/callback`,
       response_type: 'code',
       code_challenge: 'challenge', // In production, generate a proper PKCE challenge
       code_challenge_method: 'plain',
@@ -107,18 +108,18 @@ export class TwitterService extends BaseIntegrationService {
     };
   }
 
-  async handleCallback(coachID: string, code: string, state: string): Promise<Integration> {
+  async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
-    return this.connect(coachID, tokenData);
+    return this.connect(userID, userType, tokenData);
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('TWITTER_CLIENT_ID', ''),
-      client_secret: this.configService.get('TWITTER_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.twitter.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.twitter.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/twitter/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/twitter/callback`,
       code_verifier: 'challenge', // In production, use the same verifier from the challenge
     });
 

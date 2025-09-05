@@ -56,9 +56,6 @@ services:
     volumes:
       - ./apps/api/gateway:/app/apps/api/gateway
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -73,14 +70,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/agents:/app/apps/api/agents
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -95,14 +87,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/analytics:/app/apps/api/analytics
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -117,14 +104,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/auth:/app/apps/api/auth
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -139,15 +121,10 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/billing:/app/apps/api/billing
       - ./libs/api:/app/libs/api
       - ./libs/types:/app/libs/types
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -184,14 +161,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/community:/app/apps/api/community
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -228,14 +200,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/email:/app/apps/api/email
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -250,14 +217,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/integrations:/app/apps/api/integrations
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -272,14 +234,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/leads:/app/apps/api/leads
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -294,14 +251,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/media:/app/apps/api/media
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -316,14 +268,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/notifications:/app/apps/api/notifications
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -338,14 +285,9 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-#      - db_init
-#      - db_migrate
     volumes:
       - ./apps/api/users:/app/apps/api/users
       - ./libs/api:/app/libs/api
-#      - ./nx.json:/app/nx.json
-#      - ./tsconfig.json:/app/tsconfig.json
-#      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 

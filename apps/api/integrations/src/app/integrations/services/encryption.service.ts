@@ -8,7 +8,7 @@ export class EncryptionService {
   private readonly key: Buffer;
 
   constructor(private readonly configService: ConfigService) {
-    const secretKey = this.configService.get<string>('ENCRYPTION_KEY');
+    const secretKey = this.configService.get<string>('integrations.auth.encryptionKey');
     if (!secretKey) {
       throw new Error('ENCRYPTION_KEY must be set in environment variables');
     }

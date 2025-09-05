@@ -11,6 +11,8 @@ import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
 import {MessagingClient} from "@nlc-ai/sdk-messaging";
 import {AgentsClient} from "@nlc-ai/sdk-agents";
 import {CourseClient} from "@nlc-ai/sdk-course";
+import {IntegrationsClient} from "@nlc-ai/sdk-integrations";
+
 
 export class NLCClient {
   public users: UsersClient;
@@ -25,6 +27,7 @@ export class NLCClient {
   public notifications: NotificationsServiceClient;
   public messaging: MessagingClient;
   public course: CourseClient;
+  public integrations: IntegrationsClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -91,6 +94,11 @@ export class NLCClient {
     this.agents = new AgentsClient({
       ...baseConfig,
       baseURL: config.services?.agents || `${config.baseURL}/agents`,
+    });
+
+    this.integrations = new IntegrationsClient({
+      ...baseConfig,
+      baseURL: config.services?.integrations || `${config.baseURL}/integrations`,
     });
   }
 

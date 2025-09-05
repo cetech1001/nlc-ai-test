@@ -105,7 +105,7 @@
     "@nx/node": "21.4.1",
     "@nx/react": "21.2.0",
     "@nx/vite": "21.2.0",
-    "@nx/web": "21.2.0",
+    "@nx/web": "21.4.1",
     "@nx/webpack": "21.4.1",
     "@nx/workspace": "21.2.0",
     "@swc-node/register": "~1.9.1",

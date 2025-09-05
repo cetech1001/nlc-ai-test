@@ -7,7 +7,7 @@ import {
   IntegrationType,
   OAuthCredentials,
   SyncResult,
-  TestResult
+  TestResult, UserType
 } from "@nlc-ai/api-types";
 
 @Injectable()
@@ -16,11 +16,12 @@ export class OutlookService extends BaseIntegrationService {
   integrationType = IntegrationType.APP;
   authType = AuthType.OAUTH;
 
-  async connect(coachID: string, credentials: OAuthCredentials): Promise<Integration> {
+  async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getEmailProfile(credentials.accessToken);
 
     return this.saveIntegration({
-      coachID,
+      userID,
+      userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
       accessToken: credentials.accessToken,
@@ -29,7 +30,7 @@ export class OutlookService extends BaseIntegrationService {
       config: {
         emailAddress: profile.mail || profile.userPrincipalName,
         name: profile.displayName,
-        isPrimary: await this.isFirstEmailAccount(coachID),
+        isPrimary: await this.isFirstEmailAccount(userID, userType),
       },
       syncSettings: {
         autoSync: true,
@@ -78,17 +79,17 @@ export class OutlookService extends BaseIntegrationService {
     }
   }
 
-  async getAuthUrl(coachID: string): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(coachID, this.platformName);
+  async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
+    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('MICROSOFT_CLIENT_ID', ''),
+      client_id: this.configService.get('integrations.oauth.microsoft.clientID', ''),
       scope: [
         'https://graph.microsoft.com/Mail.Read',
         'https://graph.microsoft.com/Mail.Send',
         'https://graph.microsoft.com/User.Read'
       ].join(' '),
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/outlook/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/outlook/callback`,
       response_type: 'code',
       state,
     });
@@ -99,18 +100,18 @@ export class OutlookService extends BaseIntegrationService {
     };
   }
 
-  async handleCallback(coachID: string, code: string, state: string): Promise<Integration> {
+  async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
-    return this.connect(coachID, tokenData);
+    return this.connect(userID, userType, tokenData);
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('MICROSOFT_CLIENT_ID', ''),
-      client_secret: this.configService.get('MICROSOFT_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.microsoft.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.microsoft.clientSecret', ''),
       scope: 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read',
       code,
-      redirect_uri: `${this.configService.get('API_BASE_URL')}/integrations/auth/outlook/callback`,
+      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/outlook/callback`,
       grant_type: 'authorization_code',
     });
 
@@ -144,9 +145,9 @@ export class OutlookService extends BaseIntegrationService {
     return data.value || [];
   }
 
-  private async isFirstEmailAccount(coachID: string): Promise<boolean> {
+  private async isFirstEmailAccount(userID: string, userType: UserType): Promise<boolean> {
     const existingAccounts = await this.prisma.integration.count({
-      where: { coachID, integrationType: 'app', platformName: { in: ['gmail', 'outlook'] } },
+      where: { userID, integrationType: 'app', platformName: { in: ['gmail', 'outlook'] } },
     });
     return existingAccounts === 0;
   }

@@ -9,7 +9,7 @@ export const SettingsTabs: FC<SettingsTabProps> = ({
   const tabs = [
     { id: 'profile', label: 'Edit Profile' },
     { id: 'integrations', label: userType === 'admin' ? 'System Integrations' : 'Apps & Socials' },
-    ...(userType === 'coach' ? [{ id: 'courses', label: 'Course Integrations' }] : []),
+    // ...(userType === 'coach' ? [{ id: 'courses', label: 'Course Integrations' }] : []),
   ];
 
   return (

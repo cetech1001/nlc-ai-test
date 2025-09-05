@@ -9,23 +9,24 @@ export class StateTokenService {
     private readonly configService: ConfigService,
     private readonly jwt: JwtService) {}
 
-  generateState(coachID: string, platform: string): string {
+  generateState(userID: string, userType: string, platform: string): string {
     const payload = {
-      coachID,
+      userID,
+      userType,
       platform,
       exp: Date.now() + (10 * 60 * 1000),
       nonce: crypto.randomBytes(16).toString('hex'),
     };
 
-    const secret = this.configService.get('JWT_SECRET');
+    const secret = this.configService.get('integrations.auth.jwtSecret');
     return this.jwt.sign(payload, {
       secret,
     });
   }
 
-  verifyState(state: string): { coachID: string; platform: string } {
+  verifyState(state: string): { userID: string; userType: string; platform: string } {
     try {
-      const secret = this.configService.get('JWT_SECRET');
+      const secret = this.configService.get('integrations.auth.jwtSecret');
       const payload = this.jwt.verify(state, {
         secret,
       }) as any;
@@ -35,7 +36,8 @@ export class StateTokenService {
       }
 
       return {
-        coachID: payload.coachID,
+        userID: payload.userID,
+        userType: payload.userType,
         platform: payload.platform,
       };
     } catch (error) {

@@ -23,9 +23,9 @@ import { oauthError } from "../templates/oauth-error";
 import { oauthSuccess } from "../templates/oauth-success";
 
 @ApiTags('Integrations')
-@Controller('integrations')
+@Controller('')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
-@UserTypes(UserType.coach)
+@UserTypes(UserType.coach, UserType.admin, UserType.client) // Updated to support all user types
 @ApiBearerAuth()
 export class IntegrationsController {
   constructor(
@@ -35,17 +35,20 @@ export class IntegrationsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all integrations for the authenticated coach' })
+  @ApiOperation({ summary: 'Get all integrations for the authenticated user' })
   @ApiResponse({ status: 200, description: 'Integrations retrieved successfully' })
   async getAllIntegrations(@CurrentUser() user: AuthUser) {
     return this.prisma.integration.findMany({
-      where: { coachID: user.id },
+      where: {
+        userID: user.id,
+        userType: user.type
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   @Get('platform/:platform')
-  @ApiOperation({ summary: 'Get specific integration for coach' })
+  @ApiOperation({ summary: 'Get specific integration for user' })
   @ApiResponse({ status: 200, description: 'Integration retrieved successfully' })
   async getIntegration(
     @CurrentUser() user: AuthUser,
@@ -53,7 +56,8 @@ export class IntegrationsController {
   ) {
     const integration = await this.prisma.integration.findFirst({
       where: {
-        coachID: user.id,
+        userID: user.id,
+        userType: user.type,
         platformName: platform,
       },
     });
@@ -75,7 +79,8 @@ export class IntegrationsController {
   async getSocialIntegrations(@CurrentUser() user: AuthUser) {
     return this.prisma.integration.findMany({
       where: {
-        coachID: user.id,
+        userID: user.id,
+        userType: user.type,
         integrationType: 'social'
       },
       orderBy: { createdAt: 'desc' },
@@ -88,7 +93,8 @@ export class IntegrationsController {
   async getAppIntegrations(@CurrentUser() user: AuthUser) {
     return this.prisma.integration.findMany({
       where: {
-        coachID: user.id,
+        userID: user.id,
+        userType: user.type,
         integrationType: 'app'
       },
       orderBy: { createdAt: 'desc' },
@@ -101,7 +107,8 @@ export class IntegrationsController {
   async getCourseIntegrations(@CurrentUser() user: AuthUser) {
     return this.prisma.integration.findMany({
       where: {
-        coachID: user.id,
+        userID: user.id,
+        userType: user.type,
         integrationType: 'course'
       },
       orderBy: { createdAt: 'desc' },
@@ -129,7 +136,7 @@ export class IntegrationsController {
     @Body() credentials: ConnectPlatformRequest,
   ) {
     const provider = this.integrationFactory.getProvider(platform);
-    return provider.connect(user.id, credentials);
+    return provider.connect(user.id, user.type, credentials);
   }
 
   @Get('auth/:platform/url')
@@ -145,7 +152,7 @@ export class IntegrationsController {
       throw new BadRequestException(`${platform} doesn't support OAuth flow`);
     }
 
-    return provider.getAuthUrl(user.id);
+    return provider.getAuthUrl(user.id, user.type);
   }
 
   @Get('auth/:platform/callback')
@@ -168,14 +175,14 @@ export class IntegrationsController {
     }
 
     try {
-      const { coachID, platform: statePlatform } = this.stateTokenService.verifyState(state);
+      const { userID, userType, platform: statePlatform } = this.stateTokenService.verifyState(state);
 
       if (statePlatform !== platform) {
         throw new Error('Platform mismatch in state verification');
       }
 
       const provider = this.integrationFactory.getProvider(platform);
-      const integration = await provider.handleCallback?.(coachID, code, state);
+      const integration = await provider.handleCallback?.(userID, userType, code, state);
 
       this.sendOAuthSuccess(res, platform, integration!);
     } catch (error: any) {
@@ -190,7 +197,7 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Param('id') integrationID: string,
   ) {
-    const integration = await this.findUserIntegration(user.id, integrationID);
+    const integration = await this.findUserIntegration(user.id, user.type, integrationID);
     const provider = this.integrationFactory.getProvider(integration.platformName);
     return provider.test(integration);
   }
@@ -202,7 +209,7 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Param('id') integrationID: string,
   ) {
-    const integration = await this.findUserIntegration(user.id, integrationID);
+    const integration = await this.findUserIntegration(user.id, user.type, integrationID);
     const provider = this.integrationFactory.getProvider(integration.platformName);
     return provider.sync(integration);
   }
@@ -214,14 +221,14 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Param('id') integrationID: string,
   ) {
-    const integration = await this.findUserIntegration(user.id, integrationID);
+    const integration = await this.findUserIntegration(user.id, user.type, integrationID);
     const provider = this.integrationFactory.getProvider(integration.platformName);
     await provider.disconnect(integration);
     return { success: true, message: 'Integration disconnected' };
   }
 
   @Post('calendly/events')
-  @ApiOperation({ summary: 'Load Calendly events for coach' })
+  @ApiOperation({ summary: 'Load Calendly events for user' })
   @ApiResponse({ status: 200, description: 'Calendly events loaded successfully' })
   async loadCalendlyEvents(
     @CurrentUser() user: AuthUser,
@@ -229,7 +236,8 @@ export class IntegrationsController {
   ) {
     const integration = await this.prisma.integration.findFirst({
       where: {
-        coachID: user.id,
+        userID: user.id,
+        userType: user.type,
         platformName: 'calendly'
       },
     });
@@ -258,9 +266,13 @@ export class IntegrationsController {
     res.send(oauthError(errorMessage, platform));
   }
 
-  private async findUserIntegration(coachID: string, integrationID: string): Promise<Integration> {
+  private async findUserIntegration(userID: string, userType: string, integrationID: string): Promise<Integration> {
     const integration = await this.prisma.integration.findFirst({
-      where: { id: integrationID, coachID },
+      where: {
+        id: integrationID,
+        userID,
+        userType
+      },
     });
 
     if (!integration) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect, FC} from 'react';
 import {
   Check,
   ExternalLink,
@@ -10,8 +10,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useSettings } from '../../context/settings.context';
-import { integrationsAPI } from '@nlc-ai/web-api-client';
 import { SocialIntegrationsSkeleton } from '../skeletons';
+import {NLCClient} from "@nlc-ai/sdk-main";
 
 interface IntegrationData {
   id: string;
@@ -22,14 +22,6 @@ interface IntegrationData {
   lastSyncAt?: Date | null;
   syncError?: string | null;
   createdAt?: Date | null;
-}
-
-interface SocialIntegrationsProps {
-  // Keep these for backward compatibility, but they won't be used much
-  onConnectSocial?: (platform: string, authData: any) => Promise<any>;
-  onDisconnectSocial?: (integrationID: string) => Promise<void>;
-  onTestSocial?: (integrationID: string) => Promise<void>;
-  getSocialIntegrations?: () => Promise<any[]>;
 }
 
 const socialPlatforms = {
@@ -86,39 +78,27 @@ const appPlatforms = {
   },
 };
 
-export const SocialIntegrations: React.FC<SocialIntegrationsProps> = () => {
+interface IProps {
+  sdkClient: NLCClient;
+}
+
+export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
   const { setError, setSuccess } = useSettings();
 
   const [socialIntegrations, setSocialIntegrations] = useState<IntegrationData[]>([]);
   const [appIntegrations, setAppIntegrations] = useState<IntegrationData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  /*const [supportedPlatforms, setSupportedPlatforms] = useState<{
-    social: string[];
-    app: string[];
-    course: string[];
-    all: string[];
-  }>({ social: [], app: [], course: [], all: [] });*/
 
   useEffect(() => {
-    (() => loadIntegrations())();
-    // loadSupportedPlatforms();
+    loadIntegrations();
   }, []);
-
-  /*const loadSupportedPlatforms = async () => {
-    try {
-      const platforms = await integrationsAPI.getSupportedPlatforms();
-      setSupportedPlatforms(platforms);
-    } catch (error: any) {
-      console.error('Failed to load supported platforms:', error);
-    }
-  };*/
 
   const loadIntegrations = async () => {
     try {
       setIsLoading(true);
       const [socialData, appData] = await Promise.all([
-        integrationsAPI.getSocialIntegrations(),
-        integrationsAPI.getAppIntegrations(),
+        sdkClient.integrations.getSocialIntegrations(),
+        sdkClient.integrations.getAppIntegrations(),
       ]);
       setSocialIntegrations(socialData);
       setAppIntegrations(appData);
@@ -134,7 +114,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = () => {
       setIsLoading(true);
 
       // Use the OAuth flow for most platforms
-      await integrationsAPI.initiateOAuthFlow(platform);
+      await sdkClient.integrations.initiateOAuthFlow(platform);
 
       // Refresh integrations after successful connection
       await loadIntegrations();
@@ -160,7 +140,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = () => {
 
     try {
       setIsLoading(true);
-      await integrationsAPI.disconnectIntegration(integration.id);
+      await sdkClient.integrations.disconnectIntegration(integration.id);
 
       if (integration.integrationType === 'social') {
         setSocialIntegrations(prev => prev.filter(i => i.id !== integration.id));
@@ -179,7 +159,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = () => {
   const handleTest = async (integration: IntegrationData) => {
     try {
       setIsLoading(true);
-      const result = await integrationsAPI.testIntegration(integration.id);
+      const result = await sdkClient.integrations.testIntegration(integration.id);
 
       if (result.success) {
         setSuccess(`${integration.platformName} connection test successful!`);
@@ -196,7 +176,7 @@ export const SocialIntegrations: React.FC<SocialIntegrationsProps> = () => {
   const handleSync = async (integration: IntegrationData) => {
     try {
       setIsLoading(true);
-      const result = await integrationsAPI.syncIntegration(integration.id);
+      const result = await sdkClient.integrations.syncIntegration(integration.id);
 
       if (result.success) {
         setSuccess(`${integration.platformName} synced successfully!`);

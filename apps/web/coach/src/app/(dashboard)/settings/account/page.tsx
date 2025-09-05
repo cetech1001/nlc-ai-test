@@ -6,7 +6,7 @@ import {Settings} from "@nlc-ai/web-settings";
 import {authAPI, useAuth} from "@nlc-ai/web-auth";
 import {coachesAPI, integrationsAPI} from "@nlc-ai/web-api-client";
 import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
-import { DeleteAccountFlow } from '@/lib';
+import {DeleteAccountFlow, sdkClient} from '@/lib';
 
 const CoachAccountSettings = () => {
   const router = useRouter();
@@ -131,6 +131,7 @@ const CoachAccountSettings = () => {
     <div>
       <Settings
         userType={UserType.coach}
+        sdkClient={sdkClient}
         activeTab={activeTab}
         handleTabChange={handleTabChange}
         getProfile={getProfile}

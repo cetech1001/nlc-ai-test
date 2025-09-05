@@ -17,6 +17,8 @@ async function bootstrap() {
     transform: true,
   }));
 
+  app.setGlobalPrefix('api/integrations');
+
   const config = new DocumentBuilder()
     .setTitle('NLC AI Integrations Service')
     .setDescription('OAuth integrations and email accounts management')
@@ -28,8 +30,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.setGlobalPrefix('api/integrations');
 
   const port = process.env.PORT || 3008;
   await app.listen(port);

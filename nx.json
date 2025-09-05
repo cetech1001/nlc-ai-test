@@ -51,7 +51,8 @@
         "libs/sdk/notifications/*",
         "libs/sdk/chat/*",
         "libs/sdk/agents/*",
-        "libs/sdk/course/*"
+        "libs/sdk/course/*",
+        "libs/sdk/integrations/*"
       ]
     },
     {
@@ -124,7 +125,8 @@
         "libs/sdk/notifications/*",
         "libs/sdk/chat/*",
         "libs/sdk/agents/*",
-        "libs/sdk/course/*"
+        "libs/sdk/course/*",
+        "libs/sdk/integrations/*"
       ],
       "options": {
         "typecheck": {

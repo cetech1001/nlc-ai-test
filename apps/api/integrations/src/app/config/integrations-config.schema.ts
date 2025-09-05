@@ -26,7 +26,6 @@ export class IntegrationsConfigSchema {
   @IsString()
   ENCRYPTION_KEY: string;
 
-  // Google OAuth
   @IsString()
   GOOGLE_CLIENT_ID: string;
 
@@ -41,7 +40,6 @@ export class IntegrationsConfigSchema {
   @IsUrl()
   YOUTUBE_REDIRECT_URI?: string;
 
-  // Microsoft OAuth
   @IsOptional()
   @IsString()
   MICROSOFT_CLIENT_ID?: string;
@@ -54,7 +52,6 @@ export class IntegrationsConfigSchema {
   @IsUrl()
   MICROSOFT_EMAIL_REDIRECT_URI?: string;
 
-  // Meta (Facebook/Instagram)
   @IsOptional()
   @IsString()
   META_CLIENT_ID?: string;
@@ -63,16 +60,6 @@ export class IntegrationsConfigSchema {
   @IsString()
   META_CLIENT_SECRET?: string;
 
-  // LinkedIn
-  @IsOptional()
-  @IsString()
-  LINKEDIN_CLIENT_ID?: string;
-
-  @IsOptional()
-  @IsString()
-  LINKEDIN_CLIENT_SECRET?: string;
-
-  // Twitter/X
   @IsOptional()
   @IsString()
   TWITTER_CLIENT_ID?: string;
@@ -81,7 +68,6 @@ export class IntegrationsConfigSchema {
   @IsString()
   TWITTER_CLIENT_SECRET?: string;
 
-  // TikTok
   @IsOptional()
   @IsString()
   TIKTOK_CLIENT_ID?: string;
@@ -90,7 +76,6 @@ export class IntegrationsConfigSchema {
   @IsString()
   TIKTOK_CLIENT_SECRET?: string;
 
-  // Calendly
   @IsOptional()
   @IsString()
   CALENDLY_CLIENT_ID?: string;
@@ -100,11 +85,11 @@ export class IntegrationsConfigSchema {
   CALENDLY_CLIENT_SECRET?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   API_BASE_URL?: string = 'http://localhost:3003';
 
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
-  TOKEN_REFRESH_BUFFER_MS?: number = 300000; // 5 minutes
+  TOKEN_REFRESH_BUFFER_MS?: number = 300000;
 }

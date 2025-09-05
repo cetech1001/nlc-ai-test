@@ -31,12 +31,12 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
   abstract integrationType: IntegrationType;
   abstract authType: AuthType;
 
-  abstract connect(coachID: string, credentials: any): Promise<Integration>;
+  abstract connect(userID: string, userType: string, credentials: any): Promise<Integration>;
   abstract test(integration: Integration): Promise<TestResult>;
   abstract sync(integration: Integration): Promise<SyncResult>;
 
-  abstract getAuthUrl?(coachID: string): Promise<{ authUrl: string; state: string }>;
-  abstract handleCallback?(coachID: string, code: string, state: string): Promise<Integration>;
+  abstract getAuthUrl?(userID: string, userType: string): Promise<{ authUrl: string; state: string }>;
+  abstract handleCallback?(userID: string, userType: string, code: string, state: string): Promise<Integration>;
 
   async refreshToken?(integration: Integration): Promise<string> {
     return this.tokenService.ensureValidToken(integration, '');
@@ -52,7 +52,8 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
         eventType: 'integration.disconnected',
         payload: {
           integrationID: integration.id,
-          coachID: integration.coachID,
+          userID: integration.userID,
+          userType: integration.userType,
           platformName: integration.platformName,
           integrationType: integration.integrationType,
           disconnectedAt: new Date().toISOString(),
@@ -87,7 +88,8 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
         eventType: 'integration.connected',
         payload: {
           integrationID: integration.id,
-          coachID: integration.coachID,
+          userID: integration.userID,
+          userType: integration.userType,
           platformName: integration.platformName,
           integrationType: integration.integrationType,
           connectedAt: new Date().toISOString(),
