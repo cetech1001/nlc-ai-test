@@ -224,7 +224,7 @@ export class IntegrationsController {
     const integration = await this.findUserIntegration(user.id, user.type, integrationID);
     const provider = this.integrationFactory.getProvider(integration.platformName);
     await provider.disconnect(integration);
-    return { success: true, message: 'Integration disconnected' };
+    return { message: 'Integration disconnected' };
   }
 
   @Post('calendly/events')

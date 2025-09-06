@@ -1,7 +1,7 @@
 import {NLCClientConfig} from "./nlc-client.types";
 import {UsersClient} from "@nlc-ai/sdk-users";
 import {AuthServiceClient} from "@nlc-ai/sdk-auth";
-import {EmailServiceClient} from "@nlc-ai/sdk-email";
+import {EmailClient} from "@nlc-ai/sdk-email";
 import {BillingClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
@@ -11,14 +11,14 @@ import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
 import {MessagingClient} from "@nlc-ai/sdk-messaging";
 import {AgentsClient} from "@nlc-ai/sdk-agents";
 import {CourseClient} from "@nlc-ai/sdk-course";
-import {IntegrationsClient} from "@nlc-ai/sdk-integrations";
+import {IntegrationClient} from "@nlc-ai/sdk-integrations";
 
 
 export class NLCClient {
   public users: UsersClient;
   public auth: AuthServiceClient;
   public agents: AgentsClient;
-  public email: EmailServiceClient;
+  public email: EmailClient;
   public billing: BillingClient;
   public analytics: AnalyticsClient;
   public leads: LeadsServiceClient;
@@ -27,7 +27,7 @@ export class NLCClient {
   public notifications: NotificationsServiceClient;
   public messaging: MessagingClient;
   public course: CourseClient;
-  public integrations: IntegrationsClient;
+  public integration: IntegrationClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -46,7 +46,7 @@ export class NLCClient {
       baseURL: config.services?.auth || `${config.baseURL}/auth`,
     });
 
-    this.email = new EmailServiceClient({
+    this.email = new EmailClient({
       ...baseConfig,
       baseURL: config.services?.email || `${config.baseURL}/email`,
     });
@@ -96,7 +96,7 @@ export class NLCClient {
       baseURL: config.services?.agents || `${config.baseURL}/agents`,
     });
 
-    this.integrations = new IntegrationsClient({
+    this.integration = new IntegrationClient({
       ...baseConfig,
       baseURL: config.services?.integrations || `${config.baseURL}/integrations`,
     });

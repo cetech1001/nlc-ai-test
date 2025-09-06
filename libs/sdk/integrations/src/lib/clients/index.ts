@@ -1,1 +1,1 @@
-export * from './integrations.client';
+export * from './integration.client';

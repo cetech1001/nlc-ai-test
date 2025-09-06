@@ -23,9 +23,9 @@ import {EmailSyncModule} from "./email-sync/email-sync.module";
     MessagingModule.forRoot(),
     AuthLibModule,
     HealthModule,
+    EmailSyncModule,
     IntegrationsModule,
     EmailAccountsModule,
-    EmailSyncModule,
   ],
   providers: [
     {

@@ -1,9 +1,9 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '@nlc-ai/api-database';
-import { OutboxService } from '@nlc-ai/api-messaging';
-import { ConfigService } from '@nestjs/config';
-import {ClientEmailReceivedEvent, EmailSyncEvent} from '@nlc-ai/api-types';
+import {BadRequestException, Injectable, Logger} from '@nestjs/common';
+import {Cron, CronExpression} from '@nestjs/schedule';
+import {PrismaService} from '@nlc-ai/api-database';
+import {OutboxService} from '@nlc-ai/api-messaging';
+import {ConfigService} from '@nestjs/config';
+import {ClientEmailReceivedEvent, EmailSyncEvent, UserType} from '@nlc-ai/api-types';
 
 interface GmailMessage {
   id: string;
@@ -42,18 +42,19 @@ export class EmailSyncService {
 
     for (const coach of coaches) {
       try {
-        await this.syncClientEmails(coach.id);
+        await this.syncClientEmails(coach.id, UserType.coach);
       } catch (error: any) {
         this.logger.error(`Failed to sync emails for coach ${coach.id}:`, error);
       }
     }
   }
 
-  async syncClientEmails(coachID: string) {
+  async syncClientEmails(userID: string, userType: UserType) {
     const emailAccounts = await this.prisma.emailAccount.findMany({
       where: {
-        userID: coachID,
-        provider: 'google',
+        userID,
+        userType,
+        provider: 'gmail',
         isActive: true,
         syncEnabled: true,
       }
@@ -69,7 +70,7 @@ export class EmailSyncService {
 
     for (const account of emailAccounts) {
       try {
-        const result = await this.syncEmailsForAccount(coachID, account);
+        const result = await this.syncEmailsForAccount(userID, account);
         totalProcessed += result.totalProcessed;
         clientEmailsFound += result.clientEmailsFound;
       } catch (error: any) {
@@ -78,7 +79,7 @@ export class EmailSyncService {
     }
 
     await this.prisma.emailAccount.updateMany({
-      where: { userID: coachID, isActive: true },
+      where: { userID, isActive: true },
       data: { lastSyncAt: new Date() }
     });
 
@@ -87,7 +88,7 @@ export class EmailSyncService {
         eventType: 'email.sync.completed',
         schemaVersion: 1,
         payload: {
-          coachID,
+          coachID: userID,
           totalProcessed,
           clientEmailsFound,
           syncedAt: new Date().toISOString(),

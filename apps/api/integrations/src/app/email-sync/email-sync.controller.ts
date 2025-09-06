@@ -24,7 +24,7 @@ export class EmailSyncController {
   @ApiOperation({ summary: 'Manually sync client emails for authenticated coach' })
   @ApiResponse({ status: 200, description: 'Email sync completed successfully' })
   async syncClientEmails(@CurrentUser() user: AuthUser) {
-    return this.emailSyncService.syncClientEmails(user.id);
+    return this.emailSyncService.syncClientEmails(user.id, user.type);
   }
 
   @Get('threads')

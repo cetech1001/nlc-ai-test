@@ -17,6 +17,8 @@ async function bootstrap() {
     transform: true,
   }));
 
+  app.setGlobalPrefix('api/email');
+
   const config = new DocumentBuilder()
     .setTitle('NLC AI Email Service')
     .setDescription('Email services and templates')
@@ -27,8 +29,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.setGlobalPrefix('api/email');
 
   const port = process.env.PORT || 3004;
   await app.listen(port);

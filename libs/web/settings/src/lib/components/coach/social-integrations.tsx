@@ -97,8 +97,8 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
     try {
       setIsLoading(true);
       const [socialData, appData] = await Promise.all([
-        sdkClient.integrations.getSocialIntegrations(),
-        sdkClient.integrations.getAppIntegrations(),
+        sdkClient.integration.integrations.getSocialIntegrations(),
+        sdkClient.integration.integrations.getAppIntegrations(),
       ]);
       setSocialIntegrations(socialData);
       setAppIntegrations(appData);
@@ -114,7 +114,7 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
       setIsLoading(true);
 
       // Use the OAuth flow for most platforms
-      await sdkClient.integrations.initiateOAuthFlow(platform);
+      await sdkClient.integration.integrations.initiateOAuthFlow(platform);
 
       // Refresh integrations after successful connection
       await loadIntegrations();
@@ -140,7 +140,7 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
 
     try {
       setIsLoading(true);
-      await sdkClient.integrations.disconnectIntegration(integration.id);
+      await sdkClient.integration.integrations.disconnectIntegration(integration.id);
 
       if (integration.integrationType === 'social') {
         setSocialIntegrations(prev => prev.filter(i => i.id !== integration.id));
@@ -159,7 +159,7 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
   const handleTest = async (integration: IntegrationData) => {
     try {
       setIsLoading(true);
-      const result = await sdkClient.integrations.testIntegration(integration.id);
+      const result = await sdkClient.integration.integrations.testIntegration(integration.id);
 
       if (result.success) {
         setSuccess(`${integration.platformName} connection test successful!`);
@@ -176,7 +176,7 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
   const handleSync = async (integration: IntegrationData) => {
     try {
       setIsLoading(true);
-      const result = await sdkClient.integrations.syncIntegration(integration.id);
+      const result = await sdkClient.integration.integrations.syncIntegration(integration.id);
 
       if (result.success) {
         setSuccess(`${integration.platformName} synced successfully!`);

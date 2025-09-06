@@ -2,13 +2,16 @@ import {BadRequestException, Injectable} from "@nestjs/common";
 import {
   AppPlatform,
   AuthType,
+  EmailAccount,
   Integration,
   IntegrationType,
   OAuthCredentials,
   SyncResult,
-  TestResult, UserType
+  TestResult,
+  UserType
 } from "@nlc-ai/api-types";
 import {BaseIntegrationService} from "../base-integration.service";
+import {Prisma} from '@prisma/client';
 
 @Injectable()
 export class GmailService extends BaseIntegrationService {
@@ -19,27 +22,42 @@ export class GmailService extends BaseIntegrationService {
   async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getEmailProfile(credentials.accessToken);
     try {
-      return this.saveIntegration({
-        userID,
-        userType,
-        integrationType: this.integrationType,
-        platformName: this.platformName,
-        accessToken: credentials.accessToken,
-        refreshToken: credentials.refreshToken,
-        tokenExpiresAt: credentials.tokenExpiresAt,
-        config: {
-          emailAddress: profile.email,
-          name: profile.name,
-          picture: profile.picture,
-          isPrimary: await this.isFirstEmailAccount(userID, userType),
-        },
-        syncSettings: {
-          autoSync: true,
-          syncFrequency: 'hourly',
-          syncEmails: true,
-          syncSent: true,
-        },
-        isActive: true,
+      // @ts-ignore
+      return await this.prisma.$transaction(async (tx) => {
+        const isPrimary = await this.isFirstEmailAccount(userID, userType);
+
+        await this.saveEmailAccount(tx, {
+          userID,
+          userType,
+          provider: 'gmail',
+          credentials,
+          profileData: profile,
+        });
+
+        return tx.integration.create({
+          data: {
+            userID,
+            userType,
+            integrationType: this.integrationType as IntegrationType,
+            platformName: this.platformName,
+            accessToken: credentials.accessToken,
+            refreshToken: credentials.refreshToken,
+            tokenExpiresAt: credentials.tokenExpiresAt,
+            config: {
+              emailAddress: profile.email,
+              name: profile.name,
+              picture: profile.picture,
+              isPrimary,
+            },
+            syncSettings: {
+              autoSync: true,
+              syncFrequency: 'hourly',
+              syncEmails: true,
+              syncSent: true,
+            },
+            isActive: true,
+          },
+        });
       });
     } catch (error: any) {
       throw new BadRequestException(error.message || 'Failed to save gmail integration');
@@ -118,6 +136,73 @@ export class GmailService extends BaseIntegrationService {
     return this.connect(userID, userType, tokenData);
   }
 
+  private async saveEmailAccount(
+    tx: Prisma.TransactionClient,
+    params: {
+      userID: string;
+      userType: UserType;
+      provider: string;
+      credentials: OAuthCredentials;
+      profileData: any;
+    }
+  ): Promise<EmailAccount> {
+    const { userID, userType, provider, credentials, profileData } = params;
+    const emailAddress = profileData.email;
+
+    const existingAccount = await tx.emailAccount.findFirst({
+      where: {
+        userID,
+        emailAddress,
+      },
+    });
+
+    const anyConnectedAccount = await tx.emailAccount.findFirst({
+      where: {
+        userID,
+      },
+    });
+
+    const accountData = {
+      userID,
+      userType,
+      emailAddress,
+      provider,
+      accessToken: credentials.accessToken,
+      refreshToken: credentials.refreshToken,
+      tokenExpiresAt: credentials.tokenExpiresAt ?? null,
+      isPrimary: !anyConnectedAccount,
+      isActive: true,
+      syncEnabled: true,
+      lastSyncAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    };
+
+    if (existingAccount) {
+      const updatedAccount = await tx.emailAccount.update({
+        where: { id: existingAccount.id },
+        data: {
+          ...accountData,
+          updatedAt: new Date(),
+        },
+      });
+
+      return {
+        ...updatedAccount,
+        accessToken: '***',
+        refreshToken: updatedAccount.refreshToken ? '***' : null,
+      } as unknown as EmailAccount;
+    } else {
+      const newAccount = await tx.emailAccount.create({
+        data: accountData,
+      });
+
+      return {
+        ...newAccount,
+        accessToken: '***',
+        refreshToken: newAccount.refreshToken ? '***' : null,
+      } as unknown as EmailAccount;
+    }
+  }
+
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
       client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
@@ -163,6 +248,51 @@ export class GmailService extends BaseIntegrationService {
     });
     const data: any = await response.json();
     return data.threads || [];
+  }
+
+  override async disconnect(integration: Integration): Promise<void> {
+    const emailAddress = (integration as any)?.config?.emailAddress;
+    if (!emailAddress) {
+      throw new BadRequestException('Integration is missing emailAddress in config');
+    }
+
+    const userID = integration.userID;
+
+    await this.prisma.$transaction(async (tx) => {
+      // Find the corresponding email account
+      const account = await tx.emailAccount.findFirst({
+        where: { userID, emailAddress },
+      });
+
+      if (!account) {
+        // Nothing to remove if the account isn't present
+        return;
+      }
+
+      const wasPrimary = account.isPrimary ?? false;
+
+      // Delete the email account
+      await tx.emailAccount.delete({
+        where: { id: account.id },
+      });
+
+      // If we removed the primary account, promote another one (if any) to primary
+      if (wasPrimary) {
+        const another = await tx.emailAccount.findFirst({
+          where: { userID },
+        });
+        if (another) {
+          await tx.emailAccount.update({
+            where: { id: another.id },
+            data: { isPrimary: true },
+          });
+        }
+      }
+
+      await tx.integration.delete({
+        where: { id: integration.id }
+      });
+    });
   }
 
   private async isFirstEmailAccount(userID: string, userType: UserType): Promise<boolean> {
