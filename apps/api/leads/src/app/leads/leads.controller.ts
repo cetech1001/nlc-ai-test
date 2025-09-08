@@ -1,25 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
-import {JwtAuthGuard, UserTypes, UserTypesGuard, LandingTokenGuard, CurrentUser} from '@nlc-ai/api-auth';
-import { Public } from '@nlc-ai/api-auth';
+import {Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards,} from '@nestjs/common';
+import {ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
+import {CurrentUser, JwtAuthGuard, LandingTokenGuard, Public, UserTypes, UserTypesGuard} from '@nlc-ai/api-auth';
 import {type AuthUser, UserType} from '@nlc-ai/api-types';
-import { LeadsService } from './leads.service';
-import {
-  CreateLeadDto,
-  CreateLandingLeadDto,
-  UpdateLeadDto,
-  LeadQueryDto
-} from './dto';
+import {LeadsService} from './leads.service';
+import {CreateLandingLeadDto, CreateLeadDto, LeadQueryDto, UpdateLeadDto} from './dto';
 
 @ApiTags('Leads')
 @Controller('')
@@ -54,8 +38,8 @@ export class LeadsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get lead statistics' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  getStats(@Query('coachID') coachID?: string) {
-    return this.leadsService.getStats(coachID);
+  getStats(@CurrentUser() user: AuthUser) {
+    return this.leadsService.getStats(user.type === UserType.coach ? user.id : undefined);
   }
 
   @Get(':id')
@@ -78,8 +62,12 @@ export class LeadsController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   create(
     @Body() createLeadDto: CreateLeadDto,
-    @Query('coachID') coachID?: string
+    @CurrentUser() user: AuthUser,
   ) {
+    let coachID = undefined;
+    if (user.type === UserType.coach) {
+      coachID = user.id;
+    }
     return this.leadsService.create(createLeadDto, coachID);
   }
 

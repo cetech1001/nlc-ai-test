@@ -11,6 +11,8 @@ import analyticsConfig from './config/analytics.config';
 import {CourseStructureModule} from "./course-structure/course-structure.module";
 import {ClientEmailModule} from "./client-email/client-email.module";
 import {EmailDeliverabilityModule} from "./email-deliverability/email-deliverability.module";
+import {CoachReplicaModule} from "./coach-replica/coach-replica.module";
+import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
 
 @Module({
   imports: [
@@ -25,9 +27,11 @@ import {EmailDeliverabilityModule} from "./email-deliverability/email-deliverabi
     MessagingModule.forRoot(),
     AuthLibModule,
     HealthModule,
+    CoachReplicaModule,
     CourseStructureModule,
     ClientEmailModule,
     EmailDeliverabilityModule,
+    LeadFollowupModule,
   ],
   providers: [
     {

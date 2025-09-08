@@ -12,11 +12,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@nlc-ai/web-ui';
-import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { EmailInSequence, DeliverabilityAnalysis, TIMING_OPTIONS } from '@nlc-ai/types';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@nlc-ai/web-ui';
-import {AiImprovements, DeliverabilityAnalysisStats, EmailStats, getScoreBg, getScoreColor} from "@/lib";
+import {AiImprovements, DeliverabilityAnalysisStats, EmailStats, getScoreBg, getScoreColor, sdkClient} from "@/lib";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,
@@ -96,7 +95,7 @@ const EditEmailPage = () => {
 
   const loadEmail = async () => {
     try {
-      const emailData = await aiAgentsAPI.getEmailByID(emailID!);
+      const emailData = await sdkClient.agents.leadFollowup.getEmailByID(emailID!);
       setEmail(emailData.email);
       setSubject(emailData.email.subject);
       setScheduledFor(new Date(emailData.email.scheduledFor || '').toISOString().slice(0, 16));
@@ -117,7 +116,7 @@ const EditEmailPage = () => {
     return () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(async () => {
-        const result = await aiAgentsAPI.quickDeliverabilityCheck(subject, emailContent);
+        const result = await sdkClient.agents.emailDeliverability.quickDeliverabilityCheck(subject, emailContent);
         setQuickScore(result.score);
       }, 1000);
     };
@@ -126,7 +125,7 @@ const EditEmailPage = () => {
   const analyzeDeliverability = async (emailSubject: string, emailBody: string) => {
     try {
       setIsAnalyzing(true);
-      const analysis = await aiAgentsAPI.analyzeEmailDeliverability({
+      const analysis = await sdkClient.agents.emailDeliverability.analyzeEmailDeliverability({
         subject: emailSubject,
         body: emailBody,
         recipientType: 'lead'
@@ -146,7 +145,7 @@ const EditEmailPage = () => {
     try {
       setIsSaving(true);
 
-      await aiAgentsAPI.updateEmail(emailID!, {
+      await sdkClient.agents.leadFollowup.updateEmail(emailID!, {
         subject,
         body: emailContent,
         scheduledFor,
@@ -179,7 +178,7 @@ const EditEmailPage = () => {
 
     try {
       setIsRegenerating(true);
-      const regeneratedEmails = await aiAgentsAPI.regenerateEmails({
+      const regeneratedEmails = await sdkClient.agents.leadFollowup.regenerateEmails({
         sequenceID,
         emailOrders: [email.sequenceOrder],
         customInstructions: 'Regenerate with fresh content while maintaining the coach\'s authentic voice'

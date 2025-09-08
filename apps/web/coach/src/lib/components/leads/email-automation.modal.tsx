@@ -17,8 +17,8 @@ import {
   StopCircle
 } from 'lucide-react';
 import { Button } from '@nlc-ai/web-ui';
-import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { EmailSequenceWithEmails, SEQUENCE_TEMPLATES } from '@nlc-ai/types';
+import {sdkClient} from "@/lib";
 
 interface EmailAutomationModalProps {
   isOpen: boolean;
@@ -61,7 +61,7 @@ export const EmailAutomationModal = ({
     try {
       setIsLoading(true);
       // Fetch an existing sequence for this lead
-      const {sequences} = await aiAgentsAPI.getSequencesForLead(leadID);
+      const {sequences} = await sdkClient.agents.leadFollowup.getSequencesForLead(leadID);
       if (sequences.length > 0) {
         setSequence(sequences[0]);
       } else {
@@ -82,7 +82,7 @@ export const EmailAutomationModal = ({
       setIsGenerating(true);
       // const template = SEQUENCE_TEMPLATES.find(t => t.type === selectedTemplate);
 
-      const newSequence = await aiAgentsAPI.generateFollowupSequence({
+      const newSequence = await sdkClient.agents.leadFollowup.generateFollowupSequence({
         leadID,
         sequenceConfig: {
           emailCount,
@@ -123,14 +123,14 @@ export const EmailAutomationModal = ({
       setIsProcessing(true);
       switch (action) {
         case 'pause':
-          await aiAgentsAPI.pauseSequence(sequence.id);
+          await sdkClient.agents.leadFollowup.pauseSequence(sequence.id);
           break;
         case 'resume':
-          await aiAgentsAPI.resumeSequence(sequence.id);
+          await sdkClient.agents.leadFollowup.resumeSequence(sequence.id);
           break;
         case 'cancel':
           if (confirm('Are you sure you want to cancel this sequence?')) {
-            await aiAgentsAPI.cancelSequence(sequence.id);
+            await sdkClient.agents.leadFollowup.cancelSequence(sequence.id);
           }
           break;
       }
@@ -147,7 +147,7 @@ export const EmailAutomationModal = ({
 
     try {
       setIsProcessing(true);
-      await aiAgentsAPI.regenerateEmails({
+      await sdkClient.agents.leadFollowup.regenerateEmails({
         sequenceID: sequence.id,
         emailOrders,
         customInstructions: customInstructions || undefined

@@ -58,8 +58,7 @@ export interface EmailSequenceWithEmails {
   updatedAt: Date;
   lead?: {
     id: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
     status: string;
   };

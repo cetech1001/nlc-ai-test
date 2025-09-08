@@ -7,6 +7,7 @@ WORKDIR /app
 COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
+COPY libs/types ./libs/types
 COPY libs/api ./libs/api
 
 RUN npm ci --only=production
@@ -24,6 +25,7 @@ COPY nx.json ./
 COPY tsconfig.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
+COPY libs/types ./libs/types
 COPY libs/api ./libs/api
 COPY apps/api/agents ./apps/api/agents
 

@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { X, Sparkles, Settings, Zap, Clock, Target } from 'lucide-react';
 import { Button } from '@nlc-ai/web-ui';
-import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { SEQUENCE_TEMPLATES, TIMING_OPTIONS, EmailSequenceWithEmails } from '@nlc-ai/types';
+import {sdkClient} from "@/lib";
 
 interface CreateSequenceModalProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ export const CreateSequenceModal = ({
     try {
       setIsCreating(true);
 
-      const sequence = await aiAgentsAPI.generateFollowupSequence({
+      const sequence = await sdkClient.agents.leadFollowup.generateFollowupSequence({
         leadID,
         sequenceConfig: {
           emailCount,

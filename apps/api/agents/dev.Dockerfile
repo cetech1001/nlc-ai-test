@@ -10,6 +10,7 @@ COPY nx.json tsconfig.base.json ./
 RUN set -eux; npm ci --ignore-scripts && npm install nx;
 
 COPY apps/api/agents ./apps/api/agents
+COPY libs/types ./libs/types
 COPY libs/api ./libs/api
 COPY eslint.config.mjs tsconfig.json ./
 

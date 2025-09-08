@@ -6,7 +6,6 @@ import { Search, Plus, Calendar, TrendingUp, AlertCircle, Sparkles } from "lucid
 import { toast } from "sonner";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
-import { aiAgentsAPI } from '@nlc-ai/web-api-client';
 import { LeadStats, Lead } from "@nlc-ai/sdk-leads";
 import { EmailSequenceWithEmails, FilterValues } from "@nlc-ai/types";
 import {
@@ -136,7 +135,7 @@ const CoachLeads = () => {
       // Fetch sequences for all visible leads
       const sequencePromises = leads.map(async (lead) => {
         try {
-          const {sequences} = await aiAgentsAPI.getSequencesForLead(lead.id);
+          const {sequences} = await sdkClient.agents.leadFollowup.getSequencesForLead(lead.id);
           return sequences.length > 0 ? sequences[0] : null;
         } catch (error) {
           return null;
@@ -171,7 +170,7 @@ const CoachLeads = () => {
       setIsGeneratingSequence(leadID);
 
       // Use flexible sequence creation with default settings
-      await aiAgentsAPI.generateFollowupSequence({
+      await sdkClient.agents.leadFollowup.generateFollowupSequence({
         leadID,
         sequenceConfig: {
           emailCount: 4,
@@ -192,7 +191,7 @@ const CoachLeads = () => {
 
   const handlePauseSequence = async (leadID: string) => {
     try {
-      await aiAgentsAPI.pauseSequence(leadID);
+      await sdkClient.agents.leadFollowup.pauseSequence(leadID);
       setSuccessMessage('Email sequence paused');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -203,7 +202,7 @@ const CoachLeads = () => {
 
   const handleResumeSequence = async (leadID: string) => {
     try {
-      await aiAgentsAPI.resumeSequence(leadID);
+      await sdkClient.agents.leadFollowup.resumeSequence(leadID);
       setSuccessMessage('Email sequence resumed');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -216,7 +215,7 @@ const CoachLeads = () => {
     if (!confirm('Are you sure you want to cancel this email sequence?')) return;
 
     try {
-      await aiAgentsAPI.cancelSequence(leadID);
+      await sdkClient.agents.leadFollowup.cancelSequence(leadID);
       setSuccessMessage('Email sequence cancelled');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);

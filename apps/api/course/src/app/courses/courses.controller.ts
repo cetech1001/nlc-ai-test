@@ -1,34 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
   Body,
-  Param,
-  Query,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
   ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
 } from '@nestjs/common';
+import {ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags,} from '@nestjs/swagger';
+import {CoursesService} from './courses.service';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
-import { CoursesService } from './courses.service';
-import {
-  CreateCourseDto,
-  UpdateCourseDto,
   CourseQueryDto,
   CourseResponseDto,
-  PaginatedCoursesResponseDto,
   CourseStatsResponseDto,
+  CreateCourseDto,
+  PaginatedCoursesResponseDto,
+  UpdateCourseDto,
 } from './dto';
 import {CurrentUser} from "@nlc-ai/api-auth";
-import {type AuthUser} from "@nlc-ai/api-types";
+import {type AuthUser, UserType} from "@nlc-ai/api-types";
 
 @ApiTags('Courses')
 @ApiBearerAuth()
@@ -54,7 +48,10 @@ export class CoursesController {
     description: 'Courses retrieved successfully',
     type: PaginatedCoursesResponseDto,
   })
-  async findAll(@Query() query: CourseQueryDto) {
+  async findAll(@Query() query: CourseQueryDto, @CurrentUser() user: AuthUser) {
+    if (user.type === UserType.coach) {
+      query.coachID = user.id;
+    }
     return this.coursesService.findAll(query);
   }
 

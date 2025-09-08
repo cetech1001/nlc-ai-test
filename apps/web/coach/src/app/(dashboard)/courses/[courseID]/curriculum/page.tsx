@@ -47,6 +47,10 @@ const CurriculumScreen = () => {
   const [curriculum, setCurriculum] = useState<CurriculumState>({ chapters: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
+  const [showCreateChapter, setShowCreateChapter] = useState(false);
+  const [showCreateLesson, setShowCreateLesson] = useState(false);
 
   // Load course data on mount
   useEffect(() => {
@@ -98,13 +102,22 @@ const CurriculumScreen = () => {
   };
 
   const handleAddLesson = (chapterID: string) => {
-    console.log('Add lesson to chapter:', chapterID);
-    // TODO: Implement lesson creation modal/flow
+    setSelectedChapter(chapterID);
+    setShowCreateLesson(true);
   };
 
   const handleAddChapter = () => {
-    console.log('Add new chapter');
-    // TODO: Implement chapter creation modal/flow
+    setShowCreateChapter(true);
+  };
+
+  const handleEditLesson = (lessonID: string) => {
+    setSelectedLesson(lessonID);
+    setShowCreateLesson(true);
+  };
+
+  const handleCreateLesson = (type: string) => {
+    // TODO: Implement lesson creation with specific type
+    console.log('Create lesson of type:', type);
   };
 
   const handleUploadContent = () => {
@@ -390,25 +403,52 @@ const CurriculumScreen = () => {
                 {/* Additional glow orb inside content area */}
                 <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-violet-500/10 rounded-full blur-2xl"></div>
 
-                <h2 className="text-white text-xl font-semibold mb-8 relative z-10">Lessons</h2>
+                <div className="flex items-center justify-between mb-8 relative z-10">
+                  <h2 className="text-white text-xl font-semibold">Course Content</h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setActiveTab('Drip schedule')}
+                      className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-600/30 rounded-lg hover:bg-blue-600/30 transition-colors text-sm"
+                    >
+                      Manage Drip Schedule
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('Pricing')}
+                      className="px-4 py-2 bg-green-600/20 text-green-300 border border-green-600/30 rounded-lg hover:bg-green-600/30 transition-colors text-sm"
+                    >
+                      Setup Paywall
+                    </button>
+                  </div>
+                </div>
 
+                {activeTab === 'Curriculum' && (
+                  <>
                 {/* Lesson Type Cards */}
                 <div className="grid grid-cols-3 gap-6 mb-8 relative z-10">
-                  <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
+                  <button
+                    onClick={() => handleCreateLesson('video')}
+                    className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center"
+                  >
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                       <Video className="w-6 h-6 text-white" />
                     </div>
                     <div className="text-white font-medium">Video</div>
                   </button>
 
-                  <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
+                  <button
+                    onClick={() => handleCreateLesson('text')}
+                    className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center"
+                  >
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                       <FileText className="w-6 h-6 text-white" />
                     </div>
                     <div className="text-white font-medium">Text</div>
                   </button>
 
-                  <button className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center">
+                  <button
+                    onClick={() => handleCreateLesson('pdf')}
+                    className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center"
+                  >
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                       <FileDown className="w-6 h-6 text-white" />
                     </div>
@@ -461,11 +501,212 @@ const CurriculumScreen = () => {
                     </button>
                   </div>
                 </div>
+                  </>
+                )}
+
+                {activeTab === 'Drip schedule' && (
+                  <DripScheduleTab courseId={courseID} />
+                )}
+
+                {activeTab === 'Pricing' && (
+                  <PaywallTab courseId={courseID} />
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const DripScheduleTab = ({ courseId }: { courseId: string }) => {
+  const [dripSettings, setDripSettings] = useState({
+    isDripEnabled: false,
+    dripInterval: 'weekly',
+    dripCount: 1,
+    autoUnlockChapters: true,
+    completionThreshold: 80
+  });
+
+  return (
+    <div className="space-y-6 relative z-10">
+      <h3 className="text-white text-xl font-semibold">Drip Schedule Settings</h3>
+
+      <div className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-white font-medium">Enable Drip Content</h4>
+              <p className="text-stone-300 text-sm">Release course content gradually over time</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={dripSettings.isDripEnabled}
+                onChange={(e) => setDripSettings(prev => ({ ...prev, isDripEnabled: e.target.checked }))}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+            </label>
+          </div>
+
+          {dripSettings.isDripEnabled && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">Release Interval</label>
+                  <select
+                    value={dripSettings.dripInterval}
+                    onChange={(e) => setDripSettings(prev => ({ ...prev, dripInterval: e.target.value }))}
+                    className="w-full bg-neutral-700 border border-neutral-600 text-white rounded-lg px-3 py-2"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">Lessons per Release</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={dripSettings.dripCount}
+                    onChange={(e) => setDripSettings(prev => ({ ...prev, dripCount: parseInt(e.target.value) }))}
+                    className="w-full bg-neutral-700 border border-neutral-600 text-white rounded-lg px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h5 className="text-white font-medium">Auto-unlock Chapters</h5>
+                    <p className="text-stone-400 text-sm">Automatically unlock next chapter when previous is completed</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={dripSettings.autoUnlockChapters}
+                    onChange={(e) => setDripSettings(prev => ({ ...prev, autoUnlockChapters: e.target.checked }))}
+                    className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">
+                    Completion Threshold ({dripSettings.completionThreshold}%)
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={dripSettings.completionThreshold}
+                    onChange={(e) => setDripSettings(prev => ({ ...prev, completionThreshold: parseInt(e.target.value) }))}
+                    className="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <p className="text-stone-400 text-sm mt-1">Minimum completion percentage before unlocking next content</p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <button className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium transition-opacity">
+        Save Drip Settings
+      </button>
+    </div>
+  );
+};
+
+const PaywallTab = ({ courseId }: { courseId: string }) => {
+  const [paywallSettings, setPaywallSettings] = useState({
+    isEnabled: false,
+    freePreviewChapters: 1,
+    paywallMessage: 'Unlock the full course to continue your learning journey!',
+    priceOptions: [
+      { type: 'one_time', price: 99, label: 'Full Access' },
+      { type: 'installment', price: 33, installments: 3, label: '3 Monthly Payments' }
+    ]
+  });
+
+  return (
+    <div className="space-y-6 relative z-10">
+      <h3 className="text-white text-xl font-semibold">Paywall Settings</h3>
+
+      <div className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-white font-medium">Enable Paywall</h4>
+              <p className="text-stone-300 text-sm">Restrict access to course content behind payment</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={paywallSettings.isEnabled}
+                onChange={(e) => setPaywallSettings(prev => ({ ...prev, isEnabled: e.target.checked }))}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+            </label>
+          </div>
+
+          {paywallSettings.isEnabled && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">Free Preview Chapters</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={paywallSettings.freePreviewChapters}
+                  onChange={(e) => setPaywallSettings(prev => ({ ...prev, freePreviewChapters: parseInt(e.target.value) }))}
+                  className="w-full bg-neutral-700 border border-neutral-600 text-white rounded-lg px-3 py-2"
+                />
+                <p className="text-stone-400 text-sm mt-1">Number of chapters accessible for free</p>
+              </div>
+
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">Paywall Message</label>
+                <textarea
+                  value={paywallSettings.paywallMessage}
+                  onChange={(e) => setPaywallSettings(prev => ({ ...prev, paywallMessage: e.target.value }))}
+                  className="w-full bg-neutral-700 border border-neutral-600 text-white rounded-lg px-3 py-2 h-20 resize-none"
+                  placeholder="Message shown when users hit the paywall..."
+                />
+              </div>
+
+              <div>
+                <h5 className="text-white font-medium mb-3">Payment Options</h5>
+                <div className="space-y-3">
+                  {paywallSettings.priceOptions.map((option, index) => (
+                    <div key={index} className="flex items-center gap-4 p-3 bg-neutral-700/50 rounded-lg">
+                      <input
+                        type="text"
+                        value={option.label}
+                        onChange={(e) => {
+                          const newOptions = [...paywallSettings.priceOptions];
+                          newOptions[index].label = e.target.value;
+                          setPaywallSettings(prev => ({ ...prev, priceOptions: newOptions }));
+                        }}
+                        className="flex-1 bg-neutral-600 border border-neutral-500 text-white rounded px-2 py-1 text-sm"
+                      />
+                      <span className="text-white text-sm">${option.price}</span>
+                      {option.installments && (
+                        <span className="text-stone-400 text-sm">({option.installments}x)</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <button className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium transition-opacity">
+        Save Paywall Settings
+      </button>
     </div>
   );
 };

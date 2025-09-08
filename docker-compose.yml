@@ -72,6 +72,7 @@ services:
       - rabbitmq
     volumes:
       - ./apps/api/agents:/app/apps/api/agents
+      - ./libs/types:/app/libs/types
       - ./libs/api:/app/libs/api
       - ./.env:/app/.env
       - /app/node_modules
