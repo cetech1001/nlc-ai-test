@@ -47,10 +47,10 @@ const CurriculumScreen = () => {
   const [curriculum, setCurriculum] = useState<CurriculumState>({ chapters: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
-  const [showCreateChapter, setShowCreateChapter] = useState(false);
-  const [showCreateLesson, setShowCreateLesson] = useState(false);
+  const [_, setSelectedChapter] = useState<string | null>(null);
+  // const [__, setSelectedLesson] = useState<string | null>(null);
+  const [___, setShowCreateChapter] = useState(false);
+  const [____, setShowCreateLesson] = useState(false);
 
   // Load course data on mount
   useEffect(() => {
@@ -110,10 +110,10 @@ const CurriculumScreen = () => {
     setShowCreateChapter(true);
   };
 
-  const handleEditLesson = (lessonID: string) => {
+  /*const handleEditLesson = (lessonID: string) => {
     setSelectedLesson(lessonID);
     setShowCreateLesson(true);
-  };
+  };*/
 
   const handleCreateLesson = (type: string) => {
     // TODO: Implement lesson creation with specific type

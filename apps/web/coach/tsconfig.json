@@ -57,9 +57,6 @@
       "path": "../../../libs/sdk/main"
     },
     {
-      "path": "../../../libs/sdk/community"
-    },
-    {
       "path": "../../../libs/sdk/core"
     },
     {
@@ -81,10 +78,16 @@
       "path": "../../../libs/sdk/analytics"
     },
     {
+      "path": "../../../libs/sdk/integrations"
+    },
+    {
       "path": "../../../libs/sdk/agents"
     },
     {
       "path": "../../../libs/sdk/course"
+    },
+    {
+      "path": "../../../libs/sdk/community"
     },
     {
       "path": "../../../libs/sdk/users"

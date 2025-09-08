@@ -35,10 +35,13 @@
       "path": "../auth/tsconfig.lib.json"
     },
     {
+      "path": "../../sdk/users/tsconfig.lib.json"
+    },
+    {
       "path": "../../types/tsconfig.lib.json"
     },
     {
-      "path": "../api-client/tsconfig.lib.json"
+      "path": "../../sdk/main/tsconfig.lib.json"
     },
     {
       "path": "../ui/tsconfig.lib.json"

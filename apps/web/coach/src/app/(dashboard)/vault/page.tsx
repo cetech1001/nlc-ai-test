@@ -201,6 +201,7 @@ const VaultPage = () => {
           <div className="space-y-4 sm:space-y-6">
             {posts.map(post => (
               <SinglePost
+                user={user}
                 key={post.id}
                 post={post}
                 handleReactToPost={handleReactToPost}

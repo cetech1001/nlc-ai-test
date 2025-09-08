@@ -6,10 +6,13 @@
       "path": "../auth"
     },
     {
+      "path": "../../sdk/users"
+    },
+    {
       "path": "../../types"
     },
     {
-      "path": "../api-client"
+      "path": "../../sdk/main"
     },
     {
       "path": "../ui"

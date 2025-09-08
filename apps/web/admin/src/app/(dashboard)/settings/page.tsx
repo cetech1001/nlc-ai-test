@@ -6,6 +6,7 @@ import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
 import {Settings} from "@nlc-ai/web-settings";
 import {useRouter, useSearchParams} from "next/navigation";
 import {calendlyAPI} from "@nlc-ai/web-api-client";
+import {sdkClient} from "@/lib";
 
 
 const AdminSettings = () => {
@@ -67,6 +68,7 @@ const AdminSettings = () => {
   return (
     <Settings
       userType={UserType.admin}
+      sdkClient={sdkClient}
       activeTab={activeTab}
       handleTabChange={handleTabChange}
       getProfile={getProfile}
