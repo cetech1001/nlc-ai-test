@@ -1,6 +1,6 @@
 import {Coach} from "./coach";
 import {Plan} from "./plan";
-import {UserType} from "./auth";
+import {UserType} from "./users";
 
 export enum PaymentMethodType {
   CREDIT_CARD = 'credit_card',

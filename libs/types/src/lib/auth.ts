@@ -1,8 +1,8 @@
-export enum UserType {
+/*export enum UserType {
   admin = 'admin',
   coach = 'coach',
   client = 'client'
-}
+}*/
 
 export type AUTH_TYPES = 'admin' | 'coach' | 'client';
 

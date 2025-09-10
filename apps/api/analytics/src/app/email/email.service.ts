@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 
 @Injectable()
-export class AnalyticsService {
+export class EmailService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getEmailMetrics(coachID: string, dateRange: { start: Date; end: Date }) {

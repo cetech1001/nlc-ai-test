@@ -51,7 +51,6 @@ export interface RefreshEmailTokenResponse {
 
 export interface SyncEmailAccountResponse {
   syncResult: EmailSyncResult;
-  account: EmailAccount;
   success: boolean;
   message: string;
 }

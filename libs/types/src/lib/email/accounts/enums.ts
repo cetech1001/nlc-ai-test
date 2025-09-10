@@ -1,4 +1,4 @@
-export enum EmailProvider {
+export enum EmailAccountProvider {
   GMAIL = 'gmail',
   OUTLOOK = 'outlook',
   YAHOO = 'yahoo',

@@ -24,19 +24,22 @@
   ],
   "references": [
     {
-      "path": "../../../libs/api/messaging/tsconfig.lib.json"
-    },
-    {
-      "path": "../../../libs/api/validation/tsconfig.lib.json"
-    },
-    {
-      "path": "../../../libs/api/database/tsconfig.lib.json"
+      "path": "../../../libs/types/tsconfig.lib.json"
     },
     {
       "path": "../../../libs/api/types/tsconfig.lib.json"
     },
     {
+      "path": "../../../libs/api/messaging/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/api/database/tsconfig.lib.json"
+    },
+    {
       "path": "../../../libs/api/auth/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../libs/api/validation/tsconfig.lib.json"
     }
   ]
 }

@@ -16,14 +16,17 @@ export interface EmailMessage {
   subject?: string;
   text?: string;
   html?: string;
-  attachments: EmailAttachment[];
+  cc?: string;
+  bcc?: string;
+  attachments?: EmailAttachment[];
   aiProcessed: boolean;
+  tags?: string[];
   sentimentScore?: number;
   intentCategory?: EmailIntentCategory;
   suggestedActions: string[];
   status: EmailMessageStatus;
   errorMessage?: string;
-  metadata: Record<string, any>;
+  metadata?: Record<string, any>;
   openedAt?: string;
   clickedAt?: string;
   sentAt: string;
@@ -32,12 +35,10 @@ export interface EmailMessage {
 }
 
 export interface EmailAttachment {
-  id: string;
   filename: string;
+  content: string | Buffer;
   contentType: string;
-  size: number;
-  url?: string;
-  content?: string; // base64 encoded
+  size?: number;
 }
 
 export interface EmailThread {

@@ -16,7 +16,7 @@ export enum MetricType {
   SEQUENCES = 'sequences'
 }
 
-export class AnalyticsFiltersDto {
+export class EmailFiltersDto {
   @ApiProperty({ enum: MetricPeriod, required: false, default: MetricPeriod.LAST_30_DAYS })
   @IsOptional()
   @IsEnum(MetricPeriod)

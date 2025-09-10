@@ -1,6 +1,6 @@
 import { QueryParams } from '../../query-params';
 import {
-  EmailProvider,
+  EmailAccountProvider,
   EmailAccountStatus,
   TestEmailConnectionType,
 } from './enums';
@@ -9,7 +9,7 @@ import {UserType} from "../../users";
 
 export interface CreateEmailAccountRequest {
   emailAddress: string;
-  provider: EmailProvider;
+  provider: EmailAccountProvider;
   accessToken?: string;
   refreshToken?: string;
   isPrimary?: boolean;
@@ -26,14 +26,14 @@ export interface UpdateEmailAccountRequest {
 export interface GetEmailAccountsRequest extends QueryParams {
   userID?: string;
   userType?: UserType;
-  provider?: EmailProvider;
+  provider?: EmailAccountProvider;
   status?: EmailAccountStatus;
   isActive?: boolean;
   isPrimary?: boolean;
 }
 
 export interface AuthorizeEmailAccountRequest {
-  provider: EmailProvider;
+  provider: EmailAccountProvider;
   authCode: string;
   redirectURI?: string;
   state?: string;

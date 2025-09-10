@@ -1,4 +1,6 @@
 export * from './agents';
+export * from './email';
+export * from './users';
 
 export * from './activity-log';
 export * from './admin';
@@ -13,7 +15,6 @@ export * from './coach-payment-request';
 export * from './content';
 export * from './course';
 export * from './data-table';
-export * from './email';
 export * from './filter';
 export * from './integration';
 export * from './invoice';

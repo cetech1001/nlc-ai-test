@@ -30,7 +30,6 @@ export interface SendEmailResponse {
   providerMessageID?: string;
   status: EmailMessageStatus;
   scheduledFor?: string;
-  success: boolean;
   message: string;
 }
 
@@ -40,13 +39,11 @@ export interface ReplyToEmailResponse {
   providerMessageID?: string;
   status: EmailMessageStatus;
   scheduledFor?: string;
-  success: boolean;
   message: string;
 }
 
 export interface UpdateEmailThreadResponse {
   thread: EmailThread;
-  success: boolean;
   message: string;
 }
 
@@ -57,7 +54,6 @@ export interface BulkUpdateThreadsResponse {
     threadID: string;
     error: string;
   }>;
-  success: boolean;
   message: string;
 }
 
@@ -68,7 +64,6 @@ export interface ArchiveThreadsResponse {
     threadID: string;
     error: string;
   }>;
-  success: boolean;
   message: string;
 }
 
@@ -90,7 +85,6 @@ export interface SearchEmailsResponse {
 export interface GetAISuggestionsResponse {
   suggestions: EmailAISuggestions;
   processingTime: number;
-  success: boolean;
 }
 
 export interface ApproveAIResponseResponse {
@@ -102,7 +96,6 @@ export interface ApproveAIResponseResponse {
     subject?: string;
     body?: string;
   };
-  success: boolean;
   message: string;
 }
 
@@ -117,7 +110,6 @@ export interface GetThreadAnalyticsResponse {
 }
 
 export interface DeleteEmailThreadResponse {
-  success: boolean;
   message: string;
   messagesDeleted: number;
 }

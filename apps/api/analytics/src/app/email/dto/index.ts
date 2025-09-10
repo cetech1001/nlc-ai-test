@@ -1,2 +1,2 @@
-export * from './analytics-filters.dto';
+export * from './email-filters.dto';
 export * from './performance-report.dto';

@@ -1,16 +1,16 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { AnalyticsService } from './analytics.service';
+import { EmailService } from './email.service';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType } from '@nlc-ai/api-types';
 
-@ApiTags('Email Analytics')
-@Controller('analytics')
+@ApiTags('Email')
+@Controller('email')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
 @UserTypes(UserType.coach)
 @ApiBearerAuth()
-export class AnalyticsController {
-  constructor(private readonly emailAnalyticsService: AnalyticsService) {}
+export class EmailController {
+  constructor(private readonly emailAnalyticsService: EmailService) {}
 
   @Get('metrics')
   @ApiOperation({ summary: 'Get email metrics' })
