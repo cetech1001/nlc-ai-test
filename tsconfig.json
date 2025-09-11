@@ -140,6 +140,9 @@
     },
     {
       "path": "./libs/sdk/integrations"
+    },
+    {
+      "path": "./apps/web/client"
     }
   ]
 }
