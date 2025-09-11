@@ -321,7 +321,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const isAdminConversation = () => {
     if (!conversation) return false;
-    return conversation.participantTypes.includes(UserType.admin);
+    return conversation.participantTypes.includes(UserType.ADMIN);
   };
 
   const getOtherParticipant = async () => {

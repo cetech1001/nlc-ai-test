@@ -44,6 +44,6 @@ export const CoachResetPasswordContent = () => {
     <ResetPasswordForm
       handleBackToLogin={handleBackToLogin}
       token={token}
-      userType={UserType.coach}/>
+      userType={UserType.COACH}/>
   );
 }

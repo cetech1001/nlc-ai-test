@@ -86,7 +86,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         };
       } catch (error) {
         return {
-          displayName: otherUserType === UserType.admin ? 'Admin Support' : 'Unknown User',
+          displayName: otherUserType === UserType.ADMIN ? 'Admin Support' : 'Unknown User',
           displayAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=Unknown`,
           isOnline: false,
           lastMessage: getLastMessage(conversation),
@@ -124,7 +124,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   const getContactType = (userType: string) => {
     switch (userType) {
-      case UserType.admin: return 'admin' as const;
+      case UserType.ADMIN: return 'admin' as const;
       case UserType.client: return 'client' as const;
       default: return 'community' as const;
     }

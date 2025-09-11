@@ -26,7 +26,7 @@ const CoachRegisterPage = () => {
 
   return (
     <RegisterForm
-      userType={UserType.coach}
+      userType={UserType.COACH}
       handleHome={handleHome}
       handleSignIn={handleSignIn}
       handleAccountVerification={handleAccountVerification}

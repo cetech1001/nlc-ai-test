@@ -20,7 +20,7 @@ const defaultConfig = {
 
 const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
-  const { user, isLoading, isAuthenticated, logout } = useAuth(UserType.coach);
+  const { user, isLoading, isAuthenticated, logout } = useAuth(UserType.COACH);
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 

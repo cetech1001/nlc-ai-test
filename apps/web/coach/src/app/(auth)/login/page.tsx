@@ -45,7 +45,7 @@ const CoachLoginPage = () => {
 
   return (
     <LoginForm
-      userType={UserType.coach}
+      userType={UserType.COACH}
       handleHome={handleHome}
       handleSignUp={handleSignUp}
       handleForgotPassword={handleForgotPassword}

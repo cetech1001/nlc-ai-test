@@ -199,7 +199,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       // Look for existing admin conversation
       const adminConversation = conversations.data.find(conv =>
         conv.type === 'direct' &&
-        conv.participantTypes.includes(UserType.admin)
+        conv.participantTypes.includes(UserType.ADMIN)
       );
 
       if (adminConversation) {
@@ -209,8 +209,8 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         // Create new admin conversation
         const newConversation = await sdkClient.messaging.createConversation({
           type: 'direct',
-          participantIDs: [UserType.admin], // This should be handled by the backend to assign an available admin
-          participantTypes: [UserType.admin],
+          participantIDs: [UserType.ADMIN], // This should be handled by the backend to assign an available admin
+          participantTypes: [UserType.ADMIN],
         });
 
         setConversation(newConversation);

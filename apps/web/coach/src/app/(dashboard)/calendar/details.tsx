@@ -220,10 +220,10 @@ const CalendarDetailsPage = () => {
   useEffect(() => {
     const checkCalendlyConnection = async () => {
       try {
-        const isConnected = await calendlyAPI.isConnected(UserType.coach);
+        const isConnected = await calendlyAPI.isConnected(UserType.COACH);
         setIsCalendlyConnected(isConnected);
         if (isConnected) {
-          const schedulingUrl = await calendlyAPI.getSchedulingUrl(UserType.coach);
+          const schedulingUrl = await calendlyAPI.getSchedulingUrl(UserType.COACH);
           setCalendlyUrl(schedulingUrl || '');
         }
       } catch (error) {
@@ -238,7 +238,7 @@ const CalendarDetailsPage = () => {
       if (!isCalendlyConnected || isLoading) return;
       try {
         setError('');
-        const convertedEvents = await calendlyAPI.loadEventsForMonth(currentDate, UserType.coach);
+        const convertedEvents = await calendlyAPI.loadEventsForMonth(currentDate, UserType.COACH);
         setCalendarEvents(convertedEvents);
       } catch (error: any) {
         setError(error.message || 'Failed to load calendar types');
@@ -418,7 +418,7 @@ const CalendarDetailsPage = () => {
         onCloseAction={() => {
           setIsCalendlyModalOpen(false);
           if (isCalendlyConnected) {
-            calendlyAPI.loadEventsForMonth(currentDate, UserType.coach)
+            calendlyAPI.loadEventsForMonth(currentDate, UserType.COACH)
               .then(events => setCalendarEvents(events))
               .catch(error => console.error('Failed to refresh types:', error));
           }

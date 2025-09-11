@@ -61,7 +61,7 @@ const AddPaymentMethodForm = ({
     try {
       const setupResponse = await sdkClient.billing.payments.createSetupIntent({
         payerID: coachID,
-        payerType: UserType.coach,
+        payerType: UserType.COACH,
       });
 
       const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
@@ -131,7 +131,7 @@ const AddPaymentMethodForm = ({
 
       const paymentResult = await sdkClient.billing.payments.processPayment({
         payerID: coachID,
-        payerType: UserType.coach,
+        payerType: UserType.COACH,
         planID,
         amount: selectedPrice,
         paymentMethodID,
@@ -145,7 +145,7 @@ const AddPaymentMethodForm = ({
 
       await sdkClient.billing.subscriptions.createSubscription({
         subscriberID: coachID,
-        subscriberType: UserType.coach,
+        subscriberType: UserType.COACH,
         planID: planID,
         billingCycle,
         amount: selectedPrice,
@@ -258,7 +258,7 @@ export const PlanUpgradeModal = ({
   const fetchPaymentMethods = async () => {
     try {
       setIsLoading(true);
-      const response = await sdkClient.billing.paymentMethods.getPaymentMethods(coachID, UserType.coach);
+      const response = await sdkClient.billing.paymentMethods.getPaymentMethods(coachID, UserType.COACH);
       setPaymentMethods(response.data || []);
     } catch (error: any) {
       console.error('Error fetching payment methods:', error);
@@ -304,7 +304,7 @@ export const PlanUpgradeModal = ({
       // Process payment first
       const paymentResult = await sdkClient.billing.payments.processPayment({
         payerID: coachID,
-        payerType: UserType.coach,
+        payerType: UserType.COACH,
         planID: plan.id,
         amount: selectedPrice,
         paymentMethodID: paymentMethod.stripePaymentMethodID!,
@@ -319,7 +319,7 @@ export const PlanUpgradeModal = ({
       // Create subscription after successful payment
       await sdkClient.billing.subscriptions.createSubscription({
         subscriberID: coachID,
-        subscriberType: UserType.coach,
+        subscriberType: UserType.COACH,
         planID: plan.id,
         billingCycle,
         amount: selectedPrice,

@@ -17,7 +17,7 @@ const GoogleAuthCallbackPage = () => {
     if (token) {
       localStorage.setItem(appConfig.auth.tokenKey, token);
 
-      checkAuthStatus(UserType.coach).then(() => {
+      checkAuthStatus(UserType.COACH).then(() => {
         router.push('/home');
       }).catch(() => {
         router.push('/login?error=auth_failed');

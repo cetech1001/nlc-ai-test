@@ -62,7 +62,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
       const conversation = await sdkClient.messaging.createConversation({
         type: 'direct',
         participantIDs: [user?.id || '', member.userID],
-        participantTypes: [user?.type || UserType.coach, member.userType]
+        participantTypes: [user?.type || UserType.COACH, member.userType]
       });
 
       router.push(`/messages?conversationID=${conversation.id}`);

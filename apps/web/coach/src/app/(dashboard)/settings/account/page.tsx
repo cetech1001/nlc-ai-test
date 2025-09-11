@@ -130,7 +130,7 @@ const CoachAccountSettings = () => {
   return (
     <div>
       <Settings
-        userType={UserType.coach}
+        userType={UserType.COACH}
         sdkClient={sdkClient}
         activeTab={activeTab}
         handleTabChange={handleTabChange}

@@ -51,7 +51,7 @@ export const CoachAccountVerificationContent = () => {
 
   return (
     <AccountVerificationForm
-      userType={UserType.coach}
+      userType={UserType.COACH}
       handleBackToLogin={handleBackToLogin}
       handleResetToken={handleResetToken}
       handleHome={handleHome}
