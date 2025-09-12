@@ -1,13 +1,13 @@
 import {FC} from "react";
 
 interface IProps {
-  toggleSidebar: () => void;
+  onMenuClick?: () => void;
 }
 
-export const PageHeader: FC<IProps> = ({ toggleSidebar }) => {
+export const PageHeader: FC<IProps> = ({ onMenuClick }) => {
   return (
     <div className="flex items-center justify-between h-full gap-4">
-      <button onClick={toggleSidebar} className="lg:hidden p-2 text-white hover:text-primary transition-colors">
+      <button onClick={onMenuClick} className="lg:hidden p-2 text-white hover:text-primary transition-colors">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
@@ -23,7 +23,7 @@ export const PageHeader: FC<IProps> = ({ toggleSidebar }) => {
           <input
             type="text"
             placeholder="Search for.."
-            className="w-full h-10 sm:h-[50px] pl-10 sm:pl-14 pr-3 sm:pr-5 bg-white/[0.17] border-0 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+            className="w-full h-10 sm:h-[50px] pl-10 sm:pl-14 pr-3 sm:pr-5 bg-background border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
           />
         </div>
       </div>
