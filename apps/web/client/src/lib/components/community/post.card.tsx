@@ -1,6 +1,6 @@
 'use client'
 
-import {useState} from "react";
+import React, {useState} from "react";
 import {Heart, MessageCircle, Pin} from "lucide-react";
 
 export const PostCard = ({ post }: any) => {
@@ -18,8 +18,7 @@ export const PostCard = ({ post }: any) => {
 
   return (
     <div className="relative overflow-hidden rounded-[30px] border border-dark-600 card-gradient">
-      {/* Glow Effect */}
-      <div className="glow-circle absolute left-[30px] -bottom-[101px]" />
+      <div className="absolute left-[30px] -bottom-[10px] w-[267px] h-[267px] bg-streak-gradient opacity-40 blur-[112.55px] rounded-full" />
 
       <div className="relative p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
