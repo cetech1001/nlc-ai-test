@@ -20,7 +20,7 @@ const defaultConfig = {
 
 const AdminDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
-  const { user, isLoading, isAuthenticated, logout } = useAuth(UserType.admin);
+  const { user, isLoading, isAuthenticated, logout } = useAuth(UserType.ADMIN);
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
