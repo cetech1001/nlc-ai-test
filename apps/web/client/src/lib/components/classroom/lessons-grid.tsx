@@ -13,7 +13,7 @@ const lessonsData: Lesson[] = [
     image: "https://api.builder.io/api/v1/image/assets/TEMP/ea1242f159b13c64ef772881089c587ebdfbd5fd?width=1016",
     title: "Email notifications",
     description: "If you're offline and somebody messages you, we'll let you know via email. We won't email you if you're online.",
-    locked: true
+    locked: false
   },
   {
     image: "https://api.builder.io/api/v1/image/assets/TEMP/67d7ac3fa1ad750fdac7006414f332a680bcf9c6?width=1016",

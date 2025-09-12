@@ -29,12 +29,22 @@ export const LessonCard: FC<IProps> = ({ image, title, description, locked = fal
             </p>
           </div>
 
-          {locked && (
+          {locked ? (
             <div className="space-y-2 sm:space-y-2.5">
               <div className="flex justify-between items-center">
                 <span className="text-xs sm:text-sm font-semibold text-foreground/40">Lessons</span>
                 <a href="#" className="text-xs sm:text-sm text-[#FF7915] underline hover:text-[#FF7915]/80 transition-colors">
                   Pay to unlock
+                </a>
+              </div>
+              <div className="w-full h-1 bg-white/20 rounded-full" />
+            </div>
+          ) : (
+            <div className="space-y-2 sm:space-y-2.5">
+              <div className="flex justify-between items-center">
+                <span className="text-xs sm:text-sm font-semibold text-foreground/40">Lessons</span>
+                <a href="/lesson" className="text-xs sm:text-sm text-[#FF7915] underline hover:text-[#FF7915]/80 transition-colors">
+                  Start Lesson
                 </a>
               </div>
               <div className="w-full h-1 bg-white/20 rounded-full" />

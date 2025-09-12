@@ -1,4 +1,5 @@
 import {FC} from "react";
+import {UserDropdown} from "@/lib";
 
 interface IProps {
   onMenuClick?: () => void;
@@ -45,17 +46,7 @@ export const PageHeader: FC<IProps> = ({ onMenuClick }) => {
           />
         </button>
 
-        <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-border bg-glass-gradient">
-          <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/713ab25a75c43ca8d950dc89dd5fc37309b8bdd7?width=60"
-            alt="Andrew Kramer"
-            className="w-6 h-6 sm:w-[30px] sm:h-[30px] rounded-lg"
-          />
-          <div className="text-left hidden sm:block">
-            <div className="text-xs sm:text-sm font-medium text-foreground">Andrew Kramer</div>
-            <div className="text-xs text-muted-foreground hidden md:block">kramer.andrew@email.com</div>
-          </div>
-        </div>
+        <UserDropdown/>
       </div>
     </div>
   );
