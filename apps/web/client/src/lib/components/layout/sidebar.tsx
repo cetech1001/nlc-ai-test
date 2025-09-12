@@ -44,7 +44,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
 
       <nav className="flex-1 px-2 sm:px-3 overflow-y-auto min-h-0">
         <div className="space-y-1 pb-4">
-          <NavItem icon="community" label="Community" href="/" />
+          <NavItem icon="community" label="Community" href="/community" />
           <NavItem icon="classroom" label="Classroom" href="/classroom" />
           <NavItem icon="calendar" label="Calendar" href="/calendar" />
           <NavItem icon="members" label="Members" href="/members" />
