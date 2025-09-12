@@ -30,15 +30,19 @@ export const PageHeader: FC<IProps> = ({ onMenuClick }) => {
 
       <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
         <button className="text-white hover:text-primary transition-colors p-2">
-          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+          <img
+            src="/images/icons/chat.svg"
+            alt="Chat Icon"
+            className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg"
+          />
         </button>
 
         <button className="text-white hover:text-primary transition-colors p-2">
-          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M15 17h5l-5 5-5-5h5zm0 0V9a6 6 0 00-12 0v8m0 0h5" />
-          </svg>
+          <img
+            src="/images/icons/bell.svg"
+            alt="Bell Icon"
+            className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg"
+          />
         </button>
 
         <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-border bg-glass-gradient">

@@ -44,12 +44,12 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
 
       <nav className="flex-1 px-2 sm:px-3 overflow-y-auto min-h-0">
         <div className="space-y-1 pb-4">
-          <NavItem icon="chat" label="Community" href="/" />
-          <NavItem icon="users" label="Classroom" href="/classroom" />
+          <NavItem icon="community" label="Community" href="/" />
+          <NavItem icon="classroom" label="Classroom" href="/classroom" />
           <NavItem icon="calendar" label="Calendar" href="/calendar" />
-          <NavItem icon="group" label="Members" href="/members" />
-          <NavItem icon="trophy" label="Leaderboard" href="/" active />
-          <NavItem icon="archive" label="About" href="/about" />
+          <NavItem icon="members" label="Members" href="/members" />
+          <NavItem icon="leaderboard" label="Leaderboard" href="/" active />
+          <NavItem icon="about" label="About" href="/about" />
         </div>
       </nav>
 
