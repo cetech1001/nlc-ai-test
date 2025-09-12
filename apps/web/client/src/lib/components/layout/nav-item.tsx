@@ -30,16 +30,16 @@ export const NavItem = ({ icon, label, href, active = false }: { icon: string; l
   return (
     <Component
       {...(href ? { href } : {})}
-      className={`flex items-center gap-4 w-full px-3 py-3 rounded-lg transition-colors ${
+      className={`flex items-center gap-3 sm:gap-4 w-full px-2 sm:px-3 py-2 sm:py-3 rounded-lg transition-colors ${
         active
           ? 'bg-sidebar-accent text-white'
           : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
       }`}
     >
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 20 20">
+      <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 20 20">
         {iconComponent[icon as keyof typeof iconComponent]}
       </svg>
-      <span className="text-sm font-semibold">{label}</span>
+      <span className="text-xs sm:text-sm font-semibold truncate">{label}</span>
     </Component>
   );
 }

@@ -2,16 +2,21 @@ import React from "react";
 
 export const CourseProgress = () => {
   return (
-    <div className="glass-card rounded-4xl w-1/4 overflow-hidden">
+    <div className="glass-card rounded-4xl w-full h-full min-h-[280px] sm:min-h-[320px] lg:min-h-[400px] overflow-hidden">
       <div className="absolute -left-11 -bottom-13 w-56 h-56 bg-streak-gradient opacity-50 blur-[112.55px] rounded-full" />
-      <div className="z-10 flex flex-col justify-between h-full p-6">
+      <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-5 lg:p-6">
         <div>
-          <h3 className="text-2xl font-semibold text-foreground mb-3">Course Progress</h3>
-          <p className="text-sm text-muted-foreground mb-8">See more lessons to fully complete the training</p>
+          <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-2 sm:mb-3">Course Progress</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8">See more lessons to fully complete the training</p>
         </div>
 
         <div className="relative mx-auto">
-          <svg width="226" height="113" viewBox="0 0 226 113" className="transform">
+          <svg
+            width="100%"
+            height="auto"
+            viewBox="0 0 226 113"
+            className="transform max-w-[180px] sm:max-w-[200px] lg:max-w-[226px]"
+          >
             <path
               d="M0 112.472C2.62001e-06 82.6425 11.9053 54.0349 33.0969 32.9423C54.2885 11.8497 83.0305 3.20023e-06 113 0C142.969 -3.20023e-06 171.711 11.8497 192.903 32.9423C214.095 54.0348 226 82.6425 226 112.472L191.191 112.472C191.191 91.8313 182.953 72.0361 168.289 57.441C153.626 42.8459 133.738 34.6464 113 34.6464C92.2625 34.6464 72.3743 42.8459 57.7107 57.441C43.0471 72.0361 34.8091 91.8313 34.8091 112.472H0Z"
               fill="#242424"
@@ -30,10 +35,10 @@ export const CourseProgress = () => {
             </defs>
           </svg>
 
-          <div className="absolute inset-0 flex items-end justify-center pb-2">
+          <div className="absolute inset-0 flex items-end justify-center pb-1 sm:pb-2">
             <div className="text-center">
-              <span className="text-[40px] font-semibold text-foreground leading-none">65</span>
-              <span className="text-2xl text-foreground">%</span>
+              <span className="text-2xl sm:text-3xl lg:text-[40px] font-semibold text-foreground leading-none">65</span>
+              <span className="text-lg sm:text-xl lg:text-2xl text-foreground">%</span>
             </div>
           </div>
         </div>
