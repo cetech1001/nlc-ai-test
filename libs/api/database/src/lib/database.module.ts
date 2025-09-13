@@ -32,7 +32,6 @@ export class DatabaseModule {
     };
   }
 
-  // For services that don't need custom options
   static forFeature(): DynamicModule {
     return {
       module: DatabaseModule,

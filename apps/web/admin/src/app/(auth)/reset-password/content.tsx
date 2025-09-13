@@ -44,6 +44,6 @@ export const AdminResetPasswordContent = () => {
     <ResetPasswordForm
       handleBackToLogin={handleBackToLogin}
       token={token}
-      userType={UserType.admin}/>
+      userType={UserType.ADMIN}/>
   );
 }

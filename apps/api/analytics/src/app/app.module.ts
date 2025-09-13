@@ -6,9 +6,12 @@ import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-a
 import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-import { AnalyticsModule } from './analytics/analytics.module';
 import { HealthModule } from './health/health.module';
 import analyticsConfig from './config/analytics.config';
+import {AdminAnalyticsModule} from "./admin/admin-analytics.module";
+import {CoachAnalyticsModule} from "./coach/coach-analytics.module";
+import {CommunityAnalyticsModule} from "./community/community-analytics.module";
+import {EmailModule} from "./email/email.module";
 
 @Module({
   imports: [
@@ -23,7 +26,10 @@ import analyticsConfig from './config/analytics.config';
     MessagingModule.forRoot(),
     AuthLibModule,
     HealthModule,
-    AnalyticsModule,
+    AdminAnalyticsModule,
+    CoachAnalyticsModule,
+    CommunityAnalyticsModule,
+    EmailModule,
   ],
   providers: [
     {

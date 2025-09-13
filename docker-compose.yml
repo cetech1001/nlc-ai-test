@@ -39,11 +39,11 @@ services:
       psql -h postgres -U ${POSTGRES_USER} -d postgres -c 'CREATE DATABASE ${POSTGRES_SHADOW_DB};' || true"
     restart: "no"
 
-  api-gateway:
+  gateway:
     build:
       context: .
       dockerfile: ./apps/api/gateway/dev.Dockerfile
-    container_name: api-gateway
+    container_name: gateway
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -59,11 +59,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  agents-service:
+  agents:
     build:
       context: .
       dockerfile: ./apps/api/agents/dev.Dockerfile
-    container_name: agents-service
+    container_name: agents
     restart: unless-stopped
     ports:
       - "3011:3011"
@@ -77,11 +77,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  analytics-service:
+  analytics:
     build:
       context: .
       dockerfile: ./apps/api/analytics/dev.Dockerfile
-    container_name: analytics-service
+    container_name: analytics
     restart: unless-stopped
     ports:
       - "3010:3010"
@@ -94,11 +94,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  auth-service:
+  auth:
     build:
       context: .
       dockerfile: ./apps/api/auth/dev.Dockerfile
-    container_name: auth-service
+    container_name: auth
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -111,11 +111,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  billing-service:
+  billing:
     build:
       context: .
       dockerfile: ./apps/api/billing/dev.Dockerfile
-    container_name: billing-service
+    container_name: billing
     restart: unless-stopped
     ports:
       - "3005:3005"
@@ -129,11 +129,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  messaging-service:
+  messaging:
     build:
       context: .
       dockerfile: apps/api/messaging/dev.Dockerfile
-    container_name: messaging-service
+    container_name: messaging
     restart: unless-stopped
     ports:
       - "3012:3012"
@@ -151,11 +151,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  community-service:
+  community:
     build:
       context: .
       dockerfile: ./apps/api/community/dev.Dockerfile
-    container_name: community-service
+    container_name: community
     restart: unless-stopped
     ports:
       - "3009:3009"
@@ -168,11 +168,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  course-service:
+  course:
     build:
       context: .
       dockerfile: ./apps/api/course/dev.Dockerfile
-    container_name: course-service
+    container_name: course
     restart: unless-stopped
     ports:
       - "3013:3013"
@@ -190,11 +190,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  email-service:
+  email:
     build:
       context: .
       dockerfile: ./apps/api/email/dev.Dockerfile
-    container_name: email-service
+    container_name: email
     restart: unless-stopped
     ports:
       - "3004:3004"
@@ -207,11 +207,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  integrations-service:
+  integrations:
     build:
       context: .
       dockerfile: ./apps/api/integrations/dev.Dockerfile
-    container_name: integrations-service
+    container_name: integrations
     restart: unless-stopped
     ports:
       - "3008:3008"
@@ -224,11 +224,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  leads-service:
+  leads:
     build:
       context: .
       dockerfile: ./apps/api/leads/dev.Dockerfile
-    container_name: leads-service
+    container_name: leads
     restart: unless-stopped
     ports:
       - "3006:3006"
@@ -241,11 +241,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  media-service:
+  media:
     build:
       context: .
       dockerfile: ./apps/api/media/dev.Dockerfile
-    container_name: media-service
+    container_name: media
     restart: unless-stopped
     ports:
       - "3003:3003"
@@ -258,11 +258,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  notifications-service:
+  notifications:
     build:
       context: .
       dockerfile: ./apps/api/notifications/dev.Dockerfile
-    container_name: notifications-service
+    container_name: notifications
     restart: unless-stopped
     ports:
       - "3007:3007"
@@ -275,11 +275,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  users-service:
+  users:
     build:
       context: .
       dockerfile: ./apps/api/users/dev.Dockerfile
-    container_name: users-service
+    container_name: users
     restart: unless-stopped
     ports:
       - "3002:3002"

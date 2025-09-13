@@ -45,7 +45,7 @@ const AdminLoginPage = () => {
       handleForgotPassword={handleForgotPassword}
       successMessage={successMessage}
       setSuccessMessage={(message: string) => setSuccessMessage(message)}
-      userType={UserType.admin}
+      userType={UserType.ADMIN}
       showSignUp={false}
       showGoogleAuth={false}
       showRememberMe={true}

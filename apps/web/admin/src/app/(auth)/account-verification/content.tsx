@@ -33,7 +33,7 @@ export const AdminAccountVerificationContent = () => {
 
   return (
     <AccountVerificationForm
-      userType={UserType.admin}
+      userType={UserType.ADMIN}
       handleBackToLogin={handleBackToLogin}
       handleResetToken={handleResetToken}
       email={email} resendTimer={70}/>

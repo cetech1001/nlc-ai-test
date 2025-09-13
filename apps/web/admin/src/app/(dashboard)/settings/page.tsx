@@ -67,7 +67,7 @@ const AdminSettings = () => {
 
   return (
     <Settings
-      userType={UserType.admin}
+      userType={UserType.ADMIN}
       sdkClient={sdkClient}
       activeTab={activeTab}
       handleTabChange={handleTabChange}
