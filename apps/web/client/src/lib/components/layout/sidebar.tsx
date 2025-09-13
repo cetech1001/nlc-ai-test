@@ -30,15 +30,18 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
         <div className="flex items-center gap-2 sm:gap-3">
           <img
             src="https://api.builder.io/api/v1/image/assets/TEMP/bc244556a5bd5e0bd6244244993420a9fedcb56d?width=80"
-            alt="Course thumbnail"
+            alt="Community thumbnail"
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex-shrink-0"
           />
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl font-bold text-foreground leading-tight sm:leading-8 truncate">Ultimate Branding Course</h2>
           </div>
-          <svg className="w-5 h-5 sm:w-6 sm:h-6 opacity-40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 9l5 5 5-5" />
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 9l5-4 5 4M7 16l5 4 5-4" />
           </svg>
+          {/*<svg className="w-5 h-5 sm:w-6 sm:h-6 opacity-40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 9l5 5 5-5" />
+          </svg>*/}
         </div>
       </div>
 

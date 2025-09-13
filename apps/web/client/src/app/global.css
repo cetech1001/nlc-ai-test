@@ -60,6 +60,9 @@
     --purple-accent: 256 87% 51%; /* #7B26F0 */
     --glass-bg: 0 0% 15% / 0.3; /* Glassmorphic background */
     --glass-border: 0 0% 27%; /* #454444 */
+
+    --glow-gradient: radial-gradient(50% 50% at 50% 50%, #D497FF 0%, #7B21BA 100%);
+    --card-bg-glow-circle: radial-gradient(50% 50% at 50% 50%, #D497FF 0%, #7B21BA 100%);
   }
 
   .dark {
@@ -125,5 +128,53 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+}
+
+@layer components {
+  .glow-circle {
+    position: absolute;
+    width: 267px;
+    height: 267px;
+    border-radius: 50%;
+    opacity: 0.4;
+    background: var(--glow-gradient);
+    filter: blur(112.55px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-circle-small {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    opacity: 0.3;
+    background: var(--glow-gradient);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-circle-large {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    opacity: 0.2;
+    background: var(--glow-gradient);
+    filter: blur(150px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Card gradient background */
+  .card-gradient {
+    background: linear-gradient(202deg, rgba(38, 38, 38, 0.30) 11.62%, rgba(19, 19, 19, 0.30) 87.57%);
+  }
+
+  /* User dropdown gradient */
+  .user-dropdown-gradient {
+    background: linear-gradient(250deg, #272727 11.81%, #111 62.92%);
   }
 }
