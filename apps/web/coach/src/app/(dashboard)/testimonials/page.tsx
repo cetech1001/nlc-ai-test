@@ -1,419 +1,230 @@
 'use client'
 
-import { useState } from 'react';
-import {
-  Star,
-  Quote,
-  Video,
-  Share2,
-  Heart,
-  Zap,
-  Clock,
-  Trophy,
-  Camera,
-  Globe,
-  TrendingUp,
-  CheckCircle,
-  MessageSquare,
-  BarChart3
-} from "lucide-react";
-import {appConfig} from "@nlc-ai/web-shared";
+import React, { useState } from "react";
 
-const TestimonialsLanding = () => {
-  const [activeFeature, setActiveFeature] = useState('collection');
+interface TestimonialSurveyTemplate {
+  id: string;
+  title: string;
+  status: 'Email Response';
+  createdDate: string;
+  createdTime: string;
+}
 
-  const features = [
+const TestimonialSurveyCard: React.FC<{ template: TestimonialSurveyTemplate }> = ({ template }) => (
+  <div className="w-[570px] h-[163px] rounded-[30px] border border-[#454444] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] relative overflow-hidden">
+    {/* Background glow effect */}
+    <div className="absolute w-[223px] h-[223px] rounded-full opacity-50 blur-[112.55px] bg-gradient-radial from-[#D497FF] to-[#7B21BA] right-[50px] bottom-[-30px]"></div>
+
+    <div className="relative z-10 flex flex-col justify-between h-full p-[30px]">
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-[#F9F9F9] font-inter text-2xl font-semibold leading-[25.6px]">
+            {template.title}
+          </h3>
+          <div className="flex items-center gap-4">
+            <div className="flex px-[10px] py-[2px] justify-center items-center gap-1 rounded-full border border-[#168F16] bg-[rgba(22,143,22,0.20)]">
+              <span className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
+                {template.status}
+              </span>
+            </div>
+
+            {/* Action buttons */}
+            <button className="w-6 h-6">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g clipPath="url(#clip0_42670_6601)">
+                  <path d="M23.7408 7.896C23.5266 7.64293 23.212 7.4978 22.8778 7.4978H1.12211C0.788222 7.4978 0.473928 7.64293 0.259711 7.89572C0.0597907 8.13174 -0.0305367 8.43876 0.00916606 8.74359L1.29353 22.1471C1.29466 22.1575 1.29578 22.1678 1.29719 22.1779C1.41016 23.0235 2.12827 23.6611 2.96775 23.6611H21.0323C21.9149 23.6611 22.6508 22.9852 22.7065 22.1471L23.9908 8.74387C24.0305 8.43909 23.9404 8.13202 23.7408 7.896ZM21.0367 21.985C21.0359 21.9836 21.0317 21.9827 21.0322 21.9833L2.98256 21.9858C2.9753 21.9824 2.96466 21.9699 2.96133 21.9601L1.73589 9.17591H22.264L21.0367 21.985Z" fill="#D8D7D7"/>
+                  <path d="M21.8808 4.27546C21.6683 4.03077 21.3593 3.89038 21.0326 3.89038H2.99612C2.66978 3.89038 2.35937 4.03607 2.14436 4.28999C1.92822 4.54559 1.8348 4.87836 1.88739 5.19237L2.39073 8.46413L4.04925 8.20908L3.64294 5.56821H20.3862L19.9802 8.20908L21.6384 8.46413L22.1429 5.18286C22.1898 4.85239 22.0944 4.52155 21.8808 4.27546Z" fill="#D8D7D7"/>
+                  <path d="M19.3923 0.724749C19.1797 0.479782 18.8704 0.339111 18.5433 0.339111H5.48427C5.15793 0.339111 4.84753 0.484798 4.63251 0.738718C4.41609 0.994325 4.32295 1.32709 4.37583 1.64335L4.87917 4.85919L6.53684 4.59969L6.1325 2.01694H17.8893L17.4639 4.59266L19.1193 4.86612L19.6534 1.63294C19.701 1.30192 19.6056 0.971122 19.3923 0.724749Z" fill="#D8D7D7"/>
+                  <path d="M15.5244 12.783H8.47759C8.01423 12.783 7.63867 13.1585 7.63867 13.6219C7.63867 14.0852 8.01423 14.4608 8.47759 14.4608H15.5244C15.9878 14.4608 16.3634 14.0852 16.3634 13.6219C16.3633 13.1585 15.9878 12.783 15.5244 12.783Z" fill="#D8D7D7"/>
+                </g>
+                <defs>
+                  <clipPath id="clip0_42670_6601">
+                    <rect width="24" height="24" fill="white"/>
+                  </clipPath>
+                </defs>
+              </svg>
+            </button>
+
+            <button className="w-6 h-6">
+              <svg width="24" height="26" viewBox="0 0 24 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20.7898 9.94568C20.7898 9.94568 20.1348 18.0707 19.7548 21.4933C19.5738 23.1279 18.564 24.0858 16.9101 24.116C13.7626 24.1727 10.6115 24.1763 7.46523 24.1099C5.874 24.0774 4.88114 23.1074 4.7038 21.5017C4.32137 18.049 3.66992 9.94568 3.66992 9.94568" stroke="#D8D7D7" strokeWidth="1.80959" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22.458 6.05083H2" stroke="#D8D7D7" strokeWidth="1.80959" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18.5156 6.05078C17.5686 6.05078 16.7531 5.38123 16.5673 4.45351L16.2742 2.98654C16.0932 2.30976 15.4804 1.84167 14.7818 1.84167H9.67519C8.97669 1.84167 8.36384 2.30976 8.18288 2.98654L7.88973 4.45351C7.70395 5.38123 6.88842 6.05078 5.94141 6.05078" stroke="#D8D7D7" strokeWidth="1.80959" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-[10px]">
+          <span className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
+            Created:
+          </span>
+          <span className="text-[#C5C5C5] font-inter text-sm font-normal leading-[25.6px]">
+            {template.createdDate} | {template.createdTime}
+          </span>
+        </div>
+      </div>
+
+      <a
+        href={`/testimonial-surveys/edit/${template.id}`}
+        className="text-[#DF69FF] font-inter text-sm font-bold"
+      >
+        View & Edit Questions
+      </a>
+    </div>
+  </div>
+);
+
+const TestimonialSurveys: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'templates' | 'responses'>('templates');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const testimonialTemplates: TestimonialSurveyTemplate[] = [
     {
-      id: 'collection',
-      icon: MessageSquare,
-      title: "Smart Collection System",
-      description: "Automatically request and collect testimonials at the perfect moments",
-      benefits: [
-        "Automated follow-up sequences after milestones",
-        "Smart timing based on client progress",
-        "Multiple format options (text, video, audio)",
-        "Mobile-friendly collection forms"
-      ]
+      id: '1',
+      title: 'Course A: Testimonial Survey',
+      status: 'Email Response',
+      createdDate: 'Apr 14, 2025',
+      createdTime: '10:30 AM'
     },
     {
-      id: 'showcase',
-      icon: Star,
-      title: "Beautiful Showcases",
-      description: "Display testimonials in stunning, conversion-optimized formats",
-      benefits: [
-        "Customizable testimonial widgets",
-        "Video testimonial galleries",
-        "Social proof carousels",
-        "SEO-optimized testimonial pages"
-      ]
+      id: '2',
+      title: 'Course B: Testimonial Survey',
+      status: 'Email Response',
+      createdDate: 'Apr 14, 2025',
+      createdTime: '10:30 AM'
     },
     {
-      id: 'management',
-      icon: BarChart3,
-      title: "Analytics & Management",
-      description: "Track testimonial performance and manage your social proof library",
-      benefits: [
-        "Conversion impact tracking",
-        "A/B testing for testimonial placement",
-        "Testimonial performance analytics",
-        "Easy approval and moderation workflow"
-      ]
+      id: '3',
+      title: 'Course C: Testimonial Survey',
+      status: 'Email Response',
+      createdDate: 'Apr 14, 2025',
+      createdTime: '10:30 AM'
+    },
+    {
+      id: '4',
+      title: 'Course D: Testimonial Survey',
+      status: 'Email Response',
+      createdDate: 'Apr 14, 2025',
+      createdTime: '10:30 AM'
+    },
+    {
+      id: '5',
+      title: 'Course E: Testimonial Survey',
+      status: 'Email Response',
+      createdDate: 'Apr 14, 2025',
+      createdTime: '10:30 AM'
     }
   ];
 
-  const stats = [
-    { label: "Conversion Increase", value: "+50%", icon: TrendingUp },
-    { label: "Testimonials Collected", value: "5x More", icon: Trophy },
-    { label: "Time Saved Weekly", value: "12+hrs", icon: Clock },
-  ];
-
-  const testimonialTypes = [
-    {
-      icon: Quote,
-      title: "Written Reviews",
-      description: "Traditional text testimonials",
-      features: ["Star ratings", "Detailed feedback", "Quick collection forms"]
-    },
-    {
-      icon: Video,
-      title: "Video Testimonials",
-      description: "Authentic video reviews",
-      features: ["HD video recording", "Easy editing tools", "Social media ready"]
-    },
-    {
-      icon: Camera,
-      title: "Before/After Stories",
-      description: "Visual transformation proof",
-      features: ["Image comparisons", "Progress tracking", "Success timelines"]
-    }
-  ];
+  const filteredTemplates = testimonialTemplates.filter(template =>
+    template.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-8 max-w-full overflow-hidden">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 overflow-hidden">
-        <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
-        <div className="absolute w-64 h-64 right-20 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
+    <div className="flex-1 flex flex-col min-w-0">
+      {/* Header */}
+      <div className="flex w-full px-[30px] py-5 justify-between items-center border-b border-[#373535] min-h-[86px]">
+        <h1 className="text-[#F9F9F9] font-inter text-4xl font-semibold leading-normal tracking-[-0.96px]">
+          Testimonial Surveys
+        </h1>
 
-        <div className="relative z-10 text-center max-w-4xl mx-auto">
-          <div className="w-20 h-20 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Star className="w-10 h-10 text-fuchsia-400" />
-          </div>
-
-          <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-            Testimonials & Social Proof
-          </h1>
-          <p className="text-xl text-stone-300 mb-8">
-            Collect, manage, and showcase powerful testimonials that convert visitors into clients.
-            Turn your success stories into your most powerful marketing tool.
-          </p>
-
-          <div className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-fuchsia-600/20 to-violet-600/20 border border-fuchsia-400/30 rounded-full text-fuchsia-300 text-lg font-medium">
-            <Clock className="w-5 h-5" />
-            Coming Soon - Private Beta
+        {/* User Profile */}
+        <div className="flex h-[46px] px-3 flex-col justify-center items-center gap-4 rounded-[10px] border border-[#454444] bg-gradient-to-r from-[#272727] via-[#1a1a1a] to-[#111]">
+          <div className="flex items-center gap-2">
+            <img
+              src="https://api.builder.io/api/v1/image/assets/TEMP/713ab25a75c43ca8d950dc89dd5fc37309b8bdd7?width=60"
+              alt="Andrew Kramer"
+              className="w-[30px] h-[30px] rounded-[10px]"
+            />
+            <div className="flex w-[154px] flex-col items-start gap-2">
+              <div className="text-[#F9F9F9] font-inter text-base font-medium leading-[25.6px]">
+                Andrew Kramer
+              </div>
+              <div className="text-[#C5C5C5] font-inter text-xs font-normal leading-[25.6px]">
+                kramer.andrew@email.com
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden text-center">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+      {/* Content */}
+      <div className="flex-1 p-[30px] overflow-auto">
+        <div className="flex flex-col gap-[20px]">
+          {/* Tab Navigation and Search */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-start gap-8">
+              <button
+                onClick={() => setActiveTab('templates')}
+                className={`font-inter text-2xl font-medium leading-[25.6px] ${
+                  activeTab === 'templates' ? 'text-[#DF69FF]' : 'text-[#595959]'
+                }`}
+              >
+                Active Templates
+              </button>
+              <div className="w-[30px] h-0 border-t border-[#373535] transform rotate-90 self-center"></div>
+              <button
+                onClick={() => setActiveTab('responses')}
+                className={`font-inter text-2xl font-medium leading-[25.6px] ${
+                  activeTab === 'responses' ? 'text-[#DF69FF]' : 'text-[#595959]'
+                }`}
+              >
+                Responses
+              </button>
             </div>
 
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <stat.icon className="w-6 h-6 text-fuchsia-400" />
+            <div className="flex items-center gap-5">
+              {/* Search */}
+              <div className="flex w-[564px] max-h-[50px] px-5 py-[10px] justify-between items-center border border-white/50 rounded-[10px]">
+                <input
+                  type="text"
+                  placeholder="Search templates by name"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent text-white placeholder:text-white/50 font-inter text-base outline-none"
+                />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
+                  <g opacity="0.5">
+                    <path d="M20.211 11.8274C20.211 13.6833 19.661 15.4976 18.63 17.0407C17.599 18.5839 16.133 19.7867 14.419 20.497C12.704 21.2072 10.817 21.3931 8.997 21.0311C7.177 20.6691 5.505 19.7755 4.192 18.4632C2.88 17.1509 1.986 15.479 1.624 13.6587C1.262 11.8384 1.447 9.9517 2.157 8.237C2.867 6.5222 4.07 5.0566 5.613 4.0253C7.156 2.9941 8.97 2.4436 10.826 2.4434C12.059 2.4432 13.279 2.6859 14.418 3.1574C15.556 3.6289 16.591 4.3201 17.462 5.1915C18.334 6.0629 19.025 7.0974 19.497 8.236C19.969 9.3746 20.211 10.595 20.211 11.8274Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22.557 23.559L17.457 18.459" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </g>
+                </svg>
               </div>
-              <div className="text-3xl font-bold text-white mb-2">{stat.value}</div>
-              <div className="text-stone-300">{stat.label}</div>
+
+              {/* Create New Template Button */}
+              <a
+                href="/testimonial-surveys/edit/new"
+                className="flex max-w-[686.66px] px-5 py-[13px] justify-center items-center gap-2 rounded-lg bg-gradient-to-r from-[#FEBEFA] via-[#B339D4] to-[#7B21BA]"
+              >
+                  <span className="text-white font-inter text-base font-semibold leading-6 tracking-[-0.32px]">
+                    Create New Template
+                  </span>
+              </a>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Testimonial Types */}
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Collect Every Type of Social Proof</h2>
-          <p className="text-stone-300 text-lg">From written reviews to video testimonials and visual transformations</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonialTypes.map((type, index) => (
-            <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-              </div>
-
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center mb-4">
-                  <type.icon className="w-6 h-6 text-fuchsia-400" />
-                </div>
-
-                <h3 className="text-xl font-bold text-white mb-2">{type.title}</h3>
-                <p className="text-stone-300 mb-4">{type.description}</p>
-
-                <div className="space-y-2">
-                  {type.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                      <span className="text-stone-200 text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Complete Testimonial Management System</h2>
-          <p className="text-stone-300 text-lg">From collection to conversion optimization</p>
-        </div>
-
-        <div className="flex flex-wrap gap-2 justify-center">
-          {features.map((feature) => (
-            <button
-              key={feature.id}
-              onClick={() => setActiveFeature(feature.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
-                activeFeature === feature.id
-                  ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white'
-                  : 'bg-neutral-800/50 text-stone-300 hover:bg-neutral-700/50'
-              }`}
-            >
-              <feature.icon className="w-4 h-4" />
-              {feature.title}
-            </button>
-          ))}
-        </div>
-
-        {/* Feature Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-            </div>
-
-            <div className="relative z-10">
-              {features.map((feature) => (
-                <div
-                  key={feature.id}
-                  className={`${activeFeature === feature.id ? 'block' : 'hidden'}`}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-fuchsia-600/20 to-violet-600/20 rounded-xl flex items-center justify-center">
-                      <feature.icon className="w-6 h-6 text-fuchsia-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white">{feature.title}</h3>
-                  </div>
-
-                  <p className="text-stone-300 text-lg mb-6">{feature.description}</p>
-
-                  <div className="space-y-3">
-                    {feature.benefits.map((benefit, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-stone-200">{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          {/* Templates Grid */}
+          {activeTab === 'templates' && (
+            <div className="flex items-center gap-5 flex-wrap">
+              {filteredTemplates.map((template) => (
+                <TestimonialSurveyCard key={template.id} template={template} />
               ))}
             </div>
-          </div>
+          )}
 
-          {/* Testimonial Impact */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+          {/* Responses View */}
+          {activeTab === 'responses' && (
+            <div className="flex items-center justify-center h-[400px]">
+              <p className="text-[#C5C5C5] font-inter text-lg">
+                No responses yet. Create and send surveys to see responses here.
+              </p>
             </div>
-
-            <div className="relative z-10">
-              <h4 className="text-lg font-semibold text-white mb-4">Why Testimonials Work</h4>
-
-              <div className="space-y-4">
-                <div className="bg-neutral-800/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Heart className="w-4 h-4 text-red-400" />
-                    <span className="text-red-400 font-medium">Trust Building</span>
-                  </div>
-                  <p className="text-stone-300 text-sm">
-                    88% of consumers trust online reviews as much as personal recommendations.
-                  </p>
-                </div>
-
-                <div className="bg-neutral-800/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                    <span className="text-yellow-400 font-medium">Conversion Boost</span>
-                  </div>
-                  <p className="text-stone-300 text-sm">
-                    Displaying testimonials can increase conversions by up to 40%.
-                  </p>
-                </div>
-
-                <div className="bg-neutral-800/50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Share2 className="w-4 h-4 text-blue-400" />
-                    <span className="text-blue-400 font-medium">Social Sharing</span>
-                  </div>
-                  <p className="text-stone-300 text-sm">
-                    Happy clients sharing testimonials create viral marketing opportunities.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 bg-gradient-to-r from-purple-600/10 to-pink-600/10 border border-purple-600/20 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Globe className="w-4 h-4 text-purple-400" />
-                  <span className="text-purple-400 font-medium">SEO Benefits</span>
-                </div>
-                <p className="text-stone-300 text-sm">
-                  Fresh testimonial content improves search rankings and local SEO.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Testimonial Automation Flow */}
-      <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-white text-center">Automated Collection Process</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            {
-              step: "1",
-              title: "Trigger Event",
-              desc: "Client completes milestone or finishes program",
-              icon: Trophy,
-              color: "bg-blue-500/20 text-blue-400"
-            },
-            {
-              step: "2",
-              title: "Smart Request",
-              desc: "Automated email/SMS sent at optimal timing",
-              icon: Zap,
-              color: "bg-green-500/20 text-green-400"
-            },
-            {
-              step: "3",
-              title: "Easy Submission",
-              desc: "Client submits testimonial via mobile-friendly form",
-              icon: MessageSquare,
-              color: "bg-purple-500/20 text-purple-400"
-            },
-            {
-              step: "4",
-              title: "Easy Access",
-              desc: "Instantly download or copy testimonials for use anywhere",
-              icon: Star,
-              color: "bg-yellow-500/20 text-yellow-400"
-            }
-          ].map((step, index) => (
-            <div key={index} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden text-center">
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute w-24 h-24 -left-4 -top-6 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px]" />
-              </div>
-
-              <div className="relative z-10">
-                <div className={`w-12 h-12 ${step.color} rounded-xl flex items-center justify-center mx-auto mb-3`}>
-                  <step.icon className="w-6 h-6" />
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">{step.step}</div>
-                <h4 className="text-white font-semibold mb-2 text-sm">{step.title}</h4>
-                <p className="text-stone-400 text-xs">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Sample Testimonial Display */}
-      <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-white text-center">Display Options</h3>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Testimonial Card Example */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-            </div>
-
-            <div className="relative z-10">
-              <h4 className="text-lg font-semibold text-white mb-4">Sample Testimonial Card</h4>
-
-              <div className="bg-neutral-800/50 rounded-lg p-4 border border-neutral-600">
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-
-                <blockquote className="text-white text-sm mb-4 italic">
-                  "Working with this coach completely transformed my business. In just 3 months,
-                  I increased my revenue by 200% and finally achieved the work-life balance I'd been seeking."
-                </blockquote>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    SJ
-                  </div>
-                  <div>
-                    <div className="text-white font-medium text-sm">Sarah Johnson</div>
-                    <div className="text-stone-400 text-xs">Business Owner</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Video Testimonial Example */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-            </div>
-
-            <div className="relative z-10">
-              <h4 className="text-lg font-semibold text-white mb-4">Video Testimonial Player</h4>
-
-              <div className="bg-neutral-800/50 rounded-lg overflow-hidden border border-neutral-600">
-                <div className="aspect-video bg-neutral-700 flex items-center justify-center relative">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <Video className="w-8 h-8 text-white" />
-                  </div>
-                  <div className="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    2:34
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <h5 className="text-white font-medium mb-1">Amazing Results!</h5>
-                  <p className="text-stone-400 text-sm">Client shares their transformation story</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-const TestimonialsPage = () => {
-  if (appConfig.features.enableLanding) {
-    return <TestimonialsLanding />;
-  }
-
-  return <div/>;
-};
-
-export default TestimonialsPage;
+export default TestimonialSurveys;
