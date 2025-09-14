@@ -302,7 +302,7 @@ const CoursesPage = () => {
   };
 
   const handleEditCourse = (course: ExtendedCourse) => {
-    router.push(`/courses/${course.id}/curriculum`);
+    router.push(`/courses/${course.id}`);
   };
 
   const handleDeleteCourse = async (course: ExtendedCourse) => {

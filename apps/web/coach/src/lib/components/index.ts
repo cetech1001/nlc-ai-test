@@ -5,6 +5,7 @@ export * from './chat';
 export * from './clients';
 export * from './community';
 export * from './content';
+export * from './courses';
 export * from './home';
 export * from './icons';
 export * from './leads';

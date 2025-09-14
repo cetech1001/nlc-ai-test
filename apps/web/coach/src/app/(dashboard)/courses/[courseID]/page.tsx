@@ -2,11 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { sdkClient } from '@/lib';
 import type { ExtendedCourse } from '@nlc-ai/sdk-course';
-
-// Component imports
 import {
+  sdkClient,
   CourseHeader,
   TabNavigation,
   CurriculumSidebar,
@@ -14,8 +12,11 @@ import {
   DripScheduleTab,
   PaywallTab,
   LoadingSkeleton,
-  ErrorState, PDFLessonForm, VideoLessonForm, TextLessonForm
-} from './partials';
+  ErrorState,
+  PDFLessonForm,
+  VideoLessonForm,
+  TextLessonForm, SettingsTab
+} from '@/lib';
 
 interface CurriculumState {
   chapters: Array<{
@@ -176,8 +177,8 @@ const CurriculumScreen = () => {
         />
 
         <div className="h-[calc(100vh-280px)] relative">
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-to-r from-purple-500/20 to-violet-600/20 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-gradient-to-l from-fuchsia-500/20 to-purple-600/20 rounded-full blur-3xl"></div>
+          {/*<div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-to-r from-purple-500/20 to-violet-600/20 rounded-full blur-3xl"></div>*/}
+          {/*<div className="absolute -bottom-20 -right-20 w-80 h-80 bg-gradient-to-l from-fuchsia-500/20 to-purple-600/20 rounded-full blur-3xl"></div>*/}
 
           <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
             <CurriculumSidebar
@@ -227,6 +228,10 @@ const CurriculumScreen = () => {
                     onSave={handleCreateLesson}
                     onBack={() => setLessonType('')}
                   />
+                )}
+
+                {activeTab === 'Settings' && (
+                  <SettingsTab courseID={courseID} />
                 )}
 
                 {activeTab === 'Drip schedule' && (

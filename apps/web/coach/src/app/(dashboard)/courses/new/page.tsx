@@ -39,7 +39,7 @@ const CourseCreateScreen = () => {
       const createdCourse = await sdkClient.course.courses.createCourse(courseData);
 
       // Step 4: Navigate to curriculum page with the created course
-      router.push(`/courses/${createdCourse.id}/curriculum`);
+      router.push(`/courses/${createdCourse.id}`);
 
     } catch (error: any) {
       console.error('Error creating course:', error);
