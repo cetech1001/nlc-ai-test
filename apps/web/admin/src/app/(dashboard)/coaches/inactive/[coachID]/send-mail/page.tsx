@@ -7,20 +7,10 @@ import {
 } from "lucide-react";
 import {useEffect, useState} from "react";
 import {useParams, useRouter} from "next/navigation";
-import dynamic from 'next/dynamic';
-import { BackTo } from "@nlc-ai/web-shared";
+import { BackTo, RichTextEditor } from "@nlc-ai/web-shared";
 import {ExtendedCoach} from "@nlc-ai/sdk-users";
 import {sdkClient, SendMailPageSkeleton} from "@/lib";
 import { formatDate } from "@nlc-ai/web-utils";
-
-const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
-  ssr: false,
-  loading: () => <div className="w-full h-96 bg-neutral-800/50 border border-neutral-600 rounded-lg animate-pulse" />
-});
-
-interface TinyMCEConfig {
-  apiKey: string;
-}
 
 const AdminClientRetentionPage = () => {
   const router = useRouter();
@@ -52,27 +42,10 @@ const AdminClientRetentionPage = () => {
 <p>Best,<br>The Next Level Coach AI Team<br>[Support Contact Details]<br>[Company Website]</p>`);
 
   const [emailSubject, setEmailSubject] = useState("We Miss You! Let's Get Back to Growing Your Coaching Business 🚀");
-  const [tinyMCEConfig, setTinyMCEConfig] = useState<TinyMCEConfig | null>(null);
-  const [configLoading, setConfigLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [coach, setCoach] = useState<ExtendedCoach | null>(null);
 
   useEffect(() => {
-    const fetchTinyMCEConfig = async () => {
-      try {
-        const response = await fetch('/api/tinymce/config');
-        if (response.ok) {
-          const config = await response.json();
-          setTinyMCEConfig(config);
-        }
-      } catch (error) {
-        console.error('Failed to load TinyMCE config:', error);
-      } finally {
-        setConfigLoading(false);
-      }
-    };
-
-    (() => fetchTinyMCEConfig())();
     (() => fetchCoach())();
   }, []);
 
@@ -98,7 +71,7 @@ const AdminClientRetentionPage = () => {
     setEmailContent(content);
   };
 
-  if (configLoading || !tinyMCEConfig || isLoading) {
+  if (isLoading) {
     return <SendMailPageSkeleton/>;
   }
 
@@ -177,55 +150,7 @@ const AdminClientRetentionPage = () => {
               <div className="space-y-2">
                 <div className="text-stone-50 text-sm font-bold font-['Inter'] leading-tight">Body:</div>
 
-                <div className="tinymce-wrapper-mobile">
-                  <Editor
-                    apiKey={tinyMCEConfig.apiKey}
-                    value={emailContent}
-                    onEditorChange={handleEditorChange}
-                    init={{
-                      height: 350,
-                      menubar: false,
-                      elementpath: false,
-                      plugins: [
-                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
-                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
-                      ],
-                      toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | link | forecolor',
-                      content_style: `
-                        body {
-                          font-family: Inter, sans-serif;
-                          font-size: 16px;
-                          color: #d6d3d1;
-                          background: rgb(0 0 0 / 1);
-                          line-height: 1.6;
-                          margin: 0;
-                          padding: 8px;
-                        }
-                        a { color: #9333ea; text-decoration: underline; }
-                        strong { color: #f5f5f4; }
-                      `,
-                      skin: 'oxide-dark',
-                      content_css: 'dark',
-                      setup: (editor: any) => {
-                        editor.on('init', () => {
-                          const container = editor.getContainer();
-                          if (container) {
-                            container.style.border = '1px solid rgb(64, 64, 64)';
-                            container.style.borderRadius = '8px';
-                            container.style.backgroundColor = 'rgba(23, 23, 23, 0.5)';
-                          }
-                        });
-                        editor.on('blur', () => {
-                          setTimeout(() => {
-                            window.scrollTo(window.scrollX, window.scrollY + 1);
-                            window.scrollTo(window.scrollX, window.scrollY - 1);
-                          }, 300);
-                        });
-                      }
-                    }}
-                  />
-                </div>
+                <RichTextEditor content={emailContent} updateContent={handleEditorChange} view={'mobile'}/>
               </div>
             </div>
           </div>
@@ -305,58 +230,7 @@ const AdminClientRetentionPage = () => {
               <div className="space-y-2 flex-1 flex flex-col min-h-0">
                 <div className="text-stone-50 text-sm font-bold font-['Inter'] leading-tight">Body:</div>
 
-                <div className="flex-1 tinymce-wrapper min-h-0">
-                  <Editor
-                    apiKey={tinyMCEConfig.apiKey}
-                    value={emailContent}
-                    onEditorChange={handleEditorChange}
-                    init={{
-                      height: '100%',
-                      menubar: false,
-                      elementpath: false,
-                      plugins: [
-                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
-                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
-                      ],
-                      toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | link | forecolor backcolor | outdent indent',
-                      content_style: `
-                        body {
-                          font-family: Inter, sans-serif;
-                          font-size: 16px;
-                          color: #d6d3d1;
-                          background: rgb(0 0 0 / 1);
-                          line-height: 1.6;
-                          margin: 0;
-                          padding: 12px;
-                        }
-                        a { color: #9333ea; text-decoration: underline; }
-                        strong { color: #f5f5f4; }
-                      `,
-                      skin: 'oxide-dark',
-                      content_css: 'dark',
-                      resize: false,
-                      branding: false,
-                      setup: (editor: any) => {
-                        editor.on('init', () => {
-                          const container = editor.getContainer();
-                          if (container) {
-                            container.style.border = '1px solid rgb(64, 64, 64)';
-                            container.style.borderRadius = '8px';
-                            container.style.backgroundColor = 'rgba(23, 23, 23, 0.5)';
-                            container.style.height = '100%';
-                          }
-                        });
-                        editor.on('blur', () => {
-                          setTimeout(() => {
-                            window.scrollTo(window.scrollX, window.scrollY + 1);
-                            window.scrollTo(window.scrollX, window.scrollY - 1);
-                          }, 300);
-                        });
-                      }
-                    }}
-                  />
-                </div>
+                <RichTextEditor content={emailContent} updateContent={handleEditorChange}/>
               </div>
             </div>
           </div>

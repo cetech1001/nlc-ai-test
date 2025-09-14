@@ -44,4 +44,7 @@ export const appConfig: AppConfig = {
     enableNotifications: process.env.NEXT_PUBLIC_ENABLE_NOTIFICATIONS === 'true',
     maxUploadSize: parseInt(process.env.NEXT_PUBLIC_MAX_UPLOAD_SIZE || '10485760'), // 10MB default
   },
+  tinyMCE: {
+    apiKey: process.env.NEXT_PUBLIC_TINYMCE_API_KEY || '',
+  }
 };

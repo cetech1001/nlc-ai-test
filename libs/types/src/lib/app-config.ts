@@ -41,4 +41,7 @@ export interface AppConfig {
     enableNotifications: boolean;
     maxUploadSize: number;
   };
+  tinyMCE: {
+    apiKey: string;
+  }
 }
