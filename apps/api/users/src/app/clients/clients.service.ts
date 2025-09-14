@@ -89,10 +89,6 @@ export class ClientsService {
             }
           }
         },
-        emailThreads: {
-          where: { status: 'active' },
-          select: { id: true }
-        },
         clientCoaches: {
           where: { status: 'active' },
           include: {
@@ -115,7 +111,6 @@ export class ClientsService {
       coursesCompleted: client.courseEnrollments?.filter((e: any) =>
         e.progressPercentage === 100 || e.completedAt
       ).length || 0,
-      emailThreadsCount: client.emailThreads?.length || 0,
       coaches: client.clientCoaches?.map((cc: any) => ({
         id: cc.coach.id,
         name: `${cc.coach.firstName} ${cc.coach.lastName}`,
@@ -216,17 +211,6 @@ export class ClientsService {
                 estimatedDurationHours: true
               }
             }
-          }
-        },
-        emailThreads: {
-          where: { status: 'active' },
-          orderBy: { lastMessageAt: 'desc' },
-          take: 5,
-          select: {
-            id: true,
-            subject: true,
-            lastMessageAt: true,
-            messageCount: true
           }
         },
         clientCoaches: {
