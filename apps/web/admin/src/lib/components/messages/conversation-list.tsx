@@ -5,7 +5,7 @@ import { Search, Users, UserCircle, Plus } from 'lucide-react';
 import { sdkClient } from '@/lib/sdk-client';
 import { ConversationResponse } from '@nlc-ai/sdk-messaging';
 import { toast } from 'sonner';
-import { UserType } from "@nlc-ai/sdk-users";
+import { UserType } from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/web-auth";
 
 interface ConversationListProps {
@@ -81,7 +81,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   const getConversationMetadata = async (conversation: ConversationResponse) => {
     if (conversation.type === 'direct') {
       let otherUserID = '';
-      let otherUserType: UserType = UserType.coach;
+      let otherUserType: UserType = UserType.COACH;
 
       for (let i = 0; i < conversation.participantIDs.length; i++) {
         if (conversation.participantIDs[i] !== user?.id || conversation.participantTypes[i] !== 'admin') {
@@ -111,7 +111,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       lastMessage: getLastMessage(conversation),
       unreadCount: getUserUnreadCount(conversation),
       contactType: 'coach' as const,
-      userType: UserType.coach,
+      userType: UserType.COACH,
     };
   };
 
@@ -130,8 +130,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   const getContactType = (userType: UserType) => {
     switch (userType) {
-      case UserType.coach: return 'coach' as const;
-      case UserType.client: return 'client' as const;
+      case UserType.COACH: return 'coach' as const;
+      case UserType.CLIENT: return 'client' as const;
       default: return 'coach' as const;
     }
   };

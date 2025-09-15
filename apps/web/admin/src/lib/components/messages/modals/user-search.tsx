@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, X, UserCircle, Users, Mail, Calendar } from 'lucide-react';
 import { sdkClient } from '@/lib/sdk-client';
 import { toast } from 'sonner';
-import { UserType } from "@nlc-ai/sdk-users";
+import { UserType } from "@nlc-ai/types";
 
 interface UserSearchModalProps {
   isOpen: boolean;
@@ -84,7 +84,7 @@ export const UserSearchModal: React.FC<UserSearchModalProps> = ({
             lastName: coach.lastName,
             email: coach.email,
             avatarUrl: coach.avatarUrl,
-            type: UserType.coach,
+            type: UserType.COACH,
             isActive: !!coach.isActive,
             createdAt: coach.createdAt!,
             businessName: coach.businessName,
@@ -112,7 +112,7 @@ export const UserSearchModal: React.FC<UserSearchModalProps> = ({
             lastName: client.lastName,
             email: client.email,
             avatarUrl: client.avatarUrl,
-            type: UserType.client,
+            type: UserType.CLIENT,
             isActive: !!client.isActive,
             createdAt: client.createdAt!,
             lastLoginAt: client.lastLoginAt,

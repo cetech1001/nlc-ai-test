@@ -26,6 +26,9 @@
       "path": "../users/tsconfig.lib.json"
     },
     {
+      "path": "../../types/tsconfig.lib.json"
+    },
+    {
       "path": "../main/tsconfig.lib.json"
     },
     {

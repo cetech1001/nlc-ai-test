@@ -1,4 +1,4 @@
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 import {CommunityType, CommunityVisibility, MemberRole, MemberStatus, CommunityPricingTypes} from "./enums";
 
 export interface CommunityPricing {

@@ -1,8 +1,3 @@
-// Add to apps/web/admin/src/lib/components/communities/filters/index.ts
-export * from './moderation.filter';
-
-// Update apps/web/admin/src/lib/components/communities/filters/moderation.filter.ts
-
 import { FilterConfig, FilterValues } from "@nlc-ai/sdk-core";
 
 export const moderationFilters: FilterConfig[] = [

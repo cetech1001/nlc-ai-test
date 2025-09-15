@@ -3,7 +3,7 @@ import {Plus, Shield, Users, X} from 'lucide-react';
 import {Button, Input, Label} from '@nlc-ai/web-ui';
 import {toast} from 'sonner';
 import {sdkClient} from '@/lib';
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 
 interface SystemUser {
   id: string;
@@ -53,7 +53,7 @@ export const AddMemberModal = ({ isOpen, onClose, communityID, onAddSuccess }: A
         email: coach.email,
         firstName: coach.firstName,
         lastName: coach.lastName,
-        userType: UserType.coach,
+        userType: UserType.COACH,
         avatarUrl: coach.avatarUrl,
         isActive: coach.isActive || true,
       }));
@@ -63,7 +63,7 @@ export const AddMemberModal = ({ isOpen, onClose, communityID, onAddSuccess }: A
         email: client.email,
         firstName: client.firstName,
         lastName: client.lastName,
-        userType: UserType.client,
+        userType: UserType.CLIENT,
         avatarUrl: client.avatarUrl,
         isActive: client.isActive || true,
       }));

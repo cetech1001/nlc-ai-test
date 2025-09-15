@@ -17,7 +17,7 @@ import { useMessagingWebSocket } from '@/lib/hooks';
 import { ConversationResponse, DirectMessageResponse, MessageType } from '@nlc-ai/sdk-messaging';
 import { toast } from 'sonner';
 import { useAuth } from "@nlc-ai/web-auth";
-import { UserType } from "@nlc-ai/sdk-users";
+import { UserType } from "@nlc-ai/types";
 
 interface ChatWindowProps {
   conversation: ConversationResponse | null;
@@ -326,7 +326,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     // Find the non-admin participant
     let otherUserID = '';
-    let otherUserType: UserType = UserType.coach;
+    let otherUserType: UserType = UserType.COACH;
 
     for (let i = 0; i < conversation.participantIDs.length; i++) {
       if (conversation.participantIDs[i] !== user?.id || conversation.participantTypes[i] !== 'admin') {
@@ -360,9 +360,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const getParticipantTypeIcon = (userType: UserType) => {
     switch (userType) {
-      case UserType.coach:
+      case UserType.COACH:
         return <UserCircle className="w-4 h-4 text-blue-400" />;
-      case UserType.client:
+      case UserType.CLIENT:
         return <Users className="w-4 h-4 text-green-400" />;
       default:
         return <Shield className="w-4 h-4 text-purple-400" />;
@@ -371,9 +371,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const getParticipantTypeLabel = (userType: UserType) => {
     switch (userType) {
-      case UserType.coach: return 'Coach';
-      case UserType.client: return 'Client';
-      case UserType.admin: return 'Admin';
+      case UserType.COACH: return 'Coach';
+      case UserType.CLIENT: return 'Client';
+      case UserType.ADMIN: return 'Admin';
       default: return '';
     }
   };
@@ -480,7 +480,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         ) : messages.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              {otherParticipant?.type === UserType.coach ? (
+              {otherParticipant?.type === UserType.COACH ? (
                 <UserCircle className="w-8 h-8 text-white" />
               ) : (
                 <Users className="w-8 h-8 text-white" />

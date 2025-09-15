@@ -1,6 +1,6 @@
-import {EmailItem} from "@nlc-ai/types";
+// import {EmailItem} from "@nlc-ai/types";
 
-export const mockEmails: EmailItem[] = [
+export const mockEmails: any[] = [
   {
     id: '1',
     title: 'How Can I Get More Out of This Course?',
