@@ -7,6 +7,7 @@ interface IProps {
   onDiscard: () => void;
   sidebarComponent: ReactNode;
   mainComponent: ReactNode;
+  displayActionButtons?: boolean;
   saveButtonTitle?: string;
   discardButtonTitle?: string;
 }
@@ -36,12 +37,14 @@ export const TemplateFrame: FC<IProps> = (props) => {
         </div>
       </div>
 
-      <ActionButtons
-        onSave={handleSave}
-        onDelete={handleDiscard}
-        saveButtonTitle={props.saveButtonTitle}
-        discardButtonTitle={props.discardButtonTitle}
-      />
+      {(props.displayActionButtons === undefined || props.displayActionButtons) && (
+        <ActionButtons
+          onSave={handleSave}
+          onDelete={handleDiscard}
+          saveButtonTitle={props.saveButtonTitle}
+          discardButtonTitle={props.discardButtonTitle}
+        />
+      )}
     </div>
   );
 };
