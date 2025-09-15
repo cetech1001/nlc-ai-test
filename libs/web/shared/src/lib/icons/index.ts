@@ -1,3 +1,4 @@
 export * from './chevron-down.icon';
 export * from './copy.icon';
+export * from './platform.icon';
 export * from './send.icon';

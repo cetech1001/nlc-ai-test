@@ -35,10 +35,10 @@ export const menuItems: MenuItemType[] = [
     label: 'AI Agents',
     dropdown: [
       { icon: CoachReplicaIcon, label: "Coach Replica", path: "/agents/coach-replica" },
-      { icon: RetentionIcon, label: "Retention", path: "/agents/client-retention" },
+      { icon: RetentionIcon, label: "Retention", path: "/agents/retention/templates" },
       { icon: UserCheck, label: "Lead Follow-up", path: "/agents/lead-followup" },
-      { icon: EmailAgentIcon, label: "Email", path: "/agents/client-email" },
-      { icon: Zap, label: "Content Creation", path: "/agents/content-suggestion" },
+      { icon: EmailAgentIcon, label: "Email", path: "/agents/emails" },
+      { icon: Zap, label: "Content Creation", path: "/agents/suggestion" },
     ]
   },
   {

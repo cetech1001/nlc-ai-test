@@ -61,7 +61,7 @@ const RetentionTemplates = () => {
 
   const filteredTemplates = useMemo(() => {
     return templates.filter(template => {
-      const matchesTab = activeTab === 'active' ? template.isActive : !template.isActive;
+      const matchesTab = activeTab === 'active' ? template.status === 'active' : template.status !== 'active';
       const matchesSearch = searchQuery === "" ||
         template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         template.bodyTemplate.toLowerCase().includes(searchQuery.toLowerCase());

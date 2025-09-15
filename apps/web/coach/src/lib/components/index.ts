@@ -12,3 +12,4 @@ export * from './leads';
 export * from './notifications';
 export * from './retention';
 export * from './sidebar';
+export * from './suggestion';

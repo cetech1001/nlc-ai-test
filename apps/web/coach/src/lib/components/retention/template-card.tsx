@@ -69,7 +69,7 @@ export const TemplateCard: FC<TemplateCardProps> = ({ template, onEdit, onDuplic
           </span>
 
           <div className="text-stone-400 text-xs">
-            Created: {template.createdAt?.toLocaleDateString()}
+            Created: {new Date(template.createdAt)?.toLocaleDateString()}
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@ export const TemplateCard: FC<TemplateCardProps> = ({ template, onEdit, onDuplic
           <div className="flex items-center gap-4">
             <span>Used {template.usageCount} times</span>
             {template.lastUsedAt && (
-              <span>Last used: {template.lastUsedAt.toLocaleDateString()}</span>
+              <span>Last used: {new Date(template.lastUsedAt).toLocaleDateString()}</span>
             )}
           </div>
         </div>
