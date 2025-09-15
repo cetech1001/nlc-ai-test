@@ -107,7 +107,7 @@ const AddPaymentCard: React.FC = () => {
   );
 };
 
-export const PaymentRequests: React.FC = () => {
+const PaymentRequests: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'methods' | 'history'>('methods');
 
   const paymentMethods = [

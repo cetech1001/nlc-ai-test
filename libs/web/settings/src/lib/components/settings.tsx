@@ -7,7 +7,7 @@ import { AdminIntegrations } from './admin/admin-integrations';
 import { SocialIntegrations } from './coach/social-integrations';
 import { CourseIntegrations } from './coach/course-integrations';
 import { ProfileFormData, PasswordFormData } from '../types/settings.types';
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 import {NLCClient} from "@nlc-ai/sdk-main";
 
 

@@ -1,3 +1,5 @@
+'use client'
+
 import { cn } from "@nlc-ai/web-ui";
 import React from 'react';
 

@@ -10,7 +10,7 @@ interface ToggleSwitchProps {
   className?: string;
 }
 
-export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
                                                             checked,
                                                             onChange,
                                                             label,
@@ -94,7 +94,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ image, title, status, cla
   );
 };
 
-export const ChatSettings: React.FC = () => {
+const ChatSettings: React.FC = () => {
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
 

@@ -1,6 +1,9 @@
+'use client'
+
 import React from "react";
 import {NavItem} from "@/lib";
 import { cn } from "@nlc-ai/web-ui";
+import {usePathname} from "next/navigation";
 
 interface SidebarProps {
   onClose?: () => void;
@@ -73,6 +76,8 @@ const SubNavItem: React.FC<SubNavItemProps> = ({ icon: Icon, label, href, isActi
 };
 
 export const Sidebar = ({ onClose }: SidebarProps) => {
+  const pathname = usePathname();
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="h-[90px] px-4 sm:px-6 py-2.5 border-b border-sidebar-border flex items-center justify-between">
@@ -129,7 +134,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
             icon={"settings"}
             label="Settings"
             href="/settings"
-            active={location.pathname.startsWith('/settings')}
+            active={pathname.startsWith('/settings')}
             isSettings={true}
           />
 
@@ -140,7 +145,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
                 icon={item.icon}
                 label={item.label}
                 href={item.href}
-                isActive={location.pathname === item.href}
+                isActive={pathname === item.href}
               />
             ))}
           </div>

@@ -6,9 +6,6 @@
       "path": "../auth"
     },
     {
-      "path": "../../sdk/users"
-    },
-    {
       "path": "../../types"
     },
     {

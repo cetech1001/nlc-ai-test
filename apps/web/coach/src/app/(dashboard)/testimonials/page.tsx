@@ -36,7 +36,7 @@ const SearchIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" })
 );
 
 interface TestimonialSurveyTemplate {
-  ID: string;
+  id: string;
   title: string;
   status: 'Email Response';
   createdDate: string;
@@ -62,7 +62,7 @@ const SearchBar: React.FC<{
 
 const CreateTemplateButton: React.FC = () => (
   <a
-    href="/testimonial-surveys/edit/new"
+    href="/testimonials/create"
     className="flex px-4 sm:px-5 py-2 sm:py-[13px] justify-center items-center gap-2 rounded-lg bg-gradient-to-t from-[#FEBEFA] via-[#B339D4] to-[#7B21BA] whitespace-nowrap"
   >
     <span className="text-white font-inter text-sm sm:text-base font-semibold leading-6 tracking-[-0.32px]">
@@ -103,7 +103,7 @@ const TestimonialSurveyCard: React.FC<{ template: TestimonialSurveyTemplate }> =
 
       <div className="mt-4 sm:mt-0">
         <a
-          href={`/testimonial-surveys/edit/${template.ID}`}
+          href={`/testimonials/${template.id}/edit`}
           className="text-[#DF69FF] font-inter text-sm font-bold inline-block hover:underline"
         >
           View & Edit Questions
@@ -141,7 +141,7 @@ const TabNavigation: React.FC<{
 const TemplatesGrid: React.FC<{ templates: TestimonialSurveyTemplate[] }> = ({ templates }) => (
   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-5 auto-rows-max">
     {templates.map((template) => (
-      <TestimonialSurveyCard key={template.ID} template={template} />
+      <TestimonialSurveyCard key={template.id} template={template} />
     ))}
   </div>
 );
@@ -160,35 +160,35 @@ const TestimonialSurveys: React.FC = () => {
 
   const testimonialTemplates: TestimonialSurveyTemplate[] = [
     {
-      ID: '1',
+      id: '1',
       title: 'Course A: Testimonial Survey',
       status: 'Email Response',
       createdDate: 'Apr 14, 2025',
       createdTime: '10:30 AM'
     },
     {
-      ID: '2',
+      id: '2',
       title: 'Course B: Testimonial Survey',
       status: 'Email Response',
       createdDate: 'Apr 14, 2025',
       createdTime: '10:30 AM'
     },
     {
-      ID: '3',
+      id: '3',
       title: 'Course C: Testimonial Survey',
       status: 'Email Response',
       createdDate: 'Apr 14, 2025',
       createdTime: '10:30 AM'
     },
     {
-      ID: '4',
+      id: '4',
       title: 'Course D: Testimonial Survey',
       status: 'Email Response',
       createdDate: 'Apr 14, 2025',
       createdTime: '10:30 AM'
     },
     {
-      ID: '5',
+      id: '5',
       title: 'Course E: Testimonial Survey',
       status: 'Email Response',
       createdDate: 'Apr 14, 2025',

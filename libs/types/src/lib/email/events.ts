@@ -16,7 +16,7 @@ import {
   EmailPerformanceEventPayloads,
   EmailSystemEvent,
   EmailSystemEventPayloads
-} from "./events";
+} from "./common";
 
 export type EmailEvent =
   | EmailAccountEvent

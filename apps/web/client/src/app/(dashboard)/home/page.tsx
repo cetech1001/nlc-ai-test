@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react';
 import {Achievements, CourseProgress, DailyStreak, Leaderboard, Milestones} from "@/lib";
 
