@@ -34,7 +34,7 @@ export const menuItems: MenuItemType[] = [
     icon: HiSparkles,
     label: 'AI Agents',
     dropdown: [
-      { icon: CoachReplicaIcon, label: "Coach Replica", path: "/agents/coach-replica" },
+      { icon: CoachReplicaIcon, label: "Coach Replica", path: "/agents/replica" },
       { icon: RetentionIcon, label: "Retention", path: "/agents/retention/templates" },
       { icon: UserCheck, label: "Lead Follow-up", path: "/agents/lead-followup" },
       { icon: EmailAgentIcon, label: "Email", path: "/agents/emails" },
@@ -45,11 +45,11 @@ export const menuItems: MenuItemType[] = [
     icon: HiInsights,
     label: 'Agent Analytics',
     dropdown: [
-      { icon: CoachReplicaIcon, label: "Coach Replica", path: "/analytics/coach-replica" },
-      { icon: RetentionIcon, label: "Retention", path: "/analytics/client-retention" },
-      { icon: UserCheck, label: "Lead Follow-up", path: "/analytics/lead-followup" },
-      { icon: EmailAgentIcon, label: "Email", path: "/analytics/client-email" },
-      { icon: Zap, label: "Content Creation", path: "/analytics/content-suggestion" },
+      { icon: CoachReplicaIcon, label: "Coach Replica", path: "/analytics/replica" },
+      { icon: RetentionIcon, label: "Retention", path: "/analytics/retention" },
+      { icon: UserCheck, label: "Lead Follow-up", path: "/analytics/leads" },
+      { icon: EmailAgentIcon, label: "Email", path: "/analytics/emails" },
+      { icon: Zap, label: "Content Creation", path: "/analytics/suggestion" },
     ]
   },
   { icon: Globe, label: "AI Vault", path: "/vault" },
