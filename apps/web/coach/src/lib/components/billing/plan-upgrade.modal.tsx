@@ -3,7 +3,7 @@ import {BillingCycle, Plan, PaymentMethodType, PaymentMethod} from '@nlc-ai/sdk-
 import { Button } from '@nlc-ai/web-ui';
 import { AlertCircle, Check, CheckCircle2, CreditCard, Loader2, Plus, X } from 'lucide-react';
 import { sdkClient } from '@/lib';
-import { UserType } from '@nlc-ai/sdk-users';
+import { UserType } from '@nlc-ai/types';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from "@nlc-ai/web-auth";

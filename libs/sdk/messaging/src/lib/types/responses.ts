@@ -1,4 +1,4 @@
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 import {MessageType} from "./index";
 
 export interface DirectMessageResponse {

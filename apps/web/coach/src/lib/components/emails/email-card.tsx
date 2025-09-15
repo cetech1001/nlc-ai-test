@@ -1,8 +1,8 @@
 import {FC} from "react";
-import {EmailItem} from "@nlc-ai/types";
+// import {EmailItem} from "@nlc-ai/types";
 
 interface IProps {
-  email: EmailItem;
+  email: any;
   onClick: () => void;
 }
 

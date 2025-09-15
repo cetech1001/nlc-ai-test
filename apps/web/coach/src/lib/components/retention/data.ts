@@ -1,6 +1,6 @@
-import {Client, EmailTemplate} from "@nlc-ai/types";
+import {Client} from "@nlc-ai/types";
 
-export const mockTemplates: EmailTemplate[] = [
+export const mockTemplates: any[] = [
   {
     id: '1',
     coachID: '',

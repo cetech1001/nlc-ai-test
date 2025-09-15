@@ -230,7 +230,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         lastName: profileForm.lastName,
       }
 
-      if (userType === UserType.coach) {
+      if (userType === UserType.COACH) {
         payload = {
           ...profileForm,
         }

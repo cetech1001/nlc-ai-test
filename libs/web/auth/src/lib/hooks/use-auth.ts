@@ -33,7 +33,7 @@ export const useAuth = (userType?: UserType) => {
       const user = await authAPI.getProfile();
 
       if (userType) {
-        if ((user.type && user.type !== userType) || (!user.type && userType === UserType.admin)) {
+        if ((user.type && user.type !== userType) || (!user.type && userType === UserType.ADMIN)) {
           throw new Error('Unauthorised');
         }
       }

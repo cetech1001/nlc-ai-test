@@ -1,5 +1,6 @@
 import {BaseClient} from "@nlc-ai/sdk-core";
-import {Admin, ExtendedClient, ExtendedCoach, UserType} from "../types";
+import {UserType} from "@nlc-ai/types";
+import {Admin, ExtendedClient, ExtendedCoach} from "../types";
 
 export class ProfileClient extends BaseClient{
   async lookupProfile(userType: UserType, userID: string) {

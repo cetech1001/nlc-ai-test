@@ -1,4 +1,5 @@
-import {Coach, Client, UserType} from "@nlc-ai/sdk-users";
+import {Coach, Client} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 import {Plan} from "./plans.types";
 import {Transaction} from "./transactions.types";
 import {Invoice} from "./invoices.types";

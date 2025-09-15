@@ -5,7 +5,7 @@ import { Search, Headphones, Users } from 'lucide-react';
 import { sdkClient } from '@/lib';
 import { ConversationResponse } from '@nlc-ai/sdk-messaging';
 import { toast } from 'sonner';
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 import {ConversationListSkeleton} from "@/lib/components/chat/skeletons";
 import {LoginResponse} from "@nlc-ai/web-auth";
 
@@ -125,7 +125,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   const getContactType = (userType: string) => {
     switch (userType) {
       case UserType.ADMIN: return 'admin' as const;
-      case UserType.client: return 'client' as const;
+      case UserType.CLIENT: return 'client' as const;
       default: return 'community' as const;
     }
   };

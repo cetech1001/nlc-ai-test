@@ -1,4 +1,4 @@
-import {BaseEvent} from "@nlc-ai/api-messaging";
+import {BaseEvent} from "../../base-event";
 
 export interface ClientEmailResponseGeneratedEvent extends BaseEvent {
   eventType: 'email.client.response.generated';

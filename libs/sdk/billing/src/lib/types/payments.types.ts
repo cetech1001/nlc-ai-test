@@ -1,4 +1,5 @@
-import {Coach, UserType} from "@nlc-ai/sdk-users";
+import {UserType} from '@nlc-ai/types';
+import {Coach} from "@nlc-ai/sdk-users";
 import {Plan} from "./plans.types";
 
 export interface PaymentLink {

@@ -4,8 +4,8 @@ import {CalendarEvent, CalendlyEvent, CalendlyEventType, CalendlySettings, Calen
 class CalendlyAPI extends BaseAPI {
   private calendlyBaseUrl = 'https://api.calendly.com';
 
-  async getSettings(userType = UserType.admin): Promise<CalendlySettings> {
-    if (userType === UserType.admin) {
+  async getSettings(userType = UserType.ADMIN): Promise<CalendlySettings> {
+    if (userType === UserType.ADMIN) {
       return this.makeRequest('/system-settings/calendly');
     }
     return this.makeRequest('/integrations/calendly');
@@ -28,7 +28,7 @@ class CalendlyAPI extends BaseAPI {
     });
   }
 
-  private async makeCalendlyRequest(endpoint: string, options: RequestInit = {}, userType = UserType.admin) {
+  private async makeCalendlyRequest(endpoint: string, options: RequestInit = {}, userType = UserType.ADMIN) {
     const settings = await this.getSettings(userType);
 
     if (!settings.isConnected || !settings.accessToken) {
@@ -52,7 +52,7 @@ class CalendlyAPI extends BaseAPI {
     return response.json();
   }
 
-  async getCurrentUser(userType = UserType.admin): Promise<CalendlyUser> {
+  async getCurrentUser(userType = UserType.ADMIN): Promise<CalendlyUser> {
     const response = await this.makeCalendlyRequest('/users/me', {}, userType);
     return response.resource;
   }
@@ -61,7 +61,7 @@ class CalendlyAPI extends BaseAPI {
     userUri: string,
     startDate?: Date,
     endDate?: Date,
-    userType = UserType.admin,
+    userType = UserType.ADMIN,
     status: string = 'active',
   ): Promise<CalendlyEvent[]> {
     const params = new URLSearchParams({
@@ -81,7 +81,7 @@ class CalendlyAPI extends BaseAPI {
     return response.collection;
   }
 
-  async getEventTypes(organizationUri?: string, userType = UserType.admin): Promise<CalendlyEventType[]> {
+  async getEventTypes(organizationUri?: string, userType = UserType.ADMIN): Promise<CalendlyEventType[]> {
     const params = new URLSearchParams();
     if (organizationUri) {
       params.append('organization', organizationUri);
@@ -91,13 +91,13 @@ class CalendlyAPI extends BaseAPI {
     return response.collection;
   }
 
-  async getEventTypeByUri(uri: string, userType = UserType.admin): Promise<CalendlyEventType> {
+  async getEventTypeByUri(uri: string, userType = UserType.ADMIN): Promise<CalendlyEventType> {
     const eventTypeId = uri.split('/').pop();
     const response = await this.makeCalendlyRequest(`/event_types/${eventTypeId}`, {}, userType);
     return response.resource;
   }
 
-  async cancelEvent(eventUri: string, reason?: string, userType = UserType.admin): Promise<any> {
+  async cancelEvent(eventUri: string, reason?: string, userType = UserType.ADMIN): Promise<any> {
     const eventId = eventUri.split('/').pop();
     return this.makeCalendlyRequest(`/scheduled_events/${eventId}/cancellation`, {
       method: 'POST',
@@ -107,13 +107,13 @@ class CalendlyAPI extends BaseAPI {
     }, userType);
   }
 
-  async getEventInvitees(eventUri: string, userType = UserType.admin): Promise<any[]> {
+  async getEventInvitees(eventUri: string, userType = UserType.ADMIN): Promise<any[]> {
     const eventId = eventUri.split('/').pop();
     const response = await this.makeCalendlyRequest(`/scheduled_events/${eventId}/invitees`, {}, userType);
     return response.collection;
   }
 
-  async convertToCalendarEvents(calendlyEvents: CalendlyEvent[], userType = UserType.admin): Promise<Record<number, CalendarEvent[]>> {
+  async convertToCalendarEvents(calendlyEvents: CalendlyEvent[], userType = UserType.ADMIN): Promise<Record<number, CalendarEvent[]>> {
     const eventsByDay: Record<number, CalendarEvent[]> = {};
 
     for (let i = 0; i < calendlyEvents.length; i++) {
@@ -189,7 +189,7 @@ class CalendlyAPI extends BaseAPI {
     return colorMap[typeKey || 'default'];
   }
 
-  async isConnected(userType = UserType.admin): Promise<boolean> {
+  async isConnected(userType = UserType.ADMIN): Promise<boolean> {
     try {
       const settings = await this.getSettings(userType);
       return settings.isConnected;
@@ -199,7 +199,7 @@ class CalendlyAPI extends BaseAPI {
     }
   }
 
-  async getSchedulingUrl(userType = UserType.admin): Promise<string | null> {
+  async getSchedulingUrl(userType = UserType.ADMIN): Promise<string | null> {
     try {
       const settings = await this.getSettings(userType);
       return settings.schedulingUrl || null;
@@ -219,7 +219,7 @@ class CalendlyAPI extends BaseAPI {
     }
   }
 
-  async loadEventsForMonth(date: Date, userType = UserType.admin): Promise<Record<number, CalendarEvent[]>> {
+  async loadEventsForMonth(date: Date, userType = UserType.ADMIN): Promise<Record<number, CalendarEvent[]>> {
     try {
       const settings = await this.getSettings(userType);
 

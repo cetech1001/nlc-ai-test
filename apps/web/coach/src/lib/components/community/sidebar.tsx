@@ -7,7 +7,7 @@ import {sdkClient} from '@/lib';
 import {ExtendedCommunityMember} from '@nlc-ai/sdk-community';
 import {toast} from 'sonner';
 import {useAuth} from "@nlc-ai/web-auth";
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 
 interface CommunityMembersSidebarProps {
   communityID: string;

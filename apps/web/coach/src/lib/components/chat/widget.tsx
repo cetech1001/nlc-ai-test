@@ -4,7 +4,7 @@ import { sdkClient, useMessagingWebSocket } from '@/lib';
 import { DirectMessageResponse, ConversationResponse, MessageType } from '@nlc-ai/sdk-messaging';
 import { toast } from 'sonner';
 import { useAuth } from '@nlc-ai/web-auth';
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 
 interface ChatPopupWidgetProps {
   isOpen?: boolean;

@@ -6,7 +6,7 @@ import {ChatWindowSkeleton, sdkClient, useMessagingWebSocket} from '@/lib';
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messaging';
 import {toast} from 'sonner';
 import {LoginResponse} from "@nlc-ai/web-auth";
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 
 interface ChatWindowProps {
   user: LoginResponse['user'] | null;

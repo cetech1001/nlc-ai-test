@@ -2,8 +2,8 @@ import { BaseAPI } from './base';
 import { EmailAccount } from '@nlc-ai/types';
 
 export interface EmailAccountResponse extends Omit<EmailAccount, 'coach' | 'emailThreads'> {
-  accessToken?: string | null;
-  refreshToken?: string | null;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface EmailAuthUrlResponse {
