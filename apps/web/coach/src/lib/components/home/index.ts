@@ -1,5 +1,6 @@
 export * from './client-email-widget';
 export * from './coach-confidence-score';
+export * from './leaderboard';
 export * from './leads-follow-up-widget';
 export * from './task-list';
 export * from './response-time-saved';

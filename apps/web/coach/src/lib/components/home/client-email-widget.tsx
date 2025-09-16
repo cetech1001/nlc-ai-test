@@ -177,17 +177,6 @@ export const ClientEmailWidget: FC<IProps> = ({ className = '', stats }) => {
             </div>
           </div>
         )}
-
-        {/* Empty state for new coaches */}
-        {stats.clientEmailsFound === 0 && stats.emailsProcessedToday === 0 && (
-          <div className="mt-4 p-3 bg-neutral-800/30 border border-neutral-700 rounded-lg">
-            <div className="text-center">
-              <p className="text-stone-400 text-sm">
-                No client emails yet. Connect your email to start processing client communications automatically.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

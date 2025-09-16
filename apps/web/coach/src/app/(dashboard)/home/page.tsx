@@ -1,16 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatCard } from "@nlc-ai/web-shared";
 import {
-  LeadsFollowUpWidget,
+  // LeadsFollowUpWidget,
   TaskList,
   TimeSavedWidget,
   RevenueChart,
   TestimonialOpportunity,
   TopPerformingContent,
   ClientEmailWidget,
-  CoachConfidenceScore, sdkClient
+  CoachConfidenceScore,
+  sdkClient,
+  Leaderboard,
 } from "@/lib";
 import {
   Flag,
@@ -179,15 +181,12 @@ const CoachHome = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <ClientEmailWidget stats={dashboardData?.clientEmailStats!} />
         <TaskList
           title={"Today's Priorities"}
           tasks={priorityList}
-          cta={{
-            text: 'View All Actions',
-            onClick: () => {}
-          }} />
+        />
         <TaskList title={"Agent Stats"} tasks={agentStats} />
+        <Leaderboard/>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
@@ -205,14 +204,7 @@ const CoachHome = () => {
       <div className={"grid grid-cols-1 sm:grid-cols-2 gap-3"}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <TestimonialOpportunity opportunity={dashboardData?.testimonialOpportunity!} />
-          <div className={"flex flex-col gap-3"}>
-            <LeadsFollowUpWidget data={dashboardData?.leadsFollowUp!} />
-            <StatCard
-              isLoading={isLoading}
-              title="Leads Captured Weekly"
-              value={dashboardData?.weeklyLeadsCaptured.toString()}
-            />
-          </div>
+          <ClientEmailWidget stats={dashboardData?.clientEmailStats!} />
         </div>
         <TopPerformingContent content={dashboardData?.topPerformingContent!} />
       </div>

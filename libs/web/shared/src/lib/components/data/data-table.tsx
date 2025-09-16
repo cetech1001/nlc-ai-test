@@ -1,6 +1,6 @@
-import {TableProps} from "@nlc-ai/types";
+import {TableColumn, TableProps} from "@nlc-ai/types";
 import {DataTableSkeleton} from "../skeletons";
-import { formatCurrency, formatDate } from "@nlc-ai/web-utils";
+import { formatCurrency, formatDate } from "@nlc-ai/sdk-core";
 
 export const DataTable = <T,>(props: TableProps<T>) => {
   if (props.isLoading) {
@@ -25,10 +25,63 @@ export const DataTable = <T,>(props: TableProps<T>) => {
       return total + 150; // Default minimum width per column
     }, 0);
 
-    const gaps = (props.columns.length - 1) * 16; // 4 * 4px gap between props.columns
+    const gaps = (props.columns.length - 1) * 16; // 4 * 4px gap between columns
     const padding = 48; // 24px padding on each side
 
     return `${totalFixedWidth + gaps + padding}px`;
+  };
+
+  // Enhanced mobile field organization
+  const getMobileFields = () => {
+    // Use explicit mobile configuration if provided
+    const mobileColumns = props.columns.filter(col =>
+      col.mobile?.show !== false && col.key !== 'actions'
+    );
+
+    const primaryField = mobileColumns.find(col =>
+      col.mobile?.priority === 'primary' ||
+      col.key === props.mobileConfig?.primaryField ||
+      col.key === 'name'
+    ) || mobileColumns[0];
+
+    const secondaryField = mobileColumns.find(col =>
+      col.mobile?.priority === 'secondary' ||
+      col.key === props.mobileConfig?.secondaryField ||
+      (col.key === 'email' || col.key === 'id')
+    ) || mobileColumns[1];
+
+    const statusField = mobileColumns.find(col =>
+      col.mobile?.priority === 'status' ||
+      col.key === props.mobileConfig?.statusField ||
+      col.key === 'status'
+    );
+
+    const detailFields = mobileColumns.filter(col =>
+      col.key !== primaryField?.key &&
+      col.key !== secondaryField?.key &&
+      col.key !== statusField?.key &&
+      (col.mobile?.priority === 'detail' ||
+        props.mobileConfig?.detailFields?.includes(col.key) ||
+        (!col.mobile?.priority && !props.mobileConfig?.detailFields))
+    );
+
+    return { primaryField, secondaryField, statusField, detailFields };
+  };
+
+  const renderMobileField = (column: TableColumn<T>, row: T, value: any) => {
+    if (column.mobile?.render) {
+      return column.mobile.render(value, row);
+    }
+
+    if (column.render) {
+      return column.render(value, row, props.onRowAction);
+    }
+
+    return value || 'N/A';
+  };
+
+  const getMobileFieldLabel = (column: TableColumn<T>) => {
+    return column.mobile?.label || column.header;
   };
 
   return (
@@ -40,17 +93,9 @@ export const DataTable = <T,>(props: TableProps<T>) => {
               <div className="text-center py-8 text-stone-400">{props.emptyMessage}</div>
             ) : (
               props.data.map((row, index) => {
-                const primaryField = props.columns.find(col => col.key === 'name') || props.columns[0];
-                const secondaryField = props.columns.find(col => col.key === 'id') || props.columns[1];
-                const statusField = props.columns.find(col => col.key === 'status');
+                const { primaryField, secondaryField, statusField, detailFields } = getMobileFields();
                 const actionsColumn = props.columns.find(col => col.key === 'actions');
-
-                const detailFields = props.columns.filter(col =>
-                  col.key !== primaryField?.key &&
-                  col.key !== secondaryField?.key &&
-                  col.key !== statusField?.key &&
-                  col.key !== actionsColumn?.key
-                );
+                const maxDetailFields = props.mobileConfig?.maxDetailFields || 3;
 
                 return (
                   // @ts-ignore
@@ -61,81 +106,52 @@ export const DataTable = <T,>(props: TableProps<T>) => {
                     <div className="relative z-10 space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-stone-50 font-medium text-base leading-tight truncate">
-                            {primaryField?.render ? (
+                          {primaryField && (
+                            <h3 className="text-stone-50 font-medium text-base leading-tight">
                               <div className="truncate">
                                 {/* @ts-ignore */}
-                                {primaryField.render(row[primaryField.key], row, props.onRowAction)}
+                                {renderMobileField(primaryField, row, row[primaryField.key])}
                               </div>
-                            ) : (
-                              /* @ts-ignore */
-                              row[primaryField?.key] || 'N/A'
-                            )}
-                          </h3>
+                            </h3>
+                          )}
                           {secondaryField && secondaryField.key !== primaryField?.key && (
                             <div className="text-stone-300 text-sm leading-tight mt-0.5">
-                              {secondaryField.render ? (
-                                <span className="truncate">
-                                  {/* @ts-ignore */}
-                                  {secondaryField.render(row[secondaryField.key], row, props.onRowAction)}
-                                </span>
-                              ) : (
-                                /* @ts-ignore */
-                                row[secondaryField.key] || 'N/A'
-                              )}
+                              <span className="truncate">
+                                {/* @ts-ignore */}
+                                {renderMobileField(secondaryField, row, row[secondaryField.key])}
+                              </span>
                             </div>
                           )}
                         </div>
 
                         {statusField && (
                           <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                            {statusField.render ? (
-                              <div className="flex items-center gap-2">
-                                {/* @ts-ignore */}
-                                {statusField.render(row[statusField.key], row, props.onRowAction)}
-                              </div>
-                            ) : (
-                              <span className={`text-sm font-medium whitespace-nowrap ${
-                                /* @ts-ignore */
-                                row[statusField.key] === "Active" || row[statusField.key] === "Converted"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}>
-                                {/* @ts-ignore */}
-                                {row[statusField.key]}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {/* @ts-ignore */}
+                              {renderMobileField(statusField, row, row[statusField.key])}
+                            </div>
                           </div>
                         )}
                       </div>
 
                       {detailFields.length > 0 && (
-                        <div className="text-stone-300 text-sm leading-tight space-y-1">
-                          {detailFields.slice(0, 1).map((field, fieldIndex) => (
-                            <div key={field.key}>
-                              {/*@ts-ignore*/}
-                              {row[field.key]}
+                        <div className="space-y-2">
+                          {detailFields.slice(0, maxDetailFields).map((field, fieldIndex) => (
+                            <div key={field.key} className="flex items-center justify-between text-sm">
+                              <span className="text-stone-400 font-medium">
+                                {getMobileFieldLabel(field)}:
+                              </span>
+                              <span className="text-stone-300 font-normal text-right">
+                                {/* @ts-ignore */}
+                                {renderMobileField(field, row, row[field.key])}
+                              </span>
                             </div>
                           ))}
-
-                          {detailFields.length > 1 && (
-                            <div className="text-xs">
-                              {detailFields.slice(1, 3).map((field, fieldIndex) => (
-                                <span key={field.key}>
-                                  {fieldIndex > 0 && <span className="text-stone-500 mx-1">•</span>}
-                                  <span className={fieldIndex === 0 ? "text-stone-400" : "text-stone-300"}>
-                                      {/*@ts-ignore*/}
-                                      {row[field.key]}
-                                  </span>
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       )}
 
                       {actionsColumn && (
-                        <div className="pt-1">
+                        <div className="pt-1 border-t border-neutral-700/50">
                           {actionsColumn.render ? (
                             /* @ts-ignore */
                             actionsColumn.render(row[actionsColumn.key], row, props.onRowAction)
@@ -151,7 +167,7 @@ export const DataTable = <T,>(props: TableProps<T>) => {
                       )}
 
                       {!actionsColumn && (props.actions?.length || 0) > 0 && (
-                        <div className="flex gap-2 pt-2 border-t border-neutral-700">
+                        <div className="flex gap-2 pt-2 border-t border-neutral-700/50">
                           {props.actions?.map((action) => (
                             <button
                               key={action.action}

@@ -6,6 +6,17 @@ export const formatDate = (date: Date | string) => {
   });
 }
 
+export const formatCurrency = (cents = 0, currency = 'USD', locale = 'en-US') => {
+  const dollars = cents / 100;
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(dollars);
+}
+
+
 export const formatTimeAgo = (date: Date) => {
   const now = new Date();
   const diffInMinutes = Math.floor((now.getTime() - new Date(date).getTime()) / (1000 * 60));

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import {Link, Plus, Search} from "lucide-react";
 import {
   Pagination,
   PageHeader,
@@ -12,7 +12,14 @@ import {
 } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import { FilterValues } from "@nlc-ai/types";
-import {clientColumns, clientFilters, emptyClientFilterValues, sdkClient} from "@/lib";
+import {
+  clientColumns,
+  clientFilters,
+  clientMobileConfig,
+  emptyClientFilterValues,
+  InviteClientModal,
+  sdkClient
+} from "@/lib";
 import {ExtendedClient} from "@nlc-ai/sdk-users";
 
 const ClientsPage = () => {
@@ -35,6 +42,7 @@ const ClientsPage = () => {
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const clientsPerPage = 10;
 
@@ -95,14 +103,14 @@ const ClientsPage = () => {
     if (action === 'view-details') {
       router.push(`/clients/${client.id}`);
     } else if (action === 'view-emails') {
-      router.push(`/emails?clientID=${client.id}`);
+      router.push(`/agents/emails?clientID=${client.id}`);
     } else if (action === 'edit') {
       router.push(`/clients/edit?clientID=${client.id}`);
     }
   };
 
   return (
-    <div className={`flex flex-col ${isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'}`}>
+    <div className={`flex flex-col ${(isFilterOpen) && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'}`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         {successMessage && (
           <AlertBanner type="success" message={successMessage} onDismiss={clearMessages}/>
@@ -142,8 +150,40 @@ const ClientsPage = () => {
               </span>
               Add New Client
             </Button>
+
+            <Button
+              onClick={() => setShowInviteModal(true)}
+              className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex"
+            >
+              <span className="w-4 h-4 mr-2">
+                <Link className="w-4 h-4" />
+              </span>
+              Invite Client
+            </Button>
           </>
         </PageHeader>
+
+        <div className={"grid grid-cols-2 gap-4 sm:hidden"}>
+          <Button
+            onClick={() => router.push('/clients/create')}
+            className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors"
+          >
+            <span className="w-4 h-4 mr-2">
+              <Plus className="w-4 h-4" />
+            </span>
+            Add New Client
+          </Button>
+
+          <Button
+            onClick={() => router.push('/clients/create')}
+            className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors"
+          >
+            <span className="w-4 h-4 mr-2">
+              <Link className="w-4 h-4" />
+            </span>
+            Invite Client
+          </Button>
+        </div>
 
         <DataTable
           columns={clientColumns}
@@ -152,6 +192,7 @@ const ClientsPage = () => {
           showMobileCards={true}
           emptyMessage="No clients found matching your criteria"
           isLoading={isLoading}
+          mobileConfig={clientMobileConfig}
         />
 
         <Pagination
@@ -165,6 +206,7 @@ const ClientsPage = () => {
           <MobilePagination pagination={pagination}/>
         )}
       </div>
+      <InviteClientModal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)}/>
     </div>
   );
 }
