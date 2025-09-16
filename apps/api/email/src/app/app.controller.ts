@@ -120,6 +120,7 @@ export class AppController {
 
       return {
         isHealthy: health.isHealthy,
+        status: 'healthy',
         provider: health.provider,
         responseTime: health.responseTime,
         lastChecked: health.lastChecked,
@@ -131,6 +132,7 @@ export class AppController {
       this.logger.error('Failed to get provider health', error);
       return {
         isHealthy: false,
+        status: 'unhealthy',
         provider: '',
         responseTime: 0,
         lastChecked: new Date().toISOString(),

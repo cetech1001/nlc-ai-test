@@ -14,10 +14,13 @@ export class EmailClient extends BaseClient {
     });
   }
 
-
   async sendEmail(data: any) {
     const response = await this.request('POST', '/send', { body: data });
     return response.data!;
+  }
+
+  async sendClientInvite(data: any) {
+
   }
 
   async getTemplates(coachID: string, filters?: any) {

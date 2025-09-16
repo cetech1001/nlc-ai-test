@@ -21,23 +21,23 @@ export const getVerificationEmailTemplate = (code: string): string => {
       <body>
         <div class="container">
           <div class="header">
-            <h1 class="logo">Next Level Coach AI</h1>
+            <h1 class="logo">{{appName}}</h1>
           </div>
           <div class="content">
             <h2 style="color: #f5f5f4; margin-top: 0;">Verify Your Account</h2>
-            <p>Thank you for signing up for Next Level Coach AI! To complete your registration, please use the verification code below:</p>
+            <p>Thank you for signing up for {{appName}}! To complete your registration, please use the verification code below:</p>
 
             <div class="code-box">
-              <div class="code">${code}</div>
+              <div class="code">{{verificationCode}}</div>
             </div>
 
             <p><strong>This code expires in 10 minutes.</strong></p>
             <p>If you didn't request this verification, please ignore this email.</p>
 
-            <p>Best regards,<br>The Next Level Coach AI Team</p>
+            <p>Best regards,<br>The {{appName}} Team</p>
           </div>
           <div class="footer">
-            <p>&copy; 2025 Next Level Coach AI. All rights reserved.</p>
+            <p>&copy; {{currentYear}} {{appName}}. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -86,33 +86,33 @@ export const getPasswordResetEmailTemplate = (code: string, coachDashboardUrl: s
       <body>
         <div class="container">
           <div class="header">
-            <h1 class="logo">Next Level Coach AI</h1>
+            <h1 class="logo">{{appName}}</h1>
           </div>
           <div class="content">
             <h2 style="color: #f5f5f4; margin-top: 0;">Reset Your Password</h2>
             <p>We received a request to reset your password. Use the verification code below to proceed:</p>
 
             <div class="code-box">
-              <div class="code">${code}</div>
+              <div class="code">{{verificationCode}}</div>
             </div>
 
             <div class="button-container">
-              <a href="${coachDashboardUrl}/account-verification?email=${email}&type=password_reset" class="verify-button">
+              <a href="{{baseUrl}}/account-verification?email={{email}}&type=password_reset" class="verify-button">
                 Verify & Reset Password
               </a>
             </div>
 
             <p style="color: #a0a0a0; font-size: 14px; text-align: center;">Or copy and paste this link into your browser:<br>
-            <span style="color: #B339D4; word-break: break-all;">${coachDashboardUrl}/account-verification?email=${email}&type=password_reset</span></p>
+            <span style="color: #B339D4; word-break: break-all;">{{baseUrl}}/account-verification?email={{email}}&type=password_reset</span></p>
 
             <div class="warning">
               <p style="margin: 0; color: #fca5a5;"><strong>Security Notice:</strong> This code expires in 10 minutes. If you didn't request a password reset, please ignore this email and consider changing your password.</p>
             </div>
 
-            <p>Best regards,<br>The Next Level Coach AI Team</p>
+            <p>Best regards,<br>The {{appName}} Team</p>
           </div>
           <div class="footer">
-            <p>&copy; 2025 Next Level Coach AI. All rights reserved.</p>
+            <p>&copy; {{currentYear}} {{appName}}. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -127,7 +127,7 @@ export const getWelcomeEmailTemplate = (name: string, frontendURL: string): stri
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to Next Level Coach AI</title>
+        <title>Welcome to {{appName}}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #000000; }
           .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; }
@@ -143,11 +143,11 @@ export const getWelcomeEmailTemplate = (name: string, frontendURL: string): stri
       <body>
         <div class="container">
           <div class="header">
-            <h1 class="logo">Next Level Coach AI</h1>
+            <h1 class="logo">{{appName}}</h1>
           </div>
           <div class="content">
-            <h2 style="color: #f5f5f4; margin-top: 0;">Welcome, ${name}! 🎉</h2>
-            <p>Your Next Level Coach AI account has been successfully created. You're now part of a revolutionary platform that will transform how you connect with and serve your clients.</p>
+            <h2 style="color: #f5f5f4; margin-top: 0;">Welcome, {{name}}! 🎉</h2>
+            <p>Your {{appName}} account has been successfully created. You're now part of a revolutionary platform that will transform how you connect with and serve your clients.</p>
 
             <div class="feature-list">
               <h3 style="color: #FEBEFA; margin-top: 0;">What you can do now:</h3>
@@ -159,15 +159,15 @@ export const getWelcomeEmailTemplate = (name: string, frontendURL: string): stri
             </div>
 
             <p style="text-align: center;">
-              <a href="${frontendURL}/login" class="button">Access Your Dashboard</a>
+              <a href="{{baseUrl}}/login" class="button">Access Your Dashboard</a>
             </p>
 
             <p>If you have any questions or need assistance, our support team is here to help!</p>
 
-            <p>Best regards,<br>The Next Level Coach AI Team</p>
+            <p>Best regards,<br>The {{appName}} Team</p>
           </div>
           <div class="footer">
-            <p>&copy; 2025 Next Level Coach AI. All rights reserved.</p>
+            <p>&copy; {{currentYear}} {{appName}}. All rights reserved.</p>
           </div>
         </div>
       </body>

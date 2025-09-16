@@ -907,10 +907,19 @@ enum SequenceStatus {
 }
 
 enum TemplateCategory {
-  auth
   client_response
   lead_followup
   billing
+  custom
+
+  auth
+  system
+  notification
+  transactional
+}
+
+enum TemplateType {
+  user
   system
 }
 
@@ -1000,23 +1009,41 @@ model EmailMessage {
 }
 
 model EmailTemplate {
-  id               String           @id @default(uuid()) @db.Uuid
-  userID           String           @db.Uuid
-  userType         UserType
-  name             String           @db.VarChar(255)
-  category         TemplateCategory
-  subjectTemplate  String?          @db.VarChar(500)
-  bodyTemplate     String
-  isAiGenerated    Boolean?         @default(false)
+  id String @id @default(uuid()) @db.Uuid
+
+  userID   String?   @db.Uuid
+  userType UserType?
+
+  templateType TemplateType @default(user)
+
+  name     String           @db.VarChar(255)
+  category TemplateCategory
+
+  subjectTemplate String? @db.VarChar(500)
+  bodyTemplate    String
+
+  systemKey String? @unique @db.VarChar(100)
+
+  isAiGenerated    Boolean? @default(false)
   generationPrompt String?
-  usageCount       Int?             @default(0)
-  lastUsedAt       DateTime?        @db.Timestamptz(6)
-  isActive         Boolean?         @default(true)
-  createdAt        DateTime?        @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime?        @default(now()) @db.Timestamptz(6)
+
+  usageCount Int?      @default(0)
+  lastUsedAt DateTime? @db.Timestamptz(6)
+
+  isActive  Boolean? @default(true)
+  isDefault Boolean? @default(false)
+
+  description String?  @db.VarChar(500)
+  variables   String[] @default([])
+
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @db.Timestamptz(6)
 
   emailMessages EmailMessage[]
 
+  @@index([templateType, category])
+  @@index([userID, userType, category])
+  @@index([systemKey])
   @@map("email_templates")
 }
 

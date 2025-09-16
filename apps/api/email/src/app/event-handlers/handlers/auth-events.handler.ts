@@ -170,7 +170,7 @@ export class AuthEventsHandler {
           <div style="padding: 20px;">
             <p>Your password has been successfully reset.</p>
             <p>If you did not request this change, please contact our support team immediately.</p>
-            <p>Best regards,<br>The Next Level Coach AI Team</p>
+            <p>Best regards,<br>The {{appName}} Team</p>
           </div>
         </div>
       </body>
@@ -198,7 +198,7 @@ export class AuthEventsHandler {
       ? `This invitation expires on ${expiresAt.toLocaleDateString()}.`
       : 'This invitation will expire in 7 days.';
 
-    const subject = `You've been invited to join ${businessName || `${coachName}'s coaching program`}`;
+    const subject = `You've been invited to join {{businessName}}`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -217,31 +217,29 @@ export class AuthEventsHandler {
         <div class="container">
           <div class="header">
             <h1>You're Invited!</h1>
-            <p style="margin: 0; opacity: 0.9;">Join ${businessName || `${coachName}'s coaching program`}</p>
+            <p style="margin: 0; opacity: 0.9;">Join {{businessName}}</p>
           </div>
           <div class="content">
             <h2 style="color: #FEBEFA;">Welcome to Your Coaching Journey</h2>
             <p>Hi there!</p>
-            <p>${coachName} has invited you to join their coaching program. This is the beginning of an exciting journey toward achieving your goals!</p>
+            <p>{{coachName}} has invited you to join their coaching program. This is the beginning of an exciting journey toward achieving your goals!</p>
 
-            ${message ? `
             <div class="message-box">
-              <h3 style="color: #FEBEFA; margin-top: 0;">Personal Message from ${coachName}:</h3>
-              <p style="margin-bottom: 0;">${message}</p>
+              <h3 style="color: #FEBEFA; margin-top: 0;">Personal Message from {{coachName}}:</h3>
+              <p style="margin-bottom: 0;">{{message}}</p>
             </div>
-            ` : ''}
 
             <p style="text-align: center;">
-              <a href="${inviteUrl}" class="button">Accept Invitation</a>
+              <a href="{{inviteUrl}}" class="button">Accept Invitation</a>
             </p>
 
-            <p style="font-size: 14px; color: #a0a0a0;">${expiryText}</p>
+            <p style="font-size: 14px; color: #a0a0a0;">{{expiryText}}</p>
 
             <p>If you have any questions, feel free to reply to this email.</p>
 
             <p>Looking forward to working with you!</p>
-            <p><strong>${coachName}</strong><br>
-            ${businessName || 'Professional Coach'}</p>
+            <p><strong>{{coachName}}</strong><br>
+            {{businessNameTagline}}</p>
           </div>
         </div>
       </body>
