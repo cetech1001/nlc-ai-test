@@ -1,13 +1,13 @@
 import { Controller, Post, Body, Headers, Res, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { EmailService } from '../email/email.service';
-import { WebhookVerificationService } from './webhook-verification.service';
 import { Public } from '@nlc-ai/api-auth';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nlc-ai/api-database';
 import type {MailgunWebhookEvent} from "@nlc-ai/api-types";
 import {MailgunWebhookDto} from "./dto";
+import {createHmac} from "crypto";
+import {WebhookHandlerService} from "./handlers/webhook-handler.service";
 
 @ApiTags('Mailgun Webhooks')
 @Controller('webhooks/mailgun')
@@ -17,7 +17,7 @@ export class MailgunWebhookController {
   private readonly webhookSigningKey: string;
 
   constructor(
-    private readonly emailService: EmailService,
+    private readonly handlerService: WebhookHandlerService,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
@@ -79,7 +79,7 @@ export class MailgunWebhookController {
 
     try {
       const { token, timestamp, signature: providedSignature } = body.signature;
-      return WebhookVerificationService.verifyMailgunWebhook(
+      return this.verifyMailgunWebhookSignature(
         token,
         timestamp,
         providedSignature,
@@ -99,7 +99,7 @@ export class MailgunWebhookController {
   private async handleEmailOpened(eventData: any): Promise<void> {
     const messageID = eventData.message.headers['message-id'];
     try {
-      await this.emailService.trackEmailOpen(messageID, {
+      await this.handlerService.trackEmailOpen(messageID, {
         opened: true,
         openedAt: new Date(eventData.timestamp * 1000),
         userAgent: eventData['client-info']?.['user-agent'],
@@ -114,7 +114,7 @@ export class MailgunWebhookController {
   private async handleEmailClicked(eventData: any): Promise<void> {
     const messageID = eventData.message.headers['message-id'];
     try {
-      await this.emailService.trackEmailClick(messageID, eventData.url, {
+      await this.handlerService.trackEmailClick(messageID, eventData.url, {
         clicked: true,
         clickedAt: new Date(eventData.timestamp * 1000),
         userAgent: eventData['client-info']?.['user-agent'],
@@ -130,7 +130,7 @@ export class MailgunWebhookController {
     const messageID = eventData.message.headers['message-id'];
     const reason = eventData.reason || eventData.description || 'Unknown bounce reason';
     try {
-      await this.emailService.trackEmailBounce(messageID, reason);
+      await this.handlerService.trackEmailBounce(messageID, reason);
       if (eventData.severity === 'permanent') {
         this.logger.warn(`Permanent bounce for ${eventData.recipient}: ${reason}`);
       }
@@ -143,7 +143,7 @@ export class MailgunWebhookController {
   private async handleEmailComplained(eventData: any): Promise<void> {
     const messageID = eventData.message.headers['message-id'];
     try {
-      await this.emailService.trackEmailComplaint(messageID);
+      await this.handlerService.trackEmailComplaint(messageID);
       this.logger.warn(`Spam complaint from ${eventData.recipient} for message ${messageID}`);
     } catch (error) {
       this.logger.error(`Error handling email complaint event for ${messageID}:`, error);
@@ -153,7 +153,7 @@ export class MailgunWebhookController {
   private async handleEmailUnsubscribed(eventData: any): Promise<void> {
     const messageID = eventData.message.headers['message-id'];
     try {
-      await this.emailService.trackEmailUnsubscribe(messageID, eventData.recipient);
+      await this.handlerService.trackEmailUnsubscribe(messageID, eventData.recipient);
       await this.handleUnsubscribeInDatabase(eventData.recipient);
       this.logger.log(`Email unsubscribe: ${messageID} from ${eventData.recipient}`);
     } catch (error) {
@@ -183,5 +183,11 @@ export class MailgunWebhookController {
     } catch (error) {
       this.logger.error(`Error updating database for unsubscribe ${email}:`, error);
     }
+  }
+
+  private verifyMailgunWebhookSignature(token: string, timestamp: string, signature: string, signingKey: string): boolean {
+    const value = timestamp + token;
+    const hash = createHmac('sha256', signingKey).update(value).digest('hex');
+    return hash === signature;
   }
 }

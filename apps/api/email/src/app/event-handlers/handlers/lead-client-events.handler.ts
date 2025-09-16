@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
 import { EmailIntegrationService } from '../../email/email-integration.service';
-import { EmailService } from '../../email/email.service';
+import { AppService } from '../../app.service';
 import {ConfigService} from "@nestjs/config";
 import {Coach} from "@prisma/client";
 
@@ -13,7 +13,7 @@ export class LeadClientEventsHandler {
     private readonly configService: ConfigService,
     private readonly eventBus: EventBusService,
     private readonly emailIntegrationService: EmailIntegrationService,
-    private readonly emailService: EmailService,
+    private readonly emailService: AppService,
   ) {
     this.subscribeToEvents();
   }

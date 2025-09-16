@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
-import { IEmailSyncProvider, SyncedEmail } from '../interfaces/email-sync-provider.interface';
-import { EmailSyncSettings } from '@nlc-ai/types';
+import {EmailSyncSettings, IEmailSyncProvider, SyncedEmail} from '@nlc-ai/types';
 
 @Injectable()
 export class GmailSyncService implements IEmailSyncProvider {

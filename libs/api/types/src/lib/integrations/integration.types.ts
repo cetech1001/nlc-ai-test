@@ -1,4 +1,5 @@
 import {AuthType, IntegrationType} from "./enums";
+import {UserType} from "../auth";
 
 export interface Integration {
   id: string;
@@ -23,7 +24,7 @@ export interface Integration {
 export interface EmailAccount {
   id: string;
   userID: string;
-  userType: string;
+  userType: UserType;
   emailAddress: string;
   provider: string;
   accessToken?: string | null;

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@nlc-ai/api-database';
-import { EmailService } from './email.service';
+import { AppService } from '../app.service';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import {EmailEvent} from "@nlc-ai/api-types";
 
@@ -20,7 +20,7 @@ export class EmailSchedulerService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    private readonly emailService: AppService,
     private readonly outbox: OutboxService,
   ) {
     this.batchSize = parseInt(process.env.EMAIL_BATCH_SIZE || '50');

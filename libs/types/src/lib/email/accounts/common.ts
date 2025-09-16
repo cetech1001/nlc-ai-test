@@ -1,4 +1,4 @@
-import {EmailAccountStatus, EmailAccountProvider, EmailSyncDirection, SyncStatus} from "./enums";
+import {EmailAccountProvider, EmailSyncDirection, SyncStatus} from "./enums";
 import {UserType} from "../../users";
 
 export interface EmailAccount {
@@ -7,17 +7,16 @@ export interface EmailAccount {
   userType: UserType;
   emailAddress: string;
   provider: EmailAccountProvider;
-  accessToken?: string;
-  refreshToken?: string;
-  tokenExpiresAt?: string;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  tokenExpiresAt?: Date | null;
   isPrimary: boolean;
   isActive: boolean;
   syncEnabled: boolean;
-  lastSyncAt?: string;
-  status: EmailAccountStatus;
+  lastSyncAt: Date;
   syncSettings: EmailSyncSettings;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface EmailSyncSettings {

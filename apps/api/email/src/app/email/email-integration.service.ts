@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { EmailService } from './email.service';
+import { AppService } from '../app.service';
 import {TemplatesService} from "../templates/templates.service";
 
 @Injectable()
 export class EmailIntegrationService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    private readonly emailService: AppService,
     private readonly templatesService: TemplatesService,
   ) {}
 

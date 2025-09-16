@@ -1,6 +1,6 @@
 import {Injectable, Logger} from "@nestjs/common";
 import {EventBusService} from "@nlc-ai/api-messaging";
-import {EmailService} from "../../email/email.service";
+import {AppService} from "../../app.service";
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
@@ -9,7 +9,7 @@ export class BillingEventsHandler {
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly emailService: EmailService,
+    private readonly emailService: AppService,
     private readonly prisma: PrismaService,
   ) {
     this.subscribeToEvents();

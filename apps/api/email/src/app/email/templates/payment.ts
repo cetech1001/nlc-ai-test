@@ -90,3 +90,31 @@ export const getPaymentRequestEmailTemplate = (data: {
     </html>
   `;
 }
+
+export const getPaymentRequestText = (data: {
+  coachName: string;
+  planName: string;
+  amount: number;
+  paymentLink: string;
+  description?: string;
+}): string => {
+  return `
+Hello ${data.coachName},
+
+You have received a payment request for the ${data.planName} plan subscription.
+
+Amount: $${data.amount}
+Plan: ${data.planName}
+${data.description ? `Description: ${data.description}` : ''}
+
+To complete your payment, please click the link below:
+${data.paymentLink}
+
+This secure payment link will take you to Stripe's payment page where you can safely enter your payment details.
+
+If you have any questions, please contact our support team.
+
+Best regards,
+The Next Level Coach AI Team
+    `.trim();
+}

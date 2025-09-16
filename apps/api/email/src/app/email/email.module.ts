@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { EmailService } from './email.service';
+import { AppService } from '../app.service';
 import { EmailSchedulerService } from './email-scheduler.service';
-import {EmailEventController} from "./email-event.controller";
-import { EmailStatsController } from './email-stats.controller';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import {EmailIntegrationService} from "./email-integration.service";
@@ -19,16 +17,14 @@ import {TemplatesModule} from "../templates/templates.module";
     TemplatesModule,
   ],
   controllers: [
-    EmailEventController,
-    EmailStatsController,
   ],
   providers: [
-    EmailService,
+    AppService,
     EmailSchedulerService,
     EmailIntegrationService,
   ],
   exports: [
-    EmailService,
+    AppService,
     EmailSchedulerService,
     EmailIntegrationService,
   ],

@@ -1,22 +1,19 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  Inject,
-} from '@nestjs/common';
+import {BadRequestException, Inject, Injectable, Logger,} from '@nestjs/common';
 import {InjectQueue} from "@nestjs/bull";
 import type {Queue} from "bull";
-import {
-  EmailAccount,
-  EmailAccountActionResponse
-} from '@nlc-ai/api-types';
+import {Cron, CronExpression} from '@nestjs/schedule';
+import {OutboxService} from '@nlc-ai/api-messaging';
+import {ClientEmailReceivedEvent, EmailAccountActionResponse, EmailSyncEvent} from '@nlc-ai/api-types';
 import {
   BulkSyncRequest,
   BulkSyncResponse,
+  IEmailSyncProvider,
+  SyncedEmail,
+  EmailAccount,
   SyncEmailAccountRequest,
   SyncEmailAccountResponse,
   SyncStatus,
-  IEmailSyncProvider
+  UserType, EmailAccountProvider, EmailSyncSettings
 } from "@nlc-ai/types";
 import {AccountsRepository} from "./repositories/accounts.repository";
 
@@ -28,8 +25,8 @@ export class AccountsService {
     @Inject('SYNC_PROVIDERS') private syncProviders: Record<string, IEmailSyncProvider>,
     @InjectQueue('email-sync') private syncQueue: Queue,
     private readonly accountsRepo: AccountsRepository,
-  ) {
-  }
+    private readonly outbox: OutboxService,
+  ) {}
 
   async getEmailAccounts(userID: string): Promise<EmailAccount[]> {
     try {
@@ -37,15 +34,18 @@ export class AccountsService {
 
       return emailAccounts.map(account => ({
         ...account,
+        userType: account.userType as UserType,
+        provider: account.provider as EmailAccountProvider,
         accessToken: account.accessToken ? '***' : null,
         refreshToken: account.refreshToken ? '***' : null,
+        syncSettings: account.syncSettings as unknown as EmailSyncSettings,
       }));
     } catch (error: any) {
       throw new BadRequestException('Failed to retrieve email accounts');
     }
   }
 
-  async setPrimaryEmailAccount(userID: string, accountID: string): Promise<EmailAccountActionResponse> {
+  async setPrimaryEmailAccount(accountID: string, userID: string): Promise<EmailAccountActionResponse> {
     const emailAccount = await this.accountsRepo.getAccountByID(accountID, userID);
 
     try {
@@ -148,11 +148,155 @@ export class AccountsService {
     }
   }
 
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async autoSyncAllActiveAccounts() {
+    this.logger.log('Starting automatic email sync for all active accounts...');
+
+    const accounts = await this.accountsRepo.getAllActiveAccounts();
+
+    for (const account of accounts) {
+      try {
+        await this.syncQueue.add('sync-account', {
+          accountID: account.id,
+          forceFull: false,
+        });
+      } catch (error: any) {
+        this.logger.error(`Failed to queue sync for account ${account.id}:`, error);
+      }
+    }
+  }
+
   async getSyncProvider(provider: string): Promise<IEmailSyncProvider> {
     const syncProvider = this.syncProviders[provider.toLowerCase()];
     if (!syncProvider) {
       throw new Error(`Sync provider ${provider} not found`);
     }
     return syncProvider;
+  }
+
+  async processAccountSync(accountID: string, forceFull?: boolean): Promise<{
+    totalProcessed: number;
+    clientEmailsFound: number;
+    threadsCreated: number;
+  }> {
+    const account = await this.accountsRepo.getAccountByID(accountID);
+    if (!account) {
+      throw new Error(`Account ${accountID} not found`);
+    }
+
+    const syncProvider = await this.getSyncProvider(account.provider);
+    const lastSync = forceFull ? undefined : account.lastSyncAt?.toISOString();
+
+    const isConnected = await syncProvider.testConnection(account.accessToken || '');
+    if (!isConnected) {
+      throw new Error('Failed to connect to email provider');
+    }
+
+    const syncResult = await syncProvider.syncEmails(
+      account.accessToken || '',
+      account.syncSettings as any,
+      lastSync
+    );
+
+    let clientEmailsFound = 0;
+    let threadsCreated = 0;
+
+    for (const email of syncResult.emails) {
+      try {
+        const processed = await this.processIncomingEmail(account, email);
+        if (processed.isFromClient) {
+          clientEmailsFound++;
+        }
+        if (processed.threadCreated) {
+          threadsCreated++;
+        }
+      } catch (error: any) {
+        this.logger.error(`Error processing email ${email.providerMessageID}:`, error);
+      }
+    }
+
+    await this.accountsRepo.updateLastSync(accountID, new Date());
+
+    await this.outbox.saveAndPublishEvent<EmailSyncEvent>(
+      {
+        eventType: 'email.sync.completed',
+        schemaVersion: 1,
+        payload: {
+          coachID: account.userID,
+          totalProcessed: syncResult.emails.length,
+          clientEmailsFound,
+          syncedAt: new Date().toISOString(),
+        },
+      },
+      'email.sync.completed'
+    );
+
+    return {
+      totalProcessed: syncResult.emails.length,
+      clientEmailsFound,
+      threadsCreated,
+    };
+  }
+
+  private async processIncomingEmail(account: any, email: SyncedEmail): Promise<{
+    isFromClient: boolean;
+    threadCreated: boolean;
+  }> {
+    if (await this.isEmailFromCoach(email.from, account.userID)) {
+      return { isFromClient: false, threadCreated: false };
+    }
+
+    const client = await this.accountsRepo.findClientByEmail(email.from, account.userID);
+    if (!client) {
+      return { isFromClient: false, threadCreated: false };
+    }
+
+    const thread = await this.accountsRepo.findOrCreateEmailThread({
+      userID: account.userID,
+      userType: account.userType,
+      clientID: client.id,
+      clientType: UserType.CLIENT,
+      emailAccountID: account.id,
+      threadID: email.threadID,
+      subject: email.subject || 'No Subject',
+    });
+
+    const threadCreated = !await this.accountsRepo.threadExists(email.threadID);
+
+    await this.accountsRepo.createEmailMessage({
+      threadID: thread.id,
+      providerMessageID: email.providerMessageID,
+      from: email.from,
+      to: email.to,
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+      sentAt: new Date(email.sentAt),
+      receivedAt: new Date(email.receivedAt || ''),
+      isRead: email.isRead,
+    });
+
+    await this.outbox.saveAndPublishEvent<ClientEmailReceivedEvent>(
+      {
+        eventType: 'email.client.received',
+        schemaVersion: 1,
+        payload: {
+          coachID: account.userID,
+          clientID: client.id,
+          threadID: thread.id,
+          emailID: email.providerMessageID,
+          subject: email.subject || '',
+          receivedAt: new Date().toISOString(),
+        },
+      },
+      'email.client.received'
+    );
+
+    return { isFromClient: true, threadCreated };
+  }
+
+  private async isEmailFromCoach(senderEmail: string, coachID: string): Promise<boolean> {
+    const coachEmails = await this.accountsRepo.getCoachEmails(coachID);
+    return coachEmails.includes(senderEmail);
   }
 }

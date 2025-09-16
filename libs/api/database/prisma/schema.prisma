@@ -29,8 +29,8 @@ model Admin {
   role           String?         @default("admin") @db.VarChar(50)
   isActive       Boolean?        @default(true)
   lastLoginAt    DateTime?       @db.Timestamptz(6)
-  createdAt      DateTime?       @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime?       @default(now()) @db.Timestamptz(6)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime        @default(now()) @db.Timestamptz(6)
   systemSettings SystemSetting[]
 
   @@map("admins")
@@ -74,9 +74,10 @@ model Coach {
   leads                   Lead[]
   contentCategories       ContentCategory[]
   emailSequences          EmailSequence[]
-  scheduledEmails         ScheduledEmail[]
+  emailMessages           EmailMessage[]
   generatedEmailResponses GeneratedEmailResponse[]
   deliverabilityAnalyses  DeliverabilityAnalysis[]
+  emailThreads            EmailThread[]
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
@@ -162,11 +163,12 @@ model Client {
 
   aiInteractions          AiInteraction[]
   courseEnrollments       CourseEnrollment[]
-  scheduledEmails         ScheduledEmail[]
+  emailMessages           EmailMessage[]
   clientCoaches           ClientCoach[]
   emailSequences          EmailSequence[]
   paymentMethods          PaymentMethod[]
   generatedEmailResponses GeneratedEmailResponse[]
+  emailThreads            EmailThread[]
 
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
@@ -875,6 +877,13 @@ model ContentSuggestion {
 
 // Email Domain
 
+enum EmailCategory {
+  thread_reply
+  sequence_email
+  transactional
+  notification
+}
+
 enum EmailStatus {
   pending
   scheduled
@@ -913,12 +922,12 @@ model EmailAccount {
   refreshToken   String?
   syncSettings   Json?     @default("{}")
   tokenExpiresAt DateTime? @db.Timestamptz(6)
-  isPrimary      Boolean?  @default(false)
-  isActive       Boolean?  @default(true)
-  syncEnabled    Boolean?  @default(true)
-  lastSyncAt     DateTime? @db.Timestamptz(6)
-  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime? @default(now()) @db.Timestamptz(6)
+  isPrimary      Boolean   @default(false)
+  isActive       Boolean   @default(true)
+  syncEnabled    Boolean   @default(true)
+  lastSyncAt     DateTime  @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @db.Timestamptz(6)
 
   emailThreads EmailThread[]
 
@@ -928,38 +937,63 @@ model EmailAccount {
 }
 
 model EmailMessage {
-  id                String      @id @default(uuid()) @db.Uuid
-  emailThreadID     String      @db.Uuid
-  emailTemplateID   String?     @db.Uuid
-  providerMessageID String?     @unique @db.VarChar(255)
-  to                String      @db.VarChar(255)
-  from              String      @db.VarChar(255)
-  cc                String?
-  bcc               String?
-  subject           String?     @db.VarChar(500)
-  text              String?
-  html              String?
-  tags              String[]    @default([])
-  attachments       Json?       @default("[]")
-  aiProcessed       Boolean?    @default(false)
-  sentimentScore    Decimal?    @db.Decimal(3, 2)
-  intentCategory    String?     @db.VarChar(100)
-  suggestedActions  Json?       @default("[]")
-  status            EmailStatus @default(pending)
-  errorMessage      String?
-  metadata          Json?       @default("{}")
-  openedAt          DateTime?   @db.Timestamptz(6)
-  clickedAt         DateTime?   @db.Timestamptz(6)
-  sentAt            DateTime    @db.Timestamptz(6)
-  receivedAt        DateTime?   @default(now()) @db.Timestamptz(6)
-  createdAt         DateTime?   @default(now()) @db.Timestamptz(6)
+  id String @id @default(uuid()) @db.Uuid
 
-  emailThread   EmailThread    @relation(fields: [emailThreadID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailThreadID   String? @db.Uuid
+  emailTemplateID String? @db.Uuid
+  emailSequenceID String? @db.Uuid
+  coachID         String? @db.Uuid
+  clientID        String? @db.Uuid
+  leadID          String? @db.Uuid
+
+  to      String  @db.VarChar(255)
+  from    String  @db.VarChar(255)
+  cc      String?
+  bcc     String?
+  subject String? @db.VarChar(500)
+  text    String?
+  html    String?
+
+  scheduledFor  DateTime?   @db.Timestamptz(6)
+  sentAt        DateTime?   @db.Timestamptz(6)
+  deliveredAt   DateTime?   @db.Timestamptz(6)
+  status        EmailStatus @default(scheduled)
+  sequenceOrder Int?
+
+  providerMessageID String? @unique @db.VarChar(255)
+  emailProvider     String? @db.VarChar(50)
+
+  openedAt  DateTime? @db.Timestamptz(6)
+  clickedAt DateTime? @db.Timestamptz(6)
+
+  aiProcessed      Boolean? @default(false)
+  sentimentScore   Decimal? @db.Decimal(3, 2)
+  intentCategory   String?  @db.VarChar(100)
+  suggestedActions Json?    @default("[]")
+
+  tags         String[] @default([])
+  attachments  Json?    @default("[]")
+  metadata     Json?    @default("{}")
+  errorMessage String?
+  retryCount   Int      @default(0)
+  maxRetries   Int      @default(3)
+
+  receivedAt DateTime? @default(now()) @db.Timestamptz(6)
+  createdAt  DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime? @updatedAt @db.Timestamptz(6)
+
+  emailThread   EmailThread?   @relation(fields: [emailThreadID], references: [id])
   emailTemplate EmailTemplate? @relation(fields: [emailTemplateID], references: [id])
+  emailSequence EmailSequence? @relation(fields: [emailSequenceID], references: [id])
+  coach         Coach?         @relation(fields: [coachID], references: [id])
+  client        Client?        @relation(fields: [clientID], references: [id])
+  lead          Lead?          @relation(fields: [leadID], references: [id])
 
-  @@index([status])
-  @@index([sentAt], map: "idx_email_messages_sent_at")
-  @@index([emailThreadID], map: "idx_email_messages_thread_id")
+  @@index([status, scheduledFor])
+  @@index([coachID, status])
+  @@index([clientID, sentAt])
+  @@index([leadID, sentAt])
+  @@index([emailSequenceID, sequenceOrder])
   @@map("email_messages")
 }
 
@@ -985,66 +1019,40 @@ model EmailTemplate {
 }
 
 model EmailThread {
-  id             String    @id @default(uuid()) @db.Uuid
-  userID         String    @db.Uuid
-  userType       UserType
-  clientID       String?   @db.Uuid
-  clientType     String    @db.VarChar(20)
+  id       String   @id @default(uuid()) @db.Uuid
+  userID   String   @db.Uuid
+  userType UserType
+
+  coachID  String? @db.Uuid
+  clientID String? @db.Uuid
+  leadID   String? @db.Uuid
+
+  clientType     String?   @db.VarChar(20)
   emailAccountID String    @db.Uuid
   threadID       String    @db.VarChar(255)
   subject        String?   @db.VarChar(500)
   participants   String[]
-  status         String?   @default("active") @db.VarChar(50)
+  status         String?   @default("active") @db.VarChar(20)
   isRead         Boolean?  @default(false)
   priority       String?   @default("normal") @db.VarChar(20)
   messageCount   Int?      @default(0)
   tags           String[]  @default([])
   lastMessageAt  DateTime? @db.Timestamptz(6)
-  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime? @default(now()) @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @db.Timestamptz(6)
 
-  emailMessages           EmailMessage[]
-  generatedEmailResponses GeneratedEmailResponse[]
+  coach  Coach?  @relation(fields: [coachID], references: [id])
+  client Client? @relation(fields: [clientID], references: [id])
+  lead   Lead?   @relation(fields: [leadID], references: [id])
 
-  emailAccount EmailAccount @relation(fields: [emailAccountID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  emailAccount           EmailAccount             @relation(fields: [emailAccountID], references: [id])
+  emailMessages          EmailMessage[]
+  GeneratedEmailResponse GeneratedEmailResponse[]
 
+  @@index([coachID, isRead])
+  @@index([clientID, status])
+  @@index([leadID, status])
   @@map("email_threads")
-}
-
-model ScheduledEmail {
-  id                String    @id @default(uuid()) @db.Uuid
-  emailSequenceID   String?   @db.Uuid
-  leadID            String?   @db.Uuid
-  coachID           String?   @db.Uuid
-  clientID          String?   @db.Uuid
-  threadID          String?   @db.Uuid
-  to                String    @db.VarChar(255)
-  subject           String    @db.VarChar(500)
-  body              String    @db.Text
-  sequenceOrder     Int
-  scheduledFor      DateTime  @db.Timestamptz(6)
-  sentAt            DateTime? @db.Timestamptz(6)
-  status            String    @default("scheduled") @db.VarChar(50)
-  errorMessage      Json?
-  emailProvider     String?   @db.VarChar(50)
-  providerMessageID String?
-  metadata          Json?
-  openedAt          DateTime? @db.Timestamptz(6)
-  clickedAt         DateTime? @db.Timestamptz(6)
-  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
-
-  emailSequence EmailSequence? @relation(fields: [emailSequenceID], references: [id], onDelete: SetNull)
-  lead          Lead?          @relation(fields: [leadID], references: [id], onDelete: Cascade)
-  client        Client?        @relation(fields: [clientID], references: [id], onDelete: Cascade)
-  coach         Coach?         @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([scheduledFor, status])
-  @@index([leadID])
-  @@index([coachID])
-  @@index([clientID])
-  @@index([emailSequenceID])
-  @@map("scheduled_emails")
 }
 
 model EmailSequence {
@@ -1067,7 +1075,7 @@ model EmailSequence {
   coach  Coach?  @relation(fields: [coachID], references: [id], onDelete: Cascade)
   client Client? @relation(fields: [clientID], references: [id], onDelete: Cascade)
 
-  scheduledEmails ScheduledEmail[]
+  emailMessages EmailMessage[]
 
   @@index([coachID])
   @@index([leadID])
@@ -1149,7 +1157,7 @@ model WebhookEvent {
   processedAt    DateTime?    @db.Timestamptz(6)
   errorMessage   String?
   retryCount     Int?         @default(0)
-  createdAt      DateTime?    @default(now()) @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
   integration    Integration? @relation(fields: [integrationID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([integrationID], map: "idx_webhook_events_integration_id")
@@ -1404,28 +1412,37 @@ enum LeadType {
   admin_lead
 }
 
+enum LeadStatus {
+  contacted
+  scheduled
+  converted
+  unresponsive
+}
+
 model Lead {
-  id              String           @id @default(uuid()) @db.Uuid
-  coachID         String?          @db.Uuid
-  leadType        LeadType         @default(coach_lead)
-  name            String           @db.VarChar(100)
-  email           String           @db.VarChar(255)
-  phone           String?          @db.VarChar(20)
-  source          String?          @db.VarChar(100)
-  status          String           @default("contacted") @db.VarChar(50) // contacted, scheduled, converted, unresponsive
-  meetingDate     DateTime?        @db.Timestamptz(6)
-  meetingTime     String?          @db.VarChar(20)
+  id              String     @id @default(uuid()) @db.Uuid
+  coachID         String?    @db.Uuid
+  leadType        LeadType   @default(coach_lead)
+  name            String     @db.VarChar(100)
+  email           String     @db.VarChar(255)
+  phone           String?    @db.VarChar(20)
+  source          String?    @db.VarChar(100)
+  status          LeadStatus @default(contacted)
+  meetingDate     DateTime?  @db.Timestamptz(6)
+  meetingTime     String?    @db.VarChar(20)
   notes           String?
   answers         Json?
-  qualified       Boolean?         @default(false)
-  submittedAt     DateTime?        @db.Timestamptz(6)
-  lastContactedAt DateTime?        @db.Timestamptz(6)
-  convertedAt     DateTime?        @db.Timestamptz(6)
-  createdAt       DateTime         @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime         @updatedAt @db.Timestamptz(6)
-  coach           Coach?           @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  emailSequences  EmailSequence[]
-  scheduledEmails ScheduledEmail[]
+  qualified       Boolean?   @default(false)
+  submittedAt     DateTime?  @db.Timestamptz(6)
+  lastContactedAt DateTime?  @db.Timestamptz(6)
+  convertedAt     DateTime?  @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(6)
+  coach           Coach?     @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  emailSequences EmailSequence[]
+  emailMessages  EmailMessage[]
+  emailThreads   EmailThread[]
 
   @@map("leads")
 }

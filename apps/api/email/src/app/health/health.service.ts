@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nlc-ai/api-database';
-import { EmailService } from '../email/email.service';
+import { AppService } from '../app.service';
 import { EmailSchedulerService } from '../email/email-scheduler.service';
 import {EmailHealthStatus, EmailSystemHealth} from "@nlc-ai/api-types";
 
@@ -12,7 +12,7 @@ export class HealthService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    private readonly emailService: AppService,
     private readonly emailSchedulerService: EmailSchedulerService,
   ) {}
 
