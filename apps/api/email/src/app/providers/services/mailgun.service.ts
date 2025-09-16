@@ -82,6 +82,7 @@ export class MailgunService implements IEmailProvider {
 
       return {
         provider: 'mailgun',
+        status: 'healthy',
         isHealthy: true,
         responseTime: Date.now() - startTime,
         lastChecked: new Date().toISOString(),
@@ -91,6 +92,7 @@ export class MailgunService implements IEmailProvider {
       this.logger.error('Mailgun health check failed', error);
       return {
         provider: 'mailgun',
+        status: 'unhealthy',
         isHealthy: false,
         responseTime: Date.now() - startTime,
         lastChecked: new Date().toISOString(),

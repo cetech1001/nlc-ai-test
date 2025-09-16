@@ -11,6 +11,7 @@ export interface EmailDeliveryResult {
 export interface EmailProviderHealth {
   provider: string;
   isHealthy: boolean;
+  status: string;
   responseTime: number;
   lastChecked: string;
   errorRate: number;

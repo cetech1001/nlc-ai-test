@@ -895,6 +895,8 @@ enum EmailStatus {
   failed
   bounced
   simulated
+  paused
+  cancelled
 }
 
 enum SequenceStatus {

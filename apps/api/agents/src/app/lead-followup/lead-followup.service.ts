@@ -750,12 +750,12 @@ export class LeadFollowupService {
 
     let scheduledEmail;
     if (existingEmailID) {
-      scheduledEmail = await this.prisma.scheduledEmail.update({
+      scheduledEmail = await this.prisma.emailMessage.update({
         where: { id: existingEmailID },
         data: emailData
       });
     } else {
-      scheduledEmail = await this.prisma.scheduledEmail.create({
+      scheduledEmail = await this.prisma.emailMessage.create({
         data: emailData
       });
     }

@@ -66,9 +66,8 @@ export class AuthEventsHandler {
     try {
       const { email, firstName, lastName } = event.payload;
       const fullName = `${firstName} ${lastName}`;
-      const frontendURL = process.env.FRONTEND_URL || 'https://app.nextlevelcoach.ai';
 
-      await this.emailService.sendWelcomeEmail(email, fullName, frontendURL);
+      await this.emailService.sendWelcomeEmail(email, fullName);
       this.logger.log(`Welcome email sent to ${email}`);
     } catch (error) {
       this.logger.error('Failed to send welcome email:', error);
