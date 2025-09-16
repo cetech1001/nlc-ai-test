@@ -1,14 +1,14 @@
 import {Body, Controller, Get, Logger, Param, Post} from '@nestjs/common';
-import {ProvidersService} from './providers.service';
-import {SendEmailDto} from './dto/send-email.dto';
-import {SendBulkEmailsDto} from './dto/send-bulk-emails.dto';
+import {ProvidersService} from './providers/providers.service';
+import {SendEmailDto} from './providers/dto/send-email.dto';
+import {SendBulkEmailsDto} from './providers/dto/send-bulk-emails.dto';
 import {type AuthUser, EmailMessageStatus, EmailProviderHealth, SendEmailResponse, UserType} from '@nlc-ai/types';
 import {CurrentUser} from "@nlc-ai/api-auth";
 import {ConfigService} from "@nestjs/config";
 
 @Controller('providers')
-export class ProvidersController {
-  private readonly logger = new Logger(ProvidersController.name);
+export class AppController {
+  private readonly logger = new Logger(AppController.name);
 
   constructor(
     private emailProviderService: ProvidersService,

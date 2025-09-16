@@ -7,7 +7,7 @@ import {
   getWelcomeEmailTemplate,
   getPaymentRequestEmailTemplate,
   getPaymentRequestText, getLeadFollowupEmailTemplate,
-} from '../email/templates';
+} from '../templates/templates';
 import {EmailDeliveryResult, EmailMessageStatus} from "@nlc-ai/types";
 
 @Injectable()

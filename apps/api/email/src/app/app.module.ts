@@ -6,15 +6,19 @@ import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-a
 import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-import { EmailModule } from './email/email.module';
 import { TemplatesModule } from './templates/templates.module';
 import { SequencesModule } from './sequences/sequences.module';
 import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
 import emailConfig from './config/email.config';
 import {WebhooksModule} from "./webhooks/webhooks.module";
-import {ClientEmailSendModule} from "./client-email-send/client-email-send.module";
 import {AccountsModule} from "./accounts/accounts.module";
+import {AppService} from "./app.service";
+import {DeliveryModule} from "./delivery/delivery.module";
+import {ProvidersModule} from "./providers/providers.module";
+import {SchedulingModule} from "./scheduling/scheduling.module";
+import {ThreadsModule} from "./threads/threads.module";
+import {TransactionalModule} from "./transactional/transactional.module";
 
 @Module({
   imports: [
@@ -29,15 +33,19 @@ import {AccountsModule} from "./accounts/accounts.module";
     MessagingModule.forRoot(),
     AuthLibModule,
     AccountsModule,
-    HealthModule,
-    EmailModule,
-    TemplatesModule,
-    SequencesModule,
+    DeliveryModule,
     EventHandlersModule,
+    HealthModule,
+    ProvidersModule,
+    SchedulingModule,
+    SequencesModule,
+    TemplatesModule,
+    ThreadsModule,
+    TransactionalModule,
     WebhooksModule,
-    ClientEmailSendModule,
   ],
   providers: [
+    AppService,
     {
       provide: APP_PIPE,
       useClass: ValidationPipe,

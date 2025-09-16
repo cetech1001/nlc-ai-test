@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
-import { EmailIntegrationService } from '../../email/email-integration.service';
 import { AppService } from '../../app.service';
 import {ConfigService} from "@nestjs/config";
 import {Coach} from "@prisma/client";
@@ -12,7 +11,6 @@ export class LeadClientEventsHandler {
   constructor(
     private readonly configService: ConfigService,
     private readonly eventBus: EventBusService,
-    private readonly emailIntegrationService: EmailIntegrationService,
     private readonly emailService: AppService,
   ) {
     this.subscribeToEvents();
@@ -380,8 +378,8 @@ export class LeadClientEventsHandler {
   }
 
   private async handleSequenceCompleted(payload: any) {
-    const { leadID, coachID, sequenceID } = payload;
-    await this.emailIntegrationService.handleSequenceCompletion(leadID, coachID);
+    const { leadID, sequenceID } = payload;
+    // await this.emailIntegrationService.handleSequenceCompletion(leadID, coachID);
     this.logger.log(`Sequence ${sequenceID} completed for lead ${leadID}`);
   }
 
