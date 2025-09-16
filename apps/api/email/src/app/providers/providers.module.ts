@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MailgunService } from './services/mailgun.service';
-import { EmailProviderService } from './services/email-provider.service';
+import { ProvidersService } from './providers.service';
 import { ProvidersController } from './providers.controller';
 
 @Module({
@@ -13,8 +13,8 @@ import { ProvidersController } from './providers.controller';
       provide: 'EMAIL_PROVIDER',
       useClass: MailgunService,
     },
-    EmailProviderService,
+    ProvidersService,
   ],
-  exports: [EmailProviderService, 'EMAIL_PROVIDER'],
+  exports: [ProvidersService, 'EMAIL_PROVIDER'],
 })
 export class ProvidersModule {}

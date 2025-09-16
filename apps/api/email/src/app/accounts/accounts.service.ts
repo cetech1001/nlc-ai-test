@@ -1,25 +1,64 @@
-import {Inject, Injectable, Logger} from '@nestjs/common';
-import {InjectQueue} from '@nestjs/bull';
-import {type Queue} from 'bull';
-import {IEmailSyncProvider} from '../interfaces/email-sync-provider.interface';
-import {EmailSyncRepository} from '../repositories/email-sync.repository';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
+import {InjectQueue} from "@nestjs/bull";
+import type {Queue} from "bull";
+import {
+  EmailAccount,
+  EmailAccountActionResponse
+} from '@nlc-ai/api-types';
 import {
   BulkSyncRequest,
   BulkSyncResponse,
   SyncEmailAccountRequest,
   SyncEmailAccountResponse,
-  SyncStatus
-} from '@nlc-ai/types';
+  SyncStatus,
+  IEmailSyncProvider
+} from "@nlc-ai/types";
+import {AccountsRepository} from "./repositories/accounts.repository";
 
 @Injectable()
-export class EmailSyncService {
-  private readonly logger = new Logger(EmailSyncService.name);
+export class AccountsService {
+  private readonly logger = new Logger(AccountsService.name);
 
   constructor(
     @Inject('SYNC_PROVIDERS') private syncProviders: Record<string, IEmailSyncProvider>,
     @InjectQueue('email-sync') private syncQueue: Queue,
-    private emailSyncRepository: EmailSyncRepository,
-  ) {}
+    private readonly accountsRepo: AccountsRepository,
+  ) {
+  }
+
+  async getEmailAccounts(userID: string): Promise<EmailAccount[]> {
+    try {
+      const emailAccounts = await this.accountsRepo.getAccountsByUser(userID);
+
+      return emailAccounts.map(account => ({
+        ...account,
+        accessToken: account.accessToken ? '***' : null,
+        refreshToken: account.refreshToken ? '***' : null,
+      }));
+    } catch (error: any) {
+      throw new BadRequestException('Failed to retrieve email accounts');
+    }
+  }
+
+  async setPrimaryEmailAccount(userID: string, accountID: string): Promise<EmailAccountActionResponse> {
+    const emailAccount = await this.accountsRepo.getAccountByID(accountID, userID);
+
+    try {
+      await this.accountsRepo.setPrimaryEmailAccount(accountID, userID);
+
+      return {
+        success: true,
+        message: `${emailAccount?.emailAddress} set as primary email account`,
+      };
+    } catch (error: any) {
+      throw new BadRequestException('Failed to set primary email account');
+    }
+  }
 
   async syncAccount(request: SyncEmailAccountRequest): Promise<SyncEmailAccountResponse> {
     try {
@@ -77,11 +116,7 @@ export class EmailSyncService {
           jobs.push(job);
         }
       } else if (request.userID && request.userType) {
-        // Get all accounts for user and queue them
-        const accounts = await this.emailSyncRepository.getAccountsByUser(
-          request.userID,
-          request.userType
-        );
+        const accounts = await this.accountsRepo.getAccountsByUser(request.userID);
 
         for (const account of accounts) {
           const job = await this.syncQueue.add('sync-account', {
@@ -93,7 +128,7 @@ export class EmailSyncService {
       }
 
       return {
-        results: [], // Will be populated as jobs complete
+        results: [],
         totalAccounts: jobs.length,
         successfulSyncs: 0,
         failedSyncs: 0,

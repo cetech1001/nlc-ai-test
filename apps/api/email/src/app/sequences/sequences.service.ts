@@ -26,11 +26,11 @@ export class SequencesService {
         coachID,
         name: sequenceData.name,
         description: sequenceData.description,
-        category: sequenceData.category,
+        // category: sequenceData.category,
         triggerType: sequenceData.triggerType,
         isActive: sequenceData.isActive ?? true,
-        totalEmails: sequenceData.emails.length,
-        metadata: JSON.stringify({ emails: sequenceData.emails }),
+        // totalEmails: sequenceData.emails.length,
+        // metadata: JSON.stringify({ emails: sequenceData.emails }),
       },
     });
 

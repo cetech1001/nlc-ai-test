@@ -1,25 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import {PrismaService} from "@nlc-ai/api-database";
-import {UserType} from "@nlc-ai/types";
 
 @Injectable()
-export class EmailSyncRepository {
+export class AccountsRepository {
   constructor(private prisma: PrismaService) {}
 
-  async getAccountsByUser(userID: string, userType: UserType) {
+  async getAccountsByUser(userID: string) {
     return this.prisma.emailAccount.findMany({
       where: {
         userID,
-        userType,
         isActive: true,
         syncEnabled: true,
       },
     });
   }
 
-  async getAccountByID(accountID: string) {
+  async setPrimaryEmailAccount(accountID: string, userID: string) {
+    return this.prisma.$transaction(async (prisma) => {
+      await prisma.emailAccount.updateMany({
+        where: {
+          userID,
+          id: { not: accountID },
+        },
+        data: { isPrimary: false },
+      });
+
+      await prisma.emailAccount.update({
+        where: { id: accountID },
+        data: { isPrimary: true },
+      });
+    });
+  }
+
+  async getAccountByID(accountID: string, userID?: string) {
     return this.prisma.emailAccount.findUnique({
-      where: { id: accountID },
+      where: {
+        id: accountID,
+        userID,
+      },
     });
   }
 

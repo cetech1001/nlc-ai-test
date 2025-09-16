@@ -111,7 +111,7 @@ export class GmailService extends BaseIntegrationService {
     const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
+      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
       scope: [
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://www.googleapis.com/auth/gmail.send',
@@ -205,8 +205,8 @@ export class GmailService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('GOOGLE_CLIENT_ID', ''),
-      client_secret: this.configService.get('GOOGLE_CLIENT_SECRET', ''),
+      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.google.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/gmail/callback`,

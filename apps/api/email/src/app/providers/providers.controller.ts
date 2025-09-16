@@ -1,5 +1,5 @@
 import {Body, Controller, Get, Logger, Param, Post} from '@nestjs/common';
-import {EmailProviderService} from './services/email-provider.service';
+import {ProvidersService} from './providers.service';
 import {SendEmailDto} from './dto/send-email.dto';
 import {SendBulkEmailsDto} from './dto/send-bulk-emails.dto';
 import {type AuthUser, EmailMessageStatus, EmailProviderHealth, SendEmailResponse, UserType} from '@nlc-ai/types';
@@ -11,7 +11,7 @@ export class ProvidersController {
   private readonly logger = new Logger(ProvidersController.name);
 
   constructor(
-    private emailProviderService: EmailProviderService,
+    private emailProviderService: ProvidersService,
     private readonly config: ConfigService,
   ) {}
 

@@ -14,6 +14,7 @@ import { HealthModule } from './health/health.module';
 import emailConfig from './config/email.config';
 import {WebhooksModule} from "./webhooks/webhooks.module";
 import {ClientEmailSendModule} from "./client-email-send/client-email-send.module";
+import {AccountsModule} from "./accounts/accounts.module";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import {ClientEmailSendModule} from "./client-email-send/client-email-send.modul
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
+    AccountsModule,
     HealthModule,
     EmailModule,
     TemplatesModule,

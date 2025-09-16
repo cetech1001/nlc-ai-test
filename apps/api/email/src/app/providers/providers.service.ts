@@ -3,8 +3,8 @@ import type {IEmailProvider, EmailDeliveryResult, SendEmailRequest} from '@nlc-a
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
-export class EmailProviderService {
-  private readonly logger = new Logger(EmailProviderService.name);
+export class ProvidersService {
+  private readonly logger = new Logger(ProvidersService.name);
 
   constructor(
     @Inject('EMAIL_PROVIDER') private emailProvider: IEmailProvider,
