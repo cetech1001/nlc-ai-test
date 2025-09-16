@@ -13,6 +13,12 @@ enum AuthProviders {
   google
 }
 
+enum UserType {
+  admin
+  coach
+  client
+}
+
 model Admin {
   id             String          @id @default(uuid()) @db.Uuid
   email          String          @unique @db.VarChar(255)
@@ -662,7 +668,7 @@ model CommunityMember {
   id           String       @id @default(uuid()) @db.Uuid
   communityID  String       @db.Uuid
   userID       String       @db.Uuid
-  userType     String       @db.VarChar(20)
+  userType     UserType
   role         MemberRole   @default(member)
   status       MemberStatus @default(active)
   joinedAt     DateTime     @default(now()) @db.Timestamptz(6)
@@ -757,8 +763,8 @@ model PostReaction {
   postID    String? @db.Uuid
   commentID String? @db.Uuid
 
-  userID   String @db.Uuid
-  userType String @db.VarChar(20)
+  userID   String   @db.Uuid
+  userType UserType
 
   type      ReactionType @default(like)
   createdAt DateTime     @default(now()) @db.Timestamptz(6)
@@ -900,7 +906,7 @@ enum TemplateCategory {
 model EmailAccount {
   id             String    @id @default(uuid()) @db.Uuid
   userID         String    @db.Uuid
-  userType       String    @db.VarChar(20)
+  userType       UserType
   emailAddress   String    @db.VarChar(255)
   provider       String    @db.VarChar(50)
   accessToken    String?
@@ -960,7 +966,7 @@ model EmailMessage {
 model EmailTemplate {
   id               String           @id @default(uuid()) @db.Uuid
   userID           String           @db.Uuid
-  userType         String           @db.VarChar(20)
+  userType         UserType
   name             String           @db.VarChar(255)
   category         TemplateCategory
   subjectTemplate  String?          @db.VarChar(500)
@@ -981,7 +987,7 @@ model EmailTemplate {
 model EmailThread {
   id             String    @id @default(uuid()) @db.Uuid
   userID         String    @db.Uuid
-  userType       String    @db.VarChar(20)
+  userType       UserType
   clientID       String?   @db.Uuid
   clientType     String    @db.VarChar(20)
   emailAccountID String    @db.Uuid
@@ -1043,6 +1049,8 @@ model ScheduledEmail {
 
 model EmailSequence {
   id          String   @id @default(uuid()) @db.Uuid
+  userID      String   @db.VarChar(50)
+  userType    UserType
   leadID      String?  @db.Uuid
   coachID     String?  @db.Uuid
   clientID    String?  @db.Uuid
@@ -1055,9 +1063,10 @@ model EmailSequence {
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
-  lead            Lead?            @relation(fields: [leadID], references: [id], onDelete: Cascade)
-  coach           Coach?           @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  client          Client?          @relation(fields: [clientID], references: [id], onDelete: Cascade)
+  lead   Lead?   @relation(fields: [leadID], references: [id], onDelete: Cascade)
+  coach  Coach?  @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientID], references: [id], onDelete: Cascade)
+
   scheduledEmails ScheduledEmail[]
 
   @@index([coachID])
@@ -1107,7 +1116,7 @@ model Integration {
   id String @id @default(uuid()) @db.Uuid
 
   userID          String          @db.Uuid
-  userType        String          @db.VarChar(20)
+  userType        UserType
   integrationType IntegrationType
   platformName    String          @db.VarChar(100)
   accessToken     String?
@@ -1239,9 +1248,8 @@ model MediaTransformation {
 model Notification {
   id String @id @default(uuid()) @db.Uuid
 
-  // Add unified user fields for multi-user support
-  userID   String? @db.Uuid // Will replace coachID/adminID usage
-  userType String? @db.VarChar(20) // 'coach', 'admin', 'client'
+  userID   String?   @db.Uuid
+  userType UserType?
 
   type      String    @db.VarChar(50)
   title     String    @db.VarChar(255)
@@ -1261,7 +1269,7 @@ model Notification {
 model NotificationPreference {
   id           String   @id @default(uuid()) @db.Uuid
   userID       String   @db.Uuid
-  userType     String   @db.VarChar(20) // 'coach', 'admin', 'client'
+  userType     UserType
   emailEnabled Boolean  @default(true)
   pushEnabled  Boolean  @default(true)
   webhookUrl   String?  @db.VarChar(500)
@@ -1362,7 +1370,7 @@ model MessageDelivery {
   id        String   @id @default(uuid()) @db.Uuid
   messageID String   @db.Uuid
   userID    String   @db.Uuid
-  userType  String   @db.VarChar(20)
+  userType  UserType
   status    String   @default("sent") @db.VarChar(20) // 'sent', 'delivered', 'read'
   timestamp DateTime @default(now()) @db.Timestamptz(6)
 
@@ -1376,7 +1384,7 @@ model ConversationParticipant {
   id             String    @id @default(uuid()) @db.Uuid
   conversationID String    @db.Uuid
   userID         String    @db.Uuid
-  userType       String    @db.VarChar(20) // 'coach', 'admin', 'client'
+  userType       UserType
   joinedAt       DateTime  @default(now()) @db.Timestamptz(6)
   leftAt         DateTime? @db.Timestamptz(6)
   isActive       Boolean   @default(true)
@@ -1927,7 +1935,7 @@ model PlatformAnalytic {
 model ActivityLog {
   id         String   @id @default(uuid()) @db.Uuid
   userID     String   @db.Uuid
-  userType   String   @db.VarChar(20) // "admin" or "coach"
+  userType   UserType
   action     String   @db.VarChar(100)
   entityType String?  @db.VarChar(50)
   entityID   String?  @db.Uuid

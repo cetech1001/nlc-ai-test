@@ -1,43 +1,32 @@
-import { IsString, IsOptional, IsArray, IsBoolean, IsEnum, IsNumber, ValidateNested, MinLength, MaxLength, Min } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsEnum, ValidateNested, MinLength, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import {
+  CreateEmailSequenceRequest,
+  EmailCondition, EmailConditionOperator, EmailConditionType,
+  EmailSequenceTriggerType,
+  EmailSequenceType,
+} from "@nlc-ai/types";
 
-export enum TriggerType {
-  MANUAL = 'manual',
-  LEAD_CREATED = 'lead_created',
-  CLIENT_ONBOARDED = 'client_onboarded',
-  FORM_SUBMITTED = 'form_submitted',
-  CONSULTATION_BOOKED = 'consultation_booked'
+export class EmailConditionDto implements EmailCondition{
+  @ApiProperty({ description: 'Condition field to check' })
+  @IsString()
+  field: string;
+
+  @ApiProperty({ enum: EmailConditionOperator, description: 'Condition operator (equals, contains, greater_than, etc.)' })
+  @IsEnum(EmailConditionOperator)
+  operator: EmailConditionOperator;
+
+  @ApiProperty({ enum: EmailConditionType, description: 'Condition type' })
+  @IsEnum(EmailConditionType)
+  type: EmailConditionType;
+
+  @ApiProperty({ description: 'Value to compare against' })
+  @IsString()
+  value: string;
 }
 
-export class SequenceEmailDto {
-  @ApiProperty({ description: 'Template ID to use for this email' })
-  @IsString()
-  templateID: string;
-
-  @ApiProperty({ description: 'Delay in days before sending this email', minimum: 0 })
-  @IsNumber()
-  @Min(0)
-  delayDays: number;
-
-  @ApiProperty({ description: 'Order of this email in the sequence', minimum: 1 })
-  @IsNumber()
-  @Min(1)
-  order: number;
-
-  @ApiProperty({ required: false, description: 'Custom subject override' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  customSubject?: string;
-
-  @ApiProperty({ required: false, description: 'Custom content override' })
-  @IsOptional()
-  @IsString()
-  customContent?: string;
-}
-
-export class CreateSequenceDto {
+export class CreateSequenceDto implements CreateEmailSequenceRequest{
   @ApiProperty({ description: 'Sequence name', example: 'New Lead Nurture' })
   @IsString()
   @MinLength(1)
@@ -50,24 +39,18 @@ export class CreateSequenceDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiProperty({ description: 'Sequence category', example: 'lead-nurture' })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
-  category: string;
+  @ApiProperty({ enum: EmailSequenceType, description: 'Sequence type' })
+  @IsEnum(EmailSequenceType)
+  type: EmailSequenceType;
 
-  @ApiProperty({ enum: TriggerType, description: 'How this sequence is triggered' })
-  @IsEnum(TriggerType)
-  triggerType: TriggerType;
+  @ApiProperty({ enum: EmailSequenceTriggerType, description: 'How this sequence is triggered' })
+  @IsEnum(EmailSequenceTriggerType)
+  triggerType: EmailSequenceTriggerType;
 
-  @ApiProperty({ required: false, description: 'Whether sequence is active', default: true })
+  @ApiProperty({ type: [EmailConditionDto], required: false, description: 'Conditions that must be met to trigger the sequence' })
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean = true;
-
-  @ApiProperty({ type: [SequenceEmailDto], description: 'Emails in this sequence' })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SequenceEmailDto)
-  emails: SequenceEmailDto[];
+  @Type(() => EmailConditionDto)
+  triggerConditions?: EmailCondition[];
 }

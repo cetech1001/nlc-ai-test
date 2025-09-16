@@ -1,9 +1,15 @@
-import { IsString, IsOptional, IsArray, IsBoolean, IsEnum, ValidateNested, MinLength, MaxLength } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
-import { TriggerType, SequenceEmailDto } from './create-sequence.dto';
+import {ApiProperty} from "@nestjs/swagger";
+import {IsArray, IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength, ValidateNested} from "class-validator";
+import {
+  EmailSequenceStatus,
+  EmailSequenceTriggerType,
+  EmailSequenceType,
+  UpdateEmailSequenceRequest
+} from "@nlc-ai/types";
+import {Type} from "class-transformer";
+import {EmailConditionDto} from "./create-sequence.dto";
 
-export class UpdateSequenceDto {
+export class UpdateSequenceDto implements UpdateEmailSequenceRequest{
   @ApiProperty({ required: false, description: 'Sequence name' })
   @IsOptional()
   @IsString()
@@ -17,27 +23,30 @@ export class UpdateSequenceDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiProperty({ required: false, description: 'Sequence category' })
+  @ApiProperty({ enum: EmailSequenceType, required: false, description: 'Sequence type' })
   @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
-  category?: string;
+  @IsEnum(EmailSequenceType)
+  type?: EmailSequenceType;
 
-  @ApiProperty({ enum: TriggerType, required: false, description: 'How this sequence is triggered' })
+  @ApiProperty({ enum: EmailSequenceTriggerType, required: false, description: 'How this sequence is triggered' })
   @IsOptional()
-  @IsEnum(TriggerType)
-  triggerType?: TriggerType;
+  @IsEnum(EmailSequenceTriggerType)
+  triggerType?: EmailSequenceTriggerType;
+
+  @ApiProperty({ type: [EmailConditionDto], required: false, description: 'Updated trigger conditions' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EmailConditionDto)
+  triggerConditions?: EmailConditionDto[];
+
+  @ApiProperty({ enum: EmailSequenceStatus, required: false, description: 'Sequence status' })
+  @IsOptional()
+  @IsEnum(EmailSequenceStatus)
+  status?: EmailSequenceStatus;
 
   @ApiProperty({ required: false, description: 'Whether sequence is active' })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
-
-  @ApiProperty({ type: [SequenceEmailDto], required: false, description: 'Updated emails in sequence' })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SequenceEmailDto)
-  emails?: SequenceEmailDto[];
 }

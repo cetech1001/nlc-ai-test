@@ -1,36 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { EmailIntegrationService } from '../email/email-integration.service';
+import {AuthUser, CreateEmailSequenceRequest, EmailSequenceStatus, UpdateEmailSequenceRequest} from "@nlc-ai/types";
 
 @Injectable()
 export class SequencesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailIntegrationService: EmailIntegrationService,
   ) {}
 
-  async createSequence(coachID: string, sequenceData: {
-    name: string;
-    description?: string;
-    category: string;
-    triggerType: string;
-    isActive?: boolean;
-    emails: Array<{
-      templateID: string;
-      delayDays: number;
-      order: number;
-    }>;
-  }) {
+  async createSequence(user: AuthUser, sequenceData: CreateEmailSequenceRequest) {
     const sequence = await this.prisma.emailSequence.create({
       data: {
-        coachID,
-        name: sequenceData.name,
-        description: sequenceData.description,
-        // category: sequenceData.category,
-        triggerType: sequenceData.triggerType,
-        isActive: sequenceData.isActive ?? true,
-        // totalEmails: sequenceData.emails.length,
-        // metadata: JSON.stringify({ emails: sequenceData.emails }),
+        ...sequenceData,
+        userID: user.id,
+        userType: user.type,
+        sequence: [],
+        status: EmailSequenceStatus.ACTIVE,
       },
     });
 
@@ -76,16 +61,7 @@ export class SequencesService {
   async updateSequence(
     coachID: string,
     sequenceID: string,
-    updateData: {
-      name?: string;
-      description?: string;
-      isActive?: boolean;
-      emails?: Array<{
-        templateID: string;
-        delayDays: number;
-        order: number;
-      }>;
-    }
+    updateData: UpdateEmailSequenceRequest
   ) {
     const sequence = await this.prisma.emailSequence.findFirst({
       where: { id: sequenceID, coachID },
@@ -95,16 +71,9 @@ export class SequencesService {
       throw new NotFoundException('Sequence not found');
     }
 
-    const updatedData: any = { ...updateData };
-
-    if (updateData.emails) {
-      updatedData.totalEmails = updateData.emails.length;
-      updatedData.metadata = JSON.stringify({ emails: updateData.emails });
-    }
-
     const updatedSequence = await this.prisma.emailSequence.update({
       where: { id: sequenceID },
-      data: updatedData,
+      data: updateData,
     });
 
     return { sequence: updatedSequence };
@@ -125,45 +94,5 @@ export class SequencesService {
     });
 
     return { message: 'Sequence deleted successfully' };
-  }
-
-  async startSequenceForLead(
-    coachID: string,
-    leadID: string,
-    sequenceID: string
-  ) {
-    const sequence = await this.prisma.emailSequence.findFirst({
-      where: { id: sequenceID, coachID, isActive: true },
-    });
-
-    if (!sequence) {
-      throw new NotFoundException('Active sequence not found');
-    }
-
-    const lead = await this.prisma.lead.findUnique({
-      where: { id: leadID },
-    });
-
-    if (!lead) {
-      throw new NotFoundException('Lead not found');
-    }
-
-    const sequenceEmails = JSON.parse(sequence.metadata as string).emails;
-
-    for (const emailConfig of sequenceEmails) {
-      const scheduledFor = new Date();
-      scheduledFor.setDate(scheduledFor.getDate() + emailConfig.delayDays);
-
-      await this.emailIntegrationService.sendLeadFollowupWithTemplate({
-        leadID,
-        coachID,
-        templateID: emailConfig.templateID,
-        scheduledFor,
-        sequenceOrder: emailConfig.order,
-        emailSequenceID: sequenceID,
-      });
-    }
-
-    return { message: 'Sequence started successfully' };
   }
 }

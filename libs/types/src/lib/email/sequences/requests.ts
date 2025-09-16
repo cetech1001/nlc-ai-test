@@ -13,7 +13,6 @@ export interface CreateEmailSequenceRequest {
   type: EmailSequenceType;
   triggerType: EmailSequenceTriggerType;
   triggerConditions?: EmailCondition[];
-  emails: Omit<SequenceEmail, 'id'>[];
 }
 
 export interface UpdateEmailSequenceRequest {
