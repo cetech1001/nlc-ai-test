@@ -3,6 +3,9 @@ import { Transform } from 'class-transformer';
 
 export class EmailConfigSchema {
   @IsString()
+  APP_NAME: string;
+
+  @IsString()
   DATABASE_URL: string;
 
   @IsOptional()
@@ -20,7 +23,6 @@ export class EmailConfigSchema {
   @IsString()
   SERVICE_NAME?: string = 'email-service';
 
-  // Mailgun Configuration
   @IsOptional()
   @IsString()
   MAILGUN_API_KEY?: string;
@@ -52,4 +54,24 @@ export class EmailConfigSchema {
 
   @IsString()
   COACH_PLATFORM_URL: string;
+
+  @IsOptional()
+  @IsString()
+  MAILGUN_WEBHOOK_SIGNING_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  GOOGLE_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  GOOGLE_CLIENT_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  MICROSOFT_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  MICROSOFT_CLIENT_SECRET?: string;
 }

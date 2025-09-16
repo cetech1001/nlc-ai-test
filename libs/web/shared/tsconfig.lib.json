@@ -41,7 +41,7 @@
       "path": "../../sdk/billing/tsconfig.lib.json"
     },
     {
-      "path": "../utils/tsconfig.lib.json"
+      "path": "../../sdk/core/tsconfig.lib.json"
     },
     {
       "path": "../../types/tsconfig.lib.json"

@@ -12,7 +12,7 @@ export class CreateInviteDto {
   @IsUUID()
   coachID?: string;
 
-  @ApiPropertyOptional({ enum: ClientCoachRole, default: 'client' })
+  @ApiPropertyOptional({ enum: ClientCoachRole, default: ClientCoachRole.client })
   @IsOptional()
   @IsEnum(ClientCoachRole)
   role?: ClientCoachRole;

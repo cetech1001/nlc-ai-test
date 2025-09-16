@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
-import { AppService } from '../../app.service';
 import {ConfigService} from "@nestjs/config";
 import {Coach} from "@prisma/client";
 
@@ -11,7 +10,6 @@ export class LeadClientEventsHandler {
   constructor(
     private readonly configService: ConfigService,
     private readonly eventBus: EventBusService,
-    private readonly emailService: AppService,
   ) {
     this.subscribeToEvents();
   }
@@ -209,15 +207,15 @@ export class LeadClientEventsHandler {
   // NEW: Send email to unqualified leads
   private async sendUnqualifiedLeadEmail(email: string, name: string) {
     try {
-      const firstName = name.split(' ')[0];
+      // const firstName = name.split(' ')[0];
 
-      await this.emailService.sendEmail({
+      /*await this.emailService.sendEmail({
         to: email,
         subject: 'Thank you for your interest in Next Level Coach AI',
         html: this.getUnqualifiedLeadEmailTemplate(firstName),
         text: `Hi ${firstName},\n\nThank you for taking the time to complete our assessment. While you may not meet all the current criteria for our exclusive program, we appreciate your interest.\n\nWe'll keep you updated as we expand our offerings.\n\nBest regards,\nThe Next Level Coach AI Team`,
         templateID: 'unqualified-lead'
-      });
+      });*/
 
       this.logger.log(`Unqualified lead email sent to: ${email}`);
     } catch (error) {
@@ -228,15 +226,15 @@ export class LeadClientEventsHandler {
   // NEW: Welcome email fallback if account creation fails
   private async sendWelcomeEmailFallback(email: string, name: string) {
     try {
-      const firstName = name.split(' ')[0];
+      // const firstName = name.split(' ')[0];
 
-      await this.emailService.sendEmail({
+      /*await this.emailService.sendEmail({
         to: email,
         subject: 'Welcome to Next Level Coach AI - We\'ll be in touch soon!',
         html: this.getWelcomeFallbackEmailTemplate(firstName),
         text: `Hi ${firstName},\n\nThank you for qualifying for Next Level Coach AI! We're excited to have you join our exclusive program.\n\nOur team will be reaching out to you shortly to help you get started.\n\nBest regards,\nThe Next Level Coach AI Team`,
         templateID: 'welcome-fallback'
-      });
+      });*/
 
       this.logger.log(`Welcome fallback email sent to: ${email}`);
     } catch (error) {
@@ -250,7 +248,7 @@ export class LeadClientEventsHandler {
   }
 
   // Email templates
-  private getUnqualifiedLeadEmailTemplate(firstName: string): string {
+  /*private getUnqualifiedLeadEmailTemplate(firstName: string): string {
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -291,9 +289,9 @@ export class LeadClientEventsHandler {
       </body>
       </html>
     `;
-  }
+  }*/
 
-  private getWelcomeFallbackEmailTemplate(firstName: string): string {
+  /*private getWelcomeFallbackEmailTemplate(firstName: string): string {
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -338,7 +336,7 @@ export class LeadClientEventsHandler {
       </body>
       </html>
     `;
-  }
+  }*/
 
   // Existing methods (kept the same)
   private async handleLeadCreated(payload: any) {

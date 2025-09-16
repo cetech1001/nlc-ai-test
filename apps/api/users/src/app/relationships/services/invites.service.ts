@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { CreateInviteDto, InviteQueryDto } from './dto';
+import { CreateInviteDto, InviteQueryDto } from '../dto';
 import { v4 as uuid } from 'uuid';
 import {UserEvent} from "@nlc-ai/api-types";
 
@@ -96,7 +96,6 @@ export class InvitesService {
   async create(createInviteDto: CreateInviteDto, coachID: string) {
     const { email, role = 'client', message } = createInviteDto;
 
-    // Check if there's already a pending invite for this email from this coach
     const existingInvite = await this.prisma.clientInvite.findFirst({
       where: {
         coachID,
@@ -110,7 +109,6 @@ export class InvitesService {
       throw new ConflictException('An active invitation already exists for this email');
     }
 
-    // Check if client already exists and has relationship with coach
     const existingClient = await this.prisma.client.findUnique({
       where: { email },
       include: {
@@ -124,7 +122,6 @@ export class InvitesService {
       throw new ConflictException('Client is already connected to this coach');
     }
 
-    // Get coach details
     const coach = await this.prisma.coach.findUnique({
       where: { id: coachID },
       select: {
@@ -140,7 +137,7 @@ export class InvitesService {
 
     const token = uuid();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
     const invite = await this.prisma.clientInvite.create({
       data: {
@@ -153,7 +150,6 @@ export class InvitesService {
       },
     });
 
-    // Emit client invited event
     await this.outbox.saveAndPublishEvent<UserEvent>(
       {
         eventType: 'auth.client.invited',

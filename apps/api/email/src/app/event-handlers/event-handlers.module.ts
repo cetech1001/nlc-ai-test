@@ -1,9 +1,9 @@
 import {Module} from "@nestjs/common";
 import {AuthEventsHandler, LeadClientEventsHandler, BillingEventsHandler} from "./handlers";
-import {EmailModule} from "../email/email.module";
+import {TransactionalModule} from "../transactional/transactional.module";
 
 @Module({
-  imports: [EmailModule],
+  imports: [TransactionalModule],
   providers: [
     AuthEventsHandler,
     LeadClientEventsHandler,

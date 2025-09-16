@@ -2,13 +2,11 @@ import {Injectable, Logger} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {ProvidersService} from '../providers/providers.service';
 import {
-  getPasswordResetEmailTemplate,
-  getVerificationEmailTemplate,
-  getWelcomeEmailTemplate,
   getPaymentRequestEmailTemplate,
-  getPaymentRequestText, getLeadFollowupEmailTemplate,
+  getPaymentRequestText,
 } from '../templates/templates';
-import {EmailDeliveryResult, EmailMessageStatus} from "@nlc-ai/types";
+import {EmailMessageStatus, SendEmailRequest} from "@nlc-ai/types";
+import {ClientInvitedEvent} from "@nlc-ai/api-types";
 
 @Injectable()
 export class TransactionalService {
@@ -19,52 +17,73 @@ export class TransactionalService {
     private readonly providersService: ProvidersService,
     private readonly configService: ConfigService,
   ) {
-    this.systemFromEmail = this.configService.get<string>('email.system.fromEmail') ||
-      this.configService.get<string>('email.mailgun.fromEmail') ||
-      'noreply@nextlevelcoach.ai';
+    this.systemFromEmail =
+      this.configService.get<string>('email.mailgun.fromEmail', 'noreply@nextlevelcoach.ai');
   }
 
   async sendVerificationEmail(email: string, code: string): Promise<void> {
-    const subject = 'Verify Your Next Level Coach AI Account';
-    const html = getVerificationEmailTemplate(code);
-    const text = `Your verification code is: ${code}. This code expires in 10 minutes.`;
-
     await this.sendSystemEmail({
       to: email,
-      subject,
-      html,
-      text,
-      templateType: 'verification',
+      templateID: 'email_verification',
+      templateVariables: {
+        verificationCode: code,
+      }
     });
   }
 
   async sendPasswordResetEmail(email: string, code: string): Promise<void> {
-    const subject = 'Reset Your Next Level Coach AI Password';
-    const frontendURL = this.configService.get<string>('email.platforms.coach', '');
-    const html = getPasswordResetEmailTemplate(code, frontendURL, email);
-    const text = `Your password reset code is: ${code}. This code expires in 10 minutes.`;
+    const baseUrl = this.configService.get<string>('email.platforms.coach', '');
 
     await this.sendSystemEmail({
       to: email,
-      subject,
-      html,
-      text,
-      templateType: 'password-reset',
+      templateID: 'password_reset',
+      templateVariables: {
+        verificationCode: code,
+        baseUrl,
+        email,
+      },
+    });
+  }
+
+  async sendPasswordResetConfirmationEmail(email: string): Promise<void> {
+    await this.sendSystemEmail({
+      to: email,
+      templateID: 'password_reset_success',
     });
   }
 
   async sendWelcomeEmail(email: string, name: string): Promise<void> {
-    const subject = 'Welcome to Next Level Coach AI!';
-    const frontendURL = this.configService.get<string>('email.platforms.coach', '');
-    const html = getWelcomeEmailTemplate(name, frontendURL);
-    const text = `Welcome to Next Level Coach AI, ${name}! Your account has been successfully created.`;
+    const baseUrl = this.configService.get<string>('email.platforms.coach', '');
 
     await this.sendSystemEmail({
       to: email,
-      subject,
-      html,
-      text,
-      templateType: 'welcome',
+      templateID: 'welcome_coach',
+      templateVariables: {
+        name,
+        baseUrl,
+      },
+    });
+  }
+
+  async sendClientInvitationEmail(payload: ClientInvitedEvent['payload']): Promise<void> {
+    const baseUrl = this.configService.get<string>('email.platforms.client', '');
+    const inviteUrl = `${baseUrl}/client/accept-invite?token=${payload.token}`;
+    const expiryText = payload.expiresAt
+      ? `This invitation expires on ${new Date(payload.expiresAt).toLocaleDateString()}.`
+      : 'This invitation will expire in 7 days.';
+
+    await this.sendSystemEmail({
+      to: payload.email,
+      templateID: 'client_invite',
+      templateVariables: {
+        inviteUrl,
+        baseUrl,
+        coachName: payload.coachName,
+        expiryText,
+        businessName: payload.businessName || `${payload.coachName}'s coaching program`,
+        businessNameTagline: payload.businessName || 'Personal Coach',
+        message: payload.message || 'N/A',
+      },
     });
   }
 
@@ -86,7 +105,7 @@ export class TransactionalService {
       subject,
       html,
       text,
-      templateType: 'payment-request',
+      templateID: 'payment-request',
     });
   }
 
@@ -95,66 +114,22 @@ export class TransactionalService {
     subject: string;
     text: string;
     html?: string;
-    templateType?: string;
+    templateID?: string;
   }): Promise<void> {
     await this.sendSystemEmail({
       ...data,
       html: data.html || data.text,
-      templateType: data.templateType || 'notification',
+      templateID: data.templateID || 'notification',
     });
   }
 
-  async sendLeadEmail(data: {
-    to: string;
-    subject: string;
-    emailContent: string;
-    coachID: string;
-    leadName: string;
-    coachName: string;
-    coachBusinessName?: string;
-    emailNumber?: number;
-    totalEmails?: number;
-    unsubscribeLink?: string;
-  }): Promise<EmailDeliveryResult> {
-    const coachEmail = await this.providersService.getPrimaryEmail(data.coachID);
-
-    const html = getLeadFollowupEmailTemplate(data);
-    const text = data.emailContent.replace(/<[^>]*>/g, '');
-
-    return this.providersService.sendEmail({
-      to: data.to,
-      subject: data.subject,
-      html,
-      text,
-      templateID: 'lead-followup',
-      metadata: {
-        leadName: data.leadName,
-        coachName: data.coachName,
-        coachID: data.coachID,
-        emailNumber: data.emailNumber,
-        totalEmails: data.totalEmails,
-        type: 'lead_sequence',
-      },
-    }, coachEmail || this.systemFromEmail);
-  }
-
-  private async sendSystemEmail(data: {
-    to: string;
-    subject: string;
-    html: string;
-    text: string;
-    templateType: string;
-  }): Promise<void> {
+  private async sendSystemEmail(data: SendEmailRequest): Promise<void> {
     try {
       const result = await this.providersService.sendEmail({
-        to: data.to,
-        subject: data.subject,
-        html: data.html,
-        text: data.text,
-        templateID: data.templateType,
+        ...data,
         metadata: {
           type: 'system',
-          templateType: data.templateType,
+          templateID: data.templateID,
         },
       }, this.systemFromEmail);
 
@@ -162,7 +137,7 @@ export class TransactionalService {
         throw new Error(result.error || 'Failed to send email');
       }
 
-      this.logger.log(`System email sent successfully to ${data.to} (${data.templateType})`);
+      this.logger.log(`System email sent successfully to ${data.to} (${data.templateID})`);
     } catch (error: any) {
       this.logger.error(`Failed to send system email to ${data.to}:`, error);
       throw error;

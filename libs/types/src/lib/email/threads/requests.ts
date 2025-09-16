@@ -34,7 +34,7 @@ export interface SendEmailRequest {
   to: string | string[];
   cc?: string[];
   bcc?: string[];
-  subject: string;
+  subject?: string;
   text?: string;
   html?: string;
   templateID?: string;

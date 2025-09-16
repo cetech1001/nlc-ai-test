@@ -23,6 +23,7 @@ export default registerAs('email', () => {
   const config = validateConfig(process.env);
 
   return {
+    appName: config.APP_NAME,
     database: {
       url: config.DATABASE_URL,
       schema: config.DATABASE_SCHEMA,
@@ -39,6 +40,17 @@ export default registerAs('email', () => {
       domain: config.MAILGUN_DOMAIN,
       url: config.MAILGUN_URL,
       fromEmail: config.FROM_EMAIL,
+      webhookSigningKey: config.MAILGUN_WEBHOOK_SIGNING_KEY,
+    },
+    oauth: {
+      google: {
+        clientID: config.GOOGLE_CLIENT_ID,
+        clientSecret: config.GOOGLE_CLIENT_SECRET,
+      },
+      microsoft: {
+        clientID: config.MICROSOFT_CLIENT_ID,
+        clientSecret: config.MICROSOFT_CLIENT_SECRET,
+      },
     },
     performance: {
       batchSize: config.EMAIL_BATCH_SIZE,

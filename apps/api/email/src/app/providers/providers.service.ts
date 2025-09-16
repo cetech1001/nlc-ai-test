@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import type {IEmailProvider, EmailDeliveryResult, SendEmailRequest} from '@nlc-ai/types';
 import {PrismaService} from "@nlc-ai/api-database";
+import {TemplateEngineService} from "../templates/services/template-engine.service";
 
 @Injectable()
 export class ProvidersService {
@@ -9,11 +10,25 @@ export class ProvidersService {
   constructor(
     @Inject('EMAIL_PROVIDER') private emailProvider: IEmailProvider,
     private readonly prisma: PrismaService,
+    private readonly templateEngine: TemplateEngineService,
   ) {}
 
-  async sendEmail(message: SendEmailRequest, from: string): Promise<EmailDeliveryResult> {
-    this.logger.log(`Sending email to: ${message.to}`);
-    return this.emailProvider.sendEmail(message, from);
+  async sendEmail(message: SendEmailRequest, from: string, userID?: string): Promise<EmailDeliveryResult> {
+    let processedMessage = { ...message };
+
+    if (message.templateID) {
+      const template = await this.templateEngine.renderEmailFromTemplate(
+        message.templateID,
+        message.templateVariables || {},
+        userID,
+      );
+
+      processedMessage.subject = template.subject;
+      processedMessage.html = template.html;
+    }
+
+    this.logger.log(`Sending email to: ${processedMessage.to}`);
+    return this.emailProvider.sendEmail(processedMessage, from);
   }
 
   async sendBulkEmails(messages: SendEmailRequest[], from: string): Promise<EmailDeliveryResult[]> {

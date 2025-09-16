@@ -10,8 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { ClientCoachService } from './client-coach.service';
-import { CreateRelationshipDto, UpdateRelationshipDto, RelationshipQueryDto } from './dto';
+import { ClientCoachService } from '../services/client-coach.service';
+import { CreateRelationshipDto, UpdateRelationshipDto, RelationshipQueryDto } from '../dto';
 import { JwtAuthGuard, UserTypesGuard, UserTypes, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType, type AuthUser } from '@nlc-ai/api-types';
 

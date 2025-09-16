@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { CreateRelationshipDto, UpdateRelationshipDto, RelationshipQueryDto } from './dto';
+import { CreateRelationshipDto, UpdateRelationshipDto, RelationshipQueryDto } from '../dto';
 import {UserEvent} from "@nlc-ai/api-types";
 
 @Injectable()

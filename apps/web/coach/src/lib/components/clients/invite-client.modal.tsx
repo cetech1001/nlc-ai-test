@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { X, Mail } from 'lucide-react';
 import { Button, Input, Label, Textarea } from '@nlc-ai/web-ui';
 import { toast } from 'sonner';
+import {sdkClient} from "@/lib";
 
 interface InviteClientModalProps {
   isOpen: boolean;
+  userID: string;
   onClose: () => void;
   onInviteSuccess?: () => void;
 }
 
-export const InviteClientModal = ({ isOpen, onClose, onInviteSuccess }: InviteClientModalProps) => {
+export const InviteClientModal = ({ isOpen, userID, onClose, onInviteSuccess }: InviteClientModalProps) => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
   const [isInviting, setIsInviting] = useState(false);
@@ -29,15 +31,7 @@ export const InviteClientModal = ({ isOpen, onClose, onInviteSuccess }: InviteCl
 
     setIsInviting(true);
     try {
-      // TODO: Replace with actual API call
-      // await sdkClient.community.communities.inviteClient(communityID, {
-      //   email: inviteEmail,
-      //   role: selectedRole as any,
-      //   message: inviteMessage
-      // });
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await sdkClient.users.relationship.inviteClient(inviteEmail, userID, inviteMessage);
 
       toast.success(`Invitation sent to ${inviteEmail}`);
       handleClose();

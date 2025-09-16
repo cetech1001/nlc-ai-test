@@ -1,6 +1,5 @@
 import {Injectable, Logger} from "@nestjs/common";
 import {EventBusService} from "@nlc-ai/api-messaging";
-import {AppService} from "../../app.service";
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
@@ -9,7 +8,6 @@ export class BillingEventsHandler {
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly emailService: AppService,
     private readonly prisma: PrismaService,
   ) {
     this.subscribeToEvents();
@@ -109,7 +107,7 @@ export class BillingEventsHandler {
 
     if (!coach) return;
 
-    const subject = 'Payment Confirmation - Next Level Coach AI';
+    /*const subject = 'Payment Confirmation - Next Level Coach AI';
     const html = `
       <!DOCTYPE html>
       <html>
@@ -160,7 +158,7 @@ export class BillingEventsHandler {
       html,
       templateID: 'payment-confirmation',
       metadata: { coachID, transactionID, amount, planName },
-    });
+    });*/
   }
 
   private async sendPaymentFailureEmail(
@@ -176,7 +174,7 @@ export class BillingEventsHandler {
 
     if (!coach) return;
 
-    const subject = 'Payment Issue - Action Required';
+    /*const subject = 'Payment Issue - Action Required';
     const html = `
       <!DOCTYPE html>
       <html>
@@ -229,7 +227,7 @@ export class BillingEventsHandler {
       html,
       templateID: 'payment-failure',
       metadata: { coachID, amount, reason },
-    });
+    });*/
   }
 
   private async sendSubscriptionActivationEmail(
@@ -244,7 +242,7 @@ export class BillingEventsHandler {
 
     if (!coach) return;
 
-    const subject = `Welcome to ${planName} - Your Subscription is Active!`;
+    /*const subject = `Welcome to ${planName} - Your Subscription is Active!`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -301,7 +299,7 @@ export class BillingEventsHandler {
       html,
       templateID: 'subscription-activation',
       metadata: { coachID, planName, billingCycle },
-    });
+    });*/
   }
 
   private async sendSubscriptionCancellationEmail(
@@ -316,7 +314,7 @@ export class BillingEventsHandler {
 
     if (!coach) return;
 
-    const subject = 'Subscription Cancelled - We\'re Sorry to See You Go';
+    /*const subject = 'Subscription Cancelled - We\'re Sorry to See You Go';
     const html = `
       <!DOCTYPE html>
       <html>
@@ -365,7 +363,7 @@ export class BillingEventsHandler {
       html,
       templateID: 'subscription-cancellation',
       metadata: { coachID, planName, cancelReason },
-    });
+    });*/
   }
 
   private async sendInvoiceEmail(
@@ -381,7 +379,7 @@ export class BillingEventsHandler {
 
     if (!coach) return;
 
-    const subject = `Invoice ${invoiceNumber} - Next Level Coach AI`;
+    /*const subject = `Invoice ${invoiceNumber} - Next Level Coach AI`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -433,6 +431,6 @@ export class BillingEventsHandler {
       html,
       templateID: 'invoice',
       metadata: { coachID, invoiceNumber, amount, dueDate: dueDate.toISOString() },
-    });
+    });*/
   }
 }

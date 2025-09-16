@@ -21,10 +21,12 @@ import {
   sdkClient
 } from "@/lib";
 import {ExtendedClient} from "@nlc-ai/sdk-users";
+import { useAuth } from "@nlc-ai/web-auth";
 
 const ClientsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -206,7 +208,11 @@ const ClientsPage = () => {
           <MobilePagination pagination={pagination}/>
         )}
       </div>
-      <InviteClientModal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)}/>
+      <InviteClientModal
+        isOpen={showInviteModal}
+        userID={user?.id || ''}
+        onClose={() => setShowInviteModal(false)}
+      />
     </div>
   );
 }

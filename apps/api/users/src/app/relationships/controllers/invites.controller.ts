@@ -10,8 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { InvitesService } from './invites.service';
-import { CreateInviteDto, InviteQueryDto } from './dto';
+import { InvitesService } from '../services/invites.service';
+import { CreateInviteDto, InviteQueryDto } from '../dto';
 import { JwtAuthGuard, UserTypesGuard, UserTypes, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType, type AuthUser } from '@nlc-ai/api-types';
 

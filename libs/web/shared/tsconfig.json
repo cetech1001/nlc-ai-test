@@ -12,7 +12,7 @@
       "path": "../../sdk/billing"
     },
     {
-      "path": "../utils"
+      "path": "../../sdk/core"
     },
     {
       "path": "../../types"

@@ -3,11 +3,13 @@ import {BaseClient} from "@nlc-ai/sdk-core";
 import {ClientsClient} from "./clients.client";
 import {NLCClientConfig} from "@nlc-ai/sdk-main";
 import { ProfileClient } from "./profile.client";
+import { RelationshipClient } from "./relationship.client";
 
 export class UsersClient extends BaseClient{
   public coaches: CoachesClient;
   public clients: ClientsClient;
   public profile: ProfileClient;
+  public relationship: RelationshipClient;
 
   constructor(config: NLCClientConfig) {
     super(config);
@@ -25,6 +27,11 @@ export class UsersClient extends BaseClient{
     this.profile = new ProfileClient({
       ...config,
       baseURL: `${config.baseURL}/profiles`,
+    });
+
+    this.relationship = new RelationshipClient({
+      ...config,
+      baseURL: `${config.baseURL}`,
     });
   }
 }
