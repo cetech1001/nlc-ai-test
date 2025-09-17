@@ -10,6 +10,7 @@ import {
   SuggestedChapter,
   SuggestedLesson,
 } from '@nlc-ai/api-types';
+import {UserType} from "@nlc-ai/types";
 
 @Injectable()
 export class CourseStructureService {
@@ -28,13 +29,14 @@ export class CourseStructureService {
 
   async generateCourseStructure(
     request: CourseStructureRequest,
-    coachID?: string,
+    userID: string,
+    userType: UserType,
   ): Promise<CourseStructureSuggestion> {
     this.logger.log('Generating course structure suggestions', {
       descriptionLength: request.description.length,
       targetAudience: request.targetAudience,
       difficultyLevel: request.difficultyLevel,
-      coachID,
+      userID,
     });
 
     const startTime = Date.now();
@@ -42,7 +44,8 @@ export class CourseStructureService {
     try {
       const interaction = await this.prisma.aiInteraction.create({
         data: {
-          coachID: coachID || 'system',
+          userID,
+          userType,
           agentID: await this.getOrCreateCourseStructureAgent(),
           interactionType: 'course_structure_generation',
           inputData: {
@@ -83,8 +86,8 @@ export class CourseStructureService {
           schemaVersion: 1,
           payload: {
             interactionID: interaction.id,
-            userID: coachID || 'system',
-            userType: 'coach',
+            userID,
+            userType,
             courseTitle: courseStructure.courseTitle,
             chaptersCount: courseStructure.suggestedChapters.length,
             totalLessons: courseStructure.suggestedChapters.reduce(
