@@ -77,4 +77,17 @@ export class EmailConfigSchema {
   @IsOptional()
   @IsString()
   MICROSOFT_CLIENT_SECRET?: string;
+
+  @IsString()
+  REDIS_HOST: string;
+
+  @IsString()
+  REDIS_PORT: string;
+
+  @IsString()
+  @IsOptional()
+  REDIS_PASSWORD?: string;
+
+  @IsString()
+  REDIS_DB: string;
 }

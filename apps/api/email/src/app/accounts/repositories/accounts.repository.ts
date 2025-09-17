@@ -190,19 +190,19 @@ export class AccountsRepository {
     });
   }
 
-  async getSyncStats(coachID: string) {
+  async getSyncStats(userID: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const [unreadThreads, totalThreadsToday, lastSync] = await Promise.all([
       this.prisma.emailThread.count({
-        where: { coachID, isRead: false }
+        where: { userID, isRead: false }
       }),
       this.prisma.emailThread.count({
-        where: { coachID, createdAt: { gte: today } }
+        where: { userID, createdAt: { gte: today } }
       }),
       this.prisma.emailAccount.findFirst({
-        where: { userID: coachID, isActive: true },
+        where: { userID, isActive: true },
         select: { lastSyncAt: true },
         orderBy: { lastSyncAt: 'desc' }
       })

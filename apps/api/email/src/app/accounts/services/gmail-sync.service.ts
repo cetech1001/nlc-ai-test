@@ -63,7 +63,6 @@ export class GmailSyncService implements IEmailSyncProvider {
       this.oauth2Client.setCredentials({ access_token: accessToken });
       const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
 
-      // Build query based on sync settings
       let query = this.buildGmailQuery(settings);
 
       const listParams: any = {
@@ -72,9 +71,21 @@ export class GmailSyncService implements IEmailSyncProvider {
         q: query,
       };
 
-      if (lastSyncToken) {
+      if (lastSyncToken && this.isValidPageToken(lastSyncToken)) {
         listParams.pageToken = lastSyncToken;
+      } else if (lastSyncToken) {
+        const syncDate = this.parseLastSyncToken(lastSyncToken);
+        if (syncDate) {
+          query += ` after:${syncDate}`;
+          listParams.q = query;
+        }
       }
+
+      this.logger.log(`Gmail API request params:`, {
+        query: listParams.q,
+        maxResults: listParams.maxResults,
+        hasPageToken: !!listParams.pageToken
+      });
 
       const response = await gmail.users.messages.list(listParams);
       const messages = response.data.messages || [];
@@ -176,6 +187,63 @@ export class GmailSyncService implements IEmailSyncProvider {
     return conditions.join(' ');
   }
 
+  /**
+   * Check if a string looks like a valid Gmail pageToken
+   * PageTokens are typically base64-encoded strings
+   */
+  private isValidPageToken(token: string): boolean {
+    if (!token || token.length < 10) return false;
+
+    try {
+      // PageTokens are usually base64 encoded and don't look like timestamps
+      const isTimestamp = /^\d{4}-\d{2}-\d{2}/.test(token) ||
+        /^\d{13}$/.test(token) || // Unix timestamp in ms
+        /^\d{10}$/.test(token);   // Unix timestamp in seconds
+
+      return !isTimestamp && /^[A-Za-z0-9+/=_-]+$/.test(token);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Parse lastSyncToken if it's a timestamp and convert to Gmail date format
+   */
+  private parseLastSyncToken(token: string): string | null {
+    try {
+      let date: Date;
+
+      // Try parsing as ISO string
+      if (token.includes('T') || token.includes('-')) {
+        date = new Date(token);
+      }
+      // Try parsing as Unix timestamp (milliseconds)
+      else if (/^\d{13}$/.test(token)) {
+        date = new Date(parseInt(token));
+      }
+      // Try parsing as Unix timestamp (seconds)
+      else if (/^\d{10}$/.test(token)) {
+        date = new Date(parseInt(token) * 1000);
+      }
+      else {
+        return null;
+      }
+
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+
+      // Convert to Gmail date format (YYYY/MM/DD)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      return `${year}/${month}/${day}`;
+    } catch {
+      return null;
+    }
+  }
+
   private transformGmailMessage(message: any): SyncedEmail | null {
     try {
       const headers = message.payload?.headers || [];
@@ -202,7 +270,7 @@ export class GmailSyncService implements IEmailSyncProvider {
         providerMessageID: message.id,
         threadID: message.threadId,
         to: getHeader('To') || '',
-        from: getHeader('From') || '',
+        from: getHeader('From').match(/<(.+)>/)?.[1] || getHeader('From'),
         subject: getHeader('Subject'),
         text: this.extractTextFromPayload(message.payload),
         html: this.extractHtmlFromPayload(message.payload),

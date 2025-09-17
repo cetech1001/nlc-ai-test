@@ -32,6 +32,17 @@ export class ThreadsService {
             email: true,
           }
         },
+        emailMessages: {
+          orderBy: { sentAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            from: true,
+            subject: true,
+            text: true,
+            sentAt: true,
+          }
+        },
         _count: {
           select: { emailMessages: true },
         },

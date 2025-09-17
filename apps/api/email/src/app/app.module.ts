@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import {ConfigModule, ConfigService} from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
@@ -19,6 +19,7 @@ import {ProvidersModule} from "./providers/providers.module";
 import {SchedulingModule} from "./scheduling/scheduling.module";
 import {ThreadsModule} from "./threads/threads.module";
 import {TransactionalModule} from "./transactional/transactional.module";
+import {BullModule} from "@nestjs/bull";
 
 @Module({
   imports: [
@@ -27,6 +28,21 @@ import {TransactionalModule} from "./transactional/transactional.module";
       load: [emailConfig],
       cache: true,
       expandVariables: true,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get<string>('email.redis.host', 'localhost'),
+          port: configService.get<number>('email.redis.port', 6379),
+          password: configService.get<string>('email.redis.password'),
+          db: configService.get<number>('email.redis.db', 0),
+          maxRetriesPerRequest: 3,
+          retryDelayOnFailure: 100,
+          enableReadyCheck: false,
+        },
+      }),
+      inject: [ConfigService],
     }),
     ScheduleModule.forRoot(),
     DatabaseModule.forFeature(),

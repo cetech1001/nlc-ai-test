@@ -35,8 +35,8 @@ export class ThreadsClient extends BaseClient {
 
   async markThreadRead(threadID: string, isRead: boolean): Promise<{ success: boolean }> {
     const response = await this.request<{ success: boolean }>(
-      'POST',
-      `/${threadID}/mark-read`,
+      'PATCH',
+      `/${threadID}`,
       { body: { isRead } }
     );
     return response.data!;

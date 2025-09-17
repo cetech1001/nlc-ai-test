@@ -126,16 +126,16 @@ const EmailThreadCard: FC<EmailThreadCardProps> = ({ thread, onClick }) => {
         </div>
 
         {/* Latest Message Preview */}
-        {thread.latestMessage && (
+        {thread.emailMessages && (
           <div className="text-stone-300 text-sm leading-relaxed line-clamp-2 mb-4 p-3 bg-neutral-800/50 rounded-lg">
-            {thread.latestMessage.text?.substring(0, 120)}...
+            {thread.emailMessages[0]?.text?.substring(0, 120)}...
           </div>
         )}
 
         {/* Footer */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-stone-400">
-            <span>From: {thread.latestMessage?.from}</span>
+            <span>From: {thread.emailMessages?.[0]?.from}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ const ClientEmailsList = () => {
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [accountExists, setAccountExists] = useState(false);
+  const [accountExists, setAccountExists] = useState(true);
 
   // Filter state
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyEmailFilterValues);
@@ -223,9 +223,12 @@ const ClientEmailsList = () => {
       .then((data) => {
         setAccountExists(data.exists);
         if (data.exists) {
-          return loadData();
+          return loadData().catch();
         }
         return null;
+      })
+      .catch(() => {
+        setAccountExists(false);
       });
   }, [currentPage, searchQuery, filterValues, clientID]);
 
@@ -290,9 +293,15 @@ const ClientEmailsList = () => {
       setIsSyncing(true);
       setError("");
 
-      const result = await sdkClient.email.accounts.syncClientEmails();
+      await sdkClient.email.accounts.syncClientEmails();
 
-      setSuccessMessage(`Sync completed! Found ${result.clientEmailsFound} client emails.`);
+      let timeoutID = setTimeout(() => {
+        loadData();
+      }, 2000);
+
+      clearTimeout(timeoutID);
+
+      setSuccessMessage(`Sync started! Refresh to see results.`);
 
       // Refresh data
       await loadData();
@@ -304,7 +313,7 @@ const ClientEmailsList = () => {
   };
 
   const handleThreadClick = (threadID: string) => {
-    router.push(`/emails/${threadID}`);
+    router.push(`/agents/emails/${threadID}`);
   };
 
   const handleSearch = (query: string) => {

@@ -153,8 +153,8 @@ export class AccountsService {
     }
   }
 
-  async getSyncStats(coachID: string) {
-    return this.accountsRepo.getSyncStats(coachID);
+  async getSyncStats(userID: string) {
+    return this.accountsRepo.getSyncStats(userID);
   }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
@@ -251,6 +251,7 @@ export class AccountsService {
     isFromClient: boolean;
     threadCreated: boolean;
   }> {
+    console.log("Email: ", email.from);
     if (await this.isEmailFromCoach(email.from, account.userID)) {
       return { isFromClient: false, threadCreated: false };
     }

@@ -62,6 +62,12 @@ export default registerAs('email', () => {
     platforms: {
       coach: config.COACH_PLATFORM_URL,
       client: config.CLIENT_PLATFORM_URL,
-    }
+    },
+    redis: {
+      host: config.REDIS_HOST,
+      port: config.REDIS_PORT,
+      password: config.REDIS_PASSWORD,
+      db: config.REDIS_DB,
+    },
   };
 });

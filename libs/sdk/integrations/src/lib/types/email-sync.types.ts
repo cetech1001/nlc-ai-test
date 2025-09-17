@@ -21,13 +21,13 @@ export interface ClientEmailThread {
     email: string;
     status?: string;
   };
-  latestMessage?: {
+  emailMessages?: {
     id: string;
     from: string;
     subject: string;
     text: string;
     sentAt: Date;
-  };
+  }[];
   generatedResponses?: ClientEmailResponse[];
 }
 
