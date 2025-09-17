@@ -15,7 +15,7 @@ import {CurrentUser, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
 @ApiTags('Coach Replica Agent')
 @Controller('coach-replica')
 @UseGuards(UserTypesGuard)
-@UserTypes(UserType.coach, UserType.admin)
+@UserTypes(UserType.COACH, UserType.ADMIN)
 @ApiBearerAuth()
 export class CoachReplicaController {
   constructor(private readonly coachReplicaService: CoachReplicaService) {}
@@ -28,7 +28,7 @@ export class CoachReplicaController {
     @Param('coachID') coachID: string,
     @Query('refresh') refresh?: string,
   ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
+    if (user.type === UserType.COACH && user.id !== coachID) {
       coachID = user.id;
     }
 
@@ -43,7 +43,7 @@ export class CoachReplicaController {
     @Param('coachID') coachID: string,
     @CurrentUser() user: AuthUser,
   ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
+    if (user.type === UserType.COACH && user.id !== coachID) {
       coachID = user.id;
     }
 
@@ -57,7 +57,7 @@ export class CoachReplicaController {
     @Body() request: CoachReplicaRequest,
     @CurrentUser() user: AuthUser,
   ) {
-    if (user.type === UserType.coach && user.id !== request.coachID) {
+    if (user.type === UserType.COACH && user.id !== request.coachID) {
       request.coachID = user.id;
     }
 
@@ -72,7 +72,7 @@ export class CoachReplicaController {
     @Body() body: { query: string },
     @CurrentUser() user: AuthUser,
   ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
+    if (user.type === UserType.COACH && user.id !== coachID) {
       coachID = user.id;
     }
 
@@ -86,7 +86,7 @@ export class CoachReplicaController {
     @Param('coachID') coachID: string,
     @CurrentUser() user: AuthUser,
   ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
+    if (user.type === UserType.COACH && user.id !== coachID) {
       coachID = user.id;
     }
 
@@ -101,7 +101,7 @@ export class CoachReplicaController {
     @Param('coachID') coachID: string,
     @CurrentUser() user: AuthUser,
   ) {
-    if (user.type === UserType.coach && user.id !== coachID) {
+    if (user.type === UserType.COACH && user.id !== coachID) {
       coachID = user.id;
     }
 

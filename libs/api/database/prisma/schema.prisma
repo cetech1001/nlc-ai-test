@@ -232,6 +232,16 @@ model ClientInvite {
 
 // AI Agent Domain
 
+enum GeneratedEmailStatus {
+  generated
+  updated
+  scheduled
+  sent
+  failed
+  cancelled
+  superseded
+}
+
 model AiAgent {
   id              String    @id @default(uuid()) @db.Uuid
   name            String    @unique @db.VarChar(100)
@@ -280,23 +290,23 @@ model AiInteraction {
 }
 
 model GeneratedEmailResponse {
-  id                  String    @id @default(uuid()) @db.Uuid
-  coachID             String    @db.Uuid
-  threadID            String    @db.Uuid
-  clientID            String    @db.Uuid
-  interactionID       String?   @db.Uuid
-  subject             String    @db.VarChar(500)
-  body                String    @db.Text
-  actualSubject       String?   @db.VarChar(500) // Final subject if modified
-  actualBody          String?   @db.Text // Final body if modified
-  confidence          Decimal?  @default(0.8) @db.Decimal(3, 2)
+  id                  String               @id @default(uuid()) @db.Uuid
+  coachID             String               @db.Uuid
+  threadID            String               @db.Uuid
+  clientID            String               @db.Uuid
+  interactionID       String?              @db.Uuid
+  subject             String               @db.VarChar(500)
+  body                String               @db.Text
+  actualSubject       String?              @db.VarChar(500)
+  actualBody          String?              @db.Text
+  confidence          Decimal?             @default(0.8) @db.Decimal(3, 2)
   deliverabilityScore Int?
-  status              String    @default("generated") @db.VarChar(50) // generated, updated, scheduled, sent, failed, cancelled, superseded
-  sentAt              DateTime? @db.Timestamptz(6)
-  scheduledFor        DateTime? @db.Timestamptz(6)
-  metadata            Json?     @default("{}")
-  createdAt           DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt           DateTime  @updatedAt @db.Timestamptz(6)
+  status              GeneratedEmailStatus @default(generated)
+  sentAt              DateTime?            @db.Timestamptz(6)
+  scheduledFor        DateTime?            @db.Timestamptz(6)
+  metadata            Json?                @default("{}")
+  createdAt           DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime             @updatedAt @db.Timestamptz(6)
 
   coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
   emailThread   EmailThread    @relation(fields: [threadID], references: [id], onDelete: Cascade)

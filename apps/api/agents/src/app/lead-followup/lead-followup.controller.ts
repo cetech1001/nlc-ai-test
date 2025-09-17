@@ -22,7 +22,7 @@ import {CurrentUser, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
 @ApiTags(' Lead Follow-up')
 @Controller('lead-followup')
 @UseGuards(UserTypesGuard)
-@UserTypes(UserType.coach, UserType.admin)
+@UserTypes(UserType.COACH, UserType.ADMIN)
 @ApiBearerAuth()
 export class LeadFollowupController {
   constructor(
@@ -36,7 +36,7 @@ export class LeadFollowupController {
     @Body() body: CreateSequenceDto,
     @CurrentUser() user: AuthUser,
   ) {
-    if (user.type === UserType.coach) {
+    if (user.type === UserType.COACH) {
       body.coachID = user.id;
     }
 
@@ -100,7 +100,7 @@ export class LeadFollowupController {
     @CurrentUser() user: AuthUser,
   ) {
     // Ensure coaches can only see their own sequences unless admin
-    if (user.type === UserType.coach && user.id !== coachID) {
+    if (user.type === UserType.COACH && user.id !== coachID) {
       coachID = user.id;
     }
 

@@ -149,7 +149,7 @@ export class ClientEmailService {
   async regenerateResponse(coachID: string, responseID: string, customInstructions?: string) {
     const existingResponse = await this.prisma.generatedEmailResponse.findFirst({
       where: { id: responseID, coachID },
-      include: { thread: { include: { client: true } } }
+      include: { emailThread: { include: { client: true } } }
     });
 
     if (!existingResponse) {
@@ -175,7 +175,7 @@ export class ClientEmailService {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        thread: {
+        emailThread: {
           include: {
             client: {
               select: {
@@ -200,7 +200,7 @@ export class ClientEmailService {
       orderBy: { createdAt: 'desc' },
       take: 50,
       include: {
-        thread: {
+        emailThread: {
           include: {
             client: {
               select: {

@@ -248,11 +248,15 @@ export class CoachReplicaService {
    * Fetch email history for tone analysis
    */
   private async fetchEmailHistory(coachID: string) {
-    return this.prisma.scheduledEmail.findMany({
-      where: { coachID },
+    return this.prisma.emailMessage.findMany({
+      where: {
+        emailThread: {
+          userID: coachID,
+        }
+      },
       select: {
         subject: true,
-        body: true,
+        // body: true,
         status: true,
         sentAt: true,
       },
