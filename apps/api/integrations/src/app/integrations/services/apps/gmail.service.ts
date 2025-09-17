@@ -28,7 +28,7 @@ export class GmailService extends BaseIntegrationService {
 
         await this.saveEmailAccount(tx, {
           userID,
-          userType,
+          userType: userType,
           provider: 'gmail',
           credentials,
           profileData: profile,
@@ -37,7 +37,7 @@ export class GmailService extends BaseIntegrationService {
         return tx.integration.create({
           data: {
             userID,
-            userType,
+            userType: userType.toString() as UserType,
             integrationType: this.integrationType as IntegrationType,
             platformName: this.platformName,
             accessToken: credentials.accessToken,
@@ -164,7 +164,7 @@ export class GmailService extends BaseIntegrationService {
 
     const accountData = {
       userID,
-      userType,
+      userType: userType.toString() as UserType,
       emailAddress,
       provider,
       accessToken: credentials.accessToken,

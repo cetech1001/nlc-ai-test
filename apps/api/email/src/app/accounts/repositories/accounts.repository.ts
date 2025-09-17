@@ -16,9 +16,19 @@ export class AccountsRepository {
     });
   }
 
-  async getAllActiveAccounts() {
+  async hasAnAccount(userID: string) {
+    return this.prisma.emailAccount.count({
+      where: {
+        userID,
+        isActive: true,
+      },
+    });
+  }
+
+  async getAllActiveAccounts(coachID?: string) {
     return this.prisma.emailAccount.findMany({
       where: {
+        userID: coachID,
         isActive: true,
         syncEnabled: true,
       },
@@ -178,5 +188,30 @@ export class AccountsRepository {
         suggestedActions: [],
       },
     });
+  }
+
+  async getSyncStats(coachID: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [unreadThreads, totalThreadsToday, lastSync] = await Promise.all([
+      this.prisma.emailThread.count({
+        where: { coachID, isRead: false }
+      }),
+      this.prisma.emailThread.count({
+        where: { coachID, createdAt: { gte: today } }
+      }),
+      this.prisma.emailAccount.findFirst({
+        where: { userID: coachID, isActive: true },
+        select: { lastSyncAt: true },
+        orderBy: { lastSyncAt: 'desc' }
+      })
+    ]);
+
+    return {
+      unreadThreads,
+      totalThreadsToday,
+      lastSyncAt: lastSync?.lastSyncAt,
+    };
   }
 }

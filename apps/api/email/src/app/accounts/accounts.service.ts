@@ -45,6 +45,11 @@ export class AccountsService {
     }
   }
 
+  async hasAnAccount(userID: string): Promise<{ exists: boolean; }> {
+    const accounts = await this.accountsRepo.hasAnAccount(userID);
+    return { exists: accounts > 0 };
+  }
+
   async setPrimaryEmailAccount(accountID: string, userID: string): Promise<EmailAccountActionResponse> {
     const emailAccount = await this.accountsRepo.getAccountByID(accountID, userID);
 
@@ -148,11 +153,15 @@ export class AccountsService {
     }
   }
 
+  async getSyncStats(coachID: string) {
+    return this.accountsRepo.getSyncStats(coachID);
+  }
+
   @Cron(CronExpression.EVERY_10_MINUTES)
-  async autoSyncAllActiveAccounts() {
+  async autoSyncAllActiveAccounts(coachID?: string) {
     this.logger.log('Starting automatic email sync for all active accounts...');
 
-    const accounts = await this.accountsRepo.getAllActiveAccounts();
+    const accounts = await this.accountsRepo.getAllActiveAccounts(coachID);
 
     for (const account of accounts) {
       try {

@@ -27,6 +27,13 @@ export class AccountsController {
     return this.accountsService.getEmailAccounts(user.id);
   }
 
+  @Get('exists')
+  @ApiOperation({ summary: 'Check if the authenticated coach has an email account' })
+  @ApiResponse({ status: 200, description: 'Email accounts retrieved successfully' })
+  hasAnAccount(@CurrentUser() user: AuthUser) {
+    return this.accountsService.hasAnAccount(user.id);
+  }
+
   @Post(':accountID/set-primary')
   @ApiOperation({ summary: 'Set email account as primary' })
   @ApiResponse({ status: 200, description: 'Primary email account updated' })
@@ -42,8 +49,20 @@ export class AccountsController {
     return this.accountsService.syncAccount(body);
   }
 
+  @Post('sync/all')
+  async syncAllAccounts(@CurrentUser('id') id: string) {
+    return this.accountsService.autoSyncAllActiveAccounts(id);
+  }
+
   @Post('sync/bulk')
   async bulkSync(@Body() body: BulkSyncDto) {
     return this.accountsService.bulkSync(body);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get email sync statistics' })
+  @ApiResponse({ status: 200, description: 'Email stats retrieved successfully' })
+  async getSyncStats(@CurrentUser() user: AuthUser) {
+    return this.accountsService.getSyncStats(user.id);
   }
 }

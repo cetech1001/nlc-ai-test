@@ -25,7 +25,7 @@ export class NotificationsService {
       const notification = await this.prisma.notification.create({
         data: {
           userID: data.userID,
-          userType: data.userType.toString(),
+          userType: data.userType.toString() as UserType,
           type: data.type,
           title: data.title,
           message: data.message,
@@ -103,7 +103,7 @@ export class NotificationsService {
     const count = await this.prisma.notification.count({
       where: {
         userID,
-        userType: userType.toString(),
+        userType: userType.toString() as UserType,
         isRead: false,
       },
     });
@@ -116,7 +116,7 @@ export class NotificationsService {
       where: {
         id: notificationID,
         userID,
-        userType: userType.toString(),
+        userType: userType.toString() as UserType,
       },
     });
 
@@ -139,7 +139,7 @@ export class NotificationsService {
     const result = await this.prisma.notification.updateMany({
       where: {
         userID,
-        userType: userType.toString(),
+        userType: userType.toString() as UserType,
         isRead: false,
       },
       data: {
@@ -159,7 +159,7 @@ export class NotificationsService {
       where: {
         id: notificationID,
         userID,
-        userType: userType.toString(),
+        userType: userType.toString() as UserType,
       },
     });
 

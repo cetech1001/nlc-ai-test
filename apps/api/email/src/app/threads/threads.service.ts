@@ -16,7 +16,7 @@ export class ThreadsService {
   async getThreads(userID: string, filters: ThreadFilters = {}) {
     const { limit = 20, status, isRead, clientID } = filters;
 
-    const threads = await this.prisma.emailThread.findMany({
+    return this.prisma.emailThread.findMany({
       where: {
         userID,
         ...(status && { status }),
@@ -24,6 +24,14 @@ export class ThreadsService {
         ...(clientID && { clientID }),
       },
       include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          }
+        },
         _count: {
           select: { emailMessages: true },
         },
@@ -31,22 +39,13 @@ export class ThreadsService {
       orderBy: { lastMessageAt: 'desc' },
       take: limit,
     });
-
-    const unreadCount = await this.prisma.emailThread.count({
-      where: { userID, isRead: false },
-    });
-
-    return {
-      threads,
-      unreadCount,
-      total: threads.length,
-    };
   }
 
   async getThread(userID: string, threadID: string) {
     const thread = await this.prisma.emailThread.findFirst({
       where: { id: threadID, userID },
       include: {
+        client: true,
         emailMessages: {
           orderBy: { sentAt: 'asc' },
           take: 50,
@@ -89,7 +88,10 @@ export class ThreadsService {
       throw new BadRequestException('No primary email account found');
     }
 
-    const clientEmail = await this.getClientEmail(thread.clientID, thread.clientType as UserType);
+    const clientEmail = await this.getClientEmail(
+      (thread.clientID || thread.leadID || thread.coachID)!,
+      thread.clientType as UserType
+    );
 
     const message = await this.prisma.emailMessage.create({
       data: {

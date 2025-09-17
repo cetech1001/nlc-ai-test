@@ -1,15 +1,18 @@
 'use client'
 
-import { useState, useEffect, FC } from 'react';
+import React, { useState, useEffect, FC } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, RefreshCw, Mail, User, Clock, MessageSquare, AlertTriangle, CheckCircle2, Star, ArrowRight } from "lucide-react";
+import {
+  Search, RefreshCw, Mail, User, Clock, MessageSquare, AlertTriangle, CheckCircle2, Star, ArrowRight,
+  AlertCircle
+} from "lucide-react";
 import {
   Pagination,
   PageHeader,
   DataFilter,
   MobilePagination,
 } from "@nlc-ai/web-shared";
-import { AlertBanner, Button } from '@nlc-ai/web-ui';
+import { AlertBanner, Button, Skeleton } from '@nlc-ai/web-ui';
 import { FilterValues } from "@nlc-ai/types";
 import { emailFilters, emptyEmailFilterValues } from "@/lib/components/emails/filters";
 import { sdkClient } from "@/lib";
@@ -157,22 +160,25 @@ const EmailThreadCard: FC<EmailThreadCardProps> = ({ thread, onClick }) => {
 const EmailsSkeleton = () => (
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-2">
     {Array.from({ length: 6 }).map((_, i) => (
-      <div key={i} className="bg-neutral-800/50 rounded-[20px] p-6 animate-pulse">
+      <div key={i} className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] p-6">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+        </div>
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <div className="h-5 bg-neutral-700 rounded w-48 mb-2"></div>
-            <div className="h-4 bg-neutral-700 rounded w-64 mb-2"></div>
-            <div className="h-3 bg-neutral-700 rounded w-40"></div>
+            <Skeleton className="h-5 bg-neutral-700 rounded w-48 mb-2"></Skeleton>
+            <Skeleton className="h-4 bg-neutral-700 rounded w-64 mb-2"></Skeleton>
+            <Skeleton className="h-3 bg-neutral-700 rounded w-40"></Skeleton>
           </div>
-          <div className="h-4 bg-neutral-700 rounded w-16"></div>
+          <Skeleton className="h-4 bg-neutral-700 rounded w-16"></Skeleton>
         </div>
         <div className="space-y-2 mb-4">
-          <div className="h-3 bg-neutral-700 rounded w-full"></div>
-          <div className="h-3 bg-neutral-700 rounded w-3/4"></div>
+          <Skeleton className="h-3 bg-neutral-700 rounded w-full"></Skeleton>
+          <Skeleton className="h-3 bg-neutral-700 rounded w-3/4"></Skeleton>
         </div>
         <div className="flex justify-between">
-          <div className="h-3 bg-neutral-700 rounded w-32"></div>
-          <div className="h-3 bg-neutral-700 rounded w-24"></div>
+          <Skeleton className="h-3 bg-neutral-700 rounded w-32"></Skeleton>
+          <Skeleton className="h-3 bg-neutral-700 rounded w-24"></Skeleton>
         </div>
       </div>
     ))}
@@ -188,11 +194,12 @@ const ClientEmailsList = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [accountExists, setAccountExists] = useState(false);
 
   // Filter state
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyEmailFilterValues);
@@ -212,7 +219,14 @@ const ClientEmailsList = () => {
   const threadsPerPage = 10;
 
   useEffect(() => {
-    loadData();
+    sdkClient.email.accounts.hasAnAccount()
+      .then((data) => {
+        setAccountExists(data.exists);
+        if (data.exists) {
+          return loadData();
+        }
+        return null;
+      });
   }, [currentPage, searchQuery, filterValues, clientID]);
 
   const loadData = async () => {
@@ -233,8 +247,8 @@ const ClientEmailsList = () => {
       if (filterValues.priority) params.priority = filterValues.priority;
 
       const [threadsData, statsData] = await Promise.all([
-        sdkClient.integration.emailSync.getEmailThreads(params),
-        sdkClient.integration.emailSync.getSyncStats()
+        sdkClient.email.threads.getEmailThreads(params),
+        sdkClient.email.accounts.getSyncStats()
       ]);
 
       setThreads(threadsData);
@@ -256,8 +270,8 @@ const ClientEmailsList = () => {
         emailsProcessedToday: 0, // Not available in current API
         emailsProcessedThisWeek: 0, // Not available in current API
         averageResponseTime: 0, // Not available in current API
-        unreadThreads: statsData.unreadThreads,
-        totalThreads: statsData.totalThreadsToday,
+        unreadThreads: statsData?.unreadThreads || 0,
+        totalThreads: statsData?.totalThreadsToday || 0,
         activeThreads: threadsData.filter(t => t.status === 'active').length,
         responsesSentToday: 0, // Not available in current API
         responsesSentThisWeek: 0, // Not available in current API
@@ -276,7 +290,7 @@ const ClientEmailsList = () => {
       setIsSyncing(true);
       setError("");
 
-      const result = await sdkClient.integration.emailSync.syncClientEmails();
+      const result = await sdkClient.email.accounts.syncClientEmails();
 
       setSuccessMessage(`Sync completed! Found ${result.clientEmailsFound} client emails.`);
 
@@ -329,6 +343,24 @@ const ClientEmailsList = () => {
 
         {error && (
           <AlertBanner type="error" message={error} onDismiss={clearMessages} />
+        )}
+
+        {!accountExists && (
+          <div className="mb-4 p-4 bg-yellow-800/20 border border-yellow-600 rounded-lg flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-yellow-400 text-sm font-medium">No connected email accounts</p>
+              <p className="text-yellow-300 text-xs">Connect an email account to automate your email workflow.</p>
+            </div>
+            <Button
+              onClick={() => {
+                router.push('/settings/account?tab=integrations')
+              }}
+              className="bg-yellow-600 hover:bg-yellow-700 cursor-pointer text-white text-sm px-3 py-1.5"
+            >
+              Configure
+            </Button>
+          </div>
         )}
 
         {/* Header */}
