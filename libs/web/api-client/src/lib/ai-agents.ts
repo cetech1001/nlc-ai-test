@@ -282,7 +282,7 @@ class AiAgentsAPI extends BaseAPI {
     const threadData = await this.getClientEmailThread(threadID);
 
     const latestMessage = threadData.messages[0];
-    const preview = latestMessage?.bodyText?.substring(0, 150) + '...' || 'No messages';
+    const preview = latestMessage?.text?.substring(0, 150) + '...' || 'No messages';
 
     return {
       ...threadData,

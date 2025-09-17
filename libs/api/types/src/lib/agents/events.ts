@@ -1,5 +1,5 @@
-// libs/api/types/src/lib/agents/events.ts
 import { BaseEvent } from '@nlc-ai/api-messaging';
+import {UserType} from "@nlc-ai/types";
 
 // =============================================================================
 // AI AGENT LIFECYCLE EVENTS
@@ -312,8 +312,8 @@ export interface ClientEmailResponseGeneratedEvent extends BaseEvent {
   eventType: 'client.email.response.generated';
   payload: {
     responseID: string;
-    coachID: string;
-    clientID: string;
+    userID: string;
+    userType: UserType;
     threadID: string;
     confidence: number;
     generatedAt: string;

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   RefreshCw,
@@ -14,8 +14,8 @@ import {
   Clock,
   X
 } from "lucide-react";
-import { BackTo } from "@nlc-ai/web-shared";
-import { AlertBanner, Button } from '@nlc-ai/web-ui';
+import { BackTo, RichTextEditor } from "@nlc-ai/web-shared";
+import { AlertBanner, Button, Skeleton } from '@nlc-ai/web-ui';
 import { sdkClient } from '@/lib';
 import { ClientEmailResponse } from '@nlc-ai/sdk-agents';
 import {EmailThreadDetail} from "@nlc-ai/sdk-integrations";
@@ -55,7 +55,7 @@ export default function ResponseReviewPage() {
 
       const [responses, thread] = await Promise.all([
         sdkClient.agents.clientEmail.getResponsesForThread(threadID),
-        sdkClient.integration.emailSync.getEmailThread(threadID)
+        sdkClient.email.threads.getEmailThread(threadID)
       ]);
 
       const response = responses.find(r => r.id === responseID);
@@ -87,19 +87,19 @@ export default function ResponseReviewPage() {
       setIsSending(true);
       setError("");
 
-      const modifications = hasModifications ? {
+      const modifications = {
         subject: emailSubject,
-        body: emailContent
-      } : undefined;
+        html: emailContent
+      };
 
-      const result = await sdkClient.email.clientEmail.sendResponse(responseData.id, modifications);
+      const result = await sdkClient.email.threads.replyToThread(threadID, modifications);
 
       if (result.success) {
         setSuccessMessage(`Email sent successfully to ${threadData?.client?.email}`);
 
         // Redirect back to thread after a delay
         setTimeout(() => {
-          router.push(`/emails/${threadID}`);
+          router.push(`/agents/emails/${threadID}`);
         }, 2000);
       } else {
         setError(result.error?.message || "Failed to send email");
@@ -241,17 +241,20 @@ export default function ResponseReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
-        <div className="h-6 bg-neutral-700 rounded w-48"></div>
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+        </div>
+        <Skeleton className="h-6 bg-neutral-700 rounded w-48"/>
 
         <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6">
           <div className="space-y-4">
-            <div className="h-8 bg-neutral-700 rounded w-64"></div>
+            <Skeleton className="h-8 bg-neutral-700 rounded w-64"/>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <div className="h-4 bg-neutral-700 rounded w-20"></div>
-                  <div className="h-5 bg-neutral-700 rounded w-24"></div>
+                  <Skeleton className="h-4 bg-neutral-700 rounded w-20"/>
+                  <Skeleton className="h-5 bg-neutral-700 rounded w-24"/>
                 </div>
               ))}
             </div>
@@ -259,12 +262,12 @@ export default function ResponseReviewPage() {
         </div>
 
         <div className="bg-neutral-800/50 rounded-[20px] p-6 space-y-4">
-          <div className="h-6 bg-neutral-700 rounded w-32"></div>
-          <div className="h-10 bg-neutral-700 rounded w-full"></div>
+          <Skeleton className="h-6 bg-neutral-700 rounded w-32"/>
+          <Skeleton className="h-10 bg-neutral-700 rounded w-full"/>
           <div className="space-y-2">
-            <div className="h-4 bg-neutral-700 rounded w-full"></div>
-            <div className="h-4 bg-neutral-700 rounded w-3/4"></div>
-            <div className="h-4 bg-neutral-700 rounded w-1/2"></div>
+            <Skeleton className="h-4 bg-neutral-700 rounded w-full"/>
+            <Skeleton className="h-4 bg-neutral-700 rounded w-3/4"/>
+            <Skeleton className="h-4 bg-neutral-700 rounded w-1/2"/>
           </div>
         </div>
       </div>
@@ -436,19 +439,20 @@ export default function ResponseReviewPage() {
               type="text"
               value={emailSubject}
               onChange={(e) => handleSubjectChange(e.target.value)}
-              className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none"
+              className="w-full bg-background border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none"
             />
           </div>
 
           {/* Email Body */}
-          <div className="mb-6">
+          <div className="mb-12 h-56">
             <label className="block text-stone-300 text-sm font-medium mb-2">Email Content</label>
-            <textarea
+            <RichTextEditor view={'desktop'} content={emailContent} updateContent={handleContentChange}/>
+            {/*<textarea
               value={emailContent}
               onChange={(e) => handleContentChange(e.target.value)}
               className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none resize-none"
               rows={12}
-            />
+            />*/}
           </div>
 
           {/* Action Buttons */}

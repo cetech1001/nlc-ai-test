@@ -4,6 +4,8 @@
   client = 'client'
 }*/
 
+import {UserType} from "./users";
+
 export type AUTH_TYPES = 'admin' | 'coach' | 'client';
 
 export interface ValidatedGoogleUser {
@@ -30,7 +32,7 @@ export interface AuthenticatedUser {
 export interface AuthUser {
   id: string;
   email: string;
-  type: AUTH_TYPES;
+  type: UserType;
 }
 
 export interface LoginRequest {

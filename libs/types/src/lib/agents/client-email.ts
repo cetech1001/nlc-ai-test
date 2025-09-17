@@ -92,11 +92,11 @@ export interface EmailThreadDetail {
   };
   messages: Array<{
     id: string;
-    messageID: string;
-    senderEmail: string;
+    providerMessageID: string;
+    from: string;
     subject: string;
-    bodyText: string;
-    bodyHtml?: string;
+    text: string;
+    html?: string;
     sentAt: Date;
     receivedAt: Date;
   }>;

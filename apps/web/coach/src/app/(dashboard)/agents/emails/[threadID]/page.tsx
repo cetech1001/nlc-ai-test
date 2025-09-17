@@ -69,7 +69,7 @@ export default function EmailThreadDetailPage() {
   };
 
   const handleBackClick = () => {
-    router.push('/emails');
+    router.push('/agents/emails');
   };
 
   const handleGenerateResponse = async () => {
@@ -95,7 +95,7 @@ export default function EmailThreadDetailPage() {
   };
 
   const handleViewResponse = (responseID: string) => {
-    router.push(`/emails/${threadID}/response/${responseID}`);
+    router.push(`/agents/emails/${threadID}/response/${responseID}`);
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -394,13 +394,15 @@ export default function EmailThreadDetailPage() {
 
               {message.subject && message.subject !== threadData.subject && (
                 <div className="text-stone-200 font-medium text-sm mb-3">
-                  Re: {message.subject}
+                  {message.subject}
                 </div>
               )}
 
-              <div className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">
-                {message.text}
-              </div>
+              {message.text ? (
+                <div className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">
+                  {message.text}
+                </div>
+              ) : <div dangerouslySetInnerHTML={{ __html: message.html }} className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap"/>}
             </div>
           ))}
         </div>

@@ -25,7 +25,8 @@ export interface ClientEmailThread {
     id: string;
     from: string;
     subject: string;
-    text: string;
+    text?: string;
+    html?: string;
     sentAt: Date;
   }[];
   generatedResponses?: ClientEmailResponse[];
@@ -39,6 +40,7 @@ export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
+  html: string;
   sentAt: Date;
   receivedAt: Date;
   senderEmail?: string;

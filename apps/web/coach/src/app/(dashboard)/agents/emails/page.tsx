@@ -126,10 +126,17 @@ const EmailThreadCard: FC<EmailThreadCardProps> = ({ thread, onClick }) => {
         </div>
 
         {/* Latest Message Preview */}
-        {thread.emailMessages && (
-          <div className="text-stone-300 text-sm leading-relaxed line-clamp-2 mb-4 p-3 bg-neutral-800/50 rounded-lg">
-            {thread.emailMessages[0]?.text?.substring(0, 120)}...
-          </div>
+        {thread.emailMessages && thread.emailMessages[0] && (
+          thread.emailMessages[0].text
+            ? (
+              <div className="text-stone-300 text-sm leading-relaxed line-clamp-2 mb-4 rounded-lg">
+                {thread.emailMessages[0]?.text?.substring(0, 120)}...
+              </div>
+            ) : (
+              <div dangerouslySetInnerHTML={{
+                __html: thread.emailMessages[0].html!.substring(0, 120) + '...'
+              }} className="text-stone-300 text-sm leading-relaxed line-clamp-2 mb-4 rounded-lg"/>
+            )
         )}
 
         {/* Footer */}

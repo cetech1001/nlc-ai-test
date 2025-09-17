@@ -1,6 +1,7 @@
 import {BadRequestException, Injectable} from '@nestjs/common';
 import {PrismaService} from '@nlc-ai/api-database';
 import {UserType} from "@nlc-ai/types";
+import {DeliveryService} from "../delivery/delivery.service";
 
 interface ThreadFilters {
   limit?: number;
@@ -11,7 +12,10 @@ interface ThreadFilters {
 
 @Injectable()
 export class ThreadsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly deliveryService: DeliveryService,
+  ) {}
 
   async getThreads(userID: string, filters: ThreadFilters = {}) {
     const { limit = 20, status, isRead, clientID } = filters;
@@ -40,6 +44,7 @@ export class ThreadsService {
             from: true,
             subject: true,
             text: true,
+            html: true,
             sentAt: true,
           }
         },
@@ -92,7 +97,7 @@ export class ThreadsService {
     }
 
     const primaryAccount = await this.prisma.emailAccount.findFirst({
-      where: { userID: userID, isPrimary: true },
+      where: { userID, isPrimary: true },
     });
 
     if (!primaryAccount) {
@@ -126,6 +131,8 @@ export class ThreadsService {
         messageCount: { increment: 1 },
       },
     });
+
+    await this.deliveryService.sendThreadReply(message.id);
 
     return {
       message: 'Reply queued for delivery',

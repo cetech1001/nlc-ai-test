@@ -108,24 +108,22 @@ export class CoachReplicaService {
       contentPieces,
       clients,
       integrations,
-      scheduledEmails
     ] = await Promise.all([
       this.fetchCoachBasicInfo(coachID),
       this.fetchEmailPatterns(coachID),
       this.fetchContentPatterns(coachID),
       this.fetchClientInteractions(coachID),
       this.fetchIntegrationData(coachID),
-      this.fetchEmailHistory(coachID)
     ]);
 
     // Analyze patterns using AI
-    const analysisPrompt = this.buildAnalysisPrompt(coach, emailMessages, contentPieces, clients, scheduledEmails);
+    const analysisPrompt = this.buildAnalysisPrompt(coach, emailMessages, contentPieces, clients);
     const aiAnalysis = await this.analyzeCoachPatterns(analysisPrompt);
 
     // Build the knowledge profile
     return {
       coachID,
-      personality: this.extractPersonality(aiAnalysis, emailMessages, scheduledEmails),
+      personality: this.extractPersonality(aiAnalysis, emailMessages),
       businessContext: this.extractBusinessContext(coach, contentPieces, integrations),
       writingStyle: this.extractWritingStyle(aiAnalysis, emailMessages),
       contentPatterns: this.extractContentPatterns(contentPieces, integrations),
@@ -247,7 +245,7 @@ export class CoachReplicaService {
   /**
    * Fetch email history for tone analysis
    */
-  private async fetchEmailHistory(coachID: string) {
+  /*private async fetchEmailHistory(coachID: string) {
     return this.prisma.emailMessage.findMany({
       where: {
         emailThread: {
@@ -256,14 +254,15 @@ export class CoachReplicaService {
       },
       select: {
         subject: true,
-        // body: true,
+        text: true,
+        from: true,
         status: true,
         sentAt: true,
       },
       orderBy: { createdAt: 'desc' },
       take: 30
     });
-  }
+  }*/
 
   /**
    * Get all email addresses associated with a coach
@@ -314,7 +313,7 @@ export class CoachReplicaService {
   /**
    * Build analysis prompt for AI
    */
-  private buildAnalysisPrompt(coach: any, emails: any[], content: any[], clients: any[], scheduledEmails: any[]): string {
+  private buildAnalysisPrompt(coach: any, emails: any[], content: any[], clients: any[]): string {
     return `
 Analyze this coach's communication and business patterns:
 
@@ -327,13 +326,7 @@ COACH INFO:
 EMAIL SAMPLES (${emails.length} messages):
 ${emails.slice(0, 10).map(email => `
 - Subject: ${email.subject}
-- Content snippet: ${(email.bodyText || email.bodyHtml || '').substring(0, 200)}...
-`).join('')}
-
-SCHEDULED EMAIL SAMPLES (${scheduledEmails.length} messages):
-${scheduledEmails.slice(0, 10).map(email => `
-- Subject: ${email.subject}
-- Content snippet: ${email.body.substring(0, 200)}...
+- Content snippet: ${(email.text || email.html || '').substring(0, 200)}...
 `).join('')}
 
 CONTENT PIECES (${content.length} pieces):
@@ -373,7 +366,7 @@ Please analyze and return JSON with:
   /**
    * Extract personality traits from AI analysis
    */
-  private extractPersonality(aiAnalysis: any, emails: any[], scheduledEmails: any[]): CoachPersonality {
+  private extractPersonality(aiAnalysis: any, emails: any[]): CoachPersonality {
     return {
       communicationStyle: aiAnalysis.communicationStyle || 'professional',
       responseLength: aiAnalysis.responseLength || 'moderate',
@@ -381,7 +374,7 @@ Please analyze and return JSON with:
       commonPhrases: aiAnalysis.commonPhrases || [],
       preferredGreetings: aiAnalysis.writingPatterns?.preferredGreetings || ['Hi', 'Hello'],
       preferredClosings: aiAnalysis.writingPatterns?.preferredClosings || ['Best regards', 'Thank you'],
-      signatureElements: this.extractSignatureElements(emails, scheduledEmails),
+      signatureElements: this.extractSignatureElements(emails),
     };
   }
 
@@ -469,9 +462,9 @@ Please analyze and return JSON with:
   }
 
   // Helper methods for data extraction and analysis
-  private extractSignatureElements(emails: any[], scheduledEmails: any[]): string[] {
+  private extractSignatureElements(emails: any[]): string[] {
     // Extract common signature elements from emails
-    const signatures = [...emails, ...scheduledEmails]
+    const signatures = [...emails]
       .map(email => {
         const content = email.bodyText || email.body || '';
         // Look for signature patterns (lines after "Best regards", "Thanks", etc.)

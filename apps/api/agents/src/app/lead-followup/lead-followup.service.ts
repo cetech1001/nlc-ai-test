@@ -1,4 +1,7 @@
-import {Injectable, NotFoundException, BadRequestException, Logger} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { PrismaService } from '@nlc-ai/api-database';
+import { ConfigService } from '@nestjs/config';
+import { OpenAI } from 'openai';
 import { CoachReplicaService } from '../coach-replica/coach-replica.service';
 import { EmailDeliverabilityService } from '../email-deliverability/email-deliverability.service';
 import {
@@ -7,33 +10,32 @@ import {
   UpdateEmailRequest,
   EmailSequenceWithEmails,
   EmailInSequence,
-  RegenerateEmailsRequest,
-  CoachReplicaRequest
+  RegenerateEmailsRequest, EmailMessageStatus, UserType
 } from '@nlc-ai/types';
-import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class LeadFollowupService {
   private readonly logger = new Logger(LeadFollowupService.name);
+  private openai: OpenAI;
 
   constructor(
     private prisma: PrismaService,
     private coachReplicaService: CoachReplicaService,
     private emailDeliverabilityService: EmailDeliverabilityService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.openai = new OpenAI({
+      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+    });
+  }
 
-  /**
-   * Create a flexible email sequence based on coach preferences
-   */
   async createSequence(request: CreateSequenceRequest): Promise<EmailSequenceWithEmails> {
     const { leadID, coachID, sequenceConfig } = request;
 
-    // Validate email count
     if (sequenceConfig.emailCount < 1 || sequenceConfig.emailCount > 10) {
       throw new BadRequestException('Email count must be between 1 and 10');
     }
 
-    // Get lead and coach data
     const [lead, coach] = await Promise.all([
       this.prisma.lead.findUnique({ where: { id: leadID } }),
       this.prisma.coach.findUnique({ where: { id: coachID } })
@@ -43,28 +45,26 @@ export class LeadFollowupService {
       throw new NotFoundException('Lead or coach not found');
     }
 
-    // Cancel any existing active sequences for this lead
+    // Cancel existing active sequences
     await this.cancelExistingSequences(leadID);
 
-    // Generate timings if not provided
     const timings = sequenceConfig.timings ||
       this.generateDefaultTimings(sequenceConfig.emailCount, sequenceConfig.sequenceType);
 
-    // Create the email sequence record
     const emailSequence = await this.prisma.emailSequence.create({
       data: {
         leadID,
-        coachID,
+        userID: coachID!,
+        userType: UserType.COACH,
         status: lead.status,
-        name: '',
-        triggerType: '',
+        name: this.generateSequenceDescription(sequenceConfig),
+        triggerType: 'manual',
         description: this.generateSequenceDescription(sequenceConfig),
         isActive: true,
-        sequence: [], // We'll populate this with individual emails
+        sequence: [],
       }
     });
 
-    // Generate each email using Coach Replica
     const emails: EmailInSequence[] = [];
     for (let i = 0; i < sequenceConfig.emailCount; i++) {
       const email = await this.generateSequenceEmail(
@@ -78,11 +78,10 @@ export class LeadFollowupService {
       emails.push(email);
     }
 
-    // Return a complete sequence with emails
     return {
       id: emailSequence.id,
       leadID: emailSequence.leadID!,
-      coachID: emailSequence.coachID,
+      coachID: emailSequence.coachID!,
       status: emailSequence.status,
       description: emailSequence.description || '',
       isActive: emailSequence.isActive,
@@ -101,15 +100,11 @@ export class LeadFollowupService {
     };
   }
 
-  /**
-   * Update an existing sequence (add/remove emails, change timings)
-   */
   async updateSequence(request: UpdateSequenceRequest): Promise<EmailSequenceWithEmails> {
     const { sequenceID, updates } = request;
 
     const sequence = await this.getSequenceWithEmails(sequenceID);
 
-    // Update basic sequence info
     await this.prisma.emailSequence.update({
       where: { id: sequenceID },
       data: {
@@ -119,12 +114,10 @@ export class LeadFollowupService {
       }
     });
 
-    // Handle email count changes
     if (updates.emailCount && updates.emailCount !== sequence.totalEmails) {
       await this.adjustEmailCount(sequence, updates.emailCount, updates.timings);
     }
 
-    // Handle timing changes
     if (updates.timings && !updates.emailCount) {
       await this.updateEmailTimings(sequenceID, updates.timings);
     }
@@ -132,13 +125,10 @@ export class LeadFollowupService {
     return this.getSequenceWithEmails(sequenceID);
   }
 
-  /**
-   * Update a specific email in the sequence
-   */
   async updateEmail(request: UpdateEmailRequest): Promise<EmailInSequence> {
     const { emailID, updates } = request;
 
-    const existingEmail = await this.prisma.scheduledEmail.findUnique({
+    const existingEmail = await this.prisma.emailMessage.findUnique({
       where: { id: emailID }
     });
 
@@ -146,7 +136,6 @@ export class LeadFollowupService {
       throw new NotFoundException('Email not found');
     }
 
-    // Don't allow editing sent emails
     if (existingEmail.status === 'sent') {
       throw new BadRequestException('Cannot edit emails that have already been sent');
     }
@@ -155,37 +144,20 @@ export class LeadFollowupService {
       updatedAt: new Date(),
     };
 
-    if (updates.subject) {
-      updateData.subject = updates.subject;
-    }
+    if (updates.subject) updateData.subject = updates.subject;
+    if (updates.body) updateData.text = updates.body;
+    if (updates.scheduledFor) updateData.scheduledFor = new Date(updates.scheduledFor);
 
-    if (updates.body) {
-      updateData.body = updates.body;
-      // Store original AI version if this is the first edit
-      if (!existingEmail.errorMessage) { // Using errorMessage field to store original
-        updateData.errorMessage = JSON.stringify({
-          originalSubject: existingEmail.subject,
-          originalBody: existingEmail.body,
-          editedAt: new Date(),
-        });
-      }
-    }
-
-    if (updates.scheduledFor) {
-      updateData.scheduledFor = new Date(updates.scheduledFor);
-    }
-
-    const updatedEmail = await this.prisma.scheduledEmail.update({
+    const updatedEmail = await this.prisma.emailMessage.update({
       where: { id: emailID },
       data: updateData
     });
 
-    // Check deliverability if content was changed
     let deliverabilityScore;
     if (updates.subject || updates.body) {
       const analysis = await this.emailDeliverabilityService.quickDeliverabilityCheck(
-        updatedEmail.subject,
-        updatedEmail.body
+        updatedEmail.subject || '',
+        updatedEmail.text || ''
       );
       deliverabilityScore = analysis.score;
     }
@@ -193,9 +165,6 @@ export class LeadFollowupService {
     return this.mapToEmailInSequence(updatedEmail, deliverabilityScore);
   }
 
-  /**
-   * Regenerate specific emails in a sequence
-   */
   async regenerateEmails(request: RegenerateEmailsRequest): Promise<EmailInSequence[]> {
     const { sequenceID, emailOrders, customInstructions } = request;
 
@@ -217,12 +186,10 @@ export class LeadFollowupService {
         throw new NotFoundException(`Email at position ${order} not found`);
       }
 
-      // Don't regenerate sent emails
       if (existingEmail.status === 'sent') {
         throw new BadRequestException(`Cannot regenerate email at position ${order} - already sent`);
       }
 
-      // Generate new email content
       const newEmail = await this.generateSequenceEmail(
         lead,
         coach,
@@ -234,7 +201,7 @@ export class LeadFollowupService {
           sequenceType: 'standard'
         },
         sequenceID,
-        existingEmail.id // Update existing instead of creating new
+        existingEmail.id
       );
 
       regeneratedEmails.push(newEmail);
@@ -243,9 +210,6 @@ export class LeadFollowupService {
     return regeneratedEmails;
   }
 
-  /**
-   * Get a sequence with all emails
-   */
   async getSequenceWithEmails(sequenceID: string): Promise<EmailSequenceWithEmails> {
     const sequence = await this.prisma.emailSequence.findUnique({
       where: { id: sequenceID },
@@ -258,7 +222,7 @@ export class LeadFollowupService {
             status: true,
           }
         },
-        scheduledEmails: {
+        emailMessages: {
           orderBy: { sequenceOrder: 'asc' }
         }
       }
@@ -269,13 +233,13 @@ export class LeadFollowupService {
     }
 
     const emails: EmailInSequence[] = await Promise.all(
-      sequence.scheduledEmails.map(email => this.mapToEmailInSequence(email))
+      sequence.emailMessages.map(email => this.mapToEmailInSequence(email))
     );
 
     return {
       id: sequence.id,
       leadID: sequence.leadID!,
-      coachID: sequence.coachID,
+      coachID: sequence.coachID!,
       status: sequence.status,
       description: sequence.description,
       isActive: sequence.isActive,
@@ -289,17 +253,7 @@ export class LeadFollowupService {
     };
   }
 
-  // Add these methods to the existing LeadFollowupService class
-
-  /**
-   * Get all sequences for a specific coach
-   */
-  async getSequencesForCoach(coachID: string): Promise<{
-    sequences: EmailSequenceWithEmails[];
-    totalCount: number;
-    activeCount: number;
-    completedCount: number;
-  }> {
+  async getSequencesForCoach(coachID: string) {
     const sequences = await this.prisma.emailSequence.findMany({
       where: { coachID },
       include: {
@@ -311,23 +265,23 @@ export class LeadFollowupService {
             status: true,
           }
         },
-        scheduledEmails: {
+        emailMessages: {
           orderBy: { sequenceOrder: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    const sequencesWithEmails: EmailSequenceWithEmails[] = await Promise.all(
+    const sequencesWithEmails = await Promise.all(
       sequences.map(async (sequence) => {
-        const emails: EmailInSequence[] = await Promise.all(
-          sequence.scheduledEmails.map(email => this.mapToEmailInSequence(email))
+        const emails = await Promise.all(
+          sequence.emailMessages.map(email => this.mapToEmailInSequence(email))
         );
 
         return {
           id: sequence.id,
           leadID: sequence.leadID!,
-          coachID: sequence.coachID,
+          coachID: sequence.coachID!,
           status: sequence.status,
           description: sequence.description,
           isActive: sequence.isActive,
@@ -342,28 +296,17 @@ export class LeadFollowupService {
       })
     );
 
-    const totalCount = sequences.length;
-    const activeCount = sequences.filter(s => s.isActive).length;
-    const completedCount = sequences.filter(s =>
-      s.scheduledEmails.every(email => email.status === 'sent' || email.status === 'cancelled')
-    ).length;
-
     return {
       sequences: sequencesWithEmails,
-      totalCount,
-      activeCount,
-      completedCount
+      totalCount: sequences.length,
+      activeCount: sequences.filter(s => s.isActive).length,
+      completedCount: sequences.filter(s =>
+        s.emailMessages.every(email => email.status === 'sent' || email.status === 'cancelled')
+      ).length
     };
   }
 
-  /**
-   * Get all sequences for a specific lead
-   */
-  async getSequencesForLead(leadID: string): Promise<{
-    sequences: EmailSequenceWithEmails[];
-    currentSequence: EmailSequenceWithEmails | null;
-    sequenceHistory: EmailSequenceWithEmails[];
-  }> {
+  async getSequencesForLead(leadID: string) {
     const sequences = await this.prisma.emailSequence.findMany({
       where: { leadID },
       include: {
@@ -375,23 +318,23 @@ export class LeadFollowupService {
             status: true,
           }
         },
-        scheduledEmails: {
+        emailMessages: {
           orderBy: { sequenceOrder: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    const sequencesWithEmails: EmailSequenceWithEmails[] = await Promise.all(
+    const sequencesWithEmails = await Promise.all(
       sequences.map(async (sequence) => {
-        const emails: EmailInSequence[] = await Promise.all(
-          sequence.scheduledEmails.map(email => this.mapToEmailInSequence(email))
+        const emails = await Promise.all(
+          sequence.emailMessages.map(email => this.mapToEmailInSequence(email))
         );
 
         return {
           id: sequence.id,
           leadID: sequence.leadID!,
-          coachID: sequence.coachID,
+          coachID: sequence.coachID!,
           status: sequence.status,
           description: sequence.description,
           isActive: sequence.isActive,
@@ -406,10 +349,7 @@ export class LeadFollowupService {
       })
     );
 
-    // Current sequence is the most recent active one
     const currentSequence = sequencesWithEmails.find(s => s.isActive) || null;
-
-    // History includes all completed sequences
     const sequenceHistory = sequencesWithEmails.filter(s => !s.isActive);
 
     return {
@@ -419,20 +359,8 @@ export class LeadFollowupService {
     };
   }
 
-  /**
-   * Pause all scheduled emails in a sequence
-   */
   async pauseSequenceEmails(sequenceID: string): Promise<void> {
-    const sequence = await this.prisma.emailSequence.findUnique({
-      where: { id: sequenceID }
-    });
-
-    if (!sequence) {
-      throw new NotFoundException('Email sequence not found');
-    }
-
-    // Update all scheduled emails to paused status
-    await this.prisma.scheduledEmail.updateMany({
+    await this.prisma.emailMessage.updateMany({
       where: {
         emailSequenceID: sequenceID,
         status: 'scheduled'
@@ -443,34 +371,16 @@ export class LeadFollowupService {
       }
     });
 
-    // Update sequence to inactive if it was active
-    if (sequence.isActive) {
-      await this.prisma.emailSequence.update({
-        where: { id: sequenceID },
-        data: {
-          isActive: false,
-          updatedAt: new Date()
-        }
-      });
-    }
-
-    this.logger.log(`Paused sequence ${sequenceID} and all scheduled emails`);
-  }
-
-  /**
-   * Resume all paused emails in a sequence
-   */
-  async resumeSequenceEmails(sequenceID: string): Promise<void> {
-    const sequence = await this.prisma.emailSequence.findUnique({
-      where: { id: sequenceID }
+    await this.prisma.emailSequence.update({
+      where: { id: sequenceID },
+      data: { isActive: false, updatedAt: new Date() }
     });
 
-    if (!sequence) {
-      throw new NotFoundException('Email sequence not found');
-    }
+    this.logger.log(`Paused sequence ${sequenceID}`);
+  }
 
-    // Update all paused emails back to scheduled status
-    const pausedEmails = await this.prisma.scheduledEmail.findMany({
+  async resumeSequenceEmails(sequenceID: string): Promise<void> {
+    const pausedEmails = await this.prisma.emailMessage.findMany({
       where: {
         emailSequenceID: sequenceID,
         status: 'paused'
@@ -478,11 +388,10 @@ export class LeadFollowupService {
     });
 
     for (const email of pausedEmails) {
-      // Recalculate send time based on current time
-      const timing = this.inferTimingFromSchedule(email.scheduledFor);
+      const timing = this.inferTimingFromSchedule(email.scheduledFor!);
       const newScheduledFor = this.calculateSendTime(timing);
 
-      await this.prisma.scheduledEmail.update({
+      await this.prisma.emailMessage.update({
         where: { id: email.id },
         data: {
           status: 'scheduled',
@@ -492,32 +401,16 @@ export class LeadFollowupService {
       });
     }
 
-    // Reactivate sequence
     await this.prisma.emailSequence.update({
       where: { id: sequenceID },
-      data: {
-        isActive: true,
-        updatedAt: new Date()
-      }
+      data: { isActive: true, updatedAt: new Date() }
     });
 
-    this.logger.log(`Resumed sequence ${sequenceID} and rescheduled ${pausedEmails.length} emails`);
+    this.logger.log(`Resumed sequence ${sequenceID} with ${pausedEmails.length} emails`);
   }
 
-  /**
-   * Cancel all unsent emails in a sequence
-   */
   async cancelSequenceEmails(sequenceID: string): Promise<void> {
-    const sequence = await this.prisma.emailSequence.findUnique({
-      where: { id: sequenceID }
-    });
-
-    if (!sequence) {
-      throw new NotFoundException('Email sequence not found');
-    }
-
-    // Cancel all emails that haven't been sent yet
-    const cancelledCount = await this.prisma.scheduledEmail.updateMany({
+    await this.prisma.emailMessage.updateMany({
       where: {
         emailSequenceID: sequenceID,
         status: { in: ['scheduled', 'paused'] }
@@ -528,35 +421,19 @@ export class LeadFollowupService {
       }
     });
 
-    // Mark sequence as inactive
     await this.prisma.emailSequence.update({
       where: { id: sequenceID },
-      data: {
-        isActive: false,
-        updatedAt: new Date()
-      }
+      data: { isActive: false, updatedAt: new Date() }
     });
 
-    this.logger.log(`Cancelled sequence ${sequenceID} and ${cancelledCount.count} unsent emails`);
+    this.logger.log(`Cancelled sequence ${sequenceID}`);
   }
 
-  /**
-   * Get email preview with deliverability analysis
-   */
-  async getEmailPreview(emailID: string): Promise<{
-    email: EmailInSequence;
-    deliverabilityAnalysis: any;
-    suggestions: string[];
-  }> {
-    const scheduledEmail = await this.prisma.scheduledEmail.findUnique({
+  async getEmailPreview(emailID: string) {
+    const emailMessage = await this.prisma.emailMessage.findUnique({
       where: { id: emailID },
       include: {
-        lead: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
+        lead: { select: { name: true, email: true } },
         coach: {
           select: {
             firstName: true,
@@ -568,24 +445,17 @@ export class LeadFollowupService {
       }
     });
 
-    if (!scheduledEmail) {
+    if (!emailMessage) {
       throw new NotFoundException('Email not found');
     }
 
-    // Get comprehensive deliverability analysis
     const deliverabilityAnalysis = await this.emailDeliverabilityService.quickDeliverabilityCheck(
-      scheduledEmail.subject,
-      scheduledEmail.body
+      emailMessage.subject || '',
+      emailMessage.text || ''
     );
 
-    // Map to EmailInSequence
-    const email = await this.mapToEmailInSequence(scheduledEmail, deliverabilityAnalysis.score);
-
-    // Generate improvement suggestions based on deliverability analysis
-    const suggestions = this.generateImprovementSuggestions(
-      scheduledEmail,
-      deliverabilityAnalysis
-    );
+    const email = await this.mapToEmailInSequence(emailMessage, deliverabilityAnalysis.score);
+    const suggestions = this.generateImprovementSuggestions(emailMessage, deliverabilityAnalysis);
 
     return {
       email,
@@ -594,57 +464,10 @@ export class LeadFollowupService {
     };
   }
 
-  /**
-   * Generate improvement suggestions for email content
-   */
-  private generateImprovementSuggestions(email: any, analysis: any): string[] {
-    const suggestions: string[] = [];
+  // Private helper methods
 
-    // Subject line suggestions
-    if (email.subject.length > 50) {
-      suggestions.push('Consider shortening the subject line to under 50 characters for better mobile display');
-    }
-
-    if (email.subject.includes('!')) {
-      suggestions.push('Avoid exclamation marks in subject lines as they may trigger spam filters');
-    }
-
-    // Content suggestions
-    if (email.body.length > 2000) {
-      suggestions.push('Consider shortening the email body for better engagement');
-    }
-
-    if (analysis.score < 70) {
-      suggestions.push('Low deliverability score detected. Review content for spam triggers');
-    }
-
-    // Personalization suggestions
-    if (!email.body.includes(email.lead?.name.split(' ')[0])) {
-      suggestions.push('Consider adding the recipient\'s first name for better personalization');
-    }
-
-    // Call-to-action suggestions
-    const ctaWords = ['click', 'call', 'schedule', 'book', 'download', 'register'];
-    const hasCTA = ctaWords.some(word => email.body.toLowerCase().includes(word));
-
-    if (!hasCTA) {
-      suggestions.push('Consider adding a clear call-to-action to guide the recipient');
-    }
-
-    // Link suggestions
-    const linkCount = (email.body.match(/https?:\/\/[^\s]+/g) || []).length;
-    if (linkCount > 3) {
-      suggestions.push('Reduce the number of links to improve deliverability');
-    }
-
-    return suggestions;
-  }
-
-  /**
-   * Cancel existing sequences for a lead
-   */
   private async cancelExistingSequences(leadID: string): Promise<void> {
-    await this.prisma.scheduledEmail.updateMany({
+    await this.prisma.emailMessage.updateMany({
       where: {
         leadID,
         status: { in: ['scheduled', 'paused'] }
@@ -658,9 +481,6 @@ export class LeadFollowupService {
     });
   }
 
-  /**
-   * Generate default timings based on email count and sequence type
-   */
   private generateDefaultTimings(emailCount: number, sequenceType: string = 'standard'): string[] {
     const timingTemplates = {
       aggressive: ['immediate', '1-day', '3-days', '5-days', '1-week', '10-days', '2-weeks'],
@@ -673,19 +493,12 @@ export class LeadFollowupService {
     return template.slice(0, emailCount);
   }
 
-  /**
-   * Generate sequence description based on config
-   */
   private generateSequenceDescription(config: any): string {
     const type = config.sequenceType || 'standard';
     const count = config.emailCount;
-
     return `${count}-email ${type} follow-up sequence${config.customInstructions ? ' (customized)' : ''}`;
   }
 
-  /**
-   * Generate a single email in the sequence
-   */
   private async generateSequenceEmail(
     lead: any,
     coach: any,
@@ -695,52 +508,29 @@ export class LeadFollowupService {
     sequenceID: string,
     existingEmailID?: string
   ): Promise<EmailInSequence> {
-    // Build context for this specific email
+    // Get coach profile for context
+    const coachProfile = await this.coachReplicaService.getCoachKnowledgeProfile(coach?.id);
+
     const context = this.buildEmailContext(lead, coach, emailNumber, config.emailCount, timing, config);
-
-    const request: CoachReplicaRequest = {
-      coachID: coach?.id,
-      context,
-      requestType: 'lead_follow_up',
-      additionalData: {
-        leadInfo: {
-          name: `${lead.name}`,
-          email: lead.email,
-          status: lead.status,
-          source: lead.source,
-          notes: lead.notes
-        },
-        emailNumber,
-        totalEmails: config.emailCount,
-        timing,
-        customInstructions: config.customInstructions,
-        sequenceType: config.sequenceType
-      }
-    };
-
-    // Generate content using Coach Replica
-    const response = await this.coachReplicaService.generateCoachResponse(request);
+    const response = await this.generateAIResponse(context, coachProfile);
 
     const subject = this.extractSubject(response.response) || `Follow-up #${emailNumber} from ${coach.firstName}`;
     const body = this.extractBody(response.response) || response.response;
-
-    // Calculate send time
     const scheduledFor = this.calculateSendTime(timing);
 
-    // Check deliverability
     const deliverabilityAnalysis = await this.emailDeliverabilityService.quickDeliverabilityCheck(subject, body);
 
-    // Create or update the scheduled email
     const emailData = {
       leadID: lead.id,
       coachID: coach.id,
       emailSequenceID: sequenceID,
       subject,
-      body,
+      text: body,
       sequenceOrder: emailNumber,
       scheduledFor,
       to: lead.email,
-      status: 'scheduled',
+      from: coach.email,
+      status: EmailMessageStatus.SCHEDULED,
       metadata: JSON.stringify({
         originalAI: response.response,
         confidence: response.confidence,
@@ -748,41 +538,65 @@ export class LeadFollowupService {
       })
     };
 
-    let scheduledEmail;
+    let emailMessage;
     if (existingEmailID) {
-      scheduledEmail = await this.prisma.emailMessage.update({
+      emailMessage = await this.prisma.emailMessage.update({
         where: { id: existingEmailID },
         data: emailData
       });
     } else {
-      scheduledEmail = await this.prisma.emailMessage.create({
+      emailMessage = await this.prisma.emailMessage.create({
         data: emailData
       });
     }
 
-    return this.mapToEmailInSequence(scheduledEmail, deliverabilityAnalysis.score);
+    return this.mapToEmailInSequence(emailMessage, deliverabilityAnalysis.score);
   }
 
-  /**
-   * Build context for specific email in sequence
-   */
+  private async generateAIResponse(context: string, coachProfile: any) {
+    const systemPrompt = `You are an AI assistant generating follow-up emails for a ${coachProfile?.businessContext?.industry || 'professional'} coach.
+
+COACH COMMUNICATION STYLE:
+- Style: ${coachProfile?.personality?.communicationStyle || 'professional'}
+- Response Length: ${coachProfile?.personality?.responseLength || 'moderate'}
+- Formality Level: ${coachProfile?.writingStyle?.formalityLevel || 7}/10
+- Common Phrases: ${coachProfile?.personality?.commonPhrases?.join(', ') || 'N/A'}
+- Preferred Greetings: ${coachProfile?.personality?.preferredGreetings?.join(', ') || 'Hi, Hello'}
+- Preferred Closings: ${coachProfile?.personality?.preferredClosings?.join(', ') || 'Best regards'}
+
+BUSINESS CONTEXT:
+- Services: ${coachProfile?.businessContext?.services?.join(', ') || 'Coaching services'}
+- Expertise: ${coachProfile?.businessContext?.expertise?.join(', ') || 'General coaching'}
+
+Generate an email that matches this coach's authentic voice and provides genuine value.
+
+Respond in JSON format:
+{
+  "response": "The complete email with subject and body",
+  "confidence": 0.0-1.0,
+  "reasoning": "Why this matches the coach's style"
+}`;
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: context },
+        ],
+        temperature: 0.7,
+        max_completion_tokens: 1000,
+        response_format: { type: 'json_object' },
+      });
+
+      return JSON.parse(completion.choices[0].message.content || '{}');
+    } catch (error) {
+      this.logger.error('OpenAI API error:', error);
+      throw new Error('Failed to generate response with AI');
+    }
+  }
+
   private buildEmailContext(lead: any, coach: any, emailNumber: number, totalEmails: number, timing: string, config: any): string {
-    const baseContext = `
-Lead Information:
-- Name: ${lead.name}
-- Email: ${lead.email}
-- Status: ${lead.status}
-- Source: ${lead.source || 'Website'}
-- Notes: ${lead.notes || 'No additional notes'}
-
-Email Sequence Context:
-- This is email ${emailNumber} of ${totalEmails} in the sequence
-- Timing: ${timing}
-- Sequence Type: ${config.sequenceType || 'standard'}
-- Custom Instructions: ${config.customInstructions || 'None'}
-`;
-
-    // Add specific instructions based on email position
     let specificInstructions = '';
 
     if (emailNumber === 1) {
@@ -811,18 +625,30 @@ This is email ${emailNumber} of ${totalEmails}. Focus on:
 `;
     }
 
-    return baseContext + specificInstructions + `
-Generate an email that matches the coach's authentic voice and provides genuine value to the lead.`;
+    return `
+LEAD INFORMATION:
+- Name: ${lead.name}
+- Email: ${lead.email}
+- Status: ${lead.status}
+- Source: ${lead.source || 'Website'}
+- Notes: ${lead.notes || 'No additional notes'}
+
+EMAIL SEQUENCE CONTEXT:
+- This is email ${emailNumber} of ${totalEmails} in the sequence
+- Timing: ${timing}
+- Sequence Type: ${config.sequenceType || 'standard'}
+- Custom Instructions: ${config.customInstructions || 'None'}
+
+${specificInstructions}
+
+Generate an email that matches the coach's authentic voice and provides genuine value to the lead.
+`;
   }
 
-  /**
-   * Adjust email count in existing sequence
-   */
   private async adjustEmailCount(sequence: EmailSequenceWithEmails, newCount: number, newTimings?: string[]): Promise<void> {
     const currentCount = sequence.totalEmails;
 
     if (newCount > currentCount) {
-      // Add new emails
       const [lead, coach] = await Promise.all([
         this.prisma.lead.findUnique({ where: { id: sequence.leadID } }),
         sequence.coachID ? this.prisma.coach.findUnique({ where: { id: sequence.coachID } }) : null,
@@ -841,13 +667,12 @@ Generate an email that matches the coach's authentic voice and provides genuine 
         );
       }
     } else if (newCount < currentCount) {
-      // Remove emails (only remove unsent ones)
       const emailsToRemove = sequence.emails
         .filter(email => email.sequenceOrder > newCount && email.status !== 'sent')
         .map(email => email.id);
 
       if (emailsToRemove.length > 0) {
-        await this.prisma.scheduledEmail.updateMany({
+        await this.prisma.emailMessage.updateMany({
           where: { id: { in: emailsToRemove } },
           data: { status: 'cancelled' }
         });
@@ -855,11 +680,8 @@ Generate an email that matches the coach's authentic voice and provides genuine 
     }
   }
 
-  /**
-   * Update email timings for existing sequence
-   */
   private async updateEmailTimings(sequenceID: string, newTimings: string[]): Promise<void> {
-    const emails = await this.prisma.scheduledEmail.findMany({
+    const emails = await this.prisma.emailMessage.findMany({
       where: {
         emailSequenceID: sequenceID,
         status: { in: ['scheduled', 'paused'] }
@@ -870,135 +692,92 @@ Generate an email that matches the coach's authentic voice and provides genuine 
     for (let i = 0; i < Math.min(emails.length, newTimings.length); i++) {
       const newScheduledFor = this.calculateSendTime(newTimings[i]);
 
-      await this.prisma.scheduledEmail.update({
+      await this.prisma.emailMessage.update({
         where: { id: emails[i].id },
         data: { scheduledFor: newScheduledFor }
       });
     }
   }
 
-  /**
-   * Calculate send time based on timing string
-   */
   private calculateSendTime(timing: string): Date {
     const now = new Date();
 
-    switch (timing) {
-      case 'immediate':
-        return new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
-      case '1-hour':
-        return new Date(now.getTime() + 60 * 60 * 1000);
-      case '3-hours':
-        return new Date(now.getTime() + 3 * 60 * 60 * 1000);
-      case '1-day':
-        return new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      case '2-days':
-        return new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
-      case '3-days':
-        return new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-      case '5-days':
-        return new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
-      case '1-week':
-        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      case '10-days':
-        return new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
-      case '2-weeks':
-        return new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-      case '3-weeks':
-        return new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000);
-      case '1-month':
-        return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-      case '6-weeks':
-        return new Date(now.getTime() + 42 * 24 * 60 * 60 * 1000);
-      case '2-months':
-        return new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
-      default:
-        // Parse custom timing like "4-days", "2-hours", etc.
-        const match = timing.match(/^(\d+)-(hour|day|week|month)s?$/);
-        if (match) {
-          const [, num, unit] = match;
-          const multipliers = {
-            hour: 60 * 60 * 1000,
-            day: 24 * 60 * 60 * 1000,
-            week: 7 * 24 * 60 * 60 * 1000,
-            month: 30 * 24 * 60 * 60 * 1000,
-          };
-          return new Date(now.getTime() + parseInt(num) * multipliers[unit as keyof typeof multipliers]);
-        }
-        return now; // Fallback to immediate
+    const timingMap: { [key: string]: number } = {
+      'immediate': 5 * 60 * 1000,
+      '1-hour': 60 * 60 * 1000,
+      '3-hours': 3 * 60 * 60 * 1000,
+      '1-day': 24 * 60 * 60 * 1000,
+      '2-days': 2 * 24 * 60 * 60 * 1000,
+      '3-days': 3 * 24 * 60 * 60 * 1000,
+      '5-days': 5 * 24 * 60 * 60 * 1000,
+      '1-week': 7 * 24 * 60 * 60 * 1000,
+      '10-days': 10 * 24 * 60 * 60 * 1000,
+      '2-weeks': 14 * 24 * 60 * 60 * 1000,
+      '3-weeks': 21 * 24 * 60 * 60 * 1000,
+      '1-month': 30 * 24 * 60 * 60 * 1000,
+      '6-weeks': 42 * 24 * 60 * 60 * 1000,
+      '2-months': 60 * 24 * 60 * 60 * 1000
+    };
+
+    if (timingMap[timing]) {
+      return new Date(now.getTime() + timingMap[timing]);
     }
+
+    // Parse custom timing
+    const match = timing.match(/^(\d+)-(hour|day|week|month)s?$/);
+    if (match) {
+      const [, num, unit] = match;
+      const multipliers = {
+        hour: 60 * 60 * 1000,
+        day: 24 * 60 * 60 * 1000,
+        week: 7 * 24 * 60 * 60 * 1000,
+        month: 30 * 24 * 60 * 60 * 1000,
+      };
+      return new Date(now.getTime() + parseInt(num) * multipliers[unit as keyof typeof multipliers]);
+    }
+
+    return now;
   }
 
-  /**
-   * Extract subject from AI response
-   */
   private extractSubject(response: string): string | null {
     const subjectMatch = response.match(/Subject:\s*(.+)/i);
-    if (subjectMatch) {
-      return subjectMatch[1].trim();
-    }
-    return null;
+    return subjectMatch ? subjectMatch[1].trim() : null;
   }
 
-  /**
-   * Extract body from AI response
-   */
   private extractBody(response: string): string | null {
     let body = response.replace(/Subject:\s*.+\n*/i, '').trim();
     return body.length > 20 ? body : null;
   }
 
-  /**
-   * Map database email to EmailInSequence type
-   */
   private async mapToEmailInSequence(email: any, deliverabilityScore?: number): Promise<EmailInSequence> {
-    // Get deliverability score if not provided
     if (!deliverabilityScore) {
       try {
         const analysis = await this.emailDeliverabilityService.quickDeliverabilityCheck(
-          email.subject,
-          email.body
+          email.subject || '',
+          email.text || ''
         );
         deliverabilityScore = analysis.score;
       } catch (error) {
-        deliverabilityScore = 75; // Default score
+        deliverabilityScore = 75;
       }
-    }
-
-    let originalAIVersion;
-    try {
-      const metadata = JSON.parse(email.metadata || '{}');
-      originalAIVersion = metadata.originalAI;
-    } catch {
-      originalAIVersion = undefined;
-    }
-
-    let isEdited = false;
-    try {
-      isEdited = !!JSON.parse(email.errorMessage || 'false');
-    } catch {
-      isEdited = false;
     }
 
     return {
       id: email.id,
       sequenceID: email.emailSequenceID,
-      sequenceOrder: email.sequenceOrder,
-      subject: email.subject,
-      body: email.body,
-      timing: this.inferTimingFromSchedule(email.scheduledFor),
-      scheduledFor: email.scheduledFor,
+      sequenceOrder: email.sequenceOrder || 1,
+      subject: email.subject || '',
+      body: email.text || '',
+      timing: this.inferTimingFromSchedule(email.scheduledFor || new Date()),
+      scheduledFor: email.scheduledFor || new Date(),
       status: email.status,
       sentAt: email.sentAt,
       deliverabilityScore,
-      isEdited,
-      originalAIVersion,
+      isEdited: false,
+      originalAIVersion: undefined,
     };
   }
 
-  /**
-   * Infer timing string from scheduled date
-   */
   private inferTimingFromSchedule(scheduledFor: Date): string {
     const now = new Date();
     const diffMs = scheduledFor.getTime() - now.getTime();
@@ -1016,5 +795,39 @@ Generate an email that matches the coach's authentic voice and provides genuine 
 
     const diffMonths = Math.round(diffDays / 30);
     return `${diffMonths}-month${diffMonths > 1 ? 's' : ''}`;
+  }
+
+  private generateImprovementSuggestions(email: any, analysis: any): string[] {
+    const suggestions: string[] = [];
+
+    if (email.subject && email.subject.length > 50) {
+      suggestions.push('Consider shortening the subject line to under 50 characters for better mobile display');
+    }
+
+    if (email.subject && email.subject.includes('!')) {
+      suggestions.push('Avoid exclamation marks in subject lines as they may trigger spam filters');
+    }
+
+    if (email.text && email.text.length > 2000) {
+      suggestions.push('Consider shortening the email body for better engagement');
+    }
+
+    if (analysis.score < 70) {
+      suggestions.push('Low deliverability score detected. Review content for spam triggers');
+    }
+
+    const ctaWords = ['click', 'call', 'schedule', 'book', 'download', 'register'];
+    const hasCTA = ctaWords.some(word => email.text?.toLowerCase().includes(word));
+
+    if (!hasCTA) {
+      suggestions.push('Consider adding a clear call-to-action to guide the recipient');
+    }
+
+    const linkCount = (email.text?.match(/https?:\/\/[^\s]+/g) || []).length;
+    if (linkCount > 3) {
+      suggestions.push('Reduce the number of links to improve deliverability');
+    }
+
+    return suggestions;
   }
 }

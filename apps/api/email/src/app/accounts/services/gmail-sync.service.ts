@@ -46,6 +46,7 @@ export class GmailSyncService implements IEmailSyncProvider {
 
       return {
         accessToken: credentials.access_token,
+        refreshToken: credentials.refresh_token,
         expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date).toISOString() : undefined,
       };
     } catch (error) {
@@ -270,7 +271,7 @@ export class GmailSyncService implements IEmailSyncProvider {
         providerMessageID: message.id,
         threadID: message.threadId,
         to: getHeader('To') || '',
-        from: getHeader('From').match(/<(.+)>/)?.[1] || getHeader('From'),
+        from: this.extractEmailFromHeader(getHeader('From') || ''),
         subject: getHeader('Subject'),
         text: this.extractTextFromPayload(message.payload),
         html: this.extractHtmlFromPayload(message.payload),
@@ -284,6 +285,17 @@ export class GmailSyncService implements IEmailSyncProvider {
       this.logger.warn('Failed to transform Gmail message', error);
       return null;
     }
+  }
+
+  private extractEmailFromHeader(header: string): string {
+    if (!header) return '';
+
+    const emailMatch = header.match(/<(.+?)>/);
+    if (emailMatch) {
+      return emailMatch[1];
+    }
+
+    return header.trim();
   }
 
   private extractTextFromPayload(payload: any): string | undefined {

@@ -41,4 +41,12 @@ export class ThreadsClient extends BaseClient {
     );
     return response.data!;
   }
+
+  async replyToThread(threadID: string, replyData: { subject: string; text?: string; html?: string; }) {
+    return this.request<{ success: boolean }>(
+      'POST',
+      `/${threadID}/reply`,
+      { body: replyData }
+    );
+  }
 }

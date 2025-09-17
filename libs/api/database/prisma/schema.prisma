@@ -264,9 +264,9 @@ model AiAgent {
 
 model AiInteraction {
   id               String    @id @default(uuid()) @db.Uuid
-  coachID          String    @db.Uuid
+  userID           String    @db.Uuid
+  userType         UserType
   agentID          String    @db.Uuid
-  clientID         String?   @db.Uuid
   interactionType  String    @db.VarChar(50)
   inputData        Json
   outputData       Json
@@ -279,21 +279,23 @@ model AiInteraction {
 
   generatedEmailResponses GeneratedEmailResponse[]
 
-  aiAgent AiAgent @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  client  Client? @relation(fields: [clientID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coach   Coach   @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  aiAgent  AiAgent @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Coach    Coach?  @relation(fields: [coachId], references: [id])
+  coachId  String? @db.Uuid
+  Client   Client? @relation(fields: [clientId], references: [id])
+  clientId String? @db.Uuid
 
   @@index([agentID], map: "idx_ai_interactions_agent_id")
-  @@index([coachID], map: "idx_ai_interactions_coach_id")
+  @@index([userID], map: "idx_ai_interactions_user_id")
   @@index([createdAt], map: "idx_ai_interactions_created_at")
   @@map("ai_interactions")
 }
 
 model GeneratedEmailResponse {
   id                  String               @id @default(uuid()) @db.Uuid
-  coachID             String               @db.Uuid
+  userID              String               @db.Uuid
+  userType            UserType
   threadID            String               @db.Uuid
-  clientID            String               @db.Uuid
   interactionID       String?              @db.Uuid
   subject             String               @db.VarChar(500)
   body                String               @db.Text
@@ -308,12 +310,14 @@ model GeneratedEmailResponse {
   createdAt           DateTime             @default(now()) @db.Timestamptz(6)
   updatedAt           DateTime             @updatedAt @db.Timestamptz(6)
 
-  coach         Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
   emailThread   EmailThread    @relation(fields: [threadID], references: [id], onDelete: Cascade)
-  client        Client         @relation(fields: [clientID], references: [id], onDelete: Cascade)
   aiInteraction AiInteraction? @relation(fields: [interactionID], references: [id], onDelete: SetNull)
+  Coach         Coach?         @relation(fields: [coachId], references: [id])
+  coachId       String?        @db.Uuid
+  Client        Client?        @relation(fields: [clientId], references: [id])
+  clientId      String?        @db.Uuid
 
-  @@index([coachID, status])
+  @@index([userID, status])
   @@index([threadID])
   @@index([createdAt])
   @@map("generated_email_responses")

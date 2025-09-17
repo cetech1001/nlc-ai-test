@@ -8,6 +8,8 @@ import {
   // AnalyzeEmailRequest,
   // CoachReplicaRequest,
 } from '@nlc-ai/api-types';
+import {CoachReplicaService} from "../coach-replica/coach-replica.service";
+import {UserType} from "@nlc-ai/types";
 
 @Injectable()
 export class ClientEmailService {
@@ -18,17 +20,18 @@ export class ClientEmailService {
     private readonly prisma: PrismaService,
     private readonly outbox: OutboxService,
     private readonly configService: ConfigService,
+    private readonly coachReplicaService: CoachReplicaService,
   ) {
     this.openai = new OpenAI({
       apiKey: this.configService.get<string>('agents.openai.apiKey'),
     });
   }
 
-  async generateResponse(coachID: string, threadID: string, customInstructions?: string) {
+  async generateResponse(userID: string, userType: UserType, threadID: string, customInstructions?: string) {
     this.logger.log(`Generating response for thread ${threadID}`);
 
     const thread = await this.prisma.emailThread.findFirst({
-      where: { id: threadID, coachID },
+      where: { id: threadID, userID },
       include: {
         client: true,
         emailMessages: {
@@ -52,7 +55,8 @@ export class ClientEmailService {
 
     const interaction = await this.prisma.aiInteraction.create({
       data: {
-        coachID,
+        userID,
+        userType,
         agentID: await this.getOrCreateClientEmailAgent(),
         interactionType: 'client_email_response',
         inputData: {
@@ -68,14 +72,19 @@ export class ClientEmailService {
     });
 
     try {
-      const context = this.buildResponseContext(thread, latestClientMessage);
-      const aiResponse = await this.generateWithOpenAI(context, thread.client, customInstructions);
+      // Get coach knowledge profile for context
+      const coachProfile = await this.coachReplicaService.getCoachKnowledgeProfile(userID);
+
+      console.log("Thread: ", thread);
+
+      const context = this.buildResponseContext(thread, latestClientMessage, coachProfile);
+      const aiResponse = await this.generateWithOpenAI(context, thread.client, customInstructions, coachProfile);
 
       const generatedResponse = await this.prisma.generatedEmailResponse.create({
         data: {
-          coachID,
+          userID,
+          userType,
           threadID,
-          clientID: thread.client?.id!,
           interactionID: interaction.id,
           subject: this.extractSubject(aiResponse.response, latestClientMessage.subject || ''),
           body: this.extractBody(aiResponse.response),
@@ -105,8 +114,8 @@ export class ClientEmailService {
           schemaVersion: 1,
           payload: {
             responseID: generatedResponse.id,
-            coachID,
-            clientID: thread.client?.id!,
+            userID,
+            userType,
             threadID,
             confidence: aiResponse.confidence || 0.8,
             generatedAt: new Date().toISOString(),
@@ -146,9 +155,9 @@ export class ClientEmailService {
     }
   }
 
-  async regenerateResponse(coachID: string, responseID: string, customInstructions?: string) {
+  async regenerateResponse(userID: string, userType: UserType, responseID: string, customInstructions?: string) {
     const existingResponse = await this.prisma.generatedEmailResponse.findFirst({
-      where: { id: responseID, coachID },
+      where: { id: responseID, userID },
       include: { emailThread: { include: { client: true } } }
     });
 
@@ -163,13 +172,13 @@ export class ClientEmailService {
     });
 
     // Generate new response
-    return this.generateResponse(coachID, existingResponse.threadID, customInstructions);
+    return this.generateResponse(userID, userType, existingResponse.threadID, customInstructions);
   }
 
-  async getResponsesForThread(coachID: string, threadID: string) {
+  async getResponsesForThread(userID: string, threadID: string) {
     return this.prisma.generatedEmailResponse.findMany({
       where: {
-        coachID,
+        userID,
         threadID,
         status: { in: ['generated', 'updated'] }
       },
@@ -191,10 +200,10 @@ export class ClientEmailService {
     });
   }
 
-  async getAllResponses(coachID: string) {
+  async getAllResponses(userID: string) {
     return this.prisma.generatedEmailResponse.findMany({
       where: {
-        coachID,
+        userID,
         status: { in: ['generated', 'updated'] }
       },
       orderBy: { createdAt: 'desc' },
@@ -216,9 +225,9 @@ export class ClientEmailService {
     });
   }
 
-  async updateResponse(coachID: string, responseID: string, updates: { subject?: string; body?: string }) {
+  async updateResponse(userID: string, responseID: string, updates: { subject?: string; body?: string }) {
     const response = await this.prisma.generatedEmailResponse.findFirst({
-      where: { id: responseID, coachID }
+      where: { id: responseID, userID }
     });
 
     if (!response) {
@@ -235,9 +244,9 @@ export class ClientEmailService {
     });
   }
 
-  /*async analyzeResponseDeliverability(coachID: string, responseID: string) {
+  /*async analyzeResponseDeliverability(userID: string, responseID: string) {
     const response = await this.prisma.generatedEmailResponse.findFirst({
-      where: { id: responseID, coachID }
+      where: { id: responseID, userID }
     });
 
     if (!response) {
@@ -248,7 +257,7 @@ export class ClientEmailService {
     const deliverabilityRequest: AnalyzeEmailRequest = {
       subject: response.subject,
       body: response.body,
-      coachID,
+      userID,
       recipientType: 'client',
     };
 
@@ -273,7 +282,7 @@ export class ClientEmailService {
 
   private async getOrCreateClientEmailAgent(): Promise<string> {
     let agent = await this.prisma.aiAgent.findFirst({
-      where: { name: 'Client Email Agent§' },
+      where: { name: 'Client Email Agent' },
     });
 
     if (!agent) {
@@ -295,12 +304,22 @@ export class ClientEmailService {
     return agent.id;
   }
 
-  private buildResponseContext(thread: any, latestMessage: any): string {
+  private buildResponseContext(thread: any, latestMessage: any, coachProfile: any): string {
     return `
 CLIENT INFORMATION:
 - Name: ${thread.client.firstName} ${thread.client.lastName}
 - Email: ${thread.client.email}
 - Status: ${thread.client.status}
+
+COACH PROFILE CONTEXT:
+- Communication Style: ${coachProfile.personality.communicationStyle}
+- Response Length: ${coachProfile.personality.responseLength}
+- Business Industry: ${coachProfile.businessContext.industry}
+- Key Services: ${coachProfile.businessContext.services.join(', ')}
+- Expertise Areas: ${coachProfile.businessContext.expertise.join(', ')}
+- Common Phrases: ${coachProfile.personality.commonPhrases.join(', ')}
+- Preferred Greetings: ${coachProfile.personality.preferredGreetings.join(', ')}
+- Preferred Closings: ${coachProfile.personality.preferredClosings.join(', ')}
 
 EMAIL THREAD CONTEXT:
 - Subject: ${thread.subject}
@@ -311,23 +330,30 @@ EMAIL THREAD CONTEXT:
 
 RECENT CONVERSATION:
 ${thread.emailMessages.slice(0, 3).map((msg: any) => `
-- From: ${msg.senderEmail}
+- From: ${msg.from}
 - Date: ${new Date(msg.sentAt).toLocaleDateString()}
-- Content: ${msg.bodyText?.substring(0, 200)}...
+- Content: ${msg.text?.substring(0, 200)}...
 `).join('')}
 
-Please generate a professional, helpful response that:
-1. Addresses the client's specific question or concern
-2. Maintains a coaching relationship tone
-3. Provides value and actionable insights
-4. Keeps the conversation moving forward
-5. Reflects authentic coaching communication style
+Please generate a response that:
+1. Matches the coach's authentic communication style and personality
+2. Uses their preferred greetings/closings and common phrases naturally
+3. Reflects their expertise and business context
+4. Addresses the client's specific question or concern
+5. Maintains the established coaching relationship tone
+6. Provides value aligned with the coach's service offerings
 `;
   }
 
-  private async generateWithOpenAI(context: string, client: any, customInstructions?: string) {
-    const systemPrompt = `You are an AI assistant helping a professional coach respond to client emails.
-Generate authentic, helpful responses that maintain the coaching relationship and provide value.
+  private async generateWithOpenAI(context: string, client: any, customInstructions?: string, coachProfile?: any) {
+    const systemPrompt = `You are an AI assistant helping a ${coachProfile?.businessContext?.industry || 'professional'} coach respond to client emails.
+You must maintain the coach's authentic voice and communication style.
+
+COACH COMMUNICATION STYLE:
+- Style: ${coachProfile?.personality?.communicationStyle || 'professional'}
+- Formality Level: ${coachProfile?.writingStyle?.formalityLevel || 7}/10
+- Response Length: ${coachProfile?.personality?.responseLength || 'moderate'}
+- Use of Emojis: ${coachProfile?.writingStyle?.useOfEmojis || 'minimal'}
 
 ${customInstructions ? `Additional Instructions: ${customInstructions}` : ''}
 
@@ -335,7 +361,7 @@ Respond in JSON format with:
 {
   "response": "The complete email response including subject and body",
   "confidence": 0.0-1.0,
-  "reasoning": "Why this response is appropriate"
+  "reasoning": "Why this response matches the coach's style and addresses the client's needs"
 }`;
 
     try {

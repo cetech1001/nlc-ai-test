@@ -72,6 +72,7 @@ export interface IEmailSyncProvider {
 
   refreshToken(refreshToken: string): Promise<{
     accessToken: string;
+    refreshToken: string;
     expiresAt?: string;
   }>;
 

@@ -183,6 +183,48 @@ export class AccountsService {
     return syncProvider;
   }
 
+  private isTokenExpired(tokenExpiresAt?: Date): boolean {
+    if (!tokenExpiresAt) return true;
+
+    const now = new Date();
+    const expiryTime = new Date(tokenExpiresAt);
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+    return expiryTime <= fiveMinutesFromNow;
+  }
+
+  private async ensureValidToken(account: any): Promise<string> {
+    if (!this.isTokenExpired(account.tokenExpiresAt)) {
+      return account.accessToken;
+    }
+
+    this.logger.log(`Token expired for account ${account.id}, refreshing...`);
+
+    if (!account.refreshToken) {
+      throw new Error('No refresh token available for account');
+    }
+
+    try {
+      const syncProvider = await this.getSyncProvider(account.provider);
+      const tokenData = await syncProvider.refreshToken(account.refreshToken);
+
+      await this.accountsRepo.updateTokens(account.id, {
+        accessToken: tokenData.accessToken,
+        refreshToken: tokenData.refreshToken,
+        tokenExpiresAt: tokenData.expiresAt ? new Date(tokenData.expiresAt) : null,
+      });
+
+      this.logger.log(`Token refreshed successfully for account ${account.id}`);
+      return tokenData.accessToken;
+    } catch (error: any) {
+      this.logger.error(`Failed to refresh token for account ${account.id}:`, error);
+
+      await this.accountsRepo.markAccountAsNeedingReauth(account.id);
+
+      throw new Error(`Token refresh failed: ${error.message}. Please re-authenticate your email account.`);
+    }
+  }
+
   async processAccountSync(accountID: string, forceFull?: boolean): Promise<{
     totalProcessed: number;
     clientEmailsFound: number;
@@ -193,19 +235,50 @@ export class AccountsService {
       throw new Error(`Account ${accountID} not found`);
     }
 
-    const syncProvider = await this.getSyncProvider(account.provider);
-    const lastSync = forceFull ? undefined : account.lastSyncAt?.toISOString();
-
-    const isConnected = await syncProvider.testConnection(account.accessToken || '');
-    if (!isConnected) {
-      throw new Error('Failed to connect to email provider');
+    // Check if account is marked as needing re-authentication
+    if (account.syncEnabled === false && account.accessToken === null) {
+      throw new Error('Account requires re-authentication. Please reconnect your email account.');
     }
 
-    const syncResult = await syncProvider.syncEmails(
-      account.accessToken || '',
-      account.syncSettings as any,
-      lastSync
-    );
+    const syncProvider = await this.getSyncProvider(account.provider);
+
+    // Ensure we have a valid access token
+    let validAccessToken: string;
+    try {
+      validAccessToken = await this.ensureValidToken(account);
+    } catch (error: any) {
+      this.logger.error(`Token validation failed for account ${accountID}:`, error);
+      throw error;
+    }
+
+    // Test connection with the valid token
+    const isConnected = await syncProvider.testConnection(validAccessToken);
+    if (!isConnected) {
+      // If connection still fails after token refresh, mark account for re-auth
+      await this.accountsRepo.markAccountAsNeedingReauth(accountID);
+      throw new Error('Failed to connect to email provider after token refresh. Please re-authenticate your email account.');
+    }
+
+    const lastSync = forceFull ? undefined : account.lastSyncAt?.toISOString();
+
+    let syncResult;
+    try {
+      syncResult = await syncProvider.syncEmails(
+        validAccessToken,
+        account.syncSettings as any,
+        lastSync
+      );
+    } catch (error: any) {
+      this.logger.error(`Email sync failed for account ${accountID}:`, error);
+
+      // If it's an auth error, mark for re-auth
+      if (this.isAuthError(error)) {
+        await this.accountsRepo.markAccountAsNeedingReauth(accountID);
+        throw new Error('Authentication failed during sync. Please re-authenticate your email account.');
+      }
+
+      throw error;
+    }
 
     let clientEmailsFound = 0;
     let threadsCreated = 0;
@@ -224,7 +297,8 @@ export class AccountsService {
       }
     }
 
-    await this.accountsRepo.updateLastSync(accountID, new Date());
+    // Update last sync time and ensure account is marked as active
+    await this.accountsRepo.updateLastSyncAndStatus(accountID, new Date(), true);
 
     await this.outbox.saveAndPublishEvent<EmailSyncEvent>(
       {
@@ -245,6 +319,24 @@ export class AccountsService {
       clientEmailsFound,
       threadsCreated,
     };
+  }
+
+  /**
+   * Check if an error is authentication-related
+   */
+  private isAuthError(error: any): boolean {
+    const errorMessage = error.message?.toLowerCase() || '';
+    const errorCode = error.status || error.code;
+
+    return (
+      errorCode === 401 ||
+      errorCode === 403 ||
+      errorMessage.includes('invalid credentials') ||
+      errorMessage.includes('unauthorized') ||
+      errorMessage.includes('authentication') ||
+      errorMessage.includes('token') ||
+      errorMessage.includes('oauth')
+    );
   }
 
   private async processIncomingEmail(account: any, email: SyncedEmail): Promise<{

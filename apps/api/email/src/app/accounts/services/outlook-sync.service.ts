@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { IEmailSyncProvider, SyncedEmail } from '../interfaces/email-sync-provider.interface';
-import { EmailSyncSettings } from '@nlc-ai/types';
+import { EmailSyncSettings, IEmailSyncProvider, SyncedEmail } from '@nlc-ai/types';
 import axios from 'axios';
 
 @Injectable()
@@ -57,6 +56,7 @@ export class OutlookSyncService implements IEmailSyncProvider {
 
       return {
         accessToken: data.access_token,
+        refreshToken: data.refresh_token,
         expiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
       };
     } catch (error) {
