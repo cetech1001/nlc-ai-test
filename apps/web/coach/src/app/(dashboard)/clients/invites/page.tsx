@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
-import {Link, Plus, Search} from "lucide-react";
+import {Link, Search} from "lucide-react";
 import {
   Pagination,
   PageHeader,
@@ -13,17 +13,15 @@ import {
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import { FilterValues } from "@nlc-ai/types";
 import {
-  clientColumns,
-  clientFilters,
-  clientMobileConfig,
-  emptyClientFilterValues,
+  clientInviteColumns,
+  clientInviteFilters, clientInviteMobileConfig,
+  emptyClientInviteFilterValues,
   InviteClientModal,
   sdkClient
 } from "@/lib";
-import {ExtendedClient} from "@nlc-ai/sdk-users";
 import { useAuth } from "@nlc-ai/web-auth";
 
-const ClientsPage = () => {
+const ClientInvitesPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -31,8 +29,8 @@ const ClientsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [clients, setClients] = useState<ExtendedClient[]>([]);
-  const [filterValues, setFilterValues] = useState<FilterValues>(emptyClientFilterValues);
+  const [clientInvites, setClientInvites] = useState<any[]>([]);
+  const [filterValues, setFilterValues] = useState<FilterValues>(emptyClientInviteFilterValues);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -57,24 +55,24 @@ const ClientsPage = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    (() => fetchClients())();
+    (() => fetchClientInvites())();
   }, [currentPage, searchQuery, filterValues]);
 
-  const fetchClients = async () => {
+  const fetchClientInvites = async () => {
     try {
       setIsLoading(true);
       setError("");
 
-      const response = await sdkClient.users.clients.getClients({
+      const response = await sdkClient.users.relationship.getClientInvites({
         page: currentPage,
         limit: clientsPerPage,
         search: searchQuery || undefined
       }, filterValues);
 
-      setClients(response.data);
+      setClientInvites(response.data);
       setPagination(response.pagination);
     } catch (error: any) {
-      setError(error.message || "Failed to load clients");
+      setError(error.message || "Failed to load client invites");
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +89,7 @@ const ClientsPage = () => {
   };
 
   const handleResetFilters = () => {
-    setFilterValues(emptyClientFilterValues);
+    setFilterValues(emptyClientInviteFilterValues);
     setSearchQuery("");
     setCurrentPage(1);
   };
@@ -101,15 +99,22 @@ const ClientsPage = () => {
     setSuccessMessage("");
   };
 
-  const handleRowAction = async (action: string, client: ExtendedClient) => {
-    if (action === 'view-details') {
-      router.push(`/clients/${client.id}`);
-    } else if (action === 'view-emails') {
-      router.push(`/agents/emails?clientID=${client.id}`);
-    } else if (action === 'edit') {
-      router.push(`/clients/edit?clientID=${client.id}`);
+  const handleRowAction = async (action: string, id: string) => {
+    if (action === 'resend') {
+      const data = await sdkClient.users.relationship.resendClientInvite(id);
+      setSuccessMessage(data.message);
+      await fetchClientInvites();
+    } else if (action === 'delete') {
+      const data = await sdkClient.users.relationship.deleteClientInvite(id);
+      setSuccessMessage(data.message);
+      await fetchClientInvites();
     }
   };
+
+  const onInviteSuccess = () => {
+    setSuccessMessage(`Invitation sent successfully!`);
+    fetchClientInvites();
+  }
 
   return (
     <div className={`flex flex-col ${(isFilterOpen) && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'}`}>
@@ -122,12 +127,12 @@ const ClientsPage = () => {
           <AlertBanner type="error" message={error} onDismiss={clearMessages}/>
         )}
 
-        <PageHeader title="Clients List">
+        <PageHeader title="Client Invites List">
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input
                 type="text"
-                placeholder="Search clients using name, plan, email etc."
+                placeholder="Search client invites using email"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="flex-1 bg-transparent text-white placeholder:text-white/50 text-base font-normal leading-tight outline-none"
@@ -136,7 +141,7 @@ const ClientsPage = () => {
             </div>
 
             <DataFilter
-              filters={clientFilters}
+              filters={clientInviteFilters}
               values={filterValues}
               onChange={handleFilterChange}
               onReset={handleResetFilters}
@@ -144,57 +149,37 @@ const ClientsPage = () => {
             />
 
             <Button
-              onClick={() => router.push('/clients/create')}
-              className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex"
-            >
-              <span className="w-4 h-4 mr-2">
-                <Plus className="w-4 h-4" />
-              </span>
-              Add New Client
-            </Button>
-
-            <Button
-              onClick={() => router.push('/clients/invites')}
+              onClick={() => setShowInviteModal(true)}
               className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors hidden sm:flex"
             >
               <span className="w-4 h-4 mr-2">
                 <Link className="w-4 h-4" />
               </span>
-              Invites
+              Invite Client
             </Button>
           </>
         </PageHeader>
 
         <div className={"grid grid-cols-2 gap-4 sm:hidden"}>
           <Button
-            onClick={() => router.push('/clients/create')}
-            className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors"
-          >
-            <span className="w-4 h-4 mr-2">
-              <Plus className="w-4 h-4" />
-            </span>
-            Add New Client
-          </Button>
-
-          <Button
-            onClick={() => router.push('/clients/invites')}
+            onClick={() => setShowInviteModal(true)}
             className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors"
           >
             <span className="w-4 h-4 mr-2">
               <Link className="w-4 h-4" />
             </span>
-            Invites
+            Invite Client
           </Button>
         </div>
 
         <DataTable
-          columns={clientColumns}
-          data={clients}
+          columns={clientInviteColumns}
+          data={clientInvites}
           onRowAction={handleRowAction}
           showMobileCards={true}
-          emptyMessage="No clients found matching your criteria"
+          emptyMessage="No client invites found matching your criteria"
           isLoading={isLoading}
-          mobileConfig={clientMobileConfig}
+          mobileConfig={clientInviteMobileConfig}
         />
 
         <Pagination
@@ -204,7 +189,7 @@ const ClientsPage = () => {
           isLoading={isLoading}
         />
 
-        {!isLoading && clients.length > 0 && (
+        {!isLoading && clientInvites.length > 0 && (
           <MobilePagination pagination={pagination}/>
         )}
       </div>
@@ -212,9 +197,10 @@ const ClientsPage = () => {
         isOpen={showInviteModal}
         userID={user?.id || ''}
         onClose={() => setShowInviteModal(false)}
+        onInviteSuccess={onInviteSuccess}
       />
     </div>
   );
 }
 
-export default ClientsPage;
+export default ClientInvitesPage;

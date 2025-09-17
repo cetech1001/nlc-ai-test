@@ -1,4 +1,5 @@
-export * from './data';
+export * from './invites';
+
 export * from './client-form.skeleton';
 export * from './client-form';
 export * from './filters';

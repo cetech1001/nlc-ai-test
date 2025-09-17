@@ -55,6 +55,9 @@ export class EmailConfigSchema {
   @IsString()
   COACH_PLATFORM_URL: string;
 
+  @IsString()
+  CLIENT_PLATFORM_URL: string;
+
   @IsOptional()
   @IsString()
   MAILGUN_WEBHOOK_SIGNING_KEY?: string;

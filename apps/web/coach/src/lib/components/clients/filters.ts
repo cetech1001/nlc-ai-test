@@ -45,16 +45,3 @@ export const emptyClientFilterValues: FilterValues = {
   dateJoined: { start: null, end: null },
   lastInteraction: { start: null, end: null },
 };
-
-export const emailFilters: FilterConfig[] = [
-  {
-    key: 'dateRange',
-    label: 'Email Date',
-    type: 'date-range',
-    defaultValue: { start: null, end: null },
-  },
-];
-
-export const emptyEmailFilterValues: FilterValues = {
-  dateRange: { start: null, end: null },
-};

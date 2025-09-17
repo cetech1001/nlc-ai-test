@@ -61,6 +61,7 @@ export default registerAs('email', () => {
     },
     platforms: {
       coach: config.COACH_PLATFORM_URL,
+      client: config.CLIENT_PLATFORM_URL,
     }
   };
 });

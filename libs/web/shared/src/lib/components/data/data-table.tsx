@@ -262,19 +262,25 @@ export const DataTable = <T,>(props: TableProps<T>) => {
 export const tableRenderers = {
   status: (value: string) => {
     const statusColors: Record<string, string> = {
-      'Active': 'text-green-400',
-      'Completed': 'text-green-400',
-      'Inactive': 'text-red-400',
-      'Blocked': 'text-blue-400',
-      'Converted': 'text-green-400',
-      'No Show': 'text-red-400',
-      'Failed': 'text-red-400',
-      'Not Converted': 'text-yellow-400',
-      'Scheduled': 'text-blue-400',
+      'active': 'green-400',
+      'completed': 'green-400',
+      'inactive': 'red-400',
+      'blocked': 'blue-400',
+      'converted': 'green-400',
+      'no_show': 'red-400',
+      'failed': 'red-400',
+      'not_converted': 'yellow-400',
+      'pending': 'yellow-400',
+      'scheduled': 'blue-400',
     };
     return (
       <div className="flex items-center gap-2">
-        <span className={`text-sm font-normal leading-relaxed ${statusColors[value] || 'text-gray-400'}`}>
+        <span className={`
+        px-2.5 py-0.5 text-sm font-normal
+         leading-relaxed text-${statusColors[value] || 'gray-400'}
+          bg-${statusColors[value] || 'gray-400'}/20
+           border border-${statusColors[value] || 'gray-400'}/30
+            rounded-full text-sm font-medium`}>
           {value}
         </span>
       </div>

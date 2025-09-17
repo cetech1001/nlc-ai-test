@@ -67,7 +67,7 @@ export class TransactionalService {
 
   async sendClientInvitationEmail(payload: ClientInvitedEvent['payload']): Promise<void> {
     const baseUrl = this.configService.get<string>('email.platforms.client', '');
-    const inviteUrl = `${baseUrl}/client/accept-invite?token=${payload.token}`;
+    const inviteUrl = `${baseUrl}/login?token=${payload.token}`;
     const expiryText = payload.expiresAt
       ? `This invitation expires on ${new Date(payload.expiresAt).toLocaleDateString()}.`
       : 'This invitation will expire in 7 days.';
