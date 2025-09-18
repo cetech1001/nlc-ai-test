@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { Menu } from 'lucide-react';
 import type { ExtendedCourse } from '@nlc-ai/sdk-course';
 import {
   sdkClient,
@@ -15,7 +16,8 @@ import {
   ErrorState,
   PDFLessonForm,
   VideoLessonForm,
-  TextLessonForm, SettingsTab
+  TextLessonForm,
+  SettingsTab
 } from '@/lib';
 
 interface CurriculumState {
@@ -35,7 +37,7 @@ interface CurriculumState {
 
 type LessonType = 'video' | 'text' | 'pdf';
 
-const CurriculumScreen = () => {
+const CourseEditPage = () => {
   const router = useRouter();
   const params = useParams();
   const courseID = params?.courseID as string;
@@ -49,6 +51,7 @@ const CurriculumScreen = () => {
   const [__, setShowCreateChapter] = useState(false);
   const [___, setShowCreateLesson] = useState(false);
   const [lessonType, setLessonType] = useState<LessonType | ''>('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Load course data on mount
   useEffect(() => {
@@ -67,7 +70,7 @@ const CurriculumScreen = () => {
               chapterID: chapter.id,
               title: chapter.title,
               description: chapter.description,
-              isExpanded: true, // Start with all chapters expanded
+              isExpanded: true,
               lessons: chapter.lessons?.map(lesson => ({
                 lessonID: lesson.id,
                 title: lesson.title,
@@ -96,7 +99,6 @@ const CurriculumScreen = () => {
   const handlePreview = () => {
     if (course) {
       console.log('Preview course:', course.id);
-      // TODO: Implement course preview
     }
   };
 
@@ -110,7 +112,6 @@ const CurriculumScreen = () => {
         await sdkClient.course.courses.publishCourse(course.id);
       }
 
-      // Reload course data to get updated status
       const updatedCourse = await sdkClient.course.courses.getCourse(course.id);
       setCourse(updatedCourse);
     } catch (error: any) {
@@ -142,12 +143,10 @@ const CurriculumScreen = () => {
   const handleCreateLesson = (type: LessonType) => {
     console.log('Create lesson of type:', type);
     setLessonType(type);
-    // TODO: Implement lesson creation with specific type
   };
 
   const handleUploadContent = () => {
     console.log('Upload content');
-    // TODO: Implement content upload flow
   };
 
   // Loading and error states
@@ -163,7 +162,7 @@ const CurriculumScreen = () => {
     <div className="min-h-screen w-full relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
 
-      <div className="pt-8 pb-16 px-6 w-full relative z-10">
+      <div className="pt-4 md:pt-8 pb-16 px-4 md:px-6 w-full relative z-10">
         <CourseHeader
           course={course}
           onBack={handleBack}
@@ -176,68 +175,98 @@ const CurriculumScreen = () => {
           onTabChange={setActiveTab}
         />
 
-        <div className="h-[calc(100vh-280px)] relative">
-          <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
-            <CurriculumSidebar
-              course={course}
-              curriculum={curriculum}
-              onToggleChapter={toggleChapter}
-              onAddLesson={handleAddLesson}
-              onAddChapter={handleAddChapter}
-              onUploadContent={handleUploadContent}
-            />
+        <div className="h-[calc(100vh-240px)] md:h-[calc(100vh-280px)] relative">
+          <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[16px] md:rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
+            {/* Mobile Sidebar Overlay */}
+            {sidebarOpen && (
+              <div
+                className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                onClick={() => setSidebarOpen(false)}
+              />
+            )}
 
-            <div className="flex-1">
-              <div className="h-full p-8 flex flex-col relative">
-                <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-violet-500/10 rounded-full blur-2xl"></div>
+            {/* Sidebar */}
+            <div className={`
+              ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+              md:translate-x-0 transition-transform duration-300 ease-in-out
+              fixed md:relative z-50 md:z-auto
+              w-80 md:w-96 flex-shrink-0 border-r border-neutral-700
+              h-full
+            `}>
+              <CurriculumSidebar
+                course={course}
+                curriculum={curriculum}
+                onToggleChapter={toggleChapter}
+                onAddLesson={handleAddLesson}
+                onAddChapter={handleAddChapter}
+                onUploadContent={handleUploadContent}
+              />
+            </div>
 
-                {lessonType === '' && (
-                  <CurriculumContent
-                    course={course}
-                    activeTab={activeTab}
-                    onCreateLesson={handleCreateLesson}
-                    onTabChange={setActiveTab}
-                  />
-                )}
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col">
+              {/* Mobile Menu Button */}
+              <div className="md:hidden p-4 border-b border-neutral-700">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              </div>
 
-                {lessonType === 'video' && (
-                  <VideoLessonForm
-                    chapterID={''}
-                    lessonID={''}
-                    onSave={handleCreateLesson}
-                    onBack={() => setLessonType('')}
-                  />
-                )}
+              <div className="flex-1 overflow-hidden">
+                <div className="h-full p-4 md:p-8 flex flex-col relative overflow-auto">
+                  <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-violet-500/10 rounded-full blur-2xl"></div>
 
-                {lessonType === 'pdf' && (
-                  <PDFLessonForm
-                    chapterID={''}
-                    lessonID={''}
-                    onSave={handleCreateLesson}
-                    onBack={() => setLessonType('')}
-                  />
-                )}
+                  {lessonType === '' && (
+                    <CurriculumContent
+                      course={course}
+                      activeTab={activeTab}
+                      onCreateLesson={handleCreateLesson}
+                      onTabChange={setActiveTab}
+                    />
+                  )}
 
-                {lessonType === 'text' && (
-                  <TextLessonForm
-                    chapterID={''}
-                    lessonID={''}
-                    onSave={handleCreateLesson}
-                    onBack={() => setLessonType('')}
-                  />
-                )}
+                  {lessonType === 'video' && (
+                    <VideoLessonForm
+                      chapterID={''}
+                      lessonID={''}
+                      onSave={handleCreateLesson}
+                      onBack={() => setLessonType('')}
+                    />
+                  )}
 
-                {activeTab === 'Settings' && (
-                  <SettingsTab course={course} />
-                )}
+                  {lessonType === 'pdf' && (
+                    <PDFLessonForm
+                      chapterID={''}
+                      lessonID={''}
+                      onSave={handleCreateLesson}
+                      onBack={() => setLessonType('')}
+                    />
+                  )}
 
-                {activeTab === 'Drip schedule' && (
-                  <DripScheduleTab courseID={courseID} />
-                )}
+                  {lessonType === 'text' && (
+                    <TextLessonForm
+                      chapterID={''}
+                      lessonID={''}
+                      onSave={handleCreateLesson}
+                      onBack={() => setLessonType('')}
+                    />
+                  )}
 
-                {activeTab === 'Pricing' && (
-                  <PaywallTab courseID={courseID} />
-                )}
+                  {activeTab === 'Settings' && (
+                    <SettingsTab course={course} />
+                  )}
+
+                  {activeTab === 'Drip schedule' && (
+                    <DripScheduleTab courseID={courseID} course={course} />
+                  )}
+
+                  {activeTab === 'Pricing' && (
+                    <PaywallTab courseID={courseID} />
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -247,4 +276,4 @@ const CurriculumScreen = () => {
   );
 };
 
-export default CurriculumScreen;
+export default CourseEditPage;

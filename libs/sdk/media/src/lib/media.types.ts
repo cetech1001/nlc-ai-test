@@ -11,6 +11,15 @@ export enum MediaProvider {
   AWS_S3 = 'aws_s3'
 }
 
+export enum MediaTransformationType {
+  QUALITY = "quality",
+  FORMAT = "format",
+  ROTATE = "rotate",
+  RESIZE = "resize",
+  CROP = "crop",
+  EFFECT = "effect",
+}
+
 export interface MediaAsset {
   id: string;
   coachID: string;
@@ -45,7 +54,7 @@ export interface MediaUploadResult {
 }
 
 export interface TransformationOptions {
-  type: 'resize' | 'crop' | 'quality' | 'format' | 'rotate' | 'effect';
+  type: MediaTransformationType;
   width?: number;
   height?: number;
   quality?: number | 'auto';
