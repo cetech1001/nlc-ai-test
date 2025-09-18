@@ -13,7 +13,6 @@ export const CurriculumContent: React.FC<CurriculumContentProps> = ({
  course,
  activeTab,
  onCreateLesson,
- onTabChange
 }) => {
   if (activeTab !== 'Curriculum') {
     return null;
@@ -21,7 +20,7 @@ export const CurriculumContent: React.FC<CurriculumContentProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-6 mb-8 relative z-10">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-8 relative z-10">
         <button
           onClick={() => onCreateLesson('video')}
           className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center"

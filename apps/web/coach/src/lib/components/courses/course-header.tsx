@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, ChevronDown } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import type { ExtendedCourse } from '@nlc-ai/sdk-course';
 import { BackTo } from "@nlc-ai/web-shared";
 import {useRouter} from "next/navigation";
@@ -13,7 +13,6 @@ interface CourseHeaderProps {
 
 export const CourseHeader: React.FC<CourseHeaderProps> = ({
  course,
- onBack,
  onPreview,
  onUpdateStatus
 }) => {
@@ -21,25 +20,9 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({
 
   return (
     <>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        {/*<div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <h1 className="text-white text-2xl font-bold">Curriculum</h1>
-            {course && (
-              <p className="text-stone-400 text-sm mt-1">{course.title}</p>
-            )}
-          </div>
-        </div>*/}
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-8">
         <BackTo onClick={router.back} title={course?.title}/>
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <button
             onClick={onPreview}
@@ -50,15 +33,13 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({
           </button>
           <button
             onClick={onUpdateStatus}
-            className="px-4 py-2 bg-black/20 backdrop-blur-sm text-white border border-white/20 rounded-lg hover:bg-black/30 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-gradient-to-r from-[#FEBEFA] via-[#7B21BA] to-[#7B26F0] text-white rounded-lg flex items-center gap-2"
           >
             {course?.isPublished ? 'Unpublish' : 'Publish'} Course
-            <ChevronDown className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Course Status Badge */}
       {course && (
         <div className="mb-6">
           <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${

@@ -161,6 +161,8 @@ const CourseEditPage = () => {
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
+      <div className="absolute top-32 left-20 w-40 h-40 bg-gradient-to-br from-purple-400/15 to-violet-500/15 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-40 right-32 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl"></div>
 
       <div className="pt-4 md:pt-8 pb-16 px-4 md:px-6 w-full relative z-10">
         <CourseHeader
@@ -177,39 +179,23 @@ const CourseEditPage = () => {
 
         <div className="h-[calc(100vh-240px)] md:h-[calc(100vh-280px)] relative">
           <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[16px] md:rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
-            {/* Mobile Sidebar Overlay */}
-            {sidebarOpen && (
-              <div
-                className="fixed inset-0 bg-black/50 z-40 md:hidden"
-                onClick={() => setSidebarOpen(false)}
-              />
-            )}
 
-            {/* Sidebar */}
-            <div className={`
-              ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-              md:translate-x-0 transition-transform duration-300 ease-in-out
-              fixed md:relative z-50 md:z-auto
-              w-80 md:w-96 flex-shrink-0 border-r border-neutral-700
-              h-full
-            `}>
-              <CurriculumSidebar
-                course={course}
-                curriculum={curriculum}
-                onToggleChapter={toggleChapter}
-                onAddLesson={handleAddLesson}
-                onAddChapter={handleAddChapter}
-                onUploadContent={handleUploadContent}
-              />
-            </div>
+            <CurriculumSidebar
+              course={course}
+              curriculum={curriculum}
+              onToggleChapter={toggleChapter}
+              onAddLesson={handleAddLesson}
+              onAddChapter={handleAddChapter}
+              onUploadContent={handleUploadContent}
+              isMobileOpen={sidebarOpen}
+              onMobileClose={() => setSidebarOpen(false)}
+            />
 
-            {/* Main Content */}
             <div className="flex-1 flex flex-col">
-              {/* Mobile Menu Button */}
-              <div className="md:hidden p-4 border-b border-neutral-700">
+              <div className="md:hidden p-4 border-b border-neutral-700 bg-gradient-to-r from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm">
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors border border-white/10"
                 >
                   <Menu className="w-6 h-6" />
                 </button>

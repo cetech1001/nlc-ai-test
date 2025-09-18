@@ -65,7 +65,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({
       </div>
 
       {isSelected && children && (
-        <div className="ml-9 animate-in slide-in-from-top-2 duration-200">
+        <div className="ml-0 sm:ml-9 animate-in slide-in-from-top-2 duration-200">
           {children}
         </div>
       )}

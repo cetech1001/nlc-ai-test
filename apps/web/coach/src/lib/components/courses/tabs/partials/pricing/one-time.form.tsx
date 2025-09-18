@@ -16,7 +16,7 @@ interface IProps {
 }
 
 export const OneTimeForm: FC<IProps> = ({ formData, handleFormChange }) => (
-  <div className="flex p-4 md:p-6 items-start gap-4 md:gap-[30px] self-stretch rounded-[20px] border border-[#2B2A2A] bg-gradient-to-br from-[rgba(38,38,38,0.3)] to-[rgba(19,19,19,0.3)]">
+  <div className="flex p-4 items-start gap-4 self-stretch rounded-[20px] border border-[#2B2A2A] bg-gradient-to-br from-[rgba(38,38,38,0.3)] to-[rgba(19,19,19,0.3)]">
     <div className="flex flex-col items-start gap-2 flex-1">
       <h4 className="text-white font-inter text-lg md:text-xl font-semibold leading-[25.6px]">
         One-time payment
@@ -34,7 +34,7 @@ export const OneTimeForm: FC<IProps> = ({ formData, handleFormChange }) => (
         </div>
         <div className="flex flex-col gap-1 flex-1">
           <label className="text-white/70 text-sm">Access Duration (Optional)</label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="number"
               value={formData.enrollmentDuration}

@@ -38,7 +38,7 @@ export const PaywallTab: React.FC<PaywallTabProps> = ({ courseID }) => {
 
   return (
     <div className="space-y-6 relative z-10 max-h-full overflow-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <h3 className="text-white text-xl font-semibold">Pricing Options</h3>
         <button
           onClick={handleSave}
