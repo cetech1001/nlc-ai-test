@@ -380,7 +380,14 @@ const ClientEmailsList = () => {
         )}
 
         {/* Header */}
-        <PageHeader title={clientID ? "Client Email Threads" : "All Email Threads"}>
+        <PageHeader
+          title={"Client Email Agent"}
+          actionButton={{
+            label: isSyncing ? 'Syncing...' : 'Sync Emails',
+            onClick: handleSync,
+            icon: <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />,
+          }}
+        >
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input

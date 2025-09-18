@@ -64,19 +64,19 @@ export class EmailConfigSchema {
 
   @IsOptional()
   @IsString()
-  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_ID: string;
 
   @IsOptional()
   @IsString()
-  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_CLIENT_SECRET: string;
 
   @IsOptional()
   @IsString()
-  MICROSOFT_CLIENT_ID?: string;
+  MICROSOFT_CLIENT_ID: string;
 
   @IsOptional()
   @IsString()
-  MICROSOFT_CLIENT_SECRET?: string;
+  MICROSOFT_CLIENT_SECRET: string;
 
   @IsString()
   REDIS_HOST: string;
