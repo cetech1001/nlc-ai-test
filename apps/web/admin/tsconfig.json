@@ -60,6 +60,9 @@
       "path": "../../../libs/sdk/messaging"
     },
     {
+      "path": "../../../libs/sdk/media"
+    },
+    {
       "path": "../../../libs/sdk/community"
     },
     {

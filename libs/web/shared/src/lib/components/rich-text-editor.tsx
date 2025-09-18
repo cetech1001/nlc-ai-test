@@ -1,9 +1,11 @@
 'use client'
 
 import {FC} from "react";
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic';
+import {Editor} from "@tinymce/tinymce-react";
+
 import {appConfig} from "../config";
-import { Skeleton } from "@nlc-ai/web-ui";
+// import { Skeleton } from "@nlc-ai/web-ui";
 
 interface IProps {
   content: string;
@@ -11,10 +13,10 @@ interface IProps {
   view?: 'mobile' | 'desktop';
 }
 
-const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
+/*const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,
   loading: () => <Skeleton className={"w-full h-96 border border-neutral-600"}/>
-});
+});*/
 
 const styles = `
   .tox .tox-editor-header {

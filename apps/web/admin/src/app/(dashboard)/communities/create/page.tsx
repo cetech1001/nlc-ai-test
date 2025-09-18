@@ -12,8 +12,10 @@ import {
   CommunityPricingTypes,
   CommunityType,
   CommunityVisibility,
-  CreateCommunityForm, CreateCommunityRequest
+  CreateCommunityForm,
+  CreateCommunityRequest
 } from '@nlc-ai/sdk-community';
+import {MediaTransformationType} from "@nlc-ai/sdk-media";
 
 const stepNames = [
   "Basic Info",
@@ -214,11 +216,11 @@ const AdminCreateCommunityPage = () => {
         },
         transformation: [
           {
-            type: 'quality',
+            type: MediaTransformationType.QUALITY,
             quality: 'auto'
           },
           {
-            type: 'format',
+            type: MediaTransformationType.FORMAT,
             format: 'webp'
           }
         ]

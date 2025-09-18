@@ -57,6 +57,9 @@
       "path": "../../../libs/sdk/main"
     },
     {
+      "path": "../../../libs/sdk/media"
+    },
+    {
       "path": "../../../libs/sdk/core"
     },
     {
@@ -78,12 +81,6 @@
       "path": "../../../libs/sdk/analytics"
     },
     {
-      "path": "../../../libs/sdk/integrations"
-    },
-    {
-      "path": "../../../libs/sdk/agents"
-    },
-    {
       "path": "../../../libs/sdk/course"
     },
     {
@@ -97,6 +94,12 @@
     },
     {
       "path": "../../../libs/web/api-client"
+    },
+    {
+      "path": "../../../libs/sdk/integrations"
+    },
+    {
+      "path": "../../../libs/sdk/agents"
     },
     {
       "path": "../../../libs/web/ui"

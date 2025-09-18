@@ -118,31 +118,31 @@ export default function ResponseReviewPage() {
       setIsScheduling(true);
       setError("");
 
-      const scheduledFor = `${scheduleDate}T${scheduleTime}:00.000Z`;
+      /*const scheduledFor = `${scheduleDate}T${scheduleTime}:00.000Z`;
       const modifications = hasModifications ? {
         subject: emailSubject,
         body: emailContent
-      } : undefined;
+      } : undefined;*/
 
-      const result = await sdkClient.email.clientEmail.scheduleResponse(
-        responseData.id,
-        {
-          scheduledFor,
-          ...modifications,
-        }
-      );
-
-      if (result.success) {
-        setSuccessMessage(`Email scheduled for ${new Date(scheduledFor).toLocaleString()}`);
-        setShowScheduleModal(false);
-
-        // Redirect back to thread after a delay
-        setTimeout(() => {
-          router.push(`/emails/${threadID}`);
-        }, 2000);
-      } else {
-        setError(result.error?.message || "Failed to schedule email");
-      }
+      // const result = await sdkClient.email.clientEmail.scheduleResponse(
+      //   responseData.id,
+      //   {
+      //     scheduledFor,
+      //     ...modifications,
+      //   }
+      // );
+      //
+      // if (result.success) {
+      //   setSuccessMessage(`Email scheduled for ${new Date(scheduledFor).toLocaleString()}`);
+      //   setShowScheduleModal(false);
+      //
+      //   // Redirect back to thread after a delay
+      //   setTimeout(() => {
+      //     router.push(`/emails/${threadID}`);
+      //   }, 2000);
+      // } else {
+      //   setError(result.error?.message || "Failed to schedule email");
+      // }
     } catch (err: any) {
       setError(err.message || "Failed to schedule email");
     } finally {

@@ -13,7 +13,6 @@ import {
   transformPaymentHistoryData,
   paymentHistoryFilters,
   emptyPaymentHistoryFilterValues,
-  PaymentHistoryData,
   CurrentPlanCard,
   BillingTabs,
   SubscriptionPlans,
@@ -22,6 +21,7 @@ import {
   PlanUpgradeModal
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
+import {DataTableTransaction} from "@nlc-ai/types";
 
 interface CoachBillingData {
   coach: ExtendedCoach;
@@ -225,7 +225,7 @@ export default function Billing() {
     }
   };
 
-  const handlePaymentAction = async (action: string, payment: PaymentHistoryData) => {
+  const handlePaymentAction = async (action: string, payment: DataTableTransaction) => {
     if (action === 'download') {
       try {
         await sdkClient.billing.invoices.downloadInvoice(payment.id);
@@ -327,7 +327,7 @@ export default function Billing() {
               </>
             </PageHeader>
 
-            <DataTable
+            <DataTable<DataTableTransaction>
               columns={paymentHistoryColumns}
               data={transformPaymentHistoryData(paymentHistory)}
               onRowAction={handlePaymentAction}

@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Input, Textarea, Label } from '@nlc-ai/web-ui';
-import { Camera, X, Upload, RotateCw } from 'lucide-react';
-import { CommunityResponse } from '@nlc-ai/sdk-community';
-import { ImageCropper } from '@nlc-ai/web-settings';
-import { sdkClient } from "@/lib";
-import { toast } from 'sonner';
+import {useState} from 'react';
+import {Input, Label, Textarea} from '@nlc-ai/web-ui';
+import {Camera, RotateCw, Upload, X} from 'lucide-react';
+import {CommunityResponse} from '@nlc-ai/sdk-community';
+import {ImageCropper} from '@nlc-ai/web-settings';
+import {sdkClient} from "@/lib";
+import {toast} from 'sonner';
+import {MediaTransformationType} from "@nlc-ai/sdk-media";
 
 interface BasicInfoSettingsProps {
   community: CommunityResponse;
@@ -95,8 +96,8 @@ export const BasicInfoSettings = ({ community, errors, onUpdate }: BasicInfoSett
         folder: 'communities',
         tags: ['avatar', 'community-media'],
         transformation: [
-          { type: 'quality', quality: 'auto' },
-          { type: 'format', format: 'webp' }
+          { type: MediaTransformationType.QUALITY, quality: 'auto' },
+          { type: MediaTransformationType.FORMAT, format: 'webp' }
         ]
       });
 
@@ -167,8 +168,8 @@ export const BasicInfoSettings = ({ community, errors, onUpdate }: BasicInfoSett
         folder: 'communities',
         tags: ['banner', 'community-media'],
         transformation: [
-          { type: 'quality', quality: 'auto' },
-          { type: 'format', format: 'webp' }
+          { type: MediaTransformationType.QUALITY, quality: 'auto' },
+          { type: MediaTransformationType.FORMAT, format: 'webp' }
         ]
       });
 
