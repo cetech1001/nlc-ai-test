@@ -1,6 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Eye, ChevronDown } from 'lucide-react';
+import { Eye, ChevronDown } from 'lucide-react';
 import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import { BackTo } from "@nlc-ai/web-shared";
+import {useRouter} from "next/navigation";
 
 interface CourseHeaderProps {
   course: ExtendedCourse | null;
@@ -15,11 +17,13 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({
  onPreview,
  onUpdateStatus
 }) => {
+  const router = useRouter();
+
   return (
     <>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+        {/*<div className="flex items-center gap-4">
           <button
             onClick={onBack}
             className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -32,7 +36,8 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({
               <p className="text-stone-400 text-sm mt-1">{course.title}</p>
             )}
           </div>
-        </div>
+        </div>*/}
+        <BackTo onClick={router.back} title={course?.title}/>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">

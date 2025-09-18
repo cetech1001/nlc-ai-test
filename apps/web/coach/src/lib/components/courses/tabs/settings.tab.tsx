@@ -1,50 +1,5 @@
-import { cn } from "@nlc-ai/web-ui";
 import React, { useState } from 'react';
-
-type PrivacyOption = 'open' | 'level' | 'buy' | 'time' | 'private';
-
-interface PrivacyOptionCardProps {
-  title: string;
-  description: string;
-  isSelected: boolean;
-  onSelect: () => void;
-}
-
-const PrivacyOptionCard: React.FC<PrivacyOptionCardProps> = ({
- title,
- description,
- isSelected,
- onSelect
-}) => {
-  return (
-    <div
-      className={cn(
-        "flex p-6 flex-col justify-center items-start gap-3 flex-1 rounded-2xl border border-[#454444] cursor-pointer transition-colors",
-        "bg-gradient-to-br from-[rgba(38,38,38,0.3)] to-[rgba(19,19,19,0.3)]",
-        isSelected && "border-[#DF69FF]"
-      )}
-      onClick={onSelect}
-    >
-      <div className={cn(
-        "flex w-5 h-5 p-1 justify-center items-center gap-[10px] rounded-full border",
-        isSelected ? "border-[#DF69FF]/40" : "border-white/40"
-      )}>
-        {isSelected && (
-          <div className="w-3 h-3 rounded-full bg-[#DF69FF]"></div>
-        )}
-      </div>
-
-      <div className="flex flex-col items-start gap-1">
-        <span className="text-[#F9F9F9] font-inter text-lg font-medium">
-          {title}
-        </span>
-        <p className="text-[#C5C5C5] font-inter text-sm font-normal leading-5">
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-};
+import type {ExtendedCourse} from "@nlc-ai/sdk-course";
 
 const FileUploadArea: React.FC = () => {
   return (
@@ -76,47 +31,15 @@ const FileUploadArea: React.FC = () => {
   );
 };
 
-export const SettingsTab: React.FC<{ courseID: string }> = () => {
-  const [selectedPrivacy, setSelectedPrivacy] = useState<PrivacyOption>('private');
-  // const [activeTab, setActiveTab] = useState<'curriculum' | 'settings' | 'pricing' | 'drip'>('settings');
-  const [courseName, setCourseName] = useState('');
-  const [courseDescription, setCourseDescription] = useState('');
-  const [upgradeToAnnual, setUpgradeToAnnual] = useState(false);
-
-  const privacyOptions = [
-    {
-      id: 'open' as PrivacyOption,
-      title: 'Open',
-      description: 'All Members can access.'
-    },
-    {
-      id: 'level' as PrivacyOption,
-      title: 'Level unlock',
-      description: 'Members unlock at a specific level'
-    },
-    {
-      id: 'buy' as PrivacyOption,
-      title: 'Buy now',
-      description: 'Members pay a 1 time price to unlock'
-    },
-    {
-      id: 'time' as PrivacyOption,
-      title: 'Time unlock',
-      description: 'Members unlock after x days'
-    },
-    {
-      id: 'private' as PrivacyOption,
-      title: 'Private',
-      description: 'Members you select can access'
-    }
-  ];
+export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ course }) => {
+  const [courseName, setCourseName] = useState(course?.title);
+  const [courseDescription, setCourseDescription] = useState(course?.description);
+  const [difficultyLevel, setDifficultyLevel] = useState(course?.difficultyLevel);
 
   return (
-
     <div className="flex w-full items-center rounded-[30px] border border-[#373535] relative">
-      <div className="flex h-[859px] p-8 flex-col items-start gap-5 flex-1">
+      <div className="flex h-auto p-8 flex-col items-start gap-5 flex-1">
         <div className="flex flex-col items-start gap-8 self-stretch">
-          {/* Header */}
           <div className="flex justify-between items-center self-stretch">
             <div className="flex flex-col items-start gap-1">
               <div className="flex h-7 flex-col justify-center self-stretch">
@@ -128,15 +51,13 @@ export const SettingsTab: React.FC<{ courseID: string }> = () => {
 
             <button className="flex max-w-[686.66px] px-5 py-2 justify-center items-center gap-2 rounded-lg bg-gradient-to-r from-[#FEBEFA] via-[#B339D4] via-[#7B21BA] to-[#7B26F0]">
               <span className="text-white font-inter text-sm font-semibold leading-6 tracking-[-0.32px]">
-                Import with key
+                Save Settings
               </span>
             </button>
           </div>
 
-          {/* Form Section */}
           <div className="flex flex-col items-start gap-5 self-stretch">
             <div className="flex justify-center items-start gap-[30px] self-stretch">
-              {/* Upload Cover */}
               <div className="flex flex-col items-start gap-3">
                 <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
                   Upload Cover
@@ -145,9 +66,7 @@ export const SettingsTab: React.FC<{ courseID: string }> = () => {
                 <FileUploadArea />
               </div>
 
-              {/* Course Details */}
               <div className="flex flex-col items-start gap-[30px] flex-1">
-                {/* Course Name */}
                 <div className="flex flex-col items-start gap-3 self-stretch">
                   <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
                     Course Name
@@ -164,7 +83,6 @@ export const SettingsTab: React.FC<{ courseID: string }> = () => {
                   </div>
                 </div>
 
-                {/* Course Description */}
                 <div className="flex h-[142px] flex-col items-start gap-3 self-stretch">
                   <label className="self-stretch text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
                     Course Description
@@ -179,47 +97,25 @@ export const SettingsTab: React.FC<{ courseID: string }> = () => {
                     />
                   </div>
                 </div>
+
+                <div className="flex flex-col items-start gap-3 self-stretch">
+                  <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
+                    Course Difficulty
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex h-[50px] px-5 justify-between items-center self-stretch rounded-[10px] border border-white/30">
+                    {difficultyLevel && <select
+                      className="flex-1 bg-transparent text-white font-inter text-base font-normal placeholder:text-white/50 outline-none"
+                      defaultValue={difficultyLevel}
+                      onChange={(e) => setDifficultyLevel(e.target.value)}
+                    >
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>}
+                  </div>
+                </div>
               </div>
-            </div>
-
-            {/* Privacy Settings */}
-            <div className="flex flex-col items-start gap-4 self-stretch">
-              <h4 className="text-[#F9F9F9] font-inter text-xl font-medium leading-6">
-                Privacy settings
-              </h4>
-
-              <div className="flex items-start gap-4 self-stretch">
-                {privacyOptions.map((option) => (
-                  <PrivacyOptionCard
-                    key={option.id}
-                    title={option.title}
-                    description={option.description}
-                    isSelected={selectedPrivacy === option.id}
-                    onSelect={() => setSelectedPrivacy(option.id)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Instructions */}
-            <p className="self-stretch text-[#C5C5C5] font-inter text-sm font-normal leading-5">
-              To give members access: Go to the Members tab, find the member you want to give access to, click Membership ⚙️, courses tab, give access to course.
-            </p>
-
-            {/* Toggle Switch */}
-            <div className="flex items-center gap-[10px]">
-              <button
-                onClick={() => setUpgradeToAnnual(!upgradeToAnnual)}
-                className={cn(
-                  "flex w-12 h-6 p-1 items-start rounded-full transition-colors",
-                  upgradeToAnnual ? "bg-[#DF69FF] justify-end" : "bg-white/10 justify-start"
-                )}
-              >
-                <div className="w-4 h-4 bg-white/20 rounded-full"></div>
-              </button>
-              <span className="text-[#F9F9F9] font-inter text-lg font-normal">
-                Or when members upgrade to annual
-              </span>
             </div>
           </div>
         </div>

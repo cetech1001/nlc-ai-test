@@ -177,9 +177,6 @@ const CurriculumScreen = () => {
         />
 
         <div className="h-[calc(100vh-280px)] relative">
-          {/*<div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-to-r from-purple-500/20 to-violet-600/20 rounded-full blur-3xl"></div>*/}
-          {/*<div className="absolute -bottom-20 -right-20 w-80 h-80 bg-gradient-to-l from-fuchsia-500/20 to-purple-600/20 rounded-full blur-3xl"></div>*/}
-
           <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
             <CurriculumSidebar
               course={course}
@@ -231,7 +228,7 @@ const CurriculumScreen = () => {
                 )}
 
                 {activeTab === 'Settings' && (
-                  <SettingsTab courseID={courseID} />
+                  <SettingsTab course={course} />
                 )}
 
                 {activeTab === 'Drip schedule' && (

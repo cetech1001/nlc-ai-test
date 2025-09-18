@@ -21,7 +21,6 @@ export const CurriculumContent: React.FC<CurriculumContentProps> = ({
 
   return (
     <>
-      {/* Lesson Type Cards */}
       <div className="grid grid-cols-3 gap-6 mb-8 relative z-10">
         <button
           onClick={() => onCreateLesson('video')}
@@ -54,7 +53,6 @@ export const CurriculumContent: React.FC<CurriculumContentProps> = ({
         </button>
       </div>
 
-      {/* Course Summary Card */}
       {course && (
         <div className="relative bg-gradient-to-r from-purple-600/20 via-fuchsia-600/20 to-violet-600/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 overflow-hidden z-10 mb-6">
           <div className="absolute inset-0 opacity-30">
@@ -83,22 +81,6 @@ export const CurriculumContent: React.FC<CurriculumContentProps> = ({
           </div>
         </div>
       )}
-
-      {/* Upgrade Prompt */}
-      <div className="relative bg-gradient-to-r from-purple-600/20 via-fuchsia-600/20 to-violet-600/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 overflow-hidden z-10">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-        </div>
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
-            <h3 className="text-white font-semibold mb-2">Upgrade to unlock more lesson types</h3>
-            <p className="text-stone-300 text-sm">Access advanced lesson formats and interactive content</p>
-          </div>
-          <button className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-6 py-2 rounded-lg font-medium transition-opacity">
-            Upgrade
-          </button>
-        </div>
-      </div>
     </>
   );
 };
