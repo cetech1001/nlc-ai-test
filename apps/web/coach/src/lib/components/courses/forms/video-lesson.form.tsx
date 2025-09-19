@@ -1,25 +1,44 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, ChevronDown, Upload, X } from 'lucide-react';
 
 interface VideoLessonFormProps {
   chapterID?: string;
-  lessonID?: string; // For editing existing lessons
+  lessonID?: string;
+  lessonToEdit?: {
+    id: string;
+    title: string;
+    description?: string;
+    content?: string;
+    videoUrl?: string;
+    videoDuration?: number;
+    estimatedMinutes?: number;
+    isLocked?: boolean;
+  } | null;
+  chapterTitle?: string;
   onBack: () => void;
   onSave: (lessonData: any) => void;
+  onUploadVideo?: (file: File) => Promise<string>;
+  onUploadFile?: (file: File) => Promise<string>;
 }
 
 export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
- chapterID,
- lessonID,
- onBack,
- onSave
-}) => {
+                                                                  chapterID,
+                                                                  lessonID,
+                                                                  lessonToEdit,
+                                                                  chapterTitle,
+                                                                  onBack,
+                                                                  onSave,
+                                                                  onUploadVideo,
+                                                                  onUploadFile
+                                                                }) => {
   const [formData, setFormData] = useState({
     title: '',
     selectedVideo: '',
     uploadedFile: null as File | null,
+    uploadedVideoUrl: '',
     text: '',
     downloads: [] as File[],
+    uploadedDownloads: [] as string[],
     settings: {
       isFreePreview: false,
       isPrerequisite: false,
@@ -27,24 +46,96 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
       makeVideoDownloadable: false
     },
     icon: '',
-    label: ''
+    label: '',
+    estimatedMinutes: 30
   });
 
   const [showAddText, setShowAddText] = useState(false);
   const [showAddDownloads, setShowAddDownloads] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingDownloads, setIsUploadingDownloads] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Populate form when editing
+  useEffect(() => {
+    if (lessonToEdit) {
+      setFormData(prev => ({
+        ...prev,
+        title: lessonToEdit.title,
+        text: lessonToEdit.content || lessonToEdit.description || '',
+        uploadedVideoUrl: lessonToEdit.videoUrl || '',
+        estimatedMinutes: lessonToEdit.estimatedMinutes || 30,
+        settings: {
+          ...prev.settings,
+          isFreePreview: !lessonToEdit.isLocked
+        }
+      }));
+
+      if (lessonToEdit.content || lessonToEdit.description) {
+        setShowAddText(true);
+      }
+    }
+  }, [lessonToEdit]);
+
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, uploadedFile: file }));
+    if (!file || !onUploadVideo) return;
+
+    if (!file.type.startsWith('video/')) {
+      setUploadError('Please select a valid video file');
+      return;
+    }
+
+    if (file.size > 500 * 1024 * 1024) { // 500MB limit
+      setUploadError('Video file size must be less than 500MB');
+      return;
+    }
+
+    setIsUploadingVideo(true);
+    setUploadError('');
+
+    try {
+      const uploadedUrl = await onUploadVideo(file);
+      setFormData(prev => ({
+        ...prev,
+        uploadedFile: file,
+        uploadedVideoUrl: uploadedUrl
+      }));
+    } catch (error: any) {
+      setUploadError(error.message || 'Failed to upload video');
+    } finally {
+      setIsUploadingVideo(false);
     }
   };
 
-  const handleDownloadUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDownloadUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    if (files.length === 0 || !onUploadFile) return;
+
+    setIsUploadingDownloads(true);
+    setUploadError('');
+
+    try {
+      const uploadPromises = files.map(file => onUploadFile(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      setFormData(prev => ({
+        ...prev,
+        downloads: [...prev.downloads, ...files],
+        uploadedDownloads: [...prev.uploadedDownloads, ...uploadedUrls]
+      }));
+    } catch (error: any) {
+      setUploadError(error.message || 'Failed to upload files');
+    } finally {
+      setIsUploadingDownloads(false);
+    }
+  };
+
+  const removeDownload = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      downloads: [...prev.downloads, ...files]
+      downloads: prev.downloads.filter((_, i) => i !== index),
+      uploadedDownloads: prev.uploadedDownloads.filter((_, i) => i !== index)
     }));
   };
 
@@ -52,6 +143,8 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
     const lessonData = {
       ...formData,
       type: 'video',
+      videoUrl: formData.uploadedVideoUrl || formData.selectedVideo,
+      downloadUrls: formData.uploadedDownloads,
       chapterID,
       lessonID
     };
@@ -71,67 +164,119 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div className="flex items-center gap-3">
-            <h1 className="text-white text-2xl font-bold">New Lessons</h1>
+            <h1 className="text-white text-2xl font-bold">
+              {lessonToEdit ? 'Edit Lesson' : 'New Lesson'}
+            </h1>
             <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded font-medium">
               Video
             </span>
           </div>
         </div>
 
+        {chapterTitle && (
+          <div className="bg-gradient-to-r from-purple-600/20 via-fuchsia-600/20 to-violet-600/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+              <div>
+                <h3 className="text-white font-semibold">Chapter: {chapterTitle}</h3>
+                {lessonToEdit && (
+                  <p className="text-purple-200 text-sm">Editing: {lessonToEdit.title}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden">
+            {uploadError && (
+              <div className="mb-6 p-4 bg-red-800/20 border border-red-600 rounded-lg">
+                <p className="text-red-400 text-sm">{uploadError}</p>
+              </div>
+            )}
             <div className="p-8 space-y-8">
+              {uploadError && (
+                <div className="mb-6 p-4 bg-red-800/20 border border-red-600 rounded-lg">
+                  <p className="text-red-400 text-sm">{uploadError}</p>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <label className="block text-white text-sm font-medium">Title</label>
+                <label className="block text-white text-sm font-medium">
+                  Title <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="Enter title..."
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full bg-neutral-800 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
+                  className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
                 />
               </div>
 
-              <div className="space-y-4">
-                <label className="block text-white text-sm font-medium">Video from your library</label>
-                <div className="relative">
-                  <select
-                    value={formData.selectedVideo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, selectedVideo: e.target.value }))}
-                    className="w-full bg-neutral-800 border border-neutral-600 text-white rounded-lg px-4 py-3 appearance-none focus:border-purple-500 focus:outline-none"
-                  >
-                    <option value="">Choose video</option>
-                    <option value="video1">Sample Video 1</option>
-                    <option value="video2">Sample Video 2</option>
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
-                </div>
+              <div className="space-y-2">
+                <label className="block text-white text-sm font-medium">
+                  Estimated Duration (minutes)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="30"
+                  value={formData.estimatedMinutes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, estimatedMinutes: parseInt(e.target.value) || 30 }))}
+                  className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
+                />
               </div>
 
               <div className="space-y-4">
                 <label className="block text-white text-sm font-medium">Upload a video file</label>
                 <div className="border-2 border-dashed border-neutral-600 rounded-lg p-8 text-center">
+                  {formData.uploadedVideoUrl && (
+                    <div className="mb-4">
+                      <div className="bg-green-800/20 border border-green-600 rounded-lg p-3">
+                        <p className="text-green-400 text-sm">✓ Video uploaded successfully</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="text-neutral-400 mb-4">
-                    {formData.uploadedFile ? formData.uploadedFile.name : 'No file selected'}
+                    {formData.uploadedFile ?
+                      `${formData.uploadedFile.name} ${formData.uploadedVideoUrl ? '(Uploaded)' : '(Ready to upload)'}` :
+                      lessonToEdit?.videoUrl ? 'Current video file uploaded' : 'No file selected'}
                   </div>
+
                   <button
+                    type="button"
+                    disabled={isUploadingVideo}
                     onClick={() => document.getElementById('video-upload')?.click()}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
                   >
-                    Browse files
+                    {isUploadingVideo ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        {formData.uploadedVideoUrl ? 'Replace Video' : 'Browse files'}
+                      </>
+                    )}
                   </button>
+
                   <input
                     id="video-upload"
                     type="file"
                     accept="video/*"
-                    onChange={handleFileUpload}
+                    onChange={handleVideoUpload}
                     className="hidden"
+                    disabled={isUploadingVideo}
                   />
                 </div>
                 <div className="text-sm text-neutral-400 space-y-1">
                   <p>Pick a thumbnail image, add closed captions, update settings, and track your video performance analytics in the video library.</p>
                   <p><span className="text-purple-400 underline cursor-pointer">Learn more</span> about the video library.</p>
-                  <p>Videos larger than 1GB may take longer to upload and load. Consider compressing them with <span className="text-purple-400 underline cursor-pointer">HandBrake</span> before uploading them to the video library.</p>
+                  <p>Videos larger than 500MB may take longer to upload and load. Consider compressing them before uploading.</p>
                 </div>
               </div>
 
@@ -145,7 +290,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                   <ChevronDown className={`w-4 h-4 transition-transform ${showAddText ? 'rotate-180' : ''}`} />
                 </button>
                 {showAddText && (
-                  <div className="bg-neutral-800 border border-neutral-600 rounded-lg p-4">
+                  <div className="bg-neutral-800/50 border border-neutral-600 rounded-lg p-4">
                     <textarea
                       placeholder="Add text content here..."
                       value={formData.text}
@@ -169,10 +314,22 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                   <div className="space-y-4">
                     <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
                       <button
+                        type="button"
+                        disabled={isUploadingDownloads}
                         onClick={() => document.getElementById('downloads-upload')?.click()}
-                        className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        className="bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
                       >
-                        Upload files
+                        {isUploadingDownloads ? (
+                          <>
+                            <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            Upload files
+                          </>
+                        )}
                       </button>
                       <input
                         id="downloads-upload"
@@ -180,13 +337,21 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                         multiple
                         onChange={handleDownloadUpload}
                         className="hidden"
+                        disabled={isUploadingDownloads}
                       />
                     </div>
                     {formData.downloads.length > 0 && (
                       <div className="space-y-2">
+                        <h4 className="text-white text-sm font-medium">Uploaded Files:</h4>
                         {formData.downloads.map((file, index) => (
-                          <div key={index} className="text-white text-sm">
-                            {file.name}
+                          <div key={index} className="flex items-center justify-between bg-neutral-800/50 p-3 rounded-lg">
+                            <span className="text-white text-sm">{file.name}</span>
+                            <button
+                              onClick={() => removeDownload(index)}
+                              className="text-red-400 hover:text-red-300 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -196,7 +361,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
               </div>
 
               <div className="space-y-6">
-                <h3 className="text-white text-lg font-semibold">Lessons settings</h3>
+                <h3 className="text-white text-lg font-semibold">Lesson Settings</h3>
 
                 <div className="space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -248,22 +413,25 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                       }))}
                       className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
                     />
-                    <span className="text-white">Make this video downloadable</span>
+                    <span className="text-white">Make this file downloadable</span>
                   </label>
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-white font-medium">Lesson icon & label</h4>
+                  <h4 className="text-white font-medium">
+                    Lesson icon & label <span className="text-red-400">*</span>
+                  </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="relative">
                       <select
                         value={formData.icon}
                         onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                        className="w-full bg-neutral-800 border border-neutral-600 text-white rounded-lg px-4 py-3 appearance-none focus:border-purple-500 focus:outline-none"
+                        className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 appearance-none focus:border-purple-500 focus:outline-none"
                       >
                         <option value="">Choose icon</option>
-                        <option value="video">Video icon</option>
-                        <option value="play">Play icon</option>
+                        <option value="pdf">PDF icon</option>
+                        <option value="document">Document icon</option>
+                        <option value="file">File icon</option>
                       </select>
                       <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
                     </div>
@@ -272,7 +440,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                       placeholder="Enter label"
                       value={formData.label}
                       onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                      className="w-full bg-neutral-800 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
+                      className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
                     />
                   </div>
                   <p className="text-neutral-400 text-sm">You can hide all lesson icon & labels in Settings. Max 16 characters</p>
@@ -282,9 +450,9 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
               <div className="pt-4">
                 <button
                   onClick={handleSave}
-                  className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white px-8 py-3 rounded-lg font-medium transition-opacity"
+                  className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
                 >
-                  Add Lesson
+                  {lessonToEdit ? 'Update Lesson' : 'Add Lesson'}
                 </button>
               </div>
             </div>

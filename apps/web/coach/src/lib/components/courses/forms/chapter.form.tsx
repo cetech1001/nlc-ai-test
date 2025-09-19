@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, ChevronDown } from 'lucide-react';
 import { CreateCourseChapter } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse } from '@nlc-ai/sdk-course';
 
 interface ChapterFormProps {
   courseID: string;
+  course?: ExtendedCourse | null;
   chapterToEdit?: {
     id: string;
     title: string;
@@ -18,6 +20,7 @@ interface ChapterFormProps {
 
 export const ChapterForm: React.FC<ChapterFormProps> = ({
   courseID,
+  course,
   chapterToEdit,
   onBack,
   onSave,
@@ -33,6 +36,25 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Generate order options based on existing chapters
+  const orderOptions = useMemo(() => {
+    if (!course?.chapters) return [{ value: 0, label: 'First chapter' }];
+
+    const options = [{ value: 0, label: 'First chapter' }];
+
+    course.chapters
+      .filter(ch => chapterToEdit ? ch.id !== chapterToEdit.id : true)
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .forEach((chapter, index) => {
+        options.push({
+          value: chapter.orderIndex + 1,
+          label: `After "${chapter.title}"`
+        });
+      });
+
+    return options;
+  }, [course?.chapters, chapterToEdit]);
 
   const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -85,7 +107,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
           placeholder="Enter chapter title..."
           value={formData.title}
           onChange={(e) => handleInputChange('title', e.target.value)}
-          className={`w-full bg-neutral-800 border ${errors.title ? 'border-red-500' : 'border-neutral-600'} text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none`}
+          className={`w-full bg-neutral-800/50 border ${errors.title ? 'border-red-500' : 'border-neutral-600'} text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none`}
         />
         {errors.title && (
           <p className="text-red-400 text-sm">{errors.title}</p>
@@ -101,28 +123,34 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
           placeholder="Enter chapter description..."
           value={formData.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
-          className="w-full bg-neutral-800 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none resize-none h-24"
+          className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none resize-none h-24"
         />
       </div>
 
-      {/* Order Index */}
+      {/* Order Position */}
       <div className="space-y-2">
         <label className="block text-white text-sm font-medium">
-          Chapter Order <span className="text-red-400">*</span>
+          Position <span className="text-red-400">*</span>
         </label>
-        <input
-          type="number"
-          min="0"
-          placeholder="0"
-          value={formData.orderIndex}
-          onChange={(e) => handleInputChange('orderIndex', parseInt(e.target.value) || 0)}
-          className={`w-full bg-neutral-800 border ${errors.orderIndex ? 'border-red-500' : 'border-neutral-600'} text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none`}
-        />
+        <div className="relative">
+          <select
+            value={formData.orderIndex}
+            onChange={(e) => handleInputChange('orderIndex', parseInt(e.target.value))}
+            className={`w-full bg-neutral-800/50 border ${errors.orderIndex ? 'border-red-500' : 'border-neutral-600'} text-white rounded-lg px-4 py-3 appearance-none focus:border-purple-500 focus:outline-none`}
+          >
+            {orderOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
+        </div>
         {errors.orderIndex && (
           <p className="text-red-400 text-sm">{errors.orderIndex}</p>
         )}
         <p className="text-neutral-400 text-sm">
-          The order in which this chapter appears in the course (0 = first)
+          Choose where this chapter should appear in your course
         </p>
       </div>
 
@@ -140,7 +168,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
             placeholder="0"
             value={formData.dripDelay}
             onChange={(e) => handleInputChange('dripDelay', parseInt(e.target.value) || 0)}
-            className="w-full bg-neutral-800 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
+            className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
           />
           <p className="text-neutral-400 text-sm">
             Number of days to wait before making this chapter available
@@ -168,7 +196,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
         </button>
         <button
           onClick={handleSave}
-          className="px-8 py-3 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90 text-white rounded-lg font-medium transition-opacity"
+          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white rounded-lg font-medium transition-colors"
         >
           {chapterToEdit ? 'Update Chapter' : 'Create Chapter'}
         </button>
@@ -176,53 +204,26 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
     </div>
   );
 
-  if (isModal) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-        <div className="relative w-full max-w-2xl max-h-[90vh] overflow-auto bg-gradient-to-b from-neutral-800/95 to-neutral-900/95 backdrop-blur-sm rounded-[20px] border border-neutral-700">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white text-xl font-bold">
-                {chapterToEdit ? 'Edit Chapter' : 'New Chapter'}
-              </h2>
-              <button
-                onClick={onClose}
-                className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <FormContent />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen w-full relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
-
-      <div className="pt-8 pb-16 px-6 w-full relative z-10">
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={onBack}
-            className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-white text-2xl font-bold">
-            {chapterToEdit ? 'Edit Chapter' : 'New Chapter'}
-          </h1>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8 w-full max-w-2xl max-h-[90vh] overflow-auto">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-48 h-48 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden">
-            <div className="p-8">
-              <FormContent />
-            </div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-white text-xl font-bold">
+              {chapterToEdit ? 'Edit Chapter' : 'New Chapter'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
+          <FormContent />
         </div>
       </div>
     </div>

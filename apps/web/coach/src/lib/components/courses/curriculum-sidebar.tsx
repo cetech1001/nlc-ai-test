@@ -1,7 +1,7 @@
-import React from 'react';
-import { ChevronDown, ChevronRight, Plus, Upload, X } from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { ChevronDown, ChevronRight, Plus, Upload, X, Edit, GripVertical } from 'lucide-react';
 import type { ExtendedCourse } from '@nlc-ai/sdk-course';
-import {LessonTypeIcon} from '@/lib';
+import { LessonTypeIcon } from '@/lib';
 
 interface CurriculumState {
   chapters: Array<{
@@ -23,10 +23,21 @@ interface CurriculumSidebarProps {
   curriculum: CurriculumState;
   onToggleChapter: (chapterID: string) => void;
   onAddLesson: (chapterID: string) => void;
+  onEditChapter: (chapterID: string) => void;
+  onEditLesson: (chapterID: string, lessonID: string) => void;
   onAddChapter: () => void;
   onUploadContent: () => void;
+  onReorderChapters: (chapters: CurriculumState['chapters']) => void;
+  onReorderLessons: (chapterID: string, lessons: CurriculumState['chapters'][0]['lessons']) => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
+}
+
+interface DragState {
+  type: 'chapter' | 'lesson' | null;
+  dragIndex: number;
+  hoverIndex: number;
+  chapterID?: string;
 }
 
 export const CurriculumSidebar: React.FC<CurriculumSidebarProps> = ({
@@ -34,8 +45,12 @@ export const CurriculumSidebar: React.FC<CurriculumSidebarProps> = ({
                                                                       curriculum,
                                                                       onToggleChapter,
                                                                       onAddLesson,
+                                                                      onEditChapter,
+                                                                      onEditLesson,
                                                                       onAddChapter,
                                                                       onUploadContent,
+                                                                      onReorderChapters,
+                                                                      onReorderLessons,
                                                                       isMobileOpen = false,
                                                                       onMobileClose
                                                                     }) => {
@@ -47,8 +62,12 @@ export const CurriculumSidebar: React.FC<CurriculumSidebarProps> = ({
           curriculum={curriculum}
           onToggleChapter={onToggleChapter}
           onAddLesson={onAddLesson}
+          onEditChapter={onEditChapter}
+          onEditLesson={onEditLesson}
           onAddChapter={onAddChapter}
           onUploadContent={onUploadContent}
+          onReorderChapters={onReorderChapters}
+          onReorderLessons={onReorderLessons}
         />
       </div>
 
@@ -74,8 +93,12 @@ export const CurriculumSidebar: React.FC<CurriculumSidebarProps> = ({
               curriculum={curriculum}
               onToggleChapter={onToggleChapter}
               onAddLesson={onAddLesson}
+              onEditChapter={onEditChapter}
+              onEditLesson={onEditLesson}
               onAddChapter={onAddChapter}
               onUploadContent={onUploadContent}
+              onReorderChapters={onReorderChapters}
+              onReorderLessons={onReorderLessons}
             />
           </div>
         </div>
@@ -89,16 +112,102 @@ const SidebarContent: React.FC<{
   curriculum: CurriculumState;
   onToggleChapter: (chapterID: string) => void;
   onAddLesson: (chapterID: string) => void;
+  onEditChapter: (chapterID: string) => void;
+  onEditLesson: (chapterID: string, lessonID: string) => void;
   onAddChapter: () => void;
   onUploadContent: () => void;
+  onReorderChapters: (chapters: CurriculumState['chapters']) => void;
+  onReorderLessons: (chapterID: string, lessons: CurriculumState['chapters'][0]['lessons']) => void;
 }> = ({
-  course,
-  curriculum,
-  onToggleChapter,
-  onAddLesson,
-  onAddChapter,
-  onUploadContent
-}) => {
+        course,
+        curriculum,
+        onToggleChapter,
+        onAddLesson,
+        onEditChapter,
+        onEditLesson,
+        onAddChapter,
+        onUploadContent,
+        onReorderChapters,
+        onReorderLessons
+      }) => {
+  const [dragState, setDragState] = useState<DragState>({
+    type: null,
+    dragIndex: -1,
+    hoverIndex: -1
+  });
+
+  const dragItem = useRef<{ index: number; type: 'chapter' | 'lesson'; chapterID?: string } | null>(null);
+  const dragNode = useRef<HTMLDivElement | null>(null);
+
+  const handleDragStart = useCallback((e: React.DragEvent, index: number, type: 'chapter' | 'lesson', chapterID?: string) => {
+    dragItem.current = { index, type, chapterID };
+    dragNode.current = e.target as HTMLDivElement;
+    dragNode.current.addEventListener('dragend', handleDragEnd);
+
+    setDragState({
+      type,
+      dragIndex: index,
+      hoverIndex: index,
+      chapterID
+    });
+  }, []);
+
+  const handleDragEnter = useCallback((e: React.DragEvent, index: number) => {
+    if (dragItem.current && dragItem.current.index !== index) {
+      setDragState(prev => ({
+        ...prev,
+        hoverIndex: index
+      }));
+    }
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    if (dragState.type && dragItem.current) {
+      const { dragIndex, hoverIndex, type, chapterID } = dragState;
+
+      if (dragIndex !== hoverIndex) {
+        if (type === 'chapter') {
+          const newChapters = [...curriculum.chapters];
+          const draggedChapter = newChapters[dragIndex];
+          newChapters.splice(dragIndex, 1);
+          newChapters.splice(hoverIndex, 0, draggedChapter);
+          onReorderChapters(newChapters);
+        } else if (type === 'lesson' && chapterID) {
+          const chapter = curriculum.chapters.find(ch => ch.chapterID === chapterID);
+          if (chapter) {
+            const newLessons = [...chapter.lessons];
+            const draggedLesson = newLessons[dragIndex];
+            newLessons.splice(dragIndex, 1);
+            newLessons.splice(hoverIndex, 0, draggedLesson);
+            onReorderLessons(chapterID, newLessons);
+          }
+        }
+      }
+    }
+
+    setDragState({
+      type: null,
+      dragIndex: -1,
+      hoverIndex: -1
+    });
+
+    dragItem.current = null;
+    if (dragNode.current) {
+      dragNode.current.removeEventListener('dragend', handleDragEnd);
+      dragNode.current = null;
+    }
+  }, [dragState, curriculum.chapters, onReorderChapters, onReorderLessons]);
+
+  const getDragStyles = (index: number, type: 'chapter' | 'lesson') => {
+    if (dragState.type === type && dragState.dragIndex === index) {
+      return 'opacity-50 transform scale-95';
+    }
+    if (dragState.type === type && dragState.hoverIndex === index && dragState.dragIndex !== index) {
+      return 'border-purple-400 bg-purple-400/10';
+    }
+    return '';
+  };
+
   return (
     <div className="p-6 h-full flex flex-col">
       <div className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-br from-purple-400/20 to-violet-500/20 rounded-full blur-xl"></div>
@@ -123,9 +232,21 @@ const SidebarContent: React.FC<{
 
       <div className="flex-1 overflow-y-auto -mr-2 pr-2 relative z-10">
         <div className="space-y-0">
-          {curriculum.chapters.map((chapter) => (
-            <div key={chapter.chapterID}>
-              <div className="flex items-center gap-3 py-3 border-b border-neutral-700 hover:bg-white/5 transition-colors rounded-lg">
+          {curriculum.chapters.map((chapter, chapterIndex) => (
+            <div
+              key={chapter.chapterID}
+              className={`transition-all duration-200 ${getDragStyles(chapterIndex, 'chapter')}`}
+            >
+              <div
+                className="flex items-center gap-2 py-3 border-b border-neutral-700 hover:bg-white/5 transition-colors rounded-lg group"
+                draggable
+                onDragStart={(e) => handleDragStart(e, chapterIndex, 'chapter')}
+                onDragEnter={(e) => handleDragEnter(e, chapterIndex)}
+              >
+                <div className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
+                </div>
+
                 <button
                   onClick={() => onToggleChapter(chapter.chapterID)}
                   className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0"
@@ -136,25 +257,50 @@ const SidebarContent: React.FC<{
                     <ChevronRight className="w-4 h-4 text-white" />
                   )}
                 </button>
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>
+
                 <span className="text-white text-sm font-medium flex-1 leading-tight">
                   {chapter.title}
                 </span>
+
+                <button
+                  onClick={() => onEditChapter(chapter.chapterID)}
+                  className="p-1 hover:bg-white/10 rounded transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <Edit className="w-4 h-4 text-gray-400 hover:text-white" />
+                </button>
               </div>
 
               {chapter.isExpanded && (
                 <div className="space-y-0">
-                  {chapter.lessons.map((lesson) => (
-                    <div key={lesson.lessonID} className="flex items-center gap-3 py-3 pl-9 border-b border-neutral-700/50 hover:bg-white/5 transition-colors rounded-lg">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  {chapter.lessons.map((lesson, lessonIndex) => (
+                    <div
+                      key={lesson.lessonID}
+                      className={`flex items-center gap-2 py-3 pl-9 border-b border-neutral-700/50 hover:bg-white/5 transition-colors rounded-lg group ${getDragStyles(lessonIndex, 'lesson')}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, lessonIndex, 'lesson', chapter.chapterID)}
+                      onDragEnter={(e) => handleDragEnter(e, lessonIndex)}
+                    >
+                      <div className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
+                        <GripVertical className="w-3 h-3 text-gray-400" />
+                      </div>
+
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                       </svg>
+
                       <LessonTypeIcon type={lesson.type} />
-                      <span className="text-stone-300 text-sm flex-1 leading-tight">
+
+                      <button
+                        onClick={() => onEditLesson(chapter.chapterID, lesson.lessonID)}
+                        className="text-stone-300 text-sm flex-1 leading-tight text-left hover:text-white transition-colors"
+                      >
                         {lesson.title}
-                      </span>
+                      </button>
+
                       {lesson.estimatedMinutes && (
                         <span className="text-xs text-stone-500">
                           {lesson.estimatedMinutes}m

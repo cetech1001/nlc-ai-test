@@ -22,6 +22,7 @@ import {
   LessonTypeSelector
 } from '@/lib';
 import {toast} from "sonner";
+import {MediaTransformationType} from "@nlc-ai/sdk-media";
 
 interface CurriculumState {
   chapters: Array<{
@@ -39,7 +40,7 @@ interface CurriculumState {
 }
 
 type LessonType = 'video' | 'text' | 'pdf';
-type ViewState = 'course' | 'chapter-form' | 'lesson-selector' | 'lesson-form';
+type ViewState = 'course' | 'chapter-form' | 'lesson-selector' | 'lesson-form' | 'edit-chapter' | 'edit-lesson';
 
 const CourseEditPage = () => {
   const router = useRouter();
@@ -53,6 +54,8 @@ const CourseEditPage = () => {
   const [error, setError] = useState<string>('');
   const [viewState, setViewState] = useState<ViewState>('course');
   const [selectedChapter, setSelectedChapter] = useState<{ chapterID: string; title: string; lessons: number; } | null>(null);
+  const [editingChapter, setEditingChapter] = useState<{ id: string; title: string; description?: string; orderIndex: number; } | null>(null);
+  const [editingLesson, setEditingLesson] = useState<any>(null);
   const [lessonType, setLessonType] = useState<LessonType | ''>('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showChapterModal, setShowChapterModal] = useState(false);
@@ -143,17 +146,66 @@ const CourseEditPage = () => {
         title: chapter.title,
         lessons: chapter.lessons.length,
       });
+      setEditingLesson(null);
       setViewState('lesson-selector');
     }
   };
 
+  const handleEditChapter = (chapterID: string) => {
+    const chapter = course?.chapters?.find(ch => ch.id === chapterID);
+    if (chapter) {
+      setEditingChapter({
+        id: chapter.id,
+        title: chapter.title,
+        description: chapter.description,
+        orderIndex: chapter.orderIndex
+      });
+      setShowChapterModal(true);
+    }
+  };
+
+  const handleEditLesson = (chapterID: string, lessonID: string) => {
+    const chapter = course?.chapters?.find(ch => ch.id === chapterID);
+    const lesson = chapter?.lessons?.find(l => l.id === lessonID);
+
+    if (lesson && chapter) {
+      setSelectedChapter({
+        chapterID: chapter.id,
+        title: chapter.title,
+        lessons: chapter.lessons?.length || 0
+      });
+
+      setEditingLesson({
+        id: lesson.id,
+        title: lesson.title,
+        description: lesson.description,
+        content: lesson.content,
+        videoUrl: lesson.videoUrl,
+        videoDuration: lesson.videoDuration,
+        pdfUrl: lesson.pdfUrl,
+        estimatedMinutes: lesson.estimatedMinutes,
+        isLocked: lesson.isLocked
+      });
+
+      setLessonType(lesson.lessonType as LessonType);
+      setViewState('lesson-form');
+    }
+  };
+
   const handleAddChapter = () => {
+    setEditingChapter(null);
     setShowChapterModal(true);
   };
 
   const handleCreateChapter = async (chapterData: CreateCourseChapter) => {
     try {
-      await sdkClient.courses.chapters.createChapter(courseID, chapterData);
+      if (editingChapter) {
+        // Update existing chapter
+        await sdkClient.courses.chapters.updateChapter(courseID, editingChapter.id, chapterData);
+      } else {
+        // Create new chapter
+        await sdkClient.courses.chapters.createChapter(courseID, chapterData);
+      }
 
       // Reload course data
       const updatedCourse = await sdkClient.courses.getCourse(courseID);
@@ -178,11 +230,11 @@ const CourseEditPage = () => {
       }
 
       setShowChapterModal(false);
+      setEditingChapter(null);
       setViewState('course');
     } catch (error: any) {
-      console.error('Error creating chapter:', error);
-      toast.error('Failed to create chapter');
-      // setError('Failed to create chapter');
+      console.error('Error saving chapter:', error);
+      toast.error(`Failed to ${editingChapter ? 'update' : 'create'} chapter`);
     }
   };
 
@@ -195,7 +247,6 @@ const CourseEditPage = () => {
     if (!selectedChapter) return;
 
     try {
-
       const createLessonData: CreateCourseLesson = {
         title: lessonData.title,
         description: lessonData.description || undefined,
@@ -210,7 +261,13 @@ const CourseEditPage = () => {
         isLocked: !lessonData.settings?.isFreePreview || false
       };
 
-      await sdkClient.courses.lessons.createLesson(courseID, selectedChapter.chapterID, createLessonData);
+      if (editingLesson) {
+        // Update existing lesson
+        await sdkClient.courses.lessons.updateLesson(courseID, selectedChapter.chapterID, editingLesson.id, createLessonData);
+      } else {
+        // Create new lesson
+        await sdkClient.courses.lessons.createLesson(courseID, selectedChapter.chapterID, createLessonData);
+      }
 
       // Reload course data
       const updatedCourse = await sdkClient.courses.getCourse(courseID);
@@ -237,22 +294,77 @@ const CourseEditPage = () => {
       // Reset state
       setViewState('course');
       setSelectedChapter(null);
+      setEditingLesson(null);
       setLessonType('');
     } catch (error: any) {
-      console.error('Error creating lesson:', error);
-      toast.error('Failed to create lesson');
-      // setError('Failed to create lesson');
+      console.error('Error saving lesson:', error);
+      toast.error(`Failed to ${editingLesson ? 'update' : 'create'} lesson`);
+    }
+  };
+
+  const handleReorderChapters = async (reorderedChapters: CurriculumState['chapters']) => {
+    try {
+      // Update order indexes
+      const updates = reorderedChapters.map((chapter, index) => ({
+        chapterID: chapter.chapterID,
+        orderIndex: index
+      }));
+
+      // Call API to update chapter order
+      await Promise.all(updates.map(update =>
+        sdkClient.courses.chapters.updateChapter(courseID, update.chapterID, { orderIndex: update.orderIndex })
+      ));
+
+      // Update local state
+      setCurriculum({ chapters: reorderedChapters });
+
+      toast.success('Chapter order updated');
+    } catch (error: any) {
+      console.error('Error reordering chapters:', error);
+      toast.error('Failed to update chapter order');
+    }
+  };
+
+  const handleReorderLessons = async (chapterID: string, reorderedLessons: CurriculumState['chapters'][0]['lessons']) => {
+    try {
+      // Update order indexes
+      const updates = reorderedLessons.map((lesson, index) => ({
+        lessonID: lesson.lessonID,
+        orderIndex: index
+      }));
+
+      // Call API to update lesson order
+      await Promise.all(updates.map(update =>
+        sdkClient.courses.lessons.updateLesson(courseID, chapterID, update.lessonID, { orderIndex: update.orderIndex })
+      ));
+
+      // Update local state
+      setCurriculum(prev => ({
+        ...prev,
+        chapters: prev.chapters.map(chapter =>
+          chapter.chapterID === chapterID
+            ? { ...chapter, lessons: reorderedLessons }
+            : chapter
+        )
+      }));
+
+      toast.success('Lesson order updated');
+    } catch (error: any) {
+      console.error('Error reordering lessons:', error);
+      toast.error('Failed to update lesson order');
     }
   };
 
   const handleBackToSelector = () => {
     setLessonType('');
+    setEditingLesson(null);
     setViewState('lesson-selector');
   };
 
   const handleBackToCourse = () => {
     setViewState('course');
     setSelectedChapter(null);
+    setEditingLesson(null);
     setLessonType('');
   };
 
@@ -260,7 +372,86 @@ const CourseEditPage = () => {
     console.log('Upload content');
   };
 
-  // Loading and error states
+  const handleUploadVideo = async (file: File): Promise<string> => {
+    try {
+      const uploadResult = await sdkClient.media.uploadAsset(file, {
+        folder: `courses/${courseID}/videos`,
+        tags: ['course-video', 'lesson-content'],
+        metadata: {
+          uploadedBy: 'coach',
+          courseID: courseID,
+          purpose: 'lesson-video'
+        },
+        transformation: [
+          {
+            type: MediaTransformationType.QUALITY,
+            quality: 'auto'
+          }
+        ]
+      });
+
+      if (uploadResult.success && uploadResult.data) {
+        toast.success('Video uploaded successfully!');
+        return uploadResult.data.secureUrl;
+      } else {
+        throw new Error(uploadResult.error?.message || 'Video upload failed');
+      }
+    } catch (error: any) {
+      console.error('Failed to upload video:', error);
+      toast.error(`Failed to upload video: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const handleUploadPDF = async (file: File): Promise<string> => {
+    try {
+      const uploadResult = await sdkClient.media.uploadAsset(file, {
+        folder: `courses/${courseID}/pdfs`,
+        tags: ['course-pdf', 'lesson-content'],
+        metadata: {
+          uploadedBy: 'coach',
+          courseID: courseID,
+          purpose: 'lesson-pdf'
+        }
+      });
+
+      if (uploadResult.success && uploadResult.data) {
+        toast.success('PDF uploaded successfully!');
+        return uploadResult.data.secureUrl;
+      } else {
+        throw new Error(uploadResult.error?.message || 'PDF upload failed');
+      }
+    } catch (error: any) {
+      console.error('Failed to upload PDF:', error);
+      toast.error(`Failed to upload PDF: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const handleUploadFile = async (file: File): Promise<string> => {
+    try {
+      const uploadResult = await sdkClient.media.uploadAsset(file, {
+        folder: `courses/${courseID}/downloads`,
+        tags: ['course-download', 'lesson-resource'],
+        metadata: {
+          uploadedBy: 'coach',
+          courseID: courseID,
+          purpose: 'lesson-download',
+          originalFileName: file.name
+        }
+      });
+
+      if (uploadResult.success && uploadResult.data) {
+        return uploadResult.data.secureUrl;
+      } else {
+        throw new Error(uploadResult.error?.message || 'File upload failed');
+      }
+    } catch (error: any) {
+      console.error('Failed to upload file:', error);
+      throw error;
+    }
+  };
+
   if (isLoading) {
     return <LoadingSkeleton />;
   }
@@ -269,7 +460,10 @@ const CourseEditPage = () => {
     return <ErrorState error={error} onBack={handleBack} />;
   }
 
-  // Render chapter form as modal
+  const getCurrentChapterTitle = () => {
+    return selectedChapter?.title || '';
+  };
+
   if (showChapterModal) {
     return (
       <>
@@ -298,8 +492,12 @@ const CourseEditPage = () => {
                   curriculum={curriculum}
                   onToggleChapter={toggleChapter}
                   onAddLesson={handleAddLesson}
+                  onEditChapter={handleEditChapter}
+                  onEditLesson={handleEditLesson}
                   onAddChapter={handleAddChapter}
                   onUploadContent={handleUploadContent}
+                  onReorderChapters={handleReorderChapters}
+                  onReorderLessons={handleReorderLessons}
                   isMobileOpen={sidebarOpen}
                   onMobileClose={() => setSidebarOpen(false)}
                 />
@@ -344,10 +542,15 @@ const CourseEditPage = () => {
 
         <ChapterForm
           courseID={courseID}
+          course={course}
+          chapterToEdit={editingChapter}
           onBack={() => setShowChapterModal(false)}
           onSave={handleCreateChapter}
           isModal={true}
-          onClose={() => setShowChapterModal(false)}
+          onClose={() => {
+            setShowChapterModal(false);
+            setEditingChapter(null);
+          }}
         />
       </>
     );
@@ -379,8 +582,12 @@ const CourseEditPage = () => {
               curriculum={curriculum}
               onToggleChapter={toggleChapter}
               onAddLesson={handleAddLesson}
+              onEditChapter={handleEditChapter}
+              onEditLesson={handleEditLesson}
               onAddChapter={handleAddChapter}
               onUploadContent={handleUploadContent}
+              onReorderChapters={handleReorderChapters}
+              onReorderLessons={handleReorderLessons}
               isMobileOpen={sidebarOpen}
               onMobileClose={() => setSidebarOpen(false)}
             />
@@ -441,25 +648,34 @@ const CourseEditPage = () => {
                   {lessonType === 'video' && (
                     <VideoLessonForm
                       chapterID={selectedChapter?.chapterID || ''}
-                      lessonID=""
+                      lessonID={editingLesson?.id || ""}
+                      lessonToEdit={editingLesson}
+                      chapterTitle={getCurrentChapterTitle()}
                       onSave={handleCreateLesson}
                       onBack={handleBackToSelector}
+                      onUploadVideo={handleUploadVideo}
+                      onUploadFile={handleUploadFile}
                     />
                   )}
 
                   {lessonType === 'pdf' && (
                     <PDFLessonForm
                       chapterID={selectedChapter?.chapterID || ''}
-                      lessonID=""
+                      lessonID={editingLesson?.id || ""}
+                      lessonToEdit={editingLesson}
+                      chapterTitle={getCurrentChapterTitle()}
                       onSave={handleCreateLesson}
                       onBack={handleBackToSelector}
+                      onUploadPDF={handleUploadPDF}
                     />
                   )}
 
                   {lessonType === 'text' && (
                     <TextLessonForm
                       chapterID={selectedChapter?.chapterID || ''}
-                      lessonID=""
+                      lessonID={editingLesson?.id || ""}
+                      lessonToEdit={editingLesson}
+                      chapterTitle={getCurrentChapterTitle()}
                       onSave={handleCreateLesson}
                       onBack={handleBackToSelector}
                     />
