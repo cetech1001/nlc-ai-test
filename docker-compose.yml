@@ -223,6 +223,7 @@ services:
     volumes:
       - ./apps/api/courses:/app/apps/api/courses
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 

@@ -10,7 +10,7 @@ import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
 import {MessagingClient} from "@nlc-ai/sdk-messaging";
 import {AgentsClient} from "@nlc-ai/sdk-agents";
-import {CourseClient} from "@nlc-ai/sdk-course";
+import {CoursesClient} from "@nlc-ai/sdk-course";
 import {IntegrationClient} from "@nlc-ai/sdk-integrations";
 
 
@@ -26,7 +26,7 @@ export class NLCClient {
   public media: MediaServiceClient;
   public notifications: NotificationsServiceClient;
   public messaging: MessagingClient;
-  public course: CourseClient;
+  public courses: CoursesClient;
   public integration: IntegrationClient;
 
   constructor(config: NLCClientConfig) {
@@ -86,9 +86,9 @@ export class NLCClient {
       baseURL: config.services?.messaging || `${config.baseURL}/messages`,
     });
 
-    this.course = new CourseClient({
+    this.courses = new CoursesClient({
       ...baseConfig,
-      baseURL: config.services?.course || `${config.baseURL}/course`,
+      baseURL: config.services?.courses || `${config.baseURL}/courses`,
     });
 
     this.agents = new AgentsClient({

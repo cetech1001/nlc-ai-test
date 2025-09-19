@@ -1,1 +1,1 @@
-export * from './course.client';
+export * from './courses.client';

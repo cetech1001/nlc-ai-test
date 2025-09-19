@@ -11,7 +11,7 @@ import {
 import {Course} from "@prisma/client";
 
 @Injectable()
-export class AppService {
+export class CoursesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outboxService: OutboxService,

@@ -1,10 +1,32 @@
-import { IsBoolean, IsOptional, IsString, IsNumber, IsEnum, Min } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsNumber, IsEnum, IsArray, ValidateNested, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {DripInterval, UpdateDripSchedule} from "@nlc-ai/types";
+import { DripInterval, UpdateDripSchedule } from "@nlc-ai/types";
 
+export class LessonDripSettingDto {
+  @ApiProperty({ description: 'Lesson ID' })
+  @IsString()
+  lessonID: string;
 
+  @ApiProperty({ description: 'Number of days to delay' })
+  @IsNumber()
+  @Min(0)
+  days: number;
 
-export class UpdateDripScheduleDto implements UpdateDripSchedule{
+  @ApiProperty({ description: 'Drip type', enum: ['course_start', 'previous_lesson'] })
+  @IsEnum(['course_start', 'previous_lesson'])
+  type: 'course_start' | 'previous_lesson';
+}
+
+export class UpdateLessonDripScheduleDto {
+  @ApiProperty({ description: 'Lesson drip settings', type: [LessonDripSettingDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LessonDripSettingDto)
+  lessonSettings: LessonDripSettingDto[];
+}
+
+export class UpdateDripScheduleDto implements UpdateDripSchedule {
   @ApiProperty({ description: 'Enable drip content' })
   @IsBoolean()
   isDripEnabled: boolean;

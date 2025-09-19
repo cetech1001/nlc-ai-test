@@ -275,7 +275,7 @@ const CoursesPage = () => {
       setIsLoading(true);
       setError('');
 
-      const response = await sdkClient.course.courses.getCourses({
+      const response = await sdkClient.courses.courses.getCourses({
         page: 1,
         limit: 100 // Get all courses for initial load
       });
@@ -308,7 +308,7 @@ const CoursesPage = () => {
   const handleDeleteCourse = async (course: ExtendedCourse) => {
     if (confirm(`Are you sure you want to delete "${course.title}"? This action cannot be undone.`)) {
       try {
-        await sdkClient.course.courses.deleteCourse(course.id);
+        await sdkClient.courses.courses.deleteCourse(course.id);
         // Remove from local state
         setCourses(prevCourses => prevCourses.filter(c => c.id !== course.id));
 
@@ -346,7 +346,7 @@ const CoursesPage = () => {
         // Note: chapters would need to be duplicated separately via chapter API
       };
 
-      const newCourse = await sdkClient.course.courses.createCourse(duplicateData);
+      const newCourse = await sdkClient.courses.courses.createCourse(duplicateData);
 
       // Add to local state at the beginning
       setCourses(prevCourses => [newCourse, ...prevCourses]);

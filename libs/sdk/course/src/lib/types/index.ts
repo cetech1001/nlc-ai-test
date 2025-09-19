@@ -4,29 +4,6 @@ export enum PricingType {
   INSTALLMENT = 'installment'
 }
 
-export interface CreateCourseLesson {
-  title: string;
-  description?: string;
-  orderIndex: number;
-  lessonType: string;
-  content?: string;
-  videoUrl?: string;
-  videoDuration?: number;
-  pdfUrl?: string;
-  dripDelay?: number;
-  isLocked?: boolean;
-  estimatedMinutes?: number;
-}
-
-export interface CreateCourseChapter {
-  title: string;
-  description?: string;
-  orderIndex: number;
-  dripDelay?: number;
-  isLocked?: boolean;
-  lessons?: CreateCourseLesson[];
-}
-
 export interface CreateCourse {
   title: string;
   description?: string;
@@ -174,4 +151,48 @@ export interface CourseQueryParams {
   maxPrice?: number;
   createdAfter?: string;
   createdBefore?: string;
+}
+export interface CreateCourseLesson {
+  title: string;
+  description?: string;
+  orderIndex: number;
+  lessonType: string;
+  content?: string;
+  videoUrl?: string;
+  videoDuration?: number;
+  pdfUrl?: string;
+  dripDelay?: number;
+  isLocked?: boolean;
+  estimatedMinutes?: number;
+}
+
+export interface UpdateCourseLesson {
+  title?: string;
+  description?: string;
+  orderIndex?: number;
+  lessonType?: string;
+  content?: string;
+  videoUrl?: string;
+  videoDuration?: number;
+  pdfUrl?: string;
+  dripDelay?: number;
+  isLocked?: boolean;
+  estimatedMinutes?: number;
+}
+
+export interface CreateCourseChapter {
+  title: string;
+  description?: string;
+  orderIndex: number;
+  dripDelay?: number;
+  isLocked?: boolean;
+  lessons?: CreateCourseLesson[];
+}
+
+export interface UpdateCourseChapter {
+  title?: string;
+  description?: string;
+  orderIndex?: number;
+  dripDelay?: number;
+  isLocked?: boolean;
 }

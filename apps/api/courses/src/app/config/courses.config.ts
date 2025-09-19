@@ -3,7 +3,7 @@ import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { CoursesConfigSchema } from './courses-config.schema';
 
-function validateConfig(config: Record<string, unknown>) {
+const validateConfig = (config: Record<string, unknown>) => {
   const validatedConfig = plainToInstance(CoursesConfigSchema, config, {
     enableImplicitConversion: true,
   });

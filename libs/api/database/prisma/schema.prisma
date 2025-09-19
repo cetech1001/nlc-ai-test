@@ -1799,6 +1799,10 @@ model PlanAiAgent {
 }
 
 // Course Domain
+enum LessonDripType {
+  course_start
+  previous_lesson
+}
 
 model Course {
   id              String  @id @default(uuid()) @db.Uuid
@@ -1887,8 +1891,9 @@ model CourseLesson {
   videoDuration Int?
   pdfUrl        String?
 
-  dripDelay Int?    @default(0)
-  isLocked  Boolean @default(false)
+  dripDelay Int?            @default(0)
+  dripType  LessonDripType?
+  isLocked  Boolean         @default(false)
 
   estimatedMinutes Int? @default(0)
 

@@ -4,19 +4,22 @@
   "include": [],
   "references": [
     {
-      "path": "../../../libs/api/types"
+      "path": "../../../libs/types"
     },
     {
       "path": "../../../libs/api/validation"
-    },
-    {
-      "path": "../../../libs/api/auth"
     },
     {
       "path": "../../../libs/api/messaging"
     },
     {
       "path": "../../../libs/api/database"
+    },
+    {
+      "path": "../../../libs/api/types"
+    },
+    {
+      "path": "../../../libs/api/auth"
     },
     {
       "path": "./tsconfig.app.json"

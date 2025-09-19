@@ -6,12 +6,15 @@ import {DatabaseModule} from "@nlc-ai/api-database";
 import {MessagingModule} from "@nlc-ai/api-messaging";
 import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
-import {AppService} from "./app.service";
-import {AppController} from "./app.controller";
+import {CoursesService} from "./courses/courses.service";
+import {CoursesController} from "./courses/courses.controller";
 import coursesConfig from './config/courses.config';
 import { HealthModule } from './health/health.module';
 import {ChaptersModule} from "./chapters/chapters.module";
 import {DripScheduleModule} from "./drip-schedule/drip-schedule.module";
+import {CoursesModule} from "./courses/courses.module";
+import {LessonsModule} from "./lessons/lessons.module";
+import {PaywallModule} from "./paywall/paywall.module";
 
 @Module({
   imports: [
@@ -25,13 +28,16 @@ import {DripScheduleModule} from "./drip-schedule/drip-schedule.module";
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
+    CoursesModule,
     ChaptersModule,
     DripScheduleModule,
+    LessonsModule,
+    PaywallModule,
     HealthModule,
   ],
-  controllers: [AppController],
+  controllers: [CoursesController],
   providers: [
-    AppService,
+    CoursesService,
     {
       provide: APP_PIPE,
       useClass: ValidationPipe,

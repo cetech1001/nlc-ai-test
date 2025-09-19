@@ -36,7 +36,7 @@ const CourseCreateScreen = () => {
       const courseData = transformSuggestionToCourse(suggestion);
 
       // Step 3: Create the actual course
-      const createdCourse = await sdkClient.course.courses.createCourse(courseData);
+      const createdCourse = await sdkClient.courses.courses.createCourse(courseData);
 
       // Step 4: Navigate to curriculum page with the created course
       router.push(`/courses/${createdCourse.id}`);

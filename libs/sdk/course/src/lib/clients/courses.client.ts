@@ -6,8 +6,27 @@ import {
   CourseStats,
   CourseQueryParams,
 } from '../types';
+import { ChaptersClient } from "./chapters.client";
+import { LessonsClient } from "./lessons.client";
+import { DripScheduleClient } from "./drip-schedule.client";
+import { PaywallClient } from "./paywall.client";
+import {NLCClientConfig} from "@nlc-ai/sdk-main";
 
 export class CoursesClient extends BaseClient {
+  public chapters: ChaptersClient;
+  public lessons: LessonsClient;
+  public dripSchedule: DripScheduleClient;
+  public paywall: PaywallClient;
+
+  constructor(config: NLCClientConfig) {
+    super(config);
+
+    this.chapters = new ChaptersClient(config);
+    this.lessons = new LessonsClient(config);
+    this.dripSchedule = new DripScheduleClient(config);
+    this.paywall = new PaywallClient(config);
+  }
+
   async getCourses(searchOptions: SearchQuery = {}, filters: FilterValues = {}): Promise<Paginated<ExtendedCourse>> {
     const params = new URLSearchParams();
     const { page = 1, limit = 10, search } = searchOptions;

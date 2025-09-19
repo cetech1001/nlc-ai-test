@@ -1,11 +1,23 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { addDays, addWeeks, addMonths } from 'date-fns';
-import {DripInterval, UpdateDripSchedule} from "@nlc-ai/types";
+import { addDays } from 'date-fns';
+import { UpdateDripSchedule } from "@nlc-ai/types";
+
+export interface LessonDripSettings {
+  lessonID: string;
+  days: number;
+  type: 'course_start' | 'previous_lesson';
+}
+
+export interface UpdateLessonDripScheduleDto {
+  lessonSettings: LessonDripSettings[];
+}
 
 @Injectable()
 export class DripScheduleService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {}
 
   async getDripSchedule(courseID: string) {
     const course = await this.prisma.course.findUnique({
@@ -32,11 +44,11 @@ export class DripScheduleService {
       dripInterval: course.dripInterval,
       dripCount: course.dripCount,
       schedule: this.calculateDripSchedule(course),
+      lessons: this.getLessonDripSettings(course),
     };
   }
 
   async updateDripSchedule(courseID: string, updateDto: UpdateDripSchedule, coachID: string) {
-    // Verify ownership
     const course = await this.prisma.course.findFirst({
       where: { id: courseID, coachID: coachID },
     });
@@ -64,11 +76,6 @@ export class DripScheduleService {
       },
     });
 
-    // Update chapter and lesson drip delays if provided
-    if (updateDto.isDripEnabled) {
-      await this.recalculateDripDelays(courseID, updateDto);
-    }
-
     return {
       courseID: updatedCourse.id,
       isDripEnabled: updatedCourse.isDripEnabled,
@@ -76,6 +83,31 @@ export class DripScheduleService {
       dripCount: updatedCourse.dripCount,
       schedule: this.calculateDripSchedule(updatedCourse),
     };
+  }
+
+  async updateLessonDripSchedule(courseID: string, updateDto: UpdateLessonDripScheduleDto, coachID: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseID, coachID },
+    });
+
+    if (!course) {
+      throw new ForbiddenException('Course not found or access denied');
+    }
+
+    // Update individual lesson drip delays
+    await this.prisma.$transaction(async (tx) => {
+      for (const lessonSetting of updateDto.lessonSettings) {
+        await tx.courseLesson.update({
+          where: { id: lessonSetting.lessonID },
+          data: {
+            dripDelay: lessonSetting.days,
+            dripType: lessonSetting.type,
+          },
+        });
+      }
+    });
+
+    return { success: true, message: 'Lesson drip schedule updated successfully' };
   }
 
   async previewDripSchedule(courseID: string, enrollmentID: string, coachID: string) {
@@ -122,18 +154,23 @@ export class DripScheduleService {
 
     const schedule: any[] = [];
     let currentDate = new Date();
-    let releaseCount = 0;
 
     course.chapters.forEach((chapter: any) => {
       chapter.lessons.forEach((lesson: any) => {
+        const releaseDate = this.calculateLessonReleaseDate(
+          currentDate,
+          lesson.dripDelay || 0,
+          'course_start' // Default to course start for now
+        );
+
         schedule.push({
           lessonID: lesson.id,
           lessonTitle: lesson.title,
           chapterTitle: chapter.title,
-          releaseDate: this.calculateReleaseDate(currentDate, releaseCount, course.dripInterval, course.dripCount),
+          releaseDate,
+          dripDelay: lesson.dripDelay || 0,
           orderIndex: lesson.orderIndex,
         });
-        releaseCount++;
       });
     });
 
@@ -142,47 +179,49 @@ export class DripScheduleService {
 
   private calculateDripScheduleForEnrollment(course: any, enrollmentDate: Date) {
     const schedule: any[] = [];
-    let releaseCount = 0;
 
     course.chapters.forEach((chapter: any) => {
       chapter.lessons.forEach((lesson: any) => {
+        const releaseDate = this.calculateLessonReleaseDate(
+          enrollmentDate,
+          lesson.dripDelay || 0,
+          'course_start'
+        );
+
         schedule.push({
           lessonID: lesson.id,
           lessonTitle: lesson.title,
           chapterTitle: chapter.title,
-          releaseDate: this.calculateReleaseDate(enrollmentDate, releaseCount, course.dripInterval, course.dripCount),
-          isAvailable: this.isLessonAvailable(enrollmentDate, releaseCount, course.dripInterval, course.dripCount),
+          releaseDate,
+          dripDelay: lesson.dripDelay || 0,
+          isAvailable: new Date() >= releaseDate,
           orderIndex: lesson.orderIndex,
         });
-        releaseCount++;
       });
     });
 
     return schedule;
   }
 
-  private calculateReleaseDate(startDate: Date, releaseCount: number, interval: string, count: number) {
-    const intervalCount = Math.floor(releaseCount / (count || 1));
-
-    switch (interval) {
-      case DripInterval.DAILY:
-        return addDays(startDate, intervalCount);
-      case DripInterval.WEEKLY:
-        return addWeeks(startDate, intervalCount);
-      case DripInterval.MONTHLY:
-        return addMonths(startDate, intervalCount);
-      default:
-        return startDate;
-    }
+  private calculateLessonReleaseDate(startDate: Date, dripDelay: number, type: string) {
+    return addDays(startDate, dripDelay);
   }
 
-  private isLessonAvailable(enrollmentDate: Date, releaseCount: number, interval: string, count: number) {
-    const releaseDate = this.calculateReleaseDate(enrollmentDate, releaseCount, interval, count);
-    return new Date() >= releaseDate;
-  }
+  private getLessonDripSettings(course: any) {
+    const settings: any[] = [];
 
-  private async recalculateDripDelays(courseID: string, settings: UpdateDripSchedule) {
-    // Implementation for recalculating drip delays based on new settings
-    // This would update the dripDelay field on chapters and lessons
+    course.chapters.forEach((chapter: any) => {
+      chapter.lessons.forEach((lesson: any, index: number) => {
+        settings.push({
+          lessonID: lesson.id,
+          lessonTitle: lesson.title,
+          chapterTitle: chapter.title,
+          dripDelay: lesson.dripDelay || 0,
+          dripType: index === 0 ? 'course_start' : 'previous_lesson',
+        });
+      });
+    });
+
+    return settings;
   }
 }

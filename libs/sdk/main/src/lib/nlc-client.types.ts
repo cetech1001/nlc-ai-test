@@ -15,7 +15,7 @@ export interface NLCClientConfig {
     notifications?: string;
     messaging?: string;
     agents?: string;
-    course?: string;
+    courses?: string;
     integrations?: string;
   };
 }

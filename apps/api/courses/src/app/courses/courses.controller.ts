@@ -12,7 +12,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags,} from '@nestjs/swagger';
-import {AppService} from './app.service';
+import {CoursesService} from './courses.service';
 import {
   CourseQueryDto,
   CourseResponseDto,
@@ -20,15 +20,15 @@ import {
   CreateCourseDto,
   PaginatedCoursesResponseDto,
   UpdateCourseDto,
-} from './courses/dto';
+} from './dto';
 import {CurrentUser} from "@nlc-ai/api-auth";
 import {type AuthUser, UserType} from "@nlc-ai/api-types";
 
 @ApiTags('Courses')
 @ApiBearerAuth()
 @Controller('')
-export class AppController {
-  constructor(private readonly coursesService: AppService) {}
+export class CoursesController {
+  constructor(private readonly coursesService: CoursesService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new course' })

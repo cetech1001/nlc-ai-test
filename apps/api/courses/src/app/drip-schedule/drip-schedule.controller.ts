@@ -13,7 +13,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { DripScheduleService } from './drip-schedule.service';
-import { UpdateDripScheduleDto } from './dto';
+import { UpdateDripScheduleDto, UpdateLessonDripScheduleDto } from './dto';
 import { CurrentUser } from '@nlc-ai/api-auth';
 import { type AuthUser } from '@nlc-ai/api-types';
 
@@ -39,6 +39,17 @@ export class DripScheduleController {
     @CurrentUser() user: AuthUser
   ) {
     return this.dripScheduleService.updateDripSchedule(courseID, updateDto, user.id);
+  }
+
+  @Put('lessons')
+  @ApiOperation({ summary: 'Update lesson-specific drip schedule' })
+  @ApiParam({ name: 'courseID', description: 'Course ID' })
+  async updateLessonDripSchedule(
+    @Param('courseID', ParseUUIDPipe) courseID: string,
+    @Body() updateDto: UpdateLessonDripScheduleDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.dripScheduleService.updateLessonDripSchedule(courseID, updateDto, user.id);
   }
 
   @Get('preview/:enrollmentID')
