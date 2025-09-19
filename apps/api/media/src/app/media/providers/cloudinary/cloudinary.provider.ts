@@ -26,6 +26,17 @@ export class CloudinaryProvider implements MediaProvider {
 
   async upload(file: Buffer | Express.Multer.File, options: MediaUploadOptions = {}): Promise<MediaAsset> {
     try {
+      const fileBuffer = Buffer.isBuffer(file) ? file : file.buffer;
+      const fileSize = fileBuffer.length;
+      const isVideo = this.isVideoFile(file);
+
+      const needsAsyncProcessing = isVideo && (
+        fileSize > 40 * 1024 * 1024 ||
+        (options.transformation && options.transformation.length > 0)
+      );
+
+      const transformations = this.buildCloudinaryTransformations(options.transformation);
+
       const uploadOptions = {
         folder: options.folder || this.configService.get('media.upload.defaultFolder'),
         public_id: options.publicID,
@@ -33,26 +44,43 @@ export class CloudinaryProvider implements MediaProvider {
         resource_type: 'auto' as const,
         tags: options.tags || [],
         context: options.metadata || {},
-        transformation: this.buildCloudinaryTransformations(options.transformation),
+        ...(needsAsyncProcessing
+          ? {
+              eager_async: true,
+              eager: transformations.length > 0
+                ? transformations
+                : [{ quality: 'auto' }, { fetch_format: 'auto' }],
+            }
+          : {
+              transformation: transformations,
+            }),
       };
+
+      this.logger.log(`Uploading ${isVideo ? 'video' : 'file'} (${Math.round(fileSize / 1024)}KB) with ${needsAsyncProcessing ? 'eager async' : 'sync'} processing`);
 
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           uploadOptions,
           (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
+            if (error) {
+              this.logger.error('Cloudinary upload error:', error);
+              reject(error);
+            } else {
+              resolve(result);
+            }
           }
         );
 
-        if (Buffer.isBuffer(file)) {
-          uploadStream.end(file);
-        } else {
-          uploadStream.end(file.buffer);
-        }
+        uploadStream.end(fileBuffer);
       });
 
-      return this.mapCloudinaryResponse(result as any);
+      const mappedResult = this.mapCloudinaryResponse(result as any);
+
+      if (needsAsyncProcessing) {
+        this.logger.log(`Video uploaded successfully with async processing. Public ID: ${mappedResult.publicID}`);
+      }
+
+      return mappedResult;
     } catch (error) {
       this.logger.error('Failed to upload to Cloudinary', error);
       throw error;
@@ -111,9 +139,11 @@ export class CloudinaryProvider implements MediaProvider {
         searchOptions.expression += ` AND tags=(${query.tags.join(' OR ')})`;
       }
 
+      // @ts-ignore
       const result = await cloudinary.search.execute(searchOptions);
 
       return {
+        // @ts-ignore
         resources: result.resources.map(resource => this.mapCloudinaryResponse(resource)),
         totalCount: result.total_count,
         nextCursor: result.next_cursor,
@@ -136,19 +166,67 @@ export class CloudinaryProvider implements MediaProvider {
         updateOptions.context = updates.metadata;
       }
 
-      const result = await cloudinary.uploader.update_metadata(
+      await cloudinary.uploader.update_metadata(
         updateOptions,
         [publicID]
       );
 
-      return await this.getAsset(publicID);
+      // @ts-ignore
+      return this.getAsset(publicID);
     } catch (error) {
       this.logger.error(`Failed to update asset ${publicID}`, error);
       throw error;
     }
   }
 
+  /**
+   * Check if the processing status of an async upload
+   */
+  async checkProcessingStatus(publicID: string): Promise<{
+    status: 'pending' | 'processing' | 'complete' | 'error';
+    eager?: any[];
+  }> {
+    try {
+      const result = await cloudinary.api.resource(publicID, {
+        resource_type: 'video',
+      });
+
+      // Check if eager transformations are still processing
+      if (result.eager && result.eager.length > 0) {
+        const hasProcessing = result.eager.some((eager: any) => eager.status === 'processing');
+        const hasError = result.eager.some((eager: any) => eager.status === 'error');
+
+        if (hasError) {
+          return { status: 'error', eager: result.eager };
+        } else if (hasProcessing) {
+          return { status: 'processing', eager: result.eager };
+        } else {
+          return { status: 'complete', eager: result.eager };
+        }
+      }
+
+      return { status: 'complete' };
+    } catch (error) {
+      this.logger.error(`Failed to check processing status for ${publicID}`, error);
+      return { status: 'error' };
+    }
+  }
+
+  private isVideoFile(file: Buffer | Express.Multer.File): boolean {
+    if (Buffer.isBuffer(file)) {
+      return false;
+    }
+    return file.mimetype?.startsWith('video/') || false;
+  }
+
   private buildCloudinaryTransformations(transformations: TransformationOptions[] = []): any[] {
+    if (transformations.length === 0) {
+      return [
+        { quality: 'auto' },
+        { fetch_format: 'auto' }
+      ];
+    }
+
     return transformations.map(t => {
       const transformation: any = {};
 

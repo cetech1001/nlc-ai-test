@@ -35,6 +35,8 @@ export interface MediaAsset {
   duration?: number;
   folder?: string;
   tags: string[];
+  processingStatus: string;
+  message?: string;
   metadata: Record<string, any>;
   provider: MediaProvider;
   providerData: Record<string, any>;

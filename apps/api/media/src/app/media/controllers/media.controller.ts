@@ -6,7 +6,7 @@ import {MediaService} from '../services/media.service';
 import {MediaFiltersDto} from '../dto/media-filters.dto';
 
 @ApiTags('Media')
-@Controller('media')
+@Controller('')
 @UseGuards(UserTypesGuard)
 @UserTypes(UserType.coach, UserType.admin)
 export class MediaController {
@@ -42,11 +42,29 @@ export class MediaController {
 
     if (user.type === UserType.admin) {
       // Admin can access any asset, but we need the coachID from the asset
-       // We'll modify service to handle this
+      // We'll modify service to handle this
       return await this.mediaService.getAsset(id, '');
     }
 
     return this.mediaService.getAsset(id, coachID!);
+  }
+
+  @Get(':id/processing-status')
+  @ApiOperation({ summary: 'Check the processing status of a media asset' })
+  @ApiParam({ name: 'id', description: 'Media asset ID' })
+  @ApiResponse({ status: 200, description: 'Processing status retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Media asset not found' })
+  async getProcessingStatus(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    const coachID = user.type === UserType.admin ? undefined : user.id;
+
+    if (user.type === UserType.admin) {
+      return this.mediaService.checkProcessingStatus(id, '');
+    }
+
+    return this.mediaService.checkProcessingStatus(id, coachID!);
   }
 
   @Delete(':id')

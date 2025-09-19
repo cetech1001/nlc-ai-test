@@ -23,11 +23,13 @@ export class MediaService {
     userID: string,
     file: Express.Multer.File,
     uploadDto: UploadAssetDto
-  ): Promise<MediaUploadResult> {
+  ): Promise<MediaUploadResult & { processingStatus?: string }> {
     try {
       this.validateFile(file);
 
       const provider = this.mediaProviderFactory.getProvider();
+      const isVideo = file.mimetype.startsWith('video/');
+      const isLargeVideo = isVideo && file.size > 40 * 1024 * 1024; // 40MB
 
       const uploadOptions = {
         folder: uploadDto.folder,
@@ -42,9 +44,11 @@ export class MediaService {
         transformation: uploadDto.transformation
       };
 
+      this.logger.log(`Starting upload for ${file.originalname} (${Math.round(file.size / 1024)}KB)`);
+
       const asset = await provider.upload(file, uploadOptions);
 
-      // Save to database
+      // Save to database with processing status
       const mediaFile = await this.prisma.mediaFile.create({
         data: {
           userID,
@@ -60,7 +64,11 @@ export class MediaService {
           duration: asset.duration,
           folder: asset.folder,
           tags: asset.tags,
-          metadata: asset.metadata,
+          metadata: {
+            ...asset.metadata,
+            processingStatus: isLargeVideo ? 'processing' : 'complete',
+            isAsyncProcessing: isLargeVideo
+          },
           provider: this.mediaProviderFactory.getDefaultProvider(),
           providerData: {version: asset.version}
         }
@@ -81,11 +89,23 @@ export class MediaService {
           folder: asset.folder,
           tags: asset.tags,
           url: asset.secureUrl,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date().toISOString(),
+          processingStatus: isLargeVideo ? 'processing' : 'complete'
         }
       }, 'media.asset.uploaded');
 
-      return this.serializeMediaFile(mediaFile);
+      const result = this.serializeMediaFile(mediaFile);
+
+      // Add processing status info for large videos
+      if (isLargeVideo) {
+        return {
+          ...result,
+          processingStatus: 'processing',
+          message: 'Video uploaded successfully. Processing may take a few minutes for optimal playback quality.'
+        };
+      }
+
+      return result;
 
     } catch (error: any) {
       this.logger.error('Failed to upload asset', error);
@@ -94,6 +114,57 @@ export class MediaService {
         message: error.message,
         details: error
       });
+    }
+  }
+
+  async checkProcessingStatus(assetID: string, userID: string): Promise<{
+    status: 'pending' | 'processing' | 'complete' | 'error';
+    asset?: MediaFile;
+  }> {
+    const asset = await this.prisma.mediaFile.findFirst({
+      where: { id: assetID, userID }
+    });
+
+    if (!asset) {
+      throw new NotFoundException('Media asset not found');
+    }
+
+    if (!(asset.metadata as any)?.isAsyncProcessing) {
+      return { status: 'complete', asset: this.serializeMediaFile(asset) as unknown as MediaFile };
+    }
+
+    try {
+      const provider = this.mediaProviderFactory.getProvider();
+
+      if ('checkProcessingStatus' in provider && typeof provider.checkProcessingStatus === 'function') {
+        const status = await (provider as any).checkProcessingStatus(asset.publicID);
+
+        if (status.status === 'complete' && (asset.metadata as any)?.processingStatus !== 'complete') {
+          await this.prisma.mediaFile.update({
+            where: { id: assetID },
+            data: {
+              metadata: {
+                // @ts-ignore
+                ...asset.metadata,
+                processingStatus: 'complete'
+              }
+            }
+          });
+
+          const updatedAsset = await this.prisma.mediaFile.findUnique({
+            where: { id: assetID }
+          });
+
+          return { status: 'complete', asset: this.serializeMediaFile(updatedAsset) as unknown as MediaFile };
+        }
+
+        return { status: status.status, asset: this.serializeMediaFile(asset) as unknown as MediaFile };
+      }
+
+      return { status: 'complete', asset: this.serializeMediaFile(asset) as unknown as MediaFile };
+    } catch (error) {
+      this.logger.error(`Failed to check processing status for asset ${assetID}`, error);
+      return { status: 'error', asset: this.serializeMediaFile(asset) as unknown as MediaFile };
     }
   }
 
@@ -106,7 +177,7 @@ export class MediaService {
       throw new NotFoundException('Media asset not found');
     }
 
-    return asset as unknown as MediaFile;
+    return this.serializeMediaFile(asset) as unknown as MediaFile;
   }
 
   async getAssets(userID: string, filters: MediaFiltersDto): Promise<{
@@ -171,7 +242,7 @@ export class MediaService {
     ]);
 
     return {
-      assets: assets as unknown as MediaFile[],
+      assets: assets.map(a => this.serializeMediaFile(a)) as unknown as MediaFile[],
       total,
       page: filters.page || 1,
       limit: filters.limit || 10
@@ -221,16 +292,17 @@ export class MediaService {
     }
 
     const maxSize = file.mimetype.startsWith('video/')
-      ? this.configService.get('media.upload.maxVideoSize')
-      : this.configService.get('media.upload.maxFileSize');
+      ? this.configService.get('media.upload.maxVideoSize', 500 * 1024 * 1024) // Default 500MB for videos
+      : this.configService.get('media.upload.maxFileSize', 100 * 1024 * 1024); // Default 100MB for other files
 
     if (file.size > maxSize) {
-      throw new BadRequestException(`File size exceeds maximum allowed size of ${maxSize} bytes`);
+      const maxSizeMB = Math.round(maxSize / (1024 * 1024));
+      throw new BadRequestException(`File size exceeds maximum allowed size of ${maxSizeMB}MB`);
     }
 
     const allowedTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/mpeg', 'video/quicktime',
+      'video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm',
       'application/pdf', 'text/plain'
     ];
 

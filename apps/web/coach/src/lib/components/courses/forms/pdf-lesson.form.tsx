@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ChevronDown, Upload } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 
 interface PDFLessonFormProps {
   chapterID?: string;
@@ -280,35 +280,6 @@ export const PDFLessonForm: React.FC<PDFLessonFormProps> = ({
                     />
                     <span className="text-white">Make this file downloadable</span>
                   </label>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium">
-                    Lesson icon & label <span className="text-red-400">*</span>
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="relative">
-                      <select
-                        value={formData.icon}
-                        onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                        className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 appearance-none focus:border-purple-500 focus:outline-none"
-                      >
-                        <option value="">Choose icon</option>
-                        <option value="pdf">PDF icon</option>
-                        <option value="document">Document icon</option>
-                        <option value="file">File icon</option>
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Enter label"
-                      value={formData.label}
-                      onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                      className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
-                    />
-                  </div>
-                  <p className="text-neutral-400 text-sm">You can hide all lesson icon & labels in Settings. Max 16 characters</p>
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {ArrowLeft} from "lucide-react";
-import {ChevronDownIcon, RichTextEditor} from "@nlc-ai/web-shared";
+import {RichTextEditor} from "@nlc-ai/web-shared";
 
 
 interface TextLessonFormProps {
@@ -188,34 +188,6 @@ export const TextLessonForm: React.FC<TextLessonFormProps> = ({
                     />
                     <span className="text-white">Enable discussions for this lesson</span>
                   </label>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium">
-                    Lesson icon & label
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="relative">
-                      <select
-                        value={formData.icon}
-                        onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                        className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 appearance-none focus:border-purple-500 focus:outline-none"
-                      >
-                        <option value="">Choose icon</option>
-                        <option value="text">Text icon</option>
-                        <option value="document">Document icon</option>
-                      </select>
-                      <ChevronDownIcon className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Enter label"
-                      value={formData.label}
-                      onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                      className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
-                    />
-                  </div>
-                  <p className="text-neutral-400 text-sm">You can hide all lesson icon & labels in Settings. Max 16 characters</p>
                 </div>
               </div>
 

@@ -372,10 +372,10 @@ const CourseEditPage = () => {
     console.log('Upload content');
   };
 
-  const handleUploadVideo = async (file: File): Promise<string> => {
+  const handleUploadVideo = async (file: File): Promise<{ url: string; assetID?: string; processingStatus?: string; message?: string }> => {
     try {
       const uploadResult = await sdkClient.media.uploadAsset(file, {
-        folder: `courses/${courseID}/videos`,
+        folder: `nlc-ai/courses/${courseID}/videos`,
         tags: ['course-video', 'lesson-content'],
         metadata: {
           uploadedBy: 'coach',
@@ -391,8 +391,25 @@ const CourseEditPage = () => {
       });
 
       if (uploadResult.success && uploadResult.data) {
-        toast.success('Video uploaded successfully!');
-        return uploadResult.data.secureUrl;
+        const { data } = uploadResult;
+
+        // Check if this is an async processing response
+        const isAsyncProcessing = data.processingStatus === 'processing';
+
+        if (isAsyncProcessing) {
+          toast.success('Video uploaded! Processing for optimal quality...');
+        } else {
+          toast.success('Video uploaded successfully!');
+        }
+
+        return {
+          url: data.secureUrl,
+          assetID: data.id,
+          processingStatus: data.processingStatus || 'complete',
+          message: data.message || (isAsyncProcessing ?
+            'Video uploaded successfully. Processing may take a few minutes for optimal playback quality.' :
+            'Video uploaded and ready to use!')
+        };
       } else {
         throw new Error(uploadResult.error?.message || 'Video upload failed');
       }
@@ -403,10 +420,28 @@ const CourseEditPage = () => {
     }
   };
 
+  const handleCheckProcessingStatus = async (assetID: string): Promise<{ status: string; asset?: any }> => {
+    try {
+      const statusResult = await sdkClient.media.checkProcessingStatus(assetID);
+
+      if (statusResult.success && statusResult.data) {
+        return {
+          status: statusResult.data.status,
+          asset: statusResult.data.asset
+        };
+      } else {
+        throw new Error(statusResult.error?.message || 'Failed to check processing status');
+      }
+    } catch (error: any) {
+      console.error('Failed to check processing status:', error);
+      return { status: 'error' };
+    }
+  };
+
   const handleUploadPDF = async (file: File): Promise<string> => {
     try {
       const uploadResult = await sdkClient.media.uploadAsset(file, {
-        folder: `courses/${courseID}/pdfs`,
+        folder: `nlc-ai/courses/${courseID}/pdfs`,
         tags: ['course-pdf', 'lesson-content'],
         metadata: {
           uploadedBy: 'coach',
@@ -655,6 +690,7 @@ const CourseEditPage = () => {
                       onBack={handleBackToSelector}
                       onUploadVideo={handleUploadVideo}
                       onUploadFile={handleUploadFile}
+                      onCheckProcessingStatus={handleCheckProcessingStatus}
                     />
                   )}
 

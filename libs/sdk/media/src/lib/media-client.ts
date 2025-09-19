@@ -107,4 +107,8 @@ export class MediaServiceClient extends BaseClient {
     }>('GET', `/media/${id}/stats`);
     return response.data!;
   }
+
+  async checkProcessingStatus(assetID: string) {
+    return this.request<{ status: string; asset?: any }>('GET', `/${assetID}/processing-status`);
+  };
 }

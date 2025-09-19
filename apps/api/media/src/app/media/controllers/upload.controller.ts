@@ -49,9 +49,6 @@ export class UploadController {
     @Body() uploadDto: UploadAssetDto,
     @CurrentUser() user: AuthUser
   ) {
-    console.log("Uploaded file: ", file);
-    console.log("Request bodyyyy: ", uploadDto);
-
     if (!file) {
       throw new BadRequestException('No file provided');
     }

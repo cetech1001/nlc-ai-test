@@ -15,6 +15,7 @@ export interface MediaUploadedEvent extends BaseEvent {
     tags: string[];
     url: string;
     uploadedAt: string;
+    processingStatus: string;
   };
 }
 
