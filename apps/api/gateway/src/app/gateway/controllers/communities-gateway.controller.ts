@@ -12,8 +12,17 @@ import { ProxyService } from '../../proxy/proxy.service';
 export class CommunitiesGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  @All()
+  async proxyRoot(@Req() req: Request) {
+    return this.forwardToCommunities(req);
+  }
+
   @All('*')
-  async proxyToCommunity(@Req() req: Request) {
+  async proxyToCommunities(@Req() req: Request) {
+    return this.forwardToCommunities(req);
+  }
+
+  async forwardToCommunities(req: Request) {
     const path = req.path.replace(/^\/communities/, '');
 
     const response = await this.proxyService.proxyRequest(
