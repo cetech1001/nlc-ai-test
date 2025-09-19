@@ -60,7 +60,7 @@ const CourseEditPage = () => {
     const loadCourse = async () => {
       try {
         setIsLoading(true);
-        const courseData = await sdkClient.courses.courses.getCourse(courseID);
+        const courseData = await sdkClient.courses.getCourse(courseID);
         setCourse(courseData);
 
         // Transform course data to curriculum state
@@ -107,12 +107,12 @@ const CourseEditPage = () => {
 
     try {
       if (course.isPublished) {
-        await sdkClient.courses.courses.unpublishCourse(course.id);
+        await sdkClient.courses.unpublishCourse(course.id);
       } else {
-        await sdkClient.courses.courses.publishCourse(course.id);
+        await sdkClient.courses.publishCourse(course.id);
       }
 
-      const updatedCourse = await sdkClient.courses.courses.getCourse(course.id);
+      const updatedCourse = await sdkClient.courses.getCourse(course.id);
       setCourse(updatedCourse);
     } catch (error: any) {
       console.error('Error updating course status:', error);
