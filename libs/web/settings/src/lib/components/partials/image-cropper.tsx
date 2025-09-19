@@ -318,7 +318,7 @@ export const ImageCropper: FC<ImageCropperProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-neutral-900 rounded-2xl border border-neutral-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-neutral-900 rounded-2xl border border-neutral-700 p-6 w-full max-w-2xl max-h-[70vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-white">
             Crop Your {cropType === 'banner' ? 'Banner' : 'Photo'}

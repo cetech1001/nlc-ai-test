@@ -98,6 +98,12 @@ const CourseEditPage = () => {
     loadCourse();
   }, [courseID]);
 
+  // Course update handler for Settings and Paywall tabs
+  const handleCourseUpdate = (updatedCourse: ExtendedCourse) => {
+    setCourse(updatedCourse);
+    toast.success('Course updated successfully');
+  };
+
   // Event handlers
   const handleBack = () => {
     router.push('/courses');
@@ -121,9 +127,11 @@ const CourseEditPage = () => {
 
       const updatedCourse = await sdkClient.courses.getCourse(course.id);
       setCourse(updatedCourse);
+      toast.success(`Course ${updatedCourse.isPublished ? 'published' : 'unpublished'} successfully`);
     } catch (error: any) {
       console.error('Error updating course status:', error);
       setError('Failed to update course status');
+      toast.error('Failed to update course status');
     }
   };
 
@@ -202,9 +210,11 @@ const CourseEditPage = () => {
       if (editingChapter) {
         // Update existing chapter
         await sdkClient.courses.chapters.updateChapter(courseID, editingChapter.id, chapterData);
+        toast.success('Chapter updated successfully');
       } else {
         // Create new chapter
         await sdkClient.courses.chapters.createChapter(courseID, chapterData);
+        toast.success('Chapter created successfully');
       }
 
       // Reload course data
@@ -264,9 +274,11 @@ const CourseEditPage = () => {
       if (editingLesson) {
         // Update existing lesson
         await sdkClient.courses.lessons.updateLesson(courseID, selectedChapter.chapterID, editingLesson.id, createLessonData);
+        toast.success('Lesson updated successfully');
       } else {
         // Create new lesson
         await sdkClient.courses.lessons.createLesson(courseID, selectedChapter.chapterID, createLessonData);
+        toast.success('Lesson created successfully');
       }
 
       // Reload course data
@@ -557,7 +569,10 @@ const CourseEditPage = () => {
                       />
 
                       {activeTab === 'Settings' && (
-                        <SettingsTab course={course} />
+                        <SettingsTab
+                          course={course}
+                          onCourseUpdate={handleCourseUpdate}
+                        />
                       )}
 
                       {activeTab === 'Drip schedule' && (
@@ -565,7 +580,10 @@ const CourseEditPage = () => {
                       )}
 
                       {activeTab === 'Pricing' && (
-                        <PaywallTab courseID={courseID} />
+                        <PaywallTab
+                          course={course}
+                          onCourseUpdate={handleCourseUpdate}
+                        />
                       )}
                     </div>
                   </div>
@@ -650,7 +668,10 @@ const CourseEditPage = () => {
                     />
 
                     {activeTab === 'Settings' && (
-                      <SettingsTab course={course} />
+                      <SettingsTab
+                        course={course}
+                        onCourseUpdate={handleCourseUpdate}
+                      />
                     )}
 
                     {activeTab === 'Drip schedule' && (
@@ -658,7 +679,10 @@ const CourseEditPage = () => {
                     )}
 
                     {activeTab === 'Pricing' && (
-                      <PaywallTab courseID={courseID} />
+                      <PaywallTab
+                        course={course}
+                        onCourseUpdate={handleCourseUpdate}
+                      />
                     )}
                   </div>
                 </div>
