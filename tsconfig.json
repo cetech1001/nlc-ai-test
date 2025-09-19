@@ -130,7 +130,7 @@
       "path": "./apps/web/pre-launch"
     },
     {
-      "path": "./apps/api/course"
+      "path": "./apps/api/courses"
     },
     {
       "path": "./libs/sdk/agents"

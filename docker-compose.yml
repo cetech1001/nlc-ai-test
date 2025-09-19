@@ -212,11 +212,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  course:
+  courses:
     build:
       context: .
-      dockerfile: ./apps/api/course/dev.Dockerfile
-    container_name: course
+      dockerfile: apps/api/courses/dev.Dockerfile
+    container_name: courses
     restart: unless-stopped
     ports:
       - "3013:3013"
@@ -228,7 +228,7 @@ services:
     #      - db_init
     #      - db_migrate
     volumes:
-      - ./apps/api/course:/app/apps/api/course
+      - ./apps/api/courses:/app/apps/api/courses
       - ./libs/api:/app/libs/api
       #      - ./nx.json:/app/nx.json
       #      - ./tsconfig.json:/app/tsconfig.json

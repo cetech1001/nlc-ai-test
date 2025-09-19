@@ -24,11 +24,11 @@ COPY tsconfig.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
 COPY libs/api ./libs/api
-COPY apps/api/course ./apps/api/course
+COPY apps/api/courses ./apps/api/courses
 
 RUN npx nx sync
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
-RUN NX_DAEMON=false npx nx build course-service
+RUN NX_DAEMON=false npx nx build courses-service
 
 FROM base AS runner
 WORKDIR /app
@@ -38,7 +38,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-COPY --from=builder /app/apps/api/course/dist ./apps/api/course/dist
+COPY --from=builder /app/apps/api/courses/dist ./apps/api/courses/dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/libs/api/database ./libs/api/database
 
@@ -52,4 +52,4 @@ USER nestjs
 EXPOSE 3013
 ENV PORT=3013
 
-CMD ["node", "apps/api/course/dist/main.js"]
+CMD ["node", "apps/api/courses/dist/main.js"]
