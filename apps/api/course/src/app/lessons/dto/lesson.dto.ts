@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsNumber, IsBoolean, IsEnum, Min } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {CreateCourseLesson, UpdateCourseLesson} from "@nlc-ai/types";
 
 export enum LessonType {
   VIDEO = 'video',
@@ -11,7 +11,7 @@ export enum LessonType {
   ASSIGNMENT = 'assignment'
 }
 
-export class CreateLessonDto {
+export class CreateLessonDto implements CreateCourseLesson{
   @ApiProperty({ description: 'Lesson title' })
   @IsString()
   title: string;
@@ -87,7 +87,7 @@ export class CreateLessonDto {
   }>;
 }
 
-export class UpdateLessonDto {
+export class UpdateLessonDto implements UpdateCourseLesson{
   @ApiPropertyOptional({ description: 'Lesson title' })
   @IsOptional()
   @IsString()

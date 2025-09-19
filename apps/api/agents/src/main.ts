@@ -18,8 +18,6 @@ async function bootstrap() {
     .setDescription('Agents service')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Agents')
-    .addTag('Health')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

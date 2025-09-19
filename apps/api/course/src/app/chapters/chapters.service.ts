@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { CreateChapterDto, UpdateChapterDto } from './dto';
-import { CourseEvent } from '@nlc-ai/api-types';
+import {CourseEvent, CreateCourseChapter, UpdateCourseChapter} from '@nlc-ai/types';
 
 @Injectable()
 export class ChaptersService {
@@ -11,20 +10,13 @@ export class ChaptersService {
     private readonly outboxService: OutboxService,
   ) {}
 
-  async create(courseId: string, createChapterDto: CreateChapterDto, coachId: string) {
-    // Verify course ownership
-    const course = await this.prisma.course.findFirst({
-      where: { id: courseId, coachID: coachId },
-    });
-
-    if (!course) {
-      throw new NotFoundException('Course not found or access denied');
-    }
+  async create(courseID: string, createChapterDto: CreateCourseChapter, coachID: string) {
+    await this.verifyCourseOwnership(courseID, coachID);
 
     const chapter = await this.prisma.courseChapter.create({
       data: {
         ...createChapterDto,
-        courseID: courseId,
+        courseID: courseID,
       },
       include: {
         lessons: {
@@ -33,9 +25,8 @@ export class ChaptersService {
       },
     });
 
-    // Update course total chapters count
     await this.prisma.course.update({
-      where: { id: courseId },
+      where: { id: courseID },
       data: {
         totalChapters: { increment: 1 },
       },
@@ -47,8 +38,8 @@ export class ChaptersService {
         schemaVersion: 1,
         payload: {
           chapterID: chapter.id,
-          courseID: courseId,
-          coachID: coachId,
+          courseID: courseID,
+          coachID: coachID,
           title: chapter.title,
           orderIndex: chapter.orderIndex,
           createdAt: chapter.createdAt.toISOString(),
@@ -60,9 +51,9 @@ export class ChaptersService {
     return chapter;
   }
 
-  async findAll(courseId: string) {
+  async findAll(courseID: string) {
     return this.prisma.courseChapter.findMany({
-      where: { courseID: courseId },
+      where: { courseID: courseID },
       include: {
         lessons: {
           orderBy: { orderIndex: 'asc' },
@@ -72,9 +63,9 @@ export class ChaptersService {
     });
   }
 
-  async findOne(courseId: string, id: string) {
+  async findOne(courseID: string, id: string) {
     const chapter = await this.prisma.courseChapter.findFirst({
-      where: { id, courseID: courseId },
+      where: { id, courseID: courseID },
       include: {
         lessons: {
           orderBy: { orderIndex: 'asc' },
@@ -89,15 +80,8 @@ export class ChaptersService {
     return chapter;
   }
 
-  async update(courseId: string, id: string, updateChapterDto: UpdateChapterDto, coachId: string) {
-    // Verify ownership
-    const course = await this.prisma.course.findFirst({
-      where: { id: courseId, coachID: coachId },
-    });
-
-    if (!course) {
-      throw new ForbiddenException('Course not found or access denied');
-    }
+  async update(courseID: string, id: string, updateChapterDto: UpdateCourseChapter, coachID: string) {
+    await this.verifyCourseOwnership(courseID, coachID);
 
     const chapter = await this.prisma.courseChapter.update({
       where: { id },
@@ -115,8 +99,8 @@ export class ChaptersService {
         schemaVersion: 1,
         payload: {
           chapterID: id,
-          courseID: courseId,
-          coachID: coachId,
+          courseID: courseID,
+          coachID: coachID,
           changes: updateChapterDto,
           updatedAt: chapter.updatedAt.toISOString(),
         },
@@ -127,15 +111,8 @@ export class ChaptersService {
     return chapter;
   }
 
-  async remove(courseId: string, id: string, coachId: string) {
-    // Verify ownership
-    const course = await this.prisma.course.findFirst({
-      where: { id: courseId, coachID: coachId },
-    });
-
-    if (!course) {
-      throw new ForbiddenException('Course not found or access denied');
-    }
+  async remove(courseID: string, id: string, coachID: string) {
+    await this.verifyCourseOwnership(courseID, coachID);
 
     const chapter = await this.prisma.courseChapter.findUnique({
       where: { id },
@@ -146,18 +123,16 @@ export class ChaptersService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      // Delete chapter (lessons will be cascade deleted)
       await tx.courseChapter.delete({
         where: { id },
       });
 
-      // Update course totals
       const lessonsCount = await tx.courseLesson.count({
         where: { chapterID: id },
       });
 
       await tx.course.update({
-        where: { id: courseId },
+        where: { id: courseID },
         data: {
           totalChapters: { decrement: 1 },
           totalLessons: { decrement: lessonsCount },
@@ -171,8 +146,8 @@ export class ChaptersService {
         schemaVersion: 1,
         payload: {
           chapterID: id,
-          courseID: courseId,
-          coachID: coachId,
+          courseID: courseID,
+          coachID: coachID,
           title: chapter.title,
           deletedAt: new Date().toISOString(),
         },
@@ -181,26 +156,28 @@ export class ChaptersService {
     );
   }
 
-  async reorder(courseId: string, chapterIDs: string[], coachId: string) {
-    // Verify ownership
-    const course = await this.prisma.course.findFirst({
-      where: { id: courseId, coachID: coachId },
-    });
+  async reorder(courseID: string, chapterIDs: string[], coachID: string) {
+    await this.verifyCourseOwnership(courseID, coachID);
 
-    if (!course) {
-      throw new ForbiddenException('Course not found or access denied');
-    }
-
-    // Update order indices in a transaction
     await this.prisma.$transaction(
-      chapterIDs.map((chapterId, index) =>
+      chapterIDs.map((chapterID, index) =>
         this.prisma.courseChapter.update({
-          where: { id: chapterId },
+          where: { id: chapterID },
           data: { orderIndex: index },
         })
       )
     );
 
     return { success: true };
+  }
+
+  private async verifyCourseOwnership(courseID: string, coachID: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseID, coachID },
+    });
+
+    if (!course) {
+      throw new ForbiddenException('Course not found or access denied');
+    }
   }
 }

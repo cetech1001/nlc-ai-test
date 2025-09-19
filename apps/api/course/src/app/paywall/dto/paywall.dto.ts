@@ -1,7 +1,7 @@
 import { IsBoolean, IsOptional, IsString, IsNumber, IsEnum, IsArray, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PricingType } from './create-course.dto';
+import { PricingType } from '../../courses/dto/create-course.dto';
 
 export class PreviewContentDto {
   @ApiProperty({ description: 'Chapter IDs that are free preview' })

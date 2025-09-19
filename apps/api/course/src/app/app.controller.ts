@@ -12,7 +12,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags,} from '@nestjs/swagger';
-import {CoursesService} from './courses.service';
+import {AppService} from './app.service';
 import {
   CourseQueryDto,
   CourseResponseDto,
@@ -20,15 +20,15 @@ import {
   CreateCourseDto,
   PaginatedCoursesResponseDto,
   UpdateCourseDto,
-} from './dto';
+} from './courses/dto';
 import {CurrentUser} from "@nlc-ai/api-auth";
 import {type AuthUser, UserType} from "@nlc-ai/api-types";
 
 @ApiTags('Courses')
 @ApiBearerAuth()
-@Controller('courses')
-export class CoursesController {
-  constructor(private readonly coursesService: CoursesService) {}
+@Controller('')
+export class AppController {
+  constructor(private readonly coursesService: AppService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new course' })
@@ -131,20 +131,5 @@ export class CoursesController {
   @ApiResponse({ status: 404, description: 'Course not found' })
   async getStats(@Param('id', ParseUUIDPipe) id: string) {
     return this.coursesService.getStats(id);
-  }
-
-  @Get('coach/:coachID')
-  @ApiOperation({ summary: 'Get courses by coach ID' })
-  @ApiParam({ name: 'coachID', description: 'Coach ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Coach courses retrieved successfully',
-    type: PaginatedCoursesResponseDto,
-  })
-  async findByCoach(
-    @Param('coachID', ParseUUIDPipe) coachID: string,
-    @Query() query: CourseQueryDto,
-  ) {
-    return this.coursesService.findByCoach(coachID, query);
   }
 }

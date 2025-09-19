@@ -1,9 +1,9 @@
 import {
   EmailSequence,
   SequenceParticipant,
-  SequenceAnalytics
 } from './common';
 import {TestSequenceStatus} from "./enums";
+import {SequenceAnalytics} from "../../analytics";
 
 export interface CreateEmailSequenceResponse {
   sequence: EmailSequence;
@@ -58,18 +58,6 @@ export interface GetSequenceParticipantsResponse {
     totalPaused: number;
     averageCompletionTime: number;
   };
-}
-
-export interface GetSequenceAnalyticsResponse {
-  analytics: SequenceAnalytics;
-  timeSeriesData: Array<{
-    date: string;
-    started: number;
-    completed: number;
-    emailsSent: number;
-    opens: number;
-    clicks: number;
-  }>;
 }
 
 export interface DuplicateSequenceResponse {

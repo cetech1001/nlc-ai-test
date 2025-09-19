@@ -11,15 +11,13 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix('api/course');
+  app.setGlobalPrefix('api/courses');
 
   const config = new DocumentBuilder()
-    .setTitle('NLC AI Course Service')
+    .setTitle('NLC AI Courses Service')
     .setDescription('Course service')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Courses')
-    .addTag('Health')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

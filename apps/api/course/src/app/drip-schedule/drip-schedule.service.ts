@@ -1,15 +1,15 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { UpdateDripScheduleDto, DripInterval } from './dto/drip-schedule.dto';
 import { addDays, addWeeks, addMonths } from 'date-fns';
+import {DripInterval, UpdateDripSchedule} from "@nlc-ai/types";
 
 @Injectable()
 export class DripScheduleService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDripSchedule(courseId: string) {
+  async getDripSchedule(courseID: string) {
     const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
+      where: { id: courseID },
       include: {
         chapters: {
           include: {
@@ -27,7 +27,7 @@ export class DripScheduleService {
     }
 
     return {
-      courseId: course.id,
+      courseID: course.id,
       isDripEnabled: course.isDripEnabled,
       dripInterval: course.dripInterval,
       dripCount: course.dripCount,
@@ -35,10 +35,10 @@ export class DripScheduleService {
     };
   }
 
-  async updateDripSchedule(courseId: string, updateDto: UpdateDripScheduleDto, coachId: string) {
+  async updateDripSchedule(courseID: string, updateDto: UpdateDripSchedule, coachID: string) {
     // Verify ownership
     const course = await this.prisma.course.findFirst({
-      where: { id: courseId, coachID: coachId },
+      where: { id: courseID, coachID: coachID },
     });
 
     if (!course) {
@@ -46,7 +46,7 @@ export class DripScheduleService {
     }
 
     const updatedCourse = await this.prisma.course.update({
-      where: { id: courseId },
+      where: { id: courseID },
       data: {
         isDripEnabled: updateDto.isDripEnabled,
         dripInterval: updateDto.dripInterval,
@@ -66,11 +66,11 @@ export class DripScheduleService {
 
     // Update chapter and lesson drip delays if provided
     if (updateDto.isDripEnabled) {
-      await this.recalculateDripDelays(courseId, updateDto);
+      await this.recalculateDripDelays(courseID, updateDto);
     }
 
     return {
-      courseId: updatedCourse.id,
+      courseID: updatedCourse.id,
       isDripEnabled: updatedCourse.isDripEnabled,
       dripInterval: updatedCourse.dripInterval,
       dripCount: updatedCourse.dripCount,
@@ -78,12 +78,12 @@ export class DripScheduleService {
     };
   }
 
-  async previewDripSchedule(courseId: string, enrollmentId: string, coachId: string) {
+  async previewDripSchedule(courseID: string, enrollmentID: string, coachID: string) {
     const enrollment = await this.prisma.courseEnrollment.findFirst({
       where: {
-        id: enrollmentId,
-        courseID: courseId,
-        course: { coachID: coachId },
+        id: enrollmentID,
+        courseID: courseID,
+        course: { coachID: coachID },
       },
       include: {
         course: {
@@ -109,7 +109,7 @@ export class DripScheduleService {
     const schedule = this.calculateDripScheduleForEnrollment(enrollment.course, enrollmentDate);
 
     return {
-      enrollmentId,
+      enrollmentID,
       enrollmentDate,
       schedule,
     };
@@ -120,14 +120,14 @@ export class DripScheduleService {
       return { message: 'Drip scheduling is disabled for this course' };
     }
 
-    const schedule = [];
+    const schedule: any[] = [];
     let currentDate = new Date();
     let releaseCount = 0;
 
     course.chapters.forEach((chapter: any) => {
       chapter.lessons.forEach((lesson: any) => {
         schedule.push({
-          lessonId: lesson.id,
+          lessonID: lesson.id,
           lessonTitle: lesson.title,
           chapterTitle: chapter.title,
           releaseDate: this.calculateReleaseDate(currentDate, releaseCount, course.dripInterval, course.dripCount),
@@ -141,13 +141,13 @@ export class DripScheduleService {
   }
 
   private calculateDripScheduleForEnrollment(course: any, enrollmentDate: Date) {
-    const schedule = [];
+    const schedule: any[] = [];
     let releaseCount = 0;
 
     course.chapters.forEach((chapter: any) => {
       chapter.lessons.forEach((lesson: any) => {
         schedule.push({
-          lessonId: lesson.id,
+          lessonID: lesson.id,
           lessonTitle: lesson.title,
           chapterTitle: chapter.title,
           releaseDate: this.calculateReleaseDate(enrollmentDate, releaseCount, course.dripInterval, course.dripCount),
@@ -181,7 +181,7 @@ export class DripScheduleService {
     return new Date() >= releaseDate;
   }
 
-  private async recalculateDripDelays(courseId: string, settings: UpdateDripScheduleDto) {
+  private async recalculateDripDelays(courseID: string, settings: UpdateDripSchedule) {
     // Implementation for recalculating drip delays based on new settings
     // This would update the dripDelay field on chapters and lessons
   }

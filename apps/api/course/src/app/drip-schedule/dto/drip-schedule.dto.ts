@@ -1,13 +1,10 @@
 import { IsBoolean, IsOptional, IsString, IsNumber, IsEnum, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {DripInterval, UpdateDripSchedule} from "@nlc-ai/types";
 
-export enum DripInterval {
-  DAILY = 'daily',
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly'
-}
 
-export class UpdateDripScheduleDto {
+
+export class UpdateDripScheduleDto implements UpdateDripSchedule{
   @ApiProperty({ description: 'Enable drip content' })
   @IsBoolean()
   isDripEnabled: boolean;

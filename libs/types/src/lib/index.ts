@@ -1,4 +1,6 @@
 export * from './agents';
+export * from './analytics';
+export * from './courses';
 export * from './email';
 export * from './users';
 

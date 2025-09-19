@@ -1,8 +1,8 @@
 import { IsString, IsOptional, IsNumber, IsBoolean, Min } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {CreateCourseChapter, UpdateCourseChapter} from "@nlc-ai/types";
 
-export class CreateChapterDto {
+export class CreateChapterDto implements CreateCourseChapter{
   @ApiProperty({ description: 'Chapter title' })
   @IsString()
   title: string;
@@ -29,7 +29,7 @@ export class CreateChapterDto {
   isLocked?: boolean;
 }
 
-export class UpdateChapterDto {
+export class UpdateChapterDto implements UpdateCourseChapter{
   @ApiPropertyOptional({ description: 'Chapter title' })
   @IsOptional()
   @IsString()

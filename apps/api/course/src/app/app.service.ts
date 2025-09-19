@@ -7,11 +7,11 @@ import {
   CreateCourse,
   ExtendedCourse,
   Paginated, UpdateCourse
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 import {Course} from "@prisma/client";
 
 @Injectable()
-export class CoursesService {
+export class AppService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outboxService: OutboxService,
@@ -117,7 +117,6 @@ export class CoursesService {
       createdBefore,
     } = query;
 
-    // Build where clause
     const where: any = {};
 
     if (search) {
@@ -146,7 +145,6 @@ export class CoursesService {
       if (createdBefore) where.createdAt.lte = new Date(createdBefore);
     }
 
-    // Build order by
     const orderBy: any = {};
     orderBy[sortBy] = sortOrder;
 
@@ -453,10 +451,6 @@ export class CoursesService {
       popularChapter,
       dropoffPoints,
     };
-  }
-
-  async findByCoach(coachID: string, query: CourseQueryParams): Promise<Paginated<ExtendedCourse>> {
-    return this.findAll({ ...query, coachID });
   }
 
   private mapToResponseDto(course: any): ExtendedCourse {

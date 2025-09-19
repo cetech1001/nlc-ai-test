@@ -12,6 +12,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -25,6 +31,12 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
 
   redis:
     image: redis:7-alpine
@@ -35,12 +47,19 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
 
   db_init:
     image: postgres:16
     container_name: db_init
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD}
     entrypoint: [ "bash", "-lc" ]
@@ -59,9 +78,12 @@ services:
       - "3000:3000"
       - "5555:5555"
     depends_on:
-      - postgres
-      - rabbitmq
-      - db_init
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
 #      - db_migrate
     volumes:
       - ./apps/api/gateway:/app/apps/api/gateway
@@ -78,8 +100,10 @@ services:
     ports:
       - "3011:3011"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/agents:/app/apps/api/agents
       - ./libs/types:/app/libs/types
@@ -96,8 +120,10 @@ services:
     ports:
       - "3010:3010"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/analytics:/app/apps/api/analytics
       - ./libs/api:/app/libs/api
@@ -113,8 +139,10 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/auth:/app/apps/api/auth
       - ./libs/api:/app/libs/api
@@ -130,8 +158,10 @@ services:
     ports:
       - "3005:3005"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/billing:/app/apps/api/billing
       - ./libs/api:/app/libs/api
@@ -148,8 +178,10 @@ services:
     ports:
       - "3012:3012"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     #      - db_init
     #      - db_migrate
     volumes:
@@ -170,8 +202,10 @@ services:
     ports:
       - "3009:3009"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/community:/app/apps/api/community
       - ./libs/api:/app/libs/api
@@ -187,8 +221,10 @@ services:
     ports:
       - "3013:3013"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     #      - db_init
     #      - db_migrate
     volumes:
@@ -209,9 +245,12 @@ services:
     ports:
       - "3004:3004"
     depends_on:
-      - postgres
-      - rabbitmq
-      - redis
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/email:/app/apps/api/email
       - ./libs/api:/app/libs/api
@@ -227,8 +266,10 @@ services:
     ports:
       - "3008:3008"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/integrations:/app/apps/api/integrations
       - ./libs/api:/app/libs/api
@@ -244,8 +285,10 @@ services:
     ports:
       - "3006:3006"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/leads:/app/apps/api/leads
       - ./libs/api:/app/libs/api
@@ -261,8 +304,10 @@ services:
     ports:
       - "3003:3003"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/media:/app/apps/api/media
       - ./libs/api:/app/libs/api
@@ -278,8 +323,10 @@ services:
     ports:
       - "3007:3007"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/notifications:/app/apps/api/notifications
       - ./libs/api:/app/libs/api
@@ -295,8 +342,10 @@ services:
     ports:
       - "3002:3002"
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./apps/api/users:/app/apps/api/users
       - ./libs/api:/app/libs/api

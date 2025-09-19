@@ -58,24 +58,3 @@ export interface EmailSequence {
   createdAt: string;
   updatedAt: string;
 }
-
-export interface SequenceAnalytics {
-  sequenceID: string;
-  totalStarted: number;
-  totalCompleted: number;
-  completionRate: number;
-  averageEngagement: number;
-  emailPerformance: Array<{
-    emailIndex: number;
-    sent: number;
-    opened: number;
-    clicked: number;
-    openRate: number;
-    clickRate: number;
-  }>;
-  conversionMetrics?: {
-    conversions: number;
-    conversionRate: number;
-    revenue?: number;
-  };
-}
