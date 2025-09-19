@@ -7,18 +7,17 @@ import { ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
-@ApiTags('Community')
-@Controller('community')
-export class CommunityGatewayController {
+@ApiTags('Communities')
+@Controller('communities')
+export class CommunitiesGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
   async proxyToCommunity(@Req() req: Request) {
-    // Extract the path after /api/community
-    const path = req.path.replace(/^\/community/, '');
+    const path = req.path.replace(/^\/communities/, '');
 
     const response = await this.proxyService.proxyRequest(
-      'community',
+      'communities',
       path,
       {
         method: req.method as any,

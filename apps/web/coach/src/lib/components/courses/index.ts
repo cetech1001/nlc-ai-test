@@ -5,5 +5,6 @@ export * from './course-header';
 export * from './curriculum-sidebar';
 export * from './error-state';
 export * from './lesson-type-icon';
+export * from './lesson-type-selector';
 export * from './loading-skeleton';
 export * from './tab-navigation';

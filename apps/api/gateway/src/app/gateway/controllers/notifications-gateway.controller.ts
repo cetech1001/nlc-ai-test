@@ -15,7 +15,6 @@ export class NotificationsGatewayController {
 
   @All('*')
   async proxyToNotifications(@Req() req: Request) {
-    // Extract the path after /api/notifications
     const path = req.path.replace(/^\/notifications/, '');
 
     const response = await this.proxyService.proxyRequest(

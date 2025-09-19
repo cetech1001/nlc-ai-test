@@ -151,7 +151,7 @@ const FormSidebar: React.FC<{
       label="Course"
       placeholder="Select course"
       value={formData.course}
-      onChange={(value) => setFormData(prev => ({ ...prev, course: value }))}
+      onChange={(value) => setFormData(prev => ({ ...prev, courses: value }))}
       required
     />
 
@@ -327,7 +327,7 @@ const EditTestimonialSurvey: React.FC = () => {
     frequency: 'weekly',
     day: '',
     platform: '',
-    course: '',
+    courses: '',
     targetClients: '',
     prompt: '',
     formLink: ''

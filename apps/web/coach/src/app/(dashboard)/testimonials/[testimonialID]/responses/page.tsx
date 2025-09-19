@@ -230,7 +230,7 @@ const TestimonialResponsesPage: React.FC = () => {
     frequency: "Weekly",
     day: "Monday",
     platform: "Kajabi, Teachable",
-    course: "Flex & Flow",
+    courses: "Flex & Flow",
     targetClients: "50% Course Completion",
     response: {
       overallExperience: "Satisfied",

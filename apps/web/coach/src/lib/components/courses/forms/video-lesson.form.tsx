@@ -62,7 +62,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
     <div className="min-h-screen w-full relative overflow-scroll">
       <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
 
-      <div className="pb-16 px-6 mb-32 w-full relative z-10">
+      <div className="pt-8 pb-16 px-6 w-full relative z-10">
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={onBack}
@@ -78,11 +78,9 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[20px] border border-neutral-700 overflow-hidden">
             <div className="p-8 space-y-8">
-              {/* Title */}
               <div className="space-y-2">
                 <label className="block text-white text-sm font-medium">Title</label>
                 <input
@@ -94,7 +92,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                 />
               </div>
 
-              {/* Video from library */}
               <div className="space-y-4">
                 <label className="block text-white text-sm font-medium">Video from your library</label>
                 <div className="relative">
@@ -111,7 +108,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                 </div>
               </div>
 
-              {/* Upload video file */}
               <div className="space-y-4">
                 <label className="block text-white text-sm font-medium">Upload a video file</label>
                 <div className="border-2 border-dashed border-neutral-600 rounded-lg p-8 text-center">
@@ -139,7 +135,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                 </div>
               </div>
 
-              {/* Add text (optional) */}
               <div className="space-y-4">
                 <button
                   onClick={() => setShowAddText(!showAddText)}
@@ -161,7 +156,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                 )}
               </div>
 
-              {/* Add downloads (optional) */}
               <div className="space-y-4">
                 <button
                   onClick={() => setShowAddDownloads(!showAddDownloads)}
@@ -201,7 +195,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                 )}
               </div>
 
-              {/* Lesson settings */}
               <div className="space-y-6">
                 <h3 className="text-white text-lg font-semibold">Lessons settings</h3>
 
@@ -259,7 +252,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                   </label>
                 </div>
 
-                {/* Icon & label */}
                 <div className="space-y-4">
                   <h4 className="text-white font-medium">Lesson icon & label</h4>
                   <div className="grid grid-cols-2 gap-4">

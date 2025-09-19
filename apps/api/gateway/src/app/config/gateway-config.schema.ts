@@ -51,7 +51,7 @@ export class GatewayConfigSchema {
 
   @IsOptional()
   @IsString()
-  COMMUNITY_SERVICE_URL?: string;
+  COMMUNITIES_SERVICE_URL?: string;
 
   @IsOptional()
   @IsString()
@@ -67,7 +67,7 @@ export class GatewayConfigSchema {
 
   @IsOptional()
   @IsString()
-  COURSE_SERVICE_URL?: string;
+  COURSES_SERVICE_URL?: string;
 
   // Rate limiting
   @IsOptional()

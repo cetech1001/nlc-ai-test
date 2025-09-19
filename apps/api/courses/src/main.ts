@@ -15,7 +15,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('NLC AI Courses Service')
-    .setDescription('Course service')
+    .setDescription('Courses service')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -30,11 +30,11 @@ async function bootstrap() {
   const port = process.env.PORT || 3013;
   await app.listen(port);
 
-  Logger.log(`🚀 Course Service is running on: http://localhost:${port}/api/course`);
+  Logger.log(`🚀 Course Service is running on: http://localhost:${port}/api/courses`);
   Logger.log(`📚 Swagger docs available at: http://localhost:${port}/docs`);
 }
 
 bootstrap().catch((error) => {
-  Logger.error('Failed to start Course Service:', error);
+  Logger.error('Failed to start Courses Service:', error);
   process.exit(1);
 });

@@ -8,17 +8,26 @@ import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
 @ApiTags('Course')
-@Controller('course')
+@Controller('courses')
 @ApiBearerAuth()
-export class CourseGatewayController {
+export class CoursesGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
+
+  @All()
+  async proxyRoot(@Req() req: Request) {
+    return this.forwardToCourses(req);
+  }
 
   @All('*')
   async proxyToCourse(@Req() req: Request) {
-    const path = req.path.replace(/^\/course/, '');
+    return this.forwardToCourses(req);
+  }
+
+  private async forwardToCourses(req: Request) {
+    const path = req.path.replace(/^\/courses/, '');
 
     const response = await this.proxyService.proxyRequest(
-      'course',
+      'courses',
       path,
       {
         method: req.method as any,

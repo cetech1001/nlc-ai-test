@@ -10,12 +10,12 @@ import { BillingGatewayController } from './controllers/billing-gateway.controll
 import { LeadsGatewayController } from './controllers/leads-gateway.controller';
 import { NotificationsGatewayController } from './controllers/notifications-gateway.controller';
 import {IntegrationsGatewayController} from "./controllers/integrations-gateway.controller";
-import {CommunityGatewayController} from "./controllers/community-gateway.controller";
+import {CommunitiesGatewayController} from "./controllers/communities-gateway.controller";
 import {AnalyticsGatewayController} from "./controllers/analytics-gateway.controller";
 import {AgentsGatewayController} from "./controllers/agents-gateway.controller";
 import {MessagingGatewayController} from "./controllers/messaging-gateway.controller";
 import {WebSocketProxyGateway} from "./websocket-proxy.gateway";
-import {CourseGatewayController} from "./controllers/course-gateway.controller";
+import {CoursesGatewayController} from "./controllers/courses-gateway.controller";
 
 @Module({
   imports: [ProxyModule, CacheModule, SecurityModule],
@@ -30,9 +30,9 @@ import {CourseGatewayController} from "./controllers/course-gateway.controller";
     LeadsGatewayController,
     NotificationsGatewayController,
     IntegrationsGatewayController,
-    CommunityGatewayController,
+    CommunitiesGatewayController,
     MessagingGatewayController,
-    CourseGatewayController,
+    CoursesGatewayController,
   ],
   providers: [WebSocketProxyGateway],
 })
