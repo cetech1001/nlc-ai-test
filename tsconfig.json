@@ -40,7 +40,7 @@
       "path": "./apps/api/analytics"
     },
     {
-      "path": "./apps/api/community"
+      "path": "./apps/api/communities"
     },
     {
       "path": "./libs/sdk/analytics"

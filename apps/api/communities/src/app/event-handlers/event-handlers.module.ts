@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AuthEventsHandler } from './handlers/auth-events.handler';
 import { CourseEventsHandler } from './handlers/course-events.handler';
-import { CommunityModule } from '../community/community.module';
+import { CommunitiesModule } from '../communities/communities.module';
 
 @Module({
-  imports: [CommunityModule],
+  imports: [CommunitiesModule],
   providers: [
     AuthEventsHandler,
     CourseEventsHandler,

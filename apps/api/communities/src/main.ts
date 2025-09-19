@@ -17,17 +17,13 @@ async function bootstrap() {
     transform: true,
   }));
 
-  app.setGlobalPrefix('api/community');
+  app.setGlobalPrefix('api/communities');
 
   const config = new DocumentBuilder()
     .setTitle('NLC AI Community Service')
     .setDescription('Community management, posts, and messaging service')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Community')
-    .addTag('Posts')
-    .addTag('Messages')
-    .addTag('Health')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

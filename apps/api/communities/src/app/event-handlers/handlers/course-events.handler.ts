@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
 import { UserType } from '@nlc-ai/api-types';
 import { CommunityType, CommunityVisibility, MemberRole } from '@nlc-ai/api-types';
-import { CommunityService } from '../../community/community.service';
+import { CommunitiesService } from '../../communities/communities.service';
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
@@ -11,7 +11,7 @@ export class CourseEventsHandler {
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly communityService: CommunityService,
+    private readonly communityService: CommunitiesService,
     private readonly prisma: PrismaService,
   ) {
     this.subscribeToEvents();

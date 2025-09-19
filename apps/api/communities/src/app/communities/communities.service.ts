@@ -21,8 +21,8 @@ import {
 } from '@nlc-ai/api-types';
 
 @Injectable()
-export class CommunityService {
-  private readonly logger = new Logger(CommunityService.name);
+export class CommunitiesService {
+  private readonly logger = new Logger(CommunitiesService.name);
 
   constructor(
     private readonly prisma: PrismaService,

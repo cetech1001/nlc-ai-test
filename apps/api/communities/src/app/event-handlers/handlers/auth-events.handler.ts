@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
-import { CommunityService } from '../../community/community.service';
+import { CommunitiesService } from '../../communities/communities.service';
 
 @Injectable()
 export class AuthEventsHandler {
@@ -8,7 +8,7 @@ export class AuthEventsHandler {
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly communityService: CommunityService,
+    private readonly communityService: CommunitiesService,
   ) {
     this.subscribeToEvents();
   }

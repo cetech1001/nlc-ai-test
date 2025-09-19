@@ -193,11 +193,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  community:
+  communities:
     build:
       context: .
-      dockerfile: ./apps/api/community/dev.Dockerfile
-    container_name: community
+      dockerfile: apps/api/communities/dev.Dockerfile
+    container_name: communities
     restart: unless-stopped
     ports:
       - "3009:3009"
@@ -207,7 +207,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./apps/api/community:/app/apps/api/community
+      - ./apps/api/communities:/app/apps/api/communities
       - ./libs/api:/app/libs/api
       - ./.env:/app/.env
       - /app/node_modules

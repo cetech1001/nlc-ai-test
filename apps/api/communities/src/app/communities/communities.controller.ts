@@ -18,7 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser, UserTypes, UserTypesGuard } from '@nlc-ai/api-auth';
 import { type AuthUser, UserType } from '@nlc-ai/api-types';
-import { CommunityService } from './community.service';
+import { CommunitiesService } from './communities.service';
 import {
   CreateCommunityDto,
   UpdateCommunityDto,
@@ -28,12 +28,12 @@ import {
 } from './dto';
 
 @ApiTags('Community')
-@Controller('communities')
+@Controller('')
 @UseGuards(UserTypesGuard)
 @UserTypes(UserType.coach, UserType.admin, UserType.client)
 @ApiBearerAuth()
-export class CommunityController {
-  constructor(private readonly communityService: CommunityService) {}
+export class CommunitiesController {
+  constructor(private readonly communityService: CommunitiesService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new community' })

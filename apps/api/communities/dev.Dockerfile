@@ -9,7 +9,7 @@ COPY nx.json tsconfig.base.json ./
 
 RUN set -eux; npm ci --ignore-scripts && npm install nx;
 
-COPY apps/api/community ./apps/api/community
+COPY apps/api/communities ./apps/api/communities
 COPY libs/api ./libs/api
 COPY eslint.config.mjs tsconfig.json ./
 
@@ -26,5 +26,5 @@ CMD ["/bin/sh","-lc","\
   echo 'Running nx sync to align TS project references...'; \
   npx nx sync --no-interactive --verbose || true; \
   echo 'Starting dev server...'; \
-  npx nx serve community-service --configuration=development --verbose \
+  npx nx serve communities-service --configuration=development --verbose \
 "]

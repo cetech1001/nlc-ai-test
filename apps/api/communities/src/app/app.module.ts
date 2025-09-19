@@ -6,7 +6,7 @@ import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-a
 import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-import { CommunityModule } from './community/community.module';
+import { CommunitiesModule } from './communities/communities.module';
 import { PostsModule } from './posts/posts.module';
 import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
@@ -25,11 +25,11 @@ import {ModerationModule} from "./moderation/moderation.module";
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
-    HealthModule,
-    CommunityModule,
-    PostsModule,
-    ModerationModule,
+    CommunitiesModule,
     EventHandlersModule,
+    HealthModule,
+    ModerationModule,
+    PostsModule,
   ],
   providers: [
     {
