@@ -54,9 +54,9 @@ services:
       retries: 20
       start_period: 5s
 
-  db_init:
+  postgres-init:
     image: postgres:16
-    container_name: db_init
+    container_name: postgres-init
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,7 +82,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      db_init:
+      postgres-init:
         condition: service_completed_successfully
 #      - db_migrate
     volumes:
@@ -182,14 +182,9 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    #      - db_init
-    #      - db_migrate
     volumes:
       - ./apps/api/messaging:/app/apps/api/messaging
       - ./libs/api:/app/libs/api
-      #      - ./nx.json:/app/nx.json
-      #      - ./tsconfig.json:/app/tsconfig.json
-      #      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -225,14 +220,9 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    #      - db_init
-    #      - db_migrate
     volumes:
       - ./apps/api/courses:/app/apps/api/courses
       - ./libs/api:/app/libs/api
-      #      - ./nx.json:/app/nx.json
-      #      - ./tsconfig.json:/app/tsconfig.json
-      #      - ./tsconfig.base.json:/app/tsconfig.base.json
       - ./.env:/app/.env
       - /app/node_modules
 
