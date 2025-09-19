@@ -1,9 +1,9 @@
-import React, {useRef, useState} from 'react';
-import {AlertCircle, Image as ImageIcon, X} from 'lucide-react';
-import type {ExtendedCourse} from '@nlc-ai/sdk-course';
-import {sdkClient} from '@/lib';
-import {toast} from 'sonner';
-import {MediaTransformationType} from "@nlc-ai/sdk-media";
+import React, { useRef, useState, useEffect } from 'react';
+import { AlertCircle, Image as ImageIcon, X } from 'lucide-react';
+import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import { sdkClient } from '@/lib';
+import { toast } from 'sonner';
+import { MediaTransformationType } from "@nlc-ai/sdk-media";
 
 interface UploadedFile {
   id: string;
@@ -13,16 +13,52 @@ interface UploadedFile {
   size: number;
 }
 
-export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ course }) => {
+interface SettingsTabProps {
+  course: ExtendedCourse | null;
+  onCourseUpdate?: (updatedCourse: ExtendedCourse) => void;
+}
+
+export const SettingsTab: React.FC<SettingsTabProps> = ({ course, onCourseUpdate }) => {
   const [courseName, setCourseName] = useState(course?.title || '');
   const [courseDescription, setCourseDescription] = useState(course?.description || '');
+  const [category, setCategory] = useState(course?.category || '');
   const [difficultyLevel, setDifficultyLevel] = useState(course?.difficultyLevel || 'Beginner');
-  const [coverImage, setCoverImage] = useState<UploadedFile | null>(null);
+  const [estimatedDuration, setEstimatedDuration] = useState(course?.estimatedDurationHours?.toString() || '');
+  const [coverImage, setCoverImage] = useState<UploadedFile | null>(
+    course?.thumbnailUrl ? {
+      id: 'existing',
+      url: course.thumbnailUrl,
+      name: 'Current cover image',
+      type: 'image',
+      size: 0
+    } : null
+  );
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update state when course prop changes
+  useEffect(() => {
+    if (course) {
+      setCourseName(course.title);
+      setCourseDescription(course.description || '');
+      setCategory(course.category || '');
+      setDifficultyLevel(course.difficultyLevel || 'Beginner');
+      setEstimatedDuration(course.estimatedDurationHours?.toString() || '');
+
+      if (course.thumbnailUrl && !coverImage) {
+        setCoverImage({
+          id: 'existing',
+          url: course.thumbnailUrl,
+          name: 'Current cover image',
+          type: 'image',
+          size: 0
+        });
+      }
+    }
+  }, [course]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -32,6 +68,8 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
   };
 
   const uploadFile = async (file: File) => {
+    if (!course) return;
+
     try {
       setIsUploading(true);
       setUploadError('');
@@ -48,8 +86,13 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
       }
 
       const uploadOptions = {
-        folder: 'course-covers',
+        folder: `nlc-ai/courses/${course.id}/covers`,
         tags: ['course-cover'],
+        metadata: {
+          uploadedBy: 'coach',
+          courseID: course.id,
+          purpose: 'course-cover'
+        },
         transformation: [
           {
             type: MediaTransformationType.QUALITY,
@@ -113,27 +156,26 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
 
     setIsSaving(true);
     try {
-      // TODO: Replace with actual SDK call
-      console.log('Saving settings:', {
-        courseID: course.id,
-        title: courseName,
-        description: courseDescription,
+      const updateData = {
+        title: courseName.trim(),
+        description: courseDescription.trim(),
+        category: category.trim() || undefined,
         difficultyLevel,
-        coverImageUrl: coverImage?.url
-      });
+        thumbnailUrl: coverImage?.url,
+        estimatedDurationHours: estimatedDuration ? parseInt(estimatedDuration) : undefined
+      };
 
-      // Example SDK call structure:
-      // await sdkClient.course.courses.updateCourse(course.id, {
-      //   title: courseName,
-      //   description: courseDescription,
-      //   difficultyLevel,
-      //   coverImageUrl: coverImage?.url
-      // });
+      const updatedCourse = await sdkClient.courses.updateCourse(course.id, updateData);
 
       toast.success('Settings saved successfully');
+
+      // Notify parent component of the update
+      if (onCourseUpdate) {
+        onCourseUpdate(updatedCourse);
+      }
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to save settings');
+      toast.error(error.message || 'Failed to save settings');
     } finally {
       setIsSaving(false);
     }
@@ -147,6 +189,19 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const categories = [
+    'Business & Entrepreneurship',
+    'Health & Fitness',
+    'Personal Development',
+    'Technology & Programming',
+    'Creative Arts',
+    'Marketing & Sales',
+    'Finance & Investing',
+    'Education & Teaching',
+    'Lifestyle',
+    'Other'
+  ];
+
   return (
     <div className="h-full flex flex-col relative border border-neutral-800/50 rounded-[20px] md:rounded-[30px]">
       <div className="px-4 md:px-8 pt-4 md:pt-8 pb-4">
@@ -155,6 +210,9 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
             <h3 className="text-[#F9F9F9] font-inter text-xl md:text-2xl font-semibold leading-[25.6px]">
               Settings
             </h3>
+            <p className="text-[#838383] font-inter text-sm md:text-base font-normal">
+              Configure your course details and appearance
+            </p>
           </div>
 
           <button
@@ -223,9 +281,11 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
                   >
                     <X className="w-4 h-4" />
                   </button>
-                  <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    {formatFileSize(coverImage.size)}
-                  </div>
+                  {coverImage.size > 0 && (
+                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      {formatFileSize(coverImage.size)}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div
@@ -286,6 +346,31 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
 
               <div className="flex flex-col items-start gap-3 self-stretch">
                 <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
+                  Category
+                </label>
+                <div className="flex h-[50px] px-5 justify-between items-center self-stretch rounded-[10px] border border-white/30 bg-white/5">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="flex-1 bg-transparent text-white font-inter text-base font-normal outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-neutral-800 text-white">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat} className="bg-neutral-800 text-white">
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none">
+                    <svg className="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-start gap-3 self-stretch">
+                <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
                   Course Difficulty
                   <span className="text-red-500">*</span>
                 </label>
@@ -304,6 +389,23 @@ export const SettingsTab: React.FC<{ course: ExtendedCourse | null }> = ({ cours
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-start gap-3 self-stretch">
+                <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
+                  Estimated Duration (hours)
+                </label>
+                <div className="flex h-[50px] px-5 justify-between items-center self-stretch rounded-[10px] border border-white/30 bg-white/5">
+                  <input
+                    type="number"
+                    value={estimatedDuration}
+                    onChange={(e) => setEstimatedDuration(e.target.value)}
+                    placeholder="e.g., 10"
+                    min="1"
+                    max="500"
+                    className="flex-1 bg-transparent text-white font-inter text-base font-normal placeholder:text-white/50 outline-none"
+                  />
                 </div>
               </div>
             </div>
