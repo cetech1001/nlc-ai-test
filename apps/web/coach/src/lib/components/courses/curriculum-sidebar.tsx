@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Plus, Upload, X, Edit, GripVertical } from 'lucide-react';
+import {ChevronDown, ChevronRight, Plus, Upload, X, Edit, GripVertical, Trash2} from 'lucide-react';
 import type { ExtendedCourse } from '@nlc-ai/sdk-course';
 import { LessonTypeIcon } from '@/lib';
 
@@ -25,6 +25,8 @@ interface CurriculumSidebarProps {
   onAddLesson: (chapterID: string) => void;
   onEditChapter: (chapterID: string) => void;
   onEditLesson: (chapterID: string, lessonID: string) => void;
+  onDeleteChapter?: (chapterID: string) => void;
+  onDeleteLesson?: (chapterID: string, lessonID: string) => void;
   onAddChapter: () => void;
   onUploadContent: () => void;
   onReorderChapters: (chapters: CurriculumState['chapters']) => void;
@@ -47,6 +49,8 @@ export const CurriculumSidebar: React.FC<CurriculumSidebarProps> = ({
                                                                       onAddLesson,
                                                                       onEditChapter,
                                                                       onEditLesson,
+  onDeleteChapter,
+  onDeleteLesson,
                                                                       onAddChapter,
                                                                       onUploadContent,
                                                                       onReorderChapters,
@@ -114,6 +118,8 @@ const SidebarContent: React.FC<{
   onAddLesson: (chapterID: string) => void;
   onEditChapter: (chapterID: string) => void;
   onEditLesson: (chapterID: string, lessonID: string) => void;
+  onDeleteChapter?: (chapterID: string) => void;
+  onDeleteLesson?: (chapterID: string, lessonID: string) => void;
   onAddChapter: () => void;
   onUploadContent: () => void;
   onReorderChapters: (chapters: CurriculumState['chapters']) => void;
@@ -125,6 +131,8 @@ const SidebarContent: React.FC<{
         onAddLesson,
         onEditChapter,
         onEditLesson,
+  onDeleteChapter,
+  onDeleteLesson,
         onAddChapter,
         onUploadContent,
         onReorderChapters,
@@ -208,6 +216,20 @@ const SidebarContent: React.FC<{
     return '';
   };
 
+  const handleDeleteChapter = (e: React.MouseEvent, chapterID: string) => {
+    e.stopPropagation();
+    if (onDeleteChapter) {
+      onDeleteChapter(chapterID);
+    }
+  };
+
+  const handleDeleteLesson = (e: React.MouseEvent, chapterID: string, lessonID: string) => {
+    e.stopPropagation();
+    if (onDeleteLesson) {
+      onDeleteLesson(chapterID, lessonID);
+    }
+  };
+
   return (
     <div className="p-6 h-full flex flex-col">
       <div className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-br from-purple-400/20 to-violet-500/20 rounded-full blur-xl"></div>
@@ -272,6 +294,15 @@ const SidebarContent: React.FC<{
                 >
                   <Edit className="w-4 h-4 text-gray-400 hover:text-white" />
                 </button>
+
+                {onDeleteChapter && (
+                  <button
+                    onClick={(e) => handleDeleteChapter(e, chapter.chapterID)}
+                    className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-400" />
+                  </button>
+                )}
               </div>
 
               {chapter.isExpanded && (
@@ -305,6 +336,15 @@ const SidebarContent: React.FC<{
                         <span className="text-xs text-stone-500">
                           {lesson.estimatedMinutes}m
                         </span>
+                      )}
+
+                      {onDeleteLesson && (
+                        <button
+                          onClick={(e) => handleDeleteLesson(e, chapter.chapterID, lesson.lessonID)}
+                          className="p-1 hover:bg-red-500/20 rounded transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-400" />
+                        </button>
                       )}
                     </div>
                   ))}

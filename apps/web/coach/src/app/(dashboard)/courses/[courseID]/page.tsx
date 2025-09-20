@@ -367,6 +367,66 @@ const CourseEditPage = () => {
     }
   };
 
+  const handleDeleteChapter = async (chapterID: string) => {
+    const chapter = curriculum.chapters.find(ch => ch.chapterID === chapterID);
+    const chapterTitle = chapter?.title || 'this chapter';
+
+    if (window.confirm(`Are you sure you want to delete "${chapterTitle}"? This will also delete all lessons within it. This action cannot be undone.`)) {
+      try {
+        await sdkClient.courses.chapters.deleteChapter(courseID, chapterID);
+
+        // Remove from local state
+        setCurriculum(prev => ({
+          ...prev,
+          chapters: prev.chapters.filter(ch => ch.chapterID !== chapterID)
+        }));
+
+        // Reload course data to ensure consistency
+        const updatedCourse = await sdkClient.courses.getCourse(courseID);
+        setCourse(updatedCourse);
+
+        toast.success(`Chapter "${chapterTitle}" deleted successfully`);
+      } catch (error: any) {
+        console.error('Error deleting chapter:', error);
+        toast.error('Failed to delete chapter');
+      }
+    }
+  };
+
+  const handleDeleteLesson = async (chapterID: string, lessonID: string) => {
+    const chapter = curriculum.chapters.find(ch => ch.chapterID === chapterID);
+    const lesson = chapter?.lessons.find(l => l.lessonID === lessonID);
+    const lessonTitle = lesson?.title || 'this lesson';
+
+    if (window.confirm(`Are you sure you want to delete "${lessonTitle}"? This action cannot be undone.`)) {
+      try {
+        await sdkClient.courses.lessons.deleteLesson(courseID, chapterID, lessonID);
+
+        // Remove from local state
+        setCurriculum(prev => ({
+          ...prev,
+          chapters: prev.chapters.map(chapter =>
+            chapter.chapterID === chapterID
+              ? {
+                ...chapter,
+                lessons: chapter.lessons.filter(lesson => lesson.lessonID !== lessonID)
+              }
+              : chapter
+          )
+        }));
+
+        // Reload course data to ensure consistency
+        const updatedCourse = await sdkClient.courses.getCourse(courseID);
+        setCourse(updatedCourse);
+
+        toast.success(`Lesson "${lessonTitle}" deleted successfully`);
+      } catch (error: any) {
+        console.error('Error deleting lesson:', error);
+        toast.error('Failed to delete lesson');
+      }
+    }
+  };
+
   const handleBackToSelector = () => {
     setLessonType('');
     setEditingLesson(null);
@@ -541,6 +601,8 @@ const CourseEditPage = () => {
                   onAddLesson={handleAddLesson}
                   onEditChapter={handleEditChapter}
                   onEditLesson={handleEditLesson}
+                  onDeleteChapter={handleDeleteChapter}
+                  onDeleteLesson={handleDeleteLesson}
                   onAddChapter={handleAddChapter}
                   onUploadContent={handleUploadContent}
                   onReorderChapters={handleReorderChapters}
@@ -637,6 +699,8 @@ const CourseEditPage = () => {
               onAddLesson={handleAddLesson}
               onEditChapter={handleEditChapter}
               onEditLesson={handleEditLesson}
+              onDeleteChapter={handleDeleteChapter}
+              onDeleteLesson={handleDeleteLesson}
               onAddChapter={handleAddChapter}
               onUploadContent={handleUploadContent}
               onReorderChapters={handleReorderChapters}

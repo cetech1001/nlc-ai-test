@@ -14,7 +14,7 @@ export class CommunityClient extends BaseClient{
 
     this.communities = new CommunitiesClient({
       ...config,
-      baseURL: `${config.baseURL}/communities`,
+      baseURL: `${config.baseURL}`,
     });
 
     this.posts = new PostsClient({
@@ -24,7 +24,7 @@ export class CommunityClient extends BaseClient{
 
     this.moderation = new ModerationClient({
       ...config,
-      baseURL: `${config.baseURL}`,
+      baseURL: `${config.baseURL}/moderation`,
     });
   }
 

@@ -138,7 +138,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onEdit, onDelete, onDup
               <img
                 src={course.thumbnailUrl}
                 alt={course.title}
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full rounded-2xl"
               />
             ) : (
               <BookOpen className="w-12 h-12 text-purple-400" />

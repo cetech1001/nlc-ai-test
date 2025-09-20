@@ -32,7 +32,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3009;
   await app.listen(port);
 
-  console.log(`🏘️  Community Service is running on: http://localhost:${port}/api/community`);
+  console.log(`🏘️  Community Service is running on: http://localhost:${port}/api/communities`);
   console.log(`📚 Swagger docs available at: http://localhost:${port}/docs`);
 }
 

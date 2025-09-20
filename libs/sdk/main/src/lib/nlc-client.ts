@@ -68,7 +68,7 @@ export class NLCClient {
 
     this.community = new CommunityClient({
       ...baseConfig,
-      baseURL: config.services?.community || `${config.baseURL}/community`,
+      baseURL: config.services?.community || `${config.baseURL}/communities`,
     });
 
     this.media = new MediaServiceClient({
