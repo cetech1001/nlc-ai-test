@@ -58,7 +58,7 @@ export interface SyncResult {
 
 export interface CreateIntegrationData {
   userID: string;
-  userType: string;
+  userType: UserType;
   integrationType: IntegrationType;
   platformName: string;
   accessToken: string;

@@ -6,10 +6,8 @@ import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { IntegrationsModule } from './integrations/integrations.module';
-import { EmailAccountsModule } from './email-accounts/email-accounts.module';
 import { HealthModule } from './health/health.module';
-import integrationsConfig from './config/integrations.config';
-import {EmailSyncModule} from "./email-sync/email-sync.module";
+import {integrationsConfig} from './config/integrations.config';
 
 @Module({
   imports: [
@@ -22,10 +20,8 @@ import {EmailSyncModule} from "./email-sync/email-sync.module";
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
-    HealthModule,
-    EmailSyncModule,
     IntegrationsModule,
-    EmailAccountsModule,
+    HealthModule,
   ],
   providers: [
     {

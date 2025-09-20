@@ -19,7 +19,7 @@ const validateConfig = (config: Record<string, unknown>) => {
   return validatedConfig;
 };
 
-export default registerAs('integrations', () => {
+export const integrationsConfig = registerAs('integrations', () => {
   const config = validateConfig(process.env);
 
   return {

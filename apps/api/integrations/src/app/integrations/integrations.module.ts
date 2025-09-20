@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from "@nestjs/jwt";
-import { IntegrationsController } from './controllers/integrations.controller';
+import { IntegrationsController } from './integrations.controller';
 import { CalendlyService } from "./services/apps/calendly.service";
 import { EncryptionService } from "./services/encryption.service";
 import { FacebookService } from "./services/social/facebook.service";

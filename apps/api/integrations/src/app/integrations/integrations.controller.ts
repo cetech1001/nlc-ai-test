@@ -4,7 +4,6 @@ import {
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   Post,
   Query,
@@ -13,24 +12,24 @@ import {
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser, Public } from '@nlc-ai/api-auth';
-import {UserType, type AuthUser, Integration, IntegrationType} from '@nlc-ai/api-types';
+import {UserType, type AuthUser} from '@nlc-ai/api-types';
 import { ConnectPlatformRequest, LoadCalendlyEventsRequest } from '@nlc-ai/api-types';
 import type { Response } from "express";
-import { IntegrationFactory } from "../factories/integration.factory";
-import { PrismaService } from '@nlc-ai/api-database';
-import { StateTokenService } from "../services/state-token.service";
-import { oauthError } from "../templates/oauth-error";
-import { oauthSuccess } from "../templates/oauth-success";
+import { IntegrationFactory } from "./factories/integration.factory";
+import { StateTokenService } from "./services/state-token.service";
+import { IntegrationsService } from "./integrations.service";
+import { oauthError } from "./templates/oauth-error";
+import { oauthSuccess } from "./templates/oauth-success";
 
 @ApiTags('Integrations')
 @Controller('')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
-@UserTypes(UserType.coach, UserType.admin, UserType.client) // Updated to support all user types
+@UserTypes(UserType.coach, UserType.admin, UserType.client)
 @ApiBearerAuth()
 export class IntegrationsController {
   constructor(
     private readonly integrationFactory: IntegrationFactory,
-    private readonly prisma: PrismaService,
+    private readonly integrationsService: IntegrationsService,
     private readonly stateTokenService: StateTokenService,
   ) {}
 
@@ -38,13 +37,7 @@ export class IntegrationsController {
   @ApiOperation({ summary: 'Get all integrations for the authenticated user' })
   @ApiResponse({ status: 200, description: 'Integrations retrieved successfully' })
   async getAllIntegrations(@CurrentUser() user: AuthUser) {
-    return this.prisma.integration.findMany({
-      where: {
-        userID: user.id,
-        userType: user.type
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.integrationsService.getAllIntegrations(user.id, user.type);
   }
 
   @Get('platform/:platform')
@@ -54,65 +47,28 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Param('platform') platform: string,
   ) {
-    const integration = await this.prisma.integration.findFirst({
-      where: {
-        userID: user.id,
-        userType: user.type,
-        platformName: platform,
-      },
-    });
-
-    if (!integration) {
-      return { isConnected: false };
-    }
-
-    return {
-      isConnected: true,
-      ...(integration.config as any),
-      lastSync: integration.lastSyncAt,
-    };
+    return this.integrationsService.getIntegrationByPlatform(user.id, user.type, platform);
   }
 
   @Get('social')
   @ApiOperation({ summary: 'Get social media integrations only' })
   @ApiResponse({ status: 200, description: 'Social integrations retrieved successfully' })
   async getSocialIntegrations(@CurrentUser() user: AuthUser) {
-    return this.prisma.integration.findMany({
-      where: {
-        userID: user.id,
-        userType: user.type,
-        integrationType: 'social'
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.integrationsService.getSocialIntegrations(user.id, user.type);
   }
 
   @Get('apps')
   @ApiOperation({ summary: 'Get app integrations only' })
   @ApiResponse({ status: 200, description: 'App integrations retrieved successfully' })
   async getAppIntegrations(@CurrentUser() user: AuthUser) {
-    return this.prisma.integration.findMany({
-      where: {
-        userID: user.id,
-        userType: user.type,
-        integrationType: 'app'
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.integrationsService.getAppIntegrations(user.id, user.type);
   }
 
   @Get('courses')
   @ApiOperation({ summary: 'Get course platform integrations only' })
   @ApiResponse({ status: 200, description: 'Course integrations retrieved successfully' })
   async getCourseIntegrations(@CurrentUser() user: AuthUser) {
-    return this.prisma.integration.findMany({
-      where: {
-        userID: user.id,
-        userType: user.type,
-        integrationType: 'course'
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.integrationsService.getCourseIntegrations(user.id, user.type);
   }
 
   @Get('platforms')
@@ -197,7 +153,7 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Param('id') integrationID: string,
   ) {
-    const integration = await this.findUserIntegration(user.id, user.type, integrationID);
+    const integration = await this.integrationsService.findUserIntegration(user.id, user.type, integrationID);
     const provider = this.integrationFactory.getProvider(integration.platformName);
     return provider.test(integration);
   }
@@ -209,7 +165,7 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Param('id') integrationID: string,
   ) {
-    const integration = await this.findUserIntegration(user.id, user.type, integrationID);
+    const integration = await this.integrationsService.findUserIntegration(user.id, user.type, integrationID);
     const provider = this.integrationFactory.getProvider(integration.platformName);
     return provider.sync(integration);
   }
@@ -221,7 +177,7 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Param('id') integrationID: string,
   ) {
-    const integration = await this.findUserIntegration(user.id, user.type, integrationID);
+    const integration = await this.integrationsService.findUserIntegration(user.id, user.type, integrationID);
     const provider = this.integrationFactory.getProvider(integration.platformName);
     await provider.disconnect(integration);
     return { message: 'Integration disconnected' };
@@ -234,18 +190,7 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Body() body: LoadCalendlyEventsRequest
   ) {
-    const integration = await this.prisma.integration.findFirst({
-      where: {
-        userID: user.id,
-        userType: user.type,
-        platformName: 'calendly'
-      },
-    });
-
-    if (!integration) {
-      throw new NotFoundException('Calendly integration not found');
-    }
-
+    const integration = await this.integrationsService.getCalendlyIntegration(user.id, user.type);
     const provider = this.integrationFactory.getProvider('calendly');
 
     return provider.fetchScheduledEvents?.(
@@ -264,21 +209,5 @@ export class IntegrationsController {
   private sendOAuthError(res: Response, platform: string, errorMessage: string) {
     res.setHeader('Content-Type', 'text/html');
     res.send(oauthError(errorMessage, platform));
-  }
-
-  private async findUserIntegration(userID: string, userType: string, integrationID: string): Promise<Integration> {
-    const integration = await this.prisma.integration.findFirst({
-      where: {
-        id: integrationID,
-        userID,
-        userType
-      },
-    });
-
-    if (!integration) {
-      throw new NotFoundException('Integration not found');
-    }
-
-    return { ...integration, integrationType: integration.integrationType as IntegrationType };
   }
 }
