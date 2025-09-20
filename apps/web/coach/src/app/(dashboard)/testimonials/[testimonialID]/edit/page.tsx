@@ -327,7 +327,7 @@ const EditTestimonialSurvey: React.FC = () => {
     frequency: 'weekly',
     day: '',
     platform: '',
-    courses: '',
+    course: '',
     targetClients: '',
     prompt: '',
     formLink: ''

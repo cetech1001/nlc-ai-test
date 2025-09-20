@@ -20,7 +20,7 @@ export const appConfig: AppConfig = {
       billing: `${process.env.NEXT_PUBLIC_API_URL}/billing`,
       analytics: `${process.env.NEXT_PUBLIC_API_URL}/analytics`,
       aiAgents: `${process.env.NEXT_PUBLIC_API_URL}/ai-agents`,
-      communities: `${process.env.NEXT_PUBLIC_API_URL}/community`,
+      communities: `${process.env.NEXT_PUBLIC_API_URL}/communities`,
       media: `${process.env.NEXT_PUBLIC_API_URL}/media`,
       notifications: `${process.env.NEXT_PUBLIC_API_URL}/notifications`,
       messaging: `${process.env.NEXT_PUBLIC_API_URL}/messages`,

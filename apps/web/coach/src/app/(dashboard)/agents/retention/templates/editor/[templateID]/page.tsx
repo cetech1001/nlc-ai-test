@@ -24,7 +24,7 @@ const defaultTemplate: TemplateData = {
   frequency: 'weekly',
   day: '',
   platform: '',
-  courses: '',
+  course: '',
   targetClients: '',
   subject: 'Your Feedback: Help Us Improve Your Learning Experience',
   body: `Hi [Student's Name],

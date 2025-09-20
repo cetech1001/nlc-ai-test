@@ -17,7 +17,7 @@ export interface AppConfig {
       billing: string;
       analytics: string;
       aiAgents: string;
-      community: string;
+      communities: string;
       media: string;
       notifications: string;
       messaging: string;

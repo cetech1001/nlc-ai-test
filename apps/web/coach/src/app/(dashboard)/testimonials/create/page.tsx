@@ -167,7 +167,7 @@ const NewTestimonialSurveyTemplatePage: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     frequency: 'weekly',
     day: '',
-    courses: '',
+    course: '',
     targetClients: '',
     prompt: '',
     formLink: ''
