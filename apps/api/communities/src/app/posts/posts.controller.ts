@@ -6,8 +6,7 @@ import {
   Delete,
   Body,
   Param,
-  Query,
-  UseGuards,
+  Query, ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,8 +15,8 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser, UserTypes, UserTypesGuard } from '@nlc-ai/api-auth';
-import { type AuthUser, UserType } from '@nlc-ai/api-types';
+import { CurrentUser } from '@nlc-ai/api-auth';
+import { type AuthUser } from '@nlc-ai/api-types';
 import { PostsService } from './posts.service';
 import {
   CreatePostDto,
@@ -29,9 +28,7 @@ import {
 } from './dto';
 
 @ApiTags('Posts')
-@Controller('posts')
-@UseGuards(UserTypesGuard)
-@UserTypes(UserType.coach, UserType.admin, UserType.client)
+@Controller(':communityID/posts')
 @ApiBearerAuth()
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
@@ -40,16 +37,18 @@ export class PostsController {
   @ApiOperation({ summary: 'Create a new post' })
   @ApiResponse({ status: 201, description: 'Post created successfully' })
   async createPost(
+    @Param('communityID', ParseUUIDPipe) communityID: string,
     @Body() createDto: CreatePostDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.createPost(createDto, user);
+    return this.postsService.createPost(communityID, createDto, user);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get posts' })
   @ApiResponse({ status: 200, description: 'Posts retrieved successfully' })
   async getPosts(
+    @Param('communityID', ParseUUIDPipe) communityID: string,
     @Query() filters: PostFiltersDto,
     @CurrentUser() user: AuthUser
   ) {

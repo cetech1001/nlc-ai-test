@@ -29,8 +29,12 @@ export class PostsService {
     private readonly configService: ConfigService
   ) {}
 
-  async createPost(createRequest: CreatePostRequest, user: AuthUser) {
-    const member = await this.checkCommunityMembership(createRequest.communityID, user);
+  async createPost(
+    communityID: string,
+    createRequest: CreatePostRequest,
+    user: AuthUser
+  ) {
+    const member = await this.checkCommunityMembership(communityID, user);
 
     const maxLength = this.configService.get<number>('community.features.maxPostLength', 5000);
     if (createRequest.content.length > maxLength) {
@@ -39,7 +43,7 @@ export class PostsService {
 
     const post = await this.prisma.post.create({
       data: {
-        communityID: createRequest.communityID,
+        communityID,
         communityMemberID: member.id,
         type: createRequest.type || PostType.TEXT,
         content: createRequest.content,
@@ -60,7 +64,7 @@ export class PostsService {
     });
 
     await this.prisma.community.update({
-      where: { id: createRequest.communityID },
+      where: { id: communityID },
       data: { postCount: { increment: 1 } },
     });
 
@@ -80,7 +84,7 @@ export class PostsService {
       },
     }, COMMUNITY_ROUTING_KEYS.POST_CREATED);
 
-    this.logger.log(`Post created: ${post.id} in community ${createRequest.communityID} by ${user.type} ${user.id}`);
+    this.logger.log(`Post created: ${post.id} in community ${communityID} by ${user.type} ${user.id}`);
 
     return post;
   }
@@ -588,6 +592,8 @@ export class PostsService {
         },
       },
     });
+
+    console.log("Member: ", member);
 
     if (!member || member.status !== MemberStatus.ACTIVE) {
       throw new ForbiddenException('Access denied to this community');

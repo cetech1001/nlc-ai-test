@@ -1,12 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsArray, IsUrl, IsObject, IsUUID, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsUrl, IsObject, MaxLength } from 'class-validator';
 import { PostType } from '@nlc-ai/api-types';
 
 export class CreatePostDto {
-  @ApiProperty()
-  @IsUUID()
-  communityID: string;
-
   @ApiProperty({ enum: PostType, required: false })
   @IsOptional()
   @IsEnum(PostType)
