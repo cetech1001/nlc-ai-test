@@ -6,7 +6,7 @@ import { sdkClient } from '@/lib';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@nlc-ai/web-auth';
-import { UserType } from '@nlc-ai/types';
+import {UserProfile, UserStats, UserType} from '@nlc-ai/types';
 import { Skeleton } from '@nlc-ai/web-ui';
 import { formatTimeAgo, getInitials } from '@nlc-ai/web-utils';
 
@@ -16,40 +16,6 @@ interface UserProfileSidebarProps {
   userID: string;
   userType: UserType;
   isMobile?: boolean;
-}
-
-interface UserProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  avatarUrl?: string;
-  bio?: string;
-  businessName?: string;
-  websiteUrl?: string;
-  phone?: string;
-  timezone?: string;
-  isActive: boolean;
-  isVerified: boolean;
-  createdAt: Date;
-  lastLoginAt?: Date;
-  // Coach specific
-  subscriptionStatus?: string;
-  subscriptionPlan?: string;
-  // Client specific
-  source?: string;
-  tags?: string[];
-  engagementScore?: number;
-  totalInteractions?: number;
-  lastInteractionAt?: Date;
-}
-
-interface UserStats {
-  totalPosts: number;
-  totalComments: number;
-  totalLikes: number;
-  communitiesJoined: number;
-  joinedDate: Date;
 }
 
 const UserProfileSkeleton = () => (
@@ -94,12 +60,12 @@ const UserProfileSkeleton = () => (
 );
 
 export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
-  isOpen,
-  onClose,
-  userID,
-  userType,
-  isMobile = false
-}) => {
+                                                                        isOpen,
+                                                                        onClose,
+                                                                        userID,
+                                                                        userType,
+                                                                        isMobile = false
+                                                                      }) => {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -198,7 +164,7 @@ export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-scroll p-6">
+      <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
           <UserProfileSkeleton />
         ) : profile ? (
@@ -378,8 +344,13 @@ export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
 
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-        <div className="absolute inset-0 bg-gradient-to-b from-neutral-800 to-neutral-900">
+      <div className={`fixed inset-0 z-50 transform transition-transform duration-300 ease-out ${
+        isOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+        <div className={`absolute right-0 top-0 h-full w-full bg-gradient-to-b from-neutral-800 to-neutral-900 transform transition-transform duration-300 ease-out ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
           <div className="absolute inset-0 opacity-20">
             <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
           </div>
@@ -392,7 +363,9 @@ export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
   }
 
   return (
-    <div className="w-96 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden h-fit max-h-[800px]">
+    <div className={`w-96 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden h-fit transform transition-all duration-300 ease-out ${
+      isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+    }`}>
       <div className="absolute inset-0 opacity-20">
         <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
       </div>
