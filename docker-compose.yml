@@ -169,11 +169,11 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
-  messaging:
+  messages:
     build:
       context: .
-      dockerfile: apps/api/messaging/dev.Dockerfile
-    container_name: messaging
+      dockerfile: apps/api/messages/dev.Dockerfile
+    container_name: messages
     restart: unless-stopped
     ports:
       - "3012:3012"
@@ -183,7 +183,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./apps/api/messaging:/app/apps/api/messaging
+      - ./apps/api/messages:/app/apps/api/messages
       - ./libs/api:/app/libs/api
       - ./.env:/app/.env
       - /app/node_modules

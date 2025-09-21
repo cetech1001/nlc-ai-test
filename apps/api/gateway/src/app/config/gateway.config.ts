@@ -77,8 +77,8 @@ export default registerAs('gateway', () => {
         url: config.AGENTS_SERVICE_URL,
         timeout: 300000,
       },
-      messaging: {
-        url: config.MESSAGING_SERVICE_URL,
+      messages: {
+        url: config.MESSAGES_SERVICE_URL,
         timeout: config.REQUEST_TIMEOUT,
       },
       courses: {

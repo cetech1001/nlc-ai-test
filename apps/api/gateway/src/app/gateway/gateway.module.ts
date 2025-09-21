@@ -13,7 +13,7 @@ import {IntegrationsGatewayController} from "./controllers/integrations-gateway.
 import {CommunitiesGatewayController} from "./controllers/communities-gateway.controller";
 import {AnalyticsGatewayController} from "./controllers/analytics-gateway.controller";
 import {AgentsGatewayController} from "./controllers/agents-gateway.controller";
-import {MessagingGatewayController} from "./controllers/messaging-gateway.controller";
+import {MessagesGatewayController} from "./controllers/messages-gateway.controller";
 import {WebSocketProxyGateway} from "./websocket-proxy.gateway";
 import {CoursesGatewayController} from "./controllers/courses-gateway.controller";
 
@@ -31,7 +31,7 @@ import {CoursesGatewayController} from "./controllers/courses-gateway.controller
     NotificationsGatewayController,
     IntegrationsGatewayController,
     CommunitiesGatewayController,
-    MessagingGatewayController,
+    MessagesGatewayController,
     CoursesGatewayController,
   ],
   providers: [WebSocketProxyGateway],

@@ -1,9 +1,9 @@
 {
-  "name": "@nlc-ai/messaging-service",
+  "name": "@nlc-ai/messages-service",
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "@nlc-ai/messaging-service",
+    "name": "@nlc-ai/messages-service",
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -29,15 +29,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@nlc-ai/messaging-service:build",
+          "buildTarget": "@nlc-ai/messages-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@nlc-ai/messaging-service:build:development"
+            "buildTarget": "@nlc-ai/messages-service:build:development"
           },
           "production": {
-            "buildTarget": "@nlc-ai/messaging-service:build:production"
+            "buildTarget": "@nlc-ai/messages-service:build:production"
           }
         }
       }

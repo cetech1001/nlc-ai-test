@@ -7,10 +7,10 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 
-@ApiTags('Messaging')
+@ApiTags('Messages')
 @Controller('messages')
 @ApiBearerAuth()
-export class MessagingGatewayController {
+export class MessagesGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')

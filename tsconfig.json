@@ -121,7 +121,7 @@
       "path": "./libs/types"
     },
     {
-      "path": "./apps/api/messaging"
+      "path": "./apps/api/messages"
     },
     {
       "path": "./libs/sdk/messages"

@@ -41,14 +41,6 @@ async function bootstrap() {
     .addBearerAuth()
     .addServer('http://localhost:3000', 'Development')
     .addServer('https://api.nextlevelcoach.ai', 'Production')
-    .addTag('Authentication', 'User authentication and authorization')
-    .addTag('Users', 'User management and profiles')
-    .addTag('Media', 'File upload and media management')
-    .addTag('Email', 'Email services and templates')
-    .addTag('Billing', 'Subscription and payment management')
-    .addTag('Leads', 'Lead capture and management')
-    .addTag('Notifications', 'Notification services')
-    .addTag('Gateway', 'Gateway health and metrics')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

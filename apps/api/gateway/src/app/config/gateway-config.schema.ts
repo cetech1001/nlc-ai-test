@@ -63,7 +63,7 @@ export class GatewayConfigSchema {
 
   @IsOptional()
   @IsString()
-  MESSAGING_SERVICE_URL?: string;
+  MESSAGES_SERVICE_URL?: string;
 
   @IsOptional()
   @IsString()
