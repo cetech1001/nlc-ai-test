@@ -17,7 +17,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api/messages');
 
   const config = new DocumentBuilder()
-    .setTitle('NLC AI Chat Service')
+    .setTitle('NLC AI Messages Service')
     .setDescription('Direct messaging and Admin Support service')
     .setVersion('1.0')
     .addBearerAuth()
@@ -35,11 +35,11 @@ async function bootstrap() {
   const port = process.env.PORT || 3012;
   await app.listen(port);
 
-  Logger.log(`🚀 Chat Service is running on: http://localhost:${port}/api/messages`);
+  Logger.log(`🚀 Messages Service is running on: http://localhost:${port}/api/messages`);
   Logger.log(`📚 Swagger docs available at: http://localhost:${port}/docs`);
 }
 
 bootstrap().catch((error) => {
-  Logger.error('Failed to start Chat Service:', error);
+  Logger.error('Failed to start Messages Service:', error);
   process.exit(1);
 });
