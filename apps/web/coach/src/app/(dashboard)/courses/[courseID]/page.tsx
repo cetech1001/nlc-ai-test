@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Menu } from 'lucide-react';
-import type { ExtendedCourse, CreateCourseChapter, CreateCourseLesson } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse, CreateCourseChapter, CreateCourseLesson } from '@nlc-ai/sdk-courses';
 import {
   sdkClient,
   CourseHeader,

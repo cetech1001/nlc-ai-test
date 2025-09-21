@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {ChevronDown, ChevronRight, Plus, Upload, X, Edit, GripVertical, Trash2} from 'lucide-react';
-import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 import { LessonTypeIcon } from '@/lib';
 
 interface CurriculumState {

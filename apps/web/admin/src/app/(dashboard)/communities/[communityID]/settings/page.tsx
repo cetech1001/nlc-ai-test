@@ -36,7 +36,7 @@ const AdminCommunitySettingsPage = () => {
   const fetchCommunitySettings = async () => {
     try {
       setIsLoading(true);
-      const response = await sdkClient.community.communities.getCommunity(communityID);
+      const response = await sdkClient.communities.getCommunity(communityID);
       setCommunity({ ...response, isDirty: false });
     } catch (error: any) {
       toast.error(error.message || 'Failed to load community settings');
@@ -171,7 +171,7 @@ const AdminCommunitySettingsPage = () => {
         }
       }
 
-      const updatedCommunity = await sdkClient.community.communities.updateCommunity(
+      const updatedCommunity = await sdkClient.communities.updateCommunity(
         communityID,
         updateRequest
       );
@@ -195,7 +195,7 @@ const AdminCommunitySettingsPage = () => {
     if (!confirm(confirmMessage)) return;
 
     try {
-      await sdkClient.community.communities.updateCommunity(communityID, {
+      await sdkClient.communities.updateCommunity(communityID, {
         isActive: false,
       });
 

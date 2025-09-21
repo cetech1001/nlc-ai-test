@@ -59,7 +59,7 @@ const AdminCommunityModeratePage = () => {
   const fetchModerationData = async () => {
     try {
       setIsStatsLoading(true);
-      const statsResponse = await sdkClient.community.moderation.getModerationStats(communityID);
+      const statsResponse = await sdkClient.communities.moderation.getModerationStats(communityID);
       setStats(statsResponse);
     } catch (error: any) {
       console.error('Failed to fetch moderation data:', error);
@@ -73,7 +73,7 @@ const AdminCommunityModeratePage = () => {
     try {
       setIsLoading(true);
 
-      const response = await sdkClient.community.moderation.getFlaggedContent(
+      const response = await sdkClient.communities.moderation.getFlaggedContent(
         communityID,
         { page: currentPage, limit: 10, search: searchQuery },
         filterValues
@@ -93,7 +93,7 @@ const AdminCommunityModeratePage = () => {
     try {
       setIsLoading(true);
 
-      const response = await sdkClient.community.moderation.getModerationActions(
+      const response = await sdkClient.communities.moderation.getModerationActions(
         communityID,
         { page: currentPage, limit: 10 }
       );
@@ -112,7 +112,7 @@ const AdminCommunityModeratePage = () => {
     try {
       setIsProcessing(contentID);
 
-      await sdkClient.community.moderation.moderateContent(communityID, contentID, {
+      await sdkClient.communities.moderation.moderateContent(communityID, contentID, {
         action,
         reason: `Content ${action}d by moderator`
       });

@@ -5,13 +5,13 @@ import {EmailClient} from "@nlc-ai/sdk-email";
 import {BillingClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
-import {CommunityClient} from "../../../communities";
+import {CommunitiesClient} from "@nlc-ai/sdk-communities";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
-import {MessagingClient} from "@nlc-ai/sdk-messaging";
+import {MessagesClient} from "@nlc-ai/sdk-messages";
 import {AgentsClient} from "@nlc-ai/sdk-agents";
-import {CoursesClient} from "@nlc-ai/sdk-course";
-import {IntegrationClient} from "@nlc-ai/sdk-integrations";
+import {CoursesClient} from "@nlc-ai/sdk-courses";
+import {IntegrationsClient} from "@nlc-ai/sdk-integrations";
 
 
 export class NLCClient {
@@ -22,12 +22,12 @@ export class NLCClient {
   public billing: BillingClient;
   public analytics: AnalyticsClient;
   public leads: LeadsServiceClient;
-  public community: CommunityClient;
+  public communities: CommunitiesClient;
   public media: MediaServiceClient;
   public notifications: NotificationsServiceClient;
-  public messaging: MessagingClient;
+  public messaging: MessagesClient;
   public courses: CoursesClient;
-  public integration: IntegrationClient;
+  public integrations: IntegrationsClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -66,9 +66,9 @@ export class NLCClient {
       baseURL: config.services?.leads || `${config.baseURL}/leads`,
     });
 
-    this.community = new CommunityClient({
+    this.communities = new CommunitiesClient({
       ...baseConfig,
-      baseURL: config.services?.community || `${config.baseURL}/communities`,
+      baseURL: config.services?.communities || `${config.baseURL}/communities`,
     });
 
     this.media = new MediaServiceClient({
@@ -81,9 +81,9 @@ export class NLCClient {
       baseURL: config.services?.notifications || `${config.baseURL}/notifications`,
     });
 
-    this.messaging = new MessagingClient({
+    this.messaging = new MessagesClient({
       ...baseConfig,
-      baseURL: config.services?.messaging || `${config.baseURL}/messages`,
+      baseURL: config.services?.messages || `${config.baseURL}/messages`,
     });
 
     this.courses = new CoursesClient({
@@ -96,7 +96,7 @@ export class NLCClient {
       baseURL: config.services?.agents || `${config.baseURL}/agents`,
     });
 
-    this.integration = new IntegrationClient({
+    this.integrations = new IntegrationsClient({
       ...baseConfig,
       baseURL: config.services?.integrations || `${config.baseURL}/integrations`,
     });
@@ -105,7 +105,7 @@ export class NLCClient {
   updateApiKey(apiKey: string | null) {
     const services = [
       this.users, this.auth, this.email, this.billing,
-      this.analytics, this.leads, this.community,
+      this.analytics, this.leads, this.communities,
       this.media, this.notifications, this.messaging
     ];
 

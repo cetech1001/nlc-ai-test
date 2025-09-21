@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { X, ChevronDown } from 'lucide-react';
-import { CreateCourseChapter } from '@nlc-ai/sdk-course';
-import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import { CreateCourseChapter, type ExtendedCourse } from '@nlc-ai/sdk-courses';
 
 interface ChapterFormProps {
   courseID: string;

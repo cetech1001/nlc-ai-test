@@ -26,9 +26,6 @@
       "path": "../agents/tsconfig.lib.json"
     },
     {
-      "path": "../main/tsconfig.lib.json"
-    },
-    {
       "path": "../core/tsconfig.lib.json"
     }
   ]

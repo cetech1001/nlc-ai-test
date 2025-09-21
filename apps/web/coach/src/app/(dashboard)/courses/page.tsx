@@ -6,7 +6,7 @@ import { appConfig } from "@nlc-ai/web-shared";
 import { CoursesLanding } from "@/app/(dashboard)/courses/landing";
 import { useRouter } from "next/navigation";
 import { sdkClient } from "@/lib";
-import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 
 const statusColors: Record<string, string> = {
   Published: 'bg-green-600/20 text-green-400 border-green-600/50',

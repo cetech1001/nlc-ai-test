@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Users, UserCircle, Plus } from 'lucide-react';
 import { sdkClient } from '@/lib/sdk-client';
-import { ConversationResponse } from '@nlc-ai/sdk-messaging';
+import { ConversationResponse } from '@nlc-ai/sdk-messages';
 import { toast } from 'sonner';
 import { UserType } from "@nlc-ai/types";
 import { useAuth } from "@nlc-ai/web-auth";

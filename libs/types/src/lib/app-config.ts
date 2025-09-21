@@ -20,7 +20,7 @@ export interface AppConfig {
       communities: string;
       media: string;
       notifications: string;
-      messaging: string;
+      messages: string;
       courses: string;
       agents: string;
       integrations: string;

@@ -72,7 +72,7 @@
       "path": "../../../libs/sdk/notifications"
     },
     {
-      "path": "../../../libs/sdk/messaging"
+      "path": "../../../libs/sdk/messages"
     },
     {
       "path": "../../../libs/sdk/leads"
@@ -81,7 +81,7 @@
       "path": "../../../libs/sdk/analytics"
     },
     {
-      "path": "../../../libs/sdk/course"
+      "path": "../../../libs/sdk/courses"
     },
     {
       "path": "../../../libs/sdk/communities"

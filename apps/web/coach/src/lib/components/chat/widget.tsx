@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, MessageCircle, Send, Minimize2, Maximize2, Headphones, User } from 'lucide-react';
 import { sdkClient, useMessagingWebSocket } from '@/lib';
-import { DirectMessageResponse, ConversationResponse, MessageType } from '@nlc-ai/sdk-messaging';
+import { DirectMessageResponse, ConversationResponse, MessageType } from '@nlc-ai/sdk-messages';
 import { toast } from 'sonner';
 import { useAuth } from '@nlc-ai/web-auth';
 import {UserType} from "@nlc-ai/types";

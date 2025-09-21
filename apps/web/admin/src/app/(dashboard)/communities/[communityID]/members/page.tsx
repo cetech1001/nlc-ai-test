@@ -69,7 +69,7 @@ const AdminCommunityMembersPage = () => {
   const fetchStats = async () => {
     try {
       setIsStatsLoading(true);
-      const stats = await sdkClient.community.communities.getCommunityMemberStats(communityID);
+      const stats = await sdkClient.communities.getCommunityMemberStats(communityID);
       setStats(stats);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -83,7 +83,7 @@ const AdminCommunityMembersPage = () => {
     try {
       setIsLoading(true);
 
-      const response = await sdkClient.community.communities.getCommunityMembers(
+      const response = await sdkClient.communities.getCommunityMembers(
         communityID,
         {
           page: currentPage,
@@ -125,7 +125,7 @@ const AdminCommunityMembersPage = () => {
           try {
             const member: ExtendedCommunityMember | undefined = members.find(m => m.id === member?.id);
             if (member) {
-              await sdkClient.community.communities.removeMember(
+              await sdkClient.communities.removeMember(
                 communityID,
                 member.userID,
                 member.userType

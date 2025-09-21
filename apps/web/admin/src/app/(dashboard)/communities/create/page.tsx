@@ -156,7 +156,7 @@ const AdminCreateCommunityPage = () => {
         createRequest.bannerUrl = form.bannerUrl;
       }
 
-      await sdkClient.community.communities.createCommunity(createRequest);
+      await sdkClient.communities.createCommunity(createRequest);
 
       toast.success('Community created successfully!');
       router.push('/communities?success=created');

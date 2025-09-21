@@ -6,7 +6,7 @@ import { BackTo } from "@nlc-ai/web-shared";
 import { useRouter } from "next/navigation";
 import { sdkClient } from "@/lib";
 import type { CourseStructureRequest } from '@nlc-ai/sdk-agents';
-import {transformSuggestionToCourse} from "@nlc-ai/sdk-course";
+import {transformSuggestionToCourse} from "@nlc-ai/sdk-courses";
 
 
 const CourseCreateScreen = () => {

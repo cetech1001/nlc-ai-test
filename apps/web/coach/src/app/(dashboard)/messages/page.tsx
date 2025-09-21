@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ConversationList, ChatWindow, sdkClient } from '@/lib';
-import { ConversationResponse } from '@nlc-ai/sdk-messaging';
+import { ConversationResponse } from '@nlc-ai/sdk-messages';
 import { useAuth } from "@nlc-ai/web-auth";
 
 const MessagesPage = () => {

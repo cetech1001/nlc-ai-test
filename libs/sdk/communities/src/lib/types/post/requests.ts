@@ -1,7 +1,6 @@
 import {PostType, ReactionType} from "./enums";
 
 export interface CreatePostRequest {
-  communityID: string;
   type?: PostType;
   content: string;
   mediaUrls?: string[];

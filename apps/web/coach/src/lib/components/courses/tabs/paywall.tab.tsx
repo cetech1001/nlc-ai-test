@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PricingCard, OneTimeForm, SubscriptionForm, MonthlyPlanForm } from "./partials";
-import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 import { sdkClient } from '@/lib';
 import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';

@@ -10,10 +10,10 @@ export interface NLCClientConfig {
     email?: string;
     billing?: string;
     analytics?: string;
-    community?: string;
+    communities?: string;
     media?: string;
     notifications?: string;
-    messaging?: string;
+    messages?: string;
     agents?: string;
     courses?: string;
     integrations?: string;

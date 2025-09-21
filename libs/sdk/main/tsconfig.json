@@ -7,19 +7,22 @@
       "path": "../integrations"
     },
     {
-      "path": "../course"
+      "path": "../courses"
     },
     {
       "path": "../agents"
     },
     {
-      "path": "../messaging"
+      "path": "../messages"
     },
     {
       "path": "../notifications"
     },
     {
       "path": "../media"
+    },
+    {
+      "path": "../communities"
     },
     {
       "path": "../leads"

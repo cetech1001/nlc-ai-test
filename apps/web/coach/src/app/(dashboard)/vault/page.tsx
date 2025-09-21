@@ -40,7 +40,7 @@ const VaultPage = () => {
       setIsLoading(true);
       setError("");
 
-      const communityData = await sdkClient.community.communities.getCoachToCommunity();
+      const communityData = await sdkClient.communities.getCoachToCommunity();
       setCommunity(communityData);
 
       await loadPosts(communityData.id);
@@ -56,8 +56,7 @@ const VaultPage = () => {
     try {
       setPostsLoading(true);
 
-      const response = await sdkClient.community.posts.getPosts({
-        communityID: communityID || community?.id,
+      const response = await sdkClient.communities.posts.getPosts(communityID || community?.id!, {
         page,
         limit: 10,
         sortOrder: 'desc'
@@ -81,8 +80,7 @@ const VaultPage = () => {
     if (!newPost.trim() || !community) return;
 
     try {
-      const newPostData = await sdkClient.community.posts.createPost({
-        communityID: community.id,
+      const newPostData = await sdkClient.communities.posts.createPost(community.id, {
         type: PostType.TEXT,
         content: newPost.trim(),
         mediaUrls: mediaUrls || []
@@ -104,7 +102,7 @@ const VaultPage = () => {
 
       const isCurrentlyLiked = currentPost.userReaction === reactionType;
 
-      await sdkClient.community.posts.reactToPost(postID, { type: reactionType });
+      await sdkClient.communities.posts.reactToPost(community?.id!, postID, { type: reactionType });
 
       setPosts(prev => prev.map(post =>
         post.id === postID
@@ -128,7 +126,7 @@ const VaultPage = () => {
     if (!newComment.trim()) return;
 
     try {
-      await sdkClient.community.posts.createComment(postID, {
+      await sdkClient.communities.posts.createComment(community?.id!, postID, {
         content: newComment.trim(),
         mediaUrls: []
       });

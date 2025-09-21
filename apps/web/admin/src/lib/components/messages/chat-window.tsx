@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { sdkClient } from '@/lib/sdk-client';
 import { useMessagingWebSocket } from '@/lib/hooks';
-import { ConversationResponse, DirectMessageResponse, MessageType } from '@nlc-ai/sdk-messaging';
+import { ConversationResponse, DirectMessageResponse, MessageType } from '@nlc-ai/sdk-messages';
 import { toast } from 'sonner';
 import { useAuth } from "@nlc-ai/web-auth";
 import { UserType } from "@nlc-ai/types";

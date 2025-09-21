@@ -36,9 +36,8 @@ export default function CommunityPage() {
     try {
       setIsLoading(true);
       const [communityResponse, postsResponse] = await Promise.all([
-        sdkClient.community.communities.getCommunity(communityID),
-        sdkClient.community.posts.getPosts({
-          communityID,
+        sdkClient.communities.getCommunity(communityID),
+        sdkClient.communities.posts.getPosts(communityID, {
           page: 1,
           limit: 10,
           sortOrder: 'desc'
@@ -62,8 +61,7 @@ export default function CommunityPage() {
 
     try {
       setIsLoadingMore(true);
-      const response = await sdkClient.community.posts.getPosts({
-        communityID,
+      const response = await sdkClient.communities.posts.getPosts(communityID, {
         page: currentPage + 1,
         limit: 10,
         sortOrder: 'desc'
@@ -122,13 +120,12 @@ export default function CommunityPage() {
   const handleCreatePost = async (content: string, mediaUrls?: string[]) => {
     try {
       const createRequest: CreatePostRequest = {
-        communityID,
         type: PostType.TEXT,
         content,
         mediaUrls: mediaUrls || []
       };
 
-      const newPost = await sdkClient.community.posts.createPost(createRequest);
+      const newPost = await sdkClient.communities.posts.createPost(communityID, createRequest);
 
       // Remove optimistic post and add real post
       setPosts(prev => {
@@ -155,7 +152,7 @@ export default function CommunityPage() {
 
   const handleReactToPost = async (postID: string, reactionType: ReactionType) => {
     try {
-      await sdkClient.community.posts.reactToPost(postID, { type: reactionType });
+      await sdkClient.communities.posts.reactToPost(communityID, postID, { type: reactionType });
 
       // The optimistic update is handled in SinglePost component
       // Here we could refresh the post data if needed, but it's not necessary
@@ -168,7 +165,7 @@ export default function CommunityPage() {
 
   const handleAddComment = async (postID: string, content: string) => {
     try {
-      const newComment = await sdkClient.community.posts.createComment(postID, {
+      const newComment = await sdkClient.communities.posts.createComment(communityID, postID, {
         content,
         mediaUrls: []
       });

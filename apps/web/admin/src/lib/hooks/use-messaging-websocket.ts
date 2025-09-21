@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@nlc-ai/web-auth';
-import { DirectMessageResponse } from '@nlc-ai/sdk-messaging';
+import { DirectMessageResponse } from '@nlc-ai/sdk-messages';
 import { appConfig } from "@nlc-ai/web-shared";
 
 interface UseMessagingWebSocketOptions {

@@ -57,7 +57,7 @@
       "path": "../../../libs/web/settings"
     },
     {
-      "path": "../../../libs/sdk/messaging"
+      "path": "../../../libs/sdk/messages"
     },
     {
       "path": "../../../libs/sdk/media"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Video, FileText, FileDown } from 'lucide-react';
-import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 
 interface CurriculumContentProps {
   course: ExtendedCourse | null;

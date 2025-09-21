@@ -32,8 +32,8 @@ const AdminCommunityDetailPage = () => {
       setError('');
 
       const [communityResponse, activitiesResponse] = await Promise.all([
-        sdkClient.community.communities.getCommunity(communityID),
-        sdkClient.community.communities.getCommunityActivity(communityID, 6)
+        sdkClient.communities.getCommunity(communityID),
+        sdkClient.communities.getCommunityActivity(communityID, 6)
       ]);
 
       setCommunity(communityResponse);
@@ -49,7 +49,7 @@ const AdminCommunityDetailPage = () => {
     if (!community) return;
 
     try {
-      await sdkClient.community.communities.updateCommunity(community.id, {
+      await sdkClient.communities.updateCommunity(community.id, {
         isActive: !community.isActive
       });
 

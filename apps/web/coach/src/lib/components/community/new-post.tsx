@@ -92,8 +92,8 @@ export const NewPost: FC<IProps> = (props) => {
         throw new Error(`File type not supported. ${type === 'video' ? 'Please use MP4, MPEG, MOV, AVI, or WebM videos' : 'Please use JPEG, PNG, GIF, WebP images or MP4, MPEG videos'}`);
       }
 
-      const fileId = `${Date.now()}-${Math.random()}`;
-      setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
+      const fileID = `${Date.now()}-${Math.random()}`;
+      setUploadProgress(prev => ({ ...prev, [fileID]: 0 }));
 
       // Determine resource type and folder
       const isVideo = allowedVideoTypes.includes(file.type);
@@ -101,7 +101,7 @@ export const NewPost: FC<IProps> = (props) => {
 
       // Create upload options with transformations for optimization
       const uploadOptions: any = {
-        folder: `posts/${resourceType}s`,
+        folder: `nlc-ai/posts/${resourceType}s`,
         tags: ['post-media', resourceType],
         metadata: {
           uploadedFor: 'post',
@@ -139,14 +139,14 @@ export const NewPost: FC<IProps> = (props) => {
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => ({
           ...prev,
-          [fileId]: Math.min((prev[fileId] || 0) + Math.random() * 20, 90)
+          [fileID]: Math.min((prev[fileID] || 0) + Math.random() * 20, 90)
         }));
       }, 300);
 
       const result = await sdkClient.media.uploadAsset(file, uploadOptions);
 
       clearInterval(progressInterval);
-      setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
+      setUploadProgress(prev => ({ ...prev, [fileID]: 100 }));
 
       if (result.success && result.data) {
         const uploadedFile: UploadedFile = {
@@ -193,8 +193,8 @@ export const NewPost: FC<IProps> = (props) => {
     return videoUrl; // Fallback to video URL
   };
 
-  const removeFile = (fileId: string) => {
-    setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+  const removeFile = (fileID: string) => {
+    setUploadedFiles(prev => prev.filter(file => file.id !== fileID));
   };
 
   const triggerFileInput = () => {
@@ -316,8 +316,10 @@ export const NewPost: FC<IProps> = (props) => {
           {/* Upload Progress */}
           {Object.keys(uploadProgress).length > 0 && (
             <div className="space-y-2">
-              {Object.entries(uploadProgress).map(([fileId, progress]) => (
-                <div key={fileId} className="flex items-center gap-3">
+              {Object.entries(uploadProgress)
+                .filter(([_, progress]) => progress < 100)
+                .map(([fileID, progress]) => (
+                <div key={fileID} className="flex items-center gap-3">
                   <Upload className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="flex justify-between text-xs text-stone-300 mb-1">

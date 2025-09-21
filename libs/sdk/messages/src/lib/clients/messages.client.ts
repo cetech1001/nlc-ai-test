@@ -11,7 +11,7 @@ import {
   UnreadCountResponse,
 } from '../types';
 
-export class MessagingClient extends BaseClient {
+export class MessagesClient extends BaseClient {
   async createConversation(data: CreateConversationRequest): Promise<ConversationResponse> {
     const response = await this.request<ConversationResponse>('POST', '/conversations', { body: data });
     return response.data!;

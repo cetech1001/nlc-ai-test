@@ -23,7 +23,7 @@ export const appConfig: AppConfig = {
       communities: `${process.env.NEXT_PUBLIC_API_URL}/communities`,
       media: `${process.env.NEXT_PUBLIC_API_URL}/media`,
       notifications: `${process.env.NEXT_PUBLIC_API_URL}/notifications`,
-      messaging: `${process.env.NEXT_PUBLIC_API_URL}/messages`,
+      messages: `${process.env.NEXT_PUBLIC_API_URL}/messages`,
       agents: `${process.env.NEXT_PUBLIC_API_URL}/agents`,
       courses: `${process.env.NEXT_PUBLIC_API_URL}/courses`,
       integrations: `${process.env.NEXT_PUBLIC_API_URL}/integrations`,

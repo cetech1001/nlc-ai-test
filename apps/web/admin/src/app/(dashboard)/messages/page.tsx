@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { sdkClient, ConversationList, ChatWindow, UserSearchModal } from '@/lib';
-import { ConversationResponse } from '@nlc-ai/sdk-messaging';
+import { ConversationResponse } from '@nlc-ai/sdk-messages';
 import { MessageSquare, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 

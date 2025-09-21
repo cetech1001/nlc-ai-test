@@ -1,6 +1,6 @@
 import React from 'react';
 import { Eye } from 'lucide-react';
-import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 import { BackTo } from "@nlc-ai/web-shared";
 import {useRouter} from "next/navigation";
 

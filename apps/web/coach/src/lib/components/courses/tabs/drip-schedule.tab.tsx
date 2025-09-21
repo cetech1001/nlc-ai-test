@@ -1,7 +1,7 @@
 import { cn } from "@nlc-ai/web-ui";
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Calendar, Clock, Save, Info } from 'lucide-react';
-import type { ExtendedCourse } from '@nlc-ai/sdk-course';
+import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 import { sdkClient } from '@/lib';
 import { toast } from 'sonner';
 

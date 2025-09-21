@@ -124,7 +124,7 @@
       "path": "./apps/api/messaging"
     },
     {
-      "path": "./libs/sdk/messaging"
+      "path": "./libs/sdk/messages"
     },
     {
       "path": "./apps/web/pre-launch"
@@ -136,7 +136,7 @@
       "path": "./libs/sdk/agents"
     },
     {
-      "path": "./libs/sdk/course"
+      "path": "./libs/sdk/courses"
     },
     {
       "path": "./libs/sdk/integrations"

@@ -26,19 +26,22 @@
       "path": "../integrations/tsconfig.lib.json"
     },
     {
-      "path": "../course/tsconfig.lib.json"
+      "path": "../courses/tsconfig.lib.json"
     },
     {
       "path": "../agents/tsconfig.lib.json"
     },
     {
-      "path": "../messaging/tsconfig.lib.json"
+      "path": "../messages/tsconfig.lib.json"
     },
     {
       "path": "../notifications/tsconfig.lib.json"
     },
     {
       "path": "../media/tsconfig.lib.json"
+    },
+    {
+      "path": "../communities/tsconfig.lib.json"
     },
     {
       "path": "../leads/tsconfig.lib.json"

@@ -10,8 +10,21 @@ import {
   ExtendedCommunityMember,
   MemberStats, CommunityActivity, CommunityDetailStats
 } from '../types';
+import {ModerationClient} from "./moderation.client";
+import {PostsClient} from "./posts.client";
+import {NLCClientConfig} from "@nlc-ai/sdk-main";
 
 export class CommunitiesClient extends BaseClient {
+  public moderation: ModerationClient;
+  public posts: PostsClient;
+
+  constructor(config: NLCClientConfig) {
+    super(config);
+
+    this.posts = new PostsClient(config);
+    this.moderation = new ModerationClient(config);
+  }
+
   async getCommunities(filters?: CommunityFilters): Promise<Paginated<CommunityResponse>> {
     const searchParams = new URLSearchParams();
     if (filters) {

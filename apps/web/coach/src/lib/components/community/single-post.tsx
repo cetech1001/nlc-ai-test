@@ -54,7 +54,7 @@ export const SinglePost: FC<IProps> = (props) => {
     try {
       setLoadingComments(prev => ({ ...prev, [postID]: true }));
 
-      const response = await sdkClient.community.posts.getComments(postID, {page, limit: 10});
+      const response = await sdkClient.communities.posts.getComments(props.post.communityID, postID, {page, limit: 10});
 
       setComments(prev => ({
         ...prev,
@@ -222,7 +222,7 @@ export const SinglePost: FC<IProps> = (props) => {
     }));
 
     try {
-      await sdkClient.community.posts.reactToComment(commentID, { type: reactionType });
+      await sdkClient.communities.posts.reactToComment(props.post.communityID, commentID, { type: reactionType });
     } catch (error) {
       // Revert optimistic update on error
       setComments(prev => ({

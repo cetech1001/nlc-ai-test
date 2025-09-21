@@ -1,5 +1,5 @@
 {
-  "name": "@nlc-ai/sdk-messaging",
+  "name": "@nlc-ai/sdk-courses",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",

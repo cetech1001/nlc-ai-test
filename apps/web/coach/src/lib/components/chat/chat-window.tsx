@@ -3,7 +3,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Camera, Headphones, Info, MoreVertical, Phone, Send, Smile, User, Users, Video,} from 'lucide-react';
 import {ChatWindowSkeleton, sdkClient, useMessagingWebSocket} from '@/lib';
-import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messaging';
+import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messages';
 import {toast} from 'sonner';
 import {LoginResponse} from "@nlc-ai/web-auth";
 import {UserType} from "@nlc-ai/types";

@@ -141,7 +141,7 @@ const AdminCommunitiesPage = () => {
     try {
       setIsCommunitiesLoading(true);
 
-      const response = await sdkClient.community.communities.getCommunities({
+      const response = await sdkClient.communities.getCommunities({
         page: currentPage,
         limit: communitiesPerPage,
         search: searchQuery,
