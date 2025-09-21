@@ -5,6 +5,7 @@ import {formatTimeAgo, getInitials} from "@nlc-ai/web-utils";
 import {sdkClient, PostActionsDropdown, CommentActionsDropdown, EditPostModal} from "@/lib";
 import {toast} from "sonner";
 import { LoginResponse } from "@nlc-ai/web-auth";
+import {appConfig} from "@nlc-ai/web-shared";
 
 interface IProps {
   post: PostResponse;
@@ -46,7 +47,7 @@ export const SinglePost: FC<IProps> = (props) => {
 
   const POST_PREVIEW_LENGTH = 280;
 
-  const isOwnPost = props.user?.id === optimisticPost.communityMember?.userID;
+  const isOwnPost = props.user?.id === props.post.communityMember?.userID;
 
   const toggleComments = async (postID: string) => {
     const isCurrentlyShowing = showComments[postID];
@@ -240,8 +241,7 @@ export const SinglePost: FC<IProps> = (props) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
 
     try {
-      // TODO: Replace with actual API call
-      // await sdkClient.communities.posts.deletePost(props.post.communityID, props.post.id);
+      await sdkClient.communities.posts.deletePost(props.post.communityID, props.post.id);
 
       toast.success('Post deleted successfully');
       props.onPostDelete?.(props.post.id);
@@ -251,9 +251,11 @@ export const SinglePost: FC<IProps> = (props) => {
   };
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/vault/post/${props.post.id}`;
-    navigator.clipboard.writeText(url);
-    toast.success('Link copied to clipboard');
+    const url = `${appConfig.publicUrl}/communities/${props.post.community?.slug}/post/${props.post.id}`;
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        toast.success('Link copied to clipboard');
+      });
   };
 
   const handleReportPost = () => {
@@ -294,18 +296,16 @@ export const SinglePost: FC<IProps> = (props) => {
     if (!reply) return;
 
     try {
-      // TODO: Replace with actual API call
-      // await sdkClient.communities.posts.createComment(props.post.communityID, props.post.id, {
-      //   content: reply,
-      //   parentCommentID,
-      //   mediaUrls: []
-      // });
+      await sdkClient.communities.posts.createComment(props.post.communityID, props.post.id, {
+        content: reply,
+        parentCommentID,
+        mediaUrls: []
+      });
 
       setReplyText(prev => ({ ...prev, [parentCommentID]: '' }));
       setReplyingTo(prev => ({ ...prev, [parentCommentID]: false }));
       toast.success('Reply added successfully');
 
-      // Reload comments to show the new reply
       await loadComments(props.post.id, 1);
     } catch (error: any) {
       toast.error(error.message || 'Failed to add reply');
@@ -615,7 +615,6 @@ export const SinglePost: FC<IProps> = (props) => {
                 onDelete={handleDeletePost}
                 onCopyLink={handleCopyLink}
                 onReport={handleReportPost}
-                anchorRef={postActionsRef}
               />
             </div>
           </div>
@@ -793,6 +792,7 @@ export const SinglePost: FC<IProps> = (props) => {
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         postID={optimisticPost.id}
+        communityID={optimisticPost.communityID}
         initialContent={optimisticPost.content}
         onSaveSuccess={(newContent) => {
           const updatedPost = { ...optimisticPost, content: newContent, isEdited: true };

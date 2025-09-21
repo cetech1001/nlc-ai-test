@@ -234,6 +234,11 @@ const VaultPage = () => {
                   user={user}
                   key={post.id}
                   post={post}
+                  onPostDelete={(postID) => {
+                    setPosts(prevState =>
+                      prevState.filter((value) =>
+                        value.id !== postID));
+                  }}
                   handleReactToPost={handleReactToPost}
                   handleAddComment={handleAddComment}
                 />

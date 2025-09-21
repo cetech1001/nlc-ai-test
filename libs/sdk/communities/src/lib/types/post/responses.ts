@@ -28,6 +28,7 @@ export interface PostResponse extends Post{
   community?: {
     name: string;
     type: CommunityType;
+    slug: string;
   };
   communityMember?: {
     id: string;

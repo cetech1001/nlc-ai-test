@@ -55,10 +55,20 @@ export class PostsService {
       },
       include: {
         community: {
-          select: { name: true },
+          select: { name: true, type: true, slug: true },
         },
         communityMember: {
-          select: { userName: true },
+          select: { userName: true, userAvatarUrl: true, role: true, userID: true },
+        },
+        reactions: {
+          where: { userID: user.id, userType: user.type },
+          select: { type: true },
+        },
+        _count: {
+          select: {
+            reactions: true,
+            comments: true,
+          },
         },
       },
     });
@@ -131,7 +141,7 @@ export class PostsService {
       where,
       include: {
         community: {
-          select: { name: true, type: true },
+          select: { name: true, type: true, slug: true },
         },
         communityMember: {
           select: { userName: true, userAvatarUrl: true, role: true, userID: true },

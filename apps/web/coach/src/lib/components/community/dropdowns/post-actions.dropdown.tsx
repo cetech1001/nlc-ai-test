@@ -9,7 +9,6 @@ interface PostActionsDropdownProps {
   onDelete?: () => void;
   onReport?: () => void;
   onCopyLink?: () => void;
-  anchorRef?: React.RefObject<HTMLElement | null>;
 }
 
 export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
@@ -20,7 +19,6 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
   onDelete,
   onReport,
   onCopyLink,
-  anchorRef,
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 

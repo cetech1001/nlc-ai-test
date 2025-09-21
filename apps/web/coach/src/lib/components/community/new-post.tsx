@@ -40,12 +40,10 @@ export const NewPost: FC<IProps> = (props) => {
     try {
       const mediaUrls = uploadedFiles.map(file => file.url);
 
-      // Optimistic update - show post immediately
       if (props.onOptimisticPost) {
         props.onOptimisticPost(newPost, mediaUrls);
       }
 
-      // Clear form immediately for better UX
       const postContent = newPost;
       const postMediaUrls = [...mediaUrls];
       setNewPost('');

@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { Button, Textarea, Label } from '@nlc-ai/web-ui';
 import { toast } from 'sonner';
+import {sdkClient} from "@/lib";
 
 interface EditPostModalProps {
   isOpen: boolean;
   onClose: () => void;
   postID: string;
+  communityID: string;
   initialContent: string;
   onSaveSuccess?: (newContent: string) => void;
 }
 
-export const EditPostModal = ({ isOpen, onClose, postID, initialContent, onSaveSuccess }: EditPostModalProps) => {
+export const EditPostModal = ({ isOpen, onClose, postID, communityID, initialContent, onSaveSuccess }: EditPostModalProps) => {
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -31,13 +33,9 @@ export const EditPostModal = ({ isOpen, onClose, postID, initialContent, onSaveS
 
     setIsSaving(true);
     try {
-      // TODO: Replace with actual API call
-      // await sdkClient.community.posts.updatePost(postID, {
-      //   content: content.trim()
-      // });
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await sdkClient.communities.posts.updatePost(communityID, postID, {
+        content: content.trim()
+      });
 
       toast.success('Post updated successfully');
       onSaveSuccess?.(content.trim());
