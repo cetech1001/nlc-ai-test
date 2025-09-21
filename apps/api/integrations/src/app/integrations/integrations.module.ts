@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from "@nestjs/jwt";
 import { IntegrationsController } from './integrations.controller';
 import { CalendlyService } from "./services/apps/calendly.service";
 import { EncryptionService } from "./services/encryption.service";
@@ -13,15 +12,12 @@ import { TwitterService } from "./services/social/twitter.service";
 import { YoutubeService } from "./services/social/youtube.service";
 import { StateTokenService } from "./services/state-token.service";
 import { IntegrationFactory } from "./factories/integration.factory";
+import {IntegrationsService} from "./integrations.service";
 
 @Module({
-  imports: [
-    JwtModule.register({
-      global: true,
-    }),
-  ],
   controllers: [IntegrationsController],
   providers: [
+    IntegrationsService,
     EncryptionService,
     StateTokenService,
     TokenManagementService,
@@ -35,6 +31,9 @@ import { IntegrationFactory } from "./factories/integration.factory";
     YoutubeService,
     IntegrationFactory,
   ],
-  exports: [IntegrationFactory],
+  exports: [
+    IntegrationFactory,
+    IntegrationsService
+  ],
 })
 export class IntegrationsModule {}
