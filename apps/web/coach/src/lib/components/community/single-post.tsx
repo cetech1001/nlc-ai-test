@@ -1,5 +1,5 @@
 import {ChevronDown, ChevronUp, Heart, MessageCircle, MoreHorizontal, Send, Volume2, VolumeX} from "lucide-react";
-import {MemberRole, PostCommentResponse, PostResponse, ReactionType} from "@nlc-ai/sdk-community";
+import {MemberRole, PostCommentResponse, PostResponse, ReactionType} from "@nlc-ai/sdk-communities";
 import React, {FC, useState} from "react";
 import {formatTimeAgo, getInitials} from "@nlc-ai/web-utils";
 import {sdkClient} from "@/lib";

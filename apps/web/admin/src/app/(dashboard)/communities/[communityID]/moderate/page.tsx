@@ -9,7 +9,7 @@ import { Button } from '@nlc-ai/web-ui';
 import { FilterValues } from '@nlc-ai/sdk-core';
 import { toast } from 'sonner';
 import {moderationActionColumns, moderationContentColumns, sdkClient} from "@/lib";
-import { ModerationStats, FlaggedContent, ModerationAction } from '@nlc-ai/sdk-community';
+import { ModerationStats, FlaggedContent, ModerationAction } from '@nlc-ai/sdk-communities';
 import { moderationFilters, emptyModerationFilterValues } from '@/lib/components/communities/filters';
 
 const AdminCommunityModeratePage = () => {

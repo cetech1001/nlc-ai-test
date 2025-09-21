@@ -1,5 +1,5 @@
 import {Flag, MessageSquare, Users} from "lucide-react";
-import {FlaggedContent, ModerationAction} from "@nlc-ai/sdk-community";
+import {FlaggedContent, ModerationAction} from "@nlc-ai/sdk-communities";
 import { formatDate } from "@nlc-ai/web-utils";
 import { Badge } from "@nlc-ai/web-ui";
 

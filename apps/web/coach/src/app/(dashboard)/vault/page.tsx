@@ -9,7 +9,7 @@ import {
   PostType,
   ReactionType,
   CommunityResponse,
-} from "@nlc-ai/sdk-community";
+} from "@nlc-ai/sdk-communities";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import { toast } from "sonner";
 import { useAuth } from "@nlc-ai/web-auth";

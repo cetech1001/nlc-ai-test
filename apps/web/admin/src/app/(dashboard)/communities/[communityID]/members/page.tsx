@@ -16,7 +16,7 @@ import {
   memberFilters,
   emptyMemberFilterValues
 } from "@/lib";
-import {ExtendedCommunityMember} from "@nlc-ai/sdk-community";
+import {ExtendedCommunityMember} from "@nlc-ai/sdk-communities";
 
 interface MemberStats {
   totalMembers: number;

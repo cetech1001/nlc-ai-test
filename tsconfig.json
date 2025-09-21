@@ -46,7 +46,7 @@
       "path": "./libs/sdk/analytics"
     },
     {
-      "path": "./libs/sdk/community"
+      "path": "./libs/sdk/communities"
     },
     {
       "path": "./apps/api/monolith"

@@ -1,5 +1,5 @@
 import { Input, Textarea, Label } from '@nlc-ai/web-ui';
-import { CommunityFormErrors, CreateCommunityForm } from "@nlc-ai/sdk-community";
+import { CommunityFormErrors, CreateCommunityForm } from "@nlc-ai/sdk-communities";
 import { FC, useState } from "react";
 import { Camera, X, Upload, RotateCw } from 'lucide-react';
 import { ImageCropper } from '@nlc-ai/web-settings';

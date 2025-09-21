@@ -1,6 +1,6 @@
 import {Crown} from "lucide-react";
 import {FC, useEffect, useState} from "react";
-import {Community} from "@nlc-ai/sdk-community";
+import {Community} from "@nlc-ai/sdk-communities";
 import { appConfig } from "@nlc-ai/web-shared";
 import { formatCurrency } from "@nlc-ai/web-utils";
 import {sdkClient} from "@/lib";

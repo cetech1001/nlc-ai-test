@@ -41,9 +41,6 @@
       "path": "../media/tsconfig.lib.json"
     },
     {
-      "path": "../community/tsconfig.lib.json"
-    },
-    {
       "path": "../leads/tsconfig.lib.json"
     },
     {

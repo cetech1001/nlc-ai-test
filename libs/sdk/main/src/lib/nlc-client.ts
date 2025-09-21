@@ -5,7 +5,7 @@ import {EmailClient} from "@nlc-ai/sdk-email";
 import {BillingClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
 import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
-import {CommunityClient} from "@nlc-ai/sdk-community";
+import {CommunityClient} from "../../../communities";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
 import {MessagingClient} from "@nlc-ai/sdk-messaging";

@@ -1,6 +1,6 @@
 import { Users, Crown, Shield } from 'lucide-react';
 import { formatDate, getInitials } from '@nlc-ai/web-utils';
-import { ExtendedCommunityMember } from '@nlc-ai/sdk-community';
+import { ExtendedCommunityMember } from '@nlc-ai/sdk-communities';
 
 const getRoleIcon = (role: string) => {
   switch (role) {

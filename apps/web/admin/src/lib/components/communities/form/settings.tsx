@@ -1,6 +1,6 @@
 import React, {FC} from "react";
 import { Input, Label } from '@nlc-ai/web-ui';
-import {CommunityFormErrors, CreateCommunityForm} from "@nlc-ai/sdk-community";
+import {CommunityFormErrors, CreateCommunityForm} from "@nlc-ai/sdk-communities";
 
 interface IProps {
   form: CreateCommunityForm;

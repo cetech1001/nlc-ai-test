@@ -1,6 +1,6 @@
 import {TrendingUp, Users} from "lucide-react";
 import React, {FC} from "react";
-import {Community} from "@nlc-ai/sdk-community";
+import {Community} from "@nlc-ai/sdk-communities";
 
 interface IProps {
   community: Community

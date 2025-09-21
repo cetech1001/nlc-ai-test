@@ -10,7 +10,7 @@ import {
   CommunityDetailsInfo, CommunityDetailsQuickActions, CommunityDetailsRecentActivity, CommunityDetailsRecentMembers,
   CommunityDetailsSettingsPreview, sdkClient
 } from "@/lib";
-import {CommunityActivity, CommunityResponse} from '@nlc-ai/sdk-community';
+import {CommunityActivity, CommunityResponse} from '@nlc-ai/sdk-communities';
 
 const AdminCommunityDetailPage = () => {
   const router = useRouter();

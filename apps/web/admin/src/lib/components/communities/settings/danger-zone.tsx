@@ -1,6 +1,6 @@
 import { AlertTriangle, Trash2, Archive, RefreshCw } from 'lucide-react';
 import { Button } from '@nlc-ai/web-ui';
-import { CommunityResponse } from '@nlc-ai/sdk-community';
+import { CommunityResponse } from '@nlc-ai/sdk-communities';
 
 interface DangerZoneSettingsProps {
   community: CommunityResponse;

@@ -1,7 +1,7 @@
 import {Button} from "@nlc-ai/web-ui";
 import {useRouter} from "next/navigation";
 import {FC} from "react";
-import {Community} from "@nlc-ai/sdk-community";
+import {Community} from "@nlc-ai/sdk-communities";
 
 export const CommunityDetailsRecentMembers: FC<{ community: Community }> = ({ community }) => {
   const router = useRouter();

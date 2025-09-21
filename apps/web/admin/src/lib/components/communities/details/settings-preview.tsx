@@ -2,7 +2,7 @@ import {Button} from "@nlc-ai/web-ui";
 import {Settings} from "lucide-react";
 import {useRouter} from "next/navigation";
 import {FC} from "react";
-import {Community} from "@nlc-ai/sdk-community";
+import {Community} from "@nlc-ai/sdk-communities";
 
 export const CommunityDetailsSettingsPreview: FC<{ community: Community }> = ({ community }) => {
   const router = useRouter();

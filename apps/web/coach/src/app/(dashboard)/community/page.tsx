@@ -4,7 +4,7 @@ import React, {useEffect, useState} from 'react';
 import {useParams} from 'next/navigation';
 import {toast} from 'sonner';
 import {sdkClient} from '@/lib';
-import {Community, CreatePostRequest, MemberRole, PostResponse, PostType, ReactionType} from '@nlc-ai/sdk-community';
+import {Community, CreatePostRequest, MemberRole, PostResponse, PostType, ReactionType} from '@nlc-ai/sdk-communities';
 import {useAuth} from "@nlc-ai/web-auth";
 import {CommunityHeader, CommunityMembersSidebar, LoadMorePosts, NewPost, SinglePost} from '@/lib/components/community';
 

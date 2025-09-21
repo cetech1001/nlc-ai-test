@@ -14,7 +14,7 @@ import {
   CommunityVisibility,
   CreateCommunityForm,
   CreateCommunityRequest
-} from '@nlc-ai/sdk-community';
+} from '@nlc-ai/sdk-communities';
 import {MediaTransformationType} from "@nlc-ai/sdk-media";
 
 const stepNames = [

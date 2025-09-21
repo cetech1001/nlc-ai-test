@@ -1,5 +1,5 @@
 {
-  "name": "@nlc-ai/sdk-community",
+  "name": "@nlc-ai/sdk-communities",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",

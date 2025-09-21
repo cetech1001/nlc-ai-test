@@ -1,7 +1,7 @@
 import React, {FC} from "react";
 import {DollarSign, Globe, Lock, UserCheck, Users, CreditCard, Calendar, Zap} from "lucide-react";
 import { Input, Label } from '@nlc-ai/web-ui';
-import {CommunityType, CommunityVisibility, CommunityFormErrors, CreateCommunityForm} from "@nlc-ai/sdk-community";
+import {CommunityType, CommunityVisibility, CommunityFormErrors, CreateCommunityForm} from "@nlc-ai/sdk-communities";
 
 interface IProps {
   form: CreateCommunityForm;

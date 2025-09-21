@@ -4,7 +4,7 @@ import React, {useEffect, useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Crown, Menu, MessageCircle, Search, Shield, User, X,} from 'lucide-react';
 import {sdkClient} from '@/lib';
-import {ExtendedCommunityMember} from '@nlc-ai/sdk-community';
+import {ExtendedCommunityMember} from '@nlc-ai/sdk-communities';
 import {toast} from 'sonner';
 import {useAuth} from "@nlc-ai/web-auth";
 import {UserType} from "@nlc-ai/types";
