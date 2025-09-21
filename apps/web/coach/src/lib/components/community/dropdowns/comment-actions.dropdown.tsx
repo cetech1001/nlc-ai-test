@@ -20,7 +20,6 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
                                                                                 onDelete,
                                                                                 onReply,
                                                                                 onReport,
-                                                                                anchorRef,
                                                                               }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 

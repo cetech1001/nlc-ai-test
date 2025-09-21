@@ -149,7 +149,8 @@ export const SinglePost: FC<IProps> = (props) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       communityMember: {
-        id: props.user?.id || '',
+        id: '',
+        userID: props.user?.id!,
         userName: props.user?.firstName + ' ' + props.user?.lastName,
         userAvatarUrl: getCurrentUserAvatar(),
         role: MemberRole.MEMBER
@@ -370,7 +371,7 @@ export const SinglePost: FC<IProps> = (props) => {
   };
 
   const renderComment = (comment: OptimisticComment) => {
-    const isOwnComment = props.user?.id === comment.communityMember?.id;
+    const isOwnComment = props.user?.id === comment.communityMember?.userID;
 
     return (
       <div

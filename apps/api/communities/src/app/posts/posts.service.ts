@@ -175,16 +175,16 @@ export class PostsService {
       where: { id },
       include: {
         community: {
-          select: { name: true, type: true },
+          select: { name: true, type: true, slug: true },
         },
         communityMember: {
-          select: { userName: true, userAvatarUrl: true, role: true },
+          select: { userName: true, userID: true, userAvatarUrl: true, role: true },
         },
         comments: {
           where: { parentCommentID: null },
           include: {
             communityMember: {
-              select: { userName: true, userAvatarUrl: true, role: true },
+              select: { userName: true, userID: true, userAvatarUrl: true, role: true },
             },
             reactions: {
               where: { userID: user.id, userType: user.type },
@@ -194,7 +194,7 @@ export class PostsService {
               take: 3,
               include: {
                 communityMember: {
-                  select: { userName: true, userAvatarUrl: true, role: true },
+                  select: { userName: true, userID: true, userAvatarUrl: true, role: true },
                 },
                 reactions: {
                   where: { userID: user.id, userType: user.type },
@@ -485,7 +485,7 @@ export class PostsService {
       where,
       include: {
         communityMember: {
-          select: { userName: true, userAvatarUrl: true, role: true },
+          select: { userName: true, userID: true, userAvatarUrl: true, role: true },
         },
         reactions: {
           where: { userID: user.id, userType: user.type },
@@ -495,7 +495,7 @@ export class PostsService {
           take: 3,
           include: {
             communityMember: {
-              select: { userName: true, userAvatarUrl: true, role: true },
+              select: { userName: true, userID: true, userAvatarUrl: true, role: true },
             },
             reactions: {
               where: { userID: user.id, userType: user.type },

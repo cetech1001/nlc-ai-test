@@ -65,6 +65,7 @@ export interface PostCommentResponse extends PostComment{
   communityMember?: {
     id: string;
     userName: string;
+    userID: string;
     userAvatarUrl?: string;
     role: MemberRole;
   };
