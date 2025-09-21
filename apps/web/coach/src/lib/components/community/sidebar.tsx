@@ -1,9 +1,9 @@
 'use client'
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {useRouter} from 'next/navigation';
 import {Crown, Menu, MessageCircle, Search, Shield, User, X,} from 'lucide-react';
-import {sdkClient} from '@/lib';
+import {sdkClient, MembersSectionSkeleton} from '@/lib';
 import {ExtendedCommunityMember} from '@nlc-ai/sdk-communities';
 import {toast} from 'sonner';
 import {useAuth} from "@nlc-ai/web-auth";
@@ -28,6 +28,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
 }) => {
   const router = useRouter();
   const { user } = useAuth();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [members, setMembers] = useState<ExtendedCommunityMember[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,6 +73,16 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
     } catch (error: any) {
       toast.error('Failed to start conversation');
     }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    // Keep focus on the input
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
   };
 
   const filteredMembers = members.filter(member =>
@@ -136,18 +147,21 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
         <input
+          ref={searchInputRef}
           type="text"
           placeholder="Search members..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500"
         />
       </div>
 
       <div className="space-y-4 max-h-96 overflow-y-auto">
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-fuchsia-500"></div>
+          <div className="space-y-4">
+            <MembersSectionSkeleton />
+            <MembersSectionSkeleton />
+            <MembersSectionSkeleton />
           </div>
         ) : Object.keys(groupedMembers).length > 0 ? (
           Object.entries(groupedMembers).map(([role, roleMembers]) => (

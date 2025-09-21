@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "../../utils";
+import {useEffect} from "react";
 
 export interface AlertBannerProps {
   message: string;
@@ -12,6 +13,23 @@ export interface AlertBannerProps {
 
 const AlertBanner = React.forwardRef<HTMLDivElement, AlertBannerProps>(
   ({ message, type = "info", onDismiss, className, ...props }, ref) => {
+
+    useEffect(() => {
+      let timeoutID: NodeJS.Timeout;
+
+      if (onDismiss) {
+        timeoutID = setTimeout(() => {
+          onDismiss();
+        }, 3000);
+      }
+
+      return () => {
+        if (timeoutID) {
+          clearTimeout(timeoutID);
+        }
+      }
+    }, []);
+
     const typeStyles = {
       success: "bg-green-800/20 border-green-600 text-green-400",
       error: "bg-red-800/20 border-red-600 text-red-400",

@@ -31,6 +31,7 @@ export interface PostResponse extends Post{
   };
   communityMember?: {
     id: string;
+    userID: string;
     userName: string;
     userAvatarUrl?: string;
     role: MemberRole;

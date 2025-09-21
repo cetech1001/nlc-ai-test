@@ -134,7 +134,7 @@ export class PostsService {
           select: { name: true, type: true },
         },
         communityMember: {
-          select: { userName: true, userAvatarUrl: true, role: true },
+          select: { userName: true, userAvatarUrl: true, role: true, userID: true },
         },
         reactions: {
           where: { userID: user.id, userType: user.type },
