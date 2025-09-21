@@ -106,6 +106,7 @@ export default function CommunityPage() {
       communityMember: {
         id: '',
         userID: user.id,
+        userType: user.type,
         userName: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'You',
         userAvatarUrl: user.avatarUrl,
         role: MemberRole.MEMBER // This should come from community membership

@@ -11,7 +11,8 @@ import {
   sdkClient,
   SinglePost,
   CommunityMembersSidebar,
-  PostSkeleton
+  PostSkeleton,
+  UserProfileSidebar
 } from "@/lib";
 import {
   PostResponse,
@@ -21,6 +22,7 @@ import {
 } from "@nlc-ai/sdk-communities";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import { useAuth } from "@nlc-ai/web-auth";
+import { UserType } from "@nlc-ai/types";
 
 const VaultPage = () => {
   const router = useRouter();
@@ -35,6 +37,9 @@ const VaultPage = () => {
   const [successMessage, setSuccessMessage] = useState<string>("");
 
   const [showMembersSidebar, setShowMembersSidebar] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [selectedUserID, setSelectedUserID] = useState<string>("");
+  const [selectedUserType, setSelectedUserType] = useState<UserType>(UserType.COACH);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
@@ -174,6 +179,17 @@ const VaultPage = () => {
     }
   };
 
+  const handleUserClick = (userID: string, userType: UserType) => {
+    // Don't open profile for current user
+    if (userID === user?.id) return;
+
+    setSelectedUserID(userID);
+    setSelectedUserType(userType);
+    setShowUserProfile(true);
+    // Close members sidebar if open on mobile
+    setShowMembersSidebar(false);
+  };
+
   const loadMorePosts = () => {
     if (hasMorePosts && !postsLoading) {
       loadPosts(community?.id, currentPage + 1);
@@ -186,6 +202,8 @@ const VaultPage = () => {
     setSuccessMessage("");
   };
 
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+
   return (
     <div className="py-2 sm:py-4 lg:py-6 max-w-full overflow-hidden">
       {successMessage && (
@@ -197,7 +215,7 @@ const VaultPage = () => {
       )}
 
       <div className="flex gap-3 sm:gap-4 lg:gap-6 h-full relative">
-        <div className="flex-1 max-w-full lg:max-w-2xl px-2 sm:px-0">
+        <div className={`flex-1 max-w-full ${showUserProfile && isDesktop ? 'lg:max-w-2xl' : 'lg:max-w-2xl'} px-2 sm:px-0`}>
           {community ? (
             <CommunityHeader community={community}/>
           ) : (
@@ -240,8 +258,14 @@ const VaultPage = () => {
                       prevState.filter((value) =>
                         value.id !== postID));
                   }}
+                  onPostUpdate={(updatedPost) => {
+                    setPosts(prev => prev.map(p =>
+                      p.id === updatedPost.id ? updatedPost : p
+                    ));
+                  }}
                   handleReactToPost={handleReactToPost}
                   handleAddComment={handleAddComment}
+                  onUserClick={handleUserClick}
                 />
               ))
             )}
@@ -260,12 +284,24 @@ const VaultPage = () => {
           </div>
         </div>
 
+        {/* Community Members Sidebar */}
         {community && (
           <CommunityMembersSidebar
             communityID={community.id}
             isMobileOpen={showMembersSidebar}
             onMobileToggle={() => setShowMembersSidebar(!showMembersSidebar)}
             onMemberClick={handleMemberClick}
+          />
+        )}
+
+        {/* User Profile Sidebar */}
+        {showUserProfile && (
+          <UserProfileSidebar
+            isOpen={showUserProfile}
+            onClose={() => setShowUserProfile(false)}
+            userID={selectedUserID}
+            userType={selectedUserType}
+            isMobile={!isDesktop}
           />
         )}
       </div>

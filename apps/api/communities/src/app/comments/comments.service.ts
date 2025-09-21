@@ -79,7 +79,7 @@ export class CommentsService {
       },
       include: {
         communityMember: {
-          select: { userName: true, userAvatarUrl: true, role: true, userID: true },
+          select: { userName: true, userAvatarUrl: true, role: true, userType: true, userID: true },
         },
         reactions: {
           where: { userID: user.id, userType: user.type },
@@ -182,7 +182,7 @@ export class CommentsService {
       where,
       include: {
         communityMember: {
-          select: { userName: true, userID: true, userAvatarUrl: true, role: true },
+          select: { userName: true, userID: true, userType: true, userAvatarUrl: true, role: true },
         },
         reactions: {
           where: { userID: user.id, userType: user.type },
@@ -231,7 +231,7 @@ export class CommentsService {
           select: { communityID: true }
         },
         communityMember: {
-          select: { userName: true, userID: true, userAvatarUrl: true, role: true },
+          select: { userName: true, userID: true, userType: true, userAvatarUrl: true, role: true },
         },
         reactions: {
           where: { userID: user.id, userType: user.type },
@@ -240,7 +240,7 @@ export class CommentsService {
         replies: {
           include: {
             communityMember: {
-              select: { userName: true, userID: true, userAvatarUrl: true, role: true },
+              select: { userName: true, userID: true, userType: true, userAvatarUrl: true, role: true },
             },
             reactions: {
               where: { userID: user.id, userType: user.type },

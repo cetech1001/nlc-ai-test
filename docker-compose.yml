@@ -340,6 +340,7 @@ services:
     volumes:
       - ./apps/api/users:/app/apps/api/users
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 

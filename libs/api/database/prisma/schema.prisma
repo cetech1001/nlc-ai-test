@@ -88,6 +88,45 @@ model Coach {
   @@map("coaches")
 }
 
+model Client {
+  id                String         @id @default(uuid()) @db.Uuid
+  passwordHash      String?        @db.VarChar(255)
+  email             String         @unique @db.VarChar(255)
+  provider          AuthProviders?
+  providerID        String?
+  firstName         String         @db.VarChar(100)
+  lastName          String         @db.VarChar(100)
+  phone             String?        @db.VarChar(20)
+  avatarUrl         String?
+  source            String?        @db.VarChar(100)
+  tags              String[]
+  lastInteractionAt DateTime?      @db.Timestamptz(6)
+  totalInteractions Int?           @default(0)
+  engagementScore   Decimal?       @default(0.00) @db.Decimal(3, 2)
+  stripeCustomerID  String?        @db.VarChar(255)
+  customFields      Json?          @default("{}")
+  isActive          Boolean?       @default(true)
+  isVerified        Boolean?       @default(false)
+  isDeleted         Boolean?       @default(false)
+  deletedAt         DateTime?      @db.Timestamptz(6)
+  lastLoginAt       DateTime?      @db.Timestamptz(6)
+  createdAt         DateTime?      @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?      @default(now()) @db.Timestamptz(6)
+
+  aiInteractions          AiInteraction[]
+  courseEnrollments       CourseEnrollment[]
+  emailMessages           EmailMessage[]
+  clientCoaches           ClientCoach[]
+  emailSequences          EmailSequence[]
+  paymentMethods          PaymentMethod[]
+  generatedEmailResponses GeneratedEmailResponse[]
+  emailThreads            EmailThread[]
+
+  @@index([email], map: "idx_clients_email")
+  @@index([lastInteractionAt], map: "idx_clients_last_interaction")
+  @@map("clients")
+}
+
 model CoachAiAgent {
   id               String    @id @default(uuid()) @db.Uuid
   coachID          String    @db.Uuid
@@ -134,45 +173,6 @@ model DailyKPI {
   @@unique([coachID, date])
   @@index([coachID, date], map: "idx_daily_kpis_coach_id_date")
   @@map("daily_kpis")
-}
-
-model Client {
-  id                String         @id @default(uuid()) @db.Uuid
-  passwordHash      String?        @db.VarChar(255)
-  email             String         @unique @db.VarChar(255)
-  provider          AuthProviders?
-  providerID        String?
-  firstName         String         @db.VarChar(100)
-  lastName          String         @db.VarChar(100)
-  phone             String?        @db.VarChar(20)
-  avatarUrl         String?
-  source            String?        @db.VarChar(100)
-  tags              String[]
-  lastInteractionAt DateTime?      @db.Timestamptz(6)
-  totalInteractions Int?           @default(0)
-  engagementScore   Decimal?       @default(0.00) @db.Decimal(3, 2)
-  stripeCustomerID  String?        @db.VarChar(255)
-  customFields      Json?          @default("{}")
-  isActive          Boolean?       @default(true)
-  isVerified        Boolean?       @default(false)
-  isDeleted         Boolean?       @default(false)
-  deletedAt         DateTime?      @db.Timestamptz(6)
-  lastLoginAt       DateTime?      @db.Timestamptz(6)
-  createdAt         DateTime?      @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime?      @default(now()) @db.Timestamptz(6)
-
-  aiInteractions          AiInteraction[]
-  courseEnrollments       CourseEnrollment[]
-  emailMessages           EmailMessage[]
-  clientCoaches           ClientCoach[]
-  emailSequences          EmailSequence[]
-  paymentMethods          PaymentMethod[]
-  generatedEmailResponses GeneratedEmailResponse[]
-  emailThreads            EmailThread[]
-
-  @@index([email], map: "idx_clients_email")
-  @@index([lastInteractionAt], map: "idx_clients_last_interaction")
-  @@map("clients")
 }
 
 enum ClientCoachStatus {

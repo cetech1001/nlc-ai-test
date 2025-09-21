@@ -11,7 +11,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto';
 import { JwtAuthGuard, UserTypesGuard, UserTypes, CurrentUser } from '@nlc-ai/api-auth';
-import { UserType, type AuthUser } from '@nlc-ai/api-types';
+import { UserType, type AuthUser } from '@nlc-ai/types';
 
 @ApiTags('Profiles')
 @Controller('profiles')
@@ -21,7 +21,7 @@ export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
   @Get('lookup/:userType/:id')
-  @UserTypes(UserType.admin, UserType.coach, UserType.client)
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
   @ApiOperation({ summary: 'Lookup user profile by type and ID' })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
   lookupUserProfile(
@@ -32,7 +32,7 @@ export class ProfilesController {
   }
 
   @Get(':userType/:id')
-  @UserTypes(UserType.admin, UserType.coach, UserType.client)
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
   @ApiOperation({ summary: 'Get user profile by type and ID' })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
   getProfile(
@@ -41,7 +41,7 @@ export class ProfilesController {
     @CurrentUser() user: AuthUser
   ) {
     // Users can only view their own profile unless they're admin
-    if (user.type !== UserType.admin && (user.id !== id || user.type !== userType)) {
+    if (user.type !== UserType.ADMIN && (user.id !== id || user.type !== userType)) {
       throw new ForbiddenException('Access denied');
     }
 
@@ -49,7 +49,7 @@ export class ProfilesController {
   }
 
   @Patch(':userType/:id')
-  @UserTypes(UserType.admin, UserType.coach, UserType.client)
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
   @ApiOperation({ summary: 'Update user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   updateProfile(
@@ -59,10 +59,29 @@ export class ProfilesController {
     @CurrentUser() user: AuthUser
   ) {
     // Users can only update their own profile unless they're admin
-    if (user.type !== UserType.admin && (user.id !== id || user.type !== userType)) {
+    if (user.type !== UserType.ADMIN && (user.id !== id || user.type !== userType)) {
       throw new ForbiddenException('Access denied');
     }
 
     return this.profilesService.updateProfile(userType, id, updateProfileDto);
+  }
+
+  // Add these controller methods
+  @Get('profile/:userID/:userType')
+  @ApiOperation({ summary: 'Get user profile' })
+  async getUserProfile(
+    @Param('userID') userID: string,
+    @Param('userType') userType: UserType
+  ) {
+    return this.profilesService.getUserProfile(userID, userType);
+  }
+
+  @Get('stats/:userID/:userType')
+  @ApiOperation({ summary: 'Get user stats' })
+  async getUserStats(
+    @Param('userID') userID: string,
+    @Param('userType') userType: UserType
+  ) {
+    return this.profilesService.getUserStats(userID, userType);
   }
 }

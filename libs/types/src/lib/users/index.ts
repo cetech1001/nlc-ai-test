@@ -3,3 +3,5 @@ export enum UserType {
   COACH = 'coach',
   CLIENT = 'client'
 }
+
+export * from './profile';

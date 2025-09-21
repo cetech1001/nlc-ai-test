@@ -2,10 +2,11 @@ import {ChevronDown, ChevronUp, Heart, MessageCircle, MoreHorizontal, Send, Volu
 import {MemberRole, PostCommentResponse, PostResponse, ReactionType} from "@nlc-ai/sdk-communities";
 import React, {FC, useState, useRef} from "react";
 import {formatTimeAgo, getInitials} from "@nlc-ai/web-utils";
-import {sdkClient, PostActionsDropdown, CommentActionsDropdown, EditPostModal} from "@/lib";
+import {sdkClient, PostActionsDropdown, CommentActionsDropdown, EditPostModal, EditCommentModal} from "@/lib";
 import {toast} from "sonner";
 import { LoginResponse } from "@nlc-ai/web-auth";
 import {appConfig} from "@nlc-ai/web-shared";
+import {UserType} from "@nlc-ai/types";
 
 interface IProps {
   post: PostResponse;
@@ -14,6 +15,7 @@ interface IProps {
   handleAddComment: (postID: string, newComment: string) => void;
   onPostUpdate?: (updatedPost: PostResponse) => void;
   onPostDelete?: (postID: string) => void;
+  onUserClick?: (userID: string, userType: UserType) => void;
 }
 
 interface OptimisticComment extends PostCommentResponse {
@@ -30,6 +32,10 @@ export const SinglePost: FC<IProps> = (props) => {
   const [hasMoreComments, setHasMoreComments] = useState<{ [key: string]: boolean }>({});
   const [isExpanded, setIsExpanded] = useState(false);
   const [mutedVideos, setMutedVideos] = useState<{ [key: string]: boolean }>({});
+
+  // Add these after existing state variables
+  const [showEditCommentModal, setShowEditCommentModal] = useState<{ [key: string]: boolean }>({});
+  const [editingCommentContent, setEditingCommentContent] = useState<{ [key: string]: string }>({});
 
   // Dropdown and modal states
   const [showPostActions, setShowPostActions] = useState(false);
@@ -151,6 +157,7 @@ export const SinglePost: FC<IProps> = (props) => {
       communityMember: {
         id: '',
         userID: props.user?.id!,
+        userType: props.user?.type!,
         userName: props.user?.firstName + ' ' + props.user?.lastName,
         userAvatarUrl: getCurrentUserAvatar(),
         role: MemberRole.MEMBER
@@ -263,21 +270,30 @@ export const SinglePost: FC<IProps> = (props) => {
     toast.info('Report functionality will be implemented soon');
   };
 
-  const handleEditComment = (commentID: string) => {
-    toast.info('Edit comment functionality will be implemented soon');
+  const handleEditComment = (commentID: string, currentContent: string) => {
+    setEditingCommentContent(prev => ({ ...prev, [commentID]: currentContent }));
+    setShowEditCommentModal(prev => ({ ...prev, [commentID]: true }));
   };
 
   const handleDeleteComment = async (commentID: string) => {
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {
-      // TODO: Replace with actual API call
       await sdkClient.communities.comments.deleteComment(props.post.communityID, commentID);
 
+      // Remove comment from local state
       setComments(prev => ({
         ...prev,
         [props.post.id]: (prev[props.post.id] || []).filter(c => c.id !== commentID)
       }));
+
+      // Update post comment count
+      const updatedPost = {
+        ...optimisticPost,
+        commentCount: optimisticPost.commentCount - 1
+      };
+      setOptimisticPost(updatedPost);
+      props.onPostUpdate?.(updatedPost);
 
       toast.success('Comment deleted successfully');
     } catch (error: any) {
@@ -319,6 +335,20 @@ export const SinglePost: FC<IProps> = (props) => {
       ...prev,
       [videoID]: !prev[videoID]
     }));
+  };
+
+  const handleCommentEditSuccess = (commentID: string, newContent: string) => {
+    // Update comment in local state
+    setComments(prev => ({
+      ...prev,
+      [props.post.id]: (prev[props.post.id] || []).map(comment =>
+        comment.id === commentID
+          ? { ...comment, content: newContent, isEdited: true }
+          : comment
+      )
+    }));
+
+    setShowEditCommentModal(prev => ({ ...prev, [commentID]: false }));
   };
 
   const isLongPost = optimisticPost.content.length > POST_PREVIEW_LENGTH;
@@ -386,10 +416,14 @@ export const SinglePost: FC<IProps> = (props) => {
             <img
               src={comment.communityMember.userAvatarUrl}
               alt={comment.communityMember.userName || "User"}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => props.onUserClick?.(comment.communityMember?.userID!, comment.communityMember?.userType as UserType)}
             />
           ) : (
-            <div className="w-8 h-8 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
+            <div
+              className="w-8 h-8 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => props.onUserClick?.(comment.communityMember?.userID!, comment.communityMember?.userType as UserType)}
+            >
               <span className="text-white text-xs font-semibold">
                 {getInitials(comment.communityMember?.userName)}
               </span>
@@ -425,7 +459,7 @@ export const SinglePost: FC<IProps> = (props) => {
                   isOpen={showCommentActions[comment.id] || false}
                   onClose={() => setShowCommentActions(prev => ({ ...prev, [comment.id]: false }))}
                   isOwnComment={isOwnComment}
-                  onEdit={() => handleEditComment(comment.id)}
+                  onEdit={() => handleEditComment(comment.id, comment.content)}
                   onDelete={() => handleDeleteComment(comment.id)}
                   onReply={() => handleReplyToComment(comment.id)}
                   onReport={() => toast.info('Report functionality will be implemented soon')}
@@ -522,10 +556,14 @@ export const SinglePost: FC<IProps> = (props) => {
                       <img
                         src={reply.communityMember.userAvatarUrl}
                         alt={reply.communityMember.userName || "User"}
-                        className="w-6 h-6 rounded-full object-cover"
+                        className="w-6 h-6 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => props.onUserClick?.(reply.communityMember?.userID!, reply.communityMember?.userType as UserType)}
                       />
                     ) : (
-                      <div className="w-6 h-6 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
+                      <div
+                        className="w-6 h-6 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => props.onUserClick?.(reply.communityMember?.userID!, reply.communityMember?.userType as UserType)}
+                      >
                         <span className="text-white text-xs">
                           {getInitials(reply.communityMember?.userName)}
                         </span>
@@ -570,7 +608,10 @@ export const SinglePost: FC<IProps> = (props) => {
         <div className="relative z-10 p-4 sm:p-6">
           {/* Post Header */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full flex-shrink-0">
+            <div
+              className="w-10 sm:w-12 h-10 sm:h-12 rounded-full flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => props.onUserClick?.(optimisticPost.communityMember?.userID!, optimisticPost.communityMember?.userType as UserType)}
+            >
               {optimisticPost.communityMember?.userAvatarUrl ? (
                 <img
                   src={optimisticPost.communityMember.userAvatarUrl}
@@ -802,6 +843,19 @@ export const SinglePost: FC<IProps> = (props) => {
           props.onPostUpdate?.(updatedPost);
         }}
       />
+
+      {/* Edit Comment Modals */}
+      {Object.entries(showEditCommentModal).map(([commentID, isOpen]) => (
+        <EditCommentModal
+          key={commentID}
+          isOpen={isOpen}
+          onClose={() => setShowEditCommentModal(prev => ({ ...prev, [commentID]: false }))}
+          commentID={commentID}
+          communityID={optimisticPost.communityID}
+          initialContent={editingCommentContent[commentID] || ''}
+          onSaveSuccess={(newContent) => handleCommentEditSuccess(commentID, newContent)}
+        />
+      ))}
     </>
   );
 }

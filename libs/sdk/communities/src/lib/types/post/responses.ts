@@ -1,6 +1,6 @@
 import {PostType} from "./enums";
 import {CommunityType, MemberRole} from "../community";
-import {UserType} from "@nlc-ai/sdk-users";
+import {UserType} from "@nlc-ai/types";
 import {ReactionType} from "../comments";
 
 export interface Post {
@@ -34,6 +34,7 @@ export interface PostResponse extends Post{
   communityMember?: {
     id: string;
     userID: string;
+    userType: UserType;
     userName: string;
     userAvatarUrl?: string;
     role: MemberRole;
@@ -67,6 +68,7 @@ export interface PostCommentResponse extends PostComment{
     id: string;
     userName: string;
     userID: string;
+    userType: UserType;
     userAvatarUrl?: string;
     role: MemberRole;
   };
