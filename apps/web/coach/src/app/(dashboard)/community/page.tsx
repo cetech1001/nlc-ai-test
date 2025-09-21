@@ -166,7 +166,8 @@ export default function CommunityPage() {
 
   const handleAddComment = async (postID: string, content: string) => {
     try {
-      const newComment = await sdkClient.communities.posts.createComment(communityID, postID, {
+      const newComment = await sdkClient.communities.comments.createComment(communityID, {
+        postID,
         content,
         mediaUrls: []
       });

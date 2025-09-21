@@ -6,7 +6,8 @@ import {
   Delete,
   Body,
   Param,
-  Query, ParseUUIDPipe,
+  Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,9 +23,7 @@ import {
   CreatePostDto,
   UpdatePostDto,
   PostFiltersDto,
-  CreateCommentDto,
   ReactToPostDto,
-  CommentFiltersDto,
 } from './dto';
 
 @ApiTags('Posts')
@@ -99,41 +98,5 @@ export class PostsController {
     @CurrentUser() user: AuthUser
   ) {
     return this.postsService.reactToPost(postID, reactionDto, user);
-  }
-
-  @Post(':id/comments')
-  @ApiOperation({ summary: 'Add comment to post' })
-  @ApiParam({ name: 'id', description: 'Post ID' })
-  @ApiResponse({ status: 201, description: 'Comment added successfully' })
-  async createComment(
-    @Param('id') postID: string,
-    @Body() createDto: CreateCommentDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.postsService.createComment(postID, createDto, user);
-  }
-
-  @Get(':id/comments')
-  @ApiOperation({ summary: 'Get post comments' })
-  @ApiParam({ name: 'id', description: 'Post ID' })
-  @ApiResponse({ status: 200, description: 'Comments retrieved successfully' })
-  async getComments(
-    @Param('id') postID: string,
-    @Query() filters: CommentFiltersDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.postsService.getComments(postID, filters, user);
-  }
-
-  @Post('comments/:commentID/reactions')
-  @ApiOperation({ summary: 'React to comment' })
-  @ApiParam({ name: 'commentID', description: 'Comment ID' })
-  @ApiResponse({ status: 200, description: 'Reaction added successfully' })
-  async reactToComment(
-    @Param('commentID') commentID: string,
-    @Body() reactionDto: ReactToPostDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.postsService.reactToComment(commentID, reactionDto, user);
   }
 }

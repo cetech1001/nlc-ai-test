@@ -13,16 +13,19 @@ import {
 import {ModerationClient} from "./moderation.client";
 import {PostsClient} from "./posts.client";
 import {NLCClientConfig} from "@nlc-ai/sdk-main";
+import { CommentsClient } from "./comments.client";
 
 export class CommunitiesClient extends BaseClient {
   public moderation: ModerationClient;
   public posts: PostsClient;
+  public comments: CommentsClient;
 
   constructor(config: NLCClientConfig) {
     super(config);
 
     this.posts = new PostsClient(config);
     this.moderation = new ModerationClient(config);
+    this.comments = new CommentsClient(config);
   }
 
   async getCommunities(filters?: CommunityFilters): Promise<Paginated<CommunityResponse>> {

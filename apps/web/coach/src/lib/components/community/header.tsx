@@ -25,7 +25,7 @@ export const CommunityHeader: FC<IProps> = (props) => {
             <p className="text-stone-400 text-xs sm:text-sm">
               <span className="inline-block">{props.community.memberCount} coach{props.community.memberCount !== 1 && 'es'}</span>
               <span className="mx-1 hidden sm:inline">•</span>
-              <span className="block sm:inline">{props.community.postCount} post{props.community.memberCount !== 1 && 's'}</span>
+              <span className="block sm:inline">{props.community.postCount} post{props.community.postCount !== 1 && 's'}</span>
             </p>
           </div>
           <div className="flex-shrink-0">

@@ -7,6 +7,11 @@ export class CreateCommentDto {
   @MaxLength(2000)
   content: string;
 
+  @ApiProperty({ description: 'Post ID for post comments', required: false })
+  @IsOptional()
+  @IsUUID()
+  postID: string;
+
   @ApiProperty({ description: 'Media URLs', required: false, type: [String] })
   @IsOptional()
   @IsArray()

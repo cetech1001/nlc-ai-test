@@ -141,7 +141,8 @@ const VaultPage = () => {
     if (!newComment.trim()) return;
 
     try {
-      await sdkClient.communities.posts.createComment(community?.id!, postID, {
+      await sdkClient.communities.comments.createComment(community?.id!, {
+        postID,
         content: newComment.trim(),
         mediaUrls: []
       });

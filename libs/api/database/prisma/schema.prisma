@@ -486,6 +486,143 @@ model Community {
   @@map("communities")
 }
 
+model CommunityInvite {
+  id          String    @id @default(uuid()) @db.Uuid
+  communityID String    @db.Uuid
+  inviterID   String    @db.Uuid
+  inviterType String    @db.VarChar(20)
+  inviteeID   String    @db.Uuid
+  inviteeType String    @db.VarChar(20)
+  message     String?   @db.Text
+  token       String    @unique @db.VarChar(255)
+  status      String    @default("pending") @db.VarChar(20) // pending, accepted, declined, expired
+  expiresAt   DateTime  @db.Timestamptz(6)
+  acceptedAt  DateTime? @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+
+  community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([inviteeID, inviteeType])
+  @@index([status])
+  @@map("community_invites")
+}
+
+model CommunityMember {
+  id           String       @id @default(uuid()) @db.Uuid
+  communityID  String       @db.Uuid
+  userID       String       @db.Uuid
+  userType     UserType
+  role         MemberRole   @default(member)
+  status       MemberStatus @default(active)
+  joinedAt     DateTime     @default(now()) @db.Timestamptz(6)
+  lastActiveAt DateTime?    @db.Timestamptz(6)
+  invitedBy    String?      @db.Uuid
+  customTitle  String?      @db.VarChar(100)
+  permissions  String[]     @default([])
+
+  userName      String  @db.VarChar(255)
+  userEmail     String  @db.VarChar(255)
+  userAvatarUrl String?
+
+  community Community     @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  posts     Post[]
+  comments  PostComment[]
+
+  @@unique([communityID, userID, userType])
+  @@index([userID, userType])
+  @@index([communityID])
+  @@index([status])
+  @@index([userName])
+  @@index([userEmail])
+  @@map("community_members")
+}
+
+model Post {
+  id          String @id @default(uuid()) @db.Uuid
+  communityID String @db.Uuid
+
+  communityMemberID String @db.Uuid
+
+  type         PostType @default(text)
+  content      String   @db.Text
+  mediaUrls    String[] @default([])
+  linkUrl      String?
+  linkPreview  Json?    @default("{}")
+  pollOptions  String[] @default([])
+  eventData    Json?    @default("{}")
+  isPinned     Boolean  @default(false)
+  isEdited     Boolean  @default(false)
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  shareCount   Int      @default(0)
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  isDeleted Boolean @default(false)
+
+  community       Community       @relation(fields: [communityID], references: [id], onDelete: Cascade)
+  communityMember CommunityMember @relation(fields: [communityMemberID], references: [id], onDelete: Cascade)
+  comments        PostComment[]
+  reactions       PostReaction[]
+
+  @@index([communityID])
+  @@index([communityMemberID])
+  @@index([type])
+  @@index([createdAt])
+  @@index([isPinned])
+  @@map("posts")
+}
+
+model PostComment {
+  id     String @id @default(uuid()) @db.Uuid
+  postID String @db.Uuid
+
+  communityMemberID String @db.Uuid
+
+  content         String   @db.Text
+  mediaUrls       String[] @default([])
+  parentCommentID String?  @db.Uuid
+  likeCount       Int      @default(0)
+  replyCount      Int      @default(0)
+  isEdited        Boolean  @default(false)
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+
+  post            Post            @relation(fields: [postID], references: [id], onDelete: Cascade)
+  communityMember CommunityMember @relation(fields: [communityMemberID], references: [id], onDelete: Cascade)
+  parentComment   PostComment?    @relation("CommentReplies", fields: [parentCommentID], references: [id])
+  replies         PostComment[]   @relation("CommentReplies")
+  reactions       PostReaction[]
+
+  @@index([postID])
+  @@index([communityMemberID])
+  @@index([parentCommentID])
+  @@index([createdAt])
+  @@map("post_comments")
+}
+
+model PostReaction {
+  id        String  @id @default(uuid()) @db.Uuid
+  postID    String? @db.Uuid
+  commentID String? @db.Uuid
+
+  userID   String   @db.Uuid
+  userType UserType
+
+  type      ReactionType @default(like)
+  createdAt DateTime     @default(now()) @db.Timestamptz(6)
+
+  post    Post?        @relation(fields: [postID], references: [id], onDelete: Cascade)
+  comment PostComment? @relation(fields: [commentID], references: [id], onDelete: Cascade)
+
+  @@unique([postID, userID, userType])
+  @@unique([commentID, userID, userType])
+  @@index([userID, userType])
+  @@index([type])
+  @@map("post_reactions")
+}
+
 model FlaggedContent {
   id          String @id @default(uuid()) @db.Uuid
   contentID   String @db.Uuid
@@ -656,143 +793,6 @@ model ModerationStats {
   @@unique([communityID, date])
   @@index([date])
   @@map("moderation_stats")
-}
-
-model CommunityInvite {
-  id          String    @id @default(uuid()) @db.Uuid
-  communityID String    @db.Uuid
-  inviterID   String    @db.Uuid
-  inviterType String    @db.VarChar(20)
-  inviteeID   String    @db.Uuid
-  inviteeType String    @db.VarChar(20)
-  message     String?   @db.Text
-  token       String    @unique @db.VarChar(255)
-  status      String    @default("pending") @db.VarChar(20) // pending, accepted, declined, expired
-  expiresAt   DateTime  @db.Timestamptz(6)
-  acceptedAt  DateTime? @db.Timestamptz(6)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
-
-  community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([inviteeID, inviteeType])
-  @@index([status])
-  @@map("community_invites")
-}
-
-model CommunityMember {
-  id           String       @id @default(uuid()) @db.Uuid
-  communityID  String       @db.Uuid
-  userID       String       @db.Uuid
-  userType     UserType
-  role         MemberRole   @default(member)
-  status       MemberStatus @default(active)
-  joinedAt     DateTime     @default(now()) @db.Timestamptz(6)
-  lastActiveAt DateTime?    @db.Timestamptz(6)
-  invitedBy    String?      @db.Uuid
-  customTitle  String?      @db.VarChar(100)
-  permissions  String[]     @default([])
-
-  userName      String  @db.VarChar(255)
-  userEmail     String  @db.VarChar(255)
-  userAvatarUrl String?
-
-  community Community     @relation(fields: [communityID], references: [id], onDelete: Cascade)
-  posts     Post[]
-  comments  PostComment[]
-
-  @@unique([communityID, userID, userType])
-  @@index([userID, userType])
-  @@index([communityID])
-  @@index([status])
-  @@index([userName])
-  @@index([userEmail])
-  @@map("community_members")
-}
-
-model Post {
-  id          String @id @default(uuid()) @db.Uuid
-  communityID String @db.Uuid
-
-  communityMemberID String @db.Uuid
-
-  type         PostType @default(text)
-  content      String   @db.Text
-  mediaUrls    String[] @default([])
-  linkUrl      String?
-  linkPreview  Json?    @default("{}")
-  pollOptions  String[] @default([])
-  eventData    Json?    @default("{}")
-  isPinned     Boolean  @default(false)
-  isEdited     Boolean  @default(false)
-  likeCount    Int      @default(0)
-  commentCount Int      @default(0)
-  shareCount   Int      @default(0)
-  createdAt    DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
-
-  isDeleted Boolean @default(false)
-
-  community       Community       @relation(fields: [communityID], references: [id], onDelete: Cascade)
-  communityMember CommunityMember @relation(fields: [communityMemberID], references: [id], onDelete: Cascade)
-  comments        PostComment[]
-  reactions       PostReaction[]
-
-  @@index([communityID])
-  @@index([communityMemberID])
-  @@index([type])
-  @@index([createdAt])
-  @@index([isPinned])
-  @@map("posts")
-}
-
-model PostComment {
-  id     String @id @default(uuid()) @db.Uuid
-  postID String @db.Uuid
-
-  communityMemberID String @db.Uuid
-
-  content         String   @db.Text
-  mediaUrls       String[] @default([])
-  parentCommentID String?  @db.Uuid
-  likeCount       Int      @default(0)
-  replyCount      Int      @default(0)
-  isEdited        Boolean  @default(false)
-  createdAt       DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
-
-  post            Post            @relation(fields: [postID], references: [id], onDelete: Cascade)
-  communityMember CommunityMember @relation(fields: [communityMemberID], references: [id], onDelete: Cascade)
-  parentComment   PostComment?    @relation("CommentReplies", fields: [parentCommentID], references: [id])
-  replies         PostComment[]   @relation("CommentReplies")
-  reactions       PostReaction[]
-
-  @@index([postID])
-  @@index([communityMemberID])
-  @@index([parentCommentID])
-  @@index([createdAt])
-  @@map("post_comments")
-}
-
-model PostReaction {
-  id        String  @id @default(uuid()) @db.Uuid
-  postID    String? @db.Uuid
-  commentID String? @db.Uuid
-
-  userID   String   @db.Uuid
-  userType UserType
-
-  type      ReactionType @default(like)
-  createdAt DateTime     @default(now()) @db.Timestamptz(6)
-
-  post    Post?        @relation(fields: [postID], references: [id], onDelete: Cascade)
-  comment PostComment? @relation(fields: [commentID], references: [id], onDelete: Cascade)
-
-  @@unique([postID, userID, userType])
-  @@unique([commentID, userID, userType])
-  @@index([userID, userType])
-  @@index([type])
-  @@map("post_reactions")
 }
 
 model CommunityAnalytics {

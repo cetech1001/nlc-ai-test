@@ -1,4 +1,5 @@
-import {PostType, ReactionType} from "./enums";
+import {PostType} from "./enums";
+import {ReactionType} from "../comments";
 
 export interface CreatePostRequest {
   type?: PostType;
@@ -29,20 +30,6 @@ export interface PostFilters {
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
-}
-
-export interface CommentFilters {
-  parentCommentID?: string;
-  search?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
-export interface CreateCommentRequest {
-  content: string;
-  mediaUrls?: string[];
-  parentCommentID?: string;
 }
 
 export interface ReactToPostRequest {

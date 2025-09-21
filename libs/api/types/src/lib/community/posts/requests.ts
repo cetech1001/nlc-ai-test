@@ -36,6 +36,7 @@ export interface PostFilters {
 
 export interface CommentFilters {
   parentCommentID?: string;
+  postID?: string;
   search?: string;
   sortOrder?: 'asc' | 'desc';
   page?: number;
@@ -44,6 +45,13 @@ export interface CommentFilters {
 
 export interface CreateCommentRequest {
   content: string;
+  postID?: string;
+  mediaUrls?: string[];
+  parentCommentID?: string;
+}
+
+export interface UpdateCommentRequest {
+  content?: string;
   mediaUrls?: string[];
   parentCommentID?: string;
 }

@@ -10,6 +10,11 @@ export class CommentFiltersDto extends PaginationDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsUUID()
+  postID?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
   search?: string;
 

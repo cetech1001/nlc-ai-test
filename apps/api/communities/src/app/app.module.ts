@@ -12,6 +12,7 @@ import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
 import communityConfig from './config/community.config';
 import {ModerationModule} from "./moderation/moderation.module";
+import {CommentsModule} from "./comments/comments.module";
 
 @Module({
   imports: [
@@ -26,10 +27,11 @@ import {ModerationModule} from "./moderation/moderation.module";
     MessagingModule.forRoot(),
     AuthLibModule,
     CommunitiesModule,
-    EventHandlersModule,
-    HealthModule,
     ModerationModule,
     PostsModule,
+    CommentsModule,
+    EventHandlersModule,
+    HealthModule,
   ],
   providers: [
     {

@@ -6,12 +6,3 @@ export enum PostType {
   POLL = 'poll',
   EVENT = 'event',
 }
-
-export enum ReactionType {
-  LIKE = 'like',
-  LOVE = 'love',
-  LAUGH = 'laugh',
-  ANGRY = 'angry',
-  SAD = 'sad',
-  CELEBRATE = 'celebrate',
-}

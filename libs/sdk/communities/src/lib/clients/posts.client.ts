@@ -3,11 +3,8 @@ import {
   CreatePostRequest,
   UpdatePostRequest,
   PostFilters,
-  CommentFilters,
   PostResponse,
-  CreateCommentRequest,
   ReactToPostRequest,
-  PostComment,
 } from '../types';
 
 export class PostsClient extends BaseClient {
@@ -47,30 +44,6 @@ export class PostsClient extends BaseClient {
 
   async reactToPost(communityID: string, postID: string, reaction: ReactToPostRequest): Promise<{ message: string }> {
     const response = await this.request<{ message: string }>('POST', `/${communityID}/posts/${postID}/reactions`, { body: reaction });
-    return response.data!;
-  }
-
-  async createComment(communityID: string, postID: string, commentData: CreateCommentRequest): Promise<PostResponse> {
-    const response = await this.request<PostResponse>('POST', `/${communityID}/posts/${postID}/comments`, { body: commentData });
-    return response.data!;
-  }
-
-  async getComments(communityID: string, postID: string, filters?: CommentFilters): Promise<Paginated<PostComment>> {
-    const searchParams = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          searchParams.append(key, String(value));
-        }
-      });
-    }
-
-    const response = await this.request<Paginated<PostComment>>('GET', `/${communityID}/posts/${postID}/comments?${searchParams}`);
-    return response.data!;
-  }
-
-  async reactToComment(communityID: string, commentID: string, reaction: ReactToPostRequest): Promise<{ message: string }> {
-    const response = await this.request<{ message: string }>('POST', `/${communityID}/posts/comments/${commentID}/reactions`, { body: reaction });
     return response.data!;
   }
 }

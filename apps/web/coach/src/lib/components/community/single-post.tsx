@@ -47,7 +47,7 @@ export const SinglePost: FC<IProps> = (props) => {
 
   const POST_PREVIEW_LENGTH = 280;
 
-  const isOwnPost = props.user?.id === props.post.communityMember?.userID;
+  const isOwnPost = props.user?.id === optimisticPost.communityMember?.userID;
 
   const toggleComments = async (postID: string) => {
     const isCurrentlyShowing = showComments[postID];
@@ -66,7 +66,7 @@ export const SinglePost: FC<IProps> = (props) => {
     try {
       setLoadingComments(prev => ({ ...prev, [postID]: true }));
 
-      const response = await sdkClient.communities.posts.getComments(props.post.communityID, postID, {page, limit: 10});
+      const response = await sdkClient.communities.comments.getComments(props.post.communityID, {postID, page, limit: 10});
 
       setComments(prev => ({
         ...prev,
@@ -223,7 +223,7 @@ export const SinglePost: FC<IProps> = (props) => {
     }));
 
     try {
-      await sdkClient.communities.posts.reactToComment(props.post.communityID, commentID, { type: reactionType });
+      await sdkClient.communities.comments.reactToComment(props.post.communityID, commentID, { type: reactionType });
     } catch (error) {
       setComments(prev => ({
         ...prev,
@@ -272,7 +272,7 @@ export const SinglePost: FC<IProps> = (props) => {
 
     try {
       // TODO: Replace with actual API call
-      // await sdkClient.communities.posts.deleteComment(props.post.communityID, commentID);
+      await sdkClient.communities.comments.deleteComment(props.post.communityID, commentID);
 
       setComments(prev => ({
         ...prev,
@@ -297,8 +297,9 @@ export const SinglePost: FC<IProps> = (props) => {
     if (!reply) return;
 
     try {
-      await sdkClient.communities.posts.createComment(props.post.communityID, props.post.id, {
+      await sdkClient.communities.comments.createComment(props.post.communityID, {
         content: reply,
+        postID: props.post.id,
         parentCommentID,
         mediaUrls: []
       });
