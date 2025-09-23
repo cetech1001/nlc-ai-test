@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import {
   BadRequestException,
   Body,
@@ -122,16 +123,27 @@ export class IntegrationsController {
     @Query('error') error?: string,
     @Query('error_description') errorDescription?: string,
   ) {
+    const nonce = crypto.randomBytes(16).toString('base64');
+    res.setHeader('Content-Security-Policy', `script-src 'self' 'nonce-${nonce}'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+
     if (error) {
-      return this.sendOAuthError(res, platform, errorDescription || error);
+      return this.sendOAuthError(res, platform, errorDescription || error, nonce);
     }
 
     if (!code || !state) {
-      return this.sendOAuthError(res, platform, 'Missing authorization code or state parameter');
+      return this.sendOAuthError(res, platform, 'Missing authorization code or state parameter', nonce);
     }
 
     try {
       const { userID, userType, platform: statePlatform } = this.stateTokenService.verifyState(state);
+
+      console.log("User ID: ", userID);
+      console.log("User Type: ", userType);
+      console.log("Platform: ", platform);
 
       if (statePlatform !== platform) {
         throw new Error('Platform mismatch in state verification');
@@ -140,9 +152,9 @@ export class IntegrationsController {
       const provider = this.integrationFactory.getProvider(platform);
       const integration = await provider.handleCallback?.(userID, userType, code, state);
 
-      this.sendOAuthSuccess(res, platform, integration!);
+      this.sendOAuthSuccess(res, platform, integration!, nonce);
     } catch (error: any) {
-      this.sendOAuthError(res, platform, error.message);
+      this.sendOAuthError(res, platform, error.message, nonce);
     }
   }
 
@@ -201,13 +213,12 @@ export class IntegrationsController {
     );
   }
 
-  private sendOAuthSuccess(res: Response, platform: string, integration: any) {
-    res.setHeader('Content-Type', 'text/html');
-    res.send(oauthSuccess(platform, integration));
+  private sendOAuthSuccess(res: Response, platform: string, integration: any, nonce: string) {
+    res.send(oauthSuccess(platform, integration, nonce));
   }
 
-  private sendOAuthError(res: Response, platform: string, errorMessage: string) {
-    res.setHeader('Content-Type', 'text/html');
-    res.send(oauthError(errorMessage, platform));
+  private sendOAuthError(res: Response, platform: string, errorMessage: string, nonce: string) {
+
+    res.send(oauthError(errorMessage, platform, nonce));
   }
 }

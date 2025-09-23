@@ -1,13 +1,9 @@
-import { IsString, IsNumber, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class IntegrationsConfigSchema {
   @IsString()
   DATABASE_URL: string;
-
-  @IsOptional()
-  @IsString()
-  DATABASE_SCHEMA?: string = 'main';
 
   @IsString()
   RABBITMQ_URL: string;
@@ -18,7 +14,7 @@ export class IntegrationsConfigSchema {
 
   @IsOptional()
   @IsString()
-  SERVICE_NAME?: string = 'integrations-service';
+  SERVICE_NAME?: string = 'integrations';
 
   @IsString()
   JWT_SECRET: string;
@@ -32,61 +28,44 @@ export class IntegrationsConfigSchema {
   @IsString()
   GOOGLE_CLIENT_SECRET: string;
 
-  @IsOptional()
-  @IsUrl()
-  GOOGLE_EMAIL_REDIRECT_URI?: string;
-
-  @IsOptional()
-  @IsUrl()
-  YOUTUBE_REDIRECT_URI?: string;
-
-  @IsOptional()
   @IsString()
-  MICROSOFT_CLIENT_ID?: string;
+  MICROSOFT_CLIENT_ID: string;
 
-  @IsOptional()
   @IsString()
-  MICROSOFT_CLIENT_SECRET?: string;
+  MICROSOFT_CLIENT_SECRET: string;
 
-  @IsOptional()
-  @IsUrl()
-  MICROSOFT_EMAIL_REDIRECT_URI?: string;
-
-  @IsOptional()
   @IsString()
-  META_CLIENT_ID?: string;
+  META_CLIENT_ID: string;
 
-  @IsOptional()
   @IsString()
-  META_CLIENT_SECRET?: string;
+  META_CLIENT_SECRET: string;
 
-  @IsOptional()
   @IsString()
-  TWITTER_CLIENT_ID?: string;
+  INSTAGRAM_CLIENT_ID: string;
 
-  @IsOptional()
   @IsString()
-  TWITTER_CLIENT_SECRET?: string;
+  INSTAGRAM_CLIENT_SECRET: string;
 
-  @IsOptional()
   @IsString()
-  TIKTOK_CLIENT_ID?: string;
+  TWITTER_CLIENT_ID: string;
 
-  @IsOptional()
   @IsString()
-  TIKTOK_CLIENT_SECRET?: string;
+  TWITTER_CLIENT_SECRET: string;
 
-  @IsOptional()
   @IsString()
-  CALENDLY_CLIENT_ID?: string;
+  TIKTOK_CLIENT_ID: string;
 
-  @IsOptional()
   @IsString()
-  CALENDLY_CLIENT_SECRET?: string;
+  TIKTOK_CLIENT_SECRET: string;
 
-  @IsOptional()
   @IsString()
-  API_BASE_URL?: string = 'http://localhost:3003';
+  CALENDLY_CLIENT_ID: string;
+
+  @IsString()
+  CALENDLY_CLIENT_SECRET: string;
+
+  @IsString()
+  API_BASE_URL: string;
 
   @IsOptional()
   @IsNumber()

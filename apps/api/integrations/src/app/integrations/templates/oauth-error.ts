@@ -1,10 +1,13 @@
-export const oauthError = (errorMessage: string, platform: string) => `
+export const oauthError = (errorMessage: string, platform: string, nonce: string) => {
+  return `
       <!DOCTYPE html>
       <html lang="en">
       <head>
         <title>Integration Failed</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'nonce-${nonce}'; object-src 'none';">
+
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
@@ -170,22 +173,45 @@ export const oauthError = (errorMessage: string, platform: string) => `
           <div class="auto-close">Or wait for auto-close in 5 seconds</div>
         </div>
 
-        <script>
-          try {
-            if (window.opener) {
-              window.opener.postMessage({
-                type: 'integration_error',
-                platform: '${platform}',
-                error: '${errorMessage.replace(/'/g, "\\'")}'
-              }, '*');
+        <script nonce="${nonce}">
+          (function() {
+            function notifyParentAndClose() {
+            try {
+              if (window.opener && !window.opener.closed) {
+                console.log('Sending error message to parent window');
+                window.opener.postMessage({
+                  type: 'integration_error',
+                  platform: '${platform}',
+                  error: '${errorMessage.replace(/'/g, "\\'").replace(/\n/g, ' ')}'
+                }, '*');
+
+                setTimeout(() => {
+                  try {
+                    window.close();
+                  } catch (e) {
+                    console.log('Could not close window automatically');
+                  }
+                }, 500);
+              } else if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                  type: 'integration_error',
+                  platform: '${platform}',
+                  error: '${errorMessage.replace(/'/g, "\\'").replace(/\n/g, ' ')}'
+                }, '*');
+              } else {
+                setTimeout(() => window.close(), 3000);
+              }
+              } catch (error) {
+                console.error('Error communicating with parent:', error);
+                setTimeout(() => window.close(), 5000);
+              }
             }
 
-            setTimeout(() => window.close(), 5000);
-          } catch (error) {
-            console.error('OAuth error callback failed:', error);
-            setTimeout(() => window.close(), 3000);
-          }
+            notifyParentAndClose();
+            setTimeout(notifyParentAndClose, 1000);
+          })();
         </script>
       </body>
       </html>
     `;
+}

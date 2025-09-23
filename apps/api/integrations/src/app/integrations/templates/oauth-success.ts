@@ -1,6 +1,7 @@
 import {Integration} from "@nlc-ai/types";
 
-export const oauthSuccess = (platform: string, integration: Integration) => `
+export const oauthSuccess = (platform: string, integration: Integration, nonce: string) => {
+  return `
       <!DOCTYPE html>
       <html lang="en">
       <head>
@@ -11,7 +12,7 @@ export const oauthSuccess = (platform: string, integration: Integration) => `
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background: linear-gradient(135deg, #FEBEFA, 0%, #7B21BA 50%, #7B26F0 100%);
             color: white;
             min-height: 100vh;
             display: flex;
@@ -56,7 +57,7 @@ export const oauthSuccess = (platform: string, integration: Integration) => `
           .orb-2 {
             width: 80px;
             height: 80px;
-            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(45deg, #7B21BA, #8b5cf6);
             bottom: -10px;
             left: -10px;
             animation-delay: 2s;
@@ -193,29 +194,60 @@ export const oauthSuccess = (platform: string, integration: Integration) => `
           <div class="auto-close">This window will close automatically</div>
         </div>
 
-        <script>
-          try {
-            if (window.opener) {
-              window.opener.postMessage({
-                type: 'integration_success',
-                platform: '${platform}',
-                integration: ${JSON.stringify({
-                id: integration.id,
-                platformName: integration.platformName,
-                isActive: integration.isActive,
-                createdAt: integration.createdAt
-              })}
-              }, '*');
-            }
+        <script nonce="${nonce}">
+          (function() {
+            function notifyParentAndClose() {
+            try {
+              // Try different methods to communicate with parent
+              if (window.opener && !window.opener.closed) {
+                console.log('Sending success message to parent window');
+                window.opener.postMessage({
+                  type: 'integration_success',
+                  platform: '${platform}',
+                  integration: ${JSON.stringify({
+                    id: integration.id,
+                    platformName: integration.platformName,
+                    isActive: integration.isActive,
+                    createdAt: integration.createdAt
+                  })}
+                }, '*');
 
-            setTimeout(() => {
-              window.close();
-            }, 3000);
-          } catch (error) {
-            console.error('OAuth callback error:', error);
-            setTimeout(() => window.close(), 3000);
+                // Small delay to ensure message is received
+                setTimeout(() => {
+                  try {
+                    window.close();
+                  } catch (e) {
+                    console.log('Could not close window automatically');
+                  }
+                }, 500);
+              } else if (window.parent && window.parent !== window) {
+                // Fallback for iframe scenarios
+                window.parent.postMessage({
+                  type: 'integration_success',
+                  platform: '${platform}',
+                  integration: ${JSON.stringify({
+                    id: integration.id,
+                    platformName: integration.platformName,
+                    isActive: integration.isActive,
+                    createdAt: integration.createdAt
+                  })}
+                }, '*');
+              } else {
+                console.log('No parent window found, closing automatically');
+                setTimeout(() => window.close(), 2000);
+              }
+            } catch (error) {
+              console.error('Error communicating with parent:', error);
+              setTimeout(() => window.close(), 3000);
+            }
           }
+
+          // Call immediately and also set backup timeout
+          notifyParentAndClose();
+          setTimeout(notifyParentAndClose, 1000); // Backup call
+          })();
         </script>
       </body>
       </html>
     `;
+}

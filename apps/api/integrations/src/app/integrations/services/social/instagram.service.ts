@@ -89,14 +89,15 @@ export class InstagramService extends BaseIntegrationService {
 
     const params = new URLSearchParams({
       client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
-      scope: ['instagram_basic', 'instagram_content_publish'].join(','),
+      scope: 'instagram_basic,pages_show_list,pages_read_engagement',
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
       response_type: 'code',
+      config_id: this.configService.get('integrations.oauth.instagram.clientID', ''),
       state,
     });
 
     return {
-      authUrl: `https://api.instagram.com/oauth/authorize?${params}`,
+      authUrl: `https://www.facebook.com/dialog/oauth?${params}`,
       state,
     };
   }
@@ -115,7 +116,7 @@ export class InstagramService extends BaseIntegrationService {
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
     });
 
-    const response = await fetch('https://api.instagram.com/oauth/access_token', {
+    const response = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),

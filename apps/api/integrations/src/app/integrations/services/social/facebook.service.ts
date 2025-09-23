@@ -90,7 +90,7 @@ export class FacebookService extends BaseIntegrationService {
 
     const params = new URLSearchParams({
       client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
-      scope: ['pages_read_engagement', 'pages_show_list', 'email'].join(','),
+      scope: ['public_profile', 'user_likes', 'user_link', 'user_posts', 'user_videos', 'email'].join(','),
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
       response_type: 'code',
       state,

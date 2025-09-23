@@ -26,7 +26,6 @@ export const integrationsConfig = registerAs('integrations', () => {
     baseUrl: config.API_BASE_URL,
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
     },
     rabbitmq: {
       url: config.RABBITMQ_URL,
@@ -44,17 +43,18 @@ export const integrationsConfig = registerAs('integrations', () => {
       google: {
         clientID: config.GOOGLE_CLIENT_ID,
         clientSecret: config.GOOGLE_CLIENT_SECRET,
-        emailRedirectUri: config.GOOGLE_EMAIL_REDIRECT_URI,
-        youtubeRedirectUri: config.YOUTUBE_REDIRECT_URI,
       },
       microsoft: {
         clientID: config.MICROSOFT_CLIENT_ID,
         clientSecret: config.MICROSOFT_CLIENT_SECRET,
-        emailRedirectUri: config.MICROSOFT_EMAIL_REDIRECT_URI,
       },
       meta: {
         clientID: config.META_CLIENT_ID,
         clientSecret: config.META_CLIENT_SECRET,
+      },
+      instagram: {
+        clientID: config.INSTAGRAM_CLIENT_ID,
+        clientSecret: config.INSTAGRAM_CLIENT_SECRET,
       },
       twitter: {
         clientID: config.TWITTER_CLIENT_ID,
