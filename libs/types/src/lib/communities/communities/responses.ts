@@ -5,7 +5,7 @@ import {
   MemberStatus,
   CommunityPricingType
 } from './enums';
-import { UserType } from '../../auth';
+import { UserType } from '../../users';
 
 export interface CommunityResponse {
   id: string;

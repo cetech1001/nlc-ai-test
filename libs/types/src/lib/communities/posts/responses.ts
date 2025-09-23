@@ -1,5 +1,5 @@
 import {PostType, ReactionType} from "./enums";
-import {UserType} from "../../auth";
+import {UserType} from "../../users";
 import {CommunityType, MemberRole} from "../communities";
 
 export interface Post {

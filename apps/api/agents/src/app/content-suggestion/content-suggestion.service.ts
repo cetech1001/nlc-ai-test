@@ -221,13 +221,38 @@ export class ContentSuggestionService {
   }
 
   async getAllSuggestions(userID: string) {
-    return this.prisma.contentSuggestion.findMany({
+    const suggestions = await this.prisma.contentSuggestion.findMany({
       where: {
         coachID: userID,
         status: { in: ['pending', 'completed'] }
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
+    });
+
+    return suggestions.map((suggestion: any) => {
+      const parsedDescription = suggestion.description ? JSON.parse(suggestion.description) : {};
+
+      return {
+        id: suggestion.id,
+        title: suggestion.title,
+        originalIdea: parsedDescription.originalIdea || '',
+        script: {
+          hook: parsedDescription.hook || '',
+          mainContent: parsedDescription.mainContent || '',
+          callToAction: parsedDescription.callToAction || '',
+        },
+        contentCategory: suggestion.contentType,
+        recommendedPlatforms: parsedDescription.recommendedPlatforms || [],
+        bestPostingTimes: parsedDescription.bestPostingTimes || [],
+        estimatedEngagement: parsedDescription.estimatedEngagement || { min: 0, max: 0 },
+        confidence: suggestion.confidenceScore,
+        status: suggestion.status,
+        createdAt: suggestion.createdAt,
+        updatedAt: suggestion.updatedAt,
+        // @ts-ignore
+        metadata: suggestion.trendData ? JSON.parse(suggestion.trendData) : null,
+      };
     });
   }
 

@@ -1,14 +1,16 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   CategoryList,
   TopPerformingContentSuggestion,
   ContentIdeaCard,
-  GradientButton
+  GradientButton, sdkClient, ContentIdeaCardSkeleton
 } from '@/lib';
 import { PageHeader } from "@nlc-ai/web-shared";
 import { GenerateIdeaModal } from '@/lib/components/suggestion/generate-idea.modal';
+import {toast} from "sonner";
+import {useRouter} from "next/navigation";
 
 // Type definitions
 interface ContentCardData {
@@ -22,13 +24,13 @@ interface ContentCardData {
   engagement: number;
 }
 
-interface ContentIdeaData {
+/*interface ContentIdeaData {
   id: string;
   title: string;
   category: string;
   platform: string;
   predictedEngagement: string;
-}
+}*/
 
 interface CategoryData {
   name: string;
@@ -36,7 +38,31 @@ interface CategoryData {
   percentage: number;
 }
 
+interface ContentSuggestion {
+  id: string;
+  title: string;
+  originalIdea: string;
+  script: {
+    hook: string;
+    mainContent: string;
+    callToAction: string;
+  };
+  contentCategory: string;
+  recommendedPlatforms: string[];
+  bestPostingTimes: string[];
+  estimatedEngagement: {
+    min: number;
+    max: number;
+  };
+  confidence: number;
+  status: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
 const ContentSuggestion: React.FC = () => {
+  const router = useRouter();
+
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
   // Sample data
@@ -83,7 +109,7 @@ const ContentSuggestion: React.FC = () => {
     }
   ];
 
-  const contentIdeas: ContentIdeaData[] = [
+  /*const contentIdeas: ContentIdeaData[] = [
     {
       id: '1',
       title: 'The Unspoken Truth About Fitness Myths',
@@ -126,7 +152,7 @@ const ContentSuggestion: React.FC = () => {
       platform: 'Instagram, TikTok',
       predictedEngagement: '3000-5000'
     }
-  ];
+  ];*/
 
   const categoryData: CategoryData[] = [
     { name: 'Controversial', views: 11121, percentage: 82 },
@@ -135,6 +161,26 @@ const ContentSuggestion: React.FC = () => {
     { name: 'Entertainment', views: 5280, percentage: 55 },
     { name: 'Case Studies', views: 4375, percentage: 41 }
   ];
+
+  const [suggestions, setSuggestions] = useState<ContentSuggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSuggestions();
+  }, []);
+
+  const fetchSuggestions = async () => {
+    try {
+      setIsLoading(true);
+      const data = await sdkClient.agents.contentSuggestion.getAllSuggestions();
+      setSuggestions(data);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load content suggestion');
+      router.push('/agents/suggestion');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGenerateNewIdea = () => {
     setIsGenerateModalOpen(true);
@@ -181,7 +227,9 @@ const ContentSuggestion: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-5">
-          {contentIdeas.map((idea) => (
+          {isLoading && [1, 2, 3, 4, 5, 6].map((_, index) =>
+            <ContentIdeaCardSkeleton key={index}/>)}
+          {!isLoading && suggestions.map((idea) => (
             <ContentIdeaCard
               key={idea.id}
               idea={idea}

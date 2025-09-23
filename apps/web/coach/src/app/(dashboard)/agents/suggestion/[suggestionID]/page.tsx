@@ -159,10 +159,10 @@ const ScriptSidebar: React.FC<{ suggestion: ContentSuggestion | null; isLoading:
 };
 
 const ScriptContent: React.FC<{ suggestion: ContentSuggestion | null; isLoading: boolean; onRegenerate: () => void }> = ({
-                                                                                                                           suggestion,
-                                                                                                                           isLoading,
-                                                                                                                           onRegenerate
-                                                                                                                         }) => {
+ suggestion,
+ isLoading,
+ onRegenerate
+}) => {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-[30px] overflow-y-auto">
@@ -320,7 +320,7 @@ const ContentScriptPage: React.FC = () => {
 
     try {
       // Here you could implement saving changes if the user made edits
-      toast.success('Content script saved successfully');
+      toast.success('Content script deletion to be implemented');
     } catch (error: any) {
       toast.error(error.message || 'Failed to save content script');
     }
@@ -350,8 +350,8 @@ const ContentScriptPage: React.FC = () => {
           />
         </div>
       }
-      displayActionButtons={!isLoading && suggestion ? true : false}
-      saveButtonText="Save Script"
+      displayActionButtons={!!(!isLoading && suggestion)}
+      saveButtonText="Delete Script"
       discardButtonText="Back to Suggestions"
     />
   );
