@@ -99,7 +99,7 @@ export class TiktokService extends BaseIntegrationService {
         'user.info.profile',
         'user.info.stats',
         'video.list',
-        'video.insights'
+        // 'video.insights'
       ].join(','),
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/tiktok/callback`,
       response_type: 'code',

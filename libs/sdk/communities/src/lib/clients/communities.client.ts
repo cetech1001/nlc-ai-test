@@ -45,8 +45,13 @@ export class CommunitiesClient extends BaseClient {
     return response.data!;
   }
 
-  async getCommunity(id: string): Promise<CommunityResponse> {
-    const response = await this.request<CommunityResponse>('GET', `/${id}`);
+  async getCommunity(slug: string): Promise<CommunityResponse> {
+    const response = await this.request<CommunityResponse>('GET', `/${slug}`);
+    return response.data!;
+  }
+
+  async getCoachCommunity(coachID: string) {
+    const response = await this.request<CommunityResponse>('GET', `/coach/${coachID}`);
     return response.data!;
   }
 

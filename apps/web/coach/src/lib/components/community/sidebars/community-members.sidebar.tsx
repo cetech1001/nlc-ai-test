@@ -77,7 +77,6 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    // Keep focus on the input
     setTimeout(() => {
       if (searchInputRef.current) {
         searchInputRef.current.focus();
@@ -133,7 +132,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
   const SidebarContent = () => (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-white text-xl font-semibold">Community</h2>
+        <h2 className="text-white text-xl font-semibold">Community Members</h2>
         {onMobileToggle && (
           <button
             onClick={onMobileToggle}

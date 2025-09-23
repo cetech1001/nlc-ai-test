@@ -44,7 +44,6 @@ const VaultPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
 
-  // New state for optimistic posting
   const [isCreatingPost, setIsCreatingPost] = useState(false);
 
   useEffect(() => {
@@ -56,7 +55,7 @@ const VaultPage = () => {
       setIsLoading(true);
       setError("");
 
-      const communityData = await sdkClient.communities.getCoachToCommunity();
+      const communityData = await sdkClient.communities.getCommunity('ai-vault');
       setCommunity(communityData);
 
       await loadPosts(communityData.id);
@@ -180,13 +179,12 @@ const VaultPage = () => {
   };
 
   const handleUserClick = (userID: string, userType: UserType) => {
-    // Don't open profile for current user
     if (userID === user?.id) return;
 
     setSelectedUserID(userID);
     setSelectedUserType(userType);
     setShowUserProfile(true);
-    // Close members sidebar if open on mobile
+
     setShowMembersSidebar(false);
   };
 
@@ -216,24 +214,7 @@ const VaultPage = () => {
 
       <div className="flex gap-3 sm:gap-4 lg:gap-6 h-full relative">
         <div className={`flex-1 max-w-full ${showUserProfile && isDesktop ? 'lg:max-w-2xl' : 'lg:max-w-2xl'} px-2 sm:px-0`}>
-          {community ? (
-            <CommunityHeader community={community}/>
-          ) : (
-            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[16px] sm:rounded-[20px] border border-neutral-700 overflow-hidden mb-4 sm:mb-6">
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute w-24 sm:w-32 h-24 sm:h-32 -right-4 sm:-right-6 -top-6 sm:-top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px] sm:blur-[56px]" />
-              </div>
-              <div className="relative z-10 p-4 sm:p-6">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full animate-pulse" />
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div className="h-6 sm:h-8 bg-neutral-700/50 rounded animate-pulse w-48" />
-                    <div className="h-4 bg-neutral-700/50 rounded animate-pulse w-32" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <CommunityHeader community={community}/>
 
           <NewPost
             handleCreatePost={handleCreatePost}
@@ -284,7 +265,6 @@ const VaultPage = () => {
           </div>
         </div>
 
-        {/* Community Members Sidebar */}
         {community && (
           <CommunityMembersSidebar
             communityID={community.id}
@@ -294,7 +274,6 @@ const VaultPage = () => {
           />
         )}
 
-        {/* User Profile Sidebar */}
         {showUserProfile && (
           <UserProfileSidebar
             isOpen={showUserProfile}

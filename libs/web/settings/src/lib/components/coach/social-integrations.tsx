@@ -50,11 +50,6 @@ const socialPlatforms = {
     icon: <img src="/images/icons/tiktok-icon.png" alt="TikTok Icon" className="w-full h-full object-contain"/>,
     type: 'social' as const,
   },
-  linkedin: {
-    name: 'LinkedIn',
-    icon: <img src="/images/icons/linkedin-icon.svg" alt="LinkedIn Icon" className="w-full h-full object-contain"/>,
-    type: 'social' as const,
-  },
 };
 
 const appPlatforms = {

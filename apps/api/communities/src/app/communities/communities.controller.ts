@@ -17,7 +17,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { CurrentUser, UserTypes, UserTypesGuard } from '@nlc-ai/api-auth';
-import { type AuthUser, UserType } from '@nlc-ai/api-types';
+import { type AuthUser, UserType } from '@nlc-ai/types';
 import { CommunitiesService } from './communities.service';
 import {
   CreateCommunityDto,
@@ -30,7 +30,7 @@ import {
 @ApiTags('Community')
 @Controller('')
 @UseGuards(UserTypesGuard)
-@UserTypes(UserType.coach, UserType.admin, UserType.client)
+@UserTypes(UserType.COACH, UserType.ADMIN, UserType.CLIENT)
 @ApiBearerAuth()
 export class CommunitiesController {
   constructor(private readonly communityService: CommunitiesService) {}
@@ -38,7 +38,7 @@ export class CommunitiesController {
   @Post()
   @ApiOperation({ summary: 'Create a new community' })
   @ApiResponse({ status: 201, description: 'Community created successfully' })
-  @UserTypes(UserType.coach, UserType.admin)
+  @UserTypes(UserType.COACH, UserType.ADMIN)
   async createCommunity(
     @Body() createDto: CreateCommunityDto,
     @CurrentUser() user: AuthUser
@@ -56,22 +56,33 @@ export class CommunitiesController {
     return this.communityService.getCommunities(filters, user);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a specific community' })
-  @ApiParam({ name: 'id', description: 'Community ID' })
+  @Get(':slug')
+  @ApiOperation({ summary: 'Get a specific community by slug' })
+  @ApiParam({ name: 'slug', description: 'Community Slug' })
   @ApiResponse({ status: 200, description: 'Community retrieved successfully' })
   async getCommunity(
-    @Param('id') id: string,
+    @Param('slug') slug: string,
     @CurrentUser() user: AuthUser
   ) {
-    return this.communityService.getCommunity(id, user);
+    return this.communityService.getCommunity(slug, user);
+  }
+
+  @Get('coach/:coachID')
+  @ApiOperation({ summary: 'Get a coach\'s community' })
+  @ApiParam({ name: 'coachID', description: 'Coach ID' })
+  @ApiResponse({ status: 200, description: 'Community retrieved successfully' })
+  async getCoachCommunity(
+    @Param('coachID') coachID: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.getCoachCommunity(coachID, user);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update community' })
   @ApiParam({ name: 'id', description: 'Community ID' })
   @ApiResponse({ status: 200, description: 'Community updated successfully' })
-  @UserTypes(UserType.coach, UserType.admin)
+  @UserTypes(UserType.COACH, UserType.ADMIN)
   async updateCommunity(
     @Param('id') id: string,
     @Body() updateDto: UpdateCommunityDto,
@@ -84,7 +95,7 @@ export class CommunitiesController {
   @ApiOperation({ summary: 'Add member to community' })
   @ApiParam({ name: 'id', description: 'Community ID' })
   @ApiResponse({ status: 201, description: 'Member added successfully' })
-  @UserTypes(UserType.coach, UserType.admin)
+  @UserTypes(UserType.COACH, UserType.ADMIN)
   async addMember(
     @Param('id') communityID: string,
     @Body() addMemberDto: AddMemberDto,
@@ -127,7 +138,7 @@ export class CommunitiesController {
   @ApiOperation({ summary: 'Get community analytics' })
   @ApiParam({ name: 'id', description: 'Community ID' })
   @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
-  @UserTypes(UserType.coach, UserType.admin)
+  @UserTypes(UserType.COACH, UserType.ADMIN)
   async getCommunityAnalytics(
     @Param('id') id: string,
     @Query('period') period: '7d' | '30d' | '90d' = '30d',
@@ -142,7 +153,7 @@ export class CommunitiesController {
   @ApiParam({ name: 'userID', description: 'User ID' })
   @ApiParam({ name: 'userType', description: 'User Type' })
   @ApiResponse({ status: 200, description: 'Member removed successfully' })
-  @UserTypes(UserType.coach, UserType.admin)
+  @UserTypes(UserType.COACH, UserType.ADMIN)
   async removeMember(
     @Param('id') communityID: string,
     @Param('userID') userID: string,

@@ -14,13 +14,13 @@ export class StateTokenService {
       userID,
       userType,
       platform,
-      exp: Date.now() + (10 * 60 * 1000),
       nonce: crypto.randomBytes(16).toString('hex'),
     };
 
     const secret = this.configService.get('integrations.auth.jwtSecret');
     return this.jwt.sign(payload, {
       secret,
+      expiresIn: '10m',
     });
   }
 
@@ -31,17 +31,13 @@ export class StateTokenService {
         secret,
       }) as any;
 
-      if (payload.exp < Date.now()) {
-        throw new Error('State token expired');
-      }
-
       return {
         userID: payload.userID,
         userType: payload.userType,
         platform: payload.platform,
       };
     } catch (error) {
-      throw new BadRequestException('Invalid or expired state token');
+      throw new BadRequestException('Invalid or expired state token.');
     }
   }
 }

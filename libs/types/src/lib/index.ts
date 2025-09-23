@@ -1,5 +1,6 @@
-export * from './agents';
+export * from './ai-agents';
 export * from './analytics';
+export * from './communities';
 export * from './courses';
 export * from './email';
 export * from './users';
