@@ -200,7 +200,7 @@ const NewTestimonialSurveyTemplatePage: React.FC = () => {
           />
         </div>
       }
-      saveButtonTitle={'Create New Template'}
+      saveButtonText={'Create New Template'}
     />
   );
 };

@@ -3,6 +3,7 @@ import { ClientEmailClient } from "./client-email.client";
 import {CourseStructureClient} from "./course-structure.client";
 import {LeadFollowupClient} from "./lead-followup.client";
 import {EmailDeliverabilityClient} from "./email-deliverability.client";
+import { ContentSuggestionClient } from "./content-suggestion.client";
 
 
 export class AgentsClient {
@@ -10,6 +11,7 @@ export class AgentsClient {
   public clientEmail: ClientEmailClient;
   public leadFollowup: LeadFollowupClient;
   public emailDeliverability: EmailDeliverabilityClient;
+  public contentSuggestion: ContentSuggestionClient;
 
   constructor(props: NLCClientConfig) {
     this.courseStructure = new CourseStructureClient({
@@ -30,6 +32,11 @@ export class AgentsClient {
     this.emailDeliverability = new EmailDeliverabilityClient({
       ...props,
       baseURL: `${props.baseURL}/email-deliverability`,
+    });
+
+    this.contentSuggestion = new ContentSuggestionClient({
+      ...props,
+      baseURL: `${props.baseURL}/content-suggestion`,
     });
   }
 }

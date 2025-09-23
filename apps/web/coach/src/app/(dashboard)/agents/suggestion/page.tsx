@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CategoryList,
   TopPerformingContentSuggestion,
@@ -8,6 +8,7 @@ import {
   GradientButton
 } from '@/lib';
 import { PageHeader } from "@nlc-ai/web-shared";
+import { GenerateIdeaModal } from '@/lib/components/suggestion/generate-idea.modal';
 
 // Type definitions
 interface ContentCardData {
@@ -36,6 +37,8 @@ interface CategoryData {
 }
 
 const ContentSuggestion: React.FC = () => {
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+
   // Sample data
   const contentCards: ContentCardData[] = [
     {
@@ -134,11 +137,9 @@ const ContentSuggestion: React.FC = () => {
   ];
 
   const handleGenerateNewIdea = () => {
-    // Handle generate new idea logic
-    console.log('Generate new idea clicked');
+    setIsGenerateModalOpen(true);
   };
 
-  // @ts-ignore
   return (
     <div className="flex flex-col gap-6 w-full mx-auto py-4">
       <PageHeader title={'Content Suggestion Agent'}/>
@@ -189,6 +190,11 @@ const ContentSuggestion: React.FC = () => {
           ))}
         </div>
       </div>
+
+      <GenerateIdeaModal
+        isOpen={isGenerateModalOpen}
+        onClose={() => setIsGenerateModalOpen(false)}
+      />
     </div>
   );
 };

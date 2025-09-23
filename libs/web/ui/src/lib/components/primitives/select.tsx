@@ -8,6 +8,8 @@ interface SelectProps {
   value?: string;
   onValueChange?: (value: string) => void;
   children: ReactNode;
+  disabled?: boolean;
+  className?: string;
 }
 
 interface SelectTriggerProps {
@@ -17,10 +19,12 @@ interface SelectTriggerProps {
 
 interface SelectContentProps {
   children: ReactNode;
+  className?: string;
 }
 
 interface SelectItemProps {
   value: string;
+  className?: string;
   children: ReactNode;
 }
 
@@ -38,12 +42,12 @@ const SelectContext = createContext<{
   onOpenChange: () => {},
 });
 
-export const Select: FC<SelectProps> = ({ value, onValueChange, children }) => {
+export const Select: FC<SelectProps> = ({ value, onValueChange, children, className }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <SelectContext.Provider value={{ isOpen, value, onValueChange, onOpenChange: setIsOpen }}>
-      <div className="relative">
+      <div className={`relative ${className}`}>
         {children}
       </div>
     </SelectContext.Provider>
@@ -84,21 +88,21 @@ export const SelectTrigger: FC<SelectTriggerProps> = ({ className = '', children
   );
 };
 
-export const SelectContent: FC<SelectContentProps> = ({ children }) => {
+export const SelectContent: FC<SelectContentProps> = ({ children, className }) => {
   const { isOpen } = useContext(SelectContext);
 
   if (!isOpen) return null;
 
   return (
-    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-      <div className="py-1 max-h-60 overflow-auto">
+    <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg ${className}`}>
+      <div className={`py-1 max-h-60 overflow-auto ${className}`}>
         {children}
       </div>
     </div>
   );
 };
 
-export const SelectItem: FC<SelectItemProps> = ({ value, children }) => {
+export const SelectItem: FC<SelectItemProps> = ({ value, children, className }) => {
   const { value: selectedValue, onValueChange, onOpenChange } = useContext(SelectContext);
 
   const handleClick = () => {
@@ -112,7 +116,7 @@ export const SelectItem: FC<SelectItemProps> = ({ value, children }) => {
       onClick={handleClick}
       className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 ${
         selectedValue === value ? 'bg-purple-50 text-purple-900' : 'text-gray-900'
-      }`}
+      } ${className}`}
     >
       {children}
     </button>

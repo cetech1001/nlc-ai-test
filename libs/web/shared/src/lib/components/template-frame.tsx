@@ -8,8 +8,8 @@ interface IProps {
   sidebarComponent: ReactNode;
   mainComponent: ReactNode;
   displayActionButtons?: boolean;
-  saveButtonTitle?: string;
-  discardButtonTitle?: string;
+  saveButtonText?: string;
+  discardButtonText?: string;
 }
 
 export const TemplateFrame: FC<IProps> = (props) => {
@@ -41,8 +41,8 @@ export const TemplateFrame: FC<IProps> = (props) => {
         <ActionButtons
           onSave={handleSave}
           onDelete={handleDiscard}
-          saveButtonTitle={props.saveButtonTitle}
-          discardButtonTitle={props.discardButtonTitle}
+          saveButtonTitle={props.saveButtonText}
+          discardButtonTitle={props.discardButtonText}
         />
       )}
     </div>

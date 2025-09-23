@@ -365,7 +365,7 @@ const EditTestimonialSurvey: React.FC = () => {
           <EmailTemplateSection formData={formData} />
         </div>
       }
-      saveButtonTitle={'Save Changes'}
+      saveButtonText={'Save Changes'}
     />
   );
 };
