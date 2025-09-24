@@ -183,7 +183,8 @@ const ContentSuggestion: React.FC = () => {
   };
 
   const handleGenerateNewIdea = () => {
-    setIsGenerateModalOpen(true);
+    // setIsGenerateModalOpen(true);
+    router.push('/agents/suggestion/chat');
   };
 
   return (

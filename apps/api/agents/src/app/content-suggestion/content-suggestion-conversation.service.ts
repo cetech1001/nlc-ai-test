@@ -1,29 +1,15 @@
-import {Injectable, Logger, NotFoundException} from '@nestjs/common';
-import {PrismaService} from '@nlc-ai/api-database';
-import {ConfigService} from '@nestjs/config';
-import {OpenAI} from 'openai';
-import {AgentConversationService} from '../agent-conversation/agent-conversation.service';
-import {CoachReplicaService} from '../coach-replica/coach-replica.service';
-import {AgentType} from "@nlc-ai/types";
-
-interface ContentRequirements {
-  platform?: string[];
-  contentType?: string;
-  targetAudience?: string;
-  tone?: string;
-  length?: string;
-}
-
-interface ContentScript {
-  hook: string;
-  mainContent: string;
-  callToAction: string;
-  hashtags?: string[];
-  estimatedEngagement?: {
-    min: number;
-    max: number;
-  };
-}
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@nlc-ai/api-database';
+import { ConfigService } from '@nestjs/config';
+import { OpenAI } from 'openai';
+import { CoachReplicaService } from '../coach-replica/coach-replica.service';
+import {
+  AgentConversation,
+  AgentConversationMessage,
+  AgentType,
+  ConversationArtifact,
+  UserType
+} from "@nlc-ai/types";
 
 @Injectable()
 export class ContentSuggestionConversationService {
@@ -33,7 +19,6 @@ export class ContentSuggestionConversationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-    private readonly agentConversationService: AgentConversationService,
     private readonly coachReplicaService: CoachReplicaService,
   ) {
     this.openai = new OpenAI({
@@ -41,112 +26,136 @@ export class ContentSuggestionConversationService {
     });
   }
 
-  async startContentConversation(coachID: string, initialMessage: string, title?: string) {
-    return this.agentConversationService.startConversation(
-      coachID,
-      AgentType.CONTENT_CREATION,
-      initialMessage,
-      title || 'Content Creation Session'
-    );
-  }
-
-  async sendMessage(conversationID: string, message: string, coachID: string) {
-    return this.agentConversationService.sendMessage(conversationID, message, coachID);
-  }
-
-  async getConversation(conversationID: string, coachID: string) {
-    return this.agentConversationService.getConversation(conversationID, coachID);
-  }
-
-  async getConversations(coachID: string) {
-    return this.agentConversationService.getCoachConversations(coachID, AgentType.CONTENT_CREATION);
-  }
-
-  async generateContentArtifact(
-    conversationID: string,
+  async startContentConversation(
     coachID: string,
-    type: string,
-    title: string,
-    requirements: ContentRequirements
-  ) {
-    // Get conversation context
-    const conversation = await this.getConversation(conversationID, coachID);
-    const coachProfile = await this.coachReplicaService.getCoachKnowledgeProfile(coachID);
+    initialMessage: string,
+    title?: string
+  ): Promise<{ conversation: AgentConversation; firstResponse: AgentConversationMessage }> {
+    const conversation = await this.prisma.agentConversation.create({
+      data: {
+        coachID,
+        agentType: AgentType.CONTENT_CREATION,
+        title: title || 'Content Creation Session',
+        totalMessages: 0,
+        isActive: true,
+      }
+    });
 
-    // Generate content based on type
-    let content: any;
-    let messageID: string;
+    await this.prisma.agentConversationMessage.create({
+      data: {
+        conversationID: conversation.id,
+        senderType: UserType.COACH,
+        content: initialMessage,
+        messageType: 'text',
+      }
+    });
 
-    switch (type) {
-      case 'content_script':
-        const script = await this.generateContentScript(conversation, coachProfile, requirements);
-        content = script;
-
-        // Create agent message about the artifact
-        const agentMessage = await this.prisma.agentConversationMessage.create({
-          data: {
-            conversationID,
-            senderType: 'agent',
-            content: `I've created a content script for "${title}". Here's your complete script with hook, main content, and call-to-action tailored to your style.`,
-            messageType: 'artifact_response',
-            metadata: { artifactType: type, artifactTitle: title }
-          }
-        });
-        messageID = agentMessage.id;
-        break;
-
-      case 'social_post':
-        content = await this.generateSocialPost(conversation, coachProfile, requirements);
-        const postMessage = await this.prisma.agentConversationMessage.create({
-          data: {
-            conversationID,
-            senderType: 'agent',
-            content: `Here's your social media post for ${requirements.platform?.join(', ') || 'social media'}.`,
-            messageType: 'artifact_response',
-          }
-        });
-        messageID = postMessage.id;
-        break;
-
-      case 'blog_outline':
-        content = await this.generateBlogOutline(conversation, coachProfile, requirements);
-        const outlineMessage = await this.prisma.agentConversationMessage.create({
-          data: {
-            conversationID,
-            senderType: 'agent',
-            content: `I've created a comprehensive blog outline for "${title}" that aligns with your expertise and audience.`,
-            messageType: 'artifact_response',
-          }
-        });
-        messageID = outlineMessage.id;
-        break;
-
-      default:
-        throw new Error(`Unsupported artifact type: ${type}`);
-    }
-
-    // Create the artifact
-    const artifact = await this.agentConversationService.createArtifact(
-      conversationID,
-      messageID,
-      type,
-      title,
-      content,
-      { requirements, generatedAt: new Date().toISOString() }
+    const agentResponse = await this.generateAgentResponse(
+      conversation.id,
+      coachID,
+      initialMessage
     );
 
-    // Update conversation message count
     await this.prisma.agentConversation.update({
-      where: { id: conversationID },
+      where: { id: conversation.id },
       data: {
-        totalMessages: { increment: 1 },
+        totalMessages: 2,
         lastMessageAt: new Date(),
       }
     });
 
     return {
+      conversation: this.mapConversation(conversation),
+      firstResponse: agentResponse
+    };
+  }
+
+  async sendMessage(
+    conversationID: string,
+    message: string,
+    coachID: string
+  ): Promise<AgentConversationMessage> {
+    const conversation = await this.prisma.agentConversation.findFirst({
+      where: { id: conversationID, coachID },
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 10 } }
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    await this.prisma.agentConversationMessage.create({
+      data: {
+        conversationID,
+        senderType: UserType.COACH,
+        content: message,
+        messageType: 'text',
+      }
+    });
+
+    const context = conversation.messages.map(m =>
+      `${m.senderType === UserType.COACH ? 'Coach' : 'Assistant'}: ${m.content}`
+    ).reverse().join('\n');
+
+    const agentResponse = await this.generateAgentResponse(
+      conversationID,
+      coachID,
+      message,
+      context
+    );
+
+    await this.prisma.agentConversation.update({
+      where: { id: conversationID },
+      data: {
+        totalMessages: conversation.totalMessages + 2,
+        lastMessageAt: new Date(),
+      }
+    });
+
+    return agentResponse;
+  }
+
+  async generateContentArtifact(
+    conversationID: string,
+    coachID: string,
+    type: 'content_script' | 'social_post' | 'blog_outline',
+    title: string,
+    requirements: any
+  ): Promise<{ artifact: ConversationArtifact; message: string }> {
+    const conversation = await this.prisma.agentConversation.findFirst({
+      where: { id: conversationID, coachID },
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 5 } }
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    const context = conversation.messages.map(m =>
+      `${m.senderType === UserType.COACH ? 'Coach' : 'Assistant'}: ${m.content}`
+    ).reverse().join('\n');
+
+    const artifactContent = await this.generateArtifactContent(
+      coachID,
+      type,
+      title,
+      requirements,
+      context
+    );
+
+    const messageID = await this.createArtifactMessage(conversationID, type, title);
+
+    const artifact = await this.createArtifact(
+      conversationID,
+      messageID,
+      type,
+      title,
+      artifactContent
+    );
+
+    return {
       artifact,
-      message: `Created ${type.replace('_', ' ')} artifact: ${title}`
+      message: `I've created a ${this.getArtifactTypeLabel(type)} for you. You can view and copy the content from the sidebar, or click on it to see the full formatted version.`
     };
   }
 
@@ -156,269 +165,523 @@ export class ContentSuggestionConversationService {
     coachID: string,
     refinements: string,
     changes?: any
-  ) {
-    const currentArtifact = await this.prisma.conversationArtifact.findFirst({
+  ): Promise<{ artifact: ConversationArtifact; message: string }> {
+    const existingArtifact = await this.prisma.conversationArtifact.findFirst({
       where: { id: artifactID, conversationID }
     });
 
-    if (!currentArtifact) {
+    if (!existingArtifact) {
       throw new NotFoundException('Artifact not found');
     }
 
-    const coachProfile = await this.coachReplicaService.getCoachKnowledgeProfile(coachID);
+    const conversation = await this.prisma.agentConversation.findFirst({
+      where: { id: conversationID, coachID },
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 5 } }
+    });
 
-    const currentContent = typeof currentArtifact.content === 'string'
-      ? JSON.parse(currentArtifact.content)
-      : currentArtifact.content;
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
 
-    const refinedContent = await this.refineContent(
-      currentContent,
+    const context = conversation.messages.map(m =>
+      `${m.senderType === UserType.COACH ? 'Coach' : 'Assistant'}: ${m.content}`
+    ).reverse().join('\n');
+
+    const refinedContent = await this.refineArtifactContent(
+      coachID,
+      existingArtifact.artifactType,
+      existingArtifact.content,
       refinements,
       changes,
-      coachProfile,
-      currentArtifact.artifactType
+      context
     );
 
+    // Mark current artifact as not current
     await this.prisma.conversationArtifact.updateMany({
-      where: {
-        conversationID,
-        artifactType: currentArtifact.artifactType,
-        isCurrent: true
-      },
+      where: { conversationID, artifactType: existingArtifact.artifactType, isCurrent: true },
       data: { isCurrent: false }
     });
+
+    const messageID = await this.createArtifactMessage(conversationID, existingArtifact.artifactType, 'Refined ' + existingArtifact.title);
 
     const newArtifact = await this.prisma.conversationArtifact.create({
       data: {
         conversationID,
-        artifactType: currentArtifact.artifactType,
-        title: currentArtifact.title,
-        content: JSON.stringify(refinedContent),
-        metadata: {
-          ...(currentArtifact.metadata as any),
-          refinements,
-          changes,
-          previousVersion: currentArtifact.id
-        },
-        version: currentArtifact.version + 1,
+        messageID,
+        artifactType: existingArtifact.artifactType,
+        title: existingArtifact.title,
+        content: typeof refinedContent === 'string' ? refinedContent : JSON.stringify(refinedContent),
+        metadata: existingArtifact.metadata as any,
+        version: existingArtifact.version + 1,
         isCurrent: true,
       }
     });
 
-    await this.prisma.agentConversationMessage.create({
-      data: {
-        conversationID,
-        senderType: 'agent',
-        content: `I've refined your ${currentArtifact.artifactType.replace('_', ' ')} based on your feedback: "${refinements}"`,
-        messageType: 'artifact_response',
-      }
-    });
-
     return {
-      artifact: newArtifact,
-      message: 'Artifact refined successfully'
+      artifact: this.mapArtifact(newArtifact),
+      message: `I've refined your ${this.getArtifactTypeLabel(existingArtifact.artifactType)} based on your feedback. The updated version is now available.`
     };
   }
 
-  private async generateContentScript(
-    conversation: any,
-    coachProfile: any,
-    requirements: ContentRequirements
-  ): Promise<ContentScript> {
-    const context = this.buildContentContext(conversation, requirements);
+  async getConversation(conversationID: string, coachID: string) {
+    const conversation = await this.prisma.agentConversation.findFirst({
+      where: { id: conversationID, coachID },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            artifacts: {
+              where: { isCurrent: true }
+            }
+          }
+        },
+        artifacts: {
+          where: { isCurrent: true },
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
 
-    const systemPrompt = `You are a content creation expert helping a ${coachProfile?.businessContext?.industry || 'coaching'} professional create engaging content.
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    return {
+      ...this.mapConversation(conversation),
+      messages: conversation.messages.map(m => this.mapMessage(m)),
+      artifacts: conversation.artifacts.map(a => this.mapArtifact(a))
+    };
+  }
+
+  async getConversations(coachID: string) {
+    const conversations = await this.prisma.agentConversation.findMany({
+      where: {
+        coachID,
+        agentType: AgentType.CONTENT_CREATION,
+        isActive: true
+      },
+      orderBy: { lastMessageAt: 'desc' },
+      take: 50
+    });
+
+    return conversations.map(c => this.mapConversation(c));
+  }
+
+  private async generateAgentResponse(
+    conversationID: string,
+    coachID: string,
+    currentMessage: string,
+    conversationContext?: string
+  ): Promise<AgentConversationMessage> {
+    const coachProfile = await this.coachReplicaService.getCoachKnowledgeProfile(coachID);
+
+    // Check if message should generate an artifact
+    const artifactType = this.detectArtifactType(currentMessage);
+
+    if (artifactType) {
+      // Generate artifact content instead of regular response
+      const requirements = this.extractRequirements(currentMessage);
+      const title = this.generateArtifactTitle(currentMessage, artifactType);
+
+      const artifactContent = await this.generateArtifactContent(
+        coachID,
+        artifactType,
+        title,
+        requirements,
+        conversationContext
+      );
+
+      const messageID = await this.createArtifactMessage(conversationID, artifactType, title);
+
+      await this.createArtifact(
+        conversationID,
+        messageID,
+        artifactType,
+        title,
+        artifactContent
+      );
+
+      const agentMessage = await this.prisma.agentConversationMessage.findUnique({
+        where: { id: messageID },
+        include: { artifacts: true }
+      });
+
+      return this.mapMessage(agentMessage);
+    }
+
+    // Regular conversation response
+    const systemPrompt = this.buildSystemPrompt(coachProfile);
+    const userPrompt = conversationContext
+      ? `${conversationContext}\n\nCoach: ${currentMessage}`
+      : `Coach: ${currentMessage}`;
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_completion_tokens: 1000,
+      });
+
+      const agentMessage = await this.prisma.agentConversationMessage.create({
+        data: {
+          conversationID,
+          senderType: 'agent',
+          content: completion.choices[0].message.content || '',
+          messageType: 'text',
+          metadata: { model: 'gpt-4o-mini' }
+        }
+      });
+
+      return this.mapMessage(agentMessage);
+    } catch (error) {
+      this.logger.error('Error generating agent response:', error);
+
+      const fallbackMessage = await this.prisma.agentConversationMessage.create({
+        data: {
+          conversationID,
+          senderType: 'agent',
+          content: 'I apologize, but I\'m having trouble generating a response right now. Please try again.',
+          messageType: 'text',
+          metadata: { error: true }
+        }
+      });
+
+      return this.mapMessage(fallbackMessage);
+    }
+  }
+
+  private detectArtifactType(message: string): 'content_script' | 'social_post' | 'blog_outline' | null {
+    const lowerMessage = message.toLowerCase();
+
+    // Script detection
+    if (lowerMessage.includes('script') ||
+      lowerMessage.includes('video script') ||
+      (lowerMessage.includes('write') && (lowerMessage.includes('video') || lowerMessage.includes('content'))) ||
+      lowerMessage.includes('hook') ||
+      lowerMessage.includes('call to action') ||
+      lowerMessage.includes('cta')) {
+      return 'content_script';
+    }
+
+    // Social post detection
+    if (lowerMessage.includes('social') ||
+      lowerMessage.includes('post') ||
+      lowerMessage.includes('instagram') ||
+      lowerMessage.includes('linkedin') ||
+      lowerMessage.includes('facebook') ||
+      lowerMessage.includes('twitter') ||
+      lowerMessage.includes('hashtag') ||
+      (lowerMessage.includes('write') && lowerMessage.includes('caption'))) {
+      return 'social_post';
+    }
+
+    // Blog outline detection
+    if (lowerMessage.includes('blog') ||
+      lowerMessage.includes('outline') ||
+      lowerMessage.includes('article') ||
+      (lowerMessage.includes('structure') && lowerMessage.includes('content')) ||
+      lowerMessage.includes('blog post')) {
+      return 'blog_outline';
+    }
+
+    return null;
+  }
+
+  private extractRequirements(message: string): any {
+    const requirements: any = {
+      tone: 'professional',
+      length: 'medium'
+    };
+
+    const lowerMessage = message.toLowerCase();
+
+    // Extract platform
+    if (lowerMessage.includes('instagram')) requirements.platform = ['Instagram'];
+    if (lowerMessage.includes('linkedin')) requirements.platform = ['LinkedIn'];
+    if (lowerMessage.includes('facebook')) requirements.platform = ['Facebook'];
+    if (lowerMessage.includes('twitter')) requirements.platform = ['Twitter'];
+
+    // Extract tone
+    if (lowerMessage.includes('casual')) requirements.tone = 'casual';
+    if (lowerMessage.includes('formal')) requirements.tone = 'formal';
+    if (lowerMessage.includes('friendly')) requirements.tone = 'friendly';
+    if (lowerMessage.includes('professional')) requirements.tone = 'professional';
+
+    // Extract length
+    if (lowerMessage.includes('short')) requirements.length = 'short';
+    if (lowerMessage.includes('long')) requirements.length = 'long';
+    if (lowerMessage.includes('brief')) requirements.length = 'short';
+
+    return requirements;
+  }
+
+  private generateArtifactTitle(message: string, type: string): string {
+    const lowerMessage = message.toLowerCase();
+
+    if (type === 'content_script') {
+      if (lowerMessage.includes('video')) return 'Video Script';
+      return 'Content Script';
+    }
+
+    if (type === 'social_post') {
+      if (lowerMessage.includes('instagram')) return 'Instagram Post';
+      if (lowerMessage.includes('linkedin')) return 'LinkedIn Post';
+      return 'Social Media Post';
+    }
+
+    if (type === 'blog_outline') {
+      return 'Blog Outline';
+    }
+
+    return 'Content Piece';
+  }
+
+  private async generateArtifactContent(
+    coachID: string,
+    type: string,
+    title: string,
+    requirements: any,
+    context?: string
+  ): Promise<any> {
+    const coachProfile = await this.coachReplicaService.getCoachKnowledgeProfile(coachID);
+
+    const systemPrompt = `You are a content creation assistant for a ${coachProfile?.businessContext?.industry || 'coaching'} professional.
 
 COACH PROFILE:
 - Communication Style: ${coachProfile?.personality?.communicationStyle || 'professional'}
-- Expertise: ${coachProfile?.businessContext?.expertise?.join(', ') || 'general coaching'}
+- Industry: ${coachProfile?.businessContext?.industry || 'coaching'}
 - Target Audience: ${coachProfile?.businessContext?.targetAudience?.join(', ') || 'professionals'}
+- Expertise: ${coachProfile?.businessContext?.expertise?.join(', ') || 'general coaching'}
 
-Create a content script with:
-1. Hook: Attention-grabbing opening (1-2 sentences)
-2. Main Content: Valuable, actionable content (3-5 paragraphs)
-3. Call to Action: Clear next step for audience
+Create ${type === 'content_script' ? 'a content script' : type === 'social_post' ? 'a social media post' : 'a blog outline'} with the following requirements:
+${JSON.stringify(requirements, null, 2)}
 
-Respond in JSON format:
+${context ? `CONVERSATION CONTEXT:\n${context}` : ''}
+
+Respond in JSON format based on the content type requested.`;
+
+    let userPrompt = '';
+
+    if (type === 'content_script') {
+      userPrompt = `Create a content script with:
+- Hook: Engaging opening that grabs attention
+- Main Content: Valuable, actionable content (3-4 paragraphs)
+- Call to Action: Clear next step for the audience
+
+Format as JSON:
 {
   "hook": "attention-grabbing opening",
-  "mainContent": "valuable content paragraphs",
-  "callToAction": "clear next step",
-  "hashtags": ["relevant", "hashtags"],
-  "estimatedEngagement": {"min": 50, "max": 200}
+  "mainContent": "main valuable content",
+  "callToAction": "clear call to action",
+  "estimatedDuration": "estimated reading/viewing time"
 }`;
+    } else if (type === 'social_post') {
+      userPrompt = `Create a social media post with:
+- Engaging content that provides value
+- Relevant hashtags
+- Clear call to action
 
-    try {
-      const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: context },
-        ],
-        temperature: 0.8,
-        max_completion_tokens: 1000,
-        response_format: { type: 'json_object' },
-      });
-
-      return JSON.parse(completion.choices[0].message.content || '{}');
-    } catch (error) {
-      this.logger.error('Error generating content script:', error);
-      throw new Error('Failed to generate content script');
-    }
-  }
-
-  private async generateSocialPost(
-    conversation: any,
-    coachProfile: any,
-    requirements: ContentRequirements
-  ) {
-    const platform = requirements.platform?.[0] || 'LinkedIn';
-    const context = this.buildContentContext(conversation, requirements);
-
-    const systemPrompt = `Create a ${platform} post for a ${coachProfile?.businessContext?.industry || 'coaching'} professional.
-
-REQUIREMENTS:
-- Platform: ${platform}
-- Tone: ${requirements.tone || coachProfile?.personality?.communicationStyle || 'professional'}
-- Length: ${requirements.length || 'medium'}
-- Target: ${requirements.targetAudience || 'professionals'}
-
-Create engaging ${platform} content with appropriate formatting, hashtags, and call-to-action.
-
-Respond in JSON format:
+Format as JSON:
 {
-  "content": "the post content with proper formatting",
-  "hashtags": ["relevant", "hashtags"],
-  "engagement_tips": ["tip1", "tip2"]
+  "content": "main post content with proper formatting",
+  "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
+  "callToAction": "engagement prompt",
+  "platform": "recommended platform"
 }`;
+    } else if (type === 'blog_outline') {
+      userPrompt = `Create a blog outline with:
+- Compelling title
+- Introduction
+- 3-5 main sections with subsections
+- Conclusion
 
-    try {
-      const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: context },
-        ],
-        temperature: 0.7,
-        max_completion_tokens: 800,
-        response_format: { type: 'json_object' },
-      });
-
-      return JSON.parse(completion.choices[0].message.content || '{}');
-    } catch (error) {
-      this.logger.error('Error generating social post:', error);
-      throw new Error('Failed to generate social post');
-    }
-  }
-
-  private async generateBlogOutline(
-    conversation: any,
-    coachProfile: any,
-    requirements: ContentRequirements
-  ) {
-    const context = this.buildContentContext(conversation, requirements);
-
-    const systemPrompt = `Create a comprehensive blog outline for a ${coachProfile?.businessContext?.industry || 'coaching'} professional.
-
-COACH EXPERTISE: ${coachProfile?.businessContext?.expertise?.join(', ') || 'general coaching'}
-TARGET AUDIENCE: ${requirements.targetAudience || 'professionals seeking growth'}
-
-Create a detailed blog outline with:
-- Compelling headline
-- Introduction hook
-- 3-5 main sections with subpoints
-- Conclusion with key takeaways
-- Suggested call-to-action
-
-Respond in JSON format:
+Format as JSON:
 {
-  "headline": "compelling blog title",
-  "introduction": "hook and setup",
+  "title": "blog post title",
+  "introduction": "intro paragraph",
   "sections": [
     {
       "title": "section title",
-      "points": ["point 1", "point 2"]
+      "subsections": ["subsection 1", "subsection 2"],
+      "keyPoints": ["key point 1", "key point 2"]
     }
   ],
-  "conclusion": "key takeaways",
-  "callToAction": "suggested CTA",
-  "seoKeywords": ["keyword1", "keyword2"]
+  "conclusion": "conclusion paragraph"
 }`;
+    }
 
     try {
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: context },
+          { role: 'user', content: userPrompt },
         ],
-        temperature: 0.7,
-        max_completion_tokens: 1000,
+        temperature: 0.8,
+        max_completion_tokens: 2000,
         response_format: { type: 'json_object' },
       });
 
       return JSON.parse(completion.choices[0].message.content || '{}');
     } catch (error) {
-      this.logger.error('Error generating blog outline:', error);
-      throw new Error('Failed to generate blog outline');
+      this.logger.error('Error generating artifact content:', error);
+      throw new Error('Failed to generate artifact content');
     }
   }
 
-  private async refineContent(
+  private async refineArtifactContent(
+    coachID: string,
+    type: string,
     currentContent: any,
     refinements: string,
-    changes: any,
-    coachProfile: any,
-    artifactType: string
-  ) {
-    const systemPrompt = `Refine the existing ${artifactType.replace('_', ' ')} based on the feedback.
+    changes?: any,
+    context?: string
+  ): Promise<any> {
+    const coachProfile = await this.coachReplicaService.getCoachKnowledgeProfile(coachID);
 
-ORIGINAL CONTENT: ${JSON.stringify(currentContent)}
+    const systemPrompt = `You are refining existing content for a ${coachProfile?.businessContext?.industry || 'coaching'} professional.
 
-REFINEMENT REQUEST: ${refinements}
-SPECIFIC CHANGES: ${JSON.stringify(changes || {})}
+CURRENT CONTENT:
+${typeof currentContent === 'string' ? currentContent : JSON.stringify(currentContent, null, 2)}
 
-COACH STYLE: ${coachProfile?.personality?.communicationStyle || 'professional'}
+REFINEMENT REQUESTS:
+${refinements}
 
-Improve the content while maintaining the coach's authentic voice and style.
-Return the refined version in the same JSON format as the original.`;
+${changes ? `SPECIFIC CHANGES:\n${JSON.stringify(changes, null, 2)}` : ''}
+
+${context ? `CONVERSATION CONTEXT:\n${context}` : ''}
+
+Refine the content maintaining the same JSON structure but improving based on the feedback provided.`;
 
     try {
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Please refine this content based on the feedback provided.' },
+          { role: 'user', content: 'Please refine the content based on the requests above.' },
         ],
-        temperature: 0.6,
-        max_completion_tokens: 1000,
+        temperature: 0.7,
+        max_completion_tokens: 2000,
         response_format: { type: 'json_object' },
       });
 
       return JSON.parse(completion.choices[0].message.content || '{}');
     } catch (error) {
-      this.logger.error('Error refining content:', error);
-      throw new Error('Failed to refine content');
+      this.logger.error('Error refining artifact content:', error);
+      throw new Error('Failed to refine artifact content');
     }
   }
 
-  private buildContentContext(conversation: any, requirements: ContentRequirements): string {
-    const recentMessages = conversation.messages?.slice(-5) || [];
-    const context = recentMessages
-      .map((m: any) => `${m.senderType === 'coach' ? 'Coach' : 'Assistant'}: ${m.content}`)
-      .join('\n');
+  private async createArtifactMessage(conversationID: string, type: string, title: string): Promise<string> {
+    const message = await this.prisma.agentConversationMessage.create({
+      data: {
+        conversationID,
+        senderType: 'agent',
+        content: `I've created a ${this.getArtifactTypeLabel(type)} for you: "${title}". You can view and edit it in the sidebar, or click on it to see the full formatted version.`,
+        messageType: 'artifact_response',
+        metadata: { artifactType: type, artifactTitle: title }
+      }
+    });
 
-    return `
-CONVERSATION CONTEXT:
-${context}
+    return message.id;
+  }
 
-CONTENT REQUIREMENTS:
-- Platform: ${requirements.platform?.join(', ') || 'General'}
-- Content Type: ${requirements.contentType || 'Educational'}
-- Target Audience: ${requirements.targetAudience || 'Professionals'}
-- Tone: ${requirements.tone || 'Professional'}
-- Length: ${requirements.length || 'Medium'}
+  private async createArtifact(
+    conversationID: string,
+    messageID: string,
+    type: string,
+    title: string,
+    content: any,
+    metadata: any = {}
+  ): Promise<ConversationArtifact> {
+    await this.prisma.conversationArtifact.updateMany({
+      where: { conversationID, artifactType: type, isCurrent: true },
+      data: { isCurrent: false }
+    });
 
-Please create content that addresses the coach's request while matching their style and audience needs.`;
+    const artifact = await this.prisma.conversationArtifact.create({
+      data: {
+        conversationID,
+        messageID,
+        artifactType: type,
+        title,
+        content: typeof content === 'string' ? content : JSON.stringify(content),
+        metadata,
+        version: 1,
+        isCurrent: true,
+      }
+    });
+
+    return this.mapArtifact(artifact);
+  }
+
+  private buildSystemPrompt(coachProfile: any): string {
+    return `You are an AI assistant specialized in content creation for coaches.
+
+COACH CONTEXT:
+- Communication Style: ${coachProfile?.personality?.communicationStyle || 'professional'}
+- Industry: ${coachProfile?.businessContext?.industry || 'coaching'}
+- Expertise: ${coachProfile?.businessContext?.expertise?.join(', ') || 'general coaching'}
+
+You should:
+- Maintain a conversational, helpful tone
+- Ask clarifying questions when needed
+- Provide actionable advice
+- Match the coach's communication style
+- Remember context from the conversation
+- When asked to create specific content types (scripts, posts, outlines), create them as artifacts automatically
+
+If the user asks for content creation like "write a script" or "create a social post", you should generate the content as a structured artifact rather than just providing text in the conversation.`;
+  }
+
+  private getArtifactTypeLabel(type: string): string {
+    switch (type) {
+      case 'content_script': return 'content script';
+      case 'social_post': return 'social media post';
+      case 'blog_outline': return 'blog outline';
+      default: return 'content piece';
+    }
+  }
+
+  private mapConversation(conversation: any): AgentConversation {
+    return {
+      id: conversation.id,
+      agentType: conversation.agentType,
+      title: conversation.title,
+      totalMessages: conversation.totalMessages,
+      lastMessageAt: conversation.lastMessageAt,
+      isActive: conversation.isActive,
+      createdAt: conversation.createdAt,
+    };
+  }
+
+  private mapMessage(message: any): AgentConversationMessage {
+    return {
+      id: message.id,
+      senderType: message.senderType,
+      content: message.content,
+      messageType: message.messageType,
+      metadata: message.metadata,
+      createdAt: message.createdAt,
+      artifacts: message.artifacts?.map((a: any) => this.mapArtifact(a)) || []
+    };
+  }
+
+  private mapArtifact(artifact: any): ConversationArtifact {
+    return {
+      id: artifact.id,
+      artifactType: artifact.artifactType,
+      title: artifact.title,
+      content: artifact.content,
+      metadata: artifact.metadata,
+      version: artifact.version,
+      isCurrent: artifact.isCurrent,
+      createdAt: artifact.createdAt,
+      updatedAt: artifact.updatedAt,
+    };
   }
 }
