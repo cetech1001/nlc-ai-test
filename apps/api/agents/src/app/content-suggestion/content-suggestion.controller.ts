@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -30,6 +31,14 @@ export class ContentSuggestionController {
       idea: string;
       contentType?: string;
       targetPlatforms?: string[];
+      category?: string;
+      videoOptions?: {
+        duration?: string;
+        style?: string;
+        includeMusic?: boolean;
+        includeCaptions?: boolean;
+        orientation?: 'vertical' | 'horizontal' | 'square';
+      };
       customInstructions?: string;
     }
   ) {
@@ -39,6 +48,8 @@ export class ContentSuggestionController {
       body.idea,
       body.contentType,
       body.targetPlatforms,
+      body.category,
+      body.videoOptions,
       body.customInstructions
     );
   }
@@ -49,13 +60,23 @@ export class ContentSuggestionController {
   async regenerateContentSuggestion(
     @CurrentUser() user: AuthUser,
     @Param('suggestionID') suggestionID: string,
-    @Body() body?: { customInstructions?: string }
+    @Body() body?: {
+      customInstructions?: string;
+      videoOptions?: {
+        duration?: string;
+        style?: string;
+        includeMusic?: boolean;
+        includeCaptions?: boolean;
+        orientation?: 'vertical' | 'horizontal' | 'square';
+      };
+    }
   ) {
     return this.contentSuggestionService.regenerateContentSuggestion(
       user.id,
       user.type,
       suggestionID,
-      body?.customInstructions
+      body?.customInstructions,
+      body?.videoOptions
     );
   }
 
@@ -90,10 +111,35 @@ export class ContentSuggestionController {
       hook?: string;
       mainContent?: string;
       callToAction?: string;
+      videoOptions?: {
+        duration?: string;
+        style?: string;
+        includeMusic?: boolean;
+        includeCaptions?: boolean;
+        orientation?: 'vertical' | 'horizontal' | 'square';
+      };
     }
   ) {
     const coachID = user.type === UserType.COACH ? user.id : user.id;
     return this.contentSuggestionService.updateSuggestion(coachID, suggestionID, body);
+  }
+
+  @Delete('suggestions/:suggestionID')
+  @ApiOperation({ summary: 'Delete content suggestion' })
+  @ApiResponse({ status: 200, description: 'Content suggestion deleted successfully' })
+  async deleteSuggestion(
+    @CurrentUser() user: AuthUser,
+    @Param('suggestionID') suggestionID: string
+  ) {
+    const coachID = user.type === UserType.COACH ? user.id : user.id;
+    return this.contentSuggestionService.deleteSuggestion(coachID, suggestionID);
+  }
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Get available content categories' })
+  @ApiResponse({ status: 200, description: 'Content categories retrieved successfully' })
+  async getContentCategories(@CurrentUser() user: AuthUser) {
+    return this.contentSuggestionService.getContentCategories();
   }
 
   @Get('analytics/top-performing')

@@ -1,5 +1,4 @@
 /// <reference lib="dom"/>
-'use client'
 
 import {useState, useRef, useEffect, ReactNode, createContext, FC, useContext} from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -30,24 +29,36 @@ interface SelectItemProps {
 
 interface SelectValueProps {
   placeholder?: string;
+  className?: string;
 }
 
 const SelectContext = createContext<{
   isOpen: boolean;
   value?: string;
+  selectedLabel?: string;
   onValueChange?: (value: string) => void;
   onOpenChange: (open: boolean) => void;
+  setSelectedLabel: (label: string) => void;
 }>({
   isOpen: false,
   onOpenChange: () => {},
+  setSelectedLabel: () => {},
 });
 
 export const Select: FC<SelectProps> = ({ value, onValueChange, children, className }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState<string>('');
 
   return (
-    <SelectContext.Provider value={{ isOpen, value, onValueChange, onOpenChange: setIsOpen }}>
-      <div className={`relative ${className}`}>
+    <SelectContext.Provider value={{
+      isOpen,
+      value,
+      selectedLabel,
+      onValueChange,
+      onOpenChange: setIsOpen,
+      setSelectedLabel
+    }}>
+      <div className={`relative ${className || ''}`}>
         {children}
       </div>
     </SelectContext.Provider>
@@ -79,34 +90,39 @@ export const SelectTrigger: FC<SelectTriggerProps> = ({ className = '', children
       <button
         type="button"
         onClick={() => onOpenChange(!isOpen)}
-        className={`flex items-center justify-between w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${className}`}
+        className={`flex items-center justify-between w-full px-3 py-2.5 text-left rounded-md border border-gray-600 bg-gray-800 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       >
-        {children}
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <div className="flex-1 min-w-0">
+          {children}
+        </div>
+        <ChevronDown className={`w-4 h-4 ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
     </div>
   );
 };
 
-export const SelectContent: FC<SelectContentProps> = ({ children, className }) => {
+export const SelectContent: FC<SelectContentProps> = ({ children, className = '' }) => {
   const { isOpen } = useContext(SelectContext);
 
   if (!isOpen) return null;
 
   return (
-    <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg ${className}`}>
-      <div className={`py-1 max-h-60 overflow-auto ${className}`}>
+    <div className={`absolute z-50 w-full mt-1 rounded-md shadow-lg border border-gray-600 bg-gray-800 overflow-hidden ${className}`}>
+      <div className="py-1 max-h-60 overflow-auto">
         {children}
       </div>
     </div>
   );
 };
 
-export const SelectItem: FC<SelectItemProps> = ({ value, children, className }) => {
-  const { value: selectedValue, onValueChange, onOpenChange } = useContext(SelectContext);
+export const SelectItem: FC<SelectItemProps> = ({ value, children, className = '' }) => {
+  const { value: selectedValue, onValueChange, onOpenChange, setSelectedLabel } = useContext(SelectContext);
+  const isSelected = selectedValue === value;
 
   const handleClick = () => {
+    console.log("Clicked: ", value);
     onValueChange?.(value);
+    setSelectedLabel(typeof children === 'string' ? children : value);
     onOpenChange(false);
   };
 
@@ -114,8 +130,10 @@ export const SelectItem: FC<SelectItemProps> = ({ value, children, className }) 
     <button
       type="button"
       onClick={handleClick}
-      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 ${
-        selectedValue === value ? 'bg-purple-50 text-purple-900' : 'text-gray-900'
+      className={`w-full px-3 py-2.5 text-left text-sm transition-colors focus:outline-none ${
+        isSelected
+          ? 'bg-purple-600/20 text-purple-100 font-medium'
+          : 'text-gray-200 hover:bg-gray-700 focus:bg-gray-700'
       } ${className}`}
     >
       {children}
@@ -123,12 +141,12 @@ export const SelectItem: FC<SelectItemProps> = ({ value, children, className }) 
   );
 };
 
-export const SelectValue: FC<SelectValueProps> = ({ placeholder }) => {
-  const { value } = useContext(SelectContext);
+export const SelectValue: FC<SelectValueProps> = ({ placeholder, className = '' }) => {
+  const { selectedLabel, value } = useContext(SelectContext);
 
   return (
-    <span className={value ? 'text-gray-900' : 'text-gray-500'}>
-      {value || placeholder}
+    <span className={`block truncate ${(selectedLabel || value) ? 'text-current' : 'text-gray-400'} ${className}`}>
+      {selectedLabel || value || placeholder}
     </span>
   );
 };

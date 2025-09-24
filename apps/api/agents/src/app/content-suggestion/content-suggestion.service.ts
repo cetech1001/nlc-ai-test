@@ -16,12 +16,21 @@ interface PlatformAnalytics {
   topPerformingContentTypes: string[];
 }
 
+interface VideoOptions {
+  duration?: string;
+  style?: string;
+  includeMusic?: boolean;
+  includeCaptions?: boolean;
+  orientation?: 'vertical' | 'horizontal' | 'square';
+}
+
 interface ContentSuggestionResponse {
   title: string;
   script: {
     hook: string;
     mainContent: string;
     callToAction: string;
+    videoSpecificNotes?: string;
   };
   estimatedEngagement: {
     min: number;
@@ -32,12 +41,33 @@ interface ContentSuggestionResponse {
   contentCategory: string;
   confidence: number;
   reasoning: string;
+  videoGuidance?: {
+    sceneBreakdown: string[];
+    visualCues: string[];
+    pacing: string;
+    musicSuggestions?: string[];
+  };
 }
 
 @Injectable()
 export class ContentSuggestionService {
   private readonly logger = new Logger(ContentSuggestionService.name);
   private openai: OpenAI;
+
+  private readonly CONTENT_CATEGORIES = [
+    'Motivation & Inspiration',
+    'Educational & Tips',
+    'Behind the Scenes',
+    'Client Success Stories',
+    'Industry Insights',
+    'Personal Development',
+    'Health & Wellness',
+    'Business & Leadership',
+    'Q&A & FAQ',
+    'Trending Topics',
+    'Seasonal Content',
+    'Product/Service Showcase',
+  ];
 
   constructor(
     private readonly prisma: PrismaService,
@@ -56,6 +86,14 @@ export class ContentSuggestionService {
     idea: string,
     contentType?: string,
     targetPlatforms?: string[],
+    category?: string,
+    videoOptions?: {
+      duration?: string;
+      style?: string;
+      includeMusic?: boolean;
+      includeCaptions?: boolean;
+      orientation?: 'vertical' | 'horizontal' | 'square';
+    },
     customInstructions?: string
   ) {
     this.logger.log(`Generating content suggestion for user ${userID} with idea: ${idea}`);
@@ -74,6 +112,8 @@ export class ContentSuggestionService {
           idea: idea.trim(),
           contentType,
           targetPlatforms,
+          category,
+          videoOptions: videoOptions as any,
           customInstructions,
         },
         outputData: {},
@@ -98,10 +138,12 @@ export class ContentSuggestionService {
         topContent,
         contentType,
         targetPlatforms,
+        category,
+        videoOptions,
         customInstructions
       );
 
-      const aiResponse = await this.generateWithOpenAI(context, coachProfile);
+      const aiResponse = await this.generateWithOpenAI(context, coachProfile, contentType, videoOptions);
 
       const contentSuggestion = await this.prisma.contentSuggestion.create({
         data: {
@@ -114,9 +156,13 @@ export class ContentSuggestionService {
             hook: aiResponse.script.hook,
             mainContent: aiResponse.script.mainContent,
             callToAction: aiResponse.script.callToAction,
+            videoSpecificNotes: aiResponse.script.videoSpecificNotes,
             estimatedEngagement: aiResponse.estimatedEngagement,
             bestPostingTimes: aiResponse.bestPostingTimes,
             recommendedPlatforms: aiResponse.recommendedPlatforms,
+            category,
+            videoOptions,
+            videoGuidance: aiResponse.videoGuidance,
           }),
           reasoning: aiResponse.reasoning,
           confidenceScore: aiResponse.confidence || 0.8,
@@ -124,7 +170,9 @@ export class ContentSuggestionService {
           trendData: JSON.stringify({
             contentType,
             targetPlatforms,
+            category,
             customInstructions,
+            videoOptions,
             coachStyle: coachProfile.personality.communicationStyle,
           }),
         },
@@ -165,8 +213,10 @@ export class ContentSuggestionService {
           hook: aiResponse.script.hook,
           mainContent: aiResponse.script.mainContent,
           callToAction: aiResponse.script.callToAction,
+          videoSpecificNotes: aiResponse.script.videoSpecificNotes,
         },
         contentCategory: aiResponse.contentCategory,
+        category,
         recommendedPlatforms: aiResponse.recommendedPlatforms,
         bestPostingTimes: aiResponse.bestPostingTimes,
         estimatedEngagement: {
@@ -175,6 +225,8 @@ export class ContentSuggestionService {
         },
         confidence: contentSuggestion.confidenceScore,
         status: contentSuggestion.status,
+        videoOptions,
+        videoGuidance: aiResponse.videoGuidance,
         createdAt: contentSuggestion.createdAt,
       };
 
@@ -191,7 +243,13 @@ export class ContentSuggestionService {
     }
   }
 
-  async regenerateContentSuggestion(userID: string, userType: UserType, suggestionID: string, customInstructions?: string) {
+  async regenerateContentSuggestion(
+    userID: string,
+    userType: UserType,
+    suggestionID: string,
+    customInstructions?: string,
+    videoOptions?: VideoOptions
+  ) {
     const existingSuggestion = await this.prisma.contentSuggestion.findFirst({
       where: { id: suggestionID, coachID: userID },
     });
@@ -216,6 +274,8 @@ export class ContentSuggestionService {
       originalIdea,
       existingSuggestion.contentType,
       parsedDescription.recommendedPlatforms,
+      parsedDescription.category,
+      videoOptions || parsedDescription.videoOptions,
       customInstructions
     );
   }
@@ -241,13 +301,17 @@ export class ContentSuggestionService {
           hook: parsedDescription.hook || '',
           mainContent: parsedDescription.mainContent || '',
           callToAction: parsedDescription.callToAction || '',
+          videoSpecificNotes: parsedDescription.videoSpecificNotes,
         },
         contentCategory: suggestion.contentType,
+        category: parsedDescription.category,
         recommendedPlatforms: parsedDescription.recommendedPlatforms || [],
         bestPostingTimes: parsedDescription.bestPostingTimes || [],
         estimatedEngagement: parsedDescription.estimatedEngagement || { min: 0, max: 0 },
         confidence: suggestion.confidenceScore,
         status: suggestion.status,
+        videoOptions: parsedDescription.videoOptions,
+        videoGuidance: parsedDescription.videoGuidance,
         createdAt: suggestion.createdAt,
         updatedAt: suggestion.updatedAt,
         // @ts-ignore
@@ -275,13 +339,17 @@ export class ContentSuggestionService {
         hook: parsedDescription.hook || '',
         mainContent: parsedDescription.mainContent || '',
         callToAction: parsedDescription.callToAction || '',
+        videoSpecificNotes: parsedDescription.videoSpecificNotes,
       },
       contentCategory: suggestion.contentType,
+      category: parsedDescription.category,
       recommendedPlatforms: parsedDescription.recommendedPlatforms || [],
       bestPostingTimes: parsedDescription.bestPostingTimes || [],
       estimatedEngagement: parsedDescription.estimatedEngagement || { min: 0, max: 0 },
       confidence: suggestion.confidenceScore,
       status: suggestion.status,
+      videoOptions: parsedDescription.videoOptions,
+      videoGuidance: parsedDescription.videoGuidance,
       createdAt: suggestion.createdAt,
       updatedAt: suggestion.updatedAt,
       // @ts-ignore
@@ -295,6 +363,7 @@ export class ContentSuggestionService {
     hook?: string;
     mainContent?: string;
     callToAction?: string;
+    videoOptions?: VideoOptions;
   }) {
     const suggestion = await this.prisma.contentSuggestion.findFirst({
       where: { id: suggestionID, coachID: userID }
@@ -312,6 +381,7 @@ export class ContentSuggestionService {
       hook: updates.hook || currentDescription.hook,
       mainContent: updates.mainContent || currentDescription.mainContent,
       callToAction: updates.callToAction || currentDescription.callToAction,
+      videoOptions: updates.videoOptions || currentDescription.videoOptions,
     };
 
     return this.prisma.contentSuggestion.update({
@@ -323,6 +393,33 @@ export class ContentSuggestionService {
         updatedAt: new Date(),
       }
     });
+  }
+
+  async deleteSuggestion(userID: string, suggestionID: string) {
+    const suggestion = await this.prisma.contentSuggestion.findFirst({
+      where: { id: suggestionID, coachID: userID }
+    });
+
+    if (!suggestion) {
+      throw new NotFoundException('Content suggestion not found');
+    }
+
+    await this.prisma.contentSuggestion.delete({
+      where: { id: suggestionID }
+    });
+
+    return {
+      success: true,
+      message: 'Content suggestion deleted successfully',
+      deletedID: suggestionID
+    };
+  }
+
+  async getContentCategories() {
+    return {
+      categories: this.CONTENT_CATEGORIES,
+      count: this.CONTENT_CATEGORIES.length,
+    };
   }
 
   async getTopPerformingContent(userID: string) {
@@ -445,6 +542,8 @@ export class ContentSuggestionService {
     topContent: any[],
     contentType?: string,
     targetPlatforms?: string[],
+    category?: string,
+    videoOptions?: VideoOptions,
     customInstructions?: string
   ): string {
     return `
@@ -478,19 +577,36 @@ CONTENT IDEA TO DEVELOP:
 
 ${contentType ? `Requested Content Type: ${contentType}` : ''}
 ${targetPlatforms ? `Target Platforms: ${targetPlatforms.join(', ')}` : ''}
+${category ? `Content Category: ${category}` : ''}
+${videoOptions ? `
+Video Requirements:
+- Duration: ${videoOptions.duration || 'Not specified'}
+- Style: ${videoOptions.style || 'Not specified'}
+- Include Music: ${videoOptions.includeMusic ? 'Yes' : 'No'}
+- Include Captions: ${videoOptions.includeCaptions ? 'Yes' : 'No'}
+- Orientation: ${videoOptions.orientation || 'Not specified'}
+` : ''}
 ${customInstructions ? `Additional Instructions: ${customInstructions}` : ''}
 
 Please generate a comprehensive content suggestion that includes:
 1. An engaging title that matches the coach's style
 2. A complete script with hook, main content, and call-to-action
-3. Estimated engagement range based on historical performance
-4. Recommended platforms based on analytics
-5. Best posting times based on platform data
-6. Content category classification
+3. Video-specific guidance if this is video content
+4. Estimated engagement range based on historical performance
+5. Recommended platforms based on analytics
+6. Best posting times based on platform data
+7. Content category classification
 `;
   }
 
-  private async generateWithOpenAI(context: string, coachProfile: any): Promise<ContentSuggestionResponse> {
+  private async generateWithOpenAI(
+    context: string,
+    coachProfile: any,
+    contentType?: string,
+    videoOptions?: VideoOptions
+  ): Promise<ContentSuggestionResponse> {
+    const isVideoContent = contentType && ['video', 'reel', 'story'].includes(contentType.toLowerCase());
+
     const systemPrompt = `You are an AI content strategist specializing in creating engaging content for ${coachProfile?.businessContext?.industry || 'coaching'} professionals.
 
 Your role is to transform content ideas into comprehensive, actionable content suggestions that match the coach's authentic voice and maximize engagement potential.
@@ -505,6 +621,15 @@ SCRIPT STRUCTURE REQUIREMENTS:
 - Hook: 1-2 sentences that grab attention immediately
 - Main Content: 3-5 paragraphs of valuable, actionable content
 - Call to Action: Clear, specific next step for the audience
+${isVideoContent ? `
+- Video Specific Notes: Technical notes for video production and pacing
+
+VIDEO GUIDANCE (when applicable):
+- Scene Breakdown: 3-5 key scenes/shots needed
+- Visual Cues: What should be shown on screen
+- Pacing: How fast or slow the content should move
+- Music Suggestions: Type of background music that would enhance the content
+` : ''}
 
 Respond in JSON format with:
 {
@@ -512,7 +637,7 @@ Respond in JSON format with:
   "script": {
     "hook": "Attention-grabbing opening",
     "mainContent": "Main valuable content in paragraph form",
-    "callToAction": "Clear call to action"
+    "callToAction": "Clear call to action"${isVideoContent ? ',\n    "videoSpecificNotes": "Technical notes for video production"' : ''}
   },
   "estimatedEngagement": {
     "min": number,
@@ -522,7 +647,7 @@ Respond in JSON format with:
   "bestPostingTimes": ["time1", "time2"],
   "contentCategory": "category",
   "confidence": 0.0-1.0,
-  "reasoning": "Why this approach will work for this coach"
+  "reasoning": "Why this approach will work for this coach"${isVideoContent ? ',\n  "videoGuidance": {\n    "sceneBreakdown": ["scene1", "scene2", "scene3"],\n    "visualCues": ["cue1", "cue2"],\n    "pacing": "fast/medium/slow with explanation",\n    "musicSuggestions": ["type1", "type2"]\n  }' : ''}
 }`;
 
     try {
@@ -533,7 +658,7 @@ Respond in JSON format with:
           { role: 'user', content: context },
         ],
         temperature: 0.8,
-        max_completion_tokens: 2000,
+        max_completion_tokens: 3000,
         response_format: { type: 'json_object' },
       });
 

@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { X, Sparkles, Loader2 } from 'lucide-react';
-import { Button, Textarea, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@nlc-ai/web-ui';
+import { useState, useEffect } from 'react';
+import { X, Sparkles, Loader2, Video, Image, FileText } from 'lucide-react';
+import { Button, Textarea, Label } from '@nlc-ai/web-ui';
 import { toast } from 'sonner';
 import { sdkClient } from "@/lib";
 import { useRouter } from "next/navigation";
@@ -11,13 +11,13 @@ interface GenerateIdeaModalProps {
 }
 
 const CONTENT_TYPES = [
-  { value: 'video', label: 'Video Content' },
-  { value: 'post', label: 'Social Media Post' },
-  { value: 'carousel', label: 'Carousel Post' },
-  { value: 'story', label: 'Story Content' },
-  { value: 'reel', label: 'Reel/Short Video' },
-  { value: 'blog', label: 'Blog Post' },
-  { value: 'email', label: 'Email Content' },
+  { value: 'video', label: 'Video Content', icon: Video },
+  { value: 'post', label: 'Social Media Post', icon: FileText },
+  { value: 'carousel', label: 'Carousel Post', icon: Image },
+  { value: 'story', label: 'Story Content', icon: Image },
+  { value: 'reel', label: 'Reel/Short Video', icon: Video },
+  { value: 'blog', label: 'Blog Post', icon: FileText },
+  { value: 'email', label: 'Email Content', icon: FileText },
 ];
 
 const PLATFORMS = [
@@ -25,18 +25,68 @@ const PLATFORMS = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'tiktok', label: 'TikTok' },
   { value: 'youtube', label: 'YouTube' },
-  // { value: 'linkedin', label: 'LinkedIn' },
   { value: 'twitter', label: 'Twitter / X' },
-  // { value: 'threads', label: 'Threads' },
+];
+
+const VIDEO_DURATIONS = [
+  { value: '15s', label: '15 seconds' },
+  { value: '30s', label: '30 seconds' },
+  { value: '60s', label: '1 minute' },
+  { value: '90s', label: '1.5 minutes' },
+  { value: '3m', label: '3 minutes' },
+  { value: '5m', label: '5 minutes' },
+  { value: '10m+', label: '10+ minutes' },
+];
+
+const VIDEO_STYLES = [
+  { value: 'talking-head', label: 'Talking Head' },
+  { value: 'tutorial', label: 'Tutorial/How-to' },
+  { value: 'lifestyle', label: 'Lifestyle/Behind-the-scenes' },
+  { value: 'animated', label: 'Animated/Motion Graphics' },
+  { value: 'slideshow', label: 'Slideshow/Presentation' },
+  { value: 'testimonial', label: 'Testimonial/Case Study' },
+];
+
+const VIDEO_ORIENTATIONS = [
+  { value: 'vertical', label: 'Vertical (9:16)' },
+  { value: 'horizontal', label: 'Horizontal (16:9)' },
+  { value: 'square', label: 'Square (1:1)' },
 ];
 
 export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) => {
   const router = useRouter();
   const [idea, setIdea] = useState('');
   const [contentType, setContentType] = useState('');
+  const [category, setCategory] = useState('');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [customInstructions, setCustomInstructions] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  // Video-specific options
+  const [videoDuration, setVideoDuration] = useState('');
+  const [videoStyle, setVideoStyle] = useState('');
+  const [includeMusic, setIncludeMusic] = useState(false);
+  const [includeCaptions, setIncludeCaptions] = useState(true);
+  const [videoOrientation, setVideoOrientation] = useState('');
+
+  const isVideoContent = ['video', 'reel'].includes(contentType);
+
+  // Load categories on mount
+  useEffect(() => {
+    if (isOpen) {
+      loadCategories();
+    }
+  }, [isOpen]);
+
+  const loadCategories = async () => {
+    try {
+      const result = await sdkClient.agents.contentSuggestion.getContentCategories();
+      setCategories(result.categories);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -57,10 +107,20 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
 
     setIsGenerating(true);
     try {
+      const videoOptions = isVideoContent ? {
+        duration: videoDuration || undefined,
+        style: videoStyle || undefined,
+        includeMusic,
+        includeCaptions,
+        orientation: videoOrientation as 'vertical' | 'horizontal' | 'square' || undefined,
+      } : undefined;
+
       const result = await sdkClient.agents.contentSuggestion.generateContentSuggestion({
         idea: idea.trim(),
         contentType: contentType || undefined,
         targetPlatforms: selectedPlatforms.length > 0 ? selectedPlatforms : undefined,
+        category: category || undefined,
+        videoOptions,
         customInstructions: customInstructions.trim() || undefined,
       });
 
@@ -77,8 +137,14 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
   const handleClose = () => {
     setIdea('');
     setContentType('');
+    setCategory('');
     setSelectedPlatforms([]);
     setCustomInstructions('');
+    setVideoDuration('');
+    setVideoStyle('');
+    setIncludeMusic(false);
+    setIncludeCaptions(true);
+    setVideoOrientation('');
     onClose();
   };
 
@@ -92,9 +158,10 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8 w-full max-w-3xl max-h-[95vh] overflow-y-auto">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-48 h-48 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+          <div className="absolute w-32 h-32 -left-4 -bottom-8 bg-gradient-to-r from-purple-400 via-purple-600 to-indigo-600 rounded-full blur-[40px]" />
         </div>
 
         <div className="relative z-10">
@@ -148,29 +215,136 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
               )}
             </div>
 
-            <div>
-              <Label htmlFor="contentType" className="text-white text-sm mb-2 block">
-                Content Type (Optional)
-              </Label>
-              <Select
-                value={contentType} onValueChange={setContentType}
-                disabled={isGenerating} className="bg-neutral-800 border-neutral-600">
-                <SelectTrigger className="bg-neutral-800/50 border-neutral-600 text-white">
-                  <SelectValue placeholder="Select content type" />
-                </SelectTrigger>
-                <SelectContent className="bg-neutral-800 border-neutral-600">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="contentType" className="text-white text-sm mb-2 block">
+                  Content Type
+                </Label>
+                <select
+                  id="contentType"
+                  value={contentType}
+                  onChange={(e) => setContentType(e.target.value)}
+                  disabled={isGenerating}
+                  className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Select content type</option>
                   {CONTENT_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value} className="text-white hover:bg-neutral-700">
+                    <option key={type.value} value={type.value}>
                       {type.label}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="category" className="text-white text-sm mb-2 block">
+                  Content Category
+                </Label>
+                <select
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  disabled={isGenerating}
+                  className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Select category</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            {isVideoContent && (
+              <div className="space-y-4 p-4 bg-neutral-800/20 rounded-lg border border-neutral-600/50">
+                <h4 className="text-white font-medium flex items-center gap-2">
+                  <Video className="w-4 h-4" />
+                  Video Options
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-white text-sm mb-2 block">Duration</Label>
+                    <select
+                      value={videoDuration}
+                      onChange={(e) => setVideoDuration(e.target.value)}
+                      disabled={isGenerating}
+                      className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Select duration</option>
+                      {VIDEO_DURATIONS.map(duration => (
+                        <option key={duration.value} value={duration.value}>
+                          {duration.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label className="text-white text-sm mb-2 block">Style</Label>
+                    <select
+                      value={videoStyle}
+                      onChange={(e) => setVideoStyle(e.target.value)}
+                      disabled={isGenerating}
+                      className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Select style</option>
+                      {VIDEO_STYLES.map(style => (
+                        <option key={style.value} value={style.value}>
+                          {style.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label className="text-white text-sm mb-2 block">Orientation</Label>
+                    <select
+                      value={videoOrientation}
+                      onChange={(e) => setVideoOrientation(e.target.value)}
+                      disabled={isGenerating}
+                      className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Select orientation</option>
+                      {VIDEO_ORIENTATIONS.map(orientation => (
+                        <option key={orientation.value} value={orientation.value}>
+                          {orientation.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 text-white cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeMusic}
+                      onChange={(e) => setIncludeMusic(e.target.checked)}
+                      disabled={isGenerating}
+                      className="w-4 h-4 text-purple-600 bg-neutral-800 border-neutral-600 rounded focus:ring-purple-500"
+                    />
+                    Include background music suggestions
+                  </label>
+                  <label className="flex items-center gap-2 text-white cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeCaptions}
+                      onChange={(e) => setIncludeCaptions(e.target.checked)}
+                      disabled={isGenerating}
+                      className="w-4 h-4 text-purple-600 bg-neutral-800 border-neutral-600 rounded focus:ring-purple-500"
+                    />
+                    Include captions/subtitles
+                  </label>
+                </div>
+              </div>
+            )}
 
             <div>
               <Label className="text-white text-sm mb-2 block">
-                Target Platforms (Optional)
+                Target Platforms
               </Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {PLATFORMS.map(platform => (
@@ -193,7 +367,7 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
 
             <div>
               <Label htmlFor="customInstructions" className="text-white text-sm mb-2 block">
-                Additional Instructions (Optional)
+                Additional Instructions
               </Label>
               <div className="relative">
                 <Textarea
@@ -228,7 +402,7 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
               <Button
                 onClick={handleClose}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 border-neutral-600 text-white hover:bg-neutral-800"
                 disabled={isGenerating}
               >
                 Cancel
@@ -236,7 +410,7 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || !idea.trim() || isIdeaOverLimit || isInstructionsOverLimit}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white"
               >
                 {isGenerating ? (
                   <>

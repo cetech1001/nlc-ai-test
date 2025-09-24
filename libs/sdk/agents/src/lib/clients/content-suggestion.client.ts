@@ -1,5 +1,13 @@
 import { BaseClient } from '@nlc-ai/sdk-core';
 
+export interface VideoOptions {
+  duration?: string;
+  style?: string;
+  includeMusic?: boolean;
+  includeCaptions?: boolean;
+  orientation?: 'vertical' | 'horizontal' | 'square';
+}
+
 export interface ContentSuggestion {
   id: string;
   title: string;
@@ -8,8 +16,10 @@ export interface ContentSuggestion {
     hook: string;
     mainContent: string;
     callToAction: string;
+    videoSpecificNotes?: string;
   };
   contentCategory: string;
+  category?: string;
   recommendedPlatforms: string[];
   bestPostingTimes: string[];
   estimatedEngagement: {
@@ -18,6 +28,13 @@ export interface ContentSuggestion {
   };
   confidence: number;
   status: 'generated' | 'updated' | 'superseded';
+  videoOptions?: VideoOptions;
+  videoGuidance?: {
+    sceneBreakdown: string[];
+    visualCues: string[];
+    pacing: string;
+    musicSuggestions?: string[];
+  };
   createdAt: Date;
   updatedAt?: Date;
   metadata?: any;
@@ -58,6 +75,17 @@ export interface ContentTrends {
   analysisDate: Date;
 }
 
+export interface ContentCategories {
+  categories: string[];
+  count: number;
+}
+
+export interface DeleteResponse {
+  success: boolean;
+  message: string;
+  deletedID: string;
+}
+
 export class ContentSuggestionClient extends BaseClient {
   /**
    * Generate content suggestion with script
@@ -66,6 +94,8 @@ export class ContentSuggestionClient extends BaseClient {
     idea: string;
     contentType?: string;
     targetPlatforms?: string[];
+    category?: string;
+    videoOptions?: VideoOptions;
     customInstructions?: string;
   }): Promise<ContentSuggestion> {
     const response = await this.request<ContentSuggestion>(
@@ -79,11 +109,17 @@ export class ContentSuggestionClient extends BaseClient {
   /**
    * Regenerate existing content suggestion
    */
-  async regenerateContentSuggestion(suggestionID: string, customInstructions?: string): Promise<ContentSuggestion> {
+  async regenerateContentSuggestion(
+    suggestionID: string,
+    options?: {
+      customInstructions?: string;
+      videoOptions?: VideoOptions;
+    }
+  ): Promise<ContentSuggestion> {
     const response = await this.request<ContentSuggestion>(
       'POST',
       `/regenerate/${suggestionID}`,
-      { body: { customInstructions } }
+      { body: options }
     );
     return response.data!;
   }
@@ -119,11 +155,34 @@ export class ContentSuggestionClient extends BaseClient {
     hook?: string;
     mainContent?: string;
     callToAction?: string;
+    videoOptions?: VideoOptions;
   }): Promise<ContentSuggestion> {
     const response = await this.request<ContentSuggestion>(
       'POST',
       `/suggestions/${suggestionID}/update`,
       { body: updates }
+    );
+    return response.data!;
+  }
+
+  /**
+   * Delete content suggestion
+   */
+  async deleteSuggestion(suggestionID: string): Promise<DeleteResponse> {
+    const response = await this.request<DeleteResponse>(
+      'DELETE',
+      `/suggestions/${suggestionID}`
+    );
+    return response.data!;
+  }
+
+  /**
+   * Get available content categories
+   */
+  async getContentCategories(): Promise<ContentCategories> {
+    const response = await this.request<ContentCategories>(
+      'GET',
+      '/categories'
     );
     return response.data!;
   }
