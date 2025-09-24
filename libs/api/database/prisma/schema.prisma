@@ -78,6 +78,8 @@ model Coach {
   generatedEmailResponses GeneratedEmailResponse[]
   deliverabilityAnalyses  DeliverabilityAnalysis[]
   emailThreads            EmailThread[]
+  agentConversations      AgentConversation[]
+  agentMemories           AgentMemory[]
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
@@ -231,6 +233,13 @@ model ClientInvite {
 }
 
 // AI Agent Domain
+enum AgentType {
+  content_creation
+  email_response
+  lead_followup
+  client_retention
+  coach_replica
+}
 
 enum GeneratedEmailStatus {
   generated
@@ -343,6 +352,83 @@ model DeliverabilityAnalysis {
   @@index([coachID])
   @@index([createdAt])
   @@map("deliverability_analyses")
+}
+
+model AgentConversation {
+  id             String    @id @default(uuid()) @db.Uuid
+  coachID        String    @db.Uuid
+  agentType      AgentType
+  title          String?   @db.VarChar(255)
+  contextSummary String?   @db.Text
+  totalMessages  Int       @default(0)
+  lastMessageAt  DateTime? @db.Timestamptz(6)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
+
+  coach     Coach                      @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  messages  AgentConversationMessage[]
+  artifacts ConversationArtifact[]
+
+  @@index([coachID, agentType])
+  @@index([isActive])
+  @@map("agent_conversations")
+}
+
+model AgentConversationMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationID String   @db.Uuid
+  senderType     String   @db.VarChar(20) // 'coach', 'agent'
+  content        String   @db.Text
+  messageType    String   @default("text") @db.VarChar(20) // 'text', 'artifact_request', 'artifact_response'
+  metadata       Json?    @default("{}")
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  conversation AgentConversation      @relation(fields: [conversationID], references: [id], onDelete: Cascade)
+  artifacts    ConversationArtifact[]
+
+  @@index([conversationID])
+  @@index([createdAt])
+  @@map("agent_conversation_messages")
+}
+
+model ConversationArtifact {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationID String   @db.Uuid
+  messageID      String?  @db.Uuid
+  artifactType   String   @db.VarChar(50) // 'email_draft', 'content_script', 'sequence_plan'
+  title          String   @db.VarChar(255)
+  content        String   @db.Text
+  metadata       Json?    @default("{}")
+  version        Int      @default(1)
+  isCurrent      Boolean  @default(true)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  conversation AgentConversation         @relation(fields: [conversationID], references: [id], onDelete: Cascade)
+  message      AgentConversationMessage? @relation(fields: [messageID], references: [id], onDelete: SetNull)
+
+  @@index([conversationID])
+  @@index([artifactType])
+  @@map("conversation_artifacts")
+}
+
+model AgentMemory {
+  id              String   @id @default(uuid()) @db.Uuid
+  coachID         String   @db.Uuid
+  agentType       String   @db.VarChar(50)
+  memoryType      String   @db.VarChar(50) // 'personality_trait', 'preference', 'success_pattern'
+  content         String   @db.Text
+  importanceScore Decimal  @default(0.5) @db.Decimal(3, 2) // 0.0 to 1.0
+  lastAccessed    DateTime @default(now()) @db.Timestamptz(6)
+  accessCount     Int      @default(1)
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([coachID, agentType])
+  @@index([memoryType])
+  @@map("agent_memories")
 }
 
 // Community Domain

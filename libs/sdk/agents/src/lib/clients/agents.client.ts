@@ -4,6 +4,7 @@ import {CourseStructureClient} from "./course-structure.client";
 import {LeadFollowupClient} from "./lead-followup.client";
 import {EmailDeliverabilityClient} from "./email-deliverability.client";
 import { ContentSuggestionClient } from "./content-suggestion.client";
+import { ContentSuggestionConversationClient } from "./content-suggestion-conversation.client";
 
 
 export class AgentsClient {
@@ -12,6 +13,7 @@ export class AgentsClient {
   public leadFollowup: LeadFollowupClient;
   public emailDeliverability: EmailDeliverabilityClient;
   public contentSuggestion: ContentSuggestionClient;
+  public contentConversation: ContentSuggestionConversationClient;
 
   constructor(props: NLCClientConfig) {
     this.courseStructure = new CourseStructureClient({
@@ -37,6 +39,11 @@ export class AgentsClient {
     this.contentSuggestion = new ContentSuggestionClient({
       ...props,
       baseURL: `${props.baseURL}/content-suggestion`,
+    });
+
+    this.contentConversation = new ContentSuggestionConversationClient({
+      ...props,
+      baseURL: `${props.baseURL}/content-suggestion/chat`,
     });
   }
 }
