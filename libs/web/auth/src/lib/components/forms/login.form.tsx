@@ -44,6 +44,7 @@ export const LoginForm = (props: LoginFormProps) => {
       props.handleHome();
     } catch (err: unknown) {
       const apiError = err as ApiResponse<undefined>;
+      console.log(apiError);
       setError(apiError.error?.message || 'Google login failed');
     } finally {
       setIsLoading(false);

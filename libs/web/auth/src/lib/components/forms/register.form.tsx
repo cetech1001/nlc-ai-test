@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, EyeLashIcon, AlertBanner } from '@nlc-ai/web-ui';
 import { Eye } from "lucide-react";
-import { ApiError } from '@nlc-ai/web-api-client';
+import { ApiResponse } from '@nlc-ai/sdk-core';
 
 import { registerSchema, type RegisterFormData } from '../../schemas';
 import { type RegisterFormProps } from '../../types';
@@ -40,8 +40,8 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
       await authAPI.googleAuth(credentialResponse.credential, props.userType);
       props.handleHome();
     } catch (err: unknown) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Google registration failed');
+      const apiError = err as ApiResponse<undefined>;
+      setError(apiError.error?.message || 'Google registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -61,11 +61,16 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
     setError('');
 
     try {
-      await authAPI.register(data.fullName, data.email, data.password);
+      // Parse full name into firstName and lastName
+      const names = data.fullName.trim().split(' ');
+      const firstName = names[0];
+      const lastName = names.slice(1).join(' ') || firstName; // fallback to firstName if no lastName
+
+      await authAPI.register(firstName, lastName, data.email, data.password, props.userType);
       props.handleAccountVerification(data.email);
     } catch (err: unknown) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Registration failed');
+      const apiError = err as ApiResponse<undefined>;
+      setError(apiError.error?.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +157,6 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
 
         {props.showGoogleAuth && (
           <div className="space-y-4">
-            {/* Custom Google Sign-up Button */}
             <Button
               type="button"
               variant="outline"

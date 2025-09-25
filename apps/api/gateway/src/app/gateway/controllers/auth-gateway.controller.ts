@@ -2,10 +2,9 @@ import {
   Controller,
   All,
   Req,
-  Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 import { CacheService } from '../../cache/cache.service';
 
@@ -18,18 +17,15 @@ export class AuthGatewayController {
   ) {}
 
   @All('*')
-  async proxyToAuth(@Req() req: Request, @Res() res: Response) {
-    // Extract the path after /api/auth
+  async proxyToAuth(@Req() req: Request) {
     const path = req.path.replace(/^\/auth/, '');
-    // const fullPath = `/api/auth${path}`;
 
-    // Special handling for profile GET requests - check cache first
     if (req.method === 'GET' && path === '/profile' && req.headers.authorization) {
       const cacheKey = `profile:${req.headers.authorization}`;
       const cachedProfile = await this.cacheService.get(cacheKey);
 
       if (cachedProfile) {
-        return res.json(cachedProfile);
+        return cachedProfile;
       }
     }
 
@@ -44,19 +40,17 @@ export class AuthGatewayController {
       }
     );
 
-    // Cache profile responses for 5 minutes
     if (req.method === 'GET' && path === '/profile' && response.status === 200) {
       const cacheKey = `profile:${req.headers.authorization}`;
       await this.cacheService.set(cacheKey, response.data, 300);
     }
 
-    // Invalidate profile cache on profile updates
     if ((req.method === 'PATCH' || req.method === 'PUT') && path === '/profile') {
       const cacheKey = `profile:${req.headers.authorization}`;
       await this.cacheService.delete(cacheKey);
     }
 
-    return res.status(response.status).json(response.data);
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {

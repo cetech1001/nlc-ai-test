@@ -44,7 +44,7 @@
       "path": "../../types/tsconfig.lib.json"
     },
     {
-      "path": "../api-client/tsconfig.lib.json"
+      "path": "../../sdk/auth/tsconfig.lib.json"
     }
   ]
 }

@@ -88,7 +88,7 @@ export class GatewayConfigSchema {
 
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => value === 'true')
+  // @Transform(({ value }) => value === 'false')
   CORS_CREDENTIALS?: boolean = true;
 
   // Cache

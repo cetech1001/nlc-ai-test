@@ -18,6 +18,9 @@ async function bootstrap() {
   const corsOrigins = configService.get<string[]>('gateway.cors.origins');
   const corsCredentials = configService.get<boolean>('gateway.cors.credentials');
 
+  console.log("Cors Origins: ", corsOrigins);
+  console.log("Cors Credentials: ", corsCredentials);
+
   app.enableCors({
     origin: corsOrigins,
     credentials: corsCredentials,

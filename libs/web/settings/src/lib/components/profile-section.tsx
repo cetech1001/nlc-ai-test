@@ -16,7 +16,7 @@ import {UserType} from "@nlc-ai/types";
 interface ProfileSectionProps {
   onUpdateProfile: (data: ProfileFormData) => Promise<void>;
   onUpdatePassword: (data: PasswordFormData) => Promise<void>;
-  onUploadAvatar: (data: FormData) => Promise<void>;
+  onUploadAvatar: (data: string) => Promise<void>;
 }
 
 export const ProfileSection: FC<ProfileSectionProps> = ({
@@ -200,7 +200,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
       });
       formData.append('avatar', croppedFile);
 
-      await onUploadAvatar(formData);
+      await onUploadAvatar('formData');
       closeUploadModal();
       setSuccess('Profile photo updated successfully!');
     } catch (error: any) {

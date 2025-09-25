@@ -1,3 +1,4 @@
+// libs/sdk/core/src/lib/base-client.ts
 import {ServiceError} from "./service-error";
 import {ApiResponse, RequestOptions, ServiceClientConfig} from "./types";
 
@@ -6,12 +7,14 @@ export abstract class BaseClient {
   protected apiKey?: string;
   protected leadsPublicToken?: string;
   protected timeout: number = 30000;
+  protected getToken?: () => string | null;
 
   constructor(config: ServiceClientConfig) {
     this.baseURL = config.baseURL;
     this.apiKey = config.apiKey;
     this.leadsPublicToken = config.leadsPublicToken;
     this.timeout = config.timeout || 30000;
+    this.getToken = config.getToken;
   }
 
   protected async request<T>(
@@ -24,20 +27,31 @@ export abstract class BaseClient {
     const isFormData = options?.body instanceof FormData;
 
     const headers: Record<string, string> = {
-      ...(this.apiKey && { Authorization: `Bearer ${this.apiKey}` }),
       ...options?.headers,
     };
+
+    // Get token from getToken function (which handles cookies/localStorage)
+    const token = this.getToken?.() || this.apiKey;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
 
-    let body: any;
+    // Include credentials for cross-origin requests to handle cookies
+    const fetchOptions: RequestInit = {
+      method,
+      headers,
+      credentials: 'include', // This ensures cookies are sent cross-origin
+    };
+
     if (options?.body) {
       if (isFormData) {
-        body = options.body;
+        fetchOptions.body = options.body;
       } else {
-        body = JSON.stringify(options.body);
+        fetchOptions.body = JSON.stringify(options.body);
       }
     }
 
@@ -46,9 +60,7 @@ export abstract class BaseClient {
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
       const response = await fetch(url, {
-        method,
-        headers,
-        body,
+        ...fetchOptions,
         signal: controller.signal,
       });
 
@@ -128,5 +140,9 @@ export abstract class BaseClient {
     if (apiKey) {
       this.apiKey = apiKey;
     }
+  }
+
+  updateTokenGetter(getToken: () => string | null) {
+    this.getToken = getToken;
   }
 }

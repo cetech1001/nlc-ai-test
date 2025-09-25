@@ -21,7 +21,7 @@ interface SettingsProps {
   getProfile: () => Promise<any>;
   updateProfile: (data: ProfileFormData) => Promise<void>;
   updatePassword: (data: PasswordFormData) => Promise<void>;
-  uploadAvatar: (data: FormData) => Promise<void>;
+  uploadAvatar: (data: string) => Promise<void>;
 
   // Admin integration functions
   saveCalendlySettings?: (accessToken: string) => Promise<any>;
@@ -98,7 +98,7 @@ const SettingsContent: FC<SettingsProps> = ({
     await updatePassword(data);
   };
 
-  const handleUploadAvatar = async (data: FormData) => {
+  const handleUploadAvatar = async (data: string) => {
     await uploadAvatar(data);
     await refreshProfile();
   };

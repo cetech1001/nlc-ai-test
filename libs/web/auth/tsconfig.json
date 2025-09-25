@@ -15,7 +15,7 @@
       "path": "../../types"
     },
     {
-      "path": "../api-client"
+      "path": "../../sdk/auth"
     },
     {
       "path": "./tsconfig.lib.json"

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {LoginResponse} from "../types";
-import {authAPI} from "../api";
-import {UserType} from "@nlc-ai/types";
+import { UserType } from "@nlc-ai/types";
+import { authAPI } from "../api";
+import type { LoginResponse } from "../types";
 
 interface AuthState {
   user: LoginResponse['user'] | null;
@@ -24,17 +24,25 @@ export const useAuth = (userType?: UserType) => {
 
   const checkAuthStatus = async (userType?: UserType) => {
     try {
+      // Only set loading if we're not already loading
       if (!authState.isLoading) {
         setAuthState(prevState => ({
           ...prevState,
           isLoading: true,
         }));
       }
+
+      // Check if we have a token first
+      if (!authAPI.hasToken()) {
+        throw new Error('No token found');
+      }
+
       const user = await authAPI.getProfile();
 
+      // Validate user type if specified
       if (userType) {
         if ((user.type && user.type !== userType) || (!user.type && userType === UserType.ADMIN)) {
-          throw new Error('Unauthorised');
+          throw new Error('Unauthorized user type');
         }
       }
 
@@ -49,7 +57,8 @@ export const useAuth = (userType?: UserType) => {
         isLoading: false,
         isAuthenticated: false,
       });
-      await authAPI.logout();
+      // Clear any stale tokens
+      authAPI.removeToken();
     }
   };
 
@@ -86,10 +95,27 @@ export const useAuth = (userType?: UserType) => {
     });
   };
 
+  const refreshProfile = async () => {
+    if (authState.isAuthenticated) {
+      try {
+        const user = await authAPI.getProfile();
+        setAuthState(prevState => ({
+          ...prevState,
+          user,
+        }));
+      } catch (error) {
+        console.error('Failed to refresh profile:', error);
+        // If profile refresh fails, user might be logged out
+        await logout();
+      }
+    }
+  };
+
   return {
     ...authState,
     login,
     logout,
     checkAuthStatus,
+    refreshProfile,
   };
 };
