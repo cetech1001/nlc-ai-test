@@ -18,6 +18,7 @@ export class InstagramService extends BaseIntegrationService {
 
   async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getInstagramProfile(credentials.accessToken);
+    console.log("Profile: ", profile);
 
     return this.saveIntegration({
       userID,
@@ -87,58 +88,124 @@ export class InstagramService extends BaseIntegrationService {
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
     const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
+    // Instagram API with Instagram Login uses Facebook Dialog OAuth
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
-      scope: 'instagram_basic,pages_show_list,pages_read_engagement',
+      client_id: '827089366324028', // this.configService.get('integrations.oauth.facebook.appID', '')
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
       response_type: 'code',
-      config_id: this.configService.get('integrations.oauth.instagram.clientID', ''),
+      // Request only what you need; add/remove as your features require
+      scope: [
+        'instagram_basic',
+        'pages_show_list',
+      ].join(','),
       state,
     });
 
     return {
-      authUrl: `https://www.facebook.com/dialog/oauth?${params}`,
+      authUrl: `https://www.facebook.com/v20.0/dialog/oauth?${params}`,
       state,
     };
   }
 
   async handleCallback(userID: string, userType: UserType, code: string, state: string): Promise<Integration> {
     const tokenData = await this.exchangeCodeForToken(code);
+    console.log("Token data: ", tokenData);
     return this.connect(userID, userType, tokenData);
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
-    const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.meta.clientSecret', ''),
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
-    });
+    const clientId = '827089366324028'; // this.configService.get('integrations.oauth.facebook.appID', '')
+    const clientSecret = 'a22ce1189be9019cf73a8387554d8b7a'; // this.configService.get('integrations.oauth.facebook.appSecret', '')
+    const redirectUri = `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`;
 
-    const response = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
+    // Step 1: Exchange auth code for short‑lived user access token
+    const tokenRes = await fetch(
+      `https://graph.facebook.com/v20.0/oauth/access_token?` +
+        new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          code,
+        }).toString(),
+      { method: 'GET' }
+    );
+    const tokenJson: any = await tokenRes.json();
+    if (!tokenRes.ok || !tokenJson.access_token) {
+      throw new Error(`Token exchange failed: ${tokenJson.error?.message || 'unknown error'}`);
+    }
 
-    const tokenData: any = await response.json();
+    let accessToken = tokenJson.access_token as string;
+    let expiresInSec = tokenJson.expires_in as number | undefined;
+
+    // Step 2: Exchange for long‑lived token (optional but recommended)
+    try {
+      const longRes = await fetch(
+        `https://graph.facebook.com/v20.0/oauth/access_token?` +
+          new URLSearchParams({
+            grant_type: 'fb_exchange_token',
+            client_id: clientId,
+            client_secret: clientSecret,
+            fb_exchange_token: accessToken,
+          }).toString(),
+        { method: 'GET' }
+      );
+      const longJson: any = await longRes.json();
+      if (longRes.ok && longJson.access_token) {
+        accessToken = longJson.access_token;
+        expiresInSec = longJson.expires_in;
+      }
+    } catch {}
 
     return {
-      accessToken: tokenData.access_token,
-      refreshToken: undefined, // Instagram Basic Display API doesn't provide refresh tokens
-      tokenExpiresAt: new Date(Date.now() + 3600000), // 1 hour default
+      accessToken,
+      refreshToken: undefined,
+      tokenExpiresAt: expiresInSec ? new Date(Date.now() + expiresInSec * 1000) : undefined,
     };
   }
 
   private async getInstagramProfile(accessToken: string): Promise<any> {
-    const response = await fetch(`https://graph.instagram.com/me?fields=id,username,media_count&access_token=${accessToken}`);
-    return response.json();
+    const ig = await this.getIgAccount(accessToken);
+    if (!ig) throw new Error('No linked Instagram Business/Creator account found');
+
+    const profileRes = await fetch(
+      `https://graph.facebook.com/v20.0/${ig.id}?fields=id,username,media_count&access_token=${encodeURIComponent(accessToken)}`
+    );
+    if (!profileRes.ok) {
+      const err = await profileRes.text();
+      throw new Error(`Failed to fetch IG profile: ${err}`);
+    }
+    const profile: any = await profileRes.json();
+    return { id: profile.id, username: profile.username, media_count: profile.media_count };
   }
 
   private async fetchInstagramMedia(accessToken: string) {
-    const response = await fetch(`https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,timestamp&access_token=${accessToken}`);
-    const data: any = await response.json();
+    const ig = await this.getIgAccount(accessToken);
+    if (!ig) return [];
+
+    const res = await fetch(
+      `https://graph.facebook.com/v20.0/${ig.id}/media?fields=id,caption,media_type,media_url,thumbnail_url,timestamp&access_token=${encodeURIComponent(accessToken)}`
+    );
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Failed to fetch IG media: ${err}`);
+    }
+    const data: any = await res.json();
     return data.data || [];
+  }
+
+  // Finds the first Page with a linked Instagram business account
+  private async getIgAccount(accessToken: string): Promise<{ id: string; username?: string } | null> {
+    // Requires pages_show_list + instagram_business_basic
+    const pagesRes = await fetch(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=instagram_business_account{id,username}&access_token=${encodeURIComponent(accessToken)}`
+    );
+    if (!pagesRes.ok) {
+      const err = await pagesRes.text();
+      throw new Error(`Failed to list pages: ${err}`);
+    }
+    const pages: any = await pagesRes.json();
+    const page = (pages.data || []).find((p: any) => p.instagram_business_account);
+    if (!page) return null;
+    return { id: page.instagram_business_account.id, username: page.instagram_business_account.username };
   }
 }

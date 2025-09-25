@@ -121,8 +121,16 @@ export class IntegrationsController {
     @Query('code') code: string,
     @Query('state') state: string,
     @Query('error') error?: string,
+    @Query('error_message') errorMessage?: string,
     @Query('error_description') errorDescription?: string,
   ) {
+    console.log("Platform: ", platform);
+    console.log("Code: ", code);
+    console.log("State: ", state);
+    console.log("Error: ", error);
+    console.log("Error Description: ", errorDescription);
+    console.log("Error Message: ", errorMessage);
+
     const nonce = crypto.randomBytes(16).toString('base64');
     res.setHeader('Content-Security-Policy', `script-src 'self' 'nonce-${nonce}'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`);
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -131,7 +139,7 @@ export class IntegrationsController {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
     if (error) {
-      return this.sendOAuthError(res, platform, errorDescription || error, nonce);
+      return this.sendOAuthError(res, platform, errorDescription || errorMessage || error, nonce);
     }
 
     if (!code || !state) {
