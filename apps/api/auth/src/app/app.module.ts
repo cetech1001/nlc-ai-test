@@ -3,12 +3,12 @@ import {ConfigModule} from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
-import {ServiceAuthGuard} from '@nlc-ai/api-auth';
+import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import {MessagingModule} from "@nlc-ai/api-messaging";
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
-import authConfig from './config/auth.config';
+import {authConfig} from './config/auth.config';
 
 @Module({
   imports: [
@@ -21,8 +21,9 @@ import authConfig from './config/auth.config';
     ScheduleModule.forRoot(),
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
-    HealthModule,
+    AuthLibModule,
     AuthModule,
+    HealthModule,
   ],
   providers: [
     {

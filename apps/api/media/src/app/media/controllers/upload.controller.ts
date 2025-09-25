@@ -28,7 +28,7 @@ export class UploadController {
   @ApiResponse({ status: 400, description: 'Invalid file or upload parameters' })
   @UseInterceptors(FileInterceptor('file', {
     limits: {
-      fileSize: 100 * 1024 * 1024, // 100MB - will be overridden by service validation
+      fileSize: 100 * 1024 * 1024,
     },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
@@ -62,7 +62,7 @@ export class UploadController {
   @ApiResponse({ status: 201, description: 'Avatar uploaded successfully' })
   @UseInterceptors(FileInterceptor('file', {
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB for avatars
+      fileSize: 5 * 1024 * 1024,
     },
     fileFilter: (req, file, cb) => {
       const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -83,7 +83,7 @@ export class UploadController {
     }
 
     const avatarDto: UploadAssetDto = {
-      folder: `avatars/${user.type}s`,
+      folder: `nlc-ai/avatars/${user.type}s`,
       publicID: `avatar_${user.id}`,
       overwrite: true,
       tags: ['avatar', user.type],

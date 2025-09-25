@@ -17,28 +17,12 @@ async function bootstrap() {
     transform: true,
   }));
 
-  const swaggerDescription = `
-    The **Auth Service** provides endpoints for user authentication and authorization.
-    It includes functionality for:
-
-    - User registration and login
-    - JWT-based authentication
-    - Token refresh and revocation
-    - Role- and permission-based access control
-    - Password management (reset, update)
-
-    Use these endpoints to securely authenticate users and manage access across the system.
-  `;
-
   app.setGlobalPrefix('api/auth');
 
   const config = new DocumentBuilder()
     .setTitle('NLC AI Auth Service')
-    .setDescription(swaggerDescription)
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Authentication')
-    .addTag('Authorisation')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -19,7 +19,7 @@ function validateConfig(config: Record<string, unknown>) {
   return validatedConfig;
 }
 
-export default registerAs('auth', () => {
+export const authConfig = registerAs('auth', () => {
   const config = validateConfig(process.env);
 
   return {
@@ -44,15 +44,6 @@ export default registerAs('auth', () => {
       clientID: config.GOOGLE_CLIENT_ID,
       clientSecret: config.GOOGLE_CLIENT_SECRET,
       callbackUrl: config.GOOGLE_CALLBACK_URL,
-    },
-    cloudinary: {
-      cloudName: config.CLOUDINARY_CLOUD_NAME,
-      apiKey: config.CLOUDINARY_API_KEY,
-      apiSecret: config.CLOUDINARY_API_SECRET,
-    },
-    performance: {
-      maxRetries: config.MAX_RETRIES,
-      outboxBatchSize: config.OUTBOX_BATCH_SIZE,
     },
   };
 });

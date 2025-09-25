@@ -23,7 +23,6 @@ export class ClientsService {
 
     const where: any = {};
 
-    // If coachID is provided, filter by coach relationships
     if (coachID) {
       where.clientCoaches = {
         some: {

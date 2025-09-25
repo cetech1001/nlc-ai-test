@@ -398,13 +398,13 @@ export class CoachesService {
       }),
       this.prisma.aiInteraction.count({
         where: {
-          coachID,
+          userID: coachID,
           createdAt: { gte: startDate },
         },
       }),
       this.prisma.aiInteraction.aggregate({
         where: {
-          coachID,
+          userID: coachID,
           createdAt: { gte: startDate },
         },
         _sum: {
@@ -427,7 +427,7 @@ export class CoachesService {
       totalClients,
       activeClients,
       recentInteractions,
-      tokensUsed: aiUsage._sum.tokensUsed || 0,
+      tokensUsed: aiUsage._sum?.tokensUsed || 0,
       recentRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
     };
   }

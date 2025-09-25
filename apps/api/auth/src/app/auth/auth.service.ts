@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { TokenService } from './services/token.service';
 import { AdminAuthService } from './services/admin-auth.service';
 import { CoachAuthService } from './services/coach-auth.service';
@@ -26,7 +25,6 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outbox: OutboxService,
-    private readonly cloudinaryService: CloudinaryService,
     private readonly tokenService: TokenService,
     private readonly adminAuthService: AdminAuthService,
     private readonly coachAuthService: CoachAuthService,
@@ -59,20 +57,8 @@ export class AuthService {
   }
 
   // ========== COMMON METHODS ==========
-  async uploadAvatar(userID: string, userType: UserType, file: Express.Multer.File) {
+  async uploadAvatar(userID: string, userType: UserType, avatarUrl: string) {
     try {
-      const { secure_url: avatarUrl } = await this.cloudinaryService.uploadAsset(file, {
-        resource_type: 'image',
-        folder: `nlc-ai/avatars/${userType === 'coach' ? 'coaches' : userType + 's'}`,
-        public_id: `${userID}_avatar`,
-        overwrite: true,
-        transformation: [
-          { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-          { quality: 'auto', fetch_format: 'auto' }
-        ]
-      });
-
-      // Delegate to specific service for database update
       if (userType === UserType.coach) {
         await this.coachAuthService.uploadAvatar(userID, avatarUrl);
       } else if (userType === UserType.admin) {

@@ -8,12 +8,9 @@ import {
   Patch,
   UseGuards,
   Query,
-  UseInterceptors,
   BadRequestException,
-  UploadedFile
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { type AuthUser, UserType } from '@nlc-ai/api-types';
 import {CurrentUser, JwtAuthGuard, Public, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
 import { AuthService } from './auth.service';
@@ -40,7 +37,6 @@ export class AuthController {
     private readonly googleAuthService: GoogleAuthService,
   ) {}
 
-  // ========== ADMIN AUTHENTICATION ==========
   @Post('admin/login')
   @Public()
   @HttpCode(HttpStatus.OK)
@@ -51,7 +47,6 @@ export class AuthController {
     return this.authService.loginAdmin(loginDto);
   }
 
-  // ========== COACH AUTHENTICATION ==========
   @Post('coach/register')
   @Public()
   @ApiOperation({ summary: 'Register new coach' })
@@ -81,7 +76,6 @@ export class AuthController {
     return this.googleAuthService.coachGoogleAuth(googleAuthDto.idToken);
   }
 
-  // ========== CLIENT AUTHENTICATION ==========
   @Post('client/register')
   @Public()
   @ApiOperation({ summary: 'Client registration (coach-invited)' })
@@ -129,7 +123,6 @@ export class AuthController {
       throw new BadRequestException('Only clients can switch coach context');
     }
 
-    // This would be implemented in ClientAuthService
     return this.authService.switchCoachContext(user.id, switchCoachDto.coachID);
   }
 
@@ -195,30 +188,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('avatar', {
-    limits: {
-      fileSize: 5 * 1024 * 1024,
-    },
-    fileFilter: (_, file, callback) => {
-      if (!file.mimetype.startsWith('image/')) {
-        return callback(new BadRequestException('Only image files are allowed'), false);
-      }
-      callback(null, true);
-    },
-  }))
   @ApiOperation({ summary: 'Upload user avatar' })
   @ApiResponse({ status: 200, description: 'Avatar uploaded successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid file or file too large' })
-  async uploadAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      throw new BadRequestException('File size must be less than 5MB');
-    }
-
-    return this.authService.uploadAvatar(user.id, user.type, file);
+  @ApiResponse({ status: 400, description: 'No avatar URL found' })
+  async uploadAvatar(@CurrentUser() user: AuthUser, @Body('avatarUrl') avatarUrl: string) {
+    return this.authService.uploadAvatar(user.id, user.type, avatarUrl);
   }
 
   @Get('profile')
