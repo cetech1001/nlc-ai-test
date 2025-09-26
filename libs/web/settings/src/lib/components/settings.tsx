@@ -115,6 +115,7 @@ const SettingsContent: FC<SettingsProps> = ({
 
       {activeTab === 'profile' && (
         <ProfileSection
+          sdkClient={sdkClient}
           onUpdateProfile={handleUpdateProfile}
           onUpdatePassword={handleUpdatePassword}
           onUploadAvatar={handleUploadAvatar}

@@ -53,8 +53,8 @@ export const integrationsConfig = registerAs('integrations', () => {
         clientSecret: config.META_CLIENT_SECRET,
       },
       instagram: {
-        clientID: config.INSTAGRAM_CLIENT_ID,
-        clientSecret: config.INSTAGRAM_CLIENT_SECRET,
+        appID: config.INSTAGRAM_CLIENT_ID,
+        appSecret: config.INSTAGRAM_CLIENT_SECRET,
       },
       twitter: {
         clientID: config.TWITTER_CLIENT_ID,

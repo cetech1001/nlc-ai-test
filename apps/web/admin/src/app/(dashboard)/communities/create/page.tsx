@@ -207,7 +207,7 @@ const AdminCreateCommunityPage = () => {
       const file = new File([blob], fileName, { type: 'image/jpeg' });
 
       const uploadResult = await sdkClient.media.uploadAsset(file, {
-        folder: 'communities',
+        folder: 'nlc-ai/communities',
         tags: [field, 'community-media'],
         metadata: {
           uploadedBy: 'admin',

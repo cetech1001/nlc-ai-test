@@ -60,6 +60,7 @@ export interface TransformationOptions {
   width?: number;
   height?: number;
   quality?: number | 'auto';
+  fetch_format?: 'auto',
   format?: string;
   crop?: 'crop' | 'fit' | 'fill' | 'scale';
   gravity?: string;

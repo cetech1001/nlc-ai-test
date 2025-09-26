@@ -41,7 +41,7 @@ const AdminSettings = () => {
     await authAPI.updatePassword({ newPassword: payload.newPassword });
   }
 
-  const handleAvatarUpload = async (payload: FormData) => {
+  const handleAvatarUpload = async (payload: string) => {
     await authAPI.uploadAvatar(payload)
   }
 

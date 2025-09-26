@@ -1,19 +1,15 @@
-import { FC, useState, useEffect } from 'react';
-import {
-  Camera,
-  Eye,
-  EyeOff,
-  X,
-  Upload,
-  RotateCw,
-} from 'lucide-react';
-import { useSettings } from '../context/settings.context';
-import { ProfileFormData, PasswordFormData, ProfileFormErrors } from '../types/settings.types';
-import { ProfileSectionSkeleton } from "./skeletons";
-import { ImageCropper } from "./partials/image-cropper";
+import {FC, useEffect, useState} from 'react';
+import {Camera, Eye, EyeOff, RotateCw, Upload, X,} from 'lucide-react';
+import {useSettings} from '../context/settings.context';
+import {PasswordFormData, ProfileFormData, ProfileFormErrors} from '../types/settings.types';
+import {ProfileSectionSkeleton} from "./skeletons";
+import {ImageCropper} from "./partials/image-cropper";
 import {UserType} from "@nlc-ai/types";
+import {MediaTransformationType} from "@nlc-ai/sdk-media";
+import {NLCClient} from "@nlc-ai/sdk-main";
 
 interface ProfileSectionProps {
+  sdkClient: NLCClient;
   onUpdateProfile: (data: ProfileFormData) => Promise<void>;
   onUpdatePassword: (data: PasswordFormData) => Promise<void>;
   onUploadAvatar: (data: string) => Promise<void>;
@@ -23,6 +19,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
   onUpdateProfile,
   onUpdatePassword,
   onUploadAvatar,
+  sdkClient,
 }) => {
   const { user, userType, isLoading, setSuccess, setError } = useSettings();
 
@@ -194,15 +191,40 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
     setUploadingPhoto(true);
     try {
-      const formData = new FormData();
       const croppedFile = new File([croppedImageBlob], 'avatar.jpg', {
         type: 'image/jpeg',
       });
-      formData.append('avatar', croppedFile);
 
-      await onUploadAvatar('formData');
-      closeUploadModal();
-      setSuccess('Profile photo updated successfully!');
+      const uploadResult = await sdkClient.media.uploadAsset(croppedFile, {
+        folder: `nlc-ai/avatars/${userType === 'coach' ? 'coaches' : userType + 's'}`,
+        tags: ['avatar'],
+        metadata: {
+          uploadedBy: userType,
+          purpose: 'avatar',
+        },
+        transformation: [
+          {
+            type: MediaTransformationType.CROP,
+            width: 400,
+            height: 400,
+            crop: 'fill',
+            gravity: 'face',
+          },
+          {
+            type: MediaTransformationType.QUALITY,
+            quality: 'auto',
+            fetch_format: 'auto',
+          }
+        ]
+      });
+
+      if (uploadResult.success && uploadResult.data) {
+        await onUploadAvatar(uploadResult.data.secureUrl);
+        closeUploadModal();
+        setSuccess('Profile photo updated successfully!');
+      } else {
+        throw new Error(uploadResult.error?.message || 'Upload failed');
+      }
     } catch (error: any) {
       setErrors(prev => ({ ...prev, photo: error.message || "Failed to upload photo" }));
     } finally {

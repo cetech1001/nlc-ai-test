@@ -51,13 +51,7 @@
   ],
   "references": [
     {
-      "path": "../../../libs/sdk/auth"
-    },
-    {
       "path": "../../../libs/sdk/main"
-    },
-    {
-      "path": "../../../libs/sdk/media"
     },
     {
       "path": "../../../libs/sdk/core"
@@ -79,6 +73,9 @@
     },
     {
       "path": "../../../libs/sdk/analytics"
+    },
+    {
+      "path": "../../../libs/sdk/media"
     },
     {
       "path": "../../../libs/sdk/courses"

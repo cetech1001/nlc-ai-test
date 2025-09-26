@@ -88,14 +88,12 @@ export class InstagramService extends BaseIntegrationService {
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
     const state = this.stateTokenService.generateState(userID, userType, this.platformName);
 
-    // Instagram API with Instagram Login uses Facebook Dialog OAuth
     const params = new URLSearchParams({
-      client_id: '827089366324028', // this.configService.get('integrations.oauth.facebook.appID', '')
+      client_id: this.configService.get('integrations.oauth.instagram.appID', ''),
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
       response_type: 'code',
-      // Request only what you need; add/remove as your features require
       scope: [
-        'instagram_basic',
+        'instagram_business_basic',
         'pages_show_list',
       ].join(','),
       state,
@@ -114,11 +112,10 @@ export class InstagramService extends BaseIntegrationService {
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
-    const clientId = '827089366324028'; // this.configService.get('integrations.oauth.facebook.appID', '')
-    const clientSecret = 'a22ce1189be9019cf73a8387554d8b7a'; // this.configService.get('integrations.oauth.facebook.appSecret', '')
+    const clientId = this.configService.get('integrations.oauth.instagram.appID', '')
+    const clientSecret = this.configService.get('integrations.oauth.instagram.appSecret', '')
     const redirectUri = `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`;
 
-    // Step 1: Exchange auth code for short‑lived user access token
     const tokenRes = await fetch(
       `https://graph.facebook.com/v20.0/oauth/access_token?` +
         new URLSearchParams({
@@ -137,7 +134,6 @@ export class InstagramService extends BaseIntegrationService {
     let accessToken = tokenJson.access_token as string;
     let expiresInSec = tokenJson.expires_in as number | undefined;
 
-    // Step 2: Exchange for long‑lived token (optional but recommended)
     try {
       const longRes = await fetch(
         `https://graph.facebook.com/v20.0/oauth/access_token?` +
@@ -193,9 +189,7 @@ export class InstagramService extends BaseIntegrationService {
     return data.data || [];
   }
 
-  // Finds the first Page with a linked Instagram business account
   private async getIgAccount(accessToken: string): Promise<{ id: string; username?: string } | null> {
-    // Requires pages_show_list + instagram_business_basic
     const pagesRes = await fetch(
       `https://graph.facebook.com/v20.0/me/accounts?fields=instagram_business_account{id,username}&access_token=${encodeURIComponent(accessToken)}`
     );

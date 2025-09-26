@@ -6,6 +6,9 @@
       "path": "../auth"
     },
     {
+      "path": "../../sdk/media"
+    },
+    {
       "path": "../../types"
     },
     {

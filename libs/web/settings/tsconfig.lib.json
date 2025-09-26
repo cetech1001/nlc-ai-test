@@ -35,6 +35,9 @@
       "path": "../auth/tsconfig.lib.json"
     },
     {
+      "path": "../../sdk/media/tsconfig.lib.json"
+    },
+    {
       "path": "../../types/tsconfig.lib.json"
     },
     {
