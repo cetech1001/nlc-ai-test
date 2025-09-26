@@ -1,4 +1,4 @@
-import {Coach} from "./coach";
+import {Coach} from "../coach";
 import {Decimal} from "@prisma/client/runtime/edge";
 
 export interface ContentPiece {

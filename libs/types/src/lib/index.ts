@@ -2,6 +2,7 @@ export * from './ai-agents';
 export * from './analytics';
 export * from './communities';
 export * from './courses';
+export * from './content';
 export * from './email';
 export * from './users';
 
@@ -15,7 +16,6 @@ export * from './calendly';
 export * from './client';
 export * from './coach';
 export * from './coach-payment-request';
-export * from './content';
 export * from './course';
 export * from './data-table';
 export * from './filter';

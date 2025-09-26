@@ -7,6 +7,10 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { HealthModule } from './health/health.module';
 import {contentConfig} from './config/content.config';
+import {CategoriesModule} from "./categories/categories.module";
+import {ContentPiecesModule} from "./content-pieces/content-pieces.module";
+import {ContentSyncModule} from "./content-sync/content-sync.module";
+import {EventHandlersModule} from "./event-handlers/event-handlers.module";
 
 @Module({
   imports: [
@@ -19,6 +23,10 @@ import {contentConfig} from './config/content.config';
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
+    CategoriesModule,
+    ContentPiecesModule,
+    ContentSyncModule,
+    EventHandlersModule,
     HealthModule,
   ],
   providers: [

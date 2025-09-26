@@ -8,6 +8,7 @@ import { MessagingModule } from '@nlc-ai/api-messaging';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { HealthModule } from './health/health.module';
 import {integrationsConfig} from './config/integrations.config';
+import {EventHandlersModule} from "./event-handlers/event-handlers.module";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import {integrationsConfig} from './config/integrations.config';
     MessagingModule.forRoot(),
     AuthLibModule,
     IntegrationsModule,
+    EventHandlersModule,
     HealthModule,
   ],
   providers: [

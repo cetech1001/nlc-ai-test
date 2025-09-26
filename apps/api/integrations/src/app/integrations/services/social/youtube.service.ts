@@ -89,11 +89,13 @@ export class YoutubeService extends BaseIntegrationService {
       const { accessToken } = await this.getDecryptedTokens(integration);
       const validToken = await this.tokenService.ensureValidToken(integration, accessToken);
 
+      // Get basic channel stats and analytics
       const [channelStats, analytics] = await Promise.all([
         this.getChannelStats(validToken),
         this.getAnalytics(validToken),
       ]);
 
+      // Update integration with basic sync data
       await this.prisma.integration.update({
         where: { id: integration.id },
         data: {
@@ -108,6 +110,23 @@ export class YoutubeService extends BaseIntegrationService {
         },
       });
 
+      // Emit event for content service to handle content sync
+      await this.outbox.saveAndPublishEvent({
+        eventType: 'integration.sync.requested',
+        // @ts-ignore
+        payload: {
+          integration: {
+            ...integration,
+            accessToken: validToken // Include decrypted token for content service
+          },
+          platform: this.platformName,
+          syncType: 'content',
+          requestedAt: new Date().toISOString(),
+        },
+        schemaVersion: 1,
+      }, 'integration.sync.requested');
+
+      // Emit basic integration sync completed event
       await this.outbox.saveAndPublishEvent<IntegrationEvent>(
         {
           eventType: 'integration.sync.completed',
@@ -126,9 +145,10 @@ export class YoutubeService extends BaseIntegrationService {
 
       return {
         success: true,
-        message: 'YouTube data synced successfully',
+        message: 'YouTube integration synced successfully. Content sync is processing in background.',
         data: { channelStats, analytics },
       };
+
     } catch (error: any) {
       await this.prisma.integration.update({
         where: { id: integration.id },

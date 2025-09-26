@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
-import { UserType } from '@nlc-ai/api-types';
-import { CommunityType, CommunityVisibility, MemberRole } from '@nlc-ai/api-types';
+import { UserType } from '@nlc-ai/types';
+import { CommunityType, MemberRole } from '@nlc-ai/api-types';
 import { CommunitiesService } from '../../communities/communities.service';
 import {PrismaService} from "@nlc-ai/api-database";
 
@@ -52,16 +52,17 @@ export class CourseEventsHandler {
   private async handleCourseCreated(payload: any) {
     try {
       // Create a community for the course
-      const community = await this.communityService.createCommunity({
+      /*const community = await this.communityService.createCommunity({
         name: `${payload.title} - Course Community`,
+        slug: '',
         description: `Community for students and instructors of ${payload.title}`,
         type: CommunityType.COURSE,
         visibility: CommunityVisibility.INVITE_ONLY,
         courseID: payload.courseID,
         coachID: payload.coachID,
-      }, payload.coachID, UserType.coach);
+      }, {id: payload.coachID, sub: payload.coachID, type: UserType.COACH});*/
 
-      this.logger.log(`Course community created: ${community.id} for course ${payload.courseID}`);
+      this.logger.log(`Will not create community for course`);
     } catch (error) {
       this.logger.error(`Failed to create community for course ${payload.courseID}:`, error);
     }
@@ -81,7 +82,7 @@ export class CourseEventsHandler {
         await this.communityService.addMemberToCommunity(
           community.id,
           payload.clientID,
-          UserType.client,
+          UserType.CLIENT,
           MemberRole.MEMBER,
           payload.coachID
         );
