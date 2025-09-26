@@ -2,11 +2,12 @@
 
 import {useState, useEffect, ComponentType} from 'react';
 import { useRouter } from "next/navigation";
-import {Lightbulb, MessageCircle, Play, Plus} from "lucide-react";
+import {FileText, Lightbulb, MessageCircle, Play, Plus, Users} from "lucide-react";
 import { PageHeader } from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import {CategoriesSkeleton, CategoryCard, sdkClient} from '@/lib';
 import {Category} from "@nlc-ai/sdk-content";
+import {QuestionMarkCircleIcon} from "@heroicons/react/16/solid";
 
 const ContentCategories = () => {
   const router = useRouter();
@@ -38,10 +39,28 @@ const ContentCategories = () => {
               icon: MessageCircle,
               color: 'from-red-500 to-orange-500'
             };
-          default:
+          case 'Entertainment':
             return {
               ...v,
               icon: Play,
+              color: 'from-purple-500 to-pink-500',
+            }
+          case 'Conversational':
+            return {
+              ...v,
+              icon: Users,
+              color: 'from-green-500 to-teal-500'
+            };
+          case 'Case Studies':
+            return {
+              ...v,
+              icon: FileText,
+              color: 'from-indigo-500 to-purple-500'
+            };
+          default:
+            return {
+              ...v,
+              icon: QuestionMarkCircleIcon,
               color: 'from-purple-500 to-pink-500',
             }
         }

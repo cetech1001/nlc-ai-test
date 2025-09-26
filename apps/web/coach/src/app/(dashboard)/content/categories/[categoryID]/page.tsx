@@ -4,9 +4,10 @@ import {useState, useEffect} from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@nlc-ai/web-shared';
 import {Plus} from 'lucide-react';
-import {ContentPiece} from "@nlc-ai/sdk-content";
+import {Category, ContentPiece} from "@nlc-ai/sdk-content";
 import {sdkClient, VideoCard, VideosSkeleton} from "@/lib";
 import {AlertBanner} from "@nlc-ai/web-ui";
+import {toast} from "sonner";
 
 const CategoryDetail = () => {
   const router = useRouter();
@@ -14,14 +15,25 @@ const CategoryDetail = () => {
   const categoryID = params.categoryID as string;
 
   const [videos, setVideos] = useState<ContentPiece[]>([]);
+  const [category, setCategory] = useState<Category>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
     if (categoryID) {
       fetchVideos();
+      fetchCategory();
     }
   }, [categoryID]);
+
+  const fetchCategory = async () => {
+    try {
+      const result = await sdkClient.content.categories.getCategory(categoryID);
+      setCategory(result);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to fetch category');
+    }
+  }
 
   const fetchVideos = async () => {
     setIsLoading(true);
@@ -61,7 +73,7 @@ const CategoryDetail = () => {
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
       <PageHeader
-        title={"Content Categories"}
+        title={category ? `Category: ${category.name}` : "Videos"}
         actionButton={{
           label: 'Upload New Content',
           onClick: handleUploadContent,
