@@ -54,8 +54,6 @@ export class ContentPiecesService {
       publishedBefore
     } = query;
 
-    const skip = (page - 1) * limit;
-
     const where = {
       coachID: userID,
       ...(search && {
@@ -77,30 +75,17 @@ export class ContentPiecesService {
       }
     };
 
-    const [contentPieces, total] = await Promise.all([
-      this.prisma.contentPiece.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: {
-          category: {
-            select: { id: true, name: true }
-          }
+    return this.prisma.paginate(this.prisma.contentPiece, {
+      where,
+      page,
+      limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        category: {
+          select: { id: true, name: true }
         }
-      }),
-      this.prisma.contentPiece.count({ where })
-    ]);
-
-    return {
-      data: contentPieces,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
       }
-    };
+    });
   }
 
   async findOne(userID: string, userType: UserType, contentPieceID: string) {

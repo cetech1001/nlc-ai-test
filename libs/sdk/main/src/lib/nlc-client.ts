@@ -12,6 +12,7 @@ import {MessagesClient} from "@nlc-ai/sdk-messages";
 import {AgentsClient} from "@nlc-ai/sdk-agents";
 import {CoursesClient} from "@nlc-ai/sdk-courses";
 import {IntegrationsClient} from "@nlc-ai/sdk-integrations";
+import {ContentClient} from "@nlc-ai/sdk-content";
 
 
 export class NLCClient {
@@ -28,6 +29,7 @@ export class NLCClient {
   public messages: MessagesClient;
   public courses: CoursesClient;
   public integrations: IntegrationsClient;
+  public content: ContentClient;
 
   constructor(config: NLCClientConfig) {
     const baseConfig = {
@@ -99,6 +101,11 @@ export class NLCClient {
     this.integrations = new IntegrationsClient({
       ...baseConfig,
       baseURL: config.services?.integrations || `${config.baseURL}/integrations`,
+    });
+
+    this.content = new ContentClient({
+      ...baseConfig,
+      baseURL: config.services?.content || `${config.baseURL}/content`,
     });
   }
 

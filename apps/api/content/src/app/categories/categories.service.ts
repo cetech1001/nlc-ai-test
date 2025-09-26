@@ -36,7 +36,6 @@ export class CategoriesService {
 
   async findAll(userID: string, userType: UserType, query: CategoryQueryDto) {
     const { page = 1, limit = 20, search, sortBy = 'name', sortOrder = 'asc' } = query;
-    const skip = (page - 1) * limit;
 
     const where = {
       coachID: userID,
@@ -48,30 +47,17 @@ export class CategoriesService {
       })
     };
 
-    const [categories, total] = await Promise.all([
-      this.prisma.contentCategory.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: {
-          _count: {
-            select: { contentPieces: true }
-          }
+    return this.prisma.paginate(this.prisma.contentCategory, {
+      where,
+      page,
+      limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        _count: {
+          select: { contentPieces: true }
         }
-      }),
-      this.prisma.contentCategory.count({ where })
-    ]);
-
-    return {
-      data: categories,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
       }
-    };
+    });
   }
 
   async findOne(userID: string, userType: UserType, categoryID: string) {

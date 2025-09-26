@@ -1,6 +1,7 @@
 import {FC, useState} from "react";
 import {Calendar, Clock, Edit, Eye, MoreVertical, Play, Trash2} from "lucide-react";
-import {ContentPiece} from "@nlc-ai/types";
+import {ContentPiece} from "@nlc-ai/sdk-content";
+import {formatDate} from "@nlc-ai/sdk-core";
 
 interface VideoCardProps {
   video: ContentPiece;
@@ -69,7 +70,7 @@ export const VideoCard: FC<VideoCardProps> = ({ video, onPlay, onEdit, onDelete 
         <div className="flex items-center justify-between text-xs text-stone-400">
           <div className="flex items-center gap-2">
             <Calendar className="w-3 h-3" />
-            <span>{video.createdAt?.toLocaleDateString()}</span>
+            <span>{formatDate(video.createdAt)}</span>
           </div>
         </div>
 

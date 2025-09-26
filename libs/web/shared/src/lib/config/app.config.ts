@@ -27,6 +27,7 @@ export const appConfig: AppConfig = {
       agents: `${process.env.NEXT_PUBLIC_API_URL}/agents`,
       courses: `${process.env.NEXT_PUBLIC_API_URL}/courses`,
       integrations: `${process.env.NEXT_PUBLIC_API_URL}/integrations`,
+      content: `${process.env.NEXT_PUBLIC_API_URL}/content`,
     },
   },
   auth: {

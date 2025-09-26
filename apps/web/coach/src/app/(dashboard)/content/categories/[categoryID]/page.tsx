@@ -4,8 +4,9 @@ import {useState, useEffect} from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@nlc-ai/web-shared';
 import {Plus} from 'lucide-react';
-import {ContentPiece} from "@nlc-ai/types";
-import {mockVideos, VideoCard, VideosSkeleton} from "@/lib";
+import {ContentPiece} from "@nlc-ai/sdk-content";
+import {sdkClient, VideoCard, VideosSkeleton} from "@/lib";
+import {AlertBanner} from "@nlc-ai/web-ui";
 
 const CategoryDetail = () => {
   const router = useRouter();
@@ -14,15 +15,26 @@ const CategoryDetail = () => {
 
   const [videos, setVideos] = useState<ContentPiece[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVideos(mockVideos);
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    if (categoryID) {
+      fetchVideos();
+    }
   }, [categoryID]);
+
+  const fetchVideos = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await sdkClient.content.contentPieces.getContentPieces({}, { categoryID });
+      setVideos(result.data);
+    } catch (e: any) {
+      setError(e.message || 'Failed to fetch videos');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   /*const handleBackClick = () => {
     router.push('/content/categories');
@@ -56,6 +68,10 @@ const CategoryDetail = () => {
           icon: <Plus className="w-4 h-4" />,
         }}
       />
+
+      {error && (
+        <AlertBanner type={"error"} message={error} onDismiss={() => setError('')}/>
+      )}
 
       {isLoading ? (
         <VideosSkeleton />

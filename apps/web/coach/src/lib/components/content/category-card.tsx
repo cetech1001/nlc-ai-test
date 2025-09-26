@@ -1,9 +1,10 @@
 import {ComponentType, FC, useState} from "react";
 import {Edit, MoreVertical, Trash2} from "lucide-react";
-import {ContentCategory} from "@nlc-ai/types";
+import {Category} from "@nlc-ai/sdk-content";
+import {formatDate} from "@nlc-ai/sdk-core";
 
 interface CategoryCardProps {
-  category: ContentCategory & { icon: ComponentType<any>; color: string; };
+  category: Category & { icon: ComponentType<any>; color: string; };
   onViewDetails: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -60,9 +61,9 @@ export const CategoryCard: FC<CategoryCardProps> = ({ category, onViewDetails, o
         </h3>
 
         <div className="flex items-center gap-4 text-sm text-stone-400">
-          <span>{category.videosCount} Videos Uploaded</span>
+          <span>{category._count.contentPieces} Videos Uploaded</span>
           <span>•</span>
-          <span>Last Updated: {category.lastUpdated}</span>
+          <span>Last Updated: {formatDate(category.updatedAt)}</span>
         </div>
       </div>
 
@@ -79,13 +80,13 @@ export const CategoryCard: FC<CategoryCardProps> = ({ category, onViewDetails, o
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <div className="text-stone-300 text-lg font-semibold">
-              {category.totalViews.toLocaleString()}
+              {/*{category.totalViews.toLocaleString()}*/}0
             </div>
             <div className="text-stone-500 text-xs">Total Views</div>
           </div>
           <div className="space-y-1">
             <div className="text-stone-300 text-lg font-semibold">
-              {category.avgEngagement}%
+              {/*{category.avgEngagement}%*/}0
             </div>
             <div className="text-stone-500 text-xs">Avg Engagement</div>
           </div>

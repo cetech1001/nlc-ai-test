@@ -24,6 +24,7 @@ export interface AppConfig {
       courses: string;
       agents: string;
       integrations: string;
+      content: string;
     };
   };
   auth: {

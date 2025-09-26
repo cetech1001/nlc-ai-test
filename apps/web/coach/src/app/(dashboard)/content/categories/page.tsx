@@ -2,26 +2,56 @@
 
 import {useState, useEffect, ComponentType} from 'react';
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import {Lightbulb, MessageCircle, Play, Plus} from "lucide-react";
 import { PageHeader } from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {ContentCategory} from "@nlc-ai/types";
-import {CategoriesSkeleton, CategoryCard, mockCategories} from '@/lib';
+import {CategoriesSkeleton, CategoryCard, sdkClient} from '@/lib';
+import {Category} from "@nlc-ai/sdk-content";
 
 const ContentCategories = () => {
   const router = useRouter();
-  const [categories, setCategories] = useState<(ContentCategory & { icon: ComponentType<any>; color: string; })[]>([]);
+  const [categories, setCategories] = useState<(Category & { icon: ComponentType<any>; color: string; })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCategories(mockCategories);
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await sdkClient.content.categories.getCategories();
+      const categories = result.data;
+      setCategories(categories.map(v => {
+        switch (v.name) {
+          case 'Informative':
+            return {
+              ...v,
+              icon: Lightbulb,
+              color: 'from-blue-500 to-cyan-500'
+            };
+          case 'Controversial':
+            return {
+              ...v,
+              icon: MessageCircle,
+              color: 'from-red-500 to-orange-500'
+            };
+          default:
+            return {
+              ...v,
+              icon: Play,
+              color: 'from-purple-500 to-pink-500',
+            }
+        }
+      }));
+    } catch (e: any) {
+      setError(e.message || 'Failed to load categories');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const handleViewDetails = (categoryID: string) => {
     router.push(`/content/categories/${categoryID}`);

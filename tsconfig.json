@@ -146,6 +146,9 @@
     },
     {
       "path": "./apps/api/content"
+    },
+    {
+      "path": "./libs/sdk/content"
     }
   ]
 }

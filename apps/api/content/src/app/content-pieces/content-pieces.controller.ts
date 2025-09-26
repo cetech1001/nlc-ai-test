@@ -22,7 +22,7 @@ import {
 } from './dto';
 
 @ApiTags('Content Pieces')
-@Controller('content')
+@Controller('pieces')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
 @UserTypes(UserType.coach, UserType.admin)
 @ApiBearerAuth()
