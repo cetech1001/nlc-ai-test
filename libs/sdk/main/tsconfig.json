@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../content"
+    },
+    {
       "path": "../integrations"
     },
     {

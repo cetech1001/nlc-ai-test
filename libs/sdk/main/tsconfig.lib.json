@@ -23,6 +23,9 @@
   ],
   "references": [
     {
+      "path": "../content/tsconfig.lib.json"
+    },
+    {
       "path": "../integrations/tsconfig.lib.json"
     },
     {

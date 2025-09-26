@@ -81,6 +81,9 @@
       "path": "../../../libs/sdk/courses"
     },
     {
+      "path": "../../../libs/sdk/content"
+    },
+    {
       "path": "../../../libs/sdk/communities"
     },
     {
