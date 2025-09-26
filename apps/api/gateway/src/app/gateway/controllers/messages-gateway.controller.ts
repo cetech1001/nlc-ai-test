@@ -14,11 +14,11 @@ export class MessagesGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @All('*')
-  async proxyToMessaging(@Req() req: Request) {
+  async proxyToMessages(@Req() req: Request) {
     const path = req.path.replace(/^\/messages/, '');
 
     const response = await this.proxyService.proxyRequest(
-      'messaging',
+      'messages',
       path,
       {
         method: req.method as any,

@@ -38,7 +38,7 @@ const MessagesPage = () => {
   const loadConversation = async (conversationID: string) => {
     try {
       setIsLoading(true);
-      const conversation = await sdkClient.messaging.getConversation(conversationID);
+      const conversation = await sdkClient.messages.getConversation(conversationID);
       setSelectedConversation(conversation);
     } catch (error) {
       console.error('Failed to load conversation:', error);
@@ -67,7 +67,7 @@ const MessagesPage = () => {
       setShowUserSearch(false);
 
       // Create a direct conversation with the selected user
-      const conversation = await sdkClient.messaging.createConversation({
+      const conversation = await sdkClient.messages.createConversation({
         type: 'direct',
         participantIDs: [userID],
         participantTypes: [userType],

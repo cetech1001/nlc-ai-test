@@ -37,7 +37,7 @@ const MessagesPage = () => {
   const loadConversation = async (conversationID: string) => {
     try {
       setIsLoading(true);
-      const conversation = await sdkClient.messaging.getConversation(conversationID);
+      const conversation = await sdkClient.messages.getConversation(conversationID);
       setSelectedConversation(conversation);
     } catch (error) {
       console.error('Failed to load conversation:', error);

@@ -44,7 +44,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   const loadConversations = async () => {
     try {
       setIsLoading(true);
-      const response = await sdkClient.messaging.getConversations({
+      const response = await sdkClient.messages.getConversations({
         page: 1,
         limit: 50,
       });
@@ -173,7 +173,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   return (
     <div className="w-80 border-r border-neutral-700 flex flex-col">
-      {/* Header */}
       <div className="p-6 border-b border-neutral-700">
         <div className="flex items-center gap-3 mb-4">
           {onBackClick && (
@@ -187,7 +186,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           <h1 className="text-white text-xl font-semibold">Messages</h1>
         </div>
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
@@ -200,7 +198,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         </div>
       </div>
 
-      {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
         {filteredConversations.length === 0 ? (
           <div className="text-center py-8">

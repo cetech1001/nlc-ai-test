@@ -191,12 +191,11 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     setIsLoading(true);
     try {
       // First check if we already have an admin conversation
-      const conversations = await sdkClient.messaging.getConversations({
+      const conversations = await sdkClient.messages.getConversations({
         page: 1,
         limit: 50,
       });
 
-      // Look for existing admin conversation
       const adminConversation = conversations.data.find(conv =>
         conv.type === 'direct' &&
         conv.participantTypes.includes(UserType.ADMIN)
@@ -206,10 +205,9 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         setConversation(adminConversation);
         await loadMessages(adminConversation.id);
       } else {
-        // Create new admin conversation
-        const newConversation = await sdkClient.messaging.createConversation({
+        const newConversation = await sdkClient.messages.createConversation({
           type: 'direct',
-          participantIDs: [UserType.ADMIN], // This should be handled by the backend to assign an available admin
+          participantIDs: [UserType.ADMIN],
           participantTypes: [UserType.ADMIN],
         });
 
@@ -226,7 +224,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
 
   const loadMessages = async (conversationID: string) => {
     try {
-      const response = await sdkClient.messaging.getMessages(conversationID, {
+      const response = await sdkClient.messages.getMessages(conversationID, {
         limit: 50,
         page: 1
       });
@@ -300,7 +298,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
 
     try {
-      const sentMessage = await sdkClient.messaging.sendMessage(conversation.id, {
+      const sentMessage = await sdkClient.messages.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
       });
@@ -323,7 +321,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
 
   const markMessageAsRead = async (messageIDs: string[]) => {
     try {
-      await sdkClient.messaging.markAsRead({ messageIDs });
+      await sdkClient.messages.markAsRead({ messageIDs });
     } catch (error) {
       console.error('❌ Failed to mark messages as read:', error);
     }

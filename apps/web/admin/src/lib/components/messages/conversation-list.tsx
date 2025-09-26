@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Search, Users, UserCircle, Plus } from 'lucide-react';
-import { sdkClient } from '@/lib/sdk-client';
-import { ConversationResponse } from '@nlc-ai/sdk-messages';
-import { toast } from 'sonner';
-import { UserType } from "@nlc-ai/types";
-import { useAuth } from "@nlc-ai/web-auth";
+import React, {useEffect, useState} from 'react';
+import {Plus, Search, UserCircle, Users} from 'lucide-react';
+import {sdkClient} from '@/lib/sdk-client';
+import {ConversationResponse} from '@nlc-ai/sdk-messages';
+import {toast} from 'sonner';
+import {UserType} from "@nlc-ai/types";
+import {useAuth} from "@nlc-ai/web-auth";
 
 interface ConversationListProps {
   selectedConversationID?: string;
@@ -44,7 +44,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   const loadConversations = async () => {
     try {
       setIsLoading(true);
-      const response = await sdkClient.messaging.getConversations({
+      const response = await sdkClient.messages.getConversations({
         page: 1,
         limit: 50,
       });
@@ -84,7 +84,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       let otherUserType: UserType = UserType.COACH;
 
       for (let i = 0; i < conversation.participantIDs.length; i++) {
-        if (conversation.participantIDs[i] !== user?.id || conversation.participantTypes[i] !== 'admin') {
+        if (conversation.participantIDs[i] !== UserType.ADMIN && conversation.participantTypes[i] !== UserType.ADMIN) {
           otherUserID = conversation.participantIDs[i];
           otherUserType = conversation.participantTypes[i] as UserType;
           break;

@@ -1,5 +1,5 @@
 import {ApiProperty} from "@nestjs/swagger";
-import {IsArray, IsEnum, IsOptional, IsString, IsUUID} from "class-validator";
+import {IsArray, IsEnum, IsOptional, IsString} from "class-validator";
 import {UserType} from "@nlc-ai/api-types";
 
 export class CreateConversationDto {
@@ -14,7 +14,7 @@ export class CreateConversationDto {
 
   @ApiProperty({ type: [String] })
   @IsArray()
-  @IsUUID('4', { each: true })
+  @IsString({ each: true })
   participantIDs: string[];
 
   @ApiProperty({ enum: UserType, isArray: true })

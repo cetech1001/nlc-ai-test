@@ -165,7 +165,7 @@ const VaultPage = () => {
 
   const handleMemberClick = async (memberID: string, memberType: string) => {
     try {
-      const conversation = await sdkClient.messaging.createConversation({
+      const conversation = await sdkClient.messages.createConversation({
         type: 'direct',
         participantIDs: [user?.id || '', memberID],
         participantTypes: ['coach', memberType as any]

@@ -24,8 +24,6 @@ async function bootstrap() {
     .setDescription('OAuth integrations and email accounts management')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('OAuth Integrations')
-    .addTag('Email Accounts')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

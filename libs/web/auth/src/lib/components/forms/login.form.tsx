@@ -36,6 +36,7 @@ export const LoginForm = (props: LoginFormProps) => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
+      console.log("Google success");
       setIsLoading(true);
       setError('');
       props.setSuccessMessage('');

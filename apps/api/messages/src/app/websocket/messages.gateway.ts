@@ -1,17 +1,17 @@
 import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '@nlc-ai/api-database';
-import { UserType } from '@nlc-ai/api-types';
+import {Server, Socket} from 'socket.io';
+import {Logger} from '@nestjs/common';
+import {JwtService} from '@nestjs/jwt';
+import {PrismaService} from '@nlc-ai/api-database';
+import {UserType} from '@nlc-ai/api-types';
 
 interface AuthenticatedSocket extends Socket {
   userID: string;
@@ -355,7 +355,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       if (!conversation) return false;
 
-      const userIndex = conversation.participantIDs.indexOf(userID);
+      const userIndex = conversation.participantIDs.indexOf(userType === UserType.admin ? UserType.admin : userID);
       return userIndex !== -1 && conversation.participantTypes[userIndex] === userType;
     } catch (error) {
       this.logger.error('Error verifying conversation access:', error);
@@ -367,13 +367,13 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     const roomID = `conversation:${conversationID}`;
 
     sender.to(roomID).emit('user_typing', {
-      userID: sender.userID,
+      userID: sender.userType === UserType.admin ? UserType.admin : sender.userID,
       userType: sender.userType,
       conversationID,
       isTyping,
     });
 
-    this.logger.debug(`👀 User ${sender.userID} typing status: ${isTyping} in conversation ${conversationID}`);
+    this.logger.debug(`👀 User ${sender.userType === UserType.admin ? UserType.admin : sender.userID} typing status: ${isTyping} in conversation ${conversationID}`);
   }
 
   private clearTypingForUser(conversationID: string, userID: string, userType: UserType) {

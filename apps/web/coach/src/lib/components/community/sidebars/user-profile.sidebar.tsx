@@ -105,7 +105,7 @@ export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
     try {
       setIsStartingChat(true);
 
-      const conversation = await sdkClient.messaging.createConversation({
+      const conversation = await sdkClient.messages.createConversation({
         type: 'direct',
         participantIDs: [user?.id || '', profile.id],
         participantTypes: [user?.type || UserType.COACH, userType]

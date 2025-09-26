@@ -60,7 +60,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
     }
 
     try {
-      const conversation = await sdkClient.messaging.createConversation({
+      const conversation = await sdkClient.messages.createConversation({
         type: 'direct',
         participantIDs: [user?.id || '', member.userID],
         participantTypes: [user?.type || UserType.COACH, member.userType]

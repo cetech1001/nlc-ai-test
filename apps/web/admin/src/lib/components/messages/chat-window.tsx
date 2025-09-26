@@ -1,23 +1,13 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Info,
-  MoreVertical,
-  Send,
-  Smile,
-  UserCircle,
-  Users,
-  Shield,
-  Paperclip,
-  ArrowLeft
-} from 'lucide-react';
-import { sdkClient } from '@/lib/sdk-client';
-import { useMessagingWebSocket } from '@/lib/hooks';
-import { ConversationResponse, DirectMessageResponse, MessageType } from '@nlc-ai/sdk-messages';
-import { toast } from 'sonner';
-import { useAuth } from "@nlc-ai/web-auth";
-import { UserType } from "@nlc-ai/types";
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {ArrowLeft, Info, MoreVertical, Paperclip, Send, Shield, Smile, UserCircle, Users} from 'lucide-react';
+import {sdkClient} from '@/lib/sdk-client';
+import {useMessagingWebSocket} from '@/lib/hooks';
+import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messages';
+import {toast} from 'sonner';
+import {useAuth} from "@nlc-ai/web-auth";
+import {UserType} from "@nlc-ai/types";
 
 interface ChatWindowProps {
   conversation: ConversationResponse | null;
@@ -47,7 +37,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // WebSocket event handlers - use useCallback to prevent re-renders
   const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('📨 Admin received new message:', data);
 
     if (data.conversationID === conversation?.id) {
       setMessages(prev => {
@@ -58,7 +47,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         );
 
         if (exists) {
-          console.log('Message exists, replacing optimistic with real:', data.message.id);
           // Replace optimistic message with real one
           return prev.map(msg =>
             (msg.id.startsWith('optimistic-') && msg.content === data.message.content && msg.senderID === data.message.senderID)
@@ -67,7 +55,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           );
         }
 
-        console.log('Adding new message to admin state:', data.message.id);
         const newMessages = [...prev, data.message].sort(
           (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
@@ -77,7 +64,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       // Auto-mark as read if message is not from current user
       if (data.message.senderID !== user?.id || data.message.senderType !== user?.type) {
-        console.log('Auto-marking admin message as read:', data.message.id);
         setTimeout(() => {
           markMessageAsRead([data.message.id]);
         }, 1000);
@@ -86,7 +72,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id, user?.id, user?.type]);
 
   const handleMessageUpdated = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
-    console.log('✏️ Admin message updated:', data);
 
     if (data.conversationID === conversation?.id) {
       setMessages(prev =>
@@ -96,7 +81,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id]);
 
   const handleMessageDeleted = useCallback((data: { conversationID: string; messageID: string }) => {
-    console.log('🗑️ Admin message deleted:', data);
 
     if (data.conversationID === conversation?.id) {
       setMessages(prev => prev.filter(msg => msg.id !== data.messageID));
@@ -104,7 +88,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversation?.id]);
 
   const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
-    console.log('👁️ Admin messages read:', data);
 
     if (data.conversationID === conversation?.id) {
       setMessages(prev =>
@@ -117,11 +100,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       );
     }
   }, [conversation?.id]);
-
-  const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
-    console.log('👀 Admin user typing:', data);
-    // The typing state is managed by the hook itself
-  }, []);
 
   const handleError = useCallback((error: any) => {
     console.error('🚫 Admin WebSocket error:', error);
@@ -141,17 +119,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     onMessageUpdated: handleMessageUpdated,
     onMessageDeleted: handleMessageDeleted,
     onMessagesRead: handleMessagesRead,
-    onUserTyping: handleUserTyping,
     onError: handleError,
   });
 
   const typingUsers = conversation ? getTypingUsers(conversation.id) : [];
-  const isTyping = typingUsers.length > 0;
+  const isTyping = typingUsers.length > 0
+    && typingUsers.filter(v => v.userID !== UserType.ADMIN).length > 0;
+
 
   // Load initial messages when conversation changes
   useEffect(() => {
     if (conversation) {
-      console.log('🔄 Admin loading messages for conversation:', conversation.id);
       loadMessages();
     }
   }, [conversation?.id]);
@@ -159,11 +137,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // Join/leave conversation when connection status changes
   useEffect(() => {
     if (conversation && isConnected) {
-      console.log('🚪 Admin joining conversation via WebSocket:', conversation.id);
       joinConversation(conversation.id);
 
       return () => {
-        console.log('🚪 Admin leaving conversation:', conversation.id);
         leaveConversation(conversation.id);
       };
     }
@@ -196,9 +172,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     try {
       setIsLoading(true);
-      console.log('📥 Admin loading messages from API for conversation:', conversation.id);
 
-      const response = await sdkClient.messaging.getMessages(conversation.id, {
+      const response = await sdkClient.messages.getMessages(conversation.id, {
         page: 1,
         limit: 50,
       });
@@ -207,7 +182,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
 
-      console.log('📥 Admin loaded messages:', sortedMessages.length);
       setMessages(sortedMessages);
     } catch (error: any) {
       console.error('❌ Admin failed to load messages:', error);
@@ -228,7 +202,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     // Send typing indicator
     if (value.trim() && !typingTimeout) {
-      console.log('⌨️ Admin sending typing start');
       sendTypingStatus(conversation.id, true);
     }
 
@@ -239,7 +212,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     // Set new timeout to stop typing indicator
     const newTimeout = setTimeout(() => {
-      console.log('⌨️ Admin sending typing stop');
       sendTypingStatus(conversation.id, false);
       setTypingTimeout(null);
     }, 1000);
@@ -271,7 +243,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setMessages(prev => [...prev, optimisticMessage]);
     setInputMessage('');
 
-    console.log('📤 Admin sending message with optimistic update:', messageContent);
 
     // Clear typing status
     if (typingTimeout) {
@@ -284,7 +255,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     try {
       // Send the message - WebSocket will handle real-time updates and replace optimistic message
-      const sentMessage = await sdkClient.messaging.sendMessage(conversation.id, {
+      const sentMessage = await sdkClient.messages.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
       });
@@ -294,7 +265,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         prev.map(msg => msg.id === tempID ? sentMessage : msg)
       );
 
-      console.log('✅ Admin message sent successfully:', sentMessage.id);
     } catch (error: any) {
       console.error('❌ Admin failed to send message:', error);
       toast.error('Failed to send message');
@@ -307,8 +277,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const markMessageAsRead = async (messageIDs: string[]) => {
     try {
-      await sdkClient.messaging.markAsRead({ messageIDs });
-      console.log('👁️ Admin marked messages as read:', messageIDs);
+      await sdkClient.messages.markAsRead({ messageIDs });
     } catch (error) {
       console.error('❌ Admin failed to mark messages as read:', error);
     }
@@ -329,7 +298,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     let otherUserType: UserType = UserType.COACH;
 
     for (let i = 0; i < conversation.participantIDs.length; i++) {
-      if (conversation.participantIDs[i] !== user?.id || conversation.participantTypes[i] !== 'admin') {
+      if (conversation.participantIDs[i] !== UserType.ADMIN && conversation.participantTypes[i] !== UserType.ADMIN) {
         otherUserID = conversation.participantIDs[i];
         otherUserType = conversation.participantTypes[i] as UserType;
         break;
@@ -398,9 +367,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
           <h3 className="text-white text-lg font-semibold mb-2">Select a conversation</h3>
           <p className="text-stone-400">Choose from coaches, clients, or start a new conversation</p>
-          {!isConnected && (
-            <p className="text-red-400 text-sm mt-2">⚠️ Real-time updates unavailable</p>
-          )}
         </div>
       </div>
     );

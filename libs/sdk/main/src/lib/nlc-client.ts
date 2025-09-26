@@ -25,7 +25,7 @@ export class NLCClient {
   public communities: CommunitiesClient;
   public media: MediaServiceClient;
   public notifications: NotificationsServiceClient;
-  public messaging: MessagesClient;
+  public messages: MessagesClient;
   public courses: CoursesClient;
   public integrations: IntegrationsClient;
 
@@ -81,7 +81,7 @@ export class NLCClient {
       baseURL: config.services?.notifications || `${config.baseURL}/notifications`,
     });
 
-    this.messaging = new MessagesClient({
+    this.messages = new MessagesClient({
       ...baseConfig,
       baseURL: config.services?.messages || `${config.baseURL}/messages`,
     });
@@ -106,7 +106,7 @@ export class NLCClient {
     const services = [
       this.users, this.auth, this.email, this.billing,
       this.analytics, this.leads, this.communities,
-      this.media, this.notifications, this.messaging
+      this.media, this.notifications, this.messages
     ];
 
     services.forEach(service => {

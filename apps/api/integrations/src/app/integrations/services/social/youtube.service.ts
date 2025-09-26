@@ -52,7 +52,7 @@ export class YoutubeService extends BaseIntegrationService {
     const params = new URLSearchParams({
       client_id: this.configService.get('integrations.oauth.google.clientID', ''),
       scope: 'https://www.googleapis.com/auth/youtube.readonly',
-      redirect_uri: this.configService.get('integrations.oauth.google.youtubeRedirectUri', ''),
+      redirect_uri: `${this.configService.get('integrations.baseUrl', '')}/integrations/auth/youtube/callback`,
       response_type: 'code',
       state,
     });
@@ -204,7 +204,7 @@ export class YoutubeService extends BaseIntegrationService {
       client_secret: this.configService.get('integrations.oauth.google.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: this.configService.get('YOUTUBE_REDIRECT_URI', ''),
+      redirect_uri: `${this.configService.get('integrations.baseUrl', '')}/integrations/auth/youtube/callback`,
     });
 
     const response = await fetch('https://oauth2.googleapis.com/token', {

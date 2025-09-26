@@ -1,21 +1,15 @@
+import {BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException,} from '@nestjs/common';
+import {PrismaService} from '@nlc-ai/api-database';
+import {MessageType, MESSAGING_ROUTING_KEYS, MessagingEvent, UserType} from '@nlc-ai/api-types';
+import {OutboxService} from '@nlc-ai/api-messaging';
 import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '@nlc-ai/api-database';
-import { MessageType, UserType, MessagingEvent, MESSAGING_ROUTING_KEYS } from '@nlc-ai/api-types';
-import { OutboxService } from '@nlc-ai/api-messaging';
-import {
+  ConversationFiltersDto,
   CreateConversationDto,
   CreateMessageDto,
-  UpdateMessageDto,
   MessageFiltersDto,
-  ConversationFiltersDto,
+  UpdateMessageDto,
 } from './dto';
-import { MessagesGateway } from '../websocket/messages.gateway';
+import {MessagesGateway} from '../websocket/messages.gateway';
 
 @Injectable()
 export class MessagesService {
@@ -33,9 +27,16 @@ export class MessagesService {
     userType: UserType
   ) {
     try {
-      if (!createDto.participantIDs.includes(userID)) {
-        createDto.participantIDs.push(userID);
-        createDto.participantTypes.push(userType);
+      if (userType === UserType.admin) {
+        if (!createDto.participantIDs.includes(UserType.admin)) {
+          createDto.participantIDs.push(UserType.admin);
+          createDto.participantTypes.push(UserType.admin);
+        }
+      } else {
+        if (!createDto.participantIDs.includes(userID)) {
+          createDto.participantIDs.push(userID);
+          createDto.participantTypes.push(userType);
+        }
       }
 
       if (createDto.type === 'direct' && createDto.participantIDs.length !== 2) {
@@ -99,10 +100,18 @@ export class MessagesService {
     userID: string,
     userType: UserType
   ) {
-    const where: any = {
-      participantIDs: { has: userID },
-      participantTypes: { has: userType },
-    };
+    let where: any;
+    if (userType === UserType.admin) {
+      where = {
+        participantIDs: { has: UserType.admin },
+        participantTypes: { has: userType },
+      };
+    } else {
+      where = {
+        participantIDs: { has: userID },
+        participantTypes: { has: userType },
+      };
+    }
 
     if (filters.search) {
       where.OR = [
@@ -226,14 +235,23 @@ export class MessagesService {
       const participantID = conversation.participantIDs[i];
       const participantType = conversation.participantTypes[i] as UserType;
 
-      if (participantID === senderID && participantType === senderType) {
+      if (senderType === UserType.admin
+        && participantID === UserType.admin) {
+        continue;
+      }
+
+      if (
+        participantID === senderID
+        && participantType === senderType) {
         continue;
       }
 
       const isRecipientViewing = this.messagesGateway.isUserViewingConversation(conversationID, participantID, participantType);
 
       if (!isRecipientViewing) {
-        const recipientName = await this.getUserName(participantID, participantType);
+        const recipientName = participantType === UserType.admin
+          ? 'Admin Support'
+          : await this.getUserName(participantID, participantType);
 
         await this.outboxService.saveAndPublishEvent<MessagingEvent>({
           eventType: 'messaging.message.created',
@@ -527,6 +545,7 @@ export class MessagesService {
   }
 
   private isParticipant(conversation: any, userID: string, userType: UserType): boolean {
+    userID = userType === UserType.admin ? UserType.admin : userID;
     const userIndex = conversation.participantIDs.indexOf(userID);
     return userIndex !== -1 && conversation.participantTypes[userIndex] === userType;
   }

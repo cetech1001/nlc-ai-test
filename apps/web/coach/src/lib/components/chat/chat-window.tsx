@@ -196,7 +196,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setIsLoading(true);
       console.log('📥 Loading messages from API for conversation:', conversation.id);
 
-      const response = await sdkClient.messaging.getMessages(conversation.id, {
+      const response = await sdkClient.messages.getMessages(conversation.id, {
         page: 1,
         limit: 50,
       });
@@ -282,7 +282,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     try {
       // Send the message - WebSocket will handle real-time updates and replace optimistic message
-      const sentMessage = await sdkClient.messaging.sendMessage(conversation.id, {
+      const sentMessage = await sdkClient.messages.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
       });
@@ -305,7 +305,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const markMessageAsRead = async (messageIDs: string[]) => {
     try {
-      await sdkClient.messaging.markAsRead({ messageIDs });
+      await sdkClient.messages.markAsRead({ messageIDs });
       console.log('👁️ Marked messages as read:', messageIDs);
     } catch (error) {
       console.error('❌ Failed to mark messages as read:', error);

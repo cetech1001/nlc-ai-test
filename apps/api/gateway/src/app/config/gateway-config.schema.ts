@@ -33,41 +33,32 @@ export class GatewayConfigSchema {
   @IsString()
   EMAIL_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  BILLING_SERVICE_URL?: string;
+  BILLING_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  LEADS_SERVICE_URL?: string;
+  LEADS_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  NOTIFICATIONS_SERVICE_URL?: string;
+  NOTIFICATIONS_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  INTEGRATIONS_SERVICE_URL?: string;
+  INTEGRATIONS_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  COMMUNITIES_SERVICE_URL?: string;
+  COMMUNITIES_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  ANALYTICS_SERVICE_URL?: string;
+  ANALYTICS_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  AGENTS_SERVICE_URL?: string;
+  AGENTS_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  MESSAGES_SERVICE_URL?: string;
+  MESSAGES_SERVICE_URL: string;
 
-  @IsOptional()
   @IsString()
-  COURSES_SERVICE_URL?: string;
+  COURSES_SERVICE_URL: string;
 
   // Rate limiting
   @IsOptional()

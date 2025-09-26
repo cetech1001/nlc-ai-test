@@ -73,15 +73,15 @@ export class WebSocketProxyGateway implements OnGatewayInit, OnGatewayConnection
     try {
       this.logger.log(`🔌 Gateway: Client ${client.id} connecting...`);
 
-      const messagingService = this.serviceRegistry.getService('messaging');
-      if (!messagingService) {
-        this.logger.error('❌ Messaging service not found in registry');
-        client.emit('connect_error', { message: 'Messaging service unavailable' });
+      const messagesService = this.serviceRegistry.getService('messages');
+      if (!messagesService) {
+        this.logger.error('❌ Messages service not found in registry');
+        client.emit('connect_error', { message: 'Messages service unavailable' });
         client.disconnect();
         return;
       }
 
-      this.logger.log(`🎯 Gateway: Connecting to messaging service at ${messagingService.url}`);
+      this.logger.log(`🎯 Gateway: Connecting to messages service at ${messagesService.url}`);
 
       // Set connection timeout
       const connectionTimeout = setTimeout(() => {
@@ -93,7 +93,7 @@ export class WebSocketProxyGateway implements OnGatewayInit, OnGatewayConnection
 
       this.connectionTimeouts.set(client.id, connectionTimeout);
 
-      const serviceClient = ioClient(messagingService.url, {
+      const serviceClient = ioClient(messagesService.url, {
         auth: client.handshake.auth,
         query: client.handshake.query,
         extraHeaders: client.handshake.headers as Record<string, string>,
@@ -128,7 +128,7 @@ export class WebSocketProxyGateway implements OnGatewayInit, OnGatewayConnection
         clientConnection.isConnected = true;
         clientConnection.lastActivity = Date.now();
 
-        this.logger.log(`✅ Gateway: Client ${client.id} connected to messaging service (${serviceClient.id})`);
+        this.logger.log(`✅ Gateway: Client ${client.id} connected to messages service (${serviceClient.id})`);
 
         // Process buffered events
         this.processPendingEvents(client.id);
@@ -153,7 +153,7 @@ export class WebSocketProxyGateway implements OnGatewayInit, OnGatewayConnection
         this.logger.error(`🚫 Gateway: Service connection error for client ${client.id}:`, error.message);
         this.cleanupClient(client.id);
         client.emit('connect_error', {
-          message: 'Failed to connect to messaging service',
+          message: 'Failed to connect to messages service',
           error: error.message
         });
         client.disconnect();
