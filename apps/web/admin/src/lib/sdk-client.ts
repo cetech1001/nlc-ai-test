@@ -1,9 +1,11 @@
 import {appConfig} from "@nlc-ai/web-shared";
 import { NLCClient } from '@nlc-ai/sdk-main';
+import {TokenStorage} from "@nlc-ai/web-auth";
 
 const getAuthToken = (): string | undefined => {
-  if (typeof window === 'undefined') return undefined;
-  return localStorage.getItem(appConfig.auth.tokenKey) || undefined;
+  const tokenStorage = new TokenStorage();
+  const token = tokenStorage.getToken();
+  return token || undefined;
 };
 
 export const sdkClient = new NLCClient({
@@ -12,7 +14,3 @@ export const sdkClient = new NLCClient({
   timeout: appConfig.api.timeout,
   services: appConfig.api.services,
 });
-
-export const updateSDKToken = (token: string | null) => {
-  sdkClient.updateApiKey(token);
-};

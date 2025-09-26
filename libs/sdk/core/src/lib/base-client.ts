@@ -30,7 +30,6 @@ export abstract class BaseClient {
       ...options?.headers,
     };
 
-    // Get token from getToken function (which handles cookies/localStorage)
     const token = this.getToken?.() || this.apiKey;
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -40,11 +39,10 @@ export abstract class BaseClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    // Include credentials for cross-origin requests to handle cookies
     const fetchOptions: RequestInit = {
       method,
       headers,
-      credentials: 'include', // This ensures cookies are sent cross-origin
+      credentials: 'include',
     };
 
     if (options?.body) {
@@ -57,14 +55,14 @@ export abstract class BaseClient {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      const timeoutID = setTimeout(() => controller.abort(), this.timeout);
 
       const response = await fetch(url, {
         ...fetchOptions,
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutID);
 
       if (!response.ok) {
         throw await this.handleErrorResponse(response);

@@ -24,7 +24,6 @@ export const useAuth = (userType?: UserType) => {
 
   const checkAuthStatus = async (userType?: UserType) => {
     try {
-      // Only set loading if we're not already loading
       if (!authState.isLoading) {
         setAuthState(prevState => ({
           ...prevState,
@@ -32,14 +31,12 @@ export const useAuth = (userType?: UserType) => {
         }));
       }
 
-      // Check if we have a token first
       if (!authAPI.hasToken()) {
         throw new Error('No token found');
       }
 
       const user = await authAPI.getProfile();
 
-      // Validate user type if specified
       if (userType) {
         if ((user.type && user.type !== userType) || (!user.type && userType === UserType.ADMIN)) {
           throw new Error('Unauthorized user type');
@@ -105,7 +102,6 @@ export const useAuth = (userType?: UserType) => {
         }));
       } catch (error) {
         console.error('Failed to refresh profile:', error);
-        // If profile refresh fails, user might be logged out
         await logout();
       }
     }
