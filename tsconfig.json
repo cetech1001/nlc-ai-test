@@ -143,6 +143,9 @@
     },
     {
       "path": "./apps/web/client"
+    },
+    {
+      "path": "./apps/api/content"
     }
   ]
 }

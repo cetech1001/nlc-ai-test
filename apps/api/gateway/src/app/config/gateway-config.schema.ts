@@ -60,6 +60,9 @@ export class GatewayConfigSchema {
   @IsString()
   COURSES_SERVICE_URL: string;
 
+  @IsString()
+  CONTENT_SERVICE_URL: string;
+
   // Rate limiting
   @IsOptional()
   @IsNumber()

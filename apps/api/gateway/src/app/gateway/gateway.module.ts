@@ -16,6 +16,7 @@ import {AgentsGatewayController} from "./controllers/agents-gateway.controller";
 import {MessagesGatewayController} from "./controllers/messages-gateway.controller";
 import {WebSocketProxyGateway} from "./websocket-proxy.gateway";
 import {CoursesGatewayController} from "./controllers/courses-gateway.controller";
+import {ContentGatewayController} from "./controllers/content-gateway.controller";
 
 @Module({
   imports: [ProxyModule, CacheModule, SecurityModule],
@@ -33,6 +34,7 @@ import {CoursesGatewayController} from "./controllers/courses-gateway.controller
     CommunitiesGatewayController,
     MessagesGatewayController,
     CoursesGatewayController,
+    ContentGatewayController,
   ],
   providers: [WebSocketProxyGateway],
 })

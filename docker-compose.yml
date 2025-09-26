@@ -169,6 +169,26 @@ services:
       - ./.env:/app/.env
       - /app/node_modules
 
+  content:
+    build:
+      context: .
+      dockerfile: ./apps/api/content/dev.Dockerfile
+    container_name: content
+    restart: unless-stopped
+    ports:
+      - "3014:3014"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/content:/app/apps/api/content
+      - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
+      - ./.env:/app/.env
+      - /app/node_modules
+
   messages:
     build:
       context: .

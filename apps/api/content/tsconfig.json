@@ -1,0 +1,25 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../../../libs/api/types"
+    },
+    {
+      "path": "../../../libs/api/messaging"
+    },
+    {
+      "path": "../../../libs/api/database"
+    },
+    {
+      "path": "../../../libs/api/auth"
+    },
+    {
+      "path": "../../../libs/api/validation"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
+}

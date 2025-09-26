@@ -26,11 +26,11 @@ COPY tsconfig.base.json ./
 COPY package*.json ./
 COPY libs/api ./libs/api
 COPY libs/types ./libs/types
-COPY apps/api/integrations ./apps/api/integrations
+COPY apps/api/content ./apps/api/content
 
 RUN npx nx sync
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
-RUN NX_DAEMON=false npx nx build integrations-service
+RUN NX_DAEMON=false npx nx build content-service
 
 FROM base AS runner
 WORKDIR /app
@@ -41,7 +41,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-COPY --from=builder /app/apps/api/integrations/dist ./apps/api/integrations/dist
+COPY --from=builder /app/apps/api/content/dist ./apps/api/content/dist
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/libs/api/database ./libs/api/database
 
@@ -52,7 +52,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 RUN chown -R nestjs:nodejs /app
 USER nestjs
 
-EXPOSE 3008
-ENV PORT=3008
+EXPOSE 3014
+ENV PORT=3014
 
-CMD ["node", "apps/api/integrations/dist/main.js"]
+CMD ["node", "apps/api/content/dist/main.js"]
