@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { ClientQueryParams, CreateClient, UpdateClient, ClientWithDetails } from '@nlc-ai/api-types';
+import { ClientQueryParams, CreateClient, UpdateClient, ClientWithDetails } from '@nlc-ai/types';
 
 @Injectable()
 export class ClientsService {
@@ -253,14 +253,12 @@ export class ClientsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Create the client
       const client = await tx.client.create({
         data: {
           ...createClientDto,
         },
       });
 
-      // Create the client-coach relationship
       await tx.clientCoach.create({
         data: {
           clientID: client.id,

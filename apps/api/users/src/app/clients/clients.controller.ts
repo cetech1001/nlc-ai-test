@@ -12,35 +12,31 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
 import { CreateClientDto, UpdateClientDto, ClientQueryDto } from './dto';
-import { JwtAuthGuard } from '@nlc-ai/api-auth';
-import { UserTypes } from '@nlc-ai/api-auth';
-import { UserTypesGuard } from '@nlc-ai/api-auth';
-import { UserType } from '@nlc-ai/api-types';
-import { CurrentUser } from '@nlc-ai/api-auth';
-import { type AuthUser } from '@nlc-ai/api-types';
+import { UserTypes, CurrentUser, UserTypesGuard } from '@nlc-ai/api-auth';
+import { type AuthUser, UserType } from '@nlc-ai/types';
 
 @ApiTags('Clients')
 @Controller('clients')
-@UseGuards(JwtAuthGuard, UserTypesGuard)
-@UserTypes(UserType.coach, UserType.admin)
+@UseGuards(UserTypesGuard)
 @ApiBearerAuth()
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Get()
+  @UserTypes(UserType.ADMIN, UserType.COACH)
   @ApiOperation({ summary: 'Get all clients for authenticated coach or admin' })
   @ApiResponse({ status: 200, description: 'Clients retrieved successfully' })
   findAll(@Query() query: ClientQueryDto, @CurrentUser() user: AuthUser) {
-    // For coaches, filter by their ID; admins can see all
-    const coachID = user.type === UserType.coach ? user.id : query.coachID;
+    const coachID = user.type === UserType.COACH ? user.id : query.coachID;
     return this.clientsService.findAll(query, coachID);
   }
 
   @Get('stats')
+  @UserTypes(UserType.ADMIN, UserType.COACH)
   @ApiOperation({ summary: 'Get client statistics' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
   getStats(@CurrentUser() user: AuthUser, @Query('coachID') coachID?: string) {
-    const targetCoachID = user.type === UserType.coach ? user.id : coachID;
+    const targetCoachID = user.type === UserType.COACH ? user.id : coachID;
     return this.clientsService.getClientStats(targetCoachID);
   }
 
@@ -49,15 +45,16 @@ export class ClientsController {
   @ApiResponse({ status: 200, description: 'Client retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Client not found' })
   findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const coachID = user.type === UserType.coach ? user.id : undefined;
+    const coachID = user.type === UserType.COACH ? user.id : undefined;
     return this.clientsService.findOne(id, coachID);
   }
 
   @Post()
+  @UserTypes(UserType.ADMIN, UserType.COACH)
   @ApiOperation({ summary: 'Create a new client' })
   @ApiResponse({ status: 201, description: 'Client created successfully' })
   create(@Body() createClientDto: CreateClientDto, @CurrentUser() user: AuthUser) {
-    const coachID = user.type === UserType.coach ? user.id : createClientDto.coachID;
+    const coachID = user.type === UserType.COACH ? user.id : createClientDto.coachID;
     return this.clientsService.create(createClientDto, coachID);
   }
 
@@ -65,8 +62,12 @@ export class ClientsController {
   @ApiOperation({ summary: 'Update a client' })
   @ApiResponse({ status: 200, description: 'Client updated successfully' })
   @ApiResponse({ status: 404, description: 'Client not found' })
-  update(@Param('id') id: string, @Body() updateClientDto: UpdateClientDto, @CurrentUser() user: AuthUser) {
-    const coachID = user.type === UserType.coach ? user.id : undefined;
+  update(
+    @Param('id') id: string,
+    @Body() updateClientDto: UpdateClientDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    const coachID = user.type === UserType.COACH ? user.id : undefined;
     return this.clientsService.update(id, updateClientDto, coachID);
   }
 
@@ -75,7 +76,7 @@ export class ClientsController {
   @ApiResponse({ status: 200, description: 'Client deleted successfully' })
   @ApiResponse({ status: 404, description: 'Client not found' })
   remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const coachID = user.type === UserType.coach ? user.id : undefined;
+    const coachID = user.type === UserType.COACH ? user.id : undefined;
     return this.clientsService.remove(id, coachID);
   }
 }

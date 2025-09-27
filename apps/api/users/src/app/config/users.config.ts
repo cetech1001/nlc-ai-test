@@ -19,13 +19,12 @@ function validateConfig(config: Record<string, unknown>) {
   return validatedConfig;
 }
 
-export default registerAs('users', () => {
+export const usersConfig = registerAs('users', () => {
   const config = validateConfig(process.env);
 
   return {
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
     },
     rabbitmq: {
       url: config.RABBITMQ_URL,
@@ -37,12 +36,7 @@ export default registerAs('users', () => {
     },
     service: {
       name: config.SERVICE_NAME,
-      version: config.SERVICE_VERSION,
-      environment: config.NODE_ENV,
-    },
-    performance: {
-      maxRetries: config.MAX_RETRIES,
-      cacheTTL: config.CACHE_TTL,
+      env: config.NODE_ENV,
     },
   };
 });

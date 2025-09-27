@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '@nlc-ai/api-database';
-import { CreateAdminDto, UpdateAdminDto, AdminQueryDto } from './dto';
+import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
+import {PrismaService} from '@nlc-ai/api-database';
+import {AdminQueryDto, CreateAdminDto, UpdateAdminDto} from './dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -163,8 +163,8 @@ export class AdminService {
   async toggleStatus(id: string) {
     const admin = await this.findOne(id);
 
-    const updatedAdmin = await this.prisma.admin.update({
-      where: { id },
+    return this.prisma.admin.update({
+      where: {id},
       data: {
         isActive: !admin.isActive,
         updatedAt: new Date(),
@@ -178,8 +178,6 @@ export class AdminService {
         isActive: true,
       },
     });
-
-    return updatedAdmin;
   }
 
   async remove(id: string) {

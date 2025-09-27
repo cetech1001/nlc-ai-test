@@ -11,10 +11,8 @@ import { CoachesModule } from './coaches/coaches.module';
 import { AdminModule } from './admin/admin.module';
 import { RelationshipsModule } from './relationships/relationships.module';
 import { ProfilesModule } from './profiles/profiles.module';
-import { AnalyticsModule } from './analytics/analytics.module';
-import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import { HealthModule } from './health/health.module';
-import usersConfig from './config/users.config';
+import {usersConfig} from './config/users.config';
 
 @Module({
   imports: [
@@ -34,8 +32,6 @@ import usersConfig from './config/users.config';
     AdminModule,
     RelationshipsModule,
     ProfilesModule,
-    AnalyticsModule,
-    EventHandlersModule,
   ],
   providers: [
     {

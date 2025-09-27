@@ -12,13 +12,13 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { CreateAdminDto, UpdateAdminDto, AdminQueryDto } from './dto';
-import { JwtAuthGuard, UserTypesGuard, UserTypes, Public } from '@nlc-ai/api-auth';
-import { UserType } from '@nlc-ai/api-types';
+import { UserTypesGuard, UserTypes, Public } from '@nlc-ai/api-auth';
+import { UserType } from '@nlc-ai/types';
 
 @ApiTags('Admin')
 @Controller('admin')
-@UseGuards(JwtAuthGuard, UserTypesGuard)
-@UserTypes(UserType.admin)
+@UseGuards(UserTypesGuard)
+@UserTypes(UserType.ADMIN)
 @ApiBearerAuth()
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}

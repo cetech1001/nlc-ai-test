@@ -13,10 +13,10 @@ export interface UserProfile {
   isVerified: boolean;
   createdAt: Date;
   lastLoginAt?: Date;
-  // Coach specific
+
   subscriptionStatus?: string;
   subscriptionPlan?: string;
-  // Client specific
+
   source?: string;
   tags?: string[];
   engagementScore?: number;

@@ -1,6 +1,6 @@
 import {IsOptional, IsString, IsDateString, IsNumberString, IsUUID, IsInt} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ClientQueryParams } from '@nlc-ai/api-types';
+import { ClientQueryParams } from '@nlc-ai/types';
 import {Transform} from "class-transformer";
 
 export class ClientQueryDto implements ClientQueryParams {
