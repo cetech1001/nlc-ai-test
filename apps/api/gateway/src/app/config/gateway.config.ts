@@ -19,7 +19,7 @@ function validateConfig(config: Record<string, unknown>) {
   return validatedConfig;
 }
 
-export default registerAs('gateway', () => {
+export const gatewayConfig = registerAs('gateway', () => {
   const config = validateConfig(process.env);
 
   return {

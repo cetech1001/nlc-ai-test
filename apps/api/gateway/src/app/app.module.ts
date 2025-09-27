@@ -11,7 +11,7 @@ import { CacheModule } from './cache/cache.module';
 import { SecurityModule } from './security/security.module';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { ResponseTransformInterceptor } from './interceptors/response-transform.interceptor';
-import gatewayConfig from './config/gateway.config';
+import {gatewayConfig} from './config/gateway.config';
 
 @Module({
   imports: [

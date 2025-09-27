@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import {APP_FILTER, APP_GUARD, APP_PIPE} from "@nestjs/core";
 import {ScheduleModule} from "@nestjs/schedule";
 import {ValidationPipe, HttpExceptionFilter, AllExceptionsFilter} from "@nlc-ai/api-validation";
-import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
+import {AuthLibModule, JwtAuthGuard} from "@nlc-ai/api-auth";
 import {DatabaseModule} from "@nlc-ai/api-database";
 import { PaymentsModule } from './payments/payments.module';
 import { PlansModule } from './plans/plans.module';
@@ -13,7 +13,7 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 import { EmailService } from './email/email.service';
 import {HealthModule} from "./health/health.module";
-import billingConfig from "./config/billing.config";
+import {billingConfig} from "./config/billing.config";
 import {MessagingModule} from "@nlc-ai/api-messaging";
 import {PaymentRequestsModule} from "./payment-requests/payment-requests.module";
 
@@ -48,7 +48,7 @@ import {PaymentRequestsModule} from "./payment-requests/payment-requests.module"
     // Global authentication guard
     {
       provide: APP_GUARD,
-      useClass: ServiceAuthGuard,
+      useClass: JwtAuthGuard,
     },
 
     // Global exception filters (order matters - most specific first)

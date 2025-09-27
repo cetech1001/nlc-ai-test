@@ -19,7 +19,7 @@ const validateConfig = (config: Record<string, unknown>) => {
   return validatedConfig;
 }
 
-export default registerAs('billing', () => {
+export const billingConfig = registerAs('billing', () => {
   const config = validateConfig(process.env);
 
   return {
@@ -30,7 +30,6 @@ export default registerAs('billing', () => {
     },
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
     },
     rabbitmq: {
       url: config.RABBITMQ_URL,
@@ -42,20 +41,11 @@ export default registerAs('billing', () => {
     },
     service: {
       name: config.SERVICE_NAME,
-      version: config.SERVICE_VERSION,
-      environment: config.NODE_ENV,
+      env: config.NODE_ENV,
     },
     urls: {
       coachPlatform: config.COACH_PLATFORM_URL,
       adminPlatform: config.ADMIN_PLATFORM_URL,
-    },
-    email: {
-      mailgunApiKey: config.MAILGUN_API_KEY,
-      mailgunDomain: config.MAILGUN_DOMAIN,
-    },
-    performance: {
-      maxRetries: config.MAX_RETRIES,
-      outboxBatchSize: config.OUTBOX_BATCH_SIZE,
     },
   };
 });

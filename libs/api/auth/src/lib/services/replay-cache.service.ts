@@ -1,42 +1,144 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
-/**
- * Very lightweight in-memory replay cache.
- * Stores keys (e.g., signatures) with an expiration time to prevent reuse within a short window.
- * Note: This is per-instance memory; for multi-instance deployments, a shared store (e.g., Redis) is recommended.
- */
 @Injectable()
-export class ReplayCacheService {
-  private readonly store = new Map<string, number>();
-  private readonly sweepInterval: NodeJS.Timeout;
+export class ReplayCacheService implements OnModuleDestroy {
+  private readonly redis?: Redis;
+  private readonly fallbackStore = new Map<string, number>();
+  private readonly fallbackRateStore = new Map<string, number[]>();
+  private readonly sweepInterval?: NodeJS.Timeout;
+  private useRedis: boolean;
 
-  constructor() {
-    // Sweep every minute to remove expired entries
-    this.sweepInterval = setInterval(() => this.sweep(), 60_000);
-    this.sweepInterval.unref?.();
+  constructor(private readonly configService: ConfigService) {
+    const redisUrl = this.configService.get<string>('REDIS_URL');
+
+    if (redisUrl) {
+      this.redis = new Redis(redisUrl, {
+        maxRetriesPerRequest: 3,
+        lazyConnect: true,
+        retryStrategy(times) {
+          return Math.min(times * 100, 2000);
+        },
+      });
+      this.useRedis = true;
+
+      this.redis.connect().catch(error => {
+        console.warn('Failed to connect to Redis, falling back to in-memory cache:', error);
+        this.useRedis = false;
+      });
+    } else {
+      this.useRedis = false;
+    }
+
+    if (!this.useRedis) {
+      this.sweepInterval = setInterval(() => this.sweepFallback(), 60_000);
+      this.sweepInterval.unref?.();
+    }
   }
 
-  has(key: string): boolean {
-    const exp = this.store.get(key);
+  async has(key: string): Promise<boolean> {
+    if (this.useRedis && this.redis) {
+      try {
+        const exists = await this.redis.exists(key);
+        return exists === 1;
+      } catch (error) {
+        console.warn('Redis error in has(), falling back to memory:', error);
+        return this.hasFallback(key);
+      }
+    }
+
+    return this.hasFallback(key);
+  }
+
+  async add(key: string, ttlMs: number): Promise<void> {
+    const ttlSeconds = Math.ceil(ttlMs / 1000);
+
+    if (this.useRedis && this.redis) {
+      try {
+        await this.redis.setex(key, ttlSeconds, '1');
+        return;
+      } catch (error) {
+        console.warn('Redis error in add(), falling back to memory:', error);
+      }
+    }
+
+    this.addFallback(key, ttlMs);
+  }
+
+  async getRateLimitData(key: string): Promise<number[] | null> {
+    if (this.useRedis && this.redis) {
+      try {
+        const data = await this.redis.get(key);
+        return data ? JSON.parse(data) : null;
+      } catch (error) {
+        console.warn('Redis error in getRateLimitData(), falling back to memory:', error);
+        return this.fallbackRateStore.get(key) || null;
+      }
+    }
+
+    return this.fallbackRateStore.get(key) || null;
+  }
+
+  async setRateLimitData(key: string, data: number[], ttlMs: number): Promise<void> {
+    const ttlSeconds = Math.ceil(ttlMs / 1000);
+
+    if (this.useRedis && this.redis) {
+      try {
+        await this.redis.setex(key, ttlSeconds, JSON.stringify(data));
+        return;
+      } catch (error) {
+        console.warn('Redis error in setRateLimitData(), falling back to memory:', error);
+      }
+    }
+
+    this.fallbackRateStore.set(key, data);
+    setTimeout(() => {
+      this.fallbackRateStore.delete(key);
+    }, ttlMs);
+  }
+
+  private hasFallback(key: string): boolean {
+    const exp = this.fallbackStore.get(key);
     if (!exp) return false;
     if (Date.now() > exp) {
-      this.store.delete(key);
+      this.fallbackStore.delete(key);
       return false;
     }
     return true;
   }
 
-  add(key: string, ttlMs: number): void {
+  private addFallback(key: string, ttlMs: number): void {
     const expiresAt = Date.now() + ttlMs;
-    this.store.set(key, expiresAt);
+    this.fallbackStore.set(key, expiresAt);
   }
 
-  private sweep() {
+  private sweepFallback(): void {
     const now = Date.now();
-    for (const [k, exp] of this.store.entries()) {
+
+    for (const [k, exp] of this.fallbackStore.entries()) {
       if (exp <= now) {
-        this.store.delete(k);
+        this.fallbackStore.delete(k);
       }
+    }
+
+    for (const [k, timestamps] of this.fallbackRateStore.entries()) {
+      const filtered = timestamps.filter(ts => ts > now - (15 * 60 * 1000));
+      if (filtered.length === 0) {
+        this.fallbackRateStore.delete(k);
+      } else {
+        this.fallbackRateStore.set(k, filtered);
+      }
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.sweepInterval) {
+      clearInterval(this.sweepInterval);
+    }
+
+    if (this.redis) {
+      await this.redis.quit();
     }
   }
 }

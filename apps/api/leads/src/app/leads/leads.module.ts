@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
-import { LandingTokenGuard, ReplayCacheService } from '@nlc-ai/api-auth';
+import { AntiSpamGuard, ReplayCacheService } from '@nlc-ai/api-auth';
 
 @Module({
   controllers: [LeadsController],
-  providers: [LeadsService, LandingTokenGuard, ReplayCacheService],
+  providers: [LeadsService, AntiSpamGuard, ReplayCacheService],
   exports: [LeadsService],
 })
 export class LeadsModule {}

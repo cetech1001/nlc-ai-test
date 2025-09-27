@@ -4,18 +4,15 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Get,
-  Patch,
   UseGuards,
   Query,
-  BadRequestException,
   Res,
   Req,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { type AuthUser, UserType } from '@nlc-ai/api-types';
-import {CurrentUser, JwtAuthGuard, Public, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
+import { type AuthUser, UserType } from '@nlc-ai/types';
+import {CurrentUser, Public, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
 import { AuthService } from './auth.service';
 import { GoogleAuthService } from './services/google-auth.service';
 import {
@@ -24,36 +21,41 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyCodeDto,
-  UpdateProfileDto,
-  UpdatePasswordDto,
   ClientRegisterDto,
   ClientGoogleAuthDto,
   SwitchCoachContextDto,
   GoogleAuthDto,
 } from './dto';
+import {ConfigService} from "@nestjs/config";
 
+@UseGuards(UserTypesGuard)
 @ApiTags('Authentication')
 @Controller('')
 export class AuthController {
+  private readonly publicTokenName: string;
+
   constructor(
+    private readonly config: ConfigService,
     private readonly authService: AuthService,
     private readonly googleAuthService: GoogleAuthService,
-  ) {}
+  ) {
+    this.publicTokenName = this.config.get('auth.tokens.public')!;
+  }
 
   private setAuthCookie(res: Response, req: Request, token: string, rememberMe = false) {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = this.config.get('auth.service.env') === 'production';
     const domain = this.getBaseDomain(req);
 
     const cookieOptions = {
-      httpOnly: true, // Important: prevents XSS attacks
-      secure: isProduction, // Only HTTPS in production
+      httpOnly: true,
+      secure: isProduction,
       sameSite: 'lax' as const,
       path: '/',
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000, // 30 days or 1 day
-      ...(domain && { domain }), // Only set domain if we have one
+      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
+      ...(domain && { domain }),
     };
 
-    res.cookie('nlc_auth_token', token, cookieOptions);
+    res.cookie(this.publicTokenName, token, cookieOptions);
   }
 
   private clearAuthCookie(res: Response, req: Request) {
@@ -61,25 +63,23 @@ export class AuthController {
 
     const clearOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.config.get('auth.service.env') === 'production',
       sameSite: 'lax' as const,
       path: '/',
       ...(domain && { domain }),
     };
 
-    res.clearCookie('nlc_auth_token', clearOptions);
+    res.clearCookie(this.publicTokenName, clearOptions);
   }
 
   private getBaseDomain(req: Request): string | undefined {
     const host = req.get('host');
     if (!host) return undefined;
 
-    // Don't set domain for localhost/development
     if (host.includes('localhost') || /^\d+\.\d+\.\d+\.\d+/.test(host)) {
       return undefined;
     }
 
-    // Extract base domain (e.g., yourdomain.com from api.yourdomain.com)
     const parts = host.split('.');
     if (parts.length >= 2) {
       return `.${parts.slice(-2).join('.')}`;
@@ -141,7 +141,7 @@ export class AuthController {
     @Req() req: Request
   ) {
     const result = await this.googleAuthService.coachGoogleAuth(googleAuthDto.idToken);
-    this.setAuthCookie(res, req, (result as any).access_token);
+    this.setAuthCookie(res, req, result.access_token);
     return result;
   }
 
@@ -190,8 +190,7 @@ export class AuthController {
   }
 
   @Post('client/switch-coach')
-  @UseGuards(JwtAuthGuard, UserTypesGuard)
-  @UserTypes(UserType.client)
+  @UserTypes(UserType.CLIENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Switch coach context for client' })
   @ApiResponse({ status: 200, description: 'Coach context switched successfully' })
@@ -202,16 +201,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request
   ) {
-    if (user.type !== UserType.client) {
-      throw new BadRequestException('Only clients can switch coach context');
-    }
-
     const result = await this.authService.switchCoachContext(user.id, switchCoachDto.coachID);
     this.setAuthCookie(res, req, result.access_token);
     return result;
   }
 
-  // ========== COMMON AUTH ENDPOINTS ==========
   @Post('forgot-password')
   @Public()
   @HttpCode(HttpStatus.OK)
@@ -220,7 +214,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Verification code sent' })
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
-    @Query('type') type: UserType = UserType.coach
+    @Query('type') type: UserType = UserType.COACH
   ) {
     return this.authService.forgotPassword(forgotPasswordDto, type);
   }
@@ -260,12 +254,12 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password' })
-  @ApiQuery({ name: 'type', enum: ['coach', 'admin', 'client'], required: false, description: 'User type - defaults to coach' })
+  @ApiQuery({ name: 'type', enum: UserType, required: false, description: 'User type - defaults to coach' })
   @ApiResponse({ status: 200, description: 'Password reset successful' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
-    @Query('type') type: UserType = UserType.coach
+    @Query('type') type: UserType = UserType.COACH
   ) {
     return this.authService.resetPassword(resetPasswordDto, type);
   }
@@ -280,59 +274,5 @@ export class AuthController {
   ) {
     this.clearAuthCookie(res, req);
     return { message: 'Logged out successfully' };
-  }
-
-  // ========== PROTECTED ENDPOINTS ==========
-  @Post('upload-avatar')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Upload user avatar' })
-  @ApiResponse({ status: 200, description: 'Avatar uploaded successfully' })
-  @ApiResponse({ status: 400, description: 'No avatar URL found' })
-  async uploadAvatar(@CurrentUser() user: AuthUser, @Body('avatarUrl') avatarUrl: string) {
-    return this.authService.uploadAvatar(user.id, user.type, avatarUrl);
-  }
-
-  @Get('profile')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@CurrentUser() user: AuthUser) {
-    const { id, type } = user;
-    return this.authService.findUserByID(id, type);
-  }
-
-  @Patch('profile')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
-  async updateProfile(
-    @CurrentUser() user: AuthUser,
-    @Body() updateProfileDto: UpdateProfileDto
-  ) {
-    const { id, type } = user;
-    return this.authService.updateProfile(id, type, updateProfileDto);
-  }
-
-  @Patch('password')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user password' })
-  @ApiResponse({ status: 200, description: 'Password updated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid password format' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async updatePassword(
-    @CurrentUser() user: AuthUser,
-    @Body() updatePasswordDto: UpdatePasswordDto
-  ) {
-    const { id, type } = user;
-    return this.authService.updatePassword(id, type, updatePasswordDto);
   }
 }

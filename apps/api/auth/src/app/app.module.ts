@@ -3,7 +3,7 @@ import {ConfigModule} from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
-import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
+import {AuthLibModule, JwtAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import {MessagingModule} from "@nlc-ai/api-messaging";
 import { AuthModule } from './auth/auth.module';
@@ -32,7 +32,7 @@ import {authConfig} from './config/auth.config';
     },
     {
       provide: APP_GUARD,
-      useClass: ServiceAuthGuard,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_FILTER,

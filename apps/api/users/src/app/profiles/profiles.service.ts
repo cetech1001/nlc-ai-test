@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import {UserProfile, UserStats, UserType} from '@nlc-ai/types';
+import {AuthEvent, UpdatePasswordRequest, UpdateProfileRequest, UserProfile, UserStats, UserType} from '@nlc-ai/types';
 import { UpdateProfileDto } from './dto';
+import * as bcrypt from "bcryptjs";
 
 @Injectable()
 export class ProfilesService {
@@ -308,5 +309,106 @@ export class ProfilesService {
       communitiesJoined: communitiesCount,
       joinedDate: member.joinedAt
     };
+  }
+
+  async uploadAvatar(userID: string, userType: UserType, avatarUrl: string) {
+    try {
+      if (userType === UserType.COACH) {
+        await this.coachAuthService.uploadAvatar(userID, avatarUrl);
+      } else if (userType === UserType.ADMIN) {
+        await this.adminAuthService.uploadAvatar(userID, avatarUrl);
+      } else if (userType === UserType.CLIENT) {
+        await this.clientAuthService.uploadAvatar(userID, avatarUrl);
+      }
+
+      // Emit avatar updated event
+      await this.outbox.saveAndPublishEvent<AuthEvent>(
+        {
+          eventType: 'auth.avatar.updated',
+          schemaVersion: 1,
+          payload: {
+            userID,
+            userType,
+            avatarUrl,
+          },
+        },
+        'auth.avatar.updated'
+      );
+
+      return {
+        message: 'Avatar uploaded successfully',
+        avatarUrl,
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to upload avatar');
+    }
+  }
+
+  // async updateProfile(userID: string, userType: UserType, updateProfileDto: UpdateProfileRequest) {
+  //   let result;
+  //
+  //   // Delegate to specific service
+  //   if (userType === UserType.COACH) {
+  //     result = await this.coachAuthService.updateProfile(userID, updateProfileDto);
+  //   } else if (userType === UserType.ADMIN) {
+  //     result = await this.adminAuthService.updateProfile(userID, updateProfileDto);
+  //   } else if (userType === UserType.CLIENT) {
+  //     result = await this.clientAuthService.updateProfile(userID, updateProfileDto);
+  //   } else {
+  //     throw new BadRequestException('Invalid user type');
+  //   }
+  //
+  //   // Emit profile updated event
+  //   await this.outbox.saveAndPublishEvent<AuthEvent>(
+  //     {
+  //       eventType: userType === UserType.COACH ? 'auth.coach.profile.updated' :
+  //         userType === UserType.ADMIN ? 'auth.admin.profile.updated' :
+  //           'auth.client.profile.updated',
+  //       schemaVersion: 1,
+  //       payload: {
+  //         userID,
+  //         email: result.user.email,
+  //         firstName: result.user.firstName,
+  //         lastName: result.user.lastName,
+  //         ...(userType === UserType.ADMIN && { role: (result.user as Admin).role }),
+  //       },
+  //     },
+  //     `auth.${userType}.profile.updated`
+  //   );
+  //
+  //   return result;
+  // }
+
+  async updatePassword(userID: string, userType: UserType, updatePasswordDto: UpdatePasswordRequest) {
+    let result;
+
+    const passwordHash = await bcrypt.hash(updatePasswordDto.newPassword, 12);
+
+    // Delegate to specific service
+    if (userType === UserType.COACH) {
+      result = await this.coachAuthService.updatePassword(passwordHash, userID);
+    } else if (userType === UserType.ADMIN) {
+      result = await this.adminAuthService.updatePassword(passwordHash, userID);
+    } else if (userType === UserType.CLIENT) {
+      result = await this.clientAuthService.updatePassword(passwordHash, userID);
+    } else {
+      throw new BadRequestException('Invalid user type');
+    }
+
+    // Emit password updated event (without sensitive data)
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
+      {
+        eventType: 'auth.password.updated',
+        schemaVersion: 1,
+        payload: {
+          userID,
+          userType,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      'auth.password.updated'
+    );
+
+    return result;
   }
 }

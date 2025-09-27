@@ -3,7 +3,7 @@ import {ConfigModule, ConfigService} from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-ai/api-validation';
-import {AuthLibModule, ServiceAuthGuard} from '@nlc-ai/api-auth';
+import {AuthLibModule, JwtAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { TemplatesModule } from './templates/templates.module';
@@ -33,7 +33,7 @@ import {BullModule} from "@nestjs/bull";
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         redis: {
-          host: configService.get<string>('email.redis.host', 'localhost'),
+          host: configService.get<string>('email.redis.host', 'redis'),
           port: configService.get<number>('email.redis.port', 6379),
           password: configService.get<string>('email.redis.password'),
           db: configService.get<number>('email.redis.db', 0),
@@ -68,7 +68,7 @@ import {BullModule} from "@nestjs/bull";
     },
     {
       provide: APP_GUARD,
-      useClass: ServiceAuthGuard,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_FILTER,

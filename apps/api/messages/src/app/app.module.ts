@@ -7,7 +7,7 @@ import { MessagingModule } from '@nlc-ai/api-messaging';
 import { HealthModule } from './health/health.module';
 import messagingConfig from './config/messaging.config';
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
-import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
+import {AuthLibModule, JwtAuthGuard} from "@nlc-ai/api-auth";
 import {MessagesModule} from "./messages/messages.module";
 import {WebSocketModule} from "./websocket/websocket.module";
 
@@ -34,7 +34,7 @@ import {WebSocketModule} from "./websocket/websocket.module";
     },
     {
       provide: APP_GUARD,
-      useClass: ServiceAuthGuard,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_FILTER,

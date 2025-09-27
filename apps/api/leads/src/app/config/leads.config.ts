@@ -39,15 +39,5 @@ export default registerAs('leads', () => {
       tokenWindowMs: config.LEADS_TOKEN_WINDOW_MS,
       replayTtlMs: config.LEADS_REPLAY_TTL_MS,
     },
-    externalServices: {
-      email: {
-        url: config.EMAIL_SERVICE_URL,
-        token: config.EMAIL_SERVICE_TOKEN,
-      },
-      gateway: {
-        url: config.GATEWAY_SERVICE_URL,
-        token: config.GATEWAY_SERVICE_TOKEN,
-      },
-    },
   };
 });

@@ -3,13 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   ForgotPasswordRequest,
   GoogleAuthRequest,
+  LoginRequest,
   ResetPasswordRequest,
   UpdatePasswordRequest,
   UpdateProfileRequest,
   VerifyCodeRequest
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 
-export class LoginDto {
+export class LoginDto implements LoginRequest{
   @ApiProperty({ example: 'coach@example.com' })
   @IsEmail()
   email: string;

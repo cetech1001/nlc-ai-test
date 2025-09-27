@@ -122,7 +122,9 @@ export class SchedulingProcessor {
           eventType: 'email.scheduled.failed',
           schemaVersion: 1,
           payload: {
-            emailID,
+            scheduledEmailID: emailID,
+            coachID: email.coachID!,
+            recipientEmail: email.to,
             error: error.message,
             retryCount,
             failedAt: new Date().toISOString(),

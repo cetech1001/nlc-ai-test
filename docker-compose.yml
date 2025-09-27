@@ -143,9 +143,12 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/auth:/app/apps/api/auth
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 

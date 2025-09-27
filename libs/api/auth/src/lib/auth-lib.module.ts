@@ -1,10 +1,10 @@
-import {Module} from "@nestjs/common";
-import {PassportModule} from "@nestjs/passport";
-import {DatabaseModule} from "@nlc-ai/api-database";
-import {JwtStrategy} from "./strategies";
-import {JwtModule} from "@nestjs/jwt";
-import {ConfigService} from "@nestjs/config";
-import {ServiceAuthGuard} from "./guards";
+import { Module } from "@nestjs/common";
+import { PassportModule } from "@nestjs/passport";
+import { DatabaseModule } from "@nlc-ai/api-database";
+import { JwtModule } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { JwtAuthGuard } from "./guards";
+import { ReplayCacheService } from "./services";
 
 @Module({
   imports: [
@@ -23,9 +23,13 @@ import {ServiceAuthGuard} from "./guards";
     DatabaseModule.forFeature(),
   ],
   providers: [
-    JwtStrategy,
-    ServiceAuthGuard,
+    JwtAuthGuard,
+    ReplayCacheService,
   ],
-  exports: [JwtModule, JwtStrategy, ServiceAuthGuard],
+  exports: [
+    JwtModule,
+    JwtAuthGuard,
+    ReplayCacheService,
+  ],
 })
 export class AuthLibModule {}

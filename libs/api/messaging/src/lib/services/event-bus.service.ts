@@ -12,7 +12,7 @@ export class EventBusService implements OnModuleInit, OnModuleDestroy {
   private isConnecting = false;
   private connectionPromise: Promise<void> | null = null;
 
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly config: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
     await this.ensureConnection();
@@ -44,7 +44,7 @@ export class EventBusService implements OnModuleInit, OnModuleDestroy {
 
   private async connect(): Promise<void> {
     try {
-      const rabbitmqUrl = this.configService.get('RABBITMQ_URL');
+      const rabbitmqUrl = this.config.get('RABBITMQ_URL');
       if (!rabbitmqUrl) {
         this.logger.warn('RABBITMQ_URL not configured - events will not be published');
         return;
@@ -53,7 +53,6 @@ export class EventBusService implements OnModuleInit, OnModuleDestroy {
       this.connection = await amqp.connect(rabbitmqUrl);
       this.channel = await this.connection.createChannel();
 
-      // Setup error handlers
       this.connection.on('error', (error) => {
         this.logger.error('RabbitMQ connection error:', error);
         this.resetConnection();
@@ -69,8 +68,7 @@ export class EventBusService implements OnModuleInit, OnModuleDestroy {
         this.resetConnection();
       });
 
-      // Setup exchanges
-      await this.channel.assertExchange('nlc.domain.events', 'topic', {
+      await this.channel.assertExchange(this.config.get('RABBITMQ_EXCHANGE')!, 'topic', {
         durable: true,
       });
 
@@ -101,13 +99,13 @@ export class EventBusService implements OnModuleInit, OnModuleDestroy {
       ...event,
       eventID: uuid(),
       occurredAt: new Date().toISOString(),
-      producer: this.configService.get('SERVICE_NAME', 'unknown'),
-      source: `${this.configService.get('SERVICE_NAME')}.${process.env.NODE_ENV}`,
+      producer: this.config.get('SERVICE_NAME', 'unknown'),
+      source: `${this.config.get('SERVICE_NAME')}.${this.config.get('NODE_ENV')}`,
     } as T;
 
     try {
       const published = this.channel.publish(
-        'nlc.domain.events',
+        this.config.get('RABBITMQ_EXCHANGE')!,
         routingKey,
         Buffer.from(JSON.stringify(fullEvent)),
         {
@@ -148,9 +146,8 @@ export class EventBusService implements OnModuleInit, OnModuleDestroy {
         durable: true,
       });
 
-      // Bind queue to routing keys
       for (const routingKey of routingKeys) {
-        await this.channel.bindQueue(queueName, 'nlc.domain.events', routingKey);
+        await this.channel.bindQueue(queueName, this.config.get('RABBITMQ_EXCHANGE')!, routingKey);
       }
 
       await this.channel.consume(
@@ -170,7 +167,6 @@ export class EventBusService implements OnModuleInit, OnModuleDestroy {
           } catch (error) {
             this.logger.error(`Failed to process event in queue: ${queueName}`, error);
 
-            // Reject and requeue (or send to DLQ)
             this.channel?.nack(msg, false, false);
           }
         },

@@ -151,7 +151,7 @@ export class TransactionsService {
       occurredAt: new Date().toISOString(),
       producer: this.configService.get<string>('billing.service.name', 'billing-service'),
       schemaVersion: 1,
-      source: `${this.configService.get('billing.service.name')}.${this.configService.get('billing.service.environment')}`,
+      source: `${this.configService.get('billing.service.name')}.${this.configService.get('billing.service.env')}`,
       payload: {
         transactionID: transaction.id,
         coachID: transaction.payerType === 'coach' ? transaction.payerID : transaction.payeeID || '',

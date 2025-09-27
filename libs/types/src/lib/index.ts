@@ -1,5 +1,6 @@
 export * from './ai-agents';
 export * from './analytics';
+export * from './auth';
 export * from './communities';
 export * from './courses';
 export * from './content';
@@ -10,7 +11,6 @@ export * from './activity-log';
 export * from './admin';
 export * from './agent';
 export * from './app-config';
-export * from './auth';
 export * from './calendar';
 export * from './calendly';
 export * from './client';

@@ -4,7 +4,7 @@ import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import {DatabaseModule} from "@nlc-ai/api-database";
 import {MessagingModule} from "@nlc-ai/api-messaging";
-import {AuthLibModule, ServiceAuthGuard} from "@nlc-ai/api-auth";
+import {AuthLibModule, JwtAuthGuard} from "@nlc-ai/api-auth";
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
 import {CoursesService} from "./courses/courses.service";
 import {CoursesController} from "./courses/courses.controller";
@@ -44,7 +44,7 @@ import {PaywallModule} from "./paywall/paywall.module";
     },
     {
       provide: APP_GUARD,
-      useClass: ServiceAuthGuard,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_FILTER,

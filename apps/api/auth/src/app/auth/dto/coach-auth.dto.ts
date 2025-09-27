@@ -1,4 +1,4 @@
-import {RegistrationRequest} from "@nlc-ai/api-types";
+import {RegistrationRequest} from "@nlc-ai/types";
 import {ApiProperty} from "@nestjs/swagger";
 import {IsEmail, IsString, Matches, MinLength} from "class-validator";
 

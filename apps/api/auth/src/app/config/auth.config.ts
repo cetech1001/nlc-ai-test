@@ -25,7 +25,9 @@ export const authConfig = registerAs('auth', () => {
   return {
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
+    },
+    redis: {
+      url: config.REDIS_URL,
     },
     rabbitmq: {
       url: config.RABBITMQ_URL,
@@ -37,13 +39,14 @@ export const authConfig = registerAs('auth', () => {
     },
     service: {
       name: config.SERVICE_NAME,
-      version: config.SERVICE_VERSION,
-      environment: config.NODE_ENV,
+      env: config.NODE_ENV,
     },
     google: {
       clientID: config.GOOGLE_CLIENT_ID,
       clientSecret: config.GOOGLE_CLIENT_SECRET,
-      callbackUrl: config.GOOGLE_CALLBACK_URL,
     },
+    tokens: {
+      public: config.PUBLIC_TOKEN_NAME,
+    }
   };
 });

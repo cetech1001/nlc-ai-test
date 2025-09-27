@@ -1,6 +1,6 @@
 import {Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards,} from '@nestjs/common';
 import {ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
-import {CurrentUser, JwtAuthGuard, LandingTokenGuard, Public, UserTypes, UserTypesGuard} from '@nlc-ai/api-auth';
+import {CurrentUser, JwtAuthGuard, AntiSpamGuard, Public, UserTypes, UserTypesGuard} from '@nlc-ai/api-auth';
 import {type AuthUser, UserType} from '@nlc-ai/api-types';
 import {LeadsService} from './leads.service';
 import {CreateLandingLeadDto, CreateLeadDto, LeadQueryDto, UpdateLeadDto} from './dto';
@@ -73,20 +73,20 @@ export class LeadsController {
 
   @Post('landing')
   @Public()
-  @UseGuards(LandingTokenGuard)
+  @UseGuards(AntiSpamGuard)
   @ApiOperation({ summary: 'Create a new lead from landing page form' })
   @ApiHeader({
-    name: 'X-Landing-Token',
+    name: 'x-anti-spam-token',
     required: true,
-    description: 'Shared secret token for landing page submissions'
+    description: 'Shared secret token for form submissions'
   })
   @ApiHeader({
-    name: 'X-Landing-Timestamp',
+    name: 'x-anti-spam-timestamp',
     required: true,
     description: 'Unix epoch milliseconds when the request was signed'
   })
   @ApiHeader({
-    name: 'X-Landing-Signature',
+    name: 'x-anti-spam-signature',
     required: true,
     description: 'HMAC-SHA256 of method|path|rawBody|timestamp using the shared secret'
   })

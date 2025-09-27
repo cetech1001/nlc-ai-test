@@ -1,22 +1,22 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
-import { ValidatedGoogleUser } from '@nlc-ai/api-types';
 import { ClientAuthService } from './client-auth.service';
 import { CoachAuthService } from './coach-auth.service';
+import {AuthResponse, ValidatedGoogleUser} from "@nlc-ai/types";
 
 @Injectable()
 export class GoogleAuthService {
   private client: OAuth2Client;
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly config: ConfigService,
     private readonly clientAuthService: ClientAuthService,
     private readonly coachAuthService: CoachAuthService
   ) {
     this.client = new OAuth2Client(
-      this.configService.get<string>('auth.google.clientID'),
-      this.configService.get<string>('auth.google.clientSecret')
+      this.config.get<string>('auth.google.clientID'),
+      this.config.get<string>('auth.google.clientSecret')
     );
   }
 
@@ -26,7 +26,7 @@ export class GoogleAuthService {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken,
-        audience: this.configService.get<string>('auth.google.clientID'),
+        audience: this.config.get<string>('auth.google.clientID'),
       });
       payload = ticket.getPayload();
     } catch (err) {
@@ -46,15 +46,13 @@ export class GoogleAuthService {
     };
   }
 
-  // Coach Google auth - unified login/register
-  async coachGoogleAuth(idToken: string) {
+  async coachGoogleAuth(idToken: string): Promise<AuthResponse> {
     const userData = await this.validateGoogleToken(idToken);
-    return this.coachAuthService.googleAuth(userData);
+    return await this.coachAuthService.googleAuth(userData) as unknown as AuthResponse;
   }
 
-  // Client Google auth - with invite token
-  async clientGoogleAuth(idToken: string, inviteToken: string) {
+  async clientGoogleAuth(idToken: string, inviteToken: string): Promise<AuthResponse> {
     const userData = await this.validateGoogleToken(idToken);
-    return this.clientAuthService.googleAuth(userData, inviteToken);
+    return await this.clientAuthService.googleAuth(userData, inviteToken) as unknown as AuthResponse;
   }
 }

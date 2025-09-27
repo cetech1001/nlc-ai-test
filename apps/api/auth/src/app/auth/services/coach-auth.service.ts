@@ -11,7 +11,8 @@ import {
   UpdateProfileRequest,
   UserType,
   ValidatedGoogleUser,
-} from '@nlc-ai/api-types';
+  AuthResponse
+} from '@nlc-ai/types';
 import {Coach} from "@prisma/client";
 
 @Injectable()
@@ -23,7 +24,7 @@ export class CoachAuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginRequest, provider?: 'google') {
+  async login(loginDto: LoginRequest, provider?: 'google'): Promise<AuthResponse> {
     const { email, password } = loginDto;
 
     const coach = await this.findCoachByEmail(email);
@@ -285,59 +286,24 @@ export class CoachAuthService {
     }, false);
   }
 
-  async findByUserID(id: string) {
-    const data = await this.prisma.coach.findUnique({
-      where: { id, isActive: true },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        businessName: true,
-        isVerified: true,
-        avatarUrl: true,
-        websiteUrl: true,
-        bio: true,
-        timezone: true,
-        phone: true,
-      },
-    });
-    return {
-      ...data,
-      type: UserType.coach,
-    }
-  }
-
   private async findCoachByEmail(email: string) {
     return this.prisma.coach.findUnique({
       where: { email },
     });
   }
 
-  private async generateAuthResponse(coach: any, isNewUser: boolean) {
-    await this.outbox.saveAndPublishEvent<AuthEvent>(
-      {
-        eventType: 'auth.coach.login',
-        schemaVersion: 1,
-        payload: {
-          coachID: coach.id,
-          email: coach.email,
-          loginAt: new Date().toISOString(),
-        },
-      },
-      'auth.coach.login'
-    );
-
+  private async generateAuthResponse(coach: any, isNewUser: boolean): Promise<AuthResponse> {
     const payload = {
       sub: coach.id,
       email: coach.email,
-      type: UserType.coach,
+      type: UserType.COACH,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: coach.id,
+        type: UserType.COACH,
         email: coach.email,
         firstName: coach.firstName,
         lastName: coach.lastName,

@@ -153,7 +153,7 @@ export class LeadsService {
         leadType: coachID ? LeadType.COACH_LEAD : LeadType.ADMIN_LEAD,
         coachID,
         ...createLeadDto,
-        status: createLeadDto.status || LeadStatus.CONTACTED,
+        status: (createLeadDto.status || LeadStatus.CONTACTED) as LeadStatus,
         meetingDate: createLeadDto.meetingDate ? new Date(createLeadDto.meetingDate) : null,
       },
     });
@@ -297,40 +297,6 @@ export class LeadsService {
       );
     }
 
-    if (status === LeadStatus.QUALIFIED) {
-      await this.outbox.saveAndPublishEvent<LeadEvent>(
-        {
-          eventType: 'lead.qualified',
-          schemaVersion: 1,
-          payload: {
-            leadID: lead.id,
-            coachID: lead.coachID || undefined,
-            name: lead.name,
-            email: lead.email,
-            qualifiedAt: lead.updatedAt.toISOString(),
-          },
-        },
-        LEAD_ROUTING_KEYS.QUALIFIED
-      );
-    }
-
-    if (status === LeadStatus.DISQUALIFIED) {
-      await this.outbox.saveAndPublishEvent<LeadEvent>(
-        {
-          eventType: 'lead.disqualified',
-          schemaVersion: 1,
-          payload: {
-            leadID: lead.id,
-            coachID: lead.coachID || undefined,
-            name: lead.name,
-            email: lead.email,
-            disqualifiedAt: lead.updatedAt.toISOString(),
-          },
-        },
-        LEAD_ROUTING_KEYS.DISQUALIFIED
-      );
-    }
-
     this.logger.log(`Lead status updated: ${lead.id} (${previousStatus} → ${status})`);
     return lead;
   }
@@ -344,7 +310,7 @@ export class LeadsService {
       this.prisma.lead.count({ where: { ...whereClause, status: LeadStatus.SCHEDULED } }),
       this.prisma.lead.count({ where: { ...whereClause, status: LeadStatus.CONVERTED } }),
       this.prisma.lead.count({ where: { ...whereClause, status: LeadStatus.UNRESPONSIVE } }),
-      this.prisma.lead.count({ where: { ...whereClause, status: LeadStatus.DISQUALIFIED } }),
+      this.prisma.lead.count({ where: { ...whereClause, qualified: false } }),
     ]);
 
     const conversionRate = total > 0 ? (converted / total) * 100 : 0;
