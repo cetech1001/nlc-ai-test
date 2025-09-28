@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {ConflictException, ForbiddenException, Injectable, NotFoundException} from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { ClientQueryParams, CreateClient, UpdateClient, ClientWithDetails } from '@nlc-ai/types';
+import {ClientQueryParams, CreateClient, UpdateClient, ClientWithDetails} from '@nlc-ai/types';
+import {AssignCoachDto} from "./dto";
 
 @Injectable()
 export class ClientsService {
@@ -295,5 +296,292 @@ export class ClientsService {
         updatedAt: new Date(),
       },
     });
+  }
+
+  async assignCoach(clientID: string, assignCoachDto: AssignCoachDto, assignedBy: string) {
+    const { coachID, notes, isPrimary = false } = assignCoachDto;
+
+    const client = await this.prisma.client.findUnique({
+      where: { id: clientID, isDeleted: false },
+    });
+
+    if (!client) {
+      throw new NotFoundException('Client not found');
+    }
+
+    const coach = await this.prisma.coach.findUnique({
+      where: { id: coachID, isDeleted: false, isActive: true },
+    });
+
+    if (!coach) {
+      throw new NotFoundException('Coach not found or inactive');
+    }
+
+    const existingRelationship = await this.prisma.clientCoach.findUnique({
+      where: {
+        clientID_coachID: {
+          clientID,
+          coachID,
+        }
+      }
+    });
+
+    if (existingRelationship) {
+      throw new ConflictException('Coach is already assigned to this client');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (isPrimary) {
+        await tx.clientCoach.updateMany({
+          where: {
+            clientID,
+            isPrimary: true,
+          },
+          data: {
+            isPrimary: false,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      const relationship = await tx.clientCoach.create({
+        data: {
+          clientID,
+          coachID,
+          status: 'active',
+          role: 'client',
+          notes,
+          isPrimary,
+          assignedBy,
+        },
+        include: {
+          client: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            }
+          },
+          coach: {
+            select: {
+              firstName: true,
+              lastName: true,
+              businessName: true,
+              email: true,
+            }
+          }
+        },
+      });
+
+      return {
+        message: 'Coach assigned successfully',
+        relationship,
+      };
+    });
+  }
+
+  async removeCoach(clientID: string, coachID: string, removedBy: string, coachContext?: string) {
+    const relationship = await this.prisma.clientCoach.findUnique({
+      where: {
+        clientID_coachID: {
+          clientID,
+          coachID,
+        }
+      },
+      include: {
+        client: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          }
+        },
+        coach: {
+          select: {
+            firstName: true,
+            lastName: true,
+            businessName: true,
+          }
+        }
+      },
+    });
+
+    if (!relationship) {
+      throw new NotFoundException('Coach-client relationship not found');
+    }
+
+    if (coachContext && coachContext !== coachID) {
+      throw new ForbiddenException('Coaches can only remove their own client relationships');
+    }
+
+    const wasPrimary = relationship.isPrimary;
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.clientCoach.update({
+        where: {
+          clientID_coachID: {
+            clientID,
+            coachID,
+          }
+        },
+        data: {
+          status: 'inactive',
+          updatedAt: new Date(),
+        },
+      });
+
+      if (wasPrimary) {
+        const nextCoach = await tx.clientCoach.findFirst({
+          where: {
+            clientID,
+            status: 'active',
+            id: { not: relationship.id },
+          },
+          orderBy: { assignedAt: 'asc' },
+        });
+
+        if (nextCoach) {
+          await tx.clientCoach.update({
+            where: { id: nextCoach.id },
+            data: {
+              isPrimary: true,
+              updatedAt: new Date(),
+            },
+          });
+        }
+      }
+
+      return {
+        message: 'Coach removed successfully',
+        wasPrimary,
+      };
+    });
+  }
+
+  async setPrimaryCoach(clientID: string, coachID: string, updatedBy: string, coachContext?: string) {
+    const relationship = await this.prisma.clientCoach.findUnique({
+      where: {
+        clientID_coachID: {
+          clientID,
+          coachID,
+        }
+      },
+    });
+
+    if (!relationship || relationship.status !== 'active') {
+      throw new NotFoundException('Active coach-client relationship not found');
+    }
+
+    if (coachContext && coachContext !== coachID) {
+      throw new ForbiddenException('Coaches can only set themselves as primary');
+    }
+
+    if (relationship.isPrimary) {
+      return {
+        message: 'Coach is already the primary coach for this client',
+      };
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.clientCoach.updateMany({
+        where: {
+          clientID,
+          isPrimary: true,
+        },
+        data: {
+          isPrimary: false,
+          updatedAt: new Date(),
+        },
+      });
+
+      const updatedRelationship = await tx.clientCoach.update({
+        where: {
+          clientID_coachID: {
+            clientID,
+            coachID,
+          }
+        },
+        data: {
+          isPrimary: true,
+          updatedAt: new Date(),
+        },
+        include: {
+          client: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            }
+          },
+          coach: {
+            select: {
+              firstName: true,
+              lastName: true,
+              businessName: true,
+            }
+          }
+        },
+      });
+
+      return {
+        message: 'Primary coach updated successfully',
+        relationship: updatedRelationship,
+      };
+    });
+  }
+
+  async getClientCoaches(clientID: string, coachContext?: string) {
+    const where: any = {
+      clientID,
+      status: 'active',
+    };
+
+    if (coachContext) {
+      const hasAccess = await this.prisma.clientCoach.findFirst({
+        where: {
+          clientID,
+          coachID: coachContext,
+          status: 'active',
+        },
+      });
+
+      if (!hasAccess) {
+        throw new ForbiddenException('Access denied to this client');
+      }
+    }
+
+    const coaches = await this.prisma.clientCoach.findMany({
+      where,
+      include: {
+        coach: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            businessName: true,
+            email: true,
+            avatarUrl: true,
+            bio: true,
+            phone: true,
+          }
+        }
+      },
+      orderBy: [
+        { isPrimary: 'desc' },
+        { assignedAt: 'asc' },
+      ],
+    });
+
+    return {
+      clientID,
+      coaches: coaches.map((relationship) => ({
+        relationshipID: relationship.id,
+        coach: relationship.coach,
+        isPrimary: relationship.isPrimary,
+        notes: relationship.notes,
+        assignedAt: relationship.assignedAt,
+        assignedBy: relationship.assignedBy,
+      })),
+    };
   }
 }

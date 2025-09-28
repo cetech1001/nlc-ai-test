@@ -27,7 +27,7 @@ model Admin {
   lastName       String          @db.VarChar(100)
   avatarUrl      String?
   role           String?         @default("admin") @db.VarChar(50)
-  isActive       Boolean?        @default(true)
+  isActive       Boolean         @default(true)
   lastLoginAt    DateTime?       @db.Timestamptz(6)
   createdAt      DateTime        @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime        @default(now()) @db.Timestamptz(6)
@@ -55,14 +55,14 @@ model Coach {
   subscriptionPlan    String?        @db.VarChar(50)
   subscriptionEndsAt  DateTime?      @db.Timestamptz(6)
   stripeCustomerID    String?        @db.VarChar(255)
-  isActive            Boolean?       @default(true)
-  isVerified          Boolean?       @default(false)
-  isDeleted           Boolean?       @default(false)
+  isActive            Boolean        @default(true)
+  isVerified          Boolean        @default(false)
+  isDeleted           Boolean        @default(false)
   deletedAt           DateTime?      @db.Timestamptz(6)
   lastLoginAt         DateTime?      @db.Timestamptz(6)
-  onboardingCompleted Boolean?       @default(false)
-  createdAt           DateTime?      @default(now()) @db.Timestamptz(6)
-  updatedAt           DateTime?      @default(now()) @db.Timestamptz(6)
+  onboardingCompleted Boolean        @default(false)
+  createdAt           DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime       @default(now()) @db.Timestamptz(6)
 
   aiInteractions          AiInteraction[]
   coachAiAgents           CoachAiAgent[]
@@ -107,13 +107,13 @@ model Client {
   engagementScore   Decimal?       @default(0.00) @db.Decimal(3, 2)
   stripeCustomerID  String?        @db.VarChar(255)
   customFields      Json?          @default("{}")
-  isActive          Boolean?       @default(true)
-  isVerified        Boolean?       @default(false)
-  isDeleted         Boolean?       @default(false)
+  isActive          Boolean        @default(true)
+  isVerified        Boolean        @default(false)
+  isDeleted         Boolean        @default(false)
   deletedAt         DateTime?      @db.Timestamptz(6)
   lastLoginAt       DateTime?      @db.Timestamptz(6)
-  createdAt         DateTime?      @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime?      @default(now()) @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime       @default(now()) @db.Timestamptz(6)
 
   aiInteractions          AiInteraction[]
   courseEnrollments       CourseEnrollment[]

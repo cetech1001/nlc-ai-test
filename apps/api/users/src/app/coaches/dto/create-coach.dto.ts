@@ -1,6 +1,6 @@
 import { IsEmail, IsOptional, IsString, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateCoach } from '@nlc-ai/api-types';
+import { CreateCoach } from '@nlc-ai/types';
 import { Transform } from 'class-transformer';
 
 export class CreateCoachDto implements CreateCoach {

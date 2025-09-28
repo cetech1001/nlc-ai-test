@@ -3,7 +3,7 @@ import { PassportModule } from "@nestjs/passport";
 import { DatabaseModule } from "@nlc-ai/api-database";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import { JwtAuthGuard } from "./guards";
+import {AntiSpamGuard, CoachClientAccessGuard, JwtAuthGuard, ResourceAccessGuard, UserTypesGuard} from "./guards";
 import { ReplayCacheService } from "./services";
 
 @Module({
@@ -23,12 +23,20 @@ import { ReplayCacheService } from "./services";
     DatabaseModule.forFeature(),
   ],
   providers: [
+    AntiSpamGuard,
+    CoachClientAccessGuard,
     JwtAuthGuard,
+    ResourceAccessGuard,
+    UserTypesGuard,
     ReplayCacheService,
   ],
   exports: [
     JwtModule,
+    AntiSpamGuard,
+    CoachClientAccessGuard,
     JwtAuthGuard,
+    ResourceAccessGuard,
+    UserTypesGuard,
     ReplayCacheService,
   ],
 })

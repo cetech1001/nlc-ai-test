@@ -3,25 +3,25 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   email: string;
-  avatarUrl?: string;
-  bio?: string;
-  businessName?: string;
-  websiteUrl?: string;
-  phone?: string;
-  timezone?: string;
-  isActive: boolean;
-  isVerified: boolean;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  businessName?: string | null;
+  websiteUrl?: string | null;
+  phone?: string | null;
+  timezone?: string | null;
+  isActive: boolean | null;
+  isVerified?: boolean | null;
   createdAt: Date;
-  lastLoginAt?: Date;
+  lastLoginAt?: Date | null;
 
-  subscriptionStatus?: string;
-  subscriptionPlan?: string;
+  subscriptionStatus?: string | null;
+  subscriptionPlan?: string | null;
 
-  source?: string;
-  tags?: string[];
-  engagementScore?: number;
-  totalInteractions?: number;
-  lastInteractionAt?: Date;
+  source?: string | null;
+  tags?: string[] | null;
+  engagementScore?: number | null;
+  totalInteractions?: number | null;
+  lastInteractionAt?: Date | null;
 }
 
 export interface UserStats {

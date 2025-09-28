@@ -2,7 +2,7 @@ import { IsEmail, IsOptional, IsString, IsEnum, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ClientCoachRole } from '@prisma/client';
 
-export class CreateInviteDto {
+export class InviteClientDto {
   @ApiProperty({ example: 'client@example.com' })
   @IsEmail()
   email: string;

@@ -1,11 +1,3 @@
-export interface UserStats {
-  totalUsers?: number;
-  activeUsers?: number;
-  inactiveUsers?: number;
-  newUsers?: number;
-  growth?: number;
-}
-
 export interface ClientStats {
   totalClients: number;
   activeClients: number;

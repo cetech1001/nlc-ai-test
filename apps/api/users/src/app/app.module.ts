@@ -9,7 +9,6 @@ import { MessagingModule } from '@nlc-ai/api-messaging';
 import { ClientsModule } from './clients/clients.module';
 import { CoachesModule } from './coaches/coaches.module';
 import { AdminModule } from './admin/admin.module';
-import { RelationshipsModule } from './relationships/relationships.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { HealthModule } from './health/health.module';
 import {usersConfig} from './config/users.config';
@@ -26,12 +25,11 @@ import {usersConfig} from './config/users.config';
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
-    HealthModule,
     ClientsModule,
     CoachesModule,
     AdminModule,
-    RelationshipsModule,
     ProfilesModule,
+    HealthModule,
   ],
   providers: [
     {

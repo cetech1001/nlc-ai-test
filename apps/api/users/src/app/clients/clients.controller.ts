@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
-import { CreateClientDto, UpdateClientDto, ClientQueryDto } from './dto';
+import {CreateClientDto, UpdateClientDto, ClientQueryDto, AssignCoachDto} from './dto';
 import { UserTypes, CurrentUser, UserTypesGuard } from '@nlc-ai/api-auth';
 import { type AuthUser, UserType } from '@nlc-ai/types';
 
@@ -78,5 +78,46 @@ export class ClientsController {
   remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const coachID = user.type === UserType.COACH ? user.id : undefined;
     return this.clientsService.remove(id, coachID);
+  }
+
+  @Post(':id/assign-coach')
+  @UserTypes(UserType.ADMIN, UserType.COACH)
+  @ApiOperation({ summary: 'Assign a coach to a client' })
+  assignCoach(
+    @Param('id') clientID: string,
+    @Body() assignCoachDto: AssignCoachDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.clientsService.assignCoach(clientID, assignCoachDto, user.id);
+  }
+
+  @Delete(':id/coaches/:coachID')
+  @UserTypes(UserType.ADMIN, UserType.COACH)
+  @ApiOperation({ summary: 'Remove coach from client' })
+  removeCoach(
+    @Param('id') clientID: string,
+    @Param('coachID') coachID: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.clientsService.removeCoach(clientID, coachID, user.id);
+  }
+
+  @Get(':id/coaches')
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
+  @ApiOperation({ summary: 'Get client\'s coaches' })
+  getClientCoaches(@Param('id') clientID: string, @CurrentUser() user: AuthUser) {
+    const coachID = user.type === UserType.COACH ? user.id : undefined;
+    return this.clientsService.getClientCoaches(clientID, coachID);
+  }
+
+  @Patch(':id/primary-coach')
+  @UserTypes(UserType.ADMIN, UserType.COACH)
+  @ApiOperation({ summary: 'Set primary coach for client' })
+  setPrimaryCoach(
+    @Param('id') clientID: string,
+    @Body('coachID') coachID: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.clientsService.setPrimaryCoach(clientID, coachID, user.id);
   }
 }
