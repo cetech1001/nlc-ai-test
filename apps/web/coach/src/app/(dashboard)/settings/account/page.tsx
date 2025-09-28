@@ -3,15 +3,14 @@
 import {useEffect, useState} from "react";
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Settings} from "@nlc-ai/web-settings";
-import {authAPI, useAuth} from "@nlc-ai/web-auth";
-import {coachesAPI, integrationsAPI} from "@nlc-ai/web-api-client";
+import {useAuth} from "@nlc-ai/web-auth";
 import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
 import {DeleteAccountFlow, sdkClient} from '@/lib';
 
 const CoachAccountSettings = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
@@ -33,19 +32,19 @@ const CoachAccountSettings = () => {
   };
 
   const handleUpdateProfile = async (payload: UpdateProfileRequest) => {
-    await coachesAPI.updateCoach(user?.id || '', payload);
+    await sdkClient.users.profiles.updateProfile(payload);
   }
 
   const handleUpdatePassword = async (payload: PasswordFormData) => {
-    await authAPI.updatePassword({ newPassword: payload.newPassword });
+    await sdkClient.users.profiles.updatePassword({ newPassword: payload.newPassword });
   }
 
   const handleAvatarUpload = async (avatarUrl: string) => {
-    await authAPI.uploadAvatar(avatarUrl)
+    await sdkClient.users.profiles.uploadAvatar(avatarUrl)
   }
 
   const getProfile = () => {
-    return authAPI.getProfile();
+    return sdkClient.users.profiles.getMyProfile();
   }
 
   const handleDeleteAccount = async () => {
@@ -56,74 +55,6 @@ const CoachAccountSettings = () => {
       router.push('/auth/login');
     } catch (error: any) {
       throw new Error(error.message || 'Failed to delete account');
-    }
-  };
-
-  // Social Integration Handlers
-  const handleConnectSocial = async (platform: string, authData: any) => {
-    return integrationsAPI.connectPlatform(platform, authData);
-  }
-
-  const handleDisconnectSocial = async (integrationId: string) => {
-    await integrationsAPI.disconnectIntegration(integrationId);
-  }
-
-  const handleTestSocial = async (integrationId: string) => {
-    await integrationsAPI.testIntegration(integrationId);
-  }
-
-  const getSocialIntegrations = () => {
-    return integrationsAPI.getSocialIntegrations();
-  }
-
-  const handleConnectCourse = async (platform: string, credentials: any) => {
-    try {
-      return integrationsAPI.connectPlatform(platform, credentials);
-    } catch (error) {
-      console.error('Failed to connect course platform:', error);
-      throw error;
-    }
-  };
-
-  const handleDisconnectCourse = async (integrationId: string) => {
-    try {
-      await integrationsAPI.disconnectIntegration(integrationId);
-    } catch (error) {
-      console.error('Failed to disconnect course platform:', error);
-      throw error;
-    }
-  };
-
-  const handleTestCourse = async (integrationId: string) => {
-    try {
-      await integrationsAPI.testIntegration(integrationId);
-    } catch (error) {
-      console.error('Failed to test course platform:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdateCourse = async (integrationId: string, data: any) => {
-    try {
-      // return integrationsAPI.updateIntegration(integrationId, data);
-    } catch (error) {
-      console.error('Failed to update course platform:', error);
-      throw error;
-    }
-  };
-
-  const getCourseIntegrations = async () => {
-    try {
-      const integrations = await integrationsAPI.getCourseIntegrations();
-      return integrations.map(integration => ({
-        ...integration,
-        name: integration.config?.name || integration.platformName,
-        platform: integration.platformName,
-        isConnected: integration.isActive
-      }));
-    } catch (error) {
-      console.error('Failed to get course integrations:', error);
-      throw error;
     }
   };
 
@@ -138,17 +69,6 @@ const CoachAccountSettings = () => {
         updateProfile={handleUpdateProfile}
         updatePassword={handleUpdatePassword}
         uploadAvatar={handleAvatarUpload}
-
-        connectSocial={handleConnectSocial}
-        disconnectSocial={handleDisconnectSocial}
-        testSocial={handleTestSocial}
-        getSocialIntegrations={getSocialIntegrations}
-
-        connectCourse={handleConnectCourse}
-        disconnectCourse={handleDisconnectCourse}
-        testCourse={handleTestCourse}
-        updateCourse={handleUpdateCourse}
-        getCourseIntegrations={getCourseIntegrations}
       />
 
       {/* Add Delete Account Flow to Profile Tab */}

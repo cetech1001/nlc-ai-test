@@ -1,10 +1,10 @@
 import {NLCClientConfig} from "./nlc-client.types";
 import {UsersClient} from "@nlc-ai/sdk-users";
-import {AuthServiceClient} from "@nlc-ai/sdk-auth";
+import {AuthClient} from "@nlc-ai/sdk-auth";
 import {EmailClient} from "@nlc-ai/sdk-email";
 import {BillingClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
-import {LeadsServiceClient} from "@nlc-ai/sdk-leads";
+import {LeadsClient} from "@nlc-ai/sdk-leads";
 import {CommunitiesClient} from "@nlc-ai/sdk-communities";
 import {MediaServiceClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
@@ -17,12 +17,12 @@ import {ContentClient} from "@nlc-ai/sdk-content";
 
 export class NLCClient {
   public users: UsersClient;
-  public auth: AuthServiceClient;
+  public auth: AuthClient;
   public agents: AgentsClient;
   public email: EmailClient;
   public billing: BillingClient;
   public analytics: AnalyticsClient;
-  public leads: LeadsServiceClient;
+  public leads: LeadsClient;
   public communities: CommunitiesClient;
   public media: MediaServiceClient;
   public notifications: NotificationsServiceClient;
@@ -34,7 +34,7 @@ export class NLCClient {
   constructor(config: NLCClientConfig) {
     const baseConfig = {
       apiKey: config.apiKey,
-      leadsPublicToken: config.leadsPublicToken,
+      antiSpamToken: config.antiSpamToken,
       timeout: config.timeout,
     };
 
@@ -43,7 +43,7 @@ export class NLCClient {
       baseURL: config.services?.users || `${config.baseURL}/users`,
     });
 
-    this.auth = new AuthServiceClient({
+    this.auth = new AuthClient({
       ...baseConfig,
       baseURL: config.services?.auth || `${config.baseURL}/auth`,
     });
@@ -63,7 +63,7 @@ export class NLCClient {
       baseURL: config.services?.analytics || `${config.baseURL}/analytics`,
     });
 
-    this.leads = new LeadsServiceClient({
+    this.leads = new LeadsClient({
       ...baseConfig,
       baseURL: config.services?.leads || `${config.baseURL}/leads`,
     });
@@ -113,7 +113,8 @@ export class NLCClient {
     const services = [
       this.users, this.auth, this.email, this.billing,
       this.analytics, this.leads, this.communities,
-      this.media, this.notifications, this.messages
+      this.media, this.notifications, this.messages,
+      this.agents, this.content, this.integrations, this.courses,
     ];
 
     services.forEach(service => {

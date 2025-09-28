@@ -4,6 +4,7 @@ dockerfilePath = "apps/api/leads/Dockerfile"
 watchPatterns = [
   "apps/api/leads/**",
   "libs/api/**",
+  "libs/types/**",
   "nx.json",
   "package.json",
   "tsconfig*.json"

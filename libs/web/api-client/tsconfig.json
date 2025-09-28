@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../sdk/users"
+    },
+    {
       "path": "../../types"
     },
     {

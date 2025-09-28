@@ -79,7 +79,10 @@ export class ProfilesService {
       throw new NotFoundException(`${userType} profile not found`);
     }
 
-    return profile;
+    return {
+      ...profile,
+      type: userType,
+    };
   }
 
   async getProfile(userType: UserType, id: string): Promise<UserProfile> {
@@ -158,10 +161,19 @@ export class ProfilesService {
       throw new NotFoundException(`${userType} profile not found`);
     }
 
-    return profile as UserProfile;
+    const score = (profile as any).engagementScore;
+
+    return {
+      ...profile,
+      engagementScore: score ? Number(score) : undefined,
+      type: userType,
+    };
   }
 
-  async updateProfile(userType: UserType, id: string, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(userType: UserType, id: string, updateProfileDto: UpdateProfileDto): Promise<{
+    message: string;
+    profile: UserProfile;
+  }> {
     if (updateProfileDto.email) {
       await this.checkEmailConflict(userType, id, updateProfileDto.email);
     }
@@ -189,6 +201,9 @@ export class ProfilesService {
             websiteUrl: true,
             timezone: true,
             updatedAt: true,
+            isActive: true,
+            createdAt: true,
+            isVerified: true,
           },
         });
         break;
@@ -213,6 +228,9 @@ export class ProfilesService {
             phone: true,
             avatarUrl: true,
             updatedAt: true,
+            isActive: true,
+            createdAt: true,
+            isVerified: true,
           },
         });
         break;
@@ -236,6 +254,8 @@ export class ProfilesService {
             role: true,
             avatarUrl: true,
             updatedAt: true,
+            isActive: true,
+            createdAt: true,
           },
         });
         break;
@@ -246,7 +266,10 @@ export class ProfilesService {
 
     return {
       message: 'Profile updated successfully',
-      profile: updatedProfile,
+      profile: {
+        ...updatedProfile,
+        type: userType,
+      },
     };
   }
 

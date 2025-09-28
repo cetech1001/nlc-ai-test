@@ -9,7 +9,7 @@ const getAuthToken = (): string | undefined => {
 export const sdkClient = new NLCClient({
   baseURL: appConfig.api.baseURL,
   apiKey: getAuthToken(),
-  leadsPublicToken: process.env.NEXT_PUBLIC_LEADS_PUBLIC_TOKEN,
+  antiSpamToken: process.env.NEXT_PUBLIC_LEADS_PUBLIC_TOKEN,
   timeout: appConfig.api.timeout,
   services: appConfig.api.services,
 });

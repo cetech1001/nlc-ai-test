@@ -3,12 +3,11 @@ import { Heart, MoreHorizontal, Send } from 'lucide-react';
 import { PostCommentResponse, ReactionType } from '@nlc-ai/sdk-communities';
 import { formatTimeAgo, getInitials } from '@nlc-ai/web-utils';
 import { CommentActionsDropdown } from '@/lib';
-import { UserType } from '@nlc-ai/types';
-import { LoginResponse } from '@nlc-ai/web-auth';
+import {UserProfile, UserType} from '@nlc-ai/types';
 
 interface CommentBubbleProps {
   comment: PostCommentResponse & { isOptimistic?: boolean; tempID?: string };
-  user: LoginResponse['user'] | null;
+  user: UserProfile | null;
   onReact: (commentID: string, reactionType: ReactionType) => void;
   onEdit: (commentID: string, content: string) => void;
   onDelete: (commentID: string) => void;
@@ -64,7 +63,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
     );
   };
 
-  const getCurrentUserAvatar = () => user?.avatarUrl;
+  const getCurrentUserAvatar = () => user?.avatarUrl || '';
   const getCurrentUserInitials = () => getInitials(user?.firstName + ' ' + user?.lastName);
 
   return (

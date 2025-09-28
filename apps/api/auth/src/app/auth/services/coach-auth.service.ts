@@ -310,6 +310,8 @@ export class CoachAuthService {
         businessName: coach.businessName,
         isVerified: coach.isVerified,
         avatarUrl: coach.avatarUrl,
+        isActive: coach.isActive,
+        createdAt: coach.createdAt,
       },
       isNewUser,
     };

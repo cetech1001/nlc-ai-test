@@ -2,7 +2,6 @@
 
 import { FC, createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {UserType} from "@nlc-ai/types";
-import {authAPI} from "@nlc-ai/web-auth";
 
 import { SettingsContextType } from '../types/settings.types';
 
@@ -17,6 +16,7 @@ interface SettingsProviderProps {
 export const SettingsProvider: FC<SettingsProviderProps> = ({
   children,
   userType,
+  getProfile,
 }) => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +27,7 @@ export const SettingsProvider: FC<SettingsProviderProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const userData = await authAPI.getProfile();
+      const userData = await getProfile();
       setUser(userData);
     } catch (err: any) {
       setError(err.message || 'Failed to load profile');

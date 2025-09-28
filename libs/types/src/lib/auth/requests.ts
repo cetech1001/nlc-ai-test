@@ -30,7 +30,7 @@ export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
   email: string;
-  timezone: string;
+  timezone?: string;
   desktopNotifications?: boolean;
   emailNotifications?: boolean;
 }

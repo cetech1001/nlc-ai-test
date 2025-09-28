@@ -5,11 +5,10 @@ import {Camera, Headphones, Info, MoreVertical, Phone, Send, Smile, User, Users,
 import {ChatWindowSkeleton, sdkClient, useMessagingWebSocket} from '@/lib';
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messages';
 import {toast} from 'sonner';
-import {LoginResponse} from "@nlc-ai/web-auth";
-import {UserType} from "@nlc-ai/types";
+import {UserProfile, UserType} from "@nlc-ai/types";
 
 interface ChatWindowProps {
-  user: LoginResponse['user'] | null;
+  user: UserProfile | null;
   conversation: ConversationResponse | null;
   isConvoLoading: boolean;
   onBack?: () => void;
@@ -331,7 +330,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const userType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
     try {
-      const participant = await sdkClient.users.profile.lookupProfile(userType, userID);
+      const participant = await sdkClient.users.profiles.lookupUserProfile(userID, userType);
 
       setOtherParticipant({
         id: participant.id,

@@ -1,5 +1,4 @@
-import { BaseClient } from "@nlc-ai/sdk-core";
-import { NLCClientConfig } from "@nlc-ai/sdk-main";
+import {BaseClient, ServiceClientConfig} from "@nlc-ai/sdk-core";
 import { AdminAnalyticsClient } from "./admin-analytics.client";
 import { CoachAnalyticsClient } from "./coach-analytics.client";
 import { CommunityAnalyticsClient } from "./community-analytics.client";
@@ -16,7 +15,7 @@ export class AnalyticsClient extends BaseClient {
   public coach: CoachAnalyticsClient;
   public community: CommunityAnalyticsClient;
 
-  constructor(config: NLCClientConfig) {
+  constructor(config: ServiceClientConfig) {
     super(config);
 
     this.admin = new AdminAnalyticsClient({

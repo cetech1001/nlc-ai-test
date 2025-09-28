@@ -1,4 +1,4 @@
-import {Client} from "@nlc-ai/types";
+import {ExtendedClient} from "@nlc-ai/sdk-users";
 
 export const mockTemplates: any[] = [
   {
@@ -69,7 +69,7 @@ export const mockTemplates: any[] = [
   }
 ];
 
-export const mockClientData: Pick<Client, 'id' | 'firstName' | 'lastName' | 'email' | 'lastInteractionAt'>[] = [
+export const mockClientData: Pick<ExtendedClient, 'id' | 'firstName' | 'lastName' | 'email' | 'lastInteractionAt'>[] = [
   {
     id: '1',
     firstName: 'Theresa',

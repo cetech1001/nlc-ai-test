@@ -1,5 +1,8 @@
+import {UserType} from "./enums";
+
 export interface UserProfile {
   id: string;
+  type: UserType;
   firstName: string;
   lastName: string;
   email: string;
@@ -22,6 +25,20 @@ export interface UserProfile {
   engagementScore?: number | null;
   totalInteractions?: number | null;
   lastInteractionAt?: Date | null;
+
+  coaches?: Array<{
+    coachID: string;
+    coachName: string;
+    businessName: string;
+    isPrimary: string;
+    status: string;
+  }>;
+
+  currentCoach?: {
+    coachID: string;
+    coachName: string;
+    businessName: string;
+  };
 }
 
 export interface UserStats {

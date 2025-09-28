@@ -5,12 +5,11 @@ import { Search, Headphones, Users } from 'lucide-react';
 import { sdkClient } from '@/lib';
 import { ConversationResponse } from '@nlc-ai/sdk-messages';
 import { toast } from 'sonner';
-import {UserType} from "@nlc-ai/types";
+import {UserProfile, UserType} from "@nlc-ai/types";
 import {ConversationListSkeleton} from "@/lib/components/chat/skeletons";
-import {LoginResponse} from "@nlc-ai/web-auth";
 
 interface ConversationListProps {
-  user: LoginResponse['user'] | null;
+  user: UserProfile | null;
   selectedConversationID?: string;
   onConversationSelectAction: (conversation: ConversationResponse) => void;
   onBackClick?: () => void;
@@ -74,7 +73,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       const otherUserType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
       try {
-        const userInfo = await sdkClient.users.profile.lookupProfile(otherUserType, otherUserID);
+        const userInfo = await sdkClient.users.profiles.lookupUserProfile(otherUserID, otherUserType);
 
         return {
           displayName: `${userInfo.firstName} ${userInfo.lastName}`,

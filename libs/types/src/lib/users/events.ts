@@ -1,11 +1,9 @@
-// libs/api/types/src/lib/users/events/users-service.events.ts
-import { BaseEvent } from '@nlc-ai/api-messaging';
+import { BaseEvent } from '../base-event';
 import {
-  AuthAvatarUpdatedEvent,
   AuthClientConnectedEvent,
   AuthClientRegisteredEvent,
   AuthCoachRegisteredEvent,
-  AuthCoachVerifiedEvent, AuthProfileUpdatedEvent
+  AuthCoachVerifiedEvent
 } from "../auth";
 
 // =============================================================================
@@ -333,8 +331,6 @@ export type UserEvent =
   | AuthCoachVerifiedEvent
   | AuthClientRegisteredEvent
   | AuthClientConnectedEvent
-  | AuthProfileUpdatedEvent
-  | AuthAvatarUpdatedEvent
   // Relationship events
   | ClientRelationshipConnectedEvent
   | ClientRelationshipUpdatedEvent
@@ -369,8 +365,6 @@ export interface UsersServiceEventPayloads {
   'auth.coach.verified': AuthCoachVerifiedEvent['payload'];
   'auth.client.registered': AuthClientRegisteredEvent['payload'];
   'auth.client.connected': AuthClientConnectedEvent['payload'];
-  'auth.profile.updated': AuthProfileUpdatedEvent['payload'];
-  'auth.avatar.updated': AuthAvatarUpdatedEvent['payload'];
   // Relationship events
   'auth.client.relationship.updated': ClientRelationshipUpdatedEvent['payload'];
   'auth.client.relationship.removed': ClientRelationshipRemovedEvent['payload'];

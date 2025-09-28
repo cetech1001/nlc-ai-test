@@ -25,6 +25,9 @@ export class CoachAnalyticsController {
     @Param('id') coachID: string,
     @CurrentUser() user: AuthUser
   ) {
+    console.log("User: ", user);
+    console.log("Coach ID: ", coachID);
+    console.log("Is Equal: ", user.id === coachID);
     // Only allow coaches to access their own data, admins can access any
     if (user.type === UserType.coach && user.id !== coachID) {
       throw new ForbiddenException('Access denied');

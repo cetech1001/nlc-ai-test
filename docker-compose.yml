@@ -88,6 +88,7 @@ services:
     volumes:
       - ./apps/api/gateway:/app/apps/api/gateway
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -127,6 +128,7 @@ services:
     volumes:
       - ./apps/api/analytics:/app/apps/api/analytics
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -208,6 +210,7 @@ services:
     volumes:
       - ./apps/api/messages:/app/apps/api/messages
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -307,6 +310,7 @@ services:
     volumes:
       - ./apps/api/leads:/app/apps/api/leads
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -326,6 +330,7 @@ services:
     volumes:
       - ./apps/api/media:/app/apps/api/media
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 
@@ -345,6 +350,7 @@ services:
     volumes:
       - ./apps/api/notifications:/app/apps/api/notifications
       - ./libs/api:/app/libs/api
+      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
       - /app/node_modules
 

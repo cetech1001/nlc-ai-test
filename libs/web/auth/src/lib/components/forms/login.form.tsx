@@ -36,7 +36,6 @@ export const LoginForm = (props: LoginFormProps) => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
-      console.log("Google success");
       setIsLoading(true);
       setError('');
       props.setSuccessMessage('');
@@ -70,14 +69,14 @@ export const LoginForm = (props: LoginFormProps) => {
     try {
       await login(data.email, data.password, props.userType, data.rememberMe);
       props.handleHome();
-    } catch (err: unknown) {
-      const apiError = err as ApiResponse<undefined>;
+    } catch (err: any) {
+      // const apiError = err as ApiResponse<undefined>;
 
-      if (apiError.error?.details.requiresVerification && props.handleAccountVerification) {
-        return props.handleAccountVerification(apiError.error.details.email);
+      if (err.error?.details.requiresVerification && props.handleAccountVerification) {
+        return props.handleAccountVerification(err.error.details.email);
       }
 
-      setError(apiError.error?.message || 'An error occurred during login');
+      setError(err.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }

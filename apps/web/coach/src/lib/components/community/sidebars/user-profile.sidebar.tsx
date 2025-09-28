@@ -85,8 +85,8 @@ export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
       setIsLoading(true);
 
       const [profileResponse, statsResponse] = await Promise.all([
-        sdkClient.users.profile.getUserProfile(userID, userType),
-        sdkClient.users.profile.getUserStats(userID, userType)
+        sdkClient.users.profiles.lookupUserProfile(userID, userType),
+        sdkClient.users.profiles.getUserStats(userID, userType)
       ]);
 
       setProfile(profileResponse);

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Send } from 'lucide-react';
 import { getInitials } from '@nlc-ai/web-utils';
-import { LoginResponse } from '@nlc-ai/web-auth';
+import {UserProfile} from "@nlc-ai/types";
 
 interface CommentInputProps {
-  user: LoginResponse['user'] | null;
+  user: UserProfile | null;
   newComment: string;
   isCommenting: boolean;
   onCommentChange: (value: string) => void;
@@ -18,7 +18,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
                                                             onCommentChange,
                                                             onSubmitComment
                                                           }) => {
-  const getCurrentUserAvatar = () => user?.avatarUrl;
+  const getCurrentUserAvatar = () => user?.avatarUrl || '';
   const getCurrentUserInitials = () => getInitials(user?.firstName + ' ' + user?.lastName);
 
   return (

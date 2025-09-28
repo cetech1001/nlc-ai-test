@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserType } from "@nlc-ai/types";
+import {UserProfile, UserType} from "@nlc-ai/types";
 import { authAPI } from "../api";
-import type { LoginResponse } from "../types";
 
 interface AuthState {
-  user: LoginResponse['user'] | null;
+  user: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 }

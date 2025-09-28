@@ -1,10 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
 
   app.enableCors({
     origin: true,
@@ -21,7 +24,6 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('NLC AI Auth Service')
-    .setVersion('1.0')
     .addBearerAuth()
     .build();
 

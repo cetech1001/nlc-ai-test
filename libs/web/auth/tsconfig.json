@@ -12,6 +12,9 @@
       "path": "../ui"
     },
     {
+      "path": "../../sdk/users"
+    },
+    {
       "path": "../../types"
     },
     {

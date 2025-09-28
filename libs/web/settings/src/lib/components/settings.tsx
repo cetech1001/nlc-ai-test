@@ -5,7 +5,6 @@ import { AlertMessages } from './alert-messages';
 import { ProfileSection } from './profile-section';
 import { AdminIntegrations } from './admin/admin-integrations';
 import { SocialIntegrations } from './coach/social-integrations';
-import { CourseIntegrations } from './coach/course-integrations';
 import { ProfileFormData, PasswordFormData } from '../types/settings.types';
 import {UserType} from "@nlc-ai/types";
 import {NLCClient} from "@nlc-ai/sdk-main";
@@ -33,23 +32,6 @@ interface SettingsProps {
   testEmailProvider?: (id: string) => Promise<void>;
   getCalendlySettings?: () => Promise<any>;
   getEmailProviders?: () => Promise<any[]>;
-
-  // Coach integration functions
-  connectSocial?: (platform: any, authData: any) => Promise<any>;
-  disconnectSocial?: (integrationId: string) => Promise<void>;
-  testSocial?: (integrationId: string) => Promise<void>;
-  connectCourse?: (platform: any, credentials: any) => Promise<any>;
-  disconnectCourse?: (integrationId: string) => Promise<void>;
-  testCourse?: (integrationId: string) => Promise<void>;
-  updateCourse?: (integrationId: string, data: any) => Promise<any>;
-  getSocialIntegrations?: () => Promise<any[]>;
-  getCourseIntegrations?: () => Promise<any[]>;
-
-  // Coach Calendly (different from admin)
-  saveCoachCalendly?: (accessToken: string) => Promise<any>;
-  deleteCoachCalendly?: () => Promise<any>;
-  testCoachCalendly?: () => Promise<void>;
-  getCoachCalendlySettings?: () => Promise<any>;
 }
 
 const SettingsContent: FC<SettingsProps> = ({
@@ -71,21 +53,6 @@ const SettingsContent: FC<SettingsProps> = ({
   testEmailProvider,
   getCalendlySettings,
   getEmailProviders,
-
-  // Coach functions
-  connectSocial,
-  disconnectSocial,
-  testSocial,
-  connectCourse,
-  disconnectCourse,
-  testCourse,
-  updateCourse,
-  getSocialIntegrations,
-  getCourseIntegrations,
-  saveCoachCalendly,
-  deleteCoachCalendly,
-  testCoachCalendly,
-  getCoachCalendlySettings,
 }) => {
   const { error, success, refreshProfile } = useSettings();
 
@@ -139,16 +106,6 @@ const SettingsContent: FC<SettingsProps> = ({
       {activeTab === 'integrations' && userType === 'coach' && (
         <SocialIntegrations
           sdkClient={sdkClient}
-        />
-      )}
-
-      {activeTab === 'courses' && userType === 'coach' && (
-        <CourseIntegrations
-          onConnectCourse={connectCourse!}
-          onDisconnectCourse={disconnectCourse!}
-          onTestCourse={testCourse!}
-          onUpdateCourse={updateCourse!}
-          getCourseIntegrations={getCourseIntegrations!}
         />
       )}
     </div>

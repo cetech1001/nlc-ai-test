@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { PostResponse, ReactionType, PostCommentResponse } from '@nlc-ai/sdk-communities';
-import { LoginResponse } from '@nlc-ai/web-auth';
-import { UserType } from '@nlc-ai/types';
+import {UserProfile, UserType} from '@nlc-ai/types';
 import {
   sdkClient,
   EditPostModal,
@@ -16,7 +15,7 @@ import { appConfig } from '@nlc-ai/web-shared';
 
 interface SinglePostProps {
   post: PostResponse;
-  user: LoginResponse['user'] | null;
+  user: UserProfile | null;
   handleReactToPost: (postID: string, reactionType: ReactionType) => void;
   handleAddComment: (postID: string, newComment: string) => void;
   onPostUpdate?: (updatedPost: PostResponse) => void;
@@ -159,7 +158,7 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
         userID: props.user?.id!,
         userType: props.user?.type!,
         userName: props.user?.firstName + ' ' + props.user?.lastName,
-        userAvatarUrl: props.user?.avatarUrl,
+        userAvatarUrl: props.user?.avatarUrl || undefined,
         role: 'member' as any
       },
       isOptimistic: true,

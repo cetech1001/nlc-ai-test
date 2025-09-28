@@ -1,8 +1,6 @@
-export interface NLCClientConfig {
-  baseURL: string;
-  apiKey?: string;
-  leadsPublicToken?: string
-  timeout?: number;
+import {ServiceClientConfig} from "@nlc-ai/sdk-core";
+
+export interface NLCClientConfig extends ServiceClientConfig{
   services?: {
     auth?: string;
     users?: string;

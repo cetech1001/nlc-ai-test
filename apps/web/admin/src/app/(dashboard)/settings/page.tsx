@@ -1,7 +1,6 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import { authAPI } from "@nlc-ai/web-auth";
 import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
 import {Settings} from "@nlc-ai/web-settings";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -34,19 +33,19 @@ const AdminSettings = () => {
   };
 
   const handleUpdateProfile = async (payload: UpdateProfileRequest) => {
-    await authAPI.updateProfile(payload);
+    await sdkClient.users.profiles.updateProfile(payload);
   }
 
   const handleUpdatePassword = async (payload: PasswordFormData) => {
-    await authAPI.updatePassword({ newPassword: payload.newPassword });
+    await sdkClient.users.profiles.updatePassword({ newPassword: payload.newPassword });
   }
 
   const handleAvatarUpload = async (payload: string) => {
-    await authAPI.uploadAvatar(payload)
+    await sdkClient.users.profiles.uploadAvatar(payload)
   }
 
   const getProfile = () => {
-    return authAPI.getProfile();
+    return sdkClient.users.profiles.getMyProfile();
   }
 
   const loadCalendlySettings = async () => {

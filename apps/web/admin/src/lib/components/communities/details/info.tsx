@@ -15,7 +15,7 @@ export const CommunityDetailsInfo: FC<{ community: Community }> = ({ community }
   }, [community.ownerID]);
 
   const lookupOwner = async () => {
-    const owner = await sdkClient.users.profile.lookupProfile(community.ownerType, community.ownerID);
+    const owner = await sdkClient.users.profiles.lookupUserProfile(community.ownerType, community.ownerID);
     setOwner(owner);
   }
 

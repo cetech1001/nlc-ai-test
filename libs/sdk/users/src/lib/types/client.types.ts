@@ -44,6 +44,7 @@ export interface CreateClient {
 }
 
 export interface UpdateClient {
+  email?: string;
   firstName?: string;
   lastName?: string;
   phone?: string;

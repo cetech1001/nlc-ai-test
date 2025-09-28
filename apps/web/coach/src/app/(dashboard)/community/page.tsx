@@ -108,7 +108,7 @@ export default function CommunityPage() {
         userID: user.id,
         userType: user.type,
         userName: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'You',
-        userAvatarUrl: user.avatarUrl,
+        userAvatarUrl: user.avatarUrl || undefined,
         role: MemberRole.MEMBER // This should come from community membership
       },
       userReaction: undefined,

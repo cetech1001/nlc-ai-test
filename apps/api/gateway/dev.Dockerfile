@@ -11,6 +11,7 @@ RUN set -eux; npm ci --ignore-scripts && npm install nx;
 
 COPY apps/api/gateway ./apps/api/gateway
 COPY libs/api ./libs/api
+COPY libs/types ./libs/types
 COPY eslint.config.mjs tsconfig.json ./
 
 RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma

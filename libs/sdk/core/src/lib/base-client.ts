@@ -1,18 +1,17 @@
-// libs/sdk/core/src/lib/base-client.ts
 import {ServiceError} from "./service-error";
 import {ApiResponse, RequestOptions, ServiceClientConfig} from "./types";
 
 export abstract class BaseClient {
   protected baseURL: string;
   protected apiKey?: string;
-  protected leadsPublicToken?: string;
+  protected antiSpamToken?: string;
   protected timeout: number = 30000;
   protected getToken?: () => string | null;
 
   constructor(config: ServiceClientConfig) {
     this.baseURL = config.baseURL;
     this.apiKey = config.apiKey;
-    this.leadsPublicToken = config.leadsPublicToken;
+    this.antiSpamToken = config.antiSpamToken;
     this.timeout = config.timeout || 30000;
     this.getToken = config.getToken;
   }
@@ -30,10 +29,11 @@ export abstract class BaseClient {
       ...options?.headers,
     };
 
-    const token = this.getToken?.() || this.apiKey;
-    if (token) {
+    // const token = this.getToken?.() || this.apiKey;
+
+    /*if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-    }
+    }*/
 
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';

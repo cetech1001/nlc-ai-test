@@ -10,8 +10,8 @@ export interface TokenStorageOptions {
 }
 
 const DEFAULT_OPTIONS: Required<TokenStorageOptions> = {
-  cookieName: 'nlc_auth_token',
-  localStorageKey: 'nlc_auth_token',
+  cookieName: process.env.PUBLIC_TOKEN_NAME || 'nlc_auth_token',
+  localStorageKey: process.env.PUBLIC_TOKEN_NAME || 'nlc_auth_token',
   cookieOptions: {
     secure: true,
     sameSite: 'lax',
@@ -21,7 +21,7 @@ const DEFAULT_OPTIONS: Required<TokenStorageOptions> = {
 };
 
 export class TokenStorage {
-  private options: Required<TokenStorageOptions>;
+  private readonly options: Required<TokenStorageOptions>;
 
   constructor(options: TokenStorageOptions = {}) {
     this.options = { ...DEFAULT_OPTIONS, ...options };

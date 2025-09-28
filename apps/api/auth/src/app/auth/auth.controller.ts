@@ -60,10 +60,11 @@ export class AuthController {
 
   private clearAuthCookie(res: Response, req: Request) {
     const domain = this.getBaseDomain(req);
+    const isProduction = this.config.get('auth.service.env') === 'production';
 
     const clearOptions = {
       httpOnly: true,
-      secure: this.config.get('auth.service.env') === 'production',
+      secure: isProduction,
       sameSite: 'lax' as const,
       path: '/',
       ...(domain && { domain }),

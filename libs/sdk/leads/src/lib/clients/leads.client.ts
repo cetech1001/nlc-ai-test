@@ -7,7 +7,7 @@ import {
 } from '../types';
 
 
-export class LeadsServiceClient extends BaseClient {
+export class LeadsClient extends BaseClient {
   async getLeads(searchOptions: SearchQuery = {}, filters: FilterValues = {}): Promise<Paginated<Lead>> {
     const { page = 1, limit = 10, search } = searchOptions;
     const params = new URLSearchParams({
@@ -79,7 +79,7 @@ export class LeadsServiceClient extends BaseClient {
     const path = '/api/leads/landing';
     const rawBody = JSON.stringify(data);
     const timestamp = Date.now();
-    const token = this.leadsPublicToken || '';
+    const token = this.antiSpamToken || '';
 
     const dataToSign = `${method}|${path}|${rawBody}|${timestamp}`;
     const signature = await this.hmacSha256Hex(token, dataToSign);
@@ -90,9 +90,9 @@ export class LeadsServiceClient extends BaseClient {
       {
         body: data,
         headers: {
-          'X-Landing-Token': token,
-          'X-Landing-Timestamp': String(timestamp),
-          'X-Landing-Signature': signature,
+          'x-anti-spam-token': token,
+          'x-anti-spam-timestamp': String(timestamp),
+          'x-anti-spam-signature': signature,
         }
       }
     );

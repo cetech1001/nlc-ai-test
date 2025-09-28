@@ -1,7 +1,7 @@
 import { BaseClient } from "@nlc-ai/sdk-core";
-import { UserType, LoginResponse, UpdateProfileRequest } from "@nlc-ai/types";
+import { UserType } from "@nlc-ai/types";
 
-export class AuthServiceClient extends BaseClient {
+export class AuthClient extends BaseClient {
   async loginCoach(email: string, password: string, rememberMe?: boolean) {
     const response = await this.request('POST', '/coach/login', {
       body: { email, password, rememberMe }
@@ -102,31 +102,6 @@ export class AuthServiceClient extends BaseClient {
 
   async logout() {
     const response = await this.request<{ message: string }>('POST', '/logout');
-    return response.data!;
-  }
-
-  async getProfile() {
-    const response = await this.request<LoginResponse['user']>('GET', '/profile');
-    return response.data!;
-  }
-
-  async uploadAvatar(avatarUrl: string) {
-    const response = await this.request<{ message: string; avatarUrl: string }>('POST', '/upload-avatar', {
-      body: { avatarUrl }
-    });
-    return response.data!;
-  }
-
-  async updateProfile(data: UpdateProfileRequest) {
-    const response = await this.request<{
-      message: string;
-      user: LoginResponse['user']
-    }>('PATCH', '/profile', { body: data });
-    return response.data!;
-  }
-
-  async updatePassword(data: { newPassword: string }) {
-    const response = await this.request<{ message: string }>('PATCH', '/password', { body: data });
     return response.data!;
   }
 }

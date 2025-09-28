@@ -8,6 +8,7 @@ COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
 COPY libs/api ./libs/api
+COPY libs/types ./libs/types
 
 RUN npm ci --only=production
 RUN npm install nx@latest
@@ -24,6 +25,7 @@ COPY tsconfig.json ./
 COPY tsconfig.base.json ./
 COPY package*.json ./
 COPY libs/api ./libs/api
+COPY libs/types ./libs/types
 COPY apps/api/leads ./apps/api/leads
 
 RUN npx nx sync

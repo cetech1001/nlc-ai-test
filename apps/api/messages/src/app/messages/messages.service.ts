@@ -100,16 +100,15 @@ export class MessagesService {
     userID: string,
     userType: UserType
   ) {
+    console.log("User ID: ", userID);
     let where: any;
     if (userType === UserType.admin) {
       where = {
         participantIDs: { has: UserType.admin },
-        participantTypes: { has: userType },
       };
     } else {
       where = {
         participantIDs: { has: userID },
-        participantTypes: { has: userType },
       };
     }
 

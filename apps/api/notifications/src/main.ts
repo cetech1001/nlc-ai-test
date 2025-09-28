@@ -1,10 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from "cookie-parser";
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
 
   app.enableCors({
     origin: true,
@@ -22,9 +25,6 @@ async function bootstrap() {
     .setDescription('Multi-channel notifications orchestration service')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Notifications')
-    .addTag('Preferences')
-    .addTag('Health')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

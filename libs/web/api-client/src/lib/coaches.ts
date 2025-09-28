@@ -1,8 +1,9 @@
 import { BaseAPI } from './base';
 import {
-  Coach, CoachPaymentRequest, CoachPaymentRequestStats, CoachStats,
+  CoachPaymentRequest, CoachPaymentRequestStats, CoachStats,
   CoachWithStatus, Paginated,
 } from "@nlc-ai/types";
+import {ExtendedCoach} from "@nlc-ai/sdk-users";
 
 class CoachesAPI extends BaseAPI {
   async getCoaches(
@@ -67,33 +68,33 @@ class CoachesAPI extends BaseAPI {
     return this.makeRequest(`/users/coaches/${id}/kpis?days=${days}`);
   }
 
-  async toggleCoachStatus(id: string): Promise<Coach> {
+  async toggleCoachStatus(id: string): Promise<ExtendedCoach> {
     return this.makeRequest(`/users/coaches/${id}/toggle-status`, {
       method: 'PATCH',
     });
   }
 
-  async deleteCoach(id: string): Promise<Coach> {
+  async deleteCoach(id: string): Promise<ExtendedCoach> {
     return this.makeRequest(`/users/coaches/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async updateCoach(id: string, data: Partial<Coach>): Promise<Coach> {
+  async updateCoach(id: string, data: Partial<ExtendedCoach>): Promise<ExtendedCoach> {
     return this.makeRequest(`/users/coaches/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async createCoach(data: Omit<Coach, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<Coach> {
+  async createCoach(data: Omit<ExtendedCoach, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<ExtendedCoach> {
     return this.makeRequest('/users/coaches', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async restoreCoach(id: string): Promise<Coach> {
+  async restoreCoach(id: string): Promise<ExtendedCoach> {
     return this.makeRequest(`/users/coaches/${id}/restore`, {
       method: 'PATCH',
     });

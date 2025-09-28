@@ -1,7 +1,7 @@
 export interface ServiceClientConfig {
   baseURL: string;
   apiKey?: string;
-  leadsPublicToken?: string;
+  antiSpamToken?: string;
   timeout?: number;
   getToken?: () => string | null;
 }

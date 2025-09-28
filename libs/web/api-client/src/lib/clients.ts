@@ -1,12 +1,13 @@
 import { BaseAPI } from './base';
 import {
-  Client,
   ClientWithDetails,
   ClientStats,
   Paginated,
   CreateClient,
   UpdateClient,
 } from "@nlc-ai/types";
+import {ExtendedClient} from "@nlc-ai/sdk-users";
+
 
 class ClientsAPI extends BaseAPI {
   async getClients(
@@ -59,21 +60,21 @@ class ClientsAPI extends BaseAPI {
     return this.makeRequest(`/clients/${id}`);
   }
 
-  async createClient(data: CreateClient): Promise<Client> {
+  async createClient(data: CreateClient): Promise<ExtendedClient> {
     return this.makeRequest('/clients', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateClient(id: string, data: UpdateClient): Promise<Client> {
+  async updateClient(id: string, data: UpdateClient): Promise<ExtendedClient> {
     return this.makeRequest(`/clients/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteClient(id: string): Promise<Client> {
+  async deleteClient(id: string): Promise<ExtendedClient> {
     return this.makeRequest(`/clients/${id}`, {
       method: 'DELETE',
     });

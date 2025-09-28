@@ -5,11 +5,15 @@ import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
+  private readonly publicTokenName: string;
+
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
     private reflector: Reflector
-  ) {}
+  ) {
+    this.publicTokenName = this.configService.get<string>('PUBLIC_TOKEN_NAME', '');
+  }
 
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.get<boolean>('isPublic', context.getHandler()) ||
@@ -39,7 +43,7 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private extractTokenFromRequest(request: any): string | undefined {
-    const cookieToken = request.cookies?.['nlc_auth_token'];
+    const cookieToken = request.cookies?.[this.publicTokenName];
     if (cookieToken && typeof cookieToken === 'string' && cookieToken.length > 0) {
       return cookieToken;
     }

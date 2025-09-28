@@ -1,13 +1,13 @@
-import {NLCClientConfig} from "@nlc-ai/sdk-main";
 import { ClientEmailClient } from "./client-email.client";
 import {CourseStructureClient} from "./course-structure.client";
 import {LeadFollowupClient} from "./lead-followup.client";
 import {EmailDeliverabilityClient} from "./email-deliverability.client";
 import { ContentSuggestionClient } from "./content-suggestion.client";
 import { ContentSuggestionConversationClient } from "./content-suggestion-conversation.client";
+import {BaseClient, ServiceClientConfig} from "@nlc-ai/sdk-core";
 
 
-export class AgentsClient {
+export class AgentsClient extends BaseClient{
   public courseStructure: CourseStructureClient;
   public clientEmail: ClientEmailClient;
   public leadFollowup: LeadFollowupClient;
@@ -15,7 +15,9 @@ export class AgentsClient {
   public contentSuggestion: ContentSuggestionClient;
   public contentConversation: ContentSuggestionConversationClient;
 
-  constructor(props: NLCClientConfig) {
+  constructor(props: ServiceClientConfig) {
+    super(props);
+
     this.courseStructure = new CourseStructureClient({
       ...props,
       baseURL: `${props.baseURL}/course-structure`,

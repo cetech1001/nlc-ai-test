@@ -1,14 +1,13 @@
 import React from 'react';
 import { PostCommentResponse, ReactionType } from '@nlc-ai/sdk-communities';
-import { LoginResponse } from '@nlc-ai/web-auth';
-import { UserType } from '@nlc-ai/types';
+import {UserProfile, UserType} from '@nlc-ai/types';
 import { CommentBubble, CommentInput } from '@/lib';
 
 interface CommentsSectionProps {
   postID: string;
   comments: (PostCommentResponse & { isOptimistic?: boolean; tempID?: string })[];
   commentCount: number;
-  user: LoginResponse['user'] | null;
+  user: UserProfile | null;
   isLoading: boolean;
   hasMore: boolean;
   newComment: string;

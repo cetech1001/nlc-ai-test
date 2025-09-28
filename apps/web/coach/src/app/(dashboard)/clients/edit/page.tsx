@@ -5,10 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ClientForm } from "@/lib/components/clients/client-form";
 import {ClientFormSkeleton, sdkClient} from "@/lib";
 import { formatDate } from "@nlc-ai/web-utils";
-import {ClientFormData} from "@nlc-ai/types";
 import { BackTo } from "@nlc-ai/web-shared";
 import { User, CheckCircle } from "lucide-react";
-import {ExtendedClient} from "@nlc-ai/sdk-users";
+import {ExtendedClient, ClientFormData} from "@nlc-ai/sdk-users";
 
 const EditClient = () => {
   const router = useRouter();

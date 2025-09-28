@@ -1,9 +1,9 @@
 import {FC, useState} from "react";
 import {DataTable, tableRenderers} from "@nlc-ai/web-shared";
-import {Client} from "@nlc-ai/types";
+import {ExtendedClient} from "@nlc-ai/sdk-users";
 import { Skeleton } from "@nlc-ai/web-ui";
 
-type ClientData = Pick<Client, 'id' | 'firstName' | 'lastName' | 'email' | 'lastInteractionAt'>;
+type ClientData = Pick<ExtendedClient, 'id' | 'firstName' | 'lastName' | 'email' | 'lastInteractionAt'>;
 
 interface IProps {
   title: string;

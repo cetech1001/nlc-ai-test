@@ -1,10 +1,10 @@
 import {
   Controller,
   All,
-  Req,
+  Req, Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 import { CacheService } from '../../cache/cache.service';
 
@@ -17,7 +17,7 @@ export class AuthGatewayController {
   ) {}
 
   @All('*')
-  async proxyToAuth(@Req() req: Request) {
+  async proxyToAuth(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const path = req.path.replace(/^\/auth/, '');
 
     if (req.method === 'GET' && path === '/profile' && req.headers.authorization) {
@@ -40,6 +40,10 @@ export class AuthGatewayController {
       }
     );
 
+    if (response.headers['set-cookie']) {
+      res.set('Set-Cookie', response.headers['set-cookie']);
+    }
+
     if (req.method === 'GET' && path === '/profile' && response.status === 200) {
       const cacheKey = `profile:${req.headers.authorization}`;
       await this.cacheService.set(cacheKey, response.data, 300);
@@ -60,6 +64,7 @@ export class AuthGatewayController {
       'user-agent': req.headers['user-agent'] || '',
       'x-forwarded-for': req.headers['x-forwarded-for'] as string || req.ip || '',
       'x-real-ip': req.ip || '',
+      'cookie': req.headers.cookie || '',
     };
   }
 }

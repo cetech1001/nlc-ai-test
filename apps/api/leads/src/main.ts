@@ -2,9 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
+import cookieParser from "cookie-parser";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
 
   app.enableCors({
     origin: true,
@@ -22,10 +25,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('NLC AI Leads Service')
     .setDescription('Lead management and qualification service')
-    .setVersion('1.0')
     .addBearerAuth()
-    .addTag('Leads')
-    .addTag('Health')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
