@@ -57,7 +57,7 @@ export const HomeLandingPage = () => {
   ];
 
   const stats = [
-    { label: "Time Saved Daily", value: "2+ Hours", icon: Clock },
+    { label: "Time Saved Daily", value: "5+ Hours", icon: Clock },
     { label: "Faster Decisions", value: "10x", icon: Target },
     { label: "Business Overview", value: "360°", icon: LayoutDashboard },
   ];

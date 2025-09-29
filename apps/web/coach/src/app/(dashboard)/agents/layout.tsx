@@ -13,7 +13,7 @@ import {
   Zap
 } from "lucide-react";
 import {appConfig} from "@nlc-ai/web-shared";
-import {CoachReplicaIcon, EmailAgentIcon, RetentionIcon} from "@/lib";
+import {CoachReplicaIcon, EmailAgentIcon, RetentionWhiteIcon} from "@/lib";
 import {usePathname} from "next/navigation";
 
 const AIAgentsLanding = ({ agent }: { agent: string; }) => {
@@ -90,7 +90,7 @@ const AIAgentsLanding = ({ agent }: { agent: string; }) => {
     },
     {
       id: 'retention',
-      icon: RetentionIcon,
+      icon: RetentionWhiteIcon,
       title: "Retention",
       description: "Proactively identify and re-engage at-risk clients",
       features: [
