@@ -1,6 +1,4 @@
-import {Transaction, Subscription} from "@prisma/client";
-
-export interface ExtendedTransaction extends Transaction {
+export interface ExtendedTransaction {
   payer?: {
     id: string;
     type: string;
@@ -26,7 +24,6 @@ export interface ExtendedTransaction extends Transaction {
     name: string;
     pricingType: string;
   };
-  subscription?: Pick<Subscription, 'status' | 'billingCycle'> | null;
   invoice?: {
     invoiceNumber: string;
     status: string;

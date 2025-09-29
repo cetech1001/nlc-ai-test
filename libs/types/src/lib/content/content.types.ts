@@ -1,5 +1,4 @@
 import {Coach} from "../coach";
-import {Decimal} from "@prisma/client/runtime/edge";
 
 export interface ContentPiece {
   id: string;
@@ -17,7 +16,7 @@ export interface ContentPiece {
   likes?: number | null;
   comments?: number | null;
   shares?: number | null;
-  engagementRate?: Decimal | number | null;
+  engagementRate?: number | null;
   aiAnalyzed?: boolean | null;
   performancePrediction?: number | null;
   topicCategories: string[];

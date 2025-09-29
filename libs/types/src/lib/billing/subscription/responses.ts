@@ -1,6 +1,4 @@
-import {Subscription} from "@prisma/client";
-
-export interface ExtendedSubscription extends Subscription {
+export interface ExtendedSubscription {
   subscriber: {
     id: string;
     type: string;

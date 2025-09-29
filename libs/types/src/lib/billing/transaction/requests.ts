@@ -1,4 +1,3 @@
-import {PaymentMethodType, TransactionStatus} from "@prisma/client";
 import {UserType} from "../../users";
 
 export interface CreateTransactionRequest {
@@ -16,7 +15,7 @@ export interface CreateTransactionRequest {
 
   amount: number;
   currency?: string;
-  paymentMethodType: PaymentMethodType;
+  paymentMethodType: string;
 
   stripePaymentID?: string;
   paypalOrderID?: string;
@@ -31,7 +30,7 @@ export interface CreateTransactionRequest {
 }
 
 export interface UpdateTransactionRequest {
-  status?: TransactionStatus;
+  status?: string;
   paidAt?: Date;
   failureReason?: string;
   refundReason?: string;
@@ -51,8 +50,8 @@ export interface TransactionFilters {
   subscriptionID?: string;
   paymentMethodID?: string;
 
-  status?: TransactionStatus;
-  paymentMethodType?: PaymentMethodType;
+  status?: string;
+  paymentMethodType?: string;
 
   amountRange?: {
     min?: number;

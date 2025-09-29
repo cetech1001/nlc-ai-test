@@ -1,4 +1,3 @@
-import {BillingCycle, SubscriptionStatus} from "@prisma/client";
 import {UserType} from "../../users";
 
 export interface CreateSubscriptionRequest {
@@ -9,7 +8,7 @@ export interface CreateSubscriptionRequest {
   communityID?: string;
   courseID?: string;
 
-  billingCycle: BillingCycle;
+  billingCycle: string;
   amount: number;
   currency?: string;
 
@@ -23,9 +22,9 @@ export interface UpdateSubscriptionRequest {
   communityID?: string;
   courseID?: string;
 
-  billingCycle?: BillingCycle;
+  billingCycle?: string;
   amount?: number;
-  status?: SubscriptionStatus;
+  status?: string;
   cancelReason?: string;
   nextBillingDate?: Date;
 }
@@ -38,8 +37,8 @@ export interface SubscriptionFilters {
   communityID?: string;
   courseID?: string;
 
-  status?: SubscriptionStatus;
-  billingCycle?: BillingCycle;
+  status?: string;
+  billingCycle?: string;
   expiringBefore?: Date;
   createdAfter?: Date;
 }
