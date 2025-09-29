@@ -115,5 +115,8 @@ export const pageConfig = {
   },
   'messages': {
     title: 'Messages',
+  },
+  'analytics': {
+    title: 'Agent Analytics',
   }
 };
