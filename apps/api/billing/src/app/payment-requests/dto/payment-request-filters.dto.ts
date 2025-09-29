@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsUUID, IsEnum, IsDateString, IsIn } from 'class-validator';
 import { Transform } from "class-transformer";
-import {PaymentRequestFilters, UserType} from '@nlc-ai/api-types';
-import {PaymentRequestStatus, PaymentRequestType} from "@prisma/client";
+import {PaymentRequestFilters, UserType, PaymentRequestFiltersStatus} from '@nlc-ai/types';
+import {PaymentRequestType} from "@prisma/client";
 
 export class PaymentRequestFiltersDto implements PaymentRequestFilters {
   @ApiProperty({ required: false })
@@ -11,10 +11,10 @@ export class PaymentRequestFiltersDto implements PaymentRequestFilters {
   @IsUUID()
   payerID?: string;
 
-  @ApiProperty({ enum: [UserType.coach, UserType.client], required: false })
+  @ApiProperty({ enum: [UserType.COACH, UserType.CLIENT], required: false })
   @IsOptional()
   @IsString()
-  @IsIn([UserType.coach, UserType.client])
+  @IsIn([UserType.COACH, UserType.CLIENT])
   payerType?: UserType;
 
   @ApiProperty({ required: false })
@@ -23,10 +23,10 @@ export class PaymentRequestFiltersDto implements PaymentRequestFilters {
   @IsUUID()
   createdByID?: string;
 
-  @ApiProperty({ enum: [UserType.coach, UserType.admin], required: false })
+  @ApiProperty({ enum: [UserType.COACH, UserType.ADMIN], required: false })
   @IsOptional()
   @IsString()
-  @IsIn([UserType.coach, UserType.admin])
+  @IsIn([UserType.COACH, UserType.ADMIN])
   createdByType?: UserType;
 
   @ApiProperty({
@@ -38,12 +38,12 @@ export class PaymentRequestFiltersDto implements PaymentRequestFilters {
   type?: PaymentRequestType;
 
   @ApiProperty({
-    enum: PaymentRequestStatus,
+    enum: PaymentRequestFiltersStatus,
     required: false
   })
   @IsOptional()
-  @IsEnum(PaymentRequestStatus)
-  status?: PaymentRequestStatus;
+  @IsEnum(PaymentRequestFiltersStatus)
+  status?: PaymentRequestFiltersStatus;
 
   @ApiProperty({ example: '2025-12-31T00:00:00.000Z', required: false })
   @IsOptional()

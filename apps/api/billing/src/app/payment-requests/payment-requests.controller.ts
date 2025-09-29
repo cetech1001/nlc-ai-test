@@ -1,8 +1,9 @@
-import {Controller, Get, Post, Put, Body, Param, Query} from '@nestjs/common';
-import {ApiTags, ApiOperation, ApiResponse} from '@nestjs/swagger';
+import {Body, Controller, Get, Param, Post, Put, Query} from '@nestjs/common';
+import {ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 import {PaymentRequestsService} from './payment-requests.service';
 import {CreatePaymentRequestDto, PaymentRequestFiltersDto, UpdatePaymentRequestDto} from "./dto";
-import {UserType} from "@nlc-ai/api-types";
+import {CurrentUser} from "@nlc-ai/api-auth";
+import {type AuthUser, UserType} from "@nlc-ai/types";
 
 @ApiTags('Payment Requests')
 @Controller('payment-requests')
@@ -19,7 +20,13 @@ export class PaymentRequestsController {
   @Get()
   @ApiOperation({ summary: 'Get all payment requests with filtering' })
   @ApiResponse({ status: 200, description: 'Payment requests retrieved successfully' })
-  async findAllPaymentRequests(@Query() filters: PaymentRequestFiltersDto) {
+  async findAllPaymentRequests(
+    @Query() filters: PaymentRequestFiltersDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    if (user.type === UserType.COACH) {
+      filters.payerID = user.id;
+    }
     return this.paymentRequestsService.findAllPaymentRequests(filters);
   }
 
@@ -39,6 +46,14 @@ export class PaymentRequestsController {
     @Query('limit') limit: number = 50
   ) {
     return this.paymentRequestsService.getPaymentRequestsByPayer(payerID, payerType, limit);
+  }
+
+  @Get(':payerID/stats')
+  @ApiOperation({ summary: 'Get payment request stats by Payer ID' })
+  @ApiResponse({ status: 200, description: 'Payment request stats retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Payment request not found' })
+  async getStats(@Param('payerID') payerID: string) {
+    return this.paymentRequestsService.getStats(payerID);
   }
 
   @Get(':id')

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsUUID, IsOptional, IsNumber, IsDateString, IsObject, IsEnum, IsIn } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import {CreatePaymentRequestRequest, UserType} from '@nlc-ai/api-types';
+import {CreatePaymentRequestRequest, UserType} from '@nlc-ai/types';
 
 export enum PaymentRequestType {
   PLAN_PAYMENT = 'plan_payment',
@@ -16,9 +16,9 @@ export class CreatePaymentRequestDto implements CreatePaymentRequestRequest {
   @IsUUID()
   createdByID: string;
 
-  @ApiProperty({ example: UserType.coach, enum: [UserType.coach, UserType.admin] })
+  @ApiProperty({ example: UserType.COACH, enum: [UserType.COACH, UserType.ADMIN] })
   @IsString()
-  @IsIn([UserType.coach, UserType.admin])
+  @IsIn([UserType.COACH, UserType.ADMIN])
   createdByType: UserType;
 
   @ApiProperty({ example: 'coach_987654321' })
@@ -26,9 +26,9 @@ export class CreatePaymentRequestDto implements CreatePaymentRequestRequest {
   @IsUUID()
   payerID: string;
 
-  @ApiProperty({ example: UserType.client, enum: [UserType.coach, UserType.client] })
+  @ApiProperty({ example: UserType.CLIENT, enum: [UserType.COACH, UserType.CLIENT] })
   @IsString()
-  @IsIn([UserType.coach, UserType.client])
+  @IsIn([UserType.COACH, UserType.CLIENT])
   payerType: UserType;
 
   @ApiProperty({

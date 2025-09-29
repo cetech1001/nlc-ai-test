@@ -3,7 +3,7 @@
 import {useEffect, useState} from "react";
 import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {ExtendedTransaction, Plan, Subscription} from "@nlc-ai/sdk-billing";
+import {ExtendedTransaction, Plan, Subscription, DataTableTransaction} from "@nlc-ai/sdk-billing";
 import {FilterValues} from "@nlc-ai/sdk-core";
 import { useAuth } from "@nlc-ai/web-auth";
 import { Search } from "lucide-react";
@@ -21,7 +21,6 @@ import {
   PlanUpgradeModal
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
-import {DataTableTransaction} from "@nlc-ai/types";
 
 interface CoachBillingData {
   coach: ExtendedCoach;

@@ -1,13 +1,3 @@
-import {Plan, TransformedPlan} from "@nlc-ai/types";
-
-export const getPlanColorClass = (color: string) => {
-  const colorVal = PLAN_COLORS.filter(({ value }) => value === color);
-  if (colorVal.length > 0) {
-    return colorVal[0].class;
-  }
-  return 'bg-[#7B21BA]';
-};
-
 export const PLAN_COLORS = [
   { value: '#7B21BA', label: 'Purple', class: 'bg-[#7B21BA]' },
   { value: '#9C55FF', label: 'Light Purple', class: 'bg-[#9C55FF]' },
@@ -24,17 +14,3 @@ export const PLAN_COLORS = [
   { value: 'gradient-magenta-purple', label: 'Magenta Purple', class: 'bg-gradient-to-tr from-fuchsia-700 via-purple-600 to-purple-800' },
   { value: 'gradient-berry-purple', label: 'Berry Purple', class: 'bg-gradient-to-bl from-rose-600 via-pink-600 to-purple-700' },
 ];
-
-export const transformPlan = (plan: Plan, currentPlan?: Plan): TransformedPlan => ({
-  id: plan.id,
-  title: plan.name,
-  subtitle: plan.description || `Access to ${plan.maxAiAgents || 'unlimited'} agents`,
-  price: Math.floor(plan.annualPrice / 100),
-  monthlyPrice: Math.floor(plan.monthlyPrice / 100),
-  billingCycle: "per user/month billed annually",
-  monthlyBilling: `$${Math.floor(plan.monthlyPrice / 100)} billed monthly`,
-  features: plan.features || [],
-  isCurrentPlan: plan.id === currentPlan?.id,
-  colorClass: getPlanColorClass(plan.color || '#7B21BA'),
-  isDeleted: plan.isDeleted,
-});

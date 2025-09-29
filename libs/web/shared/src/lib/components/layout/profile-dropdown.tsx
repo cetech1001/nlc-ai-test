@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, CreditCard, LogOut, ChevronDown } from 'lucide-react';
+import {User, CreditCard, LogOut, ChevronDown, Cog} from 'lucide-react';
 
 interface ProfileDropdownProps {
   user: any;
@@ -69,10 +69,18 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
           <div className="py-2">
             <button
-              onClick={() => handleNavigation('/settings/account')}
+              onClick={() => handleNavigation('/settings/profile')}
               className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
             >
               <User className="w-4 h-4 text-stone-400" />
+              <span className="text-sm font-medium">Profile</span>
+            </button>
+
+            <button
+              onClick={() => handleNavigation('/settings/account')}
+              className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
+            >
+              <Cog className="w-4 h-4 text-stone-400" />
               <span className="text-sm font-medium">Account</span>
             </button>
 

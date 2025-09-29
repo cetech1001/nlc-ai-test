@@ -1,14 +1,18 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import {
   CreatePaymentRequestRequest,
-  UpdatePaymentRequestRequest,
-  PaymentRequestFilters,
   ExtendedPaymentRequest,
-  Paginated, UserType
-} from "@nlc-ai/api-types";
+  Paginated,
+  PaymentRequestFilters,
+  PaymentRequestFiltersStatus,
+  UpdatePaymentRequestRequest,
+  UserType
+} from "@nlc-ai/types";
 import {PrismaService} from "@nlc-ai/api-database";
 import {ConfigService} from "@nestjs/config";
+
 import Stripe from 'stripe';
+import {PaymentRequestStatus} from "./dto";
 
 @Injectable()
 export class PaymentRequestsService {
@@ -78,7 +82,13 @@ export class PaymentRequestsService {
     if (filters.createdByID) where.createdByID = filters.createdByID;
     if (filters.createdByType) where.createdByType = filters.createdByType;
     if (filters.type) where.type = filters.type;
-    if (filters.status) where.status = filters.status;
+    if (filters.status) {
+      if (filters.status === PaymentRequestFiltersStatus.ACTIVE) {
+        where.status = 'pending';
+      } else {
+        where.status = { not: 'pending' };
+      }
+    }
 
     if (filters.expiringBefore) {
       where.expiresAt = { lte: filters.expiringBefore };
@@ -169,7 +179,7 @@ export class PaymentRequestsService {
 
   async getExpiredPaymentRequests(): Promise<ExtendedPaymentRequest[]> {
     const result = await this.findAllPaymentRequests({
-      status: 'pending',
+      status: PaymentRequestFiltersStatus.INACTIVE,
       expiringBefore: new Date(),
     });
     return result.data;
@@ -192,11 +202,47 @@ export class PaymentRequestsService {
     return { processed, errors };
   }
 
+  async getStats(payerID: string) {
+    const [total, pending, paid, totalAmountPaidResult] = await Promise.all([
+      this.prisma.paymentRequest.count({
+        where: { payerID }
+      }),
+      this.prisma.paymentRequest.count({
+        where: {
+          payerID,
+          status: PaymentRequestStatus.PENDING
+        }
+      }),
+      this.prisma.paymentRequest.count({
+        where: {
+          payerID,
+          status: PaymentRequestStatus.PENDING
+        }
+      }),
+      this.prisma.paymentRequest.aggregate({
+        where: {
+          payerID,
+          status: PaymentRequestStatus.PAID
+        },
+        _sum: {
+          paidAmount: true
+        }
+      })
+    ]);
+
+    return {
+      total,
+      pending,
+      paid,
+      totalAmountPaid: totalAmountPaidResult._sum.paidAmount || 0
+    };
+  }
+
   private async validateUser(userID: string, userType: UserType): Promise<void> {
-    const table = userType === UserType.coach ? UserType.coach : UserType.client;
+    const table = userType === UserType.COACH ? UserType.COACH : UserType.CLIENT;
 
     let user;
-    if (table === UserType.coach) {
+    if (table === UserType.COACH) {
       user = await this.prisma.coach.findUnique({
         where: { id: userID },
       });

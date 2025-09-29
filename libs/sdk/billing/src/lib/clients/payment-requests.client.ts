@@ -1,16 +1,18 @@
-import {BaseClient, FilterValues, Paginated, SearchQuery} from "@nlc-ai/sdk-core";
+import {BaseClient, FilterValues, Paginated} from "@nlc-ai/sdk-core";
 import {CreatePaymentRequestData, PaymentRequest} from "../types";
 
 export class PaymentRequestsClient extends BaseClient{
-  async getPaymentRequests(searchOptions: SearchQuery = {}, filters: FilterValues = {}): Promise<Paginated<PaymentRequest>> {
-    const { page = 1, limit = 10, search } = searchOptions;
+  async getPaymentRequests(/*searchOptions: SearchQuery = {}, */filters: FilterValues = {}): Promise<Paginated<PaymentRequest>> {
+    /*const { page = 1, limit = 10, search } = searchOptions;
 
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     });
 
-    if (search) params.append('search', search);
+    if (search) params.append('search', search);*/
+
+    const params = new URLSearchParams();
 
     if (filters.payerID) params.append('payerID', filters.payerID);
     if (filters.status) params.append('status', filters.status);

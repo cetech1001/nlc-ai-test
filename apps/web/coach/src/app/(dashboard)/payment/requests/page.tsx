@@ -24,14 +24,14 @@ const PaymentRequests = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({
+  /*const [pagination, setPagination] = useState({
     page: 1,
     limit: 12,
     total: 0,
     totalPages: 0,
     hasNext: false,
     hasPrev: false,
-  });
+  });*/
 
   useEffect(() => {
     if (user?.id) {
@@ -67,16 +67,16 @@ const PaymentRequests = () => {
       setError("");
 
       const response = await sdkClient.billing.paymentRequests.getPaymentRequests(
-        {
+        /*{
           page: currentPage,
           limit: pagination.limit,
           search: searchQuery
-        },
+        },*/
         { payerID: user.id, status: activeTab }
       );
 
       setPaymentRequests(response.data);
-      setPagination(response.pagination);
+      // setPagination(response.pagination);
     } catch (error: any) {
       setError(error.message || "Failed to load payment requests");
     } finally {
