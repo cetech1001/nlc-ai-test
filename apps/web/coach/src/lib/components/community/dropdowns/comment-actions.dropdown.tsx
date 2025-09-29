@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Edit, Trash2, Flag, Reply } from 'lucide-react';
+import { Edit, Trash2, Flag } from 'lucide-react';
 
 interface CommentActionsDropdownProps {
   isOpen: boolean;
@@ -7,7 +7,6 @@ interface CommentActionsDropdownProps {
   isOwnComment: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
-  onReply?: () => void;
   onReport?: () => void;
   anchorRef?: React.RefObject<HTMLElement>;
 }
@@ -18,7 +17,6 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
                                                                                 isOwnComment,
                                                                                 onEdit,
                                                                                 onDelete,
-                                                                                onReply,
                                                                                 onReport,
                                                                               }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -56,18 +54,16 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
       </div>
 
       <div className="relative z-10">
-        <button
+        {/*<button
           onClick={() => handleAction(onReply || (() => {}))}
           className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-neutral-700/50 transition-colors text-left"
         >
           <Reply className="w-4 h-4" />
           <span className="text-sm">Reply</span>
-        </button>
+        </button>*/}
 
         {isOwnComment && (
           <>
-            <div className="border-t border-neutral-700 my-2"></div>
-
             <button
               onClick={() => handleAction(onEdit || (() => {}))}
               className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-neutral-700/50 transition-colors text-left"
@@ -75,6 +71,8 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
               <Edit className="w-4 h-4" />
               <span className="text-sm">Edit</span>
             </button>
+
+            <div className="border-t border-neutral-700 my-2"></div>
 
             <button
               onClick={() => handleAction(onDelete || (() => {}))}
@@ -87,16 +85,13 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
         )}
 
         {!isOwnComment && (
-          <>
-            <div className="border-t border-neutral-700 my-2"></div>
-            <button
-              onClick={() => handleAction(onReport || (() => {}))}
-              className="w-full flex items-center gap-3 px-4 py-2 text-yellow-400 hover:bg-yellow-500/10 transition-colors text-left"
-            >
-              <Flag className="w-4 h-4" />
-              <span className="text-sm">Report</span>
-            </button>
-          </>
+          <button
+            onClick={() => handleAction(onReport || (() => {}))}
+            className="w-full flex items-center gap-3 px-4 py-2 text-yellow-400 hover:bg-yellow-500/10 transition-colors text-left"
+          >
+            <Flag className="w-4 h-4" />
+            <span className="text-sm">Report</span>
+          </button>
         )}
       </div>
     </div>

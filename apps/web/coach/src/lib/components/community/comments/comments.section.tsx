@@ -1,6 +1,6 @@
 import React from 'react';
 import { PostCommentResponse, ReactionType } from '@nlc-ai/sdk-communities';
-import {UserProfile, UserType} from '@nlc-ai/types';
+import { UserProfile, UserType } from '@nlc-ai/types';
 import { CommentBubble, CommentInput } from '@/lib';
 
 interface CommentsSectionProps {
@@ -24,6 +24,10 @@ interface CommentsSectionProps {
   replyText: { [key: string]: string };
   onReplyTextChange: (commentID: string, text: string) => void;
   onSubmitReply: (commentID: string) => void;
+  onLoadReplies: (commentID: string) => void;
+  repliesExpanded: { [key: string]: boolean };
+  repliesData: { [key: string]: PostCommentResponse[] };
+  loadingReplies: { [key: string]: boolean };
 }
 
 export const CommentsSection: React.FC<CommentsSectionProps> = ({
@@ -46,17 +50,20 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                                                                   replyingTo,
                                                                   replyText,
                                                                   onReplyTextChange,
-                                                                  onSubmitReply
+                                                                  onSubmitReply,
+                                                                  onLoadReplies,
+                                                                  repliesExpanded,
+                                                                  repliesData,
+                                                                  loadingReplies,
                                                                 }) => {
   return (
-    <div className="border-t border-neutral-700 pt-4">
+    <div className="border-t border-neutral-700 pt-4 mt-4">
       <div className="flex items-center justify-between mb-4">
         <p className="text-white text-sm font-medium">
           {commentCount} Comment{commentCount !== 1 ? 's' : ''}
         </p>
       </div>
 
-      {/* Add Comment */}
       <CommentInput
         user={user}
         newComment={newComment}
@@ -65,7 +72,6 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
         onSubmitComment={onSubmitComment}
       />
 
-      {/* Comments List */}
       {isLoading && !comments.length ? (
         <div className="flex justify-center py-4">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-fuchsia-500"></div>
@@ -77,15 +83,20 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
               key={comment.id}
               comment={comment}
               user={user}
+              depth={0}
               onReact={onReactToComment}
               onEdit={onEditComment}
               onDelete={onDeleteComment}
               onReply={onReplyToComment}
+              onLoadReplies={onLoadReplies}
               onUserClick={onUserClick}
-              replyingTo={replyingTo[comment.id]}
-              replyText={replyText[comment.id]}
-              onReplyTextChange={(text: string) => onReplyTextChange(comment.id, text)}
-              onSubmitReply={() => onSubmitReply(comment.id)}
+              replyingTo={replyingTo}
+              replyText={replyText}
+              onReplyTextChange={onReplyTextChange}
+              onSubmitReply={onSubmitReply}
+              repliesExpanded={repliesExpanded}
+              isLoadingReplies={loadingReplies}
+              repliesData={repliesData}
             />
           ))}
 

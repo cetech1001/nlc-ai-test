@@ -672,6 +672,7 @@ model PostComment {
   likeCount       Int      @default(0)
   replyCount      Int      @default(0)
   isEdited        Boolean  @default(false)
+  isDeleted       Boolean  @default(false)
   createdAt       DateTime @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 

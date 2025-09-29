@@ -12,7 +12,7 @@ export interface UpdateCommentRequest {
 
 export interface CommentFilters {
   postID?: string;
-  parentCommentID?: string;
+  parentCommentID?: string | null;
   search?: string;
   sortOrder?: 'asc' | 'desc';
   page?: number;

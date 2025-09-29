@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PostResponse, ReactionType, PostCommentResponse } from '@nlc-ai/sdk-communities';
-import {UserProfile, UserType} from '@nlc-ai/types';
+import { UserProfile, UserType } from '@nlc-ai/types';
 import {
   sdkClient,
   EditPostModal,
@@ -35,6 +35,11 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
   const [loadingComments, setLoadingComments] = useState<{ [key: string]: boolean }>({});
   const [commentsPage, setCommentsPage] = useState<{ [key: string]: number }>({});
   const [hasMoreComments, setHasMoreComments] = useState<{ [key: string]: boolean }>({});
+
+  // Nested replies state
+  const [repliesExpanded, setRepliesExpanded] = useState<{ [key: string]: boolean }>({});
+  const [repliesData, setRepliesData] = useState<{ [key: string]: PostCommentResponse[] }>({});
+  const [loadingReplies, setLoadingReplies] = useState<{ [key: string]: boolean }>({});
 
   // Edit comment modal states
   const [showEditCommentModal, setShowEditCommentModal] = useState<{ [key: string]: boolean }>({});
@@ -72,7 +77,7 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
       const response = await sdkClient.communities.comments.getComments(props.post.communityID, {
         postID,
         page,
-        limit: 10
+        limit: 10,
       });
 
       setComments(prev => ({
@@ -96,6 +101,39 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
   const loadMoreComments = async (postID: string) => {
     const currentPage = commentsPage[postID] || 1;
     await loadComments(postID, currentPage + 1);
+  };
+
+  const handleLoadReplies = async (commentID: string) => {
+    const isExpanded = repliesExpanded[commentID];
+
+    // Toggle expansion
+    setRepliesExpanded(prev => ({
+      ...prev,
+      [commentID]: !isExpanded
+    }));
+
+    // If expanding and not yet loaded, fetch replies
+    if (!isExpanded && !repliesData[commentID]) {
+      try {
+        setLoadingReplies(prev => ({ ...prev, [commentID]: true }));
+
+        const response = await sdkClient.communities.comments.getReplies(
+          props.post.communityID,
+          commentID,
+          { limit: 100 } // Load all replies for now
+        );
+
+        setRepliesData(prev => ({
+          ...prev,
+          [commentID]: response.data
+        }));
+      } catch (error) {
+        console.error('Failed to load replies:', error);
+        toast.error('Failed to load replies');
+      } finally {
+        setLoadingReplies(prev => ({ ...prev, [commentID]: false }));
+      }
+    }
   };
 
   const handleOptimisticReaction = async (postID: string, reactionType: ReactionType) => {
@@ -151,6 +189,7 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
       likeCount: 0,
       replyCount: 0,
       isEdited: false,
+      isDeleted: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       communityMember: {
@@ -209,24 +248,37 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
   };
 
   const handleReactToComment = async (commentID: string, reactionType: ReactionType) => {
-    const previousComments = comments[props.post.id] || [];
+    // Helper to update comment in nested structure
+    const updateCommentInTree = (commentsList: OptimisticComment[]): OptimisticComment[] => {
+      return commentsList.map(comment => {
+        if (comment.id === commentID) {
+          const wasLiked = comment.userReaction === reactionType;
+          return {
+            ...comment,
+            likeCount: wasLiked ? comment.likeCount - 1 : comment.likeCount + 1,
+            userReaction: wasLiked ? undefined : reactionType
+          };
+        }
+        return comment;
+      });
+    };
 
-    const updatedComments = previousComments.map(comment => {
-      if (comment.id === commentID) {
-        const wasLiked = comment.userReaction === reactionType;
-        return {
-          ...comment,
-          likeCount: wasLiked ? comment.likeCount - 1 : comment.likeCount + 1,
-          userReaction: wasLiked ? undefined : reactionType
-        };
-      }
-      return comment;
-    });
+    const previousComments = comments[props.post.id] || [];
+    const updatedComments = updateCommentInTree(previousComments);
 
     setComments(prev => ({
       ...prev,
       [props.post.id]: updatedComments
     }));
+
+    // Also update in replies data if exists
+    Object.keys(repliesData).forEach(parentID => {
+      const updatedReplies = updateCommentInTree(repliesData[parentID] as OptimisticComment[]);
+      setRepliesData(prev => ({
+        ...prev,
+        [parentID]: updatedReplies
+      }));
+    });
 
     try {
       await sdkClient.communities.comments.reactToComment(props.post.communityID, commentID, { type: reactionType });
@@ -277,10 +329,41 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
     try {
       await sdkClient.communities.comments.deleteComment(props.post.communityID, commentID);
 
+      // Helper to mark comment as deleted in tree
+      const markDeletedInTree = (commentsList: OptimisticComment[]): OptimisticComment[] => {
+        return commentsList.map(comment => {
+          if (comment.id === commentID) {
+            return {
+              ...comment,
+              isDeleted: true,
+              content: '',
+              mediaUrls: []
+            };
+          }
+          return comment;
+        }).filter(comment => {
+          // Remove if it's the deleted comment and has no replies
+          if (comment.id === commentID && comment.replyCount === 0) {
+            return false;
+          }
+          return true;
+        });
+      };
+
+      const updatedComments = markDeletedInTree(comments[props.post.id] || []);
       setComments(prev => ({
         ...prev,
-        [props.post.id]: (prev[props.post.id] || []).filter(c => c.id !== commentID)
+        [props.post.id]: updatedComments
       }));
+
+      // Update replies data
+      Object.keys(repliesData).forEach(parentID => {
+        const updatedReplies = markDeletedInTree(repliesData[parentID] as OptimisticComment[]);
+        setRepliesData(prev => ({
+          ...prev,
+          [parentID]: updatedReplies
+        }));
+      });
 
       const updatedPost = {
         ...optimisticPost,
@@ -318,21 +401,69 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
       setReplyingTo(prev => ({ ...prev, [parentCommentID]: false }));
       toast.success('Reply added successfully');
 
-      await loadComments(props.post.id, 1);
+      // Reload replies for this comment
+      setRepliesData(prev => ({
+        ...prev,
+        [parentCommentID]: []
+      }));
+      await handleLoadReplies(parentCommentID);
+
+      // Re-expand if it was expanded
+      setRepliesExpanded(prev => ({
+        ...prev,
+        [parentCommentID]: true
+      }));
+
+      // Update reply count in parent comment
+      const updateReplyCount = (commentsList: OptimisticComment[]): OptimisticComment[] => {
+        return commentsList.map(comment => {
+          if (comment.id === parentCommentID) {
+            return {
+              ...comment,
+              replyCount: comment.replyCount + 1
+            };
+          }
+          return comment;
+        });
+      };
+
+      setComments(prev => ({
+        ...prev,
+        [props.post.id]: updateReplyCount(prev[props.post.id] || [])
+      }));
+
+      Object.keys(repliesData).forEach(pID => {
+        setRepliesData(prev => ({
+          ...prev,
+          [pID]: updateReplyCount(prev[pID] as OptimisticComment[])
+        }));
+      });
+
     } catch (error: any) {
       toast.error(error.message || 'Failed to add reply');
     }
   };
 
   const handleCommentEditSuccess = (commentID: string, newContent: string) => {
-    setComments(prev => ({
-      ...prev,
-      [props.post.id]: (prev[props.post.id] || []).map(comment =>
+    const updateInTree = (commentsList: OptimisticComment[]): OptimisticComment[] => {
+      return commentsList.map(comment =>
         comment.id === commentID
           ? { ...comment, content: newContent, isEdited: true }
           : comment
-      )
+      );
+    };
+
+    setComments(prev => ({
+      ...prev,
+      [props.post.id]: updateInTree(prev[props.post.id] || [])
     }));
+
+    Object.keys(repliesData).forEach(parentID => {
+      setRepliesData(prev => ({
+        ...prev,
+        [parentID]: updateInTree(prev[parentID] as OptimisticComment[])
+      }));
+    });
 
     setShowEditCommentModal(prev => ({ ...prev, [commentID]: false }));
   };
@@ -392,6 +523,10 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
               replyText={replyText}
               onReplyTextChange={(commentID: string, text: string) => setReplyText(prev => ({ ...prev, [commentID]: text }))}
               onSubmitReply={handleSubmitReply}
+              onLoadReplies={handleLoadReplies}
+              repliesExpanded={repliesExpanded}
+              repliesData={repliesData}
+              loadingReplies={loadingReplies}
             />
           )}
         </div>

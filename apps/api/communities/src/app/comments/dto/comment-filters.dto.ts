@@ -1,12 +1,12 @@
-import {ApiProperty} from "@nestjs/swagger";
-import {PaginationDto} from "@nlc-ai/api-dto";
-import {IsEnum, IsOptional, IsString, IsUUID} from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { PaginationDto } from "@nlc-ai/api-dto";
+import { IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CommentFiltersDto extends PaginationDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, nullable: true, type: String })
   @IsOptional()
   @IsUUID()
-  parentCommentID?: string;
+  parentCommentID?: string | null;
 
   @ApiProperty({ required: false })
   @IsOptional()

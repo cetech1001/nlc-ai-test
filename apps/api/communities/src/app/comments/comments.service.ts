@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
@@ -48,7 +48,7 @@ export class CommentsService {
       }
     }
 
-    // If parentCommentID is provided, verify it exists
+    // If parentCommentID is provided, verify it exists and is not deleted
     if (createRequest.parentCommentID) {
       const parentComment = await this.prisma.postComment.findUnique({
         where: { id: createRequest.parentCommentID },
@@ -57,6 +57,10 @@ export class CommentsService {
 
       if (!parentComment) {
         throw new NotFoundException('Parent comment not found');
+      }
+
+      if (parentComment.isDeleted) {
+        throw new BadRequestException('Cannot reply to deleted comment');
       }
 
       if (parentComment.post.communityID !== communityID) {
@@ -144,6 +148,7 @@ export class CommentsService {
       ...comment,
       userReaction: comment.reactions[0]?.type || null,
       reactions: undefined,
+      replies: [],
     };
   }
 
@@ -169,7 +174,6 @@ export class CommentsService {
       };
     }
 
-    // Filter by community through post relationship
     if (!filters.postID) {
       where.post = {
         communityID: communityID
@@ -188,19 +192,6 @@ export class CommentsService {
           where: { userID: user.id, userType: user.type },
           select: { type: true },
         },
-        replies: {
-          take: 3,
-          include: {
-            communityMember: {
-              select: { userName: true, userID: true, userAvatarUrl: true, role: true },
-            },
-            reactions: {
-              where: { userID: user.id, userType: user.type },
-              select: { type: true },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
         _count: {
           select: { replies: true, reactions: true },
         },
@@ -213,12 +204,8 @@ export class CommentsService {
       data: result.data.map(comment => ({
         ...comment,
         userReaction: comment.reactions?.[0]?.type || null,
-        replies: comment.replies?.map(reply => ({
-          ...reply,
-          userReaction: reply.reactions?.[0]?.type || null,
-          reactions: undefined,
-        })),
         reactions: undefined,
+        replies: [],
       })),
     };
   }
@@ -237,18 +224,6 @@ export class CommentsService {
           where: { userID: user.id, userType: user.type },
           select: { type: true },
         },
-        replies: {
-          include: {
-            communityMember: {
-              select: { userName: true, userID: true, userType: true, userAvatarUrl: true, role: true },
-            },
-            reactions: {
-              where: { userID: user.id, userType: user.type },
-              select: { type: true },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
         _count: {
           select: { replies: true, reactions: true },
         },
@@ -264,12 +239,8 @@ export class CommentsService {
     return {
       ...comment,
       userReaction: comment.reactions[0]?.type || null,
-      replies: comment.replies.map(reply => ({
-        ...reply,
-        userReaction: reply.reactions[0]?.type || null,
-        reactions: undefined,
-      })),
       reactions: undefined,
+      replies: [],
     };
   }
 
@@ -284,6 +255,10 @@ export class CommentsService {
 
     if (!comment) {
       throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.isDeleted) {
+      throw new BadRequestException('Cannot edit deleted comment');
     }
 
     await this.checkCommunityMembership(comment.post.communityID, user);
@@ -312,6 +287,9 @@ export class CommentsService {
       include: {
         post: { select: { communityID: true } },
         communityMember: true,
+        _count: {
+          select: { replies: true }
+        }
       },
     });
 
@@ -325,9 +303,29 @@ export class CommentsService {
       await this.checkCommunityPermission(comment.post.communityID, user, 'moderate_posts');
     }
 
-    await this.prisma.postComment.delete({
-      where: { id },
-    });
+    const hasReplies = comment._count.replies > 0;
+
+    if (hasReplies) {
+      // Soft delete - mark as deleted but keep in DB
+      await this.prisma.postComment.update({
+        where: { id },
+        data: {
+          isDeleted: true,
+          content: '',
+          mediaUrls: [],
+          updatedAt: new Date()
+        },
+      });
+
+      this.logger.log(`Comment ${id} soft deleted (has replies) by ${user.type} ${user.id}`);
+    } else {
+      // Hard delete - actually remove from DB
+      await this.prisma.postComment.delete({
+        where: { id },
+      });
+
+      this.logger.log(`Comment ${id} hard deleted (no replies) by ${user.type} ${user.id}`);
+    }
 
     // Update post comment count if this was a direct comment
     if (comment.postID && !comment.parentCommentID) {
@@ -345,8 +343,6 @@ export class CommentsService {
       });
     }
 
-    this.logger.log(`Comment ${id} deleted by ${user.type} ${user.id}`);
-
     return { message: 'Comment deleted successfully' };
   }
 
@@ -362,6 +358,10 @@ export class CommentsService {
 
     if (!comment) {
       throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.isDeleted) {
+      throw new BadRequestException('Cannot react to deleted comment');
     }
 
     await this.checkCommunityMembership(comment.post.communityID, user);

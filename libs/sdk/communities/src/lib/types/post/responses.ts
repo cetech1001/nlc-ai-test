@@ -57,6 +57,7 @@ export interface PostComment {
   likeCount: number;
   replyCount: number;
   isEdited: boolean;
+  isDeleted: boolean;
   replies?: PostCommentResponse[];
   reactions?: PostReaction[];
   createdAt: Date;
