@@ -273,7 +273,7 @@ export const NewPost: FC<IProps> = (props) => {
               placeholder="Share your coaching insights with fellow coaches..."
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
-              rows={3}
+              rows={10}
               disabled={isPosting}
               className={`w-full bg-transparent border rounded-lg px-4 py-3 text-stone-50 placeholder:text-stone-400 focus:outline-none text-sm sm:text-base resize-none disabled:opacity-50 ${
                 isOverLimit

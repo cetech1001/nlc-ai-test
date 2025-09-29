@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Search, Headphones, Users } from 'lucide-react';
-import { sdkClient } from '@/lib';
-import { ConversationResponse } from '@nlc-ai/sdk-messages';
-import { toast } from 'sonner';
+import React, {useEffect, useState} from 'react';
+import {Headphones, Search, Users} from 'lucide-react';
+import {sdkClient} from '@/lib';
+import {ConversationResponse} from '@nlc-ai/sdk-messages';
+import {toast} from 'sonner';
 import {UserProfile, UserType} from "@nlc-ai/types";
 import {ConversationListSkeleton} from "@/lib/components/chat/skeletons";
 
@@ -72,6 +72,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       const otherUserID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
       const otherUserType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
+      console.log("Other User ID: ", otherUserID);
+      console.log("Other User Type: ", otherUserType);
+
       try {
         const userInfo = await sdkClient.users.profiles.lookupUserProfile(otherUserID, otherUserType);
 
@@ -86,7 +89,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       } catch (error) {
         return {
           displayName: otherUserType === UserType.ADMIN ? 'Admin Support' : 'Unknown User',
-          displayAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=Unknown`,
+          displayAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=${otherUserType === UserType.ADMIN ? 'Admin Support' : 'Unknown User'}`,
           isOnline: false,
           lastMessage: getLastMessage(conversation),
           unreadCount: getUserUnreadCount(conversation),

@@ -344,8 +344,7 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
           <div className="absolute w-24 sm:w-32 h-24 sm:h-32 -left-4 sm:-left-6 -top-6 sm:-top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px] sm:blur-[56px]" />
         </div>
 
-        <div className="relative z-10 p-4 sm:p-6">
-          {/* Post Header */}
+        <div className="relative z-10 p-4">
           <PostHeader
             post={optimisticPost}
             isOwnPost={isOwnPost}
@@ -356,13 +355,11 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
             onUserClick={props.onUserClick}
           />
 
-          {/* Post Content */}
           <PostContent
             content={optimisticPost.content}
             mediaUrls={optimisticPost.mediaUrls}
           />
 
-          {/* Post Actions */}
           <PostActions
             likeCount={optimisticPost.likeCount}
             commentCount={optimisticPost.commentCount}
@@ -373,7 +370,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
             onToggleComments={() => toggleComments(optimisticPost.id)}
           />
 
-          {/* Comments Section */}
           {showComments[optimisticPost.id] && (
             <CommentsSection
               postID={optimisticPost.id}
@@ -401,7 +397,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
         </div>
       </div>
 
-      {/* Edit Post Modal */}
       <EditPostModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -415,7 +410,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
         }}
       />
 
-      {/* Edit Comment Modals */}
       {Object.entries(showEditCommentModal).map(([commentID, isOpen]) => (
         <EditCommentModal
           key={commentID}

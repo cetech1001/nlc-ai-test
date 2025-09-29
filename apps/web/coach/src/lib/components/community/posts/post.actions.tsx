@@ -22,7 +22,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
                                                           onToggleComments
                                                         }) => {
   return (
-    <div className="flex items-center gap-4 sm:gap-6 pb-4">
+    <div className="flex items-center gap-4 sm:gap-6">
       <button
         onClick={() => onReact(ReactionType.LIKE)}
         disabled={isReacting}
