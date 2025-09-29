@@ -36,7 +36,7 @@ export const menuItems: MenuItemType[] = [
     dropdown: [
       { icon: CoachReplicaIcon, label: "Coach Replica", path: "/agents/replica" },
       { icon: RetentionIcon, label: "Retention", path: "/agents/retention/templates" },
-      { icon: UserCheck, label: "Lead Follow-up", path: "/agents/lead-followup" },
+      { icon: UserCheck, label: "Lead Follow-up", path: "/agents/followup" },
       { icon: EmailAgentIcon, label: "Email", path: "/agents/emails" },
       { icon: Zap, label: "Content Creation", path: "/agents/suggestion" },
     ]

@@ -1,11 +1,7 @@
 'use client'
 
-import { useState } from 'react';
+import {FC, ReactNode, useEffect, useState} from 'react';
 import {
-  Bot,
-  Mail,
-  MessageSquare,
-  MailQuestion,
   Brain,
   Clock,
   Target,
@@ -13,21 +9,24 @@ import {
   CheckCircle,
   Sparkles,
   UserCheck,
-  BarChart3
+  BarChart3,
+  Zap
 } from "lucide-react";
 import {appConfig} from "@nlc-ai/web-shared";
-import {useParams} from "next/navigation";
+import {CoachReplicaIcon, EmailAgentIcon, RetentionIcon} from "@/lib";
+import {usePathname} from "next/navigation";
 
-const AIAgentsLanding = () => {
-  const params = useParams();
-  const agent = params.agent as string;
-
+const AIAgentsLanding = ({ agent }: { agent: string; }) => {
   const [activeAgent, setActiveAgent] = useState(agent);
+
+  useEffect(() => {
+    setActiveAgent(agent);
+  }, [agent]);
 
   const agents = [
     {
-      id: 'coach-replica',
-      icon: Bot,
+      id: 'replica',
+      icon: CoachReplicaIcon,
       title: "Coach Replica",
       description: "Your AI twin that handles routine client questions 24/7",
       features: [
@@ -42,8 +41,8 @@ const AIAgentsLanding = () => {
       iconColor: "text-violet-300"
     },
     {
-      id: 'client-retention',
-      icon: UserCheck,
+      id: 'retention',
+      icon: RetentionIcon,
       title: "Retention",
       description: "Proactively identify and re-engage at-risk clients",
       features: [
@@ -58,8 +57,8 @@ const AIAgentsLanding = () => {
       iconColor: "text-purple-300"
     },
     {
-      id: 'lead-followup',
-      icon: Mail,
+      id: 'followup',
+      icon: UserCheck,
       title: "Lead Follow-up",
       description: "Automatically nurture leads with personalized email sequences",
       features: [
@@ -74,8 +73,8 @@ const AIAgentsLanding = () => {
       iconColor: "text-blue-300"
     },
     {
-      id: 'client-email',
-      icon: MessageSquare,
+      id: 'emails',
+      icon: EmailAgentIcon,
       title: "Email",
       description: "AI-powered email responses for your existing clients",
       features: [
@@ -90,8 +89,8 @@ const AIAgentsLanding = () => {
       iconColor: "text-emerald-300"
     },
     {
-      id: 'content-suggestion',
-      icon: MailQuestion,
+      id: 'suggestion',
+      icon: Zap,
       title: "Content Creation",
       description: "AI-powered content ideas tailored to your coaching niche",
       features: [
@@ -301,17 +300,19 @@ const AIAgentsLanding = () => {
   );
 };
 
-const AIAgentsPage = () => {
+interface IProps {
+  children: ReactNode;
+}
+
+const AIAgentsPage: FC<IProps> = ({ children }) => {
+  const pathname = usePathname();
+  const agent = pathname.split('/')[2] ?? 'replica';
+
   if (appConfig.features.enableLanding) {
-    return <AIAgentsLanding />;
+    return <AIAgentsLanding agent={agent} />;
   }
 
-  // Your actual AI agents component would go here
-  return (
-    <div>
-      {/* Actual AI Agents Features */}
-    </div>
-  );
+  return children;
 };
 
 export default AIAgentsPage;

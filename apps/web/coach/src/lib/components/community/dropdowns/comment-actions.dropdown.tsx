@@ -54,14 +54,6 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
       </div>
 
       <div className="relative z-10">
-        {/*<button
-          onClick={() => handleAction(onReply || (() => {}))}
-          className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-neutral-700/50 transition-colors text-left"
-        >
-          <Reply className="w-4 h-4" />
-          <span className="text-sm">Reply</span>
-        </button>*/}
-
         {isOwnComment && (
           <>
             <button
