@@ -11,6 +11,7 @@ export interface UserProfile {
   businessName?: string | null;
   websiteUrl?: string | null;
   phone?: string | null;
+  location?: string | null;
   timezone?: string | null;
   isActive: boolean | null;
   isVerified?: boolean | null;

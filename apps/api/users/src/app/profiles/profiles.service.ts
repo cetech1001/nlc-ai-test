@@ -3,7 +3,6 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-  UnauthorizedException
 } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { UserProfile, UserStats, UserType } from '@nlc-ai/types';
@@ -32,6 +31,7 @@ export class ProfilesService {
             bio: true,
             websiteUrl: true,
             isVerified: true,
+            location: true,
             isActive: true,
             email: true,
             createdAt: true,
@@ -48,6 +48,7 @@ export class ProfilesService {
             lastName: true,
             avatarUrl: true,
             isVerified: true,
+            location: true,
             isActive: true,
             email: true,
             createdAt: true,
@@ -107,6 +108,7 @@ export class ProfilesService {
             subscriptionPlan: true,
             isActive: true,
             isVerified: true,
+            location: true,
             createdAt: true,
             lastLoginAt: true,
           },
@@ -130,6 +132,7 @@ export class ProfilesService {
             lastInteractionAt: true,
             isActive: true,
             isVerified: true,
+            location: true,
             createdAt: true,
             lastLoginAt: true,
           },
@@ -204,6 +207,7 @@ export class ProfilesService {
             isActive: true,
             createdAt: true,
             isVerified: true,
+            location: true,
           },
         });
         break;
@@ -231,6 +235,7 @@ export class ProfilesService {
             isActive: true,
             createdAt: true,
             isVerified: true,
+            location: true,
           },
         });
         break;
@@ -274,39 +279,38 @@ export class ProfilesService {
   }
 
   async updatePassword(userID: string, userType: UserType, updatePasswordDto: UpdatePasswordDto) {
-    const { currentPassword, newPassword } = updatePasswordDto;
+    const { confirmPassword, newPassword } = updatePasswordDto;
 
     let user;
     switch (userType) {
       case UserType.COACH:
         user = await this.prisma.coach.findUnique({
           where: { id: userID },
-          select: { passwordHash: true },
+          select: { id: true },
         });
         break;
       case UserType.CLIENT:
         user = await this.prisma.client.findUnique({
           where: { id: userID },
-          select: { passwordHash: true },
+          select: { id: true },
         });
         break;
       case UserType.ADMIN:
         user = await this.prisma.admin.findUnique({
           where: { id: userID },
-          select: { passwordHash: true },
+          select: { id: true },
         });
         break;
       default:
         throw new BadRequestException('Invalid user type');
     }
 
-    if (!user || !user.passwordHash) {
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!isCurrentPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
     }
 
     const newPasswordHash = await bcrypt.hash(newPassword, 12);

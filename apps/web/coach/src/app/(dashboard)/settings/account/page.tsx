@@ -71,7 +71,6 @@ const CoachAccountSettings = () => {
         uploadAvatar={handleAvatarUpload}
       />
 
-      {/* Add Delete Account Flow to Profile Tab */}
       {activeTab === 'profile' && (
         <div className="px-4 sm:px-6 lg:px-8 mb-8">
           <DeleteAccountFlow onDeleteAccount={handleDeleteAccount} />

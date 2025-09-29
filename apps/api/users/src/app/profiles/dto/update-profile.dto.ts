@@ -42,4 +42,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  @ApiPropertyOptional({ example: 'Albany, NY' })
+  @IsOptional()
+  @IsString()
+  location?: string;
 }

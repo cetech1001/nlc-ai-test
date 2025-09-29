@@ -7,6 +7,7 @@ import {ImageCropper} from "./partials/image-cropper";
 import {UserType} from "@nlc-ai/types";
 import {MediaTransformationType} from "@nlc-ai/sdk-media";
 import {NLCClient} from "@nlc-ai/sdk-main";
+import {toast} from "sonner";
 
 interface ProfileSectionProps {
   sdkClient: NLCClient;
@@ -46,6 +47,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     phone: '',
     websiteUrl: '',
     timezone: '',
+    location: '',
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordFormData>({
@@ -266,6 +268,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
           email: 'This email is already in use',
         });
       } else {
+        toast.error('Failed to update profile');
         setError('Failed to update profile');
       }
     } finally {
@@ -310,6 +313,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
       phone: user.phone || '',
       websiteUrl: user.websiteUrl || '',
       timezone: user.timezone || '',
+      location: user.location || '',
     });
     setDesktopNotifications(user.desktopNotifications || false);
     setEmailNotifications(user.emailNotifications || true);
@@ -604,6 +608,21 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                   <p className="text-red-400 text-sm">{errors.websiteUrl}</p>
                 )}
               </div>
+
+              <div className="flex flex-col gap-3">
+                <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
+                  Location
+                </label>
+                <div className="h-12 px-5 py-2.5 rounded-[10px] border border-white/30 flex justify-between items-center">
+                  <input
+                    type="text"
+                    value={profileForm.location || ''}
+                    onChange={(e) => handleProfileInputChange("location", e.target.value)}
+                    className="bg-transparent text-stone-50 text-base font-medium font-['Inter'] leading-tight outline-none flex-1"
+                    placeholder="eg. Albany, NY"
+                  />
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -647,7 +666,7 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         </div>
       </div>
 
-      <div className="w-full max-w-[1094px] h-0 border-t border-neutral-700 mb-6 lg:mb-8" />
+      <div className="w-full h-0 border-t border-neutral-700 mb-6 lg:mb-8" />
 
       <div>
         <div className="text-stone-50 text-xl sm:text-2xl font-medium font-['Inter'] leading-relaxed mb-4 sm:mb-6">

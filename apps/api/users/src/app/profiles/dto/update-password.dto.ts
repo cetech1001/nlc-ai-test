@@ -2,9 +2,9 @@ import { IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdatePasswordDto {
-  @ApiProperty({ example: 'CurrentPassword123!' })
+  @ApiProperty({ example: 'NewSecurePassword123!' })
   @IsString()
-  currentPassword: string;
+  confirmPassword: string;
 
   @ApiProperty({ example: 'NewSecurePassword123!' })
   @IsString()

@@ -48,6 +48,7 @@ model Coach {
   phone               String?        @db.VarChar(20)
   avatarUrl           String?
   bio                 String?
+  location            String?        @db.VarChar(100)
   websiteUrl          String?
   customDomain        String?        @db.VarChar(255)
   timezone            String?        @default("UTC") @db.VarChar(50)
@@ -106,6 +107,7 @@ model Client {
   totalInteractions Int?           @default(0)
   engagementScore   Decimal?       @default(0.00) @db.Decimal(3, 2)
   stripeCustomerID  String?        @db.VarChar(255)
+  location          String?        @db.VarChar(100)
   customFields      Json?          @default("{}")
   isActive          Boolean        @default(true)
   isVerified        Boolean        @default(false)

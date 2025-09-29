@@ -86,13 +86,12 @@ export interface ProfileFormData {
   firstName: string;
   lastName: string;
   email: string;
-  bio?: string; // Coach only
-  businessName?: string; // Coach only
+  bio?: string;
+  businessName?: string;
   phone?: string;
   websiteUrl?: string;
   timezone?: string;
-  // desktopNotifications?: boolean;
-  // emailNotifications?: boolean;
+  location?: string;
 }
 
 export interface PasswordFormData {
@@ -104,6 +103,7 @@ export interface ProfileFormErrors {
   firstName?: string;
   lastName?: string;
   email?: string;
+  location?: string;
   bio?: string;
   businessName?: string;
   phone?: string;

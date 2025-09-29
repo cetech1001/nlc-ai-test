@@ -59,8 +59,6 @@ export class TokenStorage {
       console.warn('Failed to set auth cookie, falling back to localStorage:', error);
     }
 
-    console.log(`Attempting to store token ${token} at ${this.options.localStorageKey}`);
-
     try {
       localStorage.setItem(this.options.localStorageKey, token);
     } catch (error) {
