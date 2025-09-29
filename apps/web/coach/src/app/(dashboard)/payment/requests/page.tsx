@@ -51,7 +51,7 @@ const PaymentRequests = () => {
     }
 
     try {
-      const response = await sdkClient.billing.payments.getPaymentRequestStats(user.id);
+      const response = await sdkClient.billing.paymentRequests.getPaymentRequestStats(user.id);
       setStats(response);
     } catch (error) {
       console.error('Failed to fetch payment request stats:', error);
