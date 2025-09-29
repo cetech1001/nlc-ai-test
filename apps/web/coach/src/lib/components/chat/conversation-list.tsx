@@ -1,9 +1,9 @@
 'use client'
 
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Headphones, Search, Users} from 'lucide-react';
-import {sdkClient} from '@/lib';
-import {ConversationResponse} from '@nlc-ai/sdk-messages';
+import {sdkClient, useMessagingWebSocket} from '@/lib';
+import {ConversationResponse, DirectMessageResponse} from '@nlc-ai/sdk-messages';
 import {toast} from 'sonner';
 import {UserProfile, UserType} from "@nlc-ai/types";
 import {ConversationListSkeleton} from "@/lib/components/chat/skeletons";
@@ -27,22 +27,141 @@ interface ConversationWithMeta extends ConversationResponse {
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
-  selectedConversationID,
-  onConversationSelectAction,
-  onBackClick,
-  user,
-}) => {
+                                                                    selectedConversationID,
+                                                                    onConversationSelectAction,
+                                                                    onBackClick,
+                                                                    user,
+                                                                  }) => {
   const [conversations, setConversations] = useState<ConversationWithMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  // WebSocket event handlers
+  const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
+    console.log('📨 New message received in conversation list:', data);
+
+    setConversations(prev => {
+      return prev.map(conv => {
+        if (conv.id === data.conversationID) {
+          // Update last message
+          const updatedMessages = [...(conv.messages || []), data.message];
+
+          // Calculate unread count - only increment if message is not from current user and conversation is not selected
+          const currentUserKey = `${user?.type}:${user?.id}`;
+          const isMessageFromCurrentUser = data.message.senderID === user?.id && data.message.senderType === user?.type;
+          const isConversationSelected = selectedConversationID === data.conversationID;
+
+          let newUnreadCount = (conv.unreadCount as Record<string, number>)[currentUserKey] || 0;
+          if (!isMessageFromCurrentUser && !isConversationSelected) {
+            newUnreadCount += 1;
+          }
+
+          return {
+            ...conv,
+            messages: updatedMessages,
+            lastMessageAt: data.message.createdAt,
+            unreadCount: {
+              ...conv.unreadCount,
+              [currentUserKey]: newUnreadCount
+            },
+            metadata: {
+              ...conv.metadata,
+              lastMessage: data.message.content,
+              unreadCount: newUnreadCount
+            }
+          };
+        }
+        return conv;
+      }).sort((a, b) => {
+        // Sort by last message time, most recent first
+        const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return timeB - timeA;
+      });
+    });
+  }, [user?.id, user?.type, selectedConversationID]);
+
+  const handleMessagesRead = useCallback((data: { conversationID: string; messageIDs: string[]; readerID: string; readerType: string }) => {
+    console.log('👁️ Messages marked as read in conversation list:', data);
+
+    // Only update if the reader is the current user
+    if (data.readerID === user?.id && data.readerType === user?.type) {
+      setConversations(prev => {
+        return prev.map(conv => {
+          if (conv.id === data.conversationID) {
+            const currentUserKey = `${user.type}:${user.id}`;
+            return {
+              ...conv,
+              unreadCount: {
+                ...conv.unreadCount,
+                [currentUserKey]: 0
+              },
+              metadata: {
+                ...conv.metadata,
+                unreadCount: 0
+              }
+            };
+          }
+          return conv;
+        });
+      });
+    }
+  }, [user?.id, user?.type]);
+
+  const handleError = useCallback((error: any) => {
+    console.error('🚫 WebSocket error in conversation list:', error);
+  }, []);
+
+  // Initialize WebSocket connection for conversation list
+  const { isConnected } = useMessagingWebSocket({
+    enabled: !!user,
+    onNewMessage: handleNewMessage,
+    onMessagesRead: handleMessagesRead,
+    onError: handleError,
+  });
+
   useEffect(() => {
     loadConversations();
+
+    // Poll for new conversations every 30 seconds
+    const pollInterval = setInterval(() => {
+      loadConversations(true);
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
   }, [user]);
 
-  const loadConversations = async () => {
+  // Reset unread count when a conversation is selected
+  useEffect(() => {
+    if (selectedConversationID) {
+      setConversations(prev => {
+        return prev.map(conv => {
+          if (conv.id === selectedConversationID) {
+            const currentUserKey = `${user?.type}:${user?.id}`;
+            return {
+              ...conv,
+              unreadCount: {
+                ...conv.unreadCount,
+                [currentUserKey]: 0
+              },
+              metadata: {
+                ...conv.metadata,
+                unreadCount: 0
+              }
+            };
+          }
+          return conv;
+        });
+      });
+    }
+  }, [selectedConversationID, user?.id, user?.type]);
+
+  const loadConversations = async (silent: boolean = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) {
+        setIsLoading(true);
+      }
+
       const response = await sdkClient.messages.getConversations({
         page: 1,
         limit: 50,
@@ -58,12 +177,23 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         })
       );
 
-      setConversations(conversationsWithMeta);
+      // Sort by last message time
+      const sortedConversations = conversationsWithMeta.sort((a, b) => {
+        const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      setConversations(sortedConversations);
     } catch (error: any) {
-      toast.error('Failed to load conversations');
-      console.error('Failed to load conversations:', error);
+      if (!silent) {
+        toast.error('Failed to load conversations');
+        console.error('Failed to load conversations:', error);
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -186,6 +316,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             </button>
           )}
           <h1 className="text-white text-xl font-semibold">Messages</h1>
+          {isConnected && (
+            <div className="flex items-center gap-1 ml-auto">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-green-400">Live</span>
+            </div>
+          )}
         </div>
 
         <div className="relative">
