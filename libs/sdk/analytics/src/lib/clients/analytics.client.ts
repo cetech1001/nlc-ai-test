@@ -193,4 +193,14 @@ export class AnalyticsClient extends BaseClient {
       },
     };
   }
+
+  override updateApiKey(apiKey: string | null) {
+    const services = [
+      this.admin, this.coach, this.community
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
+    });
+  }
 }

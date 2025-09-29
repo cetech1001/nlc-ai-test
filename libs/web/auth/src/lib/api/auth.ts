@@ -10,6 +10,7 @@ class AuthAPI {
   private auth: AuthClient;
   private users: UsersClient;
   private tokenStorage: TokenStorage;
+  private onTokenUpdate?: (token: string | null) => void;
 
   constructor() {
     this.tokenStorage = new TokenStorage({
@@ -30,8 +31,13 @@ class AuthAPI {
     });
   }
 
+  setTokenUpdateCallback(callback: (token: string | null) => void): void {
+    this.onTokenUpdate = callback;
+  }
+
   private setToken(token: string, rememberMe = false): void {
     this.tokenStorage.setToken(token, rememberMe);
+    this.onTokenUpdate?.(token);
   }
 
   async login(
@@ -156,6 +162,7 @@ class AuthAPI {
 
   removeToken(): void {
     this.tokenStorage.removeToken();
+    this.onTokenUpdate?.(null);
   }
 
   hasToken(): boolean {

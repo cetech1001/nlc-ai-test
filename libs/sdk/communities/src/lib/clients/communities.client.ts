@@ -28,6 +28,16 @@ export class CommunitiesClient extends BaseClient {
     this.comments = new CommentsClient(config);
   }
 
+  override updateApiKey(apiKey: string | null) {
+    const services = [
+      this.posts, this.moderation, this.comments
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
+    });
+  }
+
   async getCommunities(filters?: CommunityFilters): Promise<Paginated<CommunityResponse>> {
     const searchParams = new URLSearchParams();
     if (filters) {

@@ -27,6 +27,16 @@ export class CoursesClient extends BaseClient {
     this.paywall = new PaywallClient(config);
   }
 
+  override updateApiKey(apiKey: string | null) {
+    const services = [
+      this.chapters, this.lessons, this.dripSchedule, this.paywall
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
+    });
+  }
+
   async getCourses(searchOptions: SearchQuery = {}, filters: FilterValues = {}): Promise<Paginated<ExtendedCourse>> {
     const params = new URLSearchParams();
     const { page = 1, limit = 10, search } = searchOptions;

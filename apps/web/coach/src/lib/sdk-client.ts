@@ -16,3 +16,11 @@ export const sdkClient = new NLCClient({
   timeout: appConfig.api.timeout,
   services: appConfig.api.services,
 });
+
+if (typeof window !== 'undefined') {
+  import('@nlc-ai/web-auth').then(({ authAPI }) => {
+    authAPI.setTokenUpdateCallback((token) => {
+      sdkClient.updateApiKey(token);
+    });
+  });
+}

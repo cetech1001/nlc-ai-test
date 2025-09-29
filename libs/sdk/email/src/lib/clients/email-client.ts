@@ -25,4 +25,14 @@ export class EmailClient extends BaseClient {
     const response = await this.request('POST', '/send', { body: data });
     return response.data!;
   }
+
+  override updateApiKey(apiKey: string | null) {
+    const services = [
+      this.accounts, this.threads
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
+    });
+  }
 }

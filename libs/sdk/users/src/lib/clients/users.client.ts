@@ -1,18 +1,16 @@
 import {CoachesClient} from "./coaches.client";
-import {BaseClient, ServiceClientConfig} from "@nlc-ai/sdk-core";
+import {ServiceClientConfig} from "@nlc-ai/sdk-core";
 import {ClientsClient} from "./clients.client";
 import { ProfilesClient } from "./profiles.client";
 import { RelationshipClient } from "./relationship.client";
 
-export class UsersClient extends BaseClient{
+export class UsersClient{
   public coaches: CoachesClient;
   public clients: ClientsClient;
   public profiles: ProfilesClient;
   public relationship: RelationshipClient;
 
   constructor(config: ServiceClientConfig) {
-    super(config);
-
     this.coaches = new CoachesClient({
       ...config,
       baseURL: `${config.baseURL}/coaches`,
@@ -31,6 +29,16 @@ export class UsersClient extends BaseClient{
     this.relationship = new RelationshipClient({
       ...config,
       baseURL: `${config.baseURL}`,
+    });
+  }
+
+  updateApiKey(apiKey: string | null) {
+    const services = [
+      this.coaches, this.clients, this.profiles
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
     });
   }
 }

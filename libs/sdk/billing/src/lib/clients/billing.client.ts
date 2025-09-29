@@ -1,5 +1,4 @@
-import {BaseClient} from "@nlc-ai/sdk-core";
-import {NLCClientConfig} from "@nlc-ai/sdk-main";
+import {ServiceClientConfig} from "@nlc-ai/sdk-core";
 import {PlansClient} from "./plans.client";
 import {PaymentsClient} from "./payments.client";
 import {TransactionsClient} from "./transactions.client";
@@ -9,7 +8,7 @@ import { InvoicesClient } from "./invoices.client";
 import { PaymentRequestsClient } from "./payment-requests.client";
 
 
-export class BillingClient extends BaseClient {
+export class BillingClient {
   public invoices: InvoicesClient;
   public plans: PlansClient;
   public payments: PaymentsClient;
@@ -18,9 +17,7 @@ export class BillingClient extends BaseClient {
   public transactions: TransactionsClient;
   public subscriptions: SubscriptionsClient;
 
-  constructor(config: NLCClientConfig) {
-    super(config);
-
+  constructor(config: ServiceClientConfig) {
     this.invoices = new InvoicesClient({
       ...config,
       baseURL: `${config.baseURL}/plans`
@@ -54,6 +51,18 @@ export class BillingClient extends BaseClient {
     this.transactions = new TransactionsClient({
       ...config,
       baseURL: `${config.baseURL}/transactions`
+    });
+  }
+
+  updateApiKey(apiKey: string | null) {
+    const services = [
+      this.invoices, this.plans, this.paymentMethods,
+      this.payments, this.paymentRequests, this.subscriptions,
+      this.transactions
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
     });
   }
 }
