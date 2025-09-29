@@ -17,7 +17,7 @@ export const Leaderboard: FC<IProps> = ({ isLoading }) => {
       </div>
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-stone-50 text-xl font-medium leading-relaxed">Leaderboard</h3>
+          <h3 className="text-stone-50 text-xl font-medium leading-relaxed">Clients Leaderboard</h3>
           <button className="text-stone-400 text-sm hover:text-stone-300 transition-colors">
             View All
           </button>

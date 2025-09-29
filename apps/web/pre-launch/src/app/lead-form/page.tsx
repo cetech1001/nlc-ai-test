@@ -93,8 +93,7 @@ const LeadFormPage = () => {
       if (typeof e === "string") {
         return setSubmitError(e);
       }
-      const message = typeof e?.message === 'string' ? JSON.parse(e.message).message : '';
-      setSubmitError(message || 'Something went wrong while submitting. Please try again.');
+      setSubmitError(e.message || e.error.message || 'Something went wrong while submitting. Please try again.');
     } finally {
       setSubmitting(false);
     }

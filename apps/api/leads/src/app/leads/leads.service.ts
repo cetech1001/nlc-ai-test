@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {Injectable, NotFoundException, Logger, BadRequestException} from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import {
@@ -24,20 +24,81 @@ export class LeadsService {
   async createFromLanding(dto: CreateLandingLead) {
     const { lead, answers, qualified, submittedAt } = dto;
 
-    const newLead = await this.prisma.lead.create({
-      data: {
-        leadType: LeadType.ADMIN_LEAD,
-        name: lead.name,
+    if (qualified) {
+      const user = await this.prisma.coach.findFirst({
+        where: {
+          email: lead.email,
+        }
+      });
+      if (user) {
+        throw new BadRequestException('This email address is already in use.');
+      }
+    }
+
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const existingLead = await this.prisma.lead.findFirst({
+      where: {
         email: lead.email,
-        phone: lead.phone ?? null,
-        source: 'Website',
-        status: LeadStatus.CONTACTED,
-        notes: null,
-        answers: answers as any,
-        qualified,
-        submittedAt: submittedAt ? new Date(submittedAt) : null,
+        leadType: LeadType.ADMIN_LEAD,
+        submittedAt: {
+          gte: threeMonthsAgo,
+        },
+      },
+      orderBy: {
+        submittedAt: 'desc',
       },
     });
+
+    if (existingLead) {
+      throw new BadRequestException(
+        'A submission with this email was already received within the last 3 months.'
+      );
+    }
+
+    const oldLead = await this.prisma.lead.findFirst({
+      where: {
+        email: lead.email,
+        leadType: LeadType.ADMIN_LEAD,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    let newLead;
+
+    if (oldLead) {
+      newLead = await this.prisma.lead.update({
+        where: {
+          id: oldLead.id,
+        },
+        data: {
+          name: lead.name,
+          phone: lead.phone ?? null,
+          status: LeadStatus.CONTACTED,
+          answers: answers as any,
+          qualified,
+          submittedAt: submittedAt ? new Date(submittedAt) : new Date(),
+        },
+      });
+    } else {
+      newLead = await this.prisma.lead.create({
+        data: {
+          leadType: LeadType.ADMIN_LEAD,
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone ?? null,
+          source: 'Website',
+          status: LeadStatus.CONTACTED,
+          notes: null,
+          answers: answers as any,
+          qualified,
+          submittedAt: submittedAt ? new Date(submittedAt) : new Date(),
+        },
+      });
+    }
 
     await this.outbox.saveAndPublishEvent<LeadEvent>(
       {

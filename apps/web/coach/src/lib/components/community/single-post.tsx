@@ -36,21 +36,17 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
   const [commentsPage, setCommentsPage] = useState<{ [key: string]: number }>({});
   const [hasMoreComments, setHasMoreComments] = useState<{ [key: string]: boolean }>({});
 
-  // Nested replies state
   const [repliesExpanded, setRepliesExpanded] = useState<{ [key: string]: boolean }>({});
   const [repliesData, setRepliesData] = useState<{ [key: string]: PostCommentResponse[] }>({});
   const [loadingReplies, setLoadingReplies] = useState<{ [key: string]: boolean }>({});
 
-  // Edit comment modal states
   const [showEditCommentModal, setShowEditCommentModal] = useState<{ [key: string]: boolean }>({});
   const [editingCommentContent, setEditingCommentContent] = useState<{ [key: string]: string }>({});
 
-  // Post edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
   const [replyingTo, setReplyingTo] = useState<{ [key: string]: boolean }>({});
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
 
-  // Optimistic state
   const [optimisticPost, setOptimisticPost] = useState<PostResponse>(props.post);
   const [isReacting, setIsReacting] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
@@ -106,21 +102,19 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
   const handleLoadReplies = async (commentID: string) => {
     const isExpanded = repliesExpanded[commentID];
 
-    // Toggle expansion
     setRepliesExpanded(prev => ({
       ...prev,
       [commentID]: !isExpanded
     }));
 
-    // If expanding and not yet loaded, fetch replies
-    if (!isExpanded && !repliesData[commentID]) {
+    if (!isExpanded) {
       try {
         setLoadingReplies(prev => ({ ...prev, [commentID]: true }));
 
         const response = await sdkClient.communities.comments.getReplies(
           props.post.communityID,
           commentID,
-          { limit: 100 } // Load all replies for now
+          { limit: 100 }
         );
 
         setRepliesData(prev => ({
@@ -248,7 +242,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
   };
 
   const handleReactToComment = async (commentID: string, reactionType: ReactionType) => {
-    // Helper to update comment in nested structure
     const updateCommentInTree = (commentsList: OptimisticComment[]): OptimisticComment[] => {
       return commentsList.map(comment => {
         if (comment.id === commentID) {
@@ -271,7 +264,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
       [props.post.id]: updatedComments
     }));
 
-    // Also update in replies data if exists
     Object.keys(repliesData).forEach(parentID => {
       const updatedReplies = updateCommentInTree(repliesData[parentID] as OptimisticComment[]);
       setRepliesData(prev => ({
@@ -329,7 +321,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
     try {
       await sdkClient.communities.comments.deleteComment(props.post.communityID, commentID);
 
-      // Helper to mark comment as deleted in tree
       const markDeletedInTree = (commentsList: OptimisticComment[]): OptimisticComment[] => {
         return commentsList.map(comment => {
           if (comment.id === commentID) {
@@ -342,7 +333,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
           }
           return comment;
         }).filter(comment => {
-          // Remove if it's the deleted comment and has no replies
           if (comment.id === commentID && comment.replyCount === 0) {
             return false;
           }
@@ -356,7 +346,6 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
         [props.post.id]: updatedComments
       }));
 
-      // Update replies data
       Object.keys(repliesData).forEach(parentID => {
         const updatedReplies = markDeletedInTree(repliesData[parentID] as OptimisticComment[]);
         setRepliesData(prev => ({
@@ -401,20 +390,22 @@ export const SinglePost: React.FC<SinglePostProps> = (props) => {
       setReplyingTo(prev => ({ ...prev, [parentCommentID]: false }));
       toast.success('Reply added successfully');
 
-      // Reload replies for this comment
+      const response = await sdkClient.communities.comments.getReplies(
+        props.post.communityID,
+        parentCommentID,
+        { limit: 100 }
+      );
+
       setRepliesData(prev => ({
         ...prev,
-        [parentCommentID]: []
+        [parentCommentID]: response.data
       }));
-      await handleLoadReplies(parentCommentID);
 
-      // Re-expand if it was expanded
       setRepliesExpanded(prev => ({
         ...prev,
         [parentCommentID]: true
       }));
 
-      // Update reply count in parent comment
       const updateReplyCount = (commentsList: OptimisticComment[]): OptimisticComment[] => {
         return commentsList.map(comment => {
           if (comment.id === parentCommentID) {

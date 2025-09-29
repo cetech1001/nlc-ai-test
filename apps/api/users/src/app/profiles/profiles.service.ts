@@ -383,6 +383,15 @@ export class ProfilesService {
         throw new BadRequestException('Invalid user type');
     }
 
+    await this.prisma.communityMember.updateMany({
+      where: {
+        userID,
+      },
+      data: {
+        userAvatarUrl: avatarUrl,
+      }
+    });
+
     return {
       message: 'Avatar uploaded successfully',
       avatarUrl: updatedUser.avatarUrl,

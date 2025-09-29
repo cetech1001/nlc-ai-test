@@ -32,7 +32,6 @@ export class CommentsService {
   ) {
     const member = await this.checkCommunityMembership(communityID, user);
 
-    // If postID is provided, verify the post exists and is in the same community
     if (createRequest.postID) {
       const post = await this.prisma.post.findUnique({
         where: { id: createRequest.postID },
@@ -48,7 +47,6 @@ export class CommentsService {
       }
     }
 
-    // If parentCommentID is provided, verify it exists and is not deleted
     if (createRequest.parentCommentID) {
       const parentComment = await this.prisma.postComment.findUnique({
         where: { id: createRequest.parentCommentID },
@@ -98,7 +96,6 @@ export class CommentsService {
       },
     });
 
-    // Update post comment count if this is a direct comment
     if (createRequest.postID && !createRequest.parentCommentID) {
       await this.prisma.post.update({
         where: { id: createRequest.postID },
@@ -106,7 +103,6 @@ export class CommentsService {
       });
     }
 
-    // Update parent comment reply count
     if (createRequest.parentCommentID) {
       await this.prisma.postComment.update({
         where: { id: createRequest.parentCommentID },
@@ -196,7 +192,7 @@ export class CommentsService {
           select: { replies: true, reactions: true },
         },
       },
-      orderBy: { createdAt: filters.sortOrder || 'asc' },
+      orderBy: { createdAt: filters.sortOrder || 'desc' },
     });
 
     return {
@@ -306,7 +302,6 @@ export class CommentsService {
     const hasReplies = comment._count.replies > 0;
 
     if (hasReplies) {
-      // Soft delete - mark as deleted but keep in DB
       await this.prisma.postComment.update({
         where: { id },
         data: {
@@ -319,7 +314,6 @@ export class CommentsService {
 
       this.logger.log(`Comment ${id} soft deleted (has replies) by ${user.type} ${user.id}`);
     } else {
-      // Hard delete - actually remove from DB
       await this.prisma.postComment.delete({
         where: { id },
       });
@@ -327,7 +321,6 @@ export class CommentsService {
       this.logger.log(`Comment ${id} hard deleted (no replies) by ${user.type} ${user.id}`);
     }
 
-    // Update post comment count if this was a direct comment
     if (comment.postID && !comment.parentCommentID) {
       await this.prisma.post.update({
         where: { id: comment.postID },
@@ -335,7 +328,6 @@ export class CommentsService {
       });
     }
 
-    // Update parent comment reply count
     if (comment.parentCommentID) {
       await this.prisma.postComment.update({
         where: { id: comment.parentCommentID },
