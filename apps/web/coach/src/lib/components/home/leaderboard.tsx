@@ -1,66 +1,77 @@
-import React from "react";
+import React, {FC} from "react";
+import { Skeleton } from "@nlc-ai/web-ui";
 
-export const Leaderboard = () => {
+interface IProps {
+  isLoading?: boolean;
+}
+
+export const Leaderboard: FC<IProps> = ({ isLoading }) => {
+  if (isLoading) {
+    return <LeaderboardSkeleton />;
+  }
+
   return (
-    <div className="glass-card rounded-4xl flex-1 w-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
+    <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
         <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
       </div>
       <div className="relative z-10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6">
-          <h3 className="text-xl font-semibold text-foreground mb-3 sm:mb-0">Leaderboard</h3>
-          <div className="text-sm">
-            <a href={"/leaderboard"}>View All</a>
-          </div>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-stone-50 text-xl font-medium leading-relaxed">Leaderboard</h3>
+          <button className="text-stone-400 text-sm hover:text-stone-300 transition-colors">
+            View All
+          </button>
         </div>
 
         {/* Leaderboard List */}
-        <div className="space-y-0">
+        <div className="space-y-1">
           {[
             { rank: 1, name: "Andrew Kramer", milestones: "17/24", streak: "17", points: "+24pt", isTop3: true },
             { rank: 2, name: "Andrew Kramer", milestones: "16/24", streak: "5", points: "+19pt", isTop3: true },
             { rank: 3, name: "Andrew Kramer", milestones: "12/24", streak: "15", points: "+11pt", isTop3: true },
             { rank: 4, name: "Andrew Kramer", milestones: "14/24", streak: "15", points: "+8pt", isTop3: false },
-            // { rank: 5, name: "Andrew Kramer", milestones: "13/24", streak: "3", points: "+7pt", isTop3: false },
           ].map((user, index) => (
-            <div key={index} className={`flex items-center justify-between py-2 ${index < 6 ? 'border-b border-border' : ''}`}>
-              <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1">
-                {user.isTop3 ? (
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-purple-primary flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-black">{user.rank}</span>
+            <div key={index} className="grid grid-cols-[2fr_1.5fr] py-2">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                {/* Replace the rank badge section (around line 30-40) */}
+                {user.rank === 1 ? (
+                  <div className="w-7 h-7 flex items-center justify-center">
+                    {/*<img src={'/images/icons/leaderboard/gold.png'} alt={"Gold"}/>*/}
+                    <span className={"text-2xl"}>🥇</span>
+                  </div>
+                ) : user.rank === 2 ? (
+                  <div className="w-7 h-7 flex items-center justify-center">
+                    <span className={"text-2xl"}>🥈</span>
+                  </div>
+                ) : user.rank === 3 ? (
+                  <div className="w-7 h-7 flex items-center justify-center">
+                    <span className={"text-2xl"}>🥉</span>
                   </div>
                 ) : (
-                  <span className="w-5 sm:w-6 text-center text-sm sm:text-lg font-medium text-foreground flex-shrink-0">{user.rank}</span>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 flex items-center justify-center flex-shrink-0 ml-1">
+                    <span className="w-6 text-center text-sm font-medium text-white flex-shrink-0">{user.rank}</span>
+                  </div>
                 )}
                 <img
                   src="https://api.builder.io/api/v1/image/assets/TEMP/7b7ce78b469c6163f6e7431a602a7794238123c6?width=80"
                   alt={user.name}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex-shrink-0"
+                  className="w-8 h-8 rounded-lg flex-shrink-0"
                 />
-                <span className="font-medium text-foreground text-sm sm:text-base truncate">{user.name}</span>
+                <span className="text-stone-300 text-sm truncate">{user.name}</span>
               </div>
 
-              <div className="flex items-center gap-2 sm:gap-6 lg:gap-14 text-xs sm:text-sm">
-                {/* Desktop view */}
-                {/*<div className="hidden sm:flex items-center gap-4 lg:gap-8">
-                  <div className="flex items-center gap-1.5 w-20 lg:w-[121px]">
-                    <span className="text-muted-foreground hidden lg:inline">Milestones:</span>
-                    <span className="font-semibold text-foreground">{user.milestones}</span>
+              <div className="grid grid-cols-2 gap-6 text-sm">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col items-end">
+                    <span className="text-stone-400 text-xs">Milestones</span>
+                    <span className="text-white font-semibold">{user.milestones}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 w-16 lg:w-20">
-                    <span className="text-muted-foreground hidden lg:inline">Streak:</span>
-                    <span className="font-semibold text-foreground">{user.streak}</span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-stone-400 text-xs">Streak</span>
+                    <span className="text-white font-semibold">{user.streak}d</span>
                   </div>
-                </div>*/}
-
-                {/* Mobile view - compact */}
-                {/*<div className="flex sm:hidden items-center gap-1 text-xs">
-                  <span className="text-muted-foreground">{user.milestones}</span>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">{user.streak}d</span>
-                </div>*/}
-
-                <span className="text-sm sm:text-lg font-medium text-purple-primary whitespace-nowrap">{user.points}</span>
+                </div>
+                <span className="text-lg font-semibold text-white ml-2 text-right">{user.points}</span>
               </div>
             </div>
           ))}
@@ -68,4 +79,45 @@ export const Leaderboard = () => {
       </div>
     </div>
   );
-}
+};
+
+const LeaderboardSkeleton = () => {
+  return (
+    <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+      </div>
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-6">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+
+        <div className="space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-3 flex-1">
+                <Skeleton className="w-6 h-6 rounded-full flex-shrink-0" />
+                <Skeleton className="w-8 h-8 rounded-lg flex-shrink-0" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-end gap-1">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Skeleton className="h-3 w-12" />
+                  <Skeleton className="h-4 w-8" />
+                </div>
+                <Skeleton className="h-5 w-12 ml-2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

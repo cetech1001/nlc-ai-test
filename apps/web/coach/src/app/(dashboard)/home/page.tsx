@@ -45,10 +45,6 @@ const CoachHome = () => {
       setIsLoading(true);
       setError('');
 
-      // TODO: Get actual coachID from auth context
-      // const coachID = 'current-coach-id';
-
-      // Create analytics client - TODO: Get config from app config
       const data = await sdkClient.analytics.coach.getDashboardData(coachID);
       setDashboardData(data);
     } catch (err: any) {
@@ -58,24 +54,6 @@ const CoachHome = () => {
       setIsLoading(false);
     }
   };
-
-  /*if (isLoading) {
-    return (
-      <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
-        <div className="animate-pulse">
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="h-32 bg-neutral-800 rounded-[30px]"></div>
-            <div className="h-32 bg-neutral-800 rounded-[30px]"></div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
-            <div className="h-64 bg-neutral-800 rounded-[30px]"></div>
-            <div className="h-64 bg-neutral-800 rounded-[30px]"></div>
-            <div className="h-64 bg-neutral-800 rounded-[30px]"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }*/
 
   if ((error || !dashboardData) && !isLoading) {
     return (
@@ -101,30 +79,35 @@ const CoachHome = () => {
     {
       icon: Mail,
       label: "Emails To Approve",
+      link: '/agents/emails',
       count: dashboardData?.priorities.find(p => p.type === 'emails_to_approve')?.count || 0,
       color: "text-fuchsia-400"
     },
     {
       icon: TriangleAlert,
       label: "Clients At Risk",
+      link: '/agents/retention',
       count: dashboardData?.priorities.find(p => p.type === 'clients_at_risk')?.count || 0,
       color: "text-purple-400"
     },
     {
       icon: Flag,
       label: "Survey Responses Flagged",
+      link: '/agents/retention',
       count: dashboardData?.priorities.find(p => p.type === 'survey_responses_flagged')?.count || 0,
       color: "text-red-400"
     },
     {
       icon: Trophy,
       label: "Clients Nearing Completion",
+      link: '/courses',
       count: dashboardData?.priorities.find(p => p.type === 'clients_nearing_completion')?.count || 0,
       color: "text-yellow-400"
     },
     {
       icon: MessageCircleWarning,
       label: "Chat Bot Escalations",
+      link: '/messages',
       count: dashboardData?.priorities.find(p => p.type === 'chatbot_escalations')?.count || 0,
       color: "text-orange-400"
     }
@@ -134,30 +117,35 @@ const CoachHome = () => {
     {
       icon: Users,
       label: "Leads Captured",
+      link: '/leads',
       count: dashboardData?.agentStats.leadsCaptured!,
       color: "text-fuchsia-400"
     },
     {
       icon: Mail,
       label: "Follow Up Emails Sent",
+      link: '/agents/followup',
       count: dashboardData?.agentStats.followUpEmailsSent!,
       color: "text-purple-400"
     },
     {
       icon: MessagesSquare,
       label: "Feedback Surveys Sent",
+      link: '/agents/retention',
       count: dashboardData?.agentStats.feedbackSurveysSent!,
       color: "text-red-400"
     },
     {
       icon: MessageCircleHeart,
       label: "Testimonials Received",
+      link: '/agents/testimonials',
       count: dashboardData?.agentStats.testimonialsReceived!,
       color: "text-yellow-400"
     },
     {
       icon: Lightbulb,
       label: "Content Ideas Generated",
+      link: '/agents/suggestion',
       count: dashboardData?.agentStats.contentIdeasGenerated!,
       color: "text-orange-400"
     }
@@ -186,7 +174,7 @@ const CoachHome = () => {
           tasks={priorityList}
         />
         <TaskList title={"Agent Stats"} tasks={agentStats} />
-        <Leaderboard/>
+        <Leaderboard isLoading={isLoading}/>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">

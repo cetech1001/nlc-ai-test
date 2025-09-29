@@ -1,20 +1,61 @@
 import {ComponentType, FC} from "react";
+import { Skeleton } from "@nlc-ai/web-ui";
+import {useRouter} from "next/navigation";
 
 interface IProps {
   title: string;
   tasks: Array<{
     icon: ComponentType<any>;
     label: string;
+    link: string;
     count: number;
     color: string;
   }>;
   cta?: {
     text: string;
     onClick: () => void;
-  }
+  };
+  isLoading?: boolean;
 }
 
+export const TaskListSkeleton = () => {
+  return (
+    <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+      </div>
+
+      <div className="relative z-10">
+        {/* Header */}
+        <Skeleton className="h-6 w-40 mb-6" />
+
+        {/* Task Items */}
+        <div className="space-y-4 mb-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Skeleton className="w-5 h-5 rounded" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-5 w-8" />
+            </div>
+          ))}
+        </div>
+
+        {/* CTA Button */}
+        <Skeleton className="h-4 w-24" />
+      </div>
+    </div>
+  );
+};
+
 export const TaskList: FC<IProps> = (props) => {
+  const router = useRouter();
+
+  if (props.isLoading) {
+    return <TaskListSkeleton/>;
+  }
+
   return (
     <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -28,7 +69,9 @@ export const TaskList: FC<IProps> = (props) => {
             <div key={index} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <item.icon className={`w-5 h-5 ${item.color}`} />
-                <span className="text-stone-300 text-sm">{item.label}</span>
+                <span className="text-stone-300 text-sm cursor-pointer" onClick={() => router.push(item.link)}>
+                  {item.label}
+                </span>
               </div>
               <span className="text-white text-lg font-semibold">{item.count}</span>
             </div>
