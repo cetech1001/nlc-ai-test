@@ -17,9 +17,8 @@ import {
   MessageSquare,
   BarChart3
 } from "lucide-react";
-import {appConfig} from "@nlc-ai/web-shared";
 
-const TestimonialsLanding = () => {
+export const TestimonialsLanding = () => {
   const [activeFeature, setActiveFeature] = useState('collection');
 
   const features = [
@@ -62,9 +61,9 @@ const TestimonialsLanding = () => {
   ];
 
   const stats = [
-    { label: "Conversion Increase", value: "+50%", icon: TrendingUp },
+    { label: "Conversion Increase", value: "+40%", icon: TrendingUp },
     { label: "Testimonials Collected", value: "5x More", icon: Trophy },
-    { label: "Time Saved Weekly", value: "12+hrs", icon: Clock },
+    { label: "Time Saved Weekly", value: "12+ Hours", icon: Clock },
   ];
 
   const testimonialTypes = [
@@ -407,13 +406,3 @@ const TestimonialsLanding = () => {
     </div>
   );
 };
-
-const TestimonialsPage = () => {
-  if (appConfig.features.enableLanding) {
-    return <TestimonialsLanding />;
-  }
-
-  return <div/>;
-};
-
-export default TestimonialsPage;

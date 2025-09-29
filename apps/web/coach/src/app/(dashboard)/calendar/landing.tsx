@@ -52,6 +52,8 @@ export const CalendarLanding = () => {
       description: "Sync with your existing calendars and tools",
       benefits: [
         "Calendly sync",
+        "Gmail",
+        "Outlook"
         // "Zoom, Teams, and other video platform integration",
         // "CRM and client management system sync",
         // "Mobile app for on-the-go management"
@@ -62,7 +64,7 @@ export const CalendarLanding = () => {
   const stats = [
     { label: "Booking Efficiency", value: "+90%", icon: Timer },
     { label: "Fewer No-Shows", value: "60%", icon: Bell },
-    { label: "Time Saved Weekly", value: "20hrs+", icon: Clock },
+    { label: "Time Saved Weekly", value: "20+ Hours", icon: Clock },
   ];
 
   const bookingTypes = [

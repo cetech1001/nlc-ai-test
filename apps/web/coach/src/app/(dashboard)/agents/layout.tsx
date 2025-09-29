@@ -36,24 +36,8 @@ const AIAgentsLanding = ({ agent }: { agent: string; }) => {
         "Continuous learning from interactions"
       ],
       benefits: "Scale your coaching without losing the personal touch",
-      color: "from-violet-600 via-purple-600 to-fuchsia-500",
-      textColor: "text-violet-200", // Light violet text
-      iconColor: "text-violet-300"
-    },
-    {
-      id: 'retention',
-      icon: RetentionIcon,
-      title: "Retention",
-      description: "Proactively identify and re-engage at-risk clients",
-      features: [
-        "Early warning system for client churn",
-        "Automated check-in sequences",
-        "Personalized re-engagement campaigns",
-        "Progress milestone celebrations"
-      ],
-      benefits: "Reduce client churn by up to 60%",
-      color: "from-purple-600 via-violet-500 to-pink-500",
-      textColor: "text-purple-200", // Light purple text
+      color: "from-purple-700 via-purple-600 to-purple-500",
+      textColor: "text-purple-200",
       iconColor: "text-purple-300"
     },
     {
@@ -68,8 +52,8 @@ const AIAgentsLanding = ({ agent }: { agent: string; }) => {
         "Integration with your CRM and email platforms"
       ],
       benefits: "Convert 50% more leads into paying clients",
-      color: "from-blue-700 via-indigo-600 to-purple-600",
-      textColor: "text-blue-200", // Light blue text
+      color: "from-blue-600 via-blue-500 to-cyan-400",
+      textColor: "text-blue-200",
       iconColor: "text-blue-300"
     },
     {
@@ -84,9 +68,9 @@ const AIAgentsLanding = ({ agent }: { agent: string; }) => {
         "Smart escalation for complex queries"
       ],
       benefits: "Save 10+ hours per week on email management",
-      color: "from-emerald-600 via-teal-500 to-purple-600",
-      textColor: "text-emerald-200", // Light emerald text
-      iconColor: "text-emerald-300"
+      color: "from-red-600 via-red-500 to-orange-500",
+      textColor: "text-red-200",
+      iconColor: "text-red-300"
     },
     {
       id: 'suggestion',
@@ -100,9 +84,25 @@ const AIAgentsLanding = ({ agent }: { agent: string; }) => {
         "Engagement prediction and optimization"
       ],
       benefits: "5x your content engagement rates",
-      color: "from-orange-500 via-amber-400 to-purple-600",
-      textColor: "text-orange-200", // Light orange text
+      color: "from-orange-500 via-orange-400 to-yellow-400",
+      textColor: "text-orange-200",
       iconColor: "text-orange-100"
+    },
+    {
+      id: 'retention',
+      icon: RetentionIcon,
+      title: "Retention",
+      description: "Proactively identify and re-engage at-risk clients",
+      features: [
+        "Early warning system for client churn",
+        "Automated check-in sequences",
+        "Personalized re-engagement campaigns",
+        "Progress milestone celebrations"
+      ],
+      benefits: "Reduce client churn by up to 60%",
+      color: "from-green-600 via-green-500 to-emerald-500",
+      textColor: "text-green-200",
+      iconColor: "text-green-300"
     },
   ];
 
