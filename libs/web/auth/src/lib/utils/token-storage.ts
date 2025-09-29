@@ -1,3 +1,5 @@
+/// <reference lib="dom">
+
 export interface TokenStorageOptions {
   cookieName?: string;
   localStorageKey?: string;
@@ -10,8 +12,8 @@ export interface TokenStorageOptions {
 }
 
 const DEFAULT_OPTIONS: Required<TokenStorageOptions> = {
-  cookieName: process.env.PUBLIC_TOKEN_NAME || 'nlc_auth_token',
-  localStorageKey: process.env.PUBLIC_TOKEN_NAME || 'nlc_auth_token',
+  cookieName: process.env.NEXT_PUBLIC_TOKEN_NAME || 'nlc_auth_token',
+  localStorageKey: process.env.NEXT_PUBLIC_TOKEN_NAME || 'nlc_auth_token',
   cookieOptions: {
     secure: true,
     sameSite: 'lax',
@@ -56,6 +58,8 @@ export class TokenStorage {
     } catch (error) {
       console.warn('Failed to set auth cookie, falling back to localStorage:', error);
     }
+
+    console.log(`Attempting to store token ${token} at ${this.options.localStorageKey}`);
 
     try {
       localStorage.setItem(this.options.localStorageKey, token);
