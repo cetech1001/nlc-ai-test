@@ -167,7 +167,7 @@ export const Logo = ({ width = 94, height = 80, className = "", type = 'svg', si
               backfaceVisibility: 'hidden',
               maxWidth: '100%',
               height: 'auto',
-              imageRendering: 'crisp-edges'
+              // imageRendering: 'crisp-edges'
             }}
             sizes={`${width}px`}
           />
