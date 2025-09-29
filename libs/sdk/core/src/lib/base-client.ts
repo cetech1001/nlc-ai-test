@@ -29,11 +29,11 @@ export abstract class BaseClient {
       ...options?.headers,
     };
 
-    // const token = this.getToken?.() || this.apiKey;
+    const token = this.getToken?.() || this.apiKey;
 
-    /*if (token) {
+    if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-    }*/
+    }
 
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
