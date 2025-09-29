@@ -1,7 +1,7 @@
 'use client'
 
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Camera, Headphones, Info, MoreVertical, Phone, Send, Smile, User, Users, Video,} from 'lucide-react';
+import {Camera, Headphones, Info, Send, Smile, User, Users} from 'lucide-react';
 import {ChatWindowSkeleton, sdkClient, useMessagingWebSocket} from '@/lib';
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messages';
 import {toast} from 'sonner';
@@ -426,21 +426,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {!isAdminConversation() && (
-            <>
-              <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
-                <Phone className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
-                <Video className="w-5 h-5" />
-              </button>
-            </>
-          )}
           <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
             <Info className="w-5 h-5" />
-          </button>
-          <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
-            <MoreVertical className="w-5 h-5" />
           </button>
         </div>
       </div>

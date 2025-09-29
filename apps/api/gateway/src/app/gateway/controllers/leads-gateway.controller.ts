@@ -47,10 +47,10 @@ export class LeadsGatewayController {
       'user-agent': req.headers['user-agent'] || '',
       'x-forwarded-for': req.headers['x-forwarded-for'] as string || req.ip || '',
       'x-real-ip': req.ip || '',
-'cookie': req.headers.cookie || '',
-      'x-landing-token': req.headers['x-landing-token'] as string || '',
-      'x-landing-signature': req.headers['x-landing-signature'] as string || '',
-      'x-landing-timestamp': req.headers['x-landing-timestamp'] as string || '',
+      'cookie': req.headers.cookie || '',
+      'x-anti-spam-token': req.headers['x-anti-spam-token'] as string || '',
+      'x-anti-spam-signature': req.headers['x-anti-spam-signature'] as string || '',
+      'x-anti-spam-timestamp': req.headers['x-anti-spam-timestamp'] as string || '',
     };
   }
 }

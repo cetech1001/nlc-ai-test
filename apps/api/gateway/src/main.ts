@@ -32,9 +32,9 @@ async function bootstrap() {
       'Content-Type',
       'Authorization',
       'X-Requested-With',
-      'x-landing-token',
-      'x-landing-signature',
-      'x-landing-timestamp',
+      'x-anti-spam-token',
+      'x-anti-spam-signature',
+      'x-anti-spam-timestamp',
     ],
   });
 

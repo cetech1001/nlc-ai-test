@@ -5,6 +5,7 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {useCookies} from "react-cookie";
 import {UserType} from "@nlc-ai/types";
+import {appConfig} from "@nlc-ai/web-shared";
 
 const CoachLoginPage = () => {
   const router = useRouter();
@@ -52,8 +53,8 @@ const CoachLoginPage = () => {
       handleAccountVerification={handleAccountVerification}
       successMessage={successMessage}
       setSuccessMessage={(message: string) => setSuccessMessage(message)}
-      showSignUp={true}
-      showGoogleAuth={true}
+      showSignUp={!appConfig.features.enableLanding}
+      showGoogleAuth={!appConfig.features.enableLanding}
       showRememberMe={true}
       removeCookie={removeCookie}
     />

@@ -36,7 +36,7 @@ const CoachAccountSettings = () => {
   }
 
   const handleUpdatePassword = async (payload: PasswordFormData) => {
-    await sdkClient.users.profiles.updatePassword({ newPassword: payload.newPassword });
+    await sdkClient.users.profiles.updatePassword(payload);
   }
 
   const handleAvatarUpload = async (avatarUrl: string) => {

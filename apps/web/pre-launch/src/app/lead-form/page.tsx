@@ -87,7 +87,7 @@ const LeadFormPage = () => {
 
       sessionStorage.setItem('leadInfo', JSON.stringify(leadInfo));
       sessionStorage.setItem('qualified', JSON.stringify(isQualified));
-      router.push('/results?email=' + leadInfo.email);
+      router.replace('/results?email=' + leadInfo.email);
     } catch (e: any) {
       console.log("Error: ", e);
       if (typeof e === "string") {
