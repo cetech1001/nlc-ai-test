@@ -40,10 +40,6 @@ export class AntiSpamGuard implements CanActivate {
       throw new UnauthorizedException('Anti-spam protection not configured');
     }
 
-    console.log("Expected token: ", this.expectedToken);
-    console.log("Token: ", token);
-    console.log("Is a match?: ", this.expectedToken === token);
-
     if (!token || token !== this.expectedToken) {
       throw new UnauthorizedException('Invalid or missing X-Anti-Spam-Token');
     }
