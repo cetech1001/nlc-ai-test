@@ -112,5 +112,8 @@ export const pageConfig = {
   },
   'settings': {
     title: 'Account Settings',
+  },
+  'messages': {
+    title: 'Messages',
   }
 };

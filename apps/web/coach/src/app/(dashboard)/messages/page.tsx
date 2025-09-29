@@ -58,8 +58,8 @@ const MessagesPage = () => {
 
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
-      <div className="flex h-[calc(100vh-8rem)] bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+      <div className="flex min-h-[85vh] bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
         </div>
 

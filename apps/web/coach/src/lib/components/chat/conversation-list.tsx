@@ -378,7 +378,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 <div className="flex items-center gap-1 mt-1">
                   <div className={`w-2 h-2 rounded-full ${
                     conversation.metadata.contactType === 'admin' ? 'bg-fuchsia-400' :
-                      conversation.metadata.contactType === 'client' ? 'bg-blue-400' : 'bg-green-400'
+                      conversation.metadata.contactType === 'community' ? 'bg-blue-400' : 'bg-green-400'
                   }`}></div>
                   <span className="text-xs text-stone-500">{getContactTypeLabel(conversation.metadata.contactType)}</span>
                 </div>
