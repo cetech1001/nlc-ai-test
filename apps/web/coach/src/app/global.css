@@ -84,6 +84,73 @@
   }
 }
 
+/* Add this to your global.css file after the existing styles */
+
+/* Custom Scrollbar Styles - Black and Transparent */
+@layer components {
+  /* Webkit-based browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  /* For corners where horizontal and vertical scrollbars meet */
+  ::-webkit-scrollbar-corner {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.1);
+  }
+
+  /* Enhanced styling for specific containers */
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  /* Main content area scrollbar */
+  .main-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .main-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  /* Dark variant for better visibility on light backgrounds */
+  .scrollbar-dark::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+}
 
 @media (max-width: 768px) {
   html {

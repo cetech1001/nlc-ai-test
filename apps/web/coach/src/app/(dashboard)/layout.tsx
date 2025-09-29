@@ -80,7 +80,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
           />
         </div>
 
-        <main className="py-6 md:py-0">
+        <main className="py-6 md:py-0 main-content">
           <div className="mx-auto px-4">
             {children}
           </div>
