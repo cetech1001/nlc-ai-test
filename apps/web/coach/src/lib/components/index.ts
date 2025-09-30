@@ -10,6 +10,7 @@ export * from './home';
 export * from './icons';
 export * from './leads';
 export * from './notifications';
+export * from './profile';
 export * from './retention';
 export * from './sidebar';
 export * from './suggestion';

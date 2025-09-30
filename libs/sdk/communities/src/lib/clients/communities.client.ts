@@ -1,7 +1,7 @@
 import {BaseClient, Paginated, SearchQuery, FilterValues} from '@nlc-ai/sdk-core';
+import {CommunityResponse} from "@nlc-ai/types";
 import {
   CommunityFilters,
-  CommunityResponse,
   CreateCommunityRequest,
   UpdateCommunityRequest,
   AddMemberRequest,
