@@ -77,7 +77,7 @@ export class LeadsService {
         data: {
           name: lead.name,
           phone: lead.phone ?? null,
-          status: LeadStatus.CONTACTED,
+          status: qualified ? LeadStatus.CONVERTED : LeadStatus.CONTACTED,
           answers: answers as any,
           qualified,
           submittedAt: submittedAt ? new Date(submittedAt) : new Date(),
@@ -91,7 +91,7 @@ export class LeadsService {
           email: lead.email,
           phone: lead.phone ?? null,
           source: 'Website',
-          status: LeadStatus.CONTACTED,
+          status: qualified ? LeadStatus.CONVERTED : LeadStatus.CONTACTED,
           notes: null,
           answers: answers as any,
           qualified,

@@ -27,6 +27,8 @@ export class AdminAuthService {
 
     const payload = {
       sub: admin.id,
+      id: admin.id,
+      name: admin.firstName + ' ' + admin.lastName,
       email: admin.email,
       type: UserType.ADMIN,
       role: admin.role,
@@ -40,7 +42,8 @@ export class AdminAuthService {
         email: admin.email,
         firstName: admin.firstName,
         lastName: admin.lastName,
-        role: admin.role || undefined,
+        isActive: admin.isActive,
+        createdAt: admin.createdAt,
         avatarUrl: admin.avatarUrl || undefined,
       },
     };

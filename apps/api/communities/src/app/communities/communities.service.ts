@@ -30,7 +30,7 @@ export class CommunitiesService {
     private readonly outboxService: OutboxService,
   ) {}
 
-  async createCommunity(createRequest: CreateCommunityRequest, user: AuthUser) {
+  async createCommunity(createRequest: CreateCommunityRequest, userID: string, userType: UserType) {
     try {
       const existingCommunity = await this.prisma.community.findUnique({
         where: { slug: createRequest.slug },
@@ -55,7 +55,7 @@ export class CommunitiesService {
         ...createRequest.settings,
       };
 
-      const isSystemCreated = createRequest.isSystemCreated === true && user.type === UserType.ADMIN;
+      const isSystemCreated = createRequest.isSystemCreated === true && userType === UserType.ADMIN;
 
       const pricingType = createRequest.pricing?.type || CommunityPricingType.FREE;
 
@@ -86,8 +86,8 @@ export class CommunitiesService {
           slug: createRequest.slug,
           type: createRequest.type,
           visibility: createRequest.visibility || CommunityVisibility.PRIVATE,
-          ownerID: user.id,
-          ownerType: user.type,
+          ownerID: userID,
+          ownerType: userType,
           coachID: createRequest.coachID,
           courseID: createRequest.courseID,
           avatarUrl: createRequest.avatarUrl,
@@ -102,20 +102,20 @@ export class CommunitiesService {
           isSystemCreated,
 
           settings: settings as any,
-          memberCount: (!isSystemCreated && user.type === UserType.COACH) ? 1 : 0,
+          memberCount: (!isSystemCreated && userType === UserType.COACH) ? 1 : 0,
         },
         include: {
           members: true,
         },
       });
 
-      if (!isSystemCreated && user.type !== UserType.ADMIN) {
-        const { name, email, avatarUrl } = await this.getUserInfo(user);
+      if (!isSystemCreated && userType !== UserType.ADMIN) {
+        const { name, email, avatarUrl } = await this.getUserInfo(userID, userType);
         await this.prisma.communityMember.create({
           data: {
             communityID: community.id,
-            userID: user.id,
-            userType: user.type,
+            userID: userID,
+            userType: userType,
             role: MemberRole.OWNER,
             status: MemberStatus.ACTIVE,
             permissions: ['all'],
@@ -133,8 +133,8 @@ export class CommunitiesService {
           communityID: community.id,
           name: community.name,
           type: community.type as CommunityType,
-          ownerID: user.id,
-          ownerType: user.type,
+          ownerID: userID,
+          ownerType: userType,
           coachID: community.coachID,
           courseID: community.courseID,
           isSystemCreated,
@@ -148,7 +148,7 @@ export class CommunitiesService {
       }, COMMUNITY_ROUTING_KEYS.CREATED);
 
       this.logger.log(
-        `Community created: ${community.id} by ${user.type} ${user.id}${isSystemCreated ? ' (system)' : ''} - ${pricingType} pricing`
+        `Community created: ${community.id} by ${userType} ${userID}${isSystemCreated ? ' (system)' : ''} - ${pricingType} pricing`
       );
 
       return community;
@@ -192,7 +192,7 @@ export class CommunitiesService {
         type: CommunityPricingType.FREE,
         currency: 'USD'
       }
-    }, { id: coachID, type: UserType.COACH, email: '' });
+    }, coachID, UserType.COACH);
   }
 
   async getCommunities(filters: CommunityFilters, user: AuthUser) {
@@ -804,7 +804,7 @@ export class CommunitiesService {
       return updatedMember;
     }
 
-    const { name, email, avatarUrl } = await this.getUserInfo({ id: userID, type: userType });
+    const { name, email, avatarUrl } = await this.getUserInfo(userID, userType);
 
     const member = await this.prisma.communityMember.create({
       data: {
@@ -916,16 +916,16 @@ export class CommunitiesService {
     return { message: 'Member removed successfully' };
   }
 
-  private async getUserInfo(user: { id: string; type: string; }): Promise<{
+  private async getUserInfo(userID: string, userType: UserType): Promise<{
     name: string;
     email: string;
     avatarUrl: string;
   }> {
     try {
-      switch (user.type) {
+      switch (userType) {
         case UserType.COACH:
           const coach = await this.prisma.coach.findUnique({
-            where: { id: user.id },
+            where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true, businessName: true },
           });
           return {
@@ -936,7 +936,7 @@ export class CommunitiesService {
 
         case UserType.CLIENT:
           const client = await this.prisma.client.findUnique({
-            where: { id: user.id },
+            where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
           return {
@@ -947,7 +947,7 @@ export class CommunitiesService {
 
         case UserType.ADMIN:
           const admin = await this.prisma.admin.findUnique({
-            where: { id: user.id },
+            where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
           return {
@@ -964,7 +964,7 @@ export class CommunitiesService {
           };
       }
     } catch (error) {
-      this.logger.warn(`Failed to get user info for ${user.type} ${user.id}`, error);
+      this.logger.warn(`Failed to get user info for ${userType} ${userID}`, error);
       return {
         name: '',
         email: '',

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsEnum, IsString, IsDateString } from 'class-validator';
 import { PaginationDto } from '@nlc-ai/api-dto';
-import { UserType, MemberRole, MemberStatus } from '@nlc-ai/api-types';
+import { UserType, MemberRole, MemberStatus } from '@nlc-ai/types';
 
 export class CommunityMemberFiltersDto extends PaginationDto {
   @ApiProperty({ enum: MemberRole, required: false })

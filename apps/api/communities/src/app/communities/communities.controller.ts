@@ -43,7 +43,7 @@ export class CommunitiesController {
     @Body() createDto: CreateCommunityDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.communityService.createCommunity(createDto, user);
+    return this.communityService.createCommunity(createDto, user.id, user.type);
   }
 
   @Get()

@@ -383,6 +383,8 @@ export class ClientAuthService {
 
     const payload = {
       sub: client.id,
+      id: client.id,
+      name: client.firstName + ' ' + client.lastName,
       email: client.email,
       type: UserType.CLIENT,
       coachID: selectedCoach?.id,
@@ -399,6 +401,8 @@ export class ClientAuthService {
         firstName: client.firstName,
         lastName: client.lastName,
         avatarUrl: client.avatarUrl,
+        isActive: client.isActive,
+        createdAt: client.createdAt,
         coaches: client.clientCoaches.map((cc: any) => ({
           coachID: cc.coach.id,
           coachName: `${cc.coach.firstName} ${cc.coach.lastName}`,

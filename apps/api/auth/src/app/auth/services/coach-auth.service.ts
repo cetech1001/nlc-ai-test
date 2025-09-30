@@ -295,6 +295,8 @@ export class CoachAuthService {
   private async generateAuthResponse(coach: any, isNewUser: boolean): Promise<AuthResponse> {
     const payload = {
       sub: coach.id,
+      id: coach.id,
+      name: coach.firstName + ' ' + coach.lastName,
       email: coach.email,
       type: UserType.COACH,
     };
