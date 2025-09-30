@@ -1,9 +1,9 @@
 import {TrendingUp, Users} from "lucide-react";
 import React, {FC} from "react";
-import {Community} from "@nlc-ai/sdk-communities";
+import {CommunityResponse} from "@nlc-ai/types";
 
 interface IProps {
-  community: Community | null;
+  community: CommunityResponse | null;
 }
 
 export const CommunityHeader: FC<IProps> = (props) => {

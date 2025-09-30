@@ -18,11 +18,10 @@ import {
   PostResponse,
   PostType,
   ReactionType,
-  CommunityResponse,
 } from "@nlc-ai/sdk-communities";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import { useAuth } from "@nlc-ai/web-auth";
-import { UserType } from "@nlc-ai/types";
+import { UserType, CommunityResponse } from "@nlc-ai/types";
 
 const VaultPage = () => {
   const router = useRouter();
