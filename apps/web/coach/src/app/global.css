@@ -25,13 +25,11 @@
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
 
-    /* Design system colors */
     --purple: 280 80% 43.5%;
     --magenta-light: 290 100% 72%;
     --magenta: 286 73% 55%;
     --error: 0 100% 59%;
 
-    /* Sidebar variables */
     --sidebar-background: 10 10% 4%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 280 80% 43.5%;
@@ -63,7 +61,6 @@
     --input: 0 0% 10%;
     --ring: 290 100% 72%;
 
-    /* Sidebar dark theme */
     --sidebar-background: 10 10% 4%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 280 80% 43.5%;
@@ -84,11 +81,7 @@
   }
 }
 
-/* Add this to your global.css file after the existing styles */
-
-/* Custom Scrollbar Styles - Black and Transparent */
 @layer components {
-  /* Webkit-based browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -113,18 +106,15 @@
     background: rgba(0, 0, 0, 0.8);
   }
 
-  /* For corners where horizontal and vertical scrollbars meet */
   ::-webkit-scrollbar-corner {
     background: rgba(0, 0, 0, 0.1);
   }
 
-  /* Firefox */
   * {
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.1);
   }
 
-  /* Enhanced styling for specific containers */
   .sidebar-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.3);
   }
@@ -133,7 +123,6 @@
     background: rgba(0, 0, 0, 0.5);
   }
 
-  /* Main content area scrollbar */
   .main-content::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.35);
   }
@@ -142,7 +131,6 @@
     background: rgba(0, 0, 0, 0.55);
   }
 
-  /* Dark variant for better visibility on light backgrounds */
   .scrollbar-dark::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.6);
   }

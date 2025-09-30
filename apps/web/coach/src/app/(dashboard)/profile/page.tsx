@@ -1,56 +1,86 @@
-import {Calendar, Clock, Instagram, Link, X, Youtube} from "lucide-react";
+'use client'
+
+import {Calendar, Clock, Instagram, Link, MapPin, X, Youtube} from "lucide-react";
+import {useParams} from "next/navigation";
+import {useEffect, useState} from "react";
+import {useAuth} from "@nlc-ai/web-auth";
+import {UserProfile, UserType} from "@nlc-ai/types";
+import {sdkClient} from "@/lib";
+import {formatDate, formatTimeAgo} from "@nlc-ai/sdk-core";
 
 const ProfilePage = () => {
+  const { user } = useAuth(UserType.COACH);
+
+  const params = useParams();
+  const userID = params.userID as string;
+
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    if (userID) {
+      fetchUserProfile();
+    } else {
+      setProfile(user);
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    const result = await sdkClient.users.profiles.lookupUserProfile(userID, UserType.COACH);
+    setProfile(result);
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-10">
-      {/* Left Column */}
       <div className="flex-1">
-        {/* Member Profile Card */}
         <div className="glass-card rounded-[30px] p-8 mb-10 relative overflow-hidden">
-          {/* Background glow */}
-          <div className="absolute -left-7 -bottom-32 w-[267px] h-[267px] bg-streak-gradient opacity-40 blur-[112.55px] rounded-full" />
+          <div className="absolute -left-7 -bottom-32 w-[267px] h-[267px] bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 opacity-40 blur-[112.55px] rounded-full" />
 
           <div className="relative z-10 flex flex-col md:flex-row items-start gap-8">
-            {/* Profile Image */}
-            <img
-              src="https://api.builder.io/api/v1/image/assets/TEMP/03266e42472c43d1aedabe4e957102ea161e5ca8?width=248"
-              alt="Harut Martirosyan"
-              className="w-[124px] h-[124px] rounded-full border-4 border-purple-primary/20"
-            />
+            {profile?.avatarUrl && (
+              <img
+                src={profile?.avatarUrl || ''}
+                alt={profile?.firstName + ' ' + profile?.lastName}
+                className="w-[124px] h-[124px] rounded-full border-4 border-purple-primary/20"
+              />
+            )}
 
-            {/* Profile Info */}
             <div className="flex-1">
               <div className="mb-5">
-                <p className="text-foreground/70 text-sm mb-1">@harut</p>
+                <p className="text-foreground/70 text-sm mb-1">@{profile?.email}</p>
                 <div className="flex items-center gap-4 mb-4">
-                  <h1 className="text-foreground text-xl font-semibold">Harut Martirosyan 🚀</h1>
-                  <span className="px-2 py-1 bg-[#49A14C] text-white text-xs font-semibold rounded">
-                        Beginner
-                      </span>
+                  <h1 className="text-foreground text-xl font-semibold">
+                    {profile?.firstName} {profile?.lastName}
+                  </h1>
                 </div>
 
-                {/* Activity Info */}
                 <div className="flex flex-wrap items-center gap-6 mb-4">
                   <div className="flex items-center gap-3">
                     <Clock className="w-6 h-6 text-foreground/40" />
-                    <span className="text-foreground">Active: 10h ago</span>
+                    <span className="text-foreground">
+                      Active: {profile?.lastLoginAt && formatTimeAgo(profile.lastLoginAt)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Calendar className="w-6 h-6 text-foreground/40" />
-                    <span className="text-foreground">Joined Jun 10, 2022</span>
+                    <span className="text-foreground">
+                      Joined {profile?.createdAt && formatDate(profile.createdAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-6 h-6 text-foreground/40" />
+                    <span className="text-foreground">
+                      {profile?.location}
+                    </span>
                   </div>
                 </div>
 
-                {/* Bio */}
                 <p className="text-foreground leading-relaxed">
-                  Investor in Skool.com ✅ I help Skool Owners and Coaches get more clients with Content Marketing!
-                  <br />($1M+ Made, 1B+ Views, 2M+ Followers at 22 y/o)
+                  {profile?.bio}
+                  <br/>($1M+ Made, 1B+ Views, 2M+ Followers at 22 y/o)
                 </p>
               </div>
 
-              {/* Stats and Social */}
               <div className="flex flex-wrap items-center justify-between gap-6">
-                {/* Stats */}
                 <div className="flex items-center gap-8">
                   <div className="text-center">
                     <div className="text-foreground text-xl font-semibold">9.1k</div>
@@ -64,7 +94,6 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                {/* Social Links */}
                 <div className="flex items-center gap-6">
                   <Link className="w-6 h-6 text-foreground/40" />
                   <Youtube className="w-6 h-6 text-foreground/40" />
@@ -76,12 +105,10 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Courses In Progress */}
         <div className="mb-10">
           <h2 className="text-foreground text-[30px] font-medium mb-5">Courses In Progress</h2>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-            {/* Course Card 1 */}
             <div className="glass-card rounded-2xl p-6">
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-start gap-6 flex-1">
@@ -108,7 +135,6 @@ const ProfilePage = () => {
                 Turn your Personal Brand into a Client Generating machine, scale your business to $1M - $10M/year, and Achieve Greatness in your industry.
               </p>
 
-              {/* Lesson Cards */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 {[1, 2, 3, 4, 5].map((lesson) => (
                   <div key={lesson} className="glass-card rounded-[30px] p-6 text-center">
@@ -125,7 +151,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Course Card 2 */}
             <div className="glass-card rounded-2xl p-6">
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-start gap-6 flex-1">
@@ -152,7 +177,6 @@ const ProfilePage = () => {
                 Turn your Personal Brand into a Client Generating machine, scale your business to $1M - $10M/year, and Achieve Greatness in your industry.
               </p>
 
-              {/* Lesson Cards */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 {[1, 2, 3, 4, 5].map((lesson) => (
                   <div key={lesson} className="glass-card rounded-[30px] p-6 text-center">
@@ -171,12 +195,10 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Membership */}
         <div>
           <h2 className="text-foreground text-[30px] font-medium mb-5">Membership</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Membership Card 1 */}
             <div className="glass-card rounded-2xl p-6">
               <div className="flex items-center gap-6">
                 <img
@@ -195,7 +217,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Membership Card 2 */}
             <div className="glass-card rounded-2xl p-6">
               <div className="flex items-center gap-6">
                 <img
@@ -214,7 +235,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Membership Card 3 */}
             <div className="glass-card rounded-2xl p-6">
               <div className="flex items-center gap-6">
                 <img
@@ -230,46 +250,6 @@ const ProfilePage = () => {
                     <span>Free</span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column - Level Card */}
-      <div className="lg:w-[268px]">
-        <div className="glass-card rounded-[10px] p-5 bg-[#312E2B]">
-          <div className="space-y-3">
-            {/* Beginner Level */}
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-background font-semibold">1</span>
-              </div>
-              <div className="flex-1">
-                <div className="text-foreground font-medium">Beginner</div>
-                <div className="text-foreground/70 text-sm">70% members</div>
-              </div>
-            </div>
-
-            {/* Middle Level */}
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-foreground font-semibold">2</span>
-              </div>
-              <div className="flex-1">
-                <div className="text-foreground font-medium">Middle</div>
-                <div className="text-foreground/70 text-sm">20% members</div>
-              </div>
-            </div>
-
-            {/* Pro Level */}
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-foreground font-semibold">3</span>
-              </div>
-              <div className="flex-1">
-                <div className="text-foreground font-medium">Pro🚀</div>
-                <div className="text-foreground/70 text-sm">10% members</div>
               </div>
             </div>
           </div>

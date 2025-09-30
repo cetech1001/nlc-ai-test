@@ -69,7 +69,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
           <div className="py-2">
             <button
-              onClick={() => handleNavigation('/settings/profile')}
+              onClick={() => handleNavigation('/profile')}
               className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
             >
               <User className="w-4 h-4 text-stone-400" />
