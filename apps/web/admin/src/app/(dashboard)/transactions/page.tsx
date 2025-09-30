@@ -12,7 +12,9 @@ import {
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/web-shared";
 import { transactionsAPI } from "@nlc-ai/web-api-client";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {DataTableTransaction, FilterValues} from "@nlc-ai/types";
+import {FilterValues} from "@nlc-ai/types";
+import {DataTableTransaction} from "@nlc-ai/sdk-billing";
+
 
 const Transactions = () => {
   const [isLoading, setIsLoading] = useState(true);

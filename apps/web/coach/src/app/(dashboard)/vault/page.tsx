@@ -54,7 +54,7 @@ const VaultPage = () => {
       setIsLoading(true);
       setError("");
 
-      const communityData = await sdkClient.communities.getCommunity('ai-vault');
+      const communityData = await sdkClient.communities.getCommunityBySlug('ai-vault');
       setCommunity(communityData);
 
       await loadPosts(communityData.id);

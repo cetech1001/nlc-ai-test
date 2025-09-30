@@ -1,8 +1,8 @@
-import {UserType} from "@nlc-ai/types";
-import {CommunityType, CommunityVisibility, MemberRole, MemberStatus, CommunityPricingTypes} from "./enums";
+import {UserType, CommunityPricingType} from "@nlc-ai/types";
+import {CommunityType, CommunityVisibility, MemberRole, MemberStatus} from "./enums";
 
 export interface CommunityPricing {
-  type: CommunityPricingTypes;
+  type: CommunityPricingType;
   amount?: number | null;
   currency?: string | null;
 }
@@ -30,7 +30,7 @@ export interface Community {
   avatarUrl?: string;
   bannerUrl?: string;
   slug: string;
-  pricingType: CommunityPricingTypes;
+  pricingType: CommunityPricingType;
   oneTimePrice?: number | null;
   monthlyPrice?: number | null;
   annualPrice?: number | null;

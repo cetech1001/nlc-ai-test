@@ -56,15 +56,26 @@ export class CommunitiesController {
     return this.communityService.getCommunities(filters, user);
   }
 
-  @Get(':slug')
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a specific community by id' })
+  @ApiParam({ name: 'id', description: 'Community ID' })
+  @ApiResponse({ status: 200, description: 'Community retrieved successfully' })
+  async getCommunity(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.getCommunityByID(id, user);
+  }
+
+  @Get('slug/:slug')
   @ApiOperation({ summary: 'Get a specific community by slug' })
   @ApiParam({ name: 'slug', description: 'Community Slug' })
   @ApiResponse({ status: 200, description: 'Community retrieved successfully' })
-  async getCommunity(
+  async getCommunityBySlug(
     @Param('slug') slug: string,
     @CurrentUser() user: AuthUser
   ) {
-    return this.communityService.getCommunity(slug, user);
+    return this.communityService.getCommunityBySlug(slug, user);
   }
 
   @Get('coach/:coachID')

@@ -9,12 +9,11 @@ import {toast} from 'sonner';
 import {BasicCommunityInfoFormStep, CommunitySettingsFormStep, CommunityTypeAndAccessFormStep, sdkClient} from "@/lib";
 import {
   CommunityFormErrors,
-  CommunityPricingTypes,
   CommunityType,
   CommunityVisibility,
   CreateCommunityForm,
-  CreateCommunityRequest
 } from '@nlc-ai/sdk-communities';
+import {CreateCommunityRequest, CommunityPricingType} from "@nlc-ai/types";
 import {MediaTransformationType} from "@nlc-ai/sdk-media";
 
 const stepNames = [
@@ -40,7 +39,7 @@ const AdminCreateCommunityPage = () => {
     avatarUrl: '',
     bannerUrl: '',
     pricing: {
-      type: CommunityPricingTypes.FREE,
+      type: CommunityPricingType.FREE,
       amount: 0,
       currency: 'USD'
     },
@@ -97,7 +96,7 @@ const AdminCreateCommunityPage = () => {
         newErrors['pricing.amount'] = 'Valid price is required for paid communities';
       }
     } else if (currentStep === 2) {
-      if (form.settings.maxPostLength < 100 || form.settings.maxPostLength > 10000) {
+      if (form.settings.maxPostLength! < 100 || form.settings.maxPostLength! > 10000) {
         newErrors.maxPostLength = 'Max post length must be between 100 and 10,000 characters';
       }
     }

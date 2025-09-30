@@ -6,7 +6,7 @@ import {
 import { X, Plus, User, Mail, Phone, Tag, Users } from "lucide-react";
 import {useEffect, useState} from "react";
 import {ClientWithDetails} from "@nlc-ai/types";
-import {ClientFormData, ClientFormErrors} from "@nlc-ai/types";
+import {ClientFormData, ClientFormErrors} from "@nlc-ai/sdk-users";
 
 const sourceOptions = [
   { value: 'website', label: 'Website' },

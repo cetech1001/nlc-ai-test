@@ -45,14 +45,20 @@ const AdminCommunityModeratePage = () => {
   });
 
   useEffect(() => {
-    fetchModerationData();
+    if (communityID) {
+      console.log("Community ID: ", communityID);
+      fetchModerationData();
+    }
   }, [communityID]);
 
   useEffect(() => {
-    if (activeTab === 'content') {
-      fetchFlaggedContent();
-    } else if (activeTab === 'actions') {
-      fetchModerationActions();
+    if (communityID) {
+      console.log("Community ID: ", communityID);
+      if (activeTab === 'content') {
+        fetchFlaggedContent();
+      } else if (activeTab === 'actions') {
+        fetchModerationActions();
+      }
     }
   }, [communityID, activeTab, searchQuery, filterValues, currentPage]);
 

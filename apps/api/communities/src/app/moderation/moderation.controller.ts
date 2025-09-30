@@ -29,7 +29,7 @@ import {
 } from './dto';
 
 @ApiTags('Moderation')
-@Controller('communities/:communityID/moderation')
+@Controller(':communityID/moderation')
 @UseGuards(UserTypesGuard)
 @UserTypes(UserType.admin, UserType.coach)
 @ApiBearerAuth()

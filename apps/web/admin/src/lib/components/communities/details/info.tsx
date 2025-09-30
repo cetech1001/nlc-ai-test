@@ -1,11 +1,11 @@
 import {Crown} from "lucide-react";
 import {FC, useEffect, useState} from "react";
-import {Community} from "@nlc-ai/sdk-communities";
+import {CommunityResponse} from "@nlc-ai/types";
 import { appConfig } from "@nlc-ai/web-shared";
 import { formatCurrency } from "@nlc-ai/web-utils";
 import {sdkClient} from "@/lib";
 
-export const CommunityDetailsInfo: FC<{ community: Community }> = ({ community }) => {
+export const CommunityDetailsInfo: FC<{ community: CommunityResponse }> = ({ community }) => {
   const [owner, setOwner] = useState<any>(null);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export const CommunityDetailsInfo: FC<{ community: Community }> = ({ community }
   }, [community.ownerID]);
 
   const lookupOwner = async () => {
-    const owner = await sdkClient.users.profiles.lookupUserProfile(community.ownerType, community.ownerID);
+    const owner = await sdkClient.users.profiles.lookupUserProfile(community.ownerID, community.ownerType);
     setOwner(owner);
   }
 

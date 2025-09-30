@@ -1,5 +1,5 @@
 import { Input, Label } from '@nlc-ai/web-ui';
-import { CommunityResponse } from '@nlc-ai/sdk-communities';
+import { CommunityResponse } from '@nlc-ai/types';
 
 interface FeaturesSettingsProps {
   community: CommunityResponse;

@@ -41,6 +41,21 @@ export interface TransactionStats {
   totalRevenue: number;
 }
 
+export interface RevenueComparison {
+  currentMonth: number;
+  previousMonth: number;
+  percentageChange: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+export interface TopCoach {
+  coachID: string;
+  coachName: string;
+  coachEmail: string;
+  totalAmount: number;
+  transactionCount: number;
+}
+
 export interface TransactionWithDetails {
   id: string;
   coachID: string;

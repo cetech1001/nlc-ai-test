@@ -1,6 +1,7 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import {DataTableTransaction, TableColumn, TransactionWithDetails} from "@nlc-ai/types";
+import {TableColumn, TransactionWithDetails} from "@nlc-ai/types";
 import { formatCurrency } from "@nlc-ai/web-utils";
+import {DataTableTransaction} from "@nlc-ai/sdk-billing";
 
 export const transformTransactionData = (transactions: TransactionWithDetails[]): DataTableTransaction[] => {
   return transactions.map((transaction: TransactionWithDetails) => ({

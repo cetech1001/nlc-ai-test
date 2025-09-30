@@ -176,8 +176,6 @@ const AdminCommunitiesPage = () => {
     try {
       setIsStatsLoading(true);
 
-      // This would need to be implemented in the community service
-      // For now, using mock data
       const mockStats: CommunityStats = {
         total: 156,
         active: 142,

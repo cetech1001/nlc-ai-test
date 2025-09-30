@@ -1,8 +1,8 @@
 import {Dispatch, FC, SetStateAction, useMemo} from "react";
 import { DataTable, tableRenderers } from "@nlc-ai/web-shared";
-import {TableColumn, DataTableCoach} from "@nlc-ai/types";
+import {TableColumn} from "@nlc-ai/types";
 import {coachesAPI} from "@nlc-ai/web-api-client";
-import {ExtendedCoach} from "@nlc-ai/sdk-users";
+import {ExtendedCoach, DataTableCoach} from "@nlc-ai/sdk-users";
 
 interface IProps {
   coaches: ExtendedCoach[];

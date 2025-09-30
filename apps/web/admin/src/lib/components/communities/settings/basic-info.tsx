@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {Input, Label, Textarea} from '@nlc-ai/web-ui';
 import {Camera, RotateCw, Upload, X} from 'lucide-react';
-import {CommunityResponse} from '@nlc-ai/sdk-communities';
+import {CommunityResponse} from '@nlc-ai/types';
 import {ImageCropper} from '@nlc-ai/web-settings';
 import {sdkClient} from "@/lib";
 import {toast} from 'sonner';

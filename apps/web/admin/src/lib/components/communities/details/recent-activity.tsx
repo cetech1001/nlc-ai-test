@@ -1,7 +1,7 @@
 import {Button} from "@nlc-ai/web-ui";
 import {Eye} from "lucide-react";
 import {useRouter} from "next/navigation";
-import {CommunityActivity} from "@nlc-ai/sdk-communities";
+import {CommunityActivity} from "@nlc-ai/types";
 import {FC} from "react";
 
 interface IProps {

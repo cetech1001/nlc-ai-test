@@ -1,4 +1,4 @@
-import {CommunityPricing} from "./responses";
+import {CommunityPricing, CommunitySettings} from "@nlc-ai/types";
 import {CommunityType, CommunityVisibility} from "./enums";
 
 export interface CreateCommunityForm {
@@ -12,15 +12,7 @@ export interface CreateCommunityForm {
   avatarUrl: string;
   bannerUrl: string;
   pricing: CommunityPricing;
-  settings: {
-    allowMemberPosts: boolean;
-    requireApproval: boolean;
-    allowFileUploads: boolean;
-    maxPostLength: number;
-    allowPolls: boolean;
-    allowEvents: boolean;
-    moderationLevel: string;
-  };
+  settings: CommunitySettings;
   isSystemCreated?: boolean;
 }
 

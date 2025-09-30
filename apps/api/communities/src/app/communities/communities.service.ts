@@ -19,6 +19,7 @@ import {
   AuthUser,
   UserType
 } from '@nlc-ai/types';
+import {Community} from "@prisma/client";
 
 
 @Injectable()
@@ -251,7 +252,30 @@ export class CommunitiesService {
     });
   }
 
-  async getCommunity(slug: string, user: AuthUser) {
+  async getCommunityByID(id: string, user: AuthUser) {
+    const community = await this.prisma.community.findUnique({
+      where: { id },
+      include: {
+        members: {
+          where: { status: MemberStatus.ACTIVE },
+          orderBy: { joinedAt: 'asc' },
+          take: 20,
+        },
+        _count: {
+          select: {
+            members: {
+              where: { status: MemberStatus.ACTIVE },
+            },
+            posts: true,
+          },
+        },
+      },
+    });
+
+    return this.getCommunity(community, user);
+  }
+
+  async getCommunityBySlug(slug: string, user: AuthUser) {
     const community = await this.prisma.community.findUnique({
       where: { slug },
       include: {
@@ -271,6 +295,10 @@ export class CommunitiesService {
       },
     });
 
+    return this.getCommunity(community, user);
+  }
+
+  private async getCommunity(community: Community | null, user: AuthUser) {
     if (!community) {
       throw new NotFoundException('Community not found');
     }
@@ -321,32 +349,7 @@ export class CommunitiesService {
       },
     });
 
-    if (!community) {
-      throw new NotFoundException('Community not found');
-    }
-
-    let membership;
-
-    if (user.type !== UserType.ADMIN) {
-      membership = await this.prisma.communityMember.findUnique({
-        where: {
-          communityID_userID_userType: {
-            communityID: community.id,
-            userID: user.id,
-            userType: user.type,
-          },
-        },
-      });
-
-      if (!membership && community.visibility !== CommunityVisibility.PUBLIC) {
-        throw new ForbiddenException('Access denied to this community');
-      }
-    }
-
-    return {
-      ...community,
-      userMembership: membership,
-    };
+    return this.getCommunity(community, user);
   }
 
   async updateCommunity(id: string, updateRequest: UpdateCommunityRequest, user: AuthUser) {

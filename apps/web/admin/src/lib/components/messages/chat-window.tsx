@@ -306,7 +306,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
 
     try {
-      const participant = await sdkClient.users.profiles.lookupUserProfile(otherUserType, otherUserID);
+      const participant = await sdkClient.users.profiles.lookupUserProfile(otherUserID, otherUserType);
 
       setOtherParticipant({
         id: participant.id,

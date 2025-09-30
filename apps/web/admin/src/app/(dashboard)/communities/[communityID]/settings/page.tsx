@@ -13,7 +13,7 @@ import {
   PricingSettings,
   DangerZoneSettings
 } from "@/lib";
-import { CommunityResponse, UpdateCommunityRequest } from '@nlc-ai/sdk-communities';
+import { CommunityResponse, UpdateCommunityRequest } from '@nlc-ai/types';
 
 interface CommunitySettingsForm extends CommunityResponse {
   isDirty?: boolean;

@@ -91,7 +91,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         }
       }
 
-      const userInfo = await sdkClient.users.profile.lookupProfile(otherUserType, otherUserID);
+      const userInfo = await sdkClient.users.profiles.lookupUserProfile(otherUserID, otherUserType);
 
       return {
         displayName: userInfo.firstName + ' ' + userInfo.lastName,

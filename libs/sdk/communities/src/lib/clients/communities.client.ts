@@ -7,9 +7,11 @@ import {
   AddMemberRequest,
   CommunityType,
   CommunityMember,
-  ExtendedCommunityMember,
-  MemberStats, CommunityActivity, CommunityDetailStats
-} from '../types';
+  CommunityActivity,
+  CommunityDetailStats
+} from '@nlc-ai/types';
+import {ExtendedCommunityMember, MemberStats} from "../types";
+
 import {ModerationClient} from "./moderation.client";
 import {PostsClient} from "./posts.client";
 import {NLCClientConfig} from "@nlc-ai/sdk-main";
@@ -55,8 +57,13 @@ export class CommunitiesClient extends BaseClient {
     return response.data!;
   }
 
-  async getCommunity(slug: string): Promise<CommunityResponse> {
-    const response = await this.request<CommunityResponse>('GET', `/${slug}`);
+  async getCommunity(id: string): Promise<CommunityResponse> {
+    const response = await this.request<CommunityResponse>('GET', `/${id}`);
+    return response.data!;
+  }
+
+  async getCommunityBySlug(slug: string): Promise<CommunityResponse> {
+    const response = await this.request<CommunityResponse>('GET', `/slug/${slug}`);
     return response.data!;
   }
 

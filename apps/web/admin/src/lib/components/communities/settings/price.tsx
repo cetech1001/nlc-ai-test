@@ -1,6 +1,6 @@
 import { Input, Label } from '@nlc-ai/web-ui';
 import { DollarSign, Users, Calendar, CreditCard, Zap } from 'lucide-react';
-import { CommunityResponse } from '@nlc-ai/sdk-communities';
+import { CommunityResponse } from '@nlc-ai/types';
 
 interface PricingSettingsProps {
   community: CommunityResponse;
