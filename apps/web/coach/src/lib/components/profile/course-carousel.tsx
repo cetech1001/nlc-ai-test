@@ -106,6 +106,7 @@ export const CourseCarousel: React.FC<CourseCarouselProps> = ({
       >
         {courses.map((course) => (
           <div
+            key={course.id}
             className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden h-full flex flex-col cursor-pointer hover:border-purple-400/50 transition-all"
           >
             {/* Glow Effect */}
