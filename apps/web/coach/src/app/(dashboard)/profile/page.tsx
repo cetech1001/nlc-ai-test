@@ -4,9 +4,10 @@ import {Calendar, Clock, Instagram, Link, MapPin, X, Youtube} from "lucide-react
 import {useParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {useAuth} from "@nlc-ai/web-auth";
-import {UserProfile, UserType} from "@nlc-ai/types";
+import {ExtendedCourse, UserProfile, UserType} from "@nlc-ai/types";
 import {sdkClient} from "@/lib";
 import {formatDate, formatTimeAgo} from "@nlc-ai/sdk-core";
+import {toast} from "sonner";
 
 const ProfilePage = () => {
   const { user } = useAuth(UserType.COACH);
@@ -14,7 +15,12 @@ const ProfilePage = () => {
   const params = useParams();
   const userID = params.userID as string;
 
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isCoursesLoading, setIsCoursesLoading] = useState(false);
+  const [isMembershipsLoading, setIsMembershipsLoading] = useState(false);
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [courses, setCourses] = useState<ExtendedCourse[]>([]);
 
   useEffect(() => {
     if (userID) {
@@ -22,11 +28,44 @@ const ProfilePage = () => {
     } else {
       setProfile(user);
     }
+
+
   }, [user]);
 
   const fetchUserProfile = async () => {
-    const result = await sdkClient.users.profiles.lookupUserProfile(userID, UserType.COACH);
-    setProfile(result);
+    setIsProfileLoading(true);
+    try {
+      const result = await sdkClient.users.profiles.lookupUserProfile(userID, UserType.COACH);
+      setProfile(result);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setIsProfileLoading(false);
+    }
+  }
+
+  const fetchUserCourses = async () => {
+    setIsCoursesLoading(true);
+    try {
+      const result = await sdkClient.courses.getCourses();
+      setCourses(result.data);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setIsCoursesLoading(false);
+    }
+  }
+
+  const fetchUserMemberships = async () => {
+    setIsCoursesLoading(true);
+    try {
+      const result = await sdkClient.courses.getCourses();
+      setCourses(result.data);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setIsCoursesLoading(false);
+    }
   }
 
   return (
@@ -76,7 +115,6 @@ const ProfilePage = () => {
 
                 <p className="text-foreground leading-relaxed">
                   {profile?.bio}
-                  <br/>($1M+ Made, 1B+ Views, 2M+ Followers at 22 y/o)
                 </p>
               </div>
 
