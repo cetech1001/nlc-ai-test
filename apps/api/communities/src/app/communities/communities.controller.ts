@@ -24,7 +24,7 @@ import {
   UpdateCommunityDto,
   CommunityFiltersDto,
   AddMemberDto,
-  CommunityMemberFiltersDto,
+  CommunityMemberFiltersDto, InviteMemberDto,
 } from './dto';
 
 @ApiTags('Community')
@@ -54,6 +54,14 @@ export class CommunitiesController {
     @CurrentUser() user: AuthUser
   ) {
     return this.communityService.getCommunities(filters, user);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get overall community statistics' })
+  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @UserTypes(UserType.ADMIN)
+  async getCommunityStats() {
+    return this.communityService.getCommunityStats();
   }
 
   @Get(':id')
@@ -176,6 +184,38 @@ export class CommunitiesController {
       userID,
       userType,
       user,
+    );
+  }
+
+  @Get(':id/member-stats')
+  @ApiOperation({ summary: 'Get community member statistics' })
+  @ApiParam({ name: 'id', description: 'Community ID' })
+  @ApiResponse({ status: 200, description: 'Member statistics retrieved successfully' })
+  @UserTypes(UserType.COACH, UserType.ADMIN)
+  async getCommunityMemberStats(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.getCommunityMemberStats(id);
+  }
+
+  @Post(':id/invites')
+  @ApiOperation({ summary: 'Invite member to community' })
+  @ApiParam({ name: 'id', description: 'Community ID' })
+  @ApiResponse({ status: 201, description: 'Invitation sent successfully' })
+  @UserTypes(UserType.COACH, UserType.ADMIN)
+  async inviteMember(
+    @Param('id') communityID: string,
+    @Body() inviteDto: InviteMemberDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.inviteMemberToCommunity(
+      communityID,
+      inviteDto.userID,
+      inviteDto.userType,
+      user.id,
+      user.type,
+      inviteDto.message
     );
   }
 }

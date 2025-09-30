@@ -1,177 +1,195 @@
-import { useState } from 'react';
-import { X, Mail } from 'lucide-react';
-import { Button, Input, Label, Textarea } from '@nlc-ai/web-ui';
+import React, { useState } from 'react';
+import { X, Mail, Calendar } from 'lucide-react';
+import { Button, Input, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@nlc-ai/web-ui';
 import { toast } from 'sonner';
+import { sdkClient } from '@/lib';
 
 interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   communityID: string;
-  onInviteSuccess?: () => void;
+  onSuccess: () => void;
 }
 
-export const InviteMemberModal = ({ isOpen, onClose, communityID, onInviteSuccess }: InviteMemberModalProps) => {
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteMessage, setInviteMessage] = useState('');
-  const [selectedRole, setSelectedRole] = useState('member');
-  const [isInviting, setIsInviting] = useState(false);
+export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
+                                                                      isOpen,
+                                                                      onClose,
+                                                                      communityID,
+                                                                      onSuccess,
+                                                                    }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    inviteeID: '',
+    inviteeType: 'client' as 'coach' | 'client',
+    message: '',
+    expiresInDays: '7',
+  });
 
   if (!isOpen) return null;
 
-  const handleInviteMember = async () => {
-    if (!inviteEmail.trim()) {
-      toast.error('Please enter an email address');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.inviteeID.trim()) {
+      toast.error('Please enter a member ID');
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
+    setIsLoading(true);
 
-    setIsInviting(true);
     try {
-      // TODO: Replace with actual API call
-      // await sdkClient.community.communities.inviteMember(communityID, {
-      //   email: inviteEmail,
-      //   role: selectedRole as any,
-      //   message: inviteMessage
-      // });
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + parseInt(formData.expiresInDays));
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await sdkClient.communities.inviteMember(communityID, {
+        inviteeID: formData.inviteeID.trim(),
+        inviteeType: formData.inviteeType,
+        message: formData.message.trim() || undefined,
+        expiresAt: expiresAt.toISOString(),
+      });
 
-      toast.success(`Invitation sent to ${inviteEmail}`);
-      handleClose();
-      onInviteSuccess?.();
+      toast.success('Invitation sent successfully!');
+      onSuccess();
+      onClose();
+
+      // Reset form
+      setFormData({
+        inviteeID: '',
+        inviteeType: 'client',
+        message: '',
+        expiresInDays: '7',
+      });
     } catch (error: any) {
+      console.error('Failed to send invitation:', error);
       toast.error(error.message || 'Failed to send invitation');
     } finally {
-      setIsInviting(false);
+      setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    setInviteEmail('');
-    setInviteMessage('');
-    setSelectedRole('member');
-    onClose();
+    if (!isLoading) {
+      onClose();
+    }
   };
 
-  const roles = [
-    { value: 'member', label: 'Member', description: 'Can participate in discussions' },
-    { value: 'moderator', label: 'Moderator', description: 'Can moderate content and manage members' },
-    { value: 'admin', label: 'Admin', description: 'Full administrative access' },
-  ];
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8 w-full max-w-md">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute w-48 h-48 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="relative w-full max-w-md bg-gradient-to-b from-neutral-800 to-neutral-900 rounded-2xl border border-neutral-700 shadow-2xl">
+        {/* Glow orb */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute w-48 h-48 -right-12 -top-12 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[80px]" />
         </div>
 
-        <div className="relative z-10">
-          <div className="flex justify-between items-center mb-6">
+        <div className="relative z-10 p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-600 to-violet-600 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white">Invite Member</h3>
+              <h2 className="text-xl font-bold text-white">Invite Member</h2>
             </div>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              disabled={isLoading}
+              className="text-stone-400 hover:text-white transition-colors disabled:opacity-50"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
           </div>
 
-          <div className="space-y-6">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="inviteEmail" className="text-white text-sm mb-2 block">
-                Email Address <span className="text-red-400">*</span>
-              </Label>
+              <label className="block text-sm font-medium text-stone-300 mb-2">
+                Member ID
+              </label>
               <Input
-                id="inviteEmail"
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="Enter email address..."
-                className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-stone-400"
+                value={formData.inviteeID}
+                onChange={(e) => setFormData({ ...formData, inviteeID: e.target.value })}
+                placeholder="Enter member ID"
+                disabled={isLoading}
+                className="bg-neutral-700/50 border-neutral-600 text-white"
               />
             </div>
 
             <div>
-              <Label className="text-white text-sm mb-3 block">
-                Assign Role
-              </Label>
-              <div className="space-y-3">
-                {roles.map((role) => (
-                  <div
-                    key={role.value}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedRole === role.value
-                        ? 'border-purple-600 bg-purple-600/20'
-                        : 'border-neutral-600 bg-neutral-800/50 hover:bg-neutral-700/50'
-                    }`}
-                    onClick={() => setSelectedRole(role.value)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-white font-medium">{role.label}</div>
-                        <div className="text-stone-400 text-sm">{role.description}</div>
-                      </div>
-                      <div className={`w-4 h-4 rounded-full border-2 ${
-                        selectedRole === role.value
-                          ? 'border-purple-500 bg-purple-500'
-                          : 'border-neutral-400'
-                      }`}>
-                        {selectedRole === role.value && (
-                          <div className="w-2 h-2 bg-white rounded-full m-0.5" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <label className="block text-sm font-medium text-stone-300 mb-2">
+                Member Type
+              </label>
+              <Select
+                value={formData.inviteeType}
+                onValueChange={(value) => setFormData({ ...formData, inviteeType: value as 'coach' | 'client' })}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="bg-neutral-700/50 border-neutral-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="coach">Coach</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <Label htmlFor="inviteMessage" className="text-white text-sm mb-2 block">
-                Personal Message (Optional)
-              </Label>
+              <label className="block text-sm font-medium text-stone-300 mb-2">
+                Invitation Message (Optional)
+              </label>
               <Textarea
-                id="inviteMessage"
-                value={inviteMessage}
-                onChange={(e) => setInviteMessage(e.target.value)}
-                placeholder="Add a personal message to the invitation..."
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                placeholder="Add a personal message..."
                 rows={3}
-                className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-stone-400 resize-none"
+                disabled={isLoading}
+                className="bg-neutral-700/50 border-neutral-600 text-white resize-none"
               />
-              <p className="text-stone-400 text-xs mt-1">
-                This message will be included in the invitation email.
-              </p>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-stone-300 mb-2">
+                <Calendar className="w-4 h-4 inline mr-1" />
+                Expires In
+              </label>
+              <Select
+                value={formData.expiresInDays}
+                onValueChange={(value) => setFormData({ ...formData, expiresInDays: value })}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="bg-neutral-700/50 border-neutral-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 day</SelectItem>
+                  <SelectItem value="3">3 days</SelectItem>
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="14">14 days</SelectItem>
+                  <SelectItem value="30">30 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Actions */}
             <div className="flex gap-3 pt-4">
               <Button
-                onClick={handleClose}
+                type="button"
                 variant="outline"
+                onClick={handleClose}
+                disabled={isLoading}
                 className="flex-1"
-                disabled={isInviting}
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleInviteMember}
-                disabled={isInviting || !inviteEmail.trim()}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700"
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:opacity-90"
               >
-                {isInviting ? 'Sending...' : 'Send Invitation'}
+                {isLoading ? 'Sending...' : 'Send Invitation'}
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>

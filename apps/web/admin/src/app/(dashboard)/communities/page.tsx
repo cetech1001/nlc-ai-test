@@ -102,7 +102,7 @@ const AdminCommunitiesPage = () => {
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [stats, setStats] = useState<CommunityStats>();
+  const [stats, setStats] = useState<CommunityStats | null>(null);
 
   const communitiesPerPage = 10;
 
@@ -147,7 +147,6 @@ const AdminCommunitiesPage = () => {
         search: searchQuery,
         type: filterValues.type || undefined,
         visibility: filterValues.visibility || undefined,
-        // Add date range filter if needed
       });
 
       // Transform response data to match DataTable format
@@ -175,21 +174,11 @@ const AdminCommunitiesPage = () => {
   const fetchStats = async () => {
     try {
       setIsStatsLoading(true);
-
-      const mockStats: CommunityStats = {
-        total: 156,
-        active: 142,
-        coachToCommunities: 1,
-        coachClientCommunities: 89,
-        totalMembers: 2487,
-        totalPosts: 1342,
-        avgMembersPerCommunity: 15.9,
-        avgPostsPerCommunity: 8.6,
-      };
-
-      setStats(mockStats);
-    } catch (e) {
-      throw e;
+      const statsData = await sdkClient.communities.getCommunityStats();
+      setStats(statsData);
+    } catch (e: any) {
+      console.error('Failed to fetch stats:', e);
+      toast.error('Failed to load statistics');
     } finally {
       setIsStatsLoading(false);
     }
@@ -207,7 +196,6 @@ const AdminCommunitiesPage = () => {
     } else if (action === 'settings') {
       router.push(`/communities/${community.originalID}/settings`);
     } else if (action === 'toggle-status') {
-      // Implement toggle status functionality
       toast.info('Toggle status functionality to be implemented');
     }
   };
@@ -251,7 +239,7 @@ const AdminCommunitiesPage = () => {
             icon={Users}
             subtitle="&nbsp;"
             iconBgColor="from-violet-600/20 to-fuchsia-600/20"
-            isLoading={isStatsLoading || !stats}
+            isLoading={isStatsLoading}
           />
           <StatCard
             title="Active Communities"
@@ -259,23 +247,23 @@ const AdminCommunitiesPage = () => {
             subtitle={`${stats?.total ? Math.round((stats.active / stats.total) * 100) : 0}% active`}
             icon={TrendingUp}
             iconBgColor="from-green-600/20 to-emerald-600/20"
-            isLoading={isStatsLoading || !stats}
+            isLoading={isStatsLoading}
           />
           <StatCard
             title="Total Members"
             value={stats?.totalMembers}
-            subtitle={`Avg ${stats?.avgMembersPerCommunity} per community`}
+            subtitle={`Avg ${stats?.avgMembersPerCommunity || 0} per community`}
             icon={Users}
             iconBgColor="from-blue-600/20 to-cyan-600/20"
-            isLoading={isStatsLoading || !stats}
+            isLoading={isStatsLoading}
           />
           <StatCard
             title="Total Posts"
             value={stats?.totalPosts}
-            subtitle={`Avg ${stats?.avgPostsPerCommunity} per community`}
+            subtitle={`Avg ${stats?.avgPostsPerCommunity || 0} per community`}
             icon={MessageSquare}
             iconBgColor="from-orange-600/20 to-yellow-600/20"
-            isLoading={isStatsLoading || !stats}
+            isLoading={isStatsLoading}
           />
         </div>
 

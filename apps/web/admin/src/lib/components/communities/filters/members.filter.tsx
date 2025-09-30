@@ -1,10 +1,10 @@
-import { FilterConfig, FilterValues } from "@nlc-ai/sdk-core";
+import { FilterValues } from "@nlc-ai/sdk-core";
 
-export const memberFilters: FilterConfig[] = [
+export const memberFilters = [
   {
     key: 'role',
     label: 'Role',
-    type: 'select',
+    type: 'select' as const,
     options: [
       { label: 'All Roles', value: '' },
       { label: 'Owner', value: 'owner' },
@@ -16,9 +16,9 @@ export const memberFilters: FilterConfig[] = [
   {
     key: 'status',
     label: 'Status',
-    type: 'select',
+    type: 'select' as const,
     options: [
-      { label: 'All Status', value: '' },
+      { label: 'All Statuses', value: '' },
       { label: 'Active', value: 'active' },
       { label: 'Inactive', value: 'inactive' },
       { label: 'Suspended', value: 'suspended' },
@@ -28,23 +28,17 @@ export const memberFilters: FilterConfig[] = [
   {
     key: 'userType',
     label: 'User Type',
-    type: 'select',
+    type: 'select' as const,
     options: [
       { label: 'All Types', value: '' },
       { label: 'Coach', value: 'coach' },
       { label: 'Client', value: 'client' },
-      { label: 'Admin', value: 'admin' },
     ],
   },
   {
-    key: 'joinedDate',
-    label: 'Joined Date',
-    type: 'date-range',
-  },
-  {
-    key: 'lastActiveDate',
-    label: 'Last Active',
-    type: 'date-range',
+    key: 'dateRange',
+    label: 'Join Date',
+    type: 'date-range' as const,
   },
 ];
 
@@ -52,6 +46,5 @@ export const emptyMemberFilterValues: FilterValues = {
   role: '',
   status: '',
   userType: '',
-  joinedDate: null,
-  lastActiveDate: null,
+  dateRange: null,
 };

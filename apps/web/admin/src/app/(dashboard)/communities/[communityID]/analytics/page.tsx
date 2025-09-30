@@ -2,24 +2,32 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import {TrendingUp, Users, MessageSquare, Heart, Calendar, Download, Shield} from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Users, MessageSquare, Heart, Download, Shield, Calendar } from 'lucide-react';
 import { BackTo, StatCard } from "@nlc-ai/web-shared";
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@nlc-ai/web-ui';
-import { CommunityAnalytics } from '@nlc-ai/sdk-analytics';
 import { sdkClient } from "@/lib";
 
-const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+interface CommunityStats {
+  memberGrowth: number;
+  postGrowth: number;
+  engagementRate: number;
+  activeMembers: number;
+  totalPosts: number;
+  totalComments: number;
+  averagePostsPerDay: number;
+}
 
 const AdminCommunityAnalyticsPage = () => {
   const router = useRouter();
   const params = useParams();
   const communityID = params.communityID as string;
 
-  const [analytics, setAnalytics] = useState<CommunityAnalytics | null>(null);
+  const [stats, setStats] = useState<CommunityStats | null>(null);
+  const [community, setCommunity] = useState<any>(null);
+  const [activities, setActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('30d');
-  const [activeChart, setActiveChart] = useState<'activity' | 'growth'>('activity');
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   useEffect(() => {
     fetchAnalytics();
@@ -29,90 +37,141 @@ const AdminCommunityAnalyticsPage = () => {
     try {
       setIsLoading(true);
 
-      // Calculate date range
-      let startDate: string | undefined;
-      const now = new Date();
+      // Fetch community details
+      const communityData = await sdkClient.communities.getCommunity(communityID);
+      setCommunity(communityData);
 
-      if (timeRange === '7d') {
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      } else if (timeRange === '30d') {
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      } else if (timeRange === '90d') {
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-      }
+      // Fetch analytics stats
+      const analyticsData = await sdkClient.communities.getCommunityAnalytics(communityID, timeRange);
+      setStats(analyticsData);
 
-      const analyticsData = await sdkClient.analytics.community.getCommunityAnalytics(
-        communityID,
-        startDate,
-        now.toISOString()
-      );
+      // Fetch recent activity
+      const activityData = await sdkClient.communities.getCommunityActivity(communityID, 20);
+      setActivities(activityData);
 
-      setAnalytics(analyticsData);
     } catch (error: any) {
       console.error('Failed to fetch analytics:', error);
-
-      // Fallback to mock data if API fails
-      const mockAnalytics: CommunityAnalytics = {
-        overview: {
-          totalMembers: 89,
-          memberGrowth: 12.5,
-          totalPosts: 156,
-          postGrowth: 8.3,
-          totalComments: 423,
-          commentGrowth: 15.2,
-          totalReactions: 1247,
-          reactionGrowth: 22.1,
-          engagementRate: 68.5,
-          activeMembers: 61,
-        },
-        memberGrowthData: [
-          { date: '2024-01-01', members: 45, newMembers: 5 },
-          { date: '2024-01-07', members: 52, newMembers: 7 },
-          { date: '2024-01-14', members: 61, newMembers: 9 },
-          { date: '2024-01-21', members: 73, newMembers: 12 },
-          { date: '2024-01-28', members: 89, newMembers: 16 },
-        ],
-        activityData: [
-          { date: '2024-01-01', posts: 12, comments: 34, reactions: 89 },
-          { date: '2024-01-07', posts: 18, comments: 45, reactions: 123 },
-          { date: '2024-01-14', posts: 15, comments: 52, reactions: 156 },
-          { date: '2024-01-21', posts: 22, comments: 67, reactions: 198 },
-          { date: '2024-01-28', posts: 19, comments: 58, reactions: 234 },
-        ],
-        topMembers: [
-          { id: '1', name: 'Sarah Johnson', posts: 25, comments: 67, reactions: 142, score: 234 },
-          { id: '2', name: 'Mike Thompson', posts: 18, comments: 45, reactions: 98, score: 161 },
-          { id: '3', name: 'Emily Davis', posts: 12, comments: 38, reactions: 76, score: 126 },
-          { id: '4', name: 'John Smith', posts: 8, comments: 29, reactions: 54, score: 91 },
-          { id: '5', name: 'Lisa Wilson', posts: 6, comments: 22, reactions: 43, score: 71 },
-        ],
-        contentTypeBreakdown: [
-          { type: 'Text Posts', count: 89, percentage: 57.1 },
-          { type: 'Images', count: 34, percentage: 21.8 },
-          { type: 'Links', count: 21, percentage: 13.5 },
-          { type: 'Videos', count: 8, percentage: 5.1 },
-          { type: 'Polls', count: 4, percentage: 2.6 },
-        ],
-        engagementMetrics: [
-          { metric: 'Posts per Member', value: 1.75, change: 8.3 },
-          { metric: 'Comments per Post', value: 2.71, change: 12.1 },
-          { metric: 'Reactions per Post', value: 7.99, change: 18.5 },
-          { metric: 'Daily Active Users', value: 23, change: 15.2 },
-        ],
-      };
-
-      setAnalytics(mockAnalytics);
     } finally {
       setIsLoading(false);
     }
   };
 
   const exportData = () => {
-    // Implement data export functionality
-    console.log('Exporting analytics data...');
+    if (!stats || !community) return;
+
+    const csvData = [
+      ['Metric', 'Value'],
+      ['Total Members', community.memberCount],
+      ['Member Growth', `${stats.memberGrowth}%`],
+      ['Total Posts', stats.totalPosts],
+      ['Post Growth', `${stats.postGrowth}%`],
+      ['Total Comments', stats.totalComments],
+      ['Engagement Rate', stats.engagementRate],
+      ['Active Members', stats.activeMembers],
+      ['Avg Posts/Day', stats.averagePostsPerDay],
+    ];
+
+    const csv = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `community-analytics-${communityID}-${timeRange}.csv`;
+    a.click();
   };
 
-  if (isLoading || !analytics) {
+  // Generate activity chart data from recent activities
+  const generateActivityChartData = () => {
+    if (!activities.length) return [];
+
+    const dataMap = new Map<string, { posts: number; comments: number; members: number }>();
+
+    activities.forEach(activity => {
+      const date = new Date(activity.createdAt).toISOString().split('T')[0];
+      const existing = dataMap.get(date) || { posts: 0, comments: 0, members: 0 };
+
+      if (activity.type === 'post_created') {
+        existing.posts += 1;
+      } else if (activity.type === 'comment_added') {
+        existing.comments += 1;
+      } else if (activity.type === 'member_joined') {
+        existing.members += 1;
+      }
+
+      dataMap.set(date, existing);
+    });
+
+    return Array.from(dataMap.entries())
+      .map(([date, data]) => ({ date, ...data }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-7); // Last 7 days
+  };
+
+  const activityChartData = generateActivityChartData();
+
+  // Calculate engagement metrics
+  const engagementMetrics = stats ? [
+    {
+      metric: 'Posts per Member',
+      value: community?.memberCount > 0 ? (stats.totalPosts / community.memberCount).toFixed(2) : '0',
+      change: stats.postGrowth
+    },
+    {
+      metric: 'Comments per Post',
+      value: stats.totalPosts > 0 ? (stats.totalComments / stats.totalPosts).toFixed(2) : '0',
+      change: stats.engagementRate
+    },
+    {
+      metric: 'Engagement Rate',
+      value: `${stats.engagementRate.toFixed(1)}%`,
+      change: stats.memberGrowth
+    },
+    {
+      metric: 'Avg Posts per Day',
+      value: stats.averagePostsPerDay.toFixed(1),
+      change: stats.postGrowth
+    }
+  ] : [];
+
+  // Get top contributors from activities
+  const getTopContributors = () => {
+    const contributorMap = new Map<string, {
+      userID: string;
+      userName: string;
+      userAvatarUrl: string;
+      posts: number;
+      comments: number;
+    }>();
+
+    activities.forEach(activity => {
+      if (!activity.userID || !activity.userName) return;
+
+      const existing = contributorMap.get(activity.userID) || {
+        userID: activity.userID,
+        userName: activity.userName,
+        userAvatarUrl: activity.userAvatarUrl || '',
+        posts: 0,
+        comments: 0,
+      };
+
+      if (activity.type === 'post_created') {
+        existing.posts += 1;
+      } else if (activity.type === 'comment_added') {
+        existing.comments += 1;
+      }
+
+      contributorMap.set(activity.userID, existing);
+    });
+
+    return Array.from(contributorMap.values())
+      .map(c => ({ ...c, score: c.posts * 3 + c.comments }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  };
+
+  const topContributors = getTopContributors();
+
+  if (isLoading || !stats || !community) {
     return (
       <div className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="animate-pulse space-y-8">
@@ -137,7 +196,7 @@ const AdminCommunityAnalyticsPage = () => {
         />
 
         <div className="flex gap-2">
-          <Select value={timeRange} onValueChange={setTimeRange}>
+          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as '7d' | '30d' | '90d')}>
             <SelectTrigger className="w-32 bg-neutral-800 border-neutral-600">
               <SelectValue />
             </SelectTrigger>
@@ -159,113 +218,63 @@ const AdminCommunityAnalyticsPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           title="Total Members"
-          value={analytics.overview.totalMembers}
-          growth={analytics.overview.memberGrowth}
+          value={community.memberCount || 0}
+          growth={stats.memberGrowth}
           icon={Users}
           iconBgColor="from-blue-600/20 to-cyan-600/20"
         />
         <StatCard
           title="Total Posts"
-          value={analytics.overview.totalPosts}
-          growth={analytics.overview.postGrowth}
+          value={stats.totalPosts}
+          growth={stats.postGrowth}
           icon={MessageSquare}
           iconBgColor="from-green-600/20 to-emerald-600/20"
         />
         <StatCard
           title="Total Comments"
-          value={analytics.overview.totalComments}
-          growth={analytics.overview.commentGrowth}
+          value={stats.totalComments}
+          growth={stats.engagementRate}
           icon={MessageSquare}
           iconBgColor="from-orange-600/20 to-yellow-600/20"
         />
         <StatCard
-          title="Total Reactions"
-          value={analytics.overview.totalReactions}
-          growth={analytics.overview.reactionGrowth}
+          title="Active Members"
+          value={stats.activeMembers}
+          growth={stats.memberGrowth}
           icon={Heart}
           iconBgColor="from-red-600/20 to-pink-600/20"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Charts */}
+        {/* Main Chart */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Chart Toggle */}
-          <div className="flex gap-2 mb-4">
-            <Button
-              size="sm"
-              variant={activeChart === 'activity' ? 'default' : 'outline'}
-              onClick={() => setActiveChart('activity')}
-            >
-              Post Activity
-            </Button>
-            <Button
-              size="sm"
-              variant={activeChart === 'growth' ? 'default' : 'outline'}
-              onClick={() => setActiveChart('growth')}
-            >
-              Member Growth
-            </Button>
-          </div>
-
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8">
             <div className="absolute inset-0 opacity-20">
               <div className="absolute w-56 h-56 -right-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
             </div>
 
             <div className="relative z-10">
-              <h3 className="text-xl font-bold text-white mb-6">
-                {activeChart === 'activity' ? 'Post Activity Over Time' : 'Member Growth Over Time'}
-              </h3>
+              <h3 className="text-xl font-bold text-white mb-6">Recent Activity</h3>
 
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  {activeChart === 'activity' ? (
-                    <BarChart data={analytics.activityData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="date" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1F2937',
-                          border: '1px solid #374151',
-                          borderRadius: '8px',
-                          color: '#F3F4F6'
-                        }}
-                      />
-                      <Bar dataKey="posts" fill="#8B5CF6" name="Posts" />
-                      <Bar dataKey="comments" fill="#06B6D4" name="Comments" />
-                      <Bar dataKey="reactions" fill="#10B981" name="Reactions" />
-                    </BarChart>
-                  ) : (
-                    <LineChart data={analytics.memberGrowthData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="date" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1F2937',
-                          border: '1px solid #374151',
-                          borderRadius: '8px',
-                          color: '#F3F4F6'
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="members"
-                        stroke="#8B5CF6"
-                        strokeWidth={2}
-                        name="Total Members"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="newMembers"
-                        stroke="#06B6D4"
-                        strokeWidth={2}
-                        name="New Members"
-                      />
-                    </LineChart>
-                  )}
+                  <BarChart data={activityChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="date" stroke="#9CA3AF" />
+                    <YAxis stroke="#9CA3AF" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1F2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px',
+                        color: '#F3F4F6'
+                      }}
+                    />
+                    <Bar dataKey="posts" fill="#8B5CF6" name="Posts" />
+                    <Bar dataKey="comments" fill="#06B6D4" name="Comments" />
+                    <Bar dataKey="members" fill="#10B981" name="New Members" />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -281,7 +290,7 @@ const AdminCommunityAnalyticsPage = () => {
               <h3 className="text-xl font-bold text-white mb-6">Engagement Metrics</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {analytics.engagementMetrics.map((metric, index) => (
+                {engagementMetrics.map((metric) => (
                   <div key={metric.metric} className="flex items-center justify-between p-4 bg-neutral-800/50 rounded-lg">
                     <div>
                       <div className="text-stone-300 font-medium">{metric.metric}</div>
@@ -306,63 +315,7 @@ const AdminCommunityAnalyticsPage = () => {
 
         {/* Sidebar */}
         <div className="space-y-8">
-          {/* Content Types */}
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-violet-200 via-violet-600 to-purple-600 rounded-full blur-[56px]" />
-            </div>
-
-            <div className="relative z-10">
-              <h3 className="text-lg font-bold text-white mb-4">Content Types</h3>
-
-              <div className="h-48 mb-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={analytics.contentTypeBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="count"
-                    >
-                      {analytics.contentTypeBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1F2937',
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                        color: '#F3F4F6'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="space-y-2">
-                {analytics.contentTypeBreakdown.map((type, index) => (
-                  <div key={type.type} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      />
-                      <span className="text-stone-300">{type.type}</span>
-                    </div>
-                    <div className="text-stone-400">
-                      {type.count} ({type.percentage}%)
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Top Members */}
+          {/* Top Contributors */}
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6">
             <div className="absolute inset-0 opacity-20">
               <div className="absolute w-32 h-32 -left-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
@@ -371,26 +324,32 @@ const AdminCommunityAnalyticsPage = () => {
             <div className="relative z-10">
               <h3 className="text-lg font-bold text-white mb-4">Top Contributors</h3>
 
-              <div className="space-y-4">
-                {analytics.topMembers.map((member, index) => (
-                  <div key={member.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <div className="text-stone-200 font-medium text-sm">{member.name}</div>
-                        <div className="text-stone-400 text-xs">
-                          {member.posts}p • {member.comments}c • {member.reactions}r
+              {topContributors.length > 0 ? (
+                <div className="space-y-4">
+                  {topContributors.map((member, index) => (
+                    <div key={member.userID} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="text-stone-200 font-medium text-sm">{member.userName}</div>
+                          <div className="text-stone-400 text-xs">
+                            {member.posts}p • {member.comments}c
+                          </div>
                         </div>
                       </div>
+                      <div className="text-purple-400 font-bold text-sm">
+                        {member.score}
+                      </div>
                     </div>
-                    <div className="text-purple-400 font-bold text-sm">
-                      {member.score}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-stone-400 text-sm text-center py-4">
+                  No activity yet
+                </div>
+              )}
             </div>
           </div>
 
@@ -423,13 +382,13 @@ const AdminCommunityAnalyticsPage = () => {
                   Manage Members
                 </Button>
                 <Button
-                  onClick={() => router.push(`/communities/${communityID}/settings`)}
+                  onClick={() => router.push(`/communities/${communityID}`)}
                   variant="outline"
                   size="sm"
                   className="w-full justify-start"
                 >
                   <Calendar className="w-4 h-4 mr-2" />
-                  Community Settings
+                  View Community
                 </Button>
               </div>
             </div>

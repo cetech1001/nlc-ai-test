@@ -12,7 +12,7 @@ import {
   InviteMemberModal,
   AddMemberModal,
   memberColumns,
-  MembersMobileCard,
+  // MembersMobileCard,
   memberFilters,
   emptyMemberFilterValues
 } from "@/lib";
@@ -69,9 +69,9 @@ const AdminCommunityMembersPage = () => {
   const fetchStats = async () => {
     try {
       setIsStatsLoading(true);
-      const stats = await sdkClient.communities.getCommunityMemberStats(communityID);
-      setStats(stats);
-    } catch (error) {
+      const statsData = await sdkClient.communities.getCommunityMemberStats(communityID);
+      setStats(statsData);
+    } catch (error: any) {
       console.error('Failed to fetch stats:', error);
       toast.error('Failed to load member statistics');
     } finally {
@@ -95,7 +95,7 @@ const AdminCommunityMembersPage = () => {
 
       setMembers(response.data);
       setPagination(response.pagination);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch members data:', error);
       toast.error('Failed to load community members');
     } finally {
@@ -123,12 +123,12 @@ const AdminCommunityMembersPage = () => {
       case 'remove':
         if (confirm('Are you sure you want to remove this member?')) {
           try {
-            const member: ExtendedCommunityMember | undefined = members.find(m => m.id === member?.id);
-            if (member) {
+            const targetMember: ExtendedCommunityMember | undefined = members.find(m => m.id === member?.id);
+            if (targetMember) {
               await sdkClient.communities.removeMember(
                 communityID,
-                member.userID,
-                member.userType
+                targetMember.userID,
+                targetMember.userType
               );
               toast.success('Member removed successfully');
               await fetchMembersData();
@@ -166,7 +166,6 @@ const AdminCommunityMembersPage = () => {
   };
 
   const onMemberInvited = () => {
-    // Could fetch pending invitations if we had that feature
     fetchStats();
   };
 
@@ -201,7 +200,7 @@ const AdminCommunityMembersPage = () => {
           <StatCard
             title="Total Members"
             value={stats?.totalMembers}
-            subtitle={`${stats?.activeMembers} active`}
+            subtitle={`${stats?.activeMembers || 0} active`}
             icon={Users}
             iconBgColor="from-blue-600/20 to-cyan-600/20"
             isLoading={isStatsLoading}
@@ -209,7 +208,7 @@ const AdminCommunityMembersPage = () => {
           <StatCard
             title="Admins & Mods"
             value={(stats?.admins || 0) + (stats?.moderators || 0)}
-            subtitle={`${stats?.owners} owner`}
+            subtitle={`${stats?.owners || 0} owner`}
             icon={Shield}
             iconBgColor="from-purple-600/20 to-violet-600/20"
             isLoading={isStatsLoading}
@@ -270,6 +269,7 @@ const AdminCommunityMembersPage = () => {
                 <Mail className="w-4 h-4 mr-2" />
                 Invite Member
               </Button>
+
               <Button
                 onClick={() => setShowAddMemberModal(true)}
                 variant="outline"
@@ -282,16 +282,15 @@ const AdminCommunityMembersPage = () => {
           </>
         </PageHeader>
 
-        <MembersMobileCard
-          members={members}
-          onRowAction={handleMemberAction}
-          emptyMessage="No members found matching your criteria"
-        />
+        {/*<MembersMobileCard members={members}/>*/}
 
+        {/* Members Table */}
         <DataTable
           columns={memberColumns}
           data={members}
-          showMobileCards={false}
+          onRowAction={handleMemberAction}
+          showMobileCards={true}
+          // mobileCardComponent={MembersMobileCard}
           emptyMessage="No members found matching your criteria"
           isLoading={isLoading}
           actions={[
@@ -300,7 +299,6 @@ const AdminCommunityMembersPage = () => {
             { action: 'suspend', label: 'Suspend' },
             { action: 'remove', label: 'Remove' },
           ]}
-          onRowAction={handleMemberAction}
         />
 
         {/* Pagination */}
@@ -316,14 +314,14 @@ const AdminCommunityMembersPage = () => {
           isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}
           communityID={communityID}
-          onInviteSuccess={onMemberInvited}
+          onSuccess={onMemberInvited}
         />
 
         <AddMemberModal
           isOpen={showAddMemberModal}
           onClose={() => setShowAddMemberModal(false)}
           communityID={communityID}
-          onAddSuccess={onMemberAdded}
+          onSuccess={onMemberAdded}
         />
       </div>
     </div>

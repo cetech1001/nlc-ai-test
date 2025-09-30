@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsUUID, IsEnum, IsOptional, IsString } from 'class-validator';
-import { UserType, MemberRole } from '@nlc-ai/api-types';
+import { UserType, MemberRole } from '@nlc-ai/types';
 
 export class InviteMemberDto {
   @ApiProperty()

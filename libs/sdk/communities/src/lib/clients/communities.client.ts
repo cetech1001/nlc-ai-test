@@ -10,7 +10,7 @@ import {
   CommunityActivity,
   CommunityDetailStats
 } from '@nlc-ai/types';
-import {ExtendedCommunityMember, MemberStats} from "../types";
+import {ExtendedCommunityMember} from "../types";
 
 import {ModerationClient} from "./moderation.client";
 import {PostsClient} from "./posts.client";
@@ -168,16 +168,66 @@ export class CommunitiesClient extends BaseClient {
     return response.data!;
   }
 
-  async getCommunityMemberStats(communityID: string): Promise<MemberStats> {
-    return {
-      totalMembers: 89,
-      activeMembers: 82,
-      owners: 1,
-      admins: 2,
-      moderators: 5,
-      regularMembers: 74,
-      suspendedMembers: 3,
-      pendingMembers: 4,
-    };
+  async getCommunityStats(): Promise<{
+    total: number;
+    active: number;
+    coachToCommunities: number;
+    coachClientCommunities: number;
+    totalMembers: number;
+    totalPosts: number;
+    avgMembersPerCommunity: number;
+    avgPostsPerCommunity: number;
+  }> {
+    const response = await this.request<{
+      total: number;
+      active: number;
+      coachToCommunities: number;
+      coachClientCommunities: number;
+      totalMembers: number;
+      totalPosts: number;
+      avgMembersPerCommunity: number;
+      avgPostsPerCommunity: number;
+    }>('GET', '/stats');
+    return response.data!;
+  }
+
+  async getCommunityMemberStats(communityID: string): Promise<{
+    totalMembers: number;
+    activeMembers: number;
+    owners: number;
+    admins: number;
+    moderators: number;
+    regularMembers: number;
+    suspendedMembers: number;
+    pendingMembers: number;
+  }> {
+    const response = await this.request<{
+      totalMembers: number;
+      activeMembers: number;
+      owners: number;
+      admins: number;
+      moderators: number;
+      regularMembers: number;
+      suspendedMembers: number;
+      pendingMembers: number;
+    }>('GET', `/${communityID}/member-stats`);
+    return response.data!;
+  }
+
+  async inviteMember(
+    communityID: string,
+    data: {
+      inviteeID: string;
+      inviteeType: 'coach' | 'client';
+      message?: string;
+      expiresAt: string;
+    }
+  ): Promise<any> {
+    const response = await this.request<any>(
+      'POST',
+      `/${communityID}/invites`,
+      { body: data }
+    );
+    return response.data!;
   }
 }

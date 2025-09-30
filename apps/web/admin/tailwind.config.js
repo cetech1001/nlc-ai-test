@@ -12,6 +12,23 @@ module.exports = {
     '../../../libs/web/settings/src/**/*.{ts,tsx}',
   ],
   safelist: [
+    // gradient directions
+    "bg-gradient-to-r","bg-gradient-to-tr","bg-gradient-to-br","bg-gradient-to-bl","bg-gradient-to-b",
+
+    // Royal Purple
+    "from-purple-700","via-violet-600","to-fuchsia-500",
+
+    // Plum Rose
+    "from-purple-600","via-pink-600","to-rose-500",
+
+    // Twilight Glow
+    "from-purple-800","via-fuchsia-600","to-pink-500",
+
+    // Midnight Violet
+    "from-purple-900","via-violet-800","to-purple-700",
+
+    // Soft Lilac
+    "from-purple-300","via-violet-400","to-fuchsia-300",
     // Gradient backgrounds
     'bg-gradient-to-b',
     'bg-gradient-to-br',
@@ -122,6 +139,42 @@ module.exports = {
     'to-rose-900',
     // Fuchsia additional
     'to-fuchsia-200',
+    // Extra gradients
+    'bg-gradient-to-r',
+    'bg-gradient-to-tr',
+    'bg-gradient-to-br',
+    'bg-gradient-to-bl',
+    'bg-gradient-to-tl',
+    'from-fuchsia-400',
+    'via-pink-500',
+    'to-rose-500',
+    'from-violet-300',
+    'via-pink-300',
+    'to-fuchsia-400',
+    'from-purple-700',
+    'via-violet-600',
+    'to-fuchsia-500',
+    'from-violet-500',
+    'via-purple-600',
+    'to-fuchsia-700',
+    'from-purple-800',
+    'via-fuchsia-600',
+    'to-pink-500',
+    'from-fuchsia-700',
+    'via-violet-700',
+    'to-purple-900',
+    'from-purple-600',
+    'via-pink-600',
+    'to-rose-500',
+    'from-violet-500',
+    'via-purple-500',
+    'to-fuchsia-600',
+    'from-purple-900',
+    'via-violet-800',
+    'to-purple-700',
+    'from-purple-300',
+    'via-violet-400',
+    'to-fuchsia-300',
   ],
   theme: {
     container: {

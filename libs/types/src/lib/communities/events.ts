@@ -95,6 +95,8 @@ export interface CommunityMemberInvitedEvent extends BaseEvent {
     inviterType: UserType;
     inviterName: string;
     invitedAt: string;
+    token: string;
+    expiresAt: string;
   };
 }
 

@@ -2,6 +2,7 @@ import {BadRequestException, ForbiddenException, Injectable, Logger, NotFoundExc
 import {PrismaService} from '@nlc-ai/api-database';
 import {OutboxService} from '@nlc-ai/api-messaging';
 import {
+  AuthUser,
   COMMUNITY_ROUTING_KEYS,
   CommunityActivity,
   CommunityEvent,
@@ -16,7 +17,6 @@ import {
   MemberRole,
   MemberStatus,
   UpdateCommunityRequest,
-  AuthUser,
   UserType
 } from '@nlc-ai/types';
 import {Community} from "@prisma/client";
@@ -590,7 +590,9 @@ export class CommunitiesService {
   }
 
   async getCommunityAnalytics(communityID: string, period: '7d' | '30d' | '90d', user: AuthUser) {
-    await this.checkPermission(communityID, user, 'view_analytics');
+    if (user.type !== UserType.ADMIN) {
+      await this.checkPermission(communityID, user, 'view_analytics');
+    }
 
     const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
     const startDate = new Date();
@@ -974,5 +976,251 @@ export class CommunitiesService {
         avatarUrl: '',
       };
     }
+  }
+
+  // Add these methods to CommunitiesService class
+
+  async getCommunityStats() {
+    const totalCommunities = await this.prisma.community.count({
+      where: { isDeleted: false },
+    });
+
+    const activeCommunities = await this.prisma.community.count({
+      where: {
+        isDeleted: false,
+        isActive: true,
+      },
+    });
+
+    const coachToCommunities = await this.prisma.community.count({
+      where: {
+        isDeleted: false,
+        type: CommunityType.COACH_TO_COACH,
+      },
+    });
+
+    const coachClientCommunities = await this.prisma.community.count({
+      where: {
+        isDeleted: false,
+        type: CommunityType.COACH_CLIENT,
+      },
+    });
+
+    const totalMembers = await this.prisma.communityMember.count({
+      where: {
+        status: MemberStatus.ACTIVE,
+      },
+    });
+
+    const totalPosts = await this.prisma.post.count({
+      where: {
+        isDeleted: false,
+      },
+    });
+
+    const avgMembersPerCommunity = totalCommunities > 0
+      ? Math.round((totalMembers / totalCommunities) * 10) / 10
+      : 0;
+
+    const avgPostsPerCommunity = totalCommunities > 0
+      ? Math.round((totalPosts / totalCommunities) * 10) / 10
+      : 0;
+
+    return {
+      total: totalCommunities,
+      active: activeCommunities,
+      coachToCommunities,
+      coachClientCommunities,
+      totalMembers,
+      totalPosts,
+      avgMembersPerCommunity,
+      avgPostsPerCommunity,
+    };
+  }
+
+  async getCommunityMemberStats(communityID: string): Promise<{
+    totalMembers: number;
+    activeMembers: number;
+    owners: number;
+    admins: number;
+    moderators: number;
+    regularMembers: number;
+    suspendedMembers: number;
+    pendingMembers: number;
+  }> {
+    const community = await this.prisma.community.findUnique({
+      where: { id: communityID },
+    });
+
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    const [
+      totalMembers,
+      activeMembers,
+      owners,
+      admins,
+      moderators,
+      regularMembers,
+      suspendedMembers,
+      pendingMembers,
+    ] = await Promise.all([
+      this.prisma.communityMember.count({
+        where: { communityID },
+      }),
+      this.prisma.communityMember.count({
+        where: {
+          communityID,
+          status: MemberStatus.ACTIVE,
+        },
+      }),
+      this.prisma.communityMember.count({
+        where: {
+          communityID,
+          role: MemberRole.OWNER,
+          status: MemberStatus.ACTIVE,
+        },
+      }),
+      this.prisma.communityMember.count({
+        where: {
+          communityID,
+          role: MemberRole.ADMIN,
+          status: MemberStatus.ACTIVE,
+        },
+      }),
+      this.prisma.communityMember.count({
+        where: {
+          communityID,
+          role: MemberRole.MODERATOR,
+          status: MemberStatus.ACTIVE,
+        },
+      }),
+      this.prisma.communityMember.count({
+        where: {
+          communityID,
+          role: MemberRole.MEMBER,
+          status: MemberStatus.ACTIVE,
+        },
+      }),
+      this.prisma.communityMember.count({
+        where: {
+          communityID,
+          status: MemberStatus.SUSPENDED,
+        },
+      }),
+      this.prisma.communityMember.count({
+        where: {
+          communityID,
+          status: MemberStatus.PENDING,
+        },
+      }),
+    ]);
+
+    return {
+      totalMembers,
+      activeMembers,
+      owners,
+      admins,
+      moderators,
+      regularMembers,
+      suspendedMembers,
+      pendingMembers,
+    };
+  }
+
+  async inviteMemberToCommunity(
+    communityID: string,
+    inviteeID: string,
+    inviteeType: UserType,
+    inviterID: string,
+    inviterType: UserType,
+    message?: string
+  ): Promise<any> {
+    const community = await this.prisma.community.findUnique({
+      where: { id: communityID },
+    });
+
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    // Check if already a member
+    const existingMember = await this.prisma.communityMember.findUnique({
+      where: {
+        communityID_userID_userType: {
+          communityID,
+          userID: inviteeID,
+          userType: inviteeType,
+        },
+      },
+    });
+
+    if (existingMember) {
+      throw new BadRequestException('User is already a member of this community');
+    }
+
+    const existingInvite = await this.prisma.communityInvite.findFirst({
+      where: {
+        communityID,
+        inviteeID,
+        inviteeType: inviteeType as string,
+        status: 'pending',
+        expiresAt: { gte: new Date() },
+      },
+    });
+
+    if (existingInvite) {
+      throw new BadRequestException('An active invitation already exists for this user');
+    }
+
+    const token = `${communityID}-${inviteeID}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const invite = await this.prisma.communityInvite.create({
+      data: {
+        communityID,
+        inviterID,
+        inviterType: inviterType as string,
+        inviteeID,
+        inviteeType: inviteeType as string,
+        message,
+        token,
+        expiresAt,
+      },
+    });
+
+    const inviter = await this.getUserInfo(inviterID, inviterType);
+    const invitee = await this.getUserInfo(inviteeID, inviteeType);
+
+    await this.outboxService.saveAndPublishEvent<CommunityEvent>({
+      eventType: 'community.member.invited',
+      schemaVersion: 1,
+      payload: {
+        communityID,
+        communityName: community.name,
+        inviteID: invite.id,
+        inviterID,
+        inviterType,
+        inviterName: inviter.name,
+        inviteeID,
+        inviteeType,
+        inviteeName: invitee.name,
+        token: invite.token,
+        invitedAt: new Date().toISOString(),
+        expiresAt: invite.expiresAt.toISOString(),
+      },
+    }, COMMUNITY_ROUTING_KEYS.MEMBER_INVITED);
+
+    this.logger.log(
+      `Invitation sent: ${inviterType} ${inviterID} invited ${inviteeType} ${inviteeID} to community ${communityID}`
+    );
+
+    return {
+      ...invite,
+      inviteUrl: `${process.env.WEB_URL}/communities/join/${invite.token}`,
+    };
   }
 }
