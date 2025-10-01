@@ -138,7 +138,8 @@ export interface LeadQuestionOption {
 export type LeadAnswers = Record<number, string | string[]>;
 
 export interface LeadInfo {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
 }

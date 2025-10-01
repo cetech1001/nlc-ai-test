@@ -63,7 +63,7 @@ export const memberColumns = [
   {
     key: 'userName',
     header: 'Member',
-    width: `${colWidth * (5 / 3)}%`,
+    width: `${colWidth * 2}%`,
     render: (value: string, row: ExtendedCommunityMember) => (
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">

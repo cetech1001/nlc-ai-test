@@ -19,15 +19,25 @@ const isValidPhone = (phone: string) => {
 
 const LeadFormPage = () => {
   const router = useRouter();
-  const [leadInfo, setLeadInfo] = useState<LeadInfo>({ name: '', email: '', phone: '' });
-  const [touched, setTouched] = useState<Record<keyof LeadInfo, boolean>>({ name: false, email: false, phone: false });
+  const [leadInfo, setLeadInfo] = useState<LeadInfo>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+  });
+  const [touched, setTouched] = useState<Record<keyof LeadInfo, boolean>>({
+    firstName: false,
+    lastName: false,
+    email: false,
+    phone: false
+  });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);
   const [spotsLoading, setSpotsLoading] = useState(true);
 
   const nameError = useMemo(() =>
-    !leadInfo.name.trim() ? 'Name is required' : '', [leadInfo.name]);
+    !leadInfo.firstName.trim() ? 'Name is required' : '', [leadInfo.firstName]);
   const emailError = useMemo(() =>
     !leadInfo.email.trim() ? 'Email is required'
       : (!isValidEmail(leadInfo.email) ? 'Enter a valid email address' : ''), [leadInfo.email]);
@@ -79,7 +89,11 @@ const LeadFormPage = () => {
       setSubmitting(true);
 
       await sdkClient.leads.createLeadFromLanding({
-        lead: leadInfo,
+        lead: {
+          name: leadInfo.firstName + ' ' + leadInfo.lastName,
+          email: leadInfo.email,
+          phone: leadInfo.phone,
+        },
         answers,
         qualified: isQualified,
         submittedAt: new Date().toISOString()
@@ -153,18 +167,37 @@ const LeadFormPage = () => {
                 <div>
                   <label className="block text-lg font-medium mb-3 text-white">
                     <User className="inline w-5 h-5 mr-3" />
-                    Name
+                    First name
                   </label>
                   <input
                     type="text"
-                    value={leadInfo.name}
-                    onChange={(e) => setLeadInfo(prev => ({ ...prev, name: e.target.value }))}
-                    onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
-                    aria-invalid={!!nameError && touched.name}
-                    className={`w-full px-6 py-4 rounded-xl bg-black/30 border ${touched.name && nameError ? 'border-red-500' : 'border-gray-700'} focus:border-purple-400 focus:outline-none text-white placeholder-white/50`}
+                    value={leadInfo.firstName}
+                    onChange={(e) => setLeadInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                    onBlur={() => setTouched(prev => ({ ...prev, firstName: true }))}
+                    aria-invalid={!!nameError && touched.firstName}
+                    className={`w-full px-6 py-4 rounded-xl bg-black/30 border ${touched.firstName && nameError ? 'border-red-500' : 'border-gray-700'} focus:border-purple-400 focus:outline-none text-white placeholder-white/50`}
                     placeholder="Your full name"
                   />
-                  {touched.name && nameError && (
+                  {touched.firstName && nameError && (
+                    <p className="text-red-400 text-sm mt-2">{nameError}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-lg font-medium mb-3 text-white">
+                    <User className="inline w-5 h-5 mr-3" />
+                    Last name
+                  </label>
+                  <input
+                    type="text"
+                    value={leadInfo.firstName}
+                    onChange={(e) => setLeadInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                    onBlur={() => setTouched(prev => ({ ...prev, firstName: true }))}
+                    aria-invalid={!!nameError && touched.firstName}
+                    className={`w-full px-6 py-4 rounded-xl bg-black/30 border ${touched.firstName && nameError ? 'border-red-500' : 'border-gray-700'} focus:border-purple-400 focus:outline-none text-white placeholder-white/50`}
+                    placeholder="Your full name"
+                  />
+                  {touched.firstName && nameError && (
                     <p className="text-red-400 text-sm mt-2">{nameError}</p>
                   )}
                 </div>
