@@ -36,4 +36,37 @@ export class ProfilesClient extends BaseClient{
     const response = await this.request<UserStats>('GET', `/stats/${userID}/${userType}`);
     return response.data!;
   }
+
+  async followCoach(coachID: string) {
+    const response = await this.request<{ message: string; isFollowing: boolean }>(
+      'POST',
+      '/follow',
+      { body: { coachID } }
+    );
+    return response.data!;
+  }
+
+  async unfollowCoach(coachID: string) {
+    const response = await this.request<{ message: string; isFollowing: boolean }>(
+      'DELETE',
+      `/follow/${coachID}`
+    );
+    return response.data!;
+  }
+
+  async checkFollowStatus(coachID: string) {
+    const response = await this.request<{ isFollowing: boolean }>(
+      'GET',
+      `/follow-status/${coachID}`
+    );
+    return response.data!;
+  }
+
+  async getFollowCounts(coachID: string) {
+    const response = await this.request<{ followersCount: number; followingCount: number }>(
+      'GET',
+      `/follow-counts/${coachID}`
+    );
+    return response.data!;
+  }
 }

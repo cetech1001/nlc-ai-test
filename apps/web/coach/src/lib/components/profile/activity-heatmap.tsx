@@ -22,7 +22,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
   const [data, setData] = useState<ActivityHeatmapData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredDay, setHoveredDay] = useState<{ date: string; count: number; x: number; y: number; isFuture: boolean } | null>(null);
-  const [currentOffset, setCurrentOffset] = useState(0); // 0 = current month, 1 = one month back, etc.
+  const [currentOffset, setCurrentOffset] = useState(0);
 
   useEffect(() => {
     if (userID) {
@@ -30,23 +30,56 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
     }
   }, [userID, currentOffset]);
 
+  // Helper function to create UTC date strings
+  const toUTCDateString = (year: number, month: number, day: number): string => {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
+
+  // Helper function to parse UTC date string
+  const parseUTCDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const getDateRange = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() - currentOffset;
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth();
+    const todayDay = today.getDate();
 
-    // Create dates for the target month
-    const targetDate = new Date(year, month, 1);
-    const startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-    const endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+    // Calculate target month
+    const targetYear = todayMonth - currentOffset < 0
+      ? todayYear - Math.floor((currentOffset - todayMonth) / 12) - 1
+      : todayYear;
+    const targetMonth = ((todayMonth - currentOffset) % 12 + 12) % 12;
 
-    return { startDate, endDate, today };
+    // Get first and last day of target month
+    const firstDay = 1;
+    const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+    // Create date strings in UTC format (YYYY-MM-DD)
+    const startDateStr = toUTCDateString(targetYear, targetMonth, firstDay);
+    const endDateStr = toUTCDateString(targetYear, targetMonth, lastDay);
+    const todayStr = toUTCDateString(todayYear, todayMonth, todayDay);
+
+    return {
+      startDateStr,
+      endDateStr,
+      todayStr,
+      targetYear,
+      targetMonth
+    };
   };
 
   const fetchHeatmapData = async () => {
     setIsLoading(true);
     try {
-      const { startDate, endDate } = getDateRange();
+      const { startDateStr, endDateStr } = getDateRange();
+
+      // Parse to create actual Date objects for API call
+      const startDate = parseUTCDate(startDateStr);
+      const endDate = parseUTCDate(endDateStr);
+      endDate.setHours(23, 59, 59, 999); // End of day
 
       const result = await sdkClient.auth.activity.getUserHeatmap(
         userID!,
@@ -87,28 +120,24 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
   };
 
   const generateMonthGrid = useMemo(() => {
-    const { startDate, endDate, today } = getDateRange();
+    const { todayStr, targetYear, targetMonth } = getDateRange();
     const grid: { date: string; count: number; isFuture: boolean }[] = [];
 
     const dataMap = new Map(data.map((d) => [d.date, d.count]));
 
-    // Normalize today to midnight for fair comparison
-    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Get the last day of the month
+    const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
 
     // Generate all days in the month
-    const current = new Date(startDate);
-    while (current <= endDate) {
-      const dateStr = current.toISOString().split('T')[0];
-      const currentMidnight = new Date(current.getFullYear(), current.getMonth(), current.getDate());
-      const isFuture = currentMidnight > todayMidnight;
+    for (let day = 1; day <= lastDay; day++) {
+      const dateStr = toUTCDateString(targetYear, targetMonth, day);
+      const isFuture = dateStr > todayStr;
 
       grid.push({
         date: dateStr,
         count: isFuture ? 0 : (dataMap.get(dateStr) || 0),
         isFuture,
       });
-
-      current.setDate(current.getDate() + 1);
     }
 
     return grid;
@@ -120,8 +149,9 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
 
     if (days.length === 0) return weeks;
 
-    const firstDay = new Date(days[0].date);
-    const dayOfWeek = firstDay.getDay();
+    // Get the day of week for the first day (0 = Sunday, 6 = Saturday)
+    const firstDate = parseUTCDate(days[0].date);
+    const dayOfWeek = firstDate.getDay();
 
     // Pad the beginning to start on Sunday
     for (let i = 0; i < dayOfWeek; i++) {
@@ -149,7 +179,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
+    const date = parseUTCDate(dateStr);
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
@@ -159,8 +189,9 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
   };
 
   const getPeriodLabel = () => {
-    const { startDate } = getDateRange();
-    return startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const { targetYear, targetMonth } = getDateRange();
+    const date = new Date(targetYear, targetMonth, 1);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   const handlePrevious = () => {

@@ -7,11 +7,11 @@ import {
   UseGuards,
   Post,
   HttpCode,
-  HttpStatus,
+  HttpStatus, Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ProfilesService } from './profiles.service';
-import { UpdateProfileDto, UpdatePasswordDto } from './dto';
+import { UpdateProfileDto, UpdatePasswordDto, FollowCoachDto } from './dto';
 import { UserTypesGuard, UserTypes, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType, type AuthUser } from '@nlc-ai/types';
 
@@ -100,5 +100,61 @@ export class ProfilesController {
     @Param('id') id: string
   ) {
     return this.profilesService.getUserStats(id, userType);
+  }
+
+  // Add these endpoints to apps/api/users/src/app/profiles/profiles.controller.ts
+
+  @Post('follow')
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
+  @ApiOperation({ summary: 'Follow a coach' })
+  @ApiResponse({ status: 200, description: 'Successfully followed coach' })
+  @ApiResponse({ status: 400, description: 'Cannot follow yourself' })
+  @ApiResponse({ status: 404, description: 'Coach not found' })
+  @ApiResponse({ status: 409, description: 'Already following this coach' })
+  async followCoach(
+    @CurrentUser() user: AuthUser,
+    @Body() followCoachDto: FollowCoachDto
+  ) {
+    return this.profilesService.followCoach(
+      user.id,
+      user.type,
+      followCoachDto.coachID
+    );
+  }
+
+  @Delete('follow/:coachID')
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
+  @ApiOperation({ summary: 'Unfollow a coach' })
+  @ApiResponse({ status: 200, description: 'Successfully unfollowed coach' })
+  @ApiResponse({ status: 404, description: 'Follow relationship not found' })
+  async unfollowCoach(
+    @CurrentUser() user: AuthUser,
+    @Param('coachID') coachID: string
+  ) {
+    return this.profilesService.unfollowCoach(user.id, user.type, coachID);
+  }
+
+  @Get('follow-status/:coachID')
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
+  @ApiOperation({ summary: 'Check if following a coach' })
+  @ApiResponse({ status: 200, description: 'Follow status retrieved' })
+  async checkFollowStatus(
+    @CurrentUser() user: AuthUser,
+    @Param('coachID') coachID: string
+  ) {
+    const isFollowing = await this.profilesService.checkFollowStatus(
+      user.id,
+      user.type,
+      coachID
+    );
+    return { isFollowing };
+  }
+
+  @Get('follow-counts/:coachID')
+  @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
+  @ApiOperation({ summary: 'Get follower and following counts for a coach' })
+  @ApiResponse({ status: 200, description: 'Counts retrieved successfully' })
+  async getFollowCounts(@Param('coachID') coachID: string) {
+    return this.profilesService.getFollowCounts(coachID);
   }
 }

@@ -472,4 +472,114 @@ export class ProfilesService {
       throw new ConflictException('Email already exists');
     }
   }
+
+  // Add these methods to apps/api/users/src/app/profiles/profiles.service.ts
+
+  async followCoach(followerID: string, followerType: UserType, coachID: string) {
+    // Check if coach exists and is active
+    const coach = await this.prisma.coach.findUnique({
+      where: { id: coachID, isDeleted: false, isActive: true },
+      select: { id: true }
+    });
+
+    if (!coach) {
+      throw new NotFoundException('Coach not found');
+    }
+
+    // Prevent self-following
+    if (followerType === UserType.COACH && followerID === coachID) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+
+    // Check if already following
+    const existingFollow = await this.prisma.coachFollow.findUnique({
+      where: {
+        coachID_followerID_followerType: {
+          coachID,
+          followerID,
+          followerType,
+        }
+      }
+    });
+
+    if (existingFollow) {
+      throw new ConflictException('Already following this coach');
+    }
+
+    // Create follow relationship
+    await this.prisma.coachFollow.create({
+      data: {
+        coachID,
+        followerID,
+        followerType,
+      }
+    });
+
+    return {
+      message: 'Successfully followed coach',
+      isFollowing: true
+    };
+  }
+
+  async unfollowCoach(followerID: string, followerType: UserType, coachID: string) {
+    const follow = await this.prisma.coachFollow.findUnique({
+      where: {
+        coachID_followerID_followerType: {
+          coachID,
+          followerID,
+          followerType,
+        }
+      }
+    });
+
+    if (!follow) {
+      throw new NotFoundException('Follow relationship not found');
+    }
+
+    await this.prisma.coachFollow.delete({
+      where: {
+        id: follow.id
+      }
+    });
+
+    return {
+      message: 'Successfully unfollowed coach',
+      isFollowing: false
+    };
+  }
+
+  async checkFollowStatus(followerID: string, followerType: UserType, coachID: string): Promise<boolean> {
+    const follow = await this.prisma.coachFollow.findUnique({
+      where: {
+        coachID_followerID_followerType: {
+          coachID,
+          followerID,
+          followerType,
+        }
+      }
+    });
+
+    return !!follow;
+  }
+
+  async getFollowCounts(coachID: string): Promise<{ followersCount: number; followingCount: number }> {
+    const [followersCount, followingCount] = await Promise.all([
+      // Count followers of this coach
+      this.prisma.coachFollow.count({
+        where: { coachID }
+      }),
+      // Count coaches this user follows (only if they're a coach)
+      this.prisma.coachFollow.count({
+        where: {
+          followerID: coachID,
+          followerType: UserType.COACH
+        }
+      })
+    ]);
+
+    return {
+      followersCount,
+      followingCount
+    };
+  }
 }

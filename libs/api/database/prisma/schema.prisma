@@ -105,6 +105,7 @@ model Coach {
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
+  coachFollows  CoachFollow[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -150,6 +151,24 @@ model Client {
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
   @@map("clients")
+}
+
+model CoachFollow {
+  id String @id @default(uuid()) @db.Uuid
+
+  coachID String @db.Uuid
+
+  followerID   String   @db.Uuid
+  followerType UserType
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@unique([coachID, followerID, followerType])
+  @@index([coachID])
+  @@index([followerID, followerType])
+  @@map("coach_follows")
 }
 
 model CoachAiAgent {
