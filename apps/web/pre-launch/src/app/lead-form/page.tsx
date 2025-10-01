@@ -176,7 +176,7 @@ const LeadFormPage = () => {
                     onBlur={() => setTouched(prev => ({ ...prev, firstName: true }))}
                     aria-invalid={!!nameError && touched.firstName}
                     className={`w-full px-6 py-4 rounded-xl bg-black/30 border ${touched.firstName && nameError ? 'border-red-500' : 'border-gray-700'} focus:border-purple-400 focus:outline-none text-white placeholder-white/50`}
-                    placeholder="Your full name"
+                    placeholder="Your first name"
                   />
                   {touched.firstName && nameError && (
                     <p className="text-red-400 text-sm mt-2">{nameError}</p>
@@ -195,7 +195,7 @@ const LeadFormPage = () => {
                     onBlur={() => setTouched(prev => ({ ...prev, firstName: true }))}
                     aria-invalid={!!nameError && touched.firstName}
                     className={`w-full px-6 py-4 rounded-xl bg-black/30 border ${touched.firstName && nameError ? 'border-red-500' : 'border-gray-700'} focus:border-purple-400 focus:outline-none text-white placeholder-white/50`}
-                    placeholder="Your full name"
+                    placeholder="Your last name"
                   />
                   {touched.firstName && nameError && (
                     <p className="text-red-400 text-sm mt-2">{nameError}</p>

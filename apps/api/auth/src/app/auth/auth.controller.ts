@@ -125,7 +125,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request
   ) {
-    const result = await this.authService.loginCoach(loginDto);
+    const result = await this.authService.loginCoach(loginDto, req);
     this.setAuthCookie(res, req, result.access_token, loginDto.rememberMe);
     return result;
   }
@@ -141,7 +141,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request
   ) {
-    const result = await this.googleAuthService.coachGoogleAuth(googleAuthDto.idToken);
+    const result = await this.googleAuthService.coachGoogleAuth(googleAuthDto.idToken, req);
     this.setAuthCookie(res, req, result.access_token);
     return result;
   }
@@ -231,7 +231,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request
   ) {
-    const result = await this.authService.verifyCode(verifyCodeDto);
+    const result = await this.authService.verifyCode(verifyCodeDto, req);
 
     if ((result as any).access_token) {
       this.setAuthCookie(res, req, (result as any).access_token);

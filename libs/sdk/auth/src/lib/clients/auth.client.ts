@@ -1,7 +1,30 @@
-import { BaseClient } from "@nlc-ai/sdk-core";
+import {BaseClient, ServiceClientConfig} from "@nlc-ai/sdk-core";
 import { UserType } from "@nlc-ai/types";
+import {ActivityClient} from "./activity.client";
 
 export class AuthClient extends BaseClient {
+  public activity: ActivityClient;
+
+  constructor(config: ServiceClientConfig) {
+    super(config);
+
+    this.activity = new ActivityClient({
+      ...config,
+      baseURL: `${config.baseURL}/activity`,
+    });
+  }
+
+  override updateApiKey(apiKey: string | null) {
+    super.updateApiKey(apiKey);
+    const services = [
+      this.activity,
+    ];
+
+    services.forEach(service => {
+      service.updateApiKey(apiKey);
+    });
+  }
+
   async loginCoach(email: string, password: string, rememberMe?: boolean) {
     const response = await this.request('POST', '/coach/login', {
       body: { email, password, rememberMe }

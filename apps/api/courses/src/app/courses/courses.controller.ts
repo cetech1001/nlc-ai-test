@@ -22,7 +22,7 @@ import {
   UpdateCourseDto,
 } from './dto';
 import {CurrentUser} from "@nlc-ai/api-auth";
-import {type AuthUser, UserType} from "@nlc-ai/api-types";
+import {type AuthUser} from "@nlc-ai/api-types";
 
 @ApiTags('Courses')
 @ApiBearerAuth()
@@ -48,10 +48,7 @@ export class CoursesController {
     description: 'Courses retrieved successfully',
     type: PaginatedCoursesResponseDto,
   })
-  async findAll(@Query() query: CourseQueryDto, @CurrentUser() user: AuthUser) {
-    if (user.type === UserType.coach) {
-      query.coachID = user.id;
-    }
+  async findAll(@Query() query: CourseQueryDto) {
     return this.coursesService.findAll(query);
   }
 

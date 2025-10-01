@@ -19,6 +19,27 @@ enum UserType {
   client
 }
 
+model LoginActivity {
+  id            String   @id @default(uuid()) @db.Uuid
+  userID        String   @db.Uuid
+  userType      String   @db.VarChar(50)
+  loginAt       DateTime @default(now()) @db.Timestamptz(6)
+  ipAddress     String?  @db.VarChar(45)
+  userAgent     String?  @db.VarChar(500)
+  deviceType    String?  @db.VarChar(50)
+  platform      String?  @db.VarChar(50)
+  browser       String?  @db.VarChar(50)
+  loginMethod   String?  @db.VarChar(50)
+  success       Boolean  @default(true)
+  failureReason String?  @db.VarChar(255)
+
+  @@index([userID], map: "idx_login_activity_user_id")
+  @@index([userID, loginAt], map: "idx_login_activity_user_id_login_at")
+  @@index([loginAt], map: "idx_login_activity_login_at")
+  @@index([userType], map: "idx_login_activity_user_type")
+  @@map("login_activities")
+}
+
 model Admin {
   id             String          @id @default(uuid()) @db.Uuid
   email          String          @unique @db.VarChar(255)

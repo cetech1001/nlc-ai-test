@@ -9,6 +9,7 @@ import {MessagingModule} from "@nlc-ai/api-messaging";
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 import {authConfig} from './config/auth.config';
+import {ActivityModule} from "./activity/activity.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import {authConfig} from './config/auth.config';
     MessagingModule.forRoot(),
     AuthLibModule,
     AuthModule,
+    ActivityModule,
     HealthModule,
   ],
   providers: [

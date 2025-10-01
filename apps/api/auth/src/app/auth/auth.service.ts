@@ -5,6 +5,7 @@ import { TokenService } from './services/token.service';
 import { AdminAuthService } from './services/admin-auth.service';
 import { CoachAuthService } from './services/coach-auth.service';
 import { ClientAuthService } from './services/client-auth.service';
+import type { Request } from 'express';
 import {
   AuthEvent,
   UserType,
@@ -36,8 +37,8 @@ export class AuthService {
     return this.coachAuthService.register(registerDto);
   }
 
-  async loginCoach(loginDto: LoginRequest) {
-    return this.coachAuthService.login(loginDto);
+  async loginCoach(loginDto: LoginRequest, req: Request) {
+    return this.coachAuthService.login(loginDto, undefined, req);
   }
 
   async registerClient(registerDto: ClientRegistrationRequest) {
@@ -88,12 +89,12 @@ export class AuthService {
     return { message: 'Verification code sent to your email.' };
   }
 
-  async verifyCode(verifyCodeDto: VerifyCodeRequest) {
+  async verifyCode(verifyCodeDto: VerifyCodeRequest, req: Request) {
     const { email, code } = verifyCodeDto;
 
     const isEmailVerification = await this.tokenService.verifyToken(email, code, 'verification');
     if (isEmailVerification) {
-      return this.handleEmailVerification(email);
+      return this.handleEmailVerification(email, req);
     }
 
     const isPasswordReset = await this.tokenService.verifyToken(email, code, 'reset');
@@ -169,10 +170,10 @@ export class AuthService {
     return { message: 'Verification code sent' };
   }
 
-  private async handleEmailVerification(email: string) {
+  private async handleEmailVerification(email: string, req: Request) {
     let user: any = await this.prisma.coach.findUnique({ where: { email } });
     if (user && !user.isVerified) {
-      return this.coachAuthService.verifyEmail(user);
+      return this.coachAuthService.verifyEmail(user, req);
     }
 
     user = await this.prisma.client.findUnique({ where: { email } });

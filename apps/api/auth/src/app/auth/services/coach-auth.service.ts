@@ -4,16 +4,17 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '@nlc-ai/api-database';
 import { TokenService } from './token.service';
 import { OutboxService } from '@nlc-ai/api-messaging';
+import {type Request} from "express";
 import {
   AuthEvent,
   LoginRequest,
   RegistrationRequest,
-  UpdateProfileRequest,
   UserType,
   ValidatedGoogleUser,
   AuthResponse
 } from '@nlc-ai/types';
 import {Coach} from "@prisma/client";
+import {ActivityService} from "../../activity/activity.service";
 
 @Injectable()
 export class CoachAuthService {
@@ -22,9 +23,10 @@ export class CoachAuthService {
     private readonly tokenService: TokenService,
     private readonly outbox: OutboxService,
     private readonly jwtService: JwtService,
+    private readonly activity: ActivityService,
   ) {}
 
-  async login(loginDto: LoginRequest, provider?: 'google'): Promise<AuthResponse> {
+  async login(loginDto: LoginRequest, provider?: 'google', req?: Request): Promise<AuthResponse> {
     const { email, password } = loginDto;
 
     const coach = await this.findCoachByEmail(email);
@@ -91,6 +93,19 @@ export class CoachAuthService {
       where: { id: coach.id },
       data: { lastLoginAt: new Date() },
     });
+
+    // Track login activity
+    await this.activity.recordLogin(
+      {
+        userID: coach.id,
+        userType: UserType.COACH,
+        ipAddress: req?.ip || req?.headers['x-forwarded-for'] as string,
+        userAgent: req?.headers['user-agent'] as string,
+        loginMethod: provider === 'google' ? 'google' : 'password',
+        success: true,
+      },
+      req
+    );
 
     return this.generateAuthResponse(coach, false);
   }
@@ -177,11 +192,11 @@ export class CoachAuthService {
     };
   }
 
-  async googleAuth(googleUser: ValidatedGoogleUser) {
+  async googleAuth(googleUser: ValidatedGoogleUser, req: Request) {
     const existingCoach = await this.findCoachByEmail(googleUser.email);
 
     if (existingCoach) {
-      return this.login({ email: googleUser.email, password: '' }, 'google');
+      return this.login({ email: googleUser.email, password: '' }, 'google', req);
     } else {
       return this.register({
         email: googleUser.email,
@@ -190,50 +205,6 @@ export class CoachAuthService {
         password: '',
       }, 'google', googleUser);
     }
-  }
-
-  async updateProfile(coachID: string, updateProfileDto: UpdateProfileRequest) {
-    const { firstName, lastName, email } = updateProfileDto;
-
-    const existingCoach = await this.prisma.coach.findFirst({
-      where: {
-        email,
-        id: { not: coachID },
-        isActive: true,
-      },
-    });
-
-    if (existingCoach) {
-      throw new ConflictException('Email already exists');
-    }
-
-    const updatedCoach = await this.prisma.coach.update({
-      where: { id: coachID },
-      data: {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim(),
-        updatedAt: new Date(),
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        businessName: true,
-        isVerified: true,
-        avatarUrl: true,
-        websiteUrl: true,
-        bio: true,
-        timezone: true,
-        phone: true,
-      },
-    });
-
-    return {
-      message: 'Profile updated successfully',
-      user: updatedCoach,
-    };
   }
 
   async updatePassword(passwordHash: string, coachID?: string, email?: string) {
@@ -250,14 +221,7 @@ export class CoachAuthService {
     throw new BadRequestException('Could not identify user');
   }
 
-  async uploadAvatar(coachID: string, avatarUrl: string) {
-    await this.prisma.coach.update({
-      where: { id: coachID },
-      data: { avatarUrl, updatedAt: new Date() },
-    });
-  }
-
-  async verifyEmail(coach: Coach) {
+  async verifyEmail(coach: Coach, req?: Request) {
     await this.prisma.coach.update({
       where: { id: coach.id },
       data: {
@@ -277,6 +241,19 @@ export class CoachAuthService {
         },
       },
       'auth.coach.verified'
+    );
+
+    // Track login activity after email verification
+    await this.activity.recordLogin(
+      {
+        userID: coach.id,
+        userType: UserType.COACH,
+        ipAddress: req?.ip || req?.headers['x-forwarded-for'] as string,
+        userAgent: req?.headers['user-agent'] as string,
+        loginMethod: 'password',
+        success: true,
+      },
+      req
     );
 
     return this.generateAuthResponse({

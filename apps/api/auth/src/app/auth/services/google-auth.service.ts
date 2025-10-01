@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientAuthService } from './client-auth.service';
 import { CoachAuthService } from './coach-auth.service';
 import {AuthResponse, ValidatedGoogleUser} from "@nlc-ai/types";
+import {Request} from "express";
 
 @Injectable()
 export class GoogleAuthService {
@@ -46,9 +47,9 @@ export class GoogleAuthService {
     };
   }
 
-  async coachGoogleAuth(idToken: string): Promise<AuthResponse> {
+  async coachGoogleAuth(idToken: string, req: Request): Promise<AuthResponse> {
     const userData = await this.validateGoogleToken(idToken);
-    return await this.coachAuthService.googleAuth(userData) as unknown as AuthResponse;
+    return await this.coachAuthService.googleAuth(userData, req) as unknown as AuthResponse;
   }
 
   async clientGoogleAuth(idToken: string, inviteToken: string): Promise<AuthResponse> {

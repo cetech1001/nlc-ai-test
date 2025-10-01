@@ -31,6 +31,7 @@ export class CommunitiesClient extends BaseClient {
   }
 
   override updateApiKey(apiKey: string | null) {
+    super.updateApiKey(apiKey);
     const services = [
       this.posts, this.moderation, this.comments
     ];

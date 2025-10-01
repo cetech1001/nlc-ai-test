@@ -6,8 +6,10 @@ import { TokenService } from './services/token.service';
 import { AdminAuthService } from './services/admin-auth.service';
 import { CoachAuthService } from './services/coach-auth.service';
 import { ClientAuthService } from './services/client-auth.service';
+import {ActivityModule} from "../activity/activity.module";
 
 @Module({
+  imports: [ActivityModule],
   controllers: [AuthController],
   providers: [
     AuthService,

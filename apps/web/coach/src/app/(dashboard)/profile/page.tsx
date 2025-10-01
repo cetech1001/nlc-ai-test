@@ -1,10 +1,10 @@
 'use client'
 
-import {useParams} from "next/navigation";
+import {useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {useAuth} from "@nlc-ai/web-auth";
 import {CommunityResponse, ExtendedCourse, UserProfile, UserType} from "@nlc-ai/types";
-import {ProfileHeader, sdkClient} from "@/lib";
+import {ActivityHeatmap, ProfileHeader, sdkClient} from "@/lib";
 import {toast} from "sonner";
 import {CommunityMemberships, CourseCarousel} from "@/lib/components/profile";
 
@@ -23,8 +23,8 @@ interface SocialIntegration {
 const ProfilePage = () => {
   const { user } = useAuth(UserType.COACH);
 
-  const params = useParams();
-  const userID = params.userID as string;
+  const params = useSearchParams();
+  const userID = params.get('userID') as string;
 
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isCoursesLoading, setIsCoursesLoading] = useState(false);
@@ -126,6 +126,10 @@ const ProfilePage = () => {
           profile={profile}
           socialIntegrations={socialIntegrations}
         />
+
+        <div className="mb-10">
+          <ActivityHeatmap userID={userID || user?.id} />
+        </div>
 
         <div className="mb-10">
           <h2 className="text-foreground text-lg font-medium mb-5">

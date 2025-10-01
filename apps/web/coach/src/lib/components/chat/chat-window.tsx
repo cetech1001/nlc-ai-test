@@ -6,6 +6,7 @@ import {ChatWindowSkeleton, sdkClient, useMessagingWebSocket} from '@/lib';
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messages';
 import {toast} from 'sonner';
 import {UserProfile, UserType} from "@nlc-ai/types";
+import {useRouter} from "next/navigation";
 
 interface ChatWindowProps {
   user: UserProfile | null;
@@ -28,6 +29,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                         onBack,
                                                         isConvoLoading,
                                                       }) => {
+  const router = useRouter();
+
   const [messages, setMessages] = useState<DirectMessageResponse[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(isConvoLoading);
@@ -426,7 +429,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
+          <button
+            onClick={() => router.push(`/profile?userID=${otherParticipant?.id}`)}
+            className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
             <Info className="w-5 h-5" />
           </button>
         </div>
