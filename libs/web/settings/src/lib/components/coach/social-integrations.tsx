@@ -8,6 +8,8 @@ import {
   LinkIcon,
   Mail,
   RefreshCw,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useSettings } from '../../context/settings.context';
 import { SocialIntegrationsSkeleton } from '../skeletons';
@@ -186,6 +188,34 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
     }
   };
 
+  const handleToggleProfileVisibility = async (integration: IntegrationData) => {
+    const currentShowOnProfile = (integration.config as any)?.showOnProfile !== false;
+
+    try {
+      setIsLoading(true);
+      await sdkClient.integrations.toggleProfileVisibility(integration.id, !currentShowOnProfile);
+
+      // Update local state
+      if (integration.integrationType === 'social') {
+        setSocialIntegrations(prev => prev.map(i =>
+          i.id === integration.id
+            ? { ...i, config: { ...i.config, showOnProfile: !currentShowOnProfile } }
+            : i
+        ));
+      }
+
+      setSuccess(
+        currentShowOnProfile
+          ? `${integration.platformName} hidden from profile`
+          : `${integration.platformName} will now show on profile`
+      );
+    } catch (error: any) {
+      setError(`Failed to update profile visibility: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getConnectedPlatforms = (type: 'social' | 'app') => {
     const integrations = type === 'social' ? socialIntegrations : appIntegrations;
     return integrations.map(integration => integration.platformName);
@@ -203,74 +233,111 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
       : appPlatforms[integration.platformName as keyof typeof appPlatforms];
 
     const profileData = integration.config || {};
+    const showOnProfile = (profileData as any)?.showOnProfile !== false;
 
     return (
       <div key={integration.id} className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-6">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center">
-              {platformConfig?.icon || '🔗'}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center">
+                {platformConfig?.icon || '🔗'}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-white font-medium">{platformConfig?.name || integration.platformName}</span>
+                  <div className="flex items-center gap-2 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                    <Check className="w-3 h-3 text-green-400" />
+                    <span className="text-green-400 text-xs font-medium">Connected</span>
+                  </div>
+                </div>
+                <div className="text-stone-400 text-sm mb-1">
+                  {profileData?.username || profileData?.name || profileData?.emailAddress || 'Connected'}
+                  {profileData?.followerCount && ` • ${profileData.followerCount.toLocaleString()} followers`}
+                </div>
+                {integration.lastSyncAt && (
+                  <div className="text-stone-500 text-xs">
+                    Last synced: {new Date(integration.lastSyncAt).toLocaleDateString()}
+                  </div>
+                )}
+                {integration.syncError && (
+                  <div className="text-red-400 text-xs">
+                    Sync error: {integration.syncError}
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-white font-medium">{platformConfig?.name || integration.platformName}</span>
-                <div className="flex items-center gap-2 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                  <Check className="w-3 h-3 text-green-400" />
-                  <span className="text-green-400 text-xs font-medium">Connected</span>
-                </div>
-              </div>
-              <div className="text-stone-400 text-sm mb-1">
-                {profileData?.username || profileData?.name || profileData?.emailAddress || 'Connected'}
-                {profileData?.followerCount && ` • ${profileData.followerCount.toLocaleString()} followers`}
-              </div>
-              {integration.lastSyncAt && (
-                <div className="text-stone-500 text-xs">
-                  Last synced: {new Date(integration.lastSyncAt).toLocaleDateString()}
-                </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <button
+                onClick={() => handleSync(integration)}
+                disabled={isLoading}
+                className="border border-blue-600/50 text-blue-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Sync
+              </button>
+              <button
+                onClick={() => handleTest(integration)}
+                disabled={isLoading}
+                className="border border-neutral-700 text-stone-300 hover:text-white hover:border-green-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Test
+              </button>
+              {profileData?.profileUrl && (
+                <button
+                  onClick={() => window.open(profileData.profileUrl, '_blank')}
+                  className="border border-neutral-700 text-stone-300 hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  View
+                </button>
               )}
-              {integration.syncError && (
-                <div className="text-red-400 text-xs">
-                  Sync error: {integration.syncError}
-                </div>
-              )}
+              <button
+                onClick={() => handleDisconnect(integration)}
+                disabled={isLoading}
+                className="border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Disconnect
+              </button>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-            <button
-              onClick={() => handleSync(integration)}
-              disabled={isLoading}
-              className="border border-blue-600/50 text-blue-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Sync
-            </button>
-            <button
-              onClick={() => handleTest(integration)}
-              disabled={isLoading}
-              className="border border-neutral-700 text-stone-300 hover:text-white hover:border-green-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              Test
-            </button>
-            {profileData?.profileUrl && (
+          {/* Show on Profile Toggle - Only for Social Integrations */}
+          {integration.integrationType === 'social' && (
+            <div className="flex items-center justify-between pt-4 border-t border-neutral-700/50">
+              <div className="flex items-center gap-3">
+                {showOnProfile ? (
+                  <Eye className="w-4 h-4 text-violet-400" />
+                ) : (
+                  <EyeOff className="w-4 h-4 text-stone-500" />
+                )}
+                <div>
+                  <span className="text-stone-300 text-sm font-medium">Show on public profile</span>
+                  <p className="text-stone-500 text-xs mt-0.5">
+                    {showOnProfile
+                      ? 'This account is visible on your profile'
+                      : 'This account is hidden from your profile'}
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => window.open(profileData.profileUrl, '_blank')}
-                className="border border-neutral-700 text-stone-300 hover:text-white hover:border-violet-500 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
+                onClick={() => handleToggleProfileVisibility(integration)}
+                disabled={isLoading}
+                className={`w-14 p-1 rounded-full border transition-all duration-200 ${
+                  showOnProfile
+                    ? "bg-violet-600 border-violet-600 justify-end"
+                    : "bg-neutral-700 border-neutral-600 justify-start"
+                } flex items-center`}
               >
-                <ExternalLink className="w-4 h-4" />
-                View
+                <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${
+                  showOnProfile ? 'translate-x-0' : 'translate-x-0'
+                }`} />
               </button>
-            )}
-            <button
-              onClick={() => handleDisconnect(integration)}
-              disabled={isLoading}
-              className="border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors px-3 py-1.5 rounded-lg text-sm flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Disconnect
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );

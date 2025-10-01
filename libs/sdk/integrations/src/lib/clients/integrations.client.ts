@@ -48,6 +48,40 @@ export class IntegrationsClient extends BaseClient {
   }
 
   /**
+   * Get public social media integrations for a user
+   */
+  async getPublicSocialIntegrations(userID: string, userType: string): Promise<Array<{
+    id: string;
+    platformName: string;
+    config: {
+      username?: string;
+      name?: string;
+      displayName?: string;
+      profileUrl?: string;
+      followerCount?: number;
+    };
+  }>> {
+    const response = await this.request<Array<{
+      id: string;
+      platformName: string;
+      config: any;
+    }>>('GET', `/social/public/${userID}/${userType}`);
+    return response.data!;
+  }
+
+  /**
+   * Toggle integration visibility on public profile
+   */
+  async toggleProfileVisibility(integrationID: string, showOnProfile: boolean): Promise<{ success: boolean; message: string }> {
+    const response = await this.request<{ success: boolean; message: string }>(
+      'PUT',
+      `/${integrationID}/profile-visibility`,
+      { body: { showOnProfile } }
+    );
+    return response.data!;
+  }
+
+  /**
    * Get social media integrations only
    */
   async getSocialIntegrations(): Promise<Integration[]> {

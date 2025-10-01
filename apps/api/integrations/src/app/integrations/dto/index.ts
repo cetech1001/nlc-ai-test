@@ -48,3 +48,9 @@ export class EmailAccountStatsQueryDto {
   @IsString()
   days?: string;
 }
+
+export class ToggleProfileVisibilityDto {
+  @ApiProperty({ example: true, description: 'Show this integration on public profile' })
+  @IsBoolean()
+  showOnProfile: boolean;
+}

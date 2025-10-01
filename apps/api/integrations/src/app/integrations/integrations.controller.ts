@@ -7,6 +7,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   Res,
   UseGuards
@@ -21,6 +22,7 @@ import { StateTokenService } from "./services/state-token.service";
 import { IntegrationsService } from "./integrations.service";
 import { oauthError } from "./templates/oauth-error";
 import { oauthSuccess } from "./templates/oauth-success";
+import { ToggleProfileVisibilityDto } from './dto';
 
 @ApiTags('Integrations')
 @Controller('')
@@ -56,6 +58,17 @@ export class IntegrationsController {
   @ApiResponse({ status: 200, description: 'Social integrations retrieved successfully' })
   async getSocialIntegrations(@CurrentUser() user: AuthUser) {
     return this.integrationsService.getSocialIntegrations(user.id, user.type);
+  }
+
+  @Get('social/public/:userID/:userType')
+  @Public()
+  @ApiOperation({ summary: 'Get public social media integrations for a user' })
+  @ApiResponse({ status: 200, description: 'Public social integrations retrieved successfully' })
+  async getPublicSocialIntegrations(
+    @Param('userID') userID: string,
+    @Param('userType') userType: UserType,
+  ) {
+    return this.integrationsService.getPublicSocialIntegrations(userID, userType);
   }
 
   @Get('apps')
@@ -166,6 +179,29 @@ export class IntegrationsController {
     }
   }
 
+  @Put(':id/profile-visibility')
+  @ApiOperation({ summary: 'Toggle integration visibility on public profile' })
+  @ApiResponse({ status: 200, description: 'Profile visibility updated successfully' })
+  async toggleProfileVisibility(
+    @CurrentUser() user: AuthUser,
+    @Param('id') integrationID: string,
+    @Body() body: ToggleProfileVisibilityDto,
+  ) {
+    await this.integrationsService.findUserIntegration(user.id, user.type, integrationID);
+
+    await this.integrationsService.updateProfileVisibility(
+      integrationID,
+      body.showOnProfile
+    );
+
+    return {
+      success: true,
+      message: body.showOnProfile
+        ? 'Integration will now be shown on your profile'
+        : 'Integration will be hidden from your profile',
+    };
+  }
+
   @Post(':id/test')
   @ApiOperation({ summary: 'Test integration connection' })
   @ApiResponse({ status: 200, description: 'Connection test completed' })
@@ -226,7 +262,6 @@ export class IntegrationsController {
   }
 
   private sendOAuthError(res: Response, platform: string, errorMessage: string, nonce: string) {
-
     res.send(oauthError(errorMessage, platform, nonce));
   }
 }

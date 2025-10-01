@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { PrismaService } from '@nlc-ai/api-database';
 import { Integration, IntegrationType, UserType } from '@nlc-ai/api-types';
+import {Injectable, NotFoundException} from "@nestjs/common";
 
 @Injectable()
 export class IntegrationsService {
@@ -45,6 +46,37 @@ export class IntegrationsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async getPublicSocialIntegrations(userID: string, userType: UserType) {
+    const integrations = await this.prisma.integration.findMany({
+      where: {
+        userID,
+        userType,
+        integrationType: 'social',
+        isActive: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Filter to only show integrations where showOnProfile is true
+    // Return minimal data for public display
+    return integrations
+      .filter(integration => {
+        const config = integration.config as any;
+        return config?.showOnProfile !== false; // Show by default if not set
+      })
+      .map(integration => ({
+        id: integration.id,
+        platformName: integration.platformName,
+        config: {
+          username: (integration.config as any)?.username,
+          name: (integration.config as any)?.name,
+          displayName: (integration.config as any)?.displayName,
+          profileUrl: (integration.config as any)?.profileUrl || `https://youtube.com/${(integration.config as any)?.snippet?.customUrl}`,
+          followerCount: (integration.config as any)?.followerCount,
+        },
+      }));
   }
 
   async getAppIntegrations(userID: string, userType: UserType) {
@@ -99,5 +131,27 @@ export class IntegrationsService {
     }
 
     return { ...integration, integrationType: integration.integrationType as IntegrationType };
+  }
+
+  async updateProfileVisibility(integrationID: string, showOnProfile: boolean): Promise<void> {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationID },
+    });
+
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
+    }
+
+    const currentConfig = (integration.config as any) || {};
+
+    await this.prisma.integration.update({
+      where: { id: integrationID },
+      data: {
+        config: {
+          ...currentConfig,
+          showOnProfile,
+        },
+      },
+    });
   }
 }
