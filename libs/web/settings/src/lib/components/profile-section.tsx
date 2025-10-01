@@ -1,5 +1,5 @@
-import {FC, useEffect, useState} from 'react';
-import {Camera, Eye, EyeOff, RotateCw, Upload, X,} from 'lucide-react';
+import {FC, useEffect, useState, useRef} from 'react';
+import {Camera, Eye, EyeOff, RotateCw, Upload, X, MapPin, Loader2} from 'lucide-react';
 import {useSettings} from '../context/settings.context';
 import {PasswordFormData, ProfileFormData, ProfileFormErrors} from '../types/settings.types';
 import {ProfileSectionSkeleton} from "./skeletons";
@@ -14,14 +14,23 @@ interface ProfileSectionProps {
   onUpdateProfile: (data: ProfileFormData) => Promise<void>;
   onUpdatePassword: (data: PasswordFormData) => Promise<void>;
   onUploadAvatar: (data: string) => Promise<void>;
+  mapboxAccessToken?: string; // Add this to your env vars
+}
+
+interface LocationSuggestion {
+  id: string;
+  placeName: string;
+  text: string;
+  placeType: string[];
 }
 
 export const ProfileSection: FC<ProfileSectionProps> = ({
-  onUpdateProfile,
-  onUpdatePassword,
-  onUploadAvatar,
-  sdkClient,
-}) => {
+                                                          onUpdateProfile,
+                                                          onUpdatePassword,
+                                                          onUploadAvatar,
+                                                          sdkClient,
+                                                          mapboxAccessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '',
+                                                        }) => {
   const { user, userType, isLoading, setSuccess, setError } = useSettings();
 
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -31,12 +40,20 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
   const [showCropModal, setShowCropModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [_, setSelectedFile] = useState<File | null>(null);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null); // Store original image
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [croppedImageBlob, setCroppedImageBlob] = useState<Blob | null>(null);
 
   const [desktopNotifications, setDesktopNotifications] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
+
+  // Location autocomplete state
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const locationDropdownRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [profileForm, setProfileForm] = useState<ProfileFormData>({
     firstName: '',
@@ -65,6 +82,86 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     }
   }, [user]);
 
+  // Handle clicks outside location dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        locationDropdownRef.current &&
+        !locationDropdownRef.current.contains(event.target as Node) &&
+        !locationInputRef.current?.contains(event.target as Node)
+      ) {
+        setShowLocationSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const searchLocations = async (query: string) => {
+    if (!mapboxAccessToken) {
+      console.warn('Mapbox access token not configured');
+      return;
+    }
+
+    if (query.trim().length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+
+    try {
+      setLocationLoading(true);
+
+      // Mapbox Geocoding API - filter to US places only
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+        `access_token=${mapboxAccessToken}&` +
+        `country=US&` +
+        `types=place,locality,neighborhood&` +
+        `limit=8`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+
+      const data = await response.json();
+
+      const suggestions: LocationSuggestion[] = data.features.map((feature: any) => {
+        // Extract city and state from the place_name
+        // Format is usually "City, State, Country"
+        const parts = feature.place_name.split(',').map((p: string) => p.trim());
+        const city = feature.text;
+        const state = parts[1] || '';
+
+        return {
+          id: feature.id,
+          placeName: `${city}, ${state}`,
+          text: city,
+          placeType: feature.place_type,
+        };
+      });
+
+      setLocationSuggestions(suggestions);
+      setShowLocationSuggestions(suggestions.length > 0);
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      setLocationSuggestions([]);
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
   const validateProfileForm = (): boolean => {
     const newErrors: ProfileFormErrors = {};
 
@@ -87,10 +184,10 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
     }
 
     if (userType === 'coach' && profileForm.websiteUrl && profileForm.websiteUrl.trim()) {
-      try {
-        new URL(profileForm.websiteUrl);
-      } catch {
-        newErrors.websiteUrl = "Please enter a valid URL";
+      // Flexible URL validation - accepts with or without http(s)://
+      const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      if (!urlPattern.test(profileForm.websiteUrl.trim())) {
+        newErrors.websiteUrl = "Please enter a valid URL (e.g., nexlevelcoach.ai)";
       }
     }
 
@@ -121,8 +218,31 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
 
   const handleProfileInputChange = (field: keyof ProfileFormData, value: string) => {
     setProfileForm(prev => ({ ...prev, [field]: value }));
+
+    // Handle location autocomplete with debouncing
+    if (field === 'location') {
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // Set new timeout for search
+      searchTimeoutRef.current = setTimeout(() => {
+        searchLocations(value);
+      }, 300); // 300ms debounce
+    }
+
     if (errors[field as keyof ProfileFormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleLocationSelect = (placeName: string) => {
+    setProfileForm(prev => ({ ...prev, location: placeName }));
+    setShowLocationSuggestions(false);
+    setLocationSuggestions([]);
+    if (errors.location) {
+      setErrors(prev => ({ ...prev, location: undefined }));
     }
   };
 
@@ -597,11 +717,11 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                   errors.websiteUrl ? "border-red-500" : "border-white/30"
                 } flex justify-between items-center`}>
                   <input
-                    type="url"
+                    type="text"
                     value={profileForm.websiteUrl || ''}
                     onChange={(e) => handleProfileInputChange("websiteUrl", e.target.value)}
                     className="bg-transparent text-stone-50 text-base font-medium font-['Inter'] leading-tight outline-none flex-1"
-                    placeholder="https://yourwebsite.com"
+                    placeholder="nexlevelcoach.ai"
                   />
                 </div>
                 {errors.websiteUrl && (
@@ -609,19 +729,53 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
                 )}
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 relative">
                 <label className="text-stone-50 text-sm font-medium font-['Inter'] leading-relaxed">
                   Location
                 </label>
                 <div className="h-12 px-5 py-2.5 rounded-[10px] border border-white/30 flex justify-between items-center">
+                  <MapPin className="w-4 h-4 text-stone-400 mr-2 flex-shrink-0" />
                   <input
+                    ref={locationInputRef}
                     type="text"
                     value={profileForm.location || ''}
                     onChange={(e) => handleProfileInputChange("location", e.target.value)}
+                    onFocus={() => {
+                      if (profileForm.location && profileForm.location.length >= 2) {
+                        searchLocations(profileForm.location);
+                      }
+                    }}
                     className="bg-transparent text-stone-50 text-base font-medium font-['Inter'] leading-tight outline-none flex-1"
-                    placeholder="eg. Albany, NY"
+                    placeholder="Start typing city name..."
+                    autoComplete="off"
                   />
+                  {locationLoading && (
+                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin flex-shrink-0" />
+                  )}
                 </div>
+
+                {/* Location Suggestions Dropdown */}
+                {showLocationSuggestions && locationSuggestions.length > 0 && (
+                  <div
+                    ref={locationDropdownRef}
+                    className="absolute top-full left-0 right-0 mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto"
+                  >
+                    {locationSuggestions.map((location) => (
+                      <button
+                        key={location.id}
+                        onClick={() => handleLocationSelect(location.placeName)}
+                        className="w-full px-4 py-3 text-left hover:bg-neutral-700/50 transition-colors flex items-center gap-3 border-b border-neutral-700/50 last:border-b-0"
+                      >
+                        <MapPin className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                        <div>
+                          <div className="text-white text-sm font-medium">
+                            {location.placeName}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}

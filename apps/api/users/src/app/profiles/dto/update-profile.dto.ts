@@ -1,5 +1,5 @@
 // dto/update-profile.dto.ts
-import { IsOptional, IsString, IsUrl, IsEmail } from 'class-validator';
+import { IsOptional, IsString, IsEmail, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -33,9 +33,13 @@ export class UpdateProfileDto {
   @IsString()
   bio?: string;
 
-  @ApiPropertyOptional({ example: 'https://mycoaching.com' })
+  @ApiPropertyOptional({ example: 'nexlevelcoach.ai' })
   @IsOptional()
-  @IsUrl()
+  @IsString()
+  @Matches(
+    /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+    { message: 'Please enter a valid website URL' }
+  )
   websiteUrl?: string;
 
   @ApiPropertyOptional({ example: 'America/New_York' })
