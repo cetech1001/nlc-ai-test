@@ -1,97 +1,103 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Dot {
-    id: number;
-    x: number;
-    y: number;
-    size: number;
-    opacity: number;
-    speedX: number;
-    speedY: number;
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  opacity: number;
+  speedX: number;
+  speedY: number;
 }
 
 export const AnimatedDots: React.FC = () => {
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const rafId = useRef<number | null>(null);
-    const lastTs = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const rafId = useRef<number | null>(null);
+  const lastTs = useRef<number | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
-    const DOT_COUNT = 320;
-    const SPEED_RANGE = 8;
+  const DOT_COUNT = 320;
+  const SPEED_RANGE = 8;
 
-    type LiveDot = Dot & { node: HTMLDivElement };
-    const liveDots = useRef<LiveDot[]>([]);
+  type LiveDot = Dot & { node: HTMLDivElement };
+  const liveDots = useRef<LiveDot[]>([]);
 
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-        const created: LiveDot[] = [];
-        for (let i = 0; i < DOT_COUNT; i++) {
-            const size = Math.random() + 0.5;
-            const dot: LiveDot = {
-                id: i,
-                x: Math.random() * 100,
-                y: Math.random() * 100,
-                size,
-                opacity: Math.random() * 0.5 + 0.3,
-                speedX: (Math.random() - 0.5) * (SPEED_RANGE * 0.3),
-                speedY: - (Math.random() * (SPEED_RANGE * 0.8) + SPEED_RANGE * 0.2),
-                node: document.createElement('div'),
-            };
-
-            const node = dot.node;
-            node.className = 'absolute rounded-full';
-            node.style.position = 'absolute';
-            node.style.left = `${dot.x}%`;
-            node.style.top = `${dot.y}%`;
-            node.style.width = `${dot.size}px`;
-            node.style.height = `${dot.size}px`;
-            node.style.opacity = `${dot.opacity}`;
-            node.style.background = '#ffffff';
-            node.style.filter = 'blur(0.5px)';
-            node.style.willChange = 'left, top, transform';
-            node.style.transform = 'translateZ(0)';
-
-            container.appendChild(node);
-            created.push(dot);
-        }
-        liveDots.current = created;
-
-        const tick = (ts: number) => {
-            if (lastTs.current == null) lastTs.current = ts;
-            const dt = (ts - lastTs.current) / 1000; // seconds
-            lastTs.current = ts;
-
-            for (const d of liveDots.current) {
-                d.x = (d.x + d.speedX * dt + 100) % 100;
-                d.y = (d.y + d.speedY * dt + 100) % 100;
-                d.node.style.left = `${d.x}%`;
-                d.node.style.top = `${d.y}%`;
-            }
-
-            rafId.current = requestAnimationFrame(tick);
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      const created: LiveDot[] = [];
+      for (let i = 0; i < DOT_COUNT; i++) {
+        const size = Math.random() + 0.5;
+        const dot: LiveDot = {
+          id: i,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          size,
+          opacity: Math.random() * 0.5 + 0.3,
+          speedX: (Math.random() - 0.5) * (SPEED_RANGE * 0.3),
+          speedY: - (Math.random() * (SPEED_RANGE * 0.8) + SPEED_RANGE * 0.2),
+          node: document.createElement('div'),
         };
+
+        const node = dot.node;
+        node.className = 'absolute rounded-full';
+        node.style.position = 'absolute';
+        node.style.left = `${dot.x}%`;
+        node.style.top = `${dot.y}%`;
+        node.style.width = `${dot.size}px`;
+        node.style.height = `${dot.size}px`;
+        node.style.opacity = `${dot.opacity}`;
+        node.style.background = '#ffffff';
+        node.style.filter = 'blur(0.5px)';
+        node.style.willChange = 'left, top, transform';
+        node.style.transform = 'translateZ(0)';
+
+        container.appendChild(node);
+        created.push(dot);
+      }
+      liveDots.current = created;
+      setIsReady(true);
+
+      const tick = (ts: number) => {
+        if (lastTs.current == null) lastTs.current = ts;
+        const dt = (ts - lastTs.current) / 1000; // seconds
+        lastTs.current = ts;
+
+        for (const d of liveDots.current) {
+          d.x = (d.x + d.speedX * dt + 100) % 100;
+          d.y = (d.y + d.speedY * dt + 100) % 100;
+          d.node.style.left = `${d.x}%`;
+          d.node.style.top = `${d.y}%`;
+        }
 
         rafId.current = requestAnimationFrame(tick);
+      };
 
-        return () => {
-            if (rafId.current != null) cancelAnimationFrame(rafId.current);
-            for (const d of liveDots.current) {
-                if (d.node && d.node.parentNode === container) {
-                    container.removeChild(d.node);
-                }
-            }
-            liveDots.current = [];
-        };
-    }, []);
+      rafId.current = requestAnimationFrame(tick);
+    });
 
-    return (
-        <div
-            ref={containerRef}
-            className="absolute inset-0 overflow-hidden pointer-events-none"
-            aria-hidden="true"
-        />
-    );
+    return () => {
+      if (rafId.current != null) cancelAnimationFrame(rafId.current);
+      for (const d of liveDots.current) {
+        if (d.node && d.node.parentNode === container) {
+          container.removeChild(d.node);
+        }
+      }
+      liveDots.current = [];
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{ opacity: isReady ? 1 : 0, transition: 'opacity 0.3s ease-in' }}
+      aria-hidden="true"
+    />
+  );
 };
 
 export const GlowOrbs: React.FC = () => (
@@ -102,17 +108,17 @@ export const GlowOrbs: React.FC = () => (
 );
 
 export const PageBackground: React.FC<{ children: React.ReactNode, displayDots?: boolean; }> = ({ children, displayDots = false }) => {
-    return (
-        <div className="relative min-h-screen bg-black text-white overflow-hidden" style={{ background: '#070300' }}>
-            {displayDots && (
-              <AnimatedDots />
-            )}
+  return (
+    <div className="relative min-h-screen bg-black text-white overflow-hidden" style={{ background: '#070300' }}>
+      {displayDots && (
+        <AnimatedDots />
+      )}
 
-            <GlowOrbs />
+      <GlowOrbs />
 
-            <div className="z-10">
-                {children}
-            </div>
-        </div>
-    );
+      <div className="relative z-10">
+        {children}
+      </div>
+    </div>
+  );
 };
