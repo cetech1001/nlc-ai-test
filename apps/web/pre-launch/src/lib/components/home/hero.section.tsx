@@ -71,7 +71,6 @@ export const HeroSection = () => {
                             <path d="M8 5v14l11-7z"/>
                           </svg>
                         </div>
-                        <p className="text-gray-300 font-semibold drop-shadow-lg">Watch Demo</p>
                       </div>
                     </>
                   ) : (
