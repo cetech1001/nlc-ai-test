@@ -1,14 +1,16 @@
 'use client';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export const HeroSection = () => {
   const router = useRouter();
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   return (
     <>
       <div className="relative">
-        <div className="absolute top-6 left-0 px-3 z-20 w-full">
+        <div className="pt-6 px-3 z-20 w-full">
           <div className="flex items-center justify-between w-full space-x-3 sm:px-8">
             <Image src={'/images/logo-large.png'} height={192} width={192} alt={'Logo'}/>
             <button onClick={() => {
@@ -17,20 +19,20 @@ export const HeroSection = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
 
               <span className="relative z-10 flex items-center justify-center">
-                                Login →
-                            </span>
+                Login →
+              </span>
             </button>
           </div>
         </div>
 
-        <div className="container mx-auto px-6 pt-36 sm:pt-24">
+        <div className="container mx-auto px-6 pt-12 sm:pt-8">
           <div className="text-center max-w-6xl mx-auto">
             <h1 className="text-[40px] md:text-6xl lg:text-[76px] font-bold mb-6 leading-tight">
               <span className="text-white">Your Coaching Business.</span>
               <br />
               <span className="text-primary">
-                              On Autopilot.
-                            </span>
+                On Autopilot.
+              </span>
             </h1>
 
             <p className="text-lg md:text-xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
@@ -51,20 +53,36 @@ export const HeroSection = () => {
                 </div>
 
                 <div className="aspect-video w-full h-full z-20 bg-background rounded-2xl flex items-center justify-center relative overflow-hidden">
-                  <div className="text-center relative z-10">
-                    <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto hover:bg-white/20 hover:scale-110 transition-all cursor-pointer backdrop-blur-sm border border-white/20 group">
-                      <svg className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
+                  {!isVideoPlaying ? (
+                    <div className="text-center relative z-10">
+                      <div
+                        onClick={() => setIsVideoPlaying(true)}
+                        className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto hover:bg-white/20 hover:scale-110 transition-all cursor-pointer backdrop-blur-sm border border-white/20 group"
+                      >
+                        <svg className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                      <p className="text-gray-300">Watch Demo</p>
                     </div>
-                    <p className="text-gray-300">Watch Demo</p>
-                  </div>
+                  ) : (
+                    <video
+                      className="w-full h-full object-cover rounded-2xl"
+                      controls
+                      autoPlay
+                      src="https://elasticbeanstalk-us-east-1-765430960003.s3.us-east-1.amazonaws.com/nlc-ai/videos/PreLaunch+VSL+Final.mp4"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  )}
 
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
-                    <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-fuchsia-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-                    <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-violet-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-                  </div>
+                  {!isVideoPlaying && (
+                    <div className="absolute inset-0 opacity-10">
+                      <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
+                      <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-fuchsia-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
+                      <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-violet-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
