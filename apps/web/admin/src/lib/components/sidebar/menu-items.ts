@@ -7,7 +7,7 @@ import {
   EnvelopeIcon as HiEnvelope,
   UsersIcon as HiUsers,
 } from "@heroicons/react/24/outline";
-import {Globe, MessageCircleReply} from "lucide-react";
+import {Globe, Globe2, MessageCircleReply} from "lucide-react";
 
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
@@ -17,7 +17,8 @@ export const menuItems = [
   { icon: HiCalendar, label: "Calendar", path: "/calendar" },
   { icon: HiCollection, label: "Subscription Plans", path: "/plans" },
   { icon: HiCurrencyDollar, label: "Transactions", path: "/transactions" },
-  { icon: Globe, label: "Communities", path: "/communities" },
+  { icon: Globe2, label: "Communities", path: "/communities" },
+  { icon: Globe, label: "AI Vault", path: "/vault" },
   { icon: MessageCircleReply, label: "Chat", path: "/messages" },
 ];
 

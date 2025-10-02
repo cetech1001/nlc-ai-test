@@ -103,14 +103,14 @@ export class CommunitiesService {
           isSystemCreated,
 
           settings: settings as any,
-          memberCount: (!isSystemCreated && userType === UserType.COACH) ? 1 : 0,
+          memberCount: 1,
         },
         include: {
           members: true,
         },
       });
 
-      if (!isSystemCreated && userType !== UserType.ADMIN) {
+      // if (!isSystemCreated && userType !== UserType.ADMIN) {
         const { name, email, avatarUrl } = await this.getUserInfo(userID, userType);
         await this.prisma.communityMember.create({
           data: {
@@ -125,7 +125,7 @@ export class CommunitiesService {
             userAvatarUrl: avatarUrl,
           },
         });
-      }
+      // }
 
       await this.outboxService.saveAndPublishEvent<CommunityEvent>({
         eventType: 'community.created',
@@ -463,14 +463,14 @@ export class CommunitiesService {
       };
     }
 
-    if (user.id) {
+    /*if (user.id) {
       where.NOT = {
         AND: [
           { userID: user.id },
           { userType: user.type }
         ]
       };
-    }
+    }*/
 
     return this.prisma.paginate<CommunityMember>(this.prisma.communityMember, {
       page: filters.page || 1,

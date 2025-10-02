@@ -3,6 +3,12 @@
   "include": [],
   "references": [
     {
+      "path": "../utils"
+    },
+    {
+      "path": "../../sdk/communities"
+    },
+    {
       "path": "../../sdk/notifications"
     },
     {
