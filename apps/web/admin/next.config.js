@@ -49,7 +49,7 @@ const nextConfig = {
     config.optimization = {
       ...config.optimization,
       providedExports: true,
-      usedExports: true,
+      // usedExports: true,
     };
 
     return config;

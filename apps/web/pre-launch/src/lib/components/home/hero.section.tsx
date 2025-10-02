@@ -10,6 +10,7 @@ export const HeroSection = () => {
   return (
     <>
       <div className="relative">
+        {/* Fixed header positioning - removed absolute, using normal flow */}
         <div className="pt-6 px-3 z-20 w-full">
           <div className="flex items-center justify-between w-full space-x-3 sm:px-8">
             <Image src={'/images/logo-large.png'} height={192} width={192} alt={'Logo'}/>
@@ -54,17 +55,25 @@ export const HeroSection = () => {
 
                 <div className="aspect-video w-full h-full z-20 bg-background rounded-2xl flex items-center justify-center relative overflow-hidden">
                   {!isVideoPlaying ? (
-                    <div className="text-center relative z-10">
-                      <div
-                        onClick={() => setIsVideoPlaying(true)}
-                        className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto hover:bg-white/20 hover:scale-110 transition-all cursor-pointer backdrop-blur-sm border border-white/20 group"
-                      >
-                        <svg className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
+                    <>
+                      <img
+                        src="https://elasticbeanstalk-us-east-1-765430960003.s3.us-east-1.amazonaws.com/nlc-ai/videos/phonto.JPG"
+                        alt="Video thumbnail"
+                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                      />
+                      <div className="absolute inset-0 bg-black/20 rounded-2xl"></div>
+                      <div className="text-center relative z-10">
+                        <div
+                          onClick={() => setIsVideoPlaying(true)}
+                          className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto hover:bg-white/20 hover:scale-110 transition-all cursor-pointer backdrop-blur-sm border border-white/20 group"
+                        >
+                          <svg className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                        <p className="text-gray-300 font-semibold drop-shadow-lg">Watch Demo</p>
                       </div>
-                      <p className="text-gray-300">Watch Demo</p>
-                    </div>
+                    </>
                   ) : (
                     <video
                       className="w-full h-full object-cover rounded-2xl"
