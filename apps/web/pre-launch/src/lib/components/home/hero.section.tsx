@@ -7,24 +7,22 @@ export const HeroSection = () => {
 
   return (
     <>
-      {/* Fixed header - separate from scrolling content */}
-      <div className="fixed top-0 left-0 right-0 px-3 sm:px-8 z-50 py-6">
-        <div className="flex items-center justify-between w-full space-x-3">
-          <Image src={'/images/logo-large.png'} height={192} width={192} alt={'Logo'}/>
-          <button onClick={() => {
-            router.push(process.env.NEXT_PUBLIC_COACH_PLATFORM_URL || '/');
-          }} className="btn-primary">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-
-            <span className="relative z-10 flex items-center justify-center">
-                            Login →
-                        </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main content */}
       <div className="relative">
+        <div className="absolute top-6 left-0 px-3 z-20 w-full">
+          <div className="flex items-center justify-between w-full space-x-3 sm:px-8">
+            <Image src={'/images/logo-large.png'} height={192} width={192} alt={'Logo'}/>
+            <button onClick={() => {
+              router.push(process.env.NEXT_PUBLIC_COACH_PLATFORM_URL || '/');
+            }} className="btn-primary">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+
+              <span className="relative z-10 flex items-center justify-center">
+                                Login →
+                            </span>
+            </button>
+          </div>
+        </div>
+
         <div className="container mx-auto px-6 pt-36 sm:pt-24">
           <div className="text-center max-w-6xl mx-auto">
             <h1 className="text-[40px] md:text-6xl lg:text-[76px] font-bold mb-6 leading-tight">
