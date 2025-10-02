@@ -1,19 +1,13 @@
 //@ts-check
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-// const { composePlugins, withNx } = require('@nx/next');
-
-
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
  **/
 const nextConfig = {
   output: 'standalone',
-  // nx: {
-  //   svgr: false,
-  // },
   experimental: {
     externalDir: true,
+    optimizePackageImports: ['@nlc-ai/web-ui', '@nlc-ai/web-auth', '@nlc-ai/web-shared'],
   },
   images: {
     remotePatterns: [
@@ -25,7 +19,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'nlc-ai-admin.onrender.com',
+        hostname: 'admin.nextlevelcoach.ai',
         port: '',
         pathname: '/**',
       },
@@ -47,13 +41,19 @@ const nextConfig = {
         fs: false,
       };
     }
+
+    // Ensure proper module resolution
+    config.resolve.extensions = ['.tsx', '.ts', '.jsx', '.js', '.json'];
+
+    // Prevent duplicate processing
+    config.optimization = {
+      ...config.optimization,
+      providedExports: true,
+      usedExports: true,
+    };
+
     return config;
   },
 };
 
-// const plugins = [
-//   withNx,
-// ];
-
-// module.exports = composePlugins(...plugins)(nextConfig);
 module.exports = nextConfig;

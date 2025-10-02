@@ -321,7 +321,7 @@ const AdminCommunityMembersPage = () => {
           isOpen={showAddMemberModal}
           onClose={() => setShowAddMemberModal(false)}
           communityID={communityID}
-          onSuccess={onMemberAdded}
+          onAddSuccess={onMemberAdded}
         />
       </div>
     </div>

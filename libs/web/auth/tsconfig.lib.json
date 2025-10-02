@@ -15,6 +15,7 @@
   "exclude": [
     "out-tsc",
     "dist",
+    "node_modules",
     "**/*.spec.ts",
     "**/*.test.ts",
     "**/*.spec.tsx",
