@@ -22,7 +22,7 @@ const Post = () => {
     if (slug === 'ai-vault') {
       router.push('/vault');
     } else {
-      router.push(`/community/${slug}`);
+      router.push(`/community`);
     }
   }
 
