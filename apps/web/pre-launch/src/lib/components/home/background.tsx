@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface Dot {
   id: number;
@@ -12,9 +12,8 @@ interface Dot {
 
 export const AnimatedDots: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const rafId = useRef<number | null>(null);
+  const rafID = useRef<number | null>(null);
   const lastTs = useRef<number | null>(null);
-  const [isReady, setIsReady] = useState(false);
 
   const DOT_COUNT = 320;
   const SPEED_RANGE = 8;
@@ -26,61 +25,69 @@ export const AnimatedDots: React.FC = () => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Use requestAnimationFrame to ensure DOM is ready
+    // Prevent flash by setting initial opacity immediately
+    container.style.opacity = '0';
+
+    // Use double RAF to ensure DOM is fully ready and painted
     requestAnimationFrame(() => {
-      const created: LiveDot[] = [];
-      for (let i = 0; i < DOT_COUNT; i++) {
-        const size = Math.random() + 0.5;
-        const dot: LiveDot = {
-          id: i,
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          size,
-          opacity: Math.random() * 0.5 + 0.3,
-          speedX: (Math.random() - 0.5) * (SPEED_RANGE * 0.3),
-          speedY: - (Math.random() * (SPEED_RANGE * 0.8) + SPEED_RANGE * 0.2),
-          node: document.createElement('div'),
+      requestAnimationFrame(() => {
+        const created: LiveDot[] = [];
+        for (let i = 0; i < DOT_COUNT; i++) {
+          const size = Math.random() + 0.5;
+          const dot: LiveDot = {
+            id: i,
+            x: Math.random() * 100,
+            y: Math.random() * 100,
+            size,
+            opacity: Math.random() * 0.5 + 0.3,
+            speedX: (Math.random() - 0.5) * (SPEED_RANGE * 0.3),
+            speedY: - (Math.random() * (SPEED_RANGE * 0.8) + SPEED_RANGE * 0.2),
+            node: document.createElement('div'),
+          };
+
+          const node = dot.node;
+          node.className = 'absolute rounded-full';
+          node.style.position = 'absolute';
+          node.style.left = `${dot.x}%`;
+          node.style.top = `${dot.y}%`;
+          node.style.width = `${dot.size}px`;
+          node.style.height = `${dot.size}px`;
+          node.style.opacity = `${dot.opacity}`;
+          node.style.background = '#ffffff';
+          node.style.filter = 'blur(0.5px)';
+          node.style.willChange = 'left, top, transform';
+          node.style.transform = 'translateZ(0)';
+
+          container.appendChild(node);
+          created.push(dot);
+        }
+        liveDots.current = created;
+
+        // Fade in after dots are created and positioned
+        container.style.transition = 'opacity 0.5s ease-in';
+        container.style.opacity = '1';
+
+        const tick = (ts: number) => {
+          if (lastTs.current == null) lastTs.current = ts;
+          const dt = (ts - lastTs.current) / 1000;
+          lastTs.current = ts;
+
+          for (const d of liveDots.current) {
+            d.x = (d.x + d.speedX * dt + 100) % 100;
+            d.y = (d.y + d.speedY * dt + 100) % 100;
+            d.node.style.left = `${d.x}%`;
+            d.node.style.top = `${d.y}%`;
+          }
+
+          rafID.current = requestAnimationFrame(tick);
         };
 
-        const node = dot.node;
-        node.className = 'absolute rounded-full';
-        node.style.position = 'absolute';
-        node.style.left = `${dot.x}%`;
-        node.style.top = `${dot.y}%`;
-        node.style.width = `${dot.size}px`;
-        node.style.height = `${dot.size}px`;
-        node.style.opacity = `${dot.opacity}`;
-        node.style.background = '#ffffff';
-        node.style.filter = 'blur(0.5px)';
-        node.style.willChange = 'left, top, transform';
-        node.style.transform = 'translateZ(0)';
-
-        container.appendChild(node);
-        created.push(dot);
-      }
-      liveDots.current = created;
-      setIsReady(true);
-
-      const tick = (ts: number) => {
-        if (lastTs.current == null) lastTs.current = ts;
-        const dt = (ts - lastTs.current) / 1000; // seconds
-        lastTs.current = ts;
-
-        for (const d of liveDots.current) {
-          d.x = (d.x + d.speedX * dt + 100) % 100;
-          d.y = (d.y + d.speedY * dt + 100) % 100;
-          d.node.style.left = `${d.x}%`;
-          d.node.style.top = `${d.y}%`;
-        }
-
-        rafId.current = requestAnimationFrame(tick);
-      };
-
-      rafId.current = requestAnimationFrame(tick);
+        rafID.current = requestAnimationFrame(tick);
+      });
     });
 
     return () => {
-      if (rafId.current != null) cancelAnimationFrame(rafId.current);
+      if (rafID.current != null) cancelAnimationFrame(rafID.current);
       for (const d of liveDots.current) {
         if (d.node && d.node.parentNode === container) {
           container.removeChild(d.node);
@@ -94,7 +101,6 @@ export const AnimatedDots: React.FC = () => {
     <div
       ref={containerRef}
       className="absolute inset-0 overflow-hidden pointer-events-none"
-      style={{ opacity: isReady ? 1 : 0, transition: 'opacity 0.3s ease-in' }}
       aria-hidden="true"
     />
   );
