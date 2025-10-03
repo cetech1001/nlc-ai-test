@@ -2,8 +2,8 @@ import {Body, Controller, Delete, Get, Param, Post, Query, UseGuards} from '@nes
 import {ApiOperation, ApiParam, ApiResponse, ApiTags} from '@nestjs/swagger';
 import {CurrentUser, UserTypes, UserTypesGuard} from '@nlc-ai/api-auth';
 import {type AuthUser, UserType} from '@nlc-ai/api-types';
-import {MediaService} from '../services/media.service';
-import {MediaFiltersDto} from '../dto/media-filters.dto';
+import {MediaService} from './media.service';
+import {MediaFiltersDto} from './dto/media-filters.dto';
 
 @ApiTags('Media')
 @Controller('')
@@ -19,7 +19,6 @@ export class MediaController {
     @Query() filters: MediaFiltersDto,
     @CurrentUser() user: AuthUser
   ) {
-    // For non-admin users, filter by their own coachID
     const coachID = user.type === UserType.admin ? filters.coachID : user.id;
 
     if (!coachID) {
@@ -41,8 +40,6 @@ export class MediaController {
     const coachID = user.type === UserType.admin ? undefined : user.id;
 
     if (user.type === UserType.admin) {
-      // Admin can access any asset, but we need the coachID from the asset
-      // We'll modify service to handle this
       return await this.mediaService.getAsset(id, '');
     }
 
@@ -79,9 +76,8 @@ export class MediaController {
     const coachID = user.type === UserType.admin ? undefined : user.id;
 
     if (user.type === UserType.admin) {
-      // For admin, we need to get the asset first to find the coachID
       const asset = await this.mediaService.getAsset(id, '');
-      return this.mediaService.deleteAsset(id, asset.coachID, user.id);
+      return this.mediaService.deleteAsset(id, asset.userID, user.id);
     }
 
     return this.mediaService.deleteAsset(id, coachID!, user.id);
@@ -101,7 +97,7 @@ export class MediaController {
     if (user.type === UserType.admin) {
       const asset = await this.mediaService.getAsset(id, '');
       return {
-        url: await this.mediaService.generateUrl(id, asset.coachID, transformations)
+        url: await this.mediaService.generateUrl(id, asset.userID, transformations)
       };
     }
 
@@ -118,16 +114,10 @@ export class MediaController {
     @Param('id') id: string,
     @CurrentUser() user: AuthUser
   ) {
-    // This would integrate with analytics service
-    // For now, return basic info
-    // const coachID = user.type === UserType.admin ? undefined : user.id;
-
     if (user.type === UserType.admin) {
-      // const asset = await this.mediaService.getAsset(id, '');
       return { assetID: id, views: 0, downloads: 0, lastAccessed: null };
     }
 
-    // const asset = await this.mediaService.getAsset(id, coachID);
     return { assetID: id, views: 0, downloads: 0, lastAccessed: null };
   }
 }

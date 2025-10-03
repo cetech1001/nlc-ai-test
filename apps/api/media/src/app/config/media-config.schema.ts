@@ -1,68 +1,69 @@
 import { IsString, IsOptional, IsNumber, IsEnum, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
-import {MediaProviderType} from "@nlc-ai/api-types";
+import { MediaProviderType } from "@nlc-ai/api-types";
 
 export class MediaConfigSchema {
   @IsString()
   DATABASE_URL: string;
 
-  @IsOptional()
-  @IsString()
-  DATABASE_SCHEMA?: string = 'media';
-
   @IsString()
   RABBITMQ_URL: string;
 
   @IsOptional()
-  @IsString()
-  RABBITMQ_EXCHANGE?: string = 'nlc.domain.events';
+  RABBITMQ_EXCHANGE: string;
 
   @IsString()
   JWT_SECRET: string;
 
   @IsOptional()
-  @IsString()
-  JWT_EXPIRES_IN?: string = '24h';
+  JWT_EXPIRES_IN: string;
 
   @IsOptional()
   @IsString()
-  SERVICE_NAME?: string = 'media-service';
+  SERVICE_NAME?: string = 'media';
 
   @IsOptional()
-  @IsString()
-  SERVICE_VERSION?: string = '1.0.0';
+  NODE_ENV: string;
 
-  @IsOptional()
-  @IsString()
-  NODE_ENV?: string = 'development';
-
-  // Media Provider Configuration
   @IsEnum(MediaProviderType)
   MEDIA_PROVIDER: MediaProviderType = MediaProviderType.CLOUDINARY;
 
-  // Cloudinary Configuration
-  @IsOptional()
-  @IsString()
-  CLOUDINARY_CLOUD_NAME?: string;
+  @IsEnum(MediaProviderType)
+  VIDEO_PROVIDER: MediaProviderType = MediaProviderType.S3;
 
-  @IsOptional()
   @IsString()
-  CLOUDINARY_API_KEY?: string;
+  CLOUDINARY_CLOUD_NAME: string;
 
-  @IsOptional()
   @IsString()
-  CLOUDINARY_API_SECRET?: string;
+  CLOUDINARY_API_KEY: string;
 
-  // Upload Limits
+  @IsString()
+  CLOUDINARY_API_SECRET: string;
+
+  @IsString()
+  AWS_S3_BUCKET_NAME: string;
+
+  @IsString()
+  AWS_S3_REGION: string;
+
+  @IsString()
+  AWS_ACCESS_KEY_ID: string;
+
+  @IsString()
+  AWS_SECRET_ACCESS_KEY: string;
+
+  @IsString()
+  AWS_CLOUDFRONT_DOMAIN: string;
+
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
-  MAX_FILE_SIZE?: number = 100 * 1024 * 1024; // 100MB
+  MAX_FILE_SIZE?: number = 100 * 1024 * 1024;
 
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
-  MAX_VIDEO_SIZE?: number = 500 * 1024 * 1024; // 500MB
+  MAX_VIDEO_SIZE?: number = 10 * 1024 * 1024 * 1024;
 
   @IsOptional()
   @IsBoolean()
@@ -71,5 +72,5 @@ export class MediaConfigSchema {
 
   @IsOptional()
   @IsString()
-  DEFAULT_FOLDER?: string = 'uploads';
+  DEFAULT_FOLDER?: string = 'nlc-ai/uploads';
 }

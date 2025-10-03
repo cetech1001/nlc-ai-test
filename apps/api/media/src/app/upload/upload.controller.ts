@@ -11,8 +11,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser, UserTypesGuard, UserTypes } from '@nlc-ai/api-auth';
 import {type AuthUser, UserType} from '@nlc-ai/api-types';
-import { MediaService } from '../services/media.service';
-import { UploadAssetDto } from '../dto/upload-asset.dto';
+import { MediaService } from '../media/media.service';
+import { UploadAssetDto } from './dto';
 
 @ApiTags('Media Upload')
 @Controller('upload')
@@ -28,7 +28,7 @@ export class UploadController {
   @ApiResponse({ status: 400, description: 'Invalid file or upload parameters' })
   @UseInterceptors(FileInterceptor('file', {
     limits: {
-      fileSize: 100 * 1024 * 1024,
+      fileSize: 10 * 1024 * 1024 * 1024,
     },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [

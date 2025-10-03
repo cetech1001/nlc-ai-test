@@ -8,7 +8,8 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { MediaModule } from './media/media.module';
 import { HealthModule } from './health/health.module';
-import mediaConfig from './config/media.config';
+import {mediaConfig} from './config/media.config';
+import {UploadModule} from "./upload/upload.module";
 
 @Module({
   imports: [
@@ -22,8 +23,9 @@ import mediaConfig from './config/media.config';
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
-    HealthModule,
     MediaModule,
+    UploadModule,
+    HealthModule,
   ],
   providers: [
     {

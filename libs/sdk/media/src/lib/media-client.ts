@@ -1,8 +1,9 @@
 import {BaseClient} from '@nlc-ai/sdk-core';
-import {MediaAsset, MediaFilters, MediaUploadOptions, MediaUploadResult} from './media.types';
+import {MediaAsset, MediaUploadOptions, MediaUploadResult} from '@nlc-ai/types';
+import {MediaFilters} from './media.types'
 
 export class MediaServiceClient extends BaseClient {
-  async uploadAsset(file: File, options?: MediaUploadOptions): Promise<MediaUploadResult> {
+  async uploadAsset(file: File, options?: MediaUploadOptions) {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -19,7 +20,7 @@ export class MediaServiceClient extends BaseClient {
       formData.append('transformation', JSON.stringify(options.transformation));
     }
 
-    return this.request<MediaAsset>(
+    return this.request<MediaUploadResult>(
       'POST',
       '/upload/asset',
       {
@@ -29,7 +30,7 @@ export class MediaServiceClient extends BaseClient {
     );
   }
 
-  async uploadAvatar(file: File): Promise<MediaUploadResult> {
+  async uploadAvatar(file: File) {
     const formData = new FormData();
     formData.append('file', file);
 

@@ -21,13 +21,12 @@ function validateConfig(config: Record<string, unknown>) {
   return validatedConfig;
 }
 
-export default registerAs('media', () => {
+export const mediaConfig = registerAs('media', () => {
   const config = validateConfig(process.env);
 
   return {
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
     },
     rabbitmq: {
       url: config.RABBITMQ_URL,
@@ -39,15 +38,22 @@ export default registerAs('media', () => {
     },
     service: {
       name: config.SERVICE_NAME,
-      version: config.SERVICE_VERSION,
       environment: config.NODE_ENV,
     },
     provider: {
       type: config.MEDIA_PROVIDER,
+      videoType: config.VIDEO_PROVIDER,
       cloudinary: {
         cloudName: config.CLOUDINARY_CLOUD_NAME,
         apiKey: config.CLOUDINARY_API_KEY,
         apiSecret: config.CLOUDINARY_API_SECRET,
+      },
+      s3: {
+        bucketName: config.AWS_S3_BUCKET_NAME,
+        region: config.AWS_S3_REGION,
+        accessKeyID: config.AWS_ACCESS_KEY_ID,
+        secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
+        cloudFrontDomain: config.AWS_CLOUDFRONT_DOMAIN,
       },
     },
     upload: {

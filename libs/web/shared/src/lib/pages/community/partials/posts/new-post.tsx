@@ -147,14 +147,14 @@ export const NewPost: FC<IProps> = ({ sdkClient, ...props }) => {
       clearInterval(progressInterval);
       setUploadProgress(prev => ({ ...prev, [fileID]: 100 }));
 
-      if (result.success && result.data) {
+      if (result.success && result.data?.asset) {
         const uploadedFile: UploadedFile = {
-          id: result.data.id,
-          url: result.data.secureUrl,
-          name: result.data.originalName || file.name,
-          type: result.data.resourceType as 'image' | 'video' | 'raw',
-          size: result.data.fileSize || file.size,
-          thumbnailUrl: isVideo ? generateVideoThumbnail(result.data.secureUrl) : result.data.secureUrl
+          id: result.data.asset.id,
+          url: result.data.asset.secureUrl,
+          name: result.data.asset.originalName || file.name,
+          type: result.data.asset.resourceType as 'image' | 'video' | 'raw',
+          size: result.data.asset.fileSize || file.size,
+          thumbnailUrl: isVideo ? generateVideoThumbnail(result.data.asset.secureUrl) : result.data.asset.secureUrl
         };
 
         setUploadedFiles(prev => [...prev, uploadedFile]);
@@ -216,7 +216,7 @@ export const NewPost: FC<IProps> = ({ sdkClient, ...props }) => {
     const isVideo = file.type === 'video';
 
     return (
-      <div key={file.id} className="relative group">
+      <div key={index} className="relative group">
         <div className="aspect-square rounded-lg overflow-hidden bg-neutral-800 border border-neutral-600 relative">
           {isVideo ? (
             <>

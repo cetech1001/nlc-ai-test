@@ -4,13 +4,6 @@ export enum MediaResourceType {
   RAW = 'raw'
 }
 
-export enum MediaProvider {
-  CLOUDINARY = 'cloudinary',
-  VIMEO = 'vimeo',
-  CLOUDFRONT = 'cloudfront',
-  AWS_S3 = 'aws_s3'
-}
-
 export enum MediaTransformationType {
   QUALITY = "quality",
   FORMAT = "format",
@@ -18,63 +11,6 @@ export enum MediaTransformationType {
   RESIZE = "resize",
   CROP = "crop",
   EFFECT = "effect",
-}
-
-export interface MediaAsset {
-  id: string;
-  coachID: string;
-  publicID: string;
-  originalName: string;
-  url: string;
-  secureUrl: string;
-  format: string;
-  resourceType: MediaResourceType;
-  fileSize: number;
-  width?: number;
-  height?: number;
-  duration?: number;
-  folder?: string;
-  tags: string[];
-  processingStatus: string;
-  message?: string;
-  metadata: Record<string, any>;
-  provider: MediaProvider;
-  providerData: Record<string, any>;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface MediaUploadResult {
-  success: boolean;
-  data?: MediaAsset;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
-
-export interface TransformationOptions {
-  type: MediaTransformationType;
-  width?: number;
-  height?: number;
-  quality?: number | 'auto';
-  fetch_format?: 'auto',
-  format?: string;
-  crop?: 'crop' | 'fit' | 'fill' | 'scale';
-  gravity?: string;
-  angle?: number;
-  effect?: string;
-}
-
-export interface MediaUploadOptions {
-  folder?: string;
-  publicID?: string;
-  overwrite?: boolean;
-  tags?: string[];
-  metadata?: Record<string, any>;
-  transformation?: TransformationOptions[];
 }
 
 export interface MediaFilters {

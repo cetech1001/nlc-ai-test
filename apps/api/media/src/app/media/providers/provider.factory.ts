@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {MediaProvider, MediaProviderType} from '@nlc-ai/api-types';
+import { MediaProvider, MediaProviderType } from '@nlc-ai/types';
 import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
+import { S3Provider } from './s3/s3.provider';
 
 @Injectable()
 export class MediaProviderFactory {
@@ -11,12 +12,14 @@ export class MediaProviderFactory {
   constructor(
     private configService: ConfigService,
     private cloudinaryProvider: CloudinaryProvider,
+    private s3Provider: S3Provider
   ) {
     this.registerProviders();
   }
 
   private registerProviders(): void {
     this.providers.set(MediaProviderType.CLOUDINARY, this.cloudinaryProvider);
+    this.providers.set(MediaProviderType.S3, this.s3Provider);
   }
 
   getProvider(providerType?: MediaProviderType): MediaProvider {
@@ -27,8 +30,33 @@ export class MediaProviderFactory {
       throw new Error(`Media provider '${type}' is not supported or not configured`);
     }
 
-    this.logger.log(`Using media provider: ${type}`);
     return provider;
+  }
+
+  getProviderForVideo(): MediaProvider {
+    const videoProvider = this.configService.get<string>('media.provider.videoType');
+
+    if (!videoProvider || !Object.values(MediaProviderType).includes(videoProvider as MediaProviderType)) {
+      this.logger.warn(`Invalid video provider configuration: ${videoProvider}. Falling back to S3.`);
+      return this.getProvider(MediaProviderType.S3);
+    }
+
+    return this.getProvider(videoProvider as MediaProviderType);
+  }
+
+  getProviderForImage(): MediaProvider {
+    const imageProvider = this.configService.get<string>('media.provider.type');
+
+    if (!imageProvider || !Object.values(MediaProviderType).includes(imageProvider as MediaProviderType)) {
+      this.logger.warn(`Invalid image provider configuration: ${imageProvider}. Falling back to Cloudinary.`);
+      return this.getProvider(MediaProviderType.CLOUDINARY);
+    }
+
+    return this.getProvider(imageProvider as MediaProviderType);
+  }
+
+  getProviderForFile(isVideo: boolean): MediaProvider {
+    return isVideo ? this.getProviderForVideo() : this.getProviderForImage();
   }
 
   getDefaultProvider(): MediaProviderType {
@@ -48,14 +76,5 @@ export class MediaProviderFactory {
 
   isProviderSupported(providerType: MediaProviderType): boolean {
     return this.providers.has(providerType);
-  }
-
-  switchProvider(providerType: MediaProviderType): MediaProvider {
-    if (!this.isProviderSupported(providerType)) {
-      throw new Error(`Cannot switch to unsupported provider: ${providerType}`);
-    }
-
-    this.logger.log(`Switching media provider to: ${providerType}`);
-    return this.getProvider(providerType);
   }
 }

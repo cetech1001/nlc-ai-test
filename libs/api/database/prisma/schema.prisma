@@ -1343,7 +1343,7 @@ enum MediaProvider {
   cloudinary
   vimeo
   cloudfront
-  aws_s3
+  S3
 }
 
 enum MediaResourceType {
