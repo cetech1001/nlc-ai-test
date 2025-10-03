@@ -4,13 +4,29 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app/app.module';
 import { SecurityService } from './app/security/security.service';
-import {IoAdapter} from "@nestjs/platform-socket.io";
-import cookieParser from "cookie-parser";
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false, // Disable default body parser for streaming
+  });
+
   const configService = app.get(ConfigService);
   const securityService = app.get(SecurityService);
+
+  // Add raw body parser for streaming uploads
+  app.use((req: any, res: any, next: any) => {
+    const contentType = req.headers['content-type'] || '';
+
+    // Only parse body for non-multipart requests
+    if (!contentType.includes('multipart/form-data')) {
+      const bodyParser = require('body-parser');
+      return bodyParser.json({ limit: '50mb' })(req, res, next);
+    }
+
+    next();
+  });
 
   app.use(cookieParser());
 
@@ -19,10 +35,9 @@ async function bootstrap() {
   securityService.applySecurity(app);
 
   const corsOrigins = configService.get<string[]>('gateway.cors.origins');
-  const corsCredentials = configService.get<boolean>('gateway.cors.credentials');
-
-  console.log("Cors Origins: ", corsOrigins);
-  console.log("Cors Credentials: ", corsCredentials);
+  const corsCredentials = configService.get<boolean>(
+    'gateway.cors.credentials'
+  );
 
   app.enableCors({
     origin: corsOrigins,
@@ -36,6 +51,7 @@ async function bootstrap() {
       'x-anti-spam-signature',
       'x-anti-spam-timestamp',
     ],
+    maxAge: 86400, // 24 hours
   });
 
   app.setGlobalPrefix('api');
@@ -43,7 +59,6 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('NLC AI API Gateway')
     .setDescription('Unified API Gateway for NLC AI Platform')
-    .setVersion('1.0')
     .addBearerAuth()
     .addServer('http://localhost:3000', 'Development')
     .addServer('https://api.nextlevelcoach.ai', 'Production')

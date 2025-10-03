@@ -6,7 +6,7 @@ import {BillingClient} from "@nlc-ai/sdk-billing";
 import {AnalyticsClient} from "@nlc-ai/sdk-analytics";
 import {LeadsClient} from "@nlc-ai/sdk-leads";
 import {CommunitiesClient} from "@nlc-ai/sdk-communities";
-import {MediaServiceClient} from "@nlc-ai/sdk-media";
+import {MediaClient} from "@nlc-ai/sdk-media";
 import {NotificationsServiceClient} from "@nlc-ai/sdk-notifications";
 import {MessagesClient} from "@nlc-ai/sdk-messages";
 import {AgentsClient} from "@nlc-ai/sdk-agents";
@@ -24,7 +24,7 @@ export class NLCClient {
   public analytics: AnalyticsClient;
   public leads: LeadsClient;
   public communities: CommunitiesClient;
-  public media: MediaServiceClient;
+  public media: MediaClient;
   public notifications: NotificationsServiceClient;
   public messages: MessagesClient;
   public courses: CoursesClient;
@@ -73,8 +73,9 @@ export class NLCClient {
       baseURL: config.services?.communities || `${config.baseURL}/communities`,
     });
 
-    this.media = new MediaServiceClient({
+    this.media = new MediaClient({
       ...baseConfig,
+      timeout: 900000,
       baseURL: config.services?.media || `${config.baseURL}/media`,
     });
 

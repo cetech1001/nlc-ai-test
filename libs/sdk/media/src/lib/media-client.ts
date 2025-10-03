@@ -3,7 +3,7 @@ import { MediaFilters } from './media.types';
 import {MediaUploadOptions, MediaUploadResult, MediaAsset} from "@nlc-ai/types";
 
 
-export class MediaServiceClient extends BaseClient {
+export class MediaClient extends BaseClient {
   async uploadAsset(file: File, options?: MediaUploadOptions) {
     const formData = new FormData();
     formData.append('file', file);

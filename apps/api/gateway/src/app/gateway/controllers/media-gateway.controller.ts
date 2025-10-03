@@ -2,81 +2,115 @@ import {
   Controller,
   All,
   Req,
-  UseInterceptors,
-  UploadedFile,
-  Body,
+  Res,
+  type RawBodyRequest,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
+import busboy from 'busboy';
+import FormData from 'form-data';
 
 @ApiTags('Media')
 @Controller('media')
 @ApiBearerAuth()
 export class MediaGatewayController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(
+    private readonly proxyService: ProxyService,
+  ) {}
 
-  // Handle file uploads separately with proper multipart handling
+  // Handle file uploads with streaming (no memory loading)
   @All('upload/*')
-  @UseInterceptors(FileInterceptor('file'))
   async proxyFileUpload(
-    @Req() req: Request,
-    @UploadedFile() file?: Express.Multer.File,
-    @Body() body?: any
+    @Req() req: RawBodyRequest<Request>,
+    @Res() res: Response
   ) {
     const path = req.path.replace(/^\/media/, '');
 
-    // Create FormData for the proxied request
-    const FormData = require('form-data');
-    const formData = new FormData();
-
-    // Add the file if it exists
-    if (file) {
-      formData.append('file', file.buffer, {
-        filename: file.originalname,
-        contentType: file.mimetype,
-      });
-    }
-
-    // Add other form fields
-    if (body) {
-      Object.keys(body).forEach(key => {
-        if (body[key] !== undefined && body[key] !== null) {
-          formData.append(key, body[key]);
+    return new Promise((resolve, reject) => {
+      const bb = busboy({
+        headers: req.headers,
+        limits: {
+          fileSize: 10 * 1024 * 1024 * 1024, // 10GB max
         }
       });
-    }
 
-    const headers = this.extractHeaders(req);
-    // Remove content-type and let form-data set it
-    delete headers['content-type'];
+      const formData = new FormData();
+      const fields: Record<string, any> = {};
+      let fileCount = 0;
 
-    try {
-      const response = await this.proxyService.proxyFormDataRequest(
-        'media',
-        path,
-        {
-          method: req.method as any,
-          data: formData,
-          params: req.query,
-          headers: {
-            ...headers,
-            ...formData.getHeaders(), // This sets the correct Content-Type with boundary
-          },
+      // Handle file streams
+      bb.on('file', (fieldname, fileStream, info) => {
+        fileCount++;
+        const { filename, mimeType } = info;
+
+        console.log(`Streaming file: ${filename} (${mimeType})`);
+
+        // Append file stream directly to FormData (no buffering)
+        formData.append(fieldname, fileStream, {
+          filename,
+          contentType: mimeType,
+        });
+      });
+
+      // Handle form fields
+      bb.on('field', (fieldname, value) => {
+        fields[fieldname] = value;
+        formData.append(fieldname, value);
+      });
+
+      // Handle completion
+      bb.on('finish', async () => {
+        if (fileCount === 0) {
+          res.status(400).json({ error: 'No file provided' });
+          return resolve(undefined);
         }
-      );
 
-      return response.data;
-    } catch (error) {
-      console.error('File upload proxy error:', error);
-      throw error;
-    }
+        const headers = this.extractHeaders(req);
+        delete headers['content-type'];
+        delete headers['content-length'];
+
+        try {
+          const response = await this.proxyService.proxyFormDataRequest(
+            'media',
+            path,
+            {
+              method: req.method as any,
+              data: formData,
+              params: req.query,
+              headers: {
+                ...headers,
+                ...formData.getHeaders(),
+              },
+            }
+          );
+
+          res.status(response.status).json(response.data);
+          resolve(undefined);
+        } catch (error: any) {
+          console.error('File upload proxy error:', error);
+          res.status(error.response?.status || 502).json({
+            error: error.message || 'Upload failed',
+          });
+          resolve(undefined);
+        }
+      });
+
+      // Handle errors
+      bb.on('error', (error) => {
+        console.error('Busboy error:', error);
+        res.status(500).json({ error: 'Upload processing failed' });
+        resolve(undefined);
+      });
+
+      // Pipe request to busboy
+      req.pipe(bb);
+    });
   }
 
   // Handle all other media requests (non-upload)
   @All('*')
-  async proxyToMedia(@Req() req: Request) {
+  async proxyToMedia(@Req() req: Request, @Res() res: Response) {
     // Skip if this is an upload request (handled above)
     if (req.path.includes('/upload/')) {
       return;
@@ -85,28 +119,32 @@ export class MediaGatewayController {
     const path = req.path.replace(/^\/media/, '');
     const headers = this.extractHeaders(req);
 
-    const response = await this.proxyService.proxyRequest(
-      'media',
-      path,
-      {
+    try {
+      const response = await this.proxyService.proxyRequest('media', path, {
         method: req.method as any,
         data: req.body,
         params: req.query,
         headers: headers,
-      }
-    );
+      });
 
-    return response.data;
+      res.status(response.status).json(response.data);
+    } catch (error: any) {
+      console.error('Media proxy error:', error);
+      res.status(error.response?.status || 502).json({
+        error: error.message || 'Request failed',
+      });
+    }
   }
 
   private extractHeaders(req: Request): Record<string, string> {
     return {
-      'authorization': req.headers.authorization || '',
+      authorization: req.headers.authorization || '',
       'content-type': req.headers['content-type'] || 'application/json',
       'user-agent': req.headers['user-agent'] || '',
-      'x-forwarded-for': req.headers['x-forwarded-for'] as string || req.ip || '',
+      'x-forwarded-for':
+        (req.headers['x-forwarded-for'] as string) || req.ip || '',
       'x-real-ip': req.ip || '',
-'cookie': req.headers.cookie || '',
+      cookie: req.headers.cookie || '',
     };
   }
 }

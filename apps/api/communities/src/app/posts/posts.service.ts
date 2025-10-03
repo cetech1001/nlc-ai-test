@@ -273,8 +273,6 @@ export class PostsService {
     return updatedPost;
   }
 
-  // Add this method to the PostsService class
-
   async togglePinPost(communityID: string, id: string, user: AuthUser) {
     const post = await this.prisma.post.findUnique({
       where: { id },
@@ -290,6 +288,21 @@ export class PostsService {
 
     // Check if user is community owner or has moderate_posts permission
     await this.checkCommunityPermission(communityID, user, 'moderate_posts');
+
+    // If pinning this post, unpin all other posts in the community first
+    if (!post.isPinned) {
+      await this.prisma.post.updateMany({
+        where: {
+          communityID,
+          isPinned: true,
+          id: { not: id },
+        },
+        data: {
+          isPinned: false,
+          updatedAt: new Date(),
+        },
+      });
+    }
 
     const updatedPost = await this.prisma.post.update({
       where: { id },

@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadGatewayException, ServiceUnavailableException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import {firstValueFrom, timeout, catchError, retry, ObservableInput, timer} from 'rxjs';
+import {firstValueFrom, timeout, catchError} from 'rxjs';
 import { ServiceRegistryService } from './service-registry.service';
 import { CircuitBreakerService } from './circuit-breaker.service';
 
@@ -67,13 +67,6 @@ export class ProxyService {
           validateStatus: () => true, // Don't throw on HTTP error status codes
         }).pipe(
           timeout(requestTimeout),
-          retry({
-            count: 2,
-            delay: (error, retryCount): ObservableInput<any> => {
-              this.logger.warn(`Retrying request to ${serviceName} (attempt ${retryCount}):`, error.message);
-              return timer(1000 * retryCount); // Exponential backoff
-            },
-          }),
           catchError((error) => {
             this.circuitBreaker.recordFailure(serviceName);
             throw error;
@@ -110,7 +103,7 @@ export class ProxyService {
     }
   }
 
-  // New method specifically for FormData requests
+  // Enhanced method for FormData streaming requests
   async proxyFormDataRequest<T = any>(
     serviceName: string,
     path: string,
@@ -128,7 +121,7 @@ export class ProxyService {
     }
 
     const fullUrl = `${serviceConfig.url}${path}`;
-    const requestTimeout = serviceConfig.timeout || 60000; // Longer timeout for file uploads
+    const requestTimeout = serviceConfig.timeout || 900000; // 15 min for uploads
 
     this.logger.debug(`Proxying FormData ${request.method} request to: ${fullUrl}`);
 
@@ -144,15 +137,16 @@ export class ProxyService {
             'X-Gateway-Request-ID': this.generateRequestID(),
             'X-Forwarded-For': request.headers?.['x-forwarded-for'] || 'gateway',
           },
-          data: request.data, // FormData object
+          data: request.data, // FormData object with streams
           params: request.params,
           timeout: requestTimeout,
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
           validateStatus: () => true,
+          // Disable automatic decompression to prevent memory issues
+          decompress: false,
         }).pipe(
           timeout(requestTimeout),
-          // No retry for file uploads - they're expensive
           catchError((error) => {
             this.circuitBreaker.recordFailure(serviceName);
             throw error;
