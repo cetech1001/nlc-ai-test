@@ -2,11 +2,10 @@ import {
   Controller,
   All,
   Req,
-  Res,
   type RawBodyRequest,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 import busboy from 'busboy';
 import FormData from 'form-data';
@@ -21,10 +20,7 @@ export class MediaGatewayController {
 
   // Handle file uploads with streaming (no memory loading)
   @All('upload/*')
-  async proxyFileUpload(
-    @Req() req: RawBodyRequest<Request>,
-    @Res() res: Response
-  ) {
+  async proxyFileUpload(@Req() req: RawBodyRequest<Request>) {
     const path = req.path.replace(/^\/media/, '');
 
     return new Promise((resolve, reject) => {
@@ -62,8 +58,8 @@ export class MediaGatewayController {
       // Handle completion
       bb.on('finish', async () => {
         if (fileCount === 0) {
-          res.status(400).json({ error: 'No file provided' });
-          return resolve(undefined);
+          return reject('No file provided');
+          // return resolve(undefined);
         }
 
         const headers = this.extractHeaders(req);
@@ -85,22 +81,17 @@ export class MediaGatewayController {
             }
           );
 
-          res.status(response.status).json(response.data);
-          resolve(undefined);
+          resolve(response.data);
         } catch (error: any) {
           console.error('File upload proxy error:', error);
-          res.status(error.response?.status || 502).json({
-            error: error.message || 'Upload failed',
-          });
-          resolve(undefined);
+          reject(error.message || 'Upload failed');
         }
       });
 
       // Handle errors
       bb.on('error', (error) => {
         console.error('Busboy error:', error);
-        res.status(500).json({ error: 'Upload processing failed' });
-        resolve(undefined);
+        reject('Upload processing failed');
       });
 
       // Pipe request to busboy
@@ -110,30 +101,22 @@ export class MediaGatewayController {
 
   // Handle all other media requests (non-upload)
   @All('*')
-  async proxyToMedia(@Req() req: Request, @Res() res: Response) {
+  async proxyToMedia(@Req() req: Request) {
     // Skip if this is an upload request (handled above)
     if (req.path.includes('/upload/')) {
       return;
     }
 
     const path = req.path.replace(/^\/media/, '');
-    const headers = this.extractHeaders(req);
 
-    try {
-      const response = await this.proxyService.proxyRequest('media', path, {
-        method: req.method as any,
-        data: req.body,
-        params: req.query,
-        headers: headers,
-      });
+    const response = await this.proxyService.proxyRequest('media', path, {
+      method: req.method as any,
+      data: req.body,
+      params: req.query,
+      headers: this.extractHeaders(req),
+    });
 
-      res.status(response.status).json(response.data);
-    } catch (error: any) {
-      console.error('Media proxy error:', error);
-      res.status(error.response?.status || 502).json({
-        error: error.message || 'Request failed',
-      });
-    }
+    return response.data;
   }
 
   private extractHeaders(req: Request): Record<string, string> {
