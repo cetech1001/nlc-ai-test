@@ -208,6 +208,9 @@ export const CommunityPage: FC<IProps> = ({ sdkClient, handleMessages, community
                       value.id !== postID));
                 }}
                 onPostUpdate={(updatedPost) => {
+                  if (updatedPost.isPinned) {
+                    window.location.reload();
+                  }
                   setPosts(prev => prev.map(p =>
                     p.id === updatedPost.id ? updatedPost : p
                   ));

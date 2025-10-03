@@ -1,25 +1,31 @@
 import React, { useRef, useEffect } from 'react';
-import { Edit, Trash2, Flag, Copy } from 'lucide-react';
+import { Edit, Trash2, Flag, Copy, Pin, PinOff } from 'lucide-react';
 
 interface PostActionsDropdownProps {
   isOpen: boolean;
   onClose: () => void;
   isOwnPost: boolean;
+  canModerate: boolean;
+  isPinned: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onReport?: () => void;
   onCopyLink?: () => void;
+  onTogglePin?: () => void;
 }
 
 export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
-  isOpen,
-  onClose,
-  isOwnPost,
-  onEdit,
-  onDelete,
-  onReport,
-  onCopyLink,
-}) => {
+                                                                          isOpen,
+                                                                          onClose,
+                                                                          isOwnPost,
+                                                                          canModerate,
+                                                                          isPinned,
+                                                                          onEdit,
+                                                                          onDelete,
+                                                                          onReport,
+                                                                          onCopyLink,
+                                                                          onTogglePin,
+                                                                        }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,6 +61,28 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
       </div>
 
       <div className="relative z-10">
+        {canModerate && (
+          <>
+            <button
+              onClick={() => handleAction(onTogglePin || (() => {}))}
+              className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-neutral-700/50 transition-colors text-left"
+            >
+              {isPinned ? (
+                <>
+                  <PinOff className="w-4 h-4" />
+                  <span className="text-sm">Unpin Post</span>
+                </>
+              ) : (
+                <>
+                  <Pin className="w-4 h-4" />
+                  <span className="text-sm">Pin Post</span>
+                </>
+              )}
+            </button>
+            <div className="border-t border-neutral-700 my-2"></div>
+          </>
+        )}
+
         {isOwnPost && (
           <>
             <button

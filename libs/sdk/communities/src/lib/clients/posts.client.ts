@@ -37,6 +37,16 @@ export class PostsClient extends BaseClient {
     return response.data!;
   }
 
+  async togglePinPost(communityID: string, postID: string): Promise<PostResponse> {
+    const response = await this.request<PostResponse>('PUT', `/${communityID}/posts/${postID}/pin`);
+    return response.data!;
+  }
+
+  async getPostByID(communityID: string, postID: string): Promise<PostResponse> {
+    const response = await this.request<PostResponse>('GET', `/${communityID}/posts/${postID}`);
+    return response.data!;
+  }
+
   async deletePost(communityID: string, id: string): Promise<{ message: string }> {
     const response = await this.request<{ message: string }>('DELETE', `/${communityID}/posts/${id}`);
     return response.data!;

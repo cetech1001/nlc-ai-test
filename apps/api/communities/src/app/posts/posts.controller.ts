@@ -77,6 +77,18 @@ export class PostsController {
     return this.postsService.updatePost(id, updateDto, user);
   }
 
+  @Put(':id/pin')
+  @ApiOperation({ summary: 'Pin/unpin post' })
+  @ApiParam({ name: 'id', description: 'Post ID' })
+  @ApiResponse({ status: 200, description: 'Post pin status updated successfully' })
+  async togglePinPost(
+    @Param('communityID', ParseUUIDPipe) communityID: string,
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.postsService.togglePinPost(communityID, id, user);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete post' })
   @ApiParam({ name: 'id', description: 'Post ID' })

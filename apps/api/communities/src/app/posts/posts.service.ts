@@ -273,6 +273,55 @@ export class PostsService {
     return updatedPost;
   }
 
+  // Add this method to the PostsService class
+
+  async togglePinPost(communityID: string, id: string, user: AuthUser) {
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (post.communityID !== communityID) {
+      throw new ForbiddenException('Post does not belong to this community');
+    }
+
+    // Check if user is community owner or has moderate_posts permission
+    await this.checkCommunityPermission(communityID, user, 'moderate_posts');
+
+    const updatedPost = await this.prisma.post.update({
+      where: { id },
+      data: {
+        isPinned: !post.isPinned,
+        updatedAt: new Date(),
+      },
+      include: {
+        community: {
+          select: { name: true, type: true, slug: true },
+        },
+        communityMember: {
+          select: { userName: true, userAvatarUrl: true, role: true, userID: true },
+        },
+        reactions: {
+          where: { userID: user.id, userType: user.type },
+          select: { type: true },
+        },
+        _count: {
+          select: {
+            reactions: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    this.logger.log(`Post ${id} pin status toggled to ${updatedPost.isPinned} by ${user.type} ${user.id}`);
+
+    return updatedPost;
+  }
+
   async deletePost(id: string, user: AuthUser) {
     const post = await this.prisma.post.findUnique({
       where: { id },

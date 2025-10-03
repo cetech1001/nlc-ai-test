@@ -6,7 +6,7 @@ import {sdkClient} from "@/lib";
 import { useAuth } from "@nlc-ai/web-auth";
 import {VaultPage} from "@nlc-ai/web-shared";
 
-const CoachVault = () => {
+const AdminVault = () => {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -19,4 +19,4 @@ const CoachVault = () => {
   );
 };
 
-export default CoachVault;
+export default AdminVault;

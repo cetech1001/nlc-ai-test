@@ -2,12 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
 import { UserType } from '@nlc-ai/api-types';
 import {NotificationsService} from "../../notifications/notifications.service";
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class AuthEventsHandler {
   private readonly logger = new Logger(AuthEventsHandler.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
     private readonly notificationsService: NotificationsService,
   ) {
@@ -55,13 +57,22 @@ export class AuthEventsHandler {
   }
 
   private async handleCoachRegistered(payload: any) {
+    const post = await this.prisma.post.findFirst({
+      where: {
+        isPinned: true,
+        community: {
+          slug: 'ai-vault',
+        },
+      }
+    });
+
     await this.notificationsService.createNotification({
       userID: payload.coachID,
       userType: UserType.coach,
       type: 'welcome',
       title: 'Welcome to Next Level Coach AI! 🎉',
       message: `Hi ${payload.firstName}! Your account has been created successfully. Complete your profile to get started.`,
-      actionUrl: '/dashboard/profile',
+      actionUrl: `/community/ai-vault/post/${post?.id}`,
       priority: 'high',
       metadata: {
         source: 'auth.coach.registered',

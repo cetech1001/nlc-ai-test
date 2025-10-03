@@ -54,6 +54,25 @@ export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) =
 
   const isOwnPost = props.user?.id === optimisticPost.communityMember?.userID;
 
+  const canModerate = props.user && optimisticPost.communityMember?.role &&
+    ['owner', 'admin', 'moderator'].includes(optimisticPost.communityMember.role);
+
+  const handleTogglePin = async () => {
+    try {
+      const updatedPost = await sdkClient.communities.posts.togglePinPost(
+        props.post.communityID,
+        optimisticPost.id
+      );
+
+      setOptimisticPost(updatedPost);
+      props.onPostUpdate?.(updatedPost);
+
+      toast.success(updatedPost.isPinned ? 'Post pinned successfully' : 'Post unpinned successfully');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update pin status');
+    }
+  };
+
   const toggleComments = async (postID: string) => {
     const isCurrentlyShowing = showComments[postID];
 
@@ -300,7 +319,8 @@ export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) =
   };
 
   const handleCopyLink = () => {
-    const url = `${appConfig.publicUrl}/communities/${props.post.community?.slug}/post/${props.post.id}`;
+    const baseUrl = props.user?.type === UserType.ADMIN ? appConfig.platforms.admin : appConfig.platforms.coach;
+    const url = `${baseUrl}/community/${props.post.community?.slug}/post/${props.post.id}`;
     navigator.clipboard.writeText(url)
       .then(() => {
         toast.success('Link copied to clipboard');
@@ -469,6 +489,8 @@ export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) =
 
         <div className="relative z-10 p-4">
           <PostHeader
+            canModerate={canModerate || false}
+            onTogglePin={handleTogglePin}
             post={optimisticPost}
             isOwnPost={isOwnPost}
             onEdit={handleEditPost}

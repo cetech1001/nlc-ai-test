@@ -1,40 +1,32 @@
 //@ts-check
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { composePlugins, withNx } = require('@nx/next');
+const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
+
+
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
  **/
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    externalDir: true,
-    optimizePackageImports: ['@nlc-ai/web-ui', '@nlc-ai/web-auth', '@nlc-ai/web-shared'],
+
+  nx: {
+    svgr: false,
   },
+
   images: {
-    remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'admin.nextlevelcoach.ai',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        port: '',
-        pathname: '/**',
-      }
-    ],
+    domains: [],
   },
-  eslint: { ignoreDuringBuilds: true },
-  transpilePackages: ['@nlc-ai/web-ui', '@nlc-ai/web-auth', '@nlc-ai/web-shared'],
+
   env: {},
-  webpack: (config, { isServer }) => {
+
+  webpack: (config, { dev, isServer }) => {
+    if (dev) {
+      config.plugins.push(new CaseSensitivePathsPlugin());
+      config.cache = { type: 'memory' };
+    }
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -42,18 +34,12 @@ const nextConfig = {
       };
     }
 
-    // Ensure proper module resolution
-    config.resolve.extensions = ['.tsx', '.ts', '.jsx', '.js', '.json'];
-
-    // Prevent duplicate processing
-    config.optimization = {
-      ...config.optimization,
-      providedExports: true,
-      // usedExports: true,
-    };
-
     return config;
   },
 };
 
-module.exports = nextConfig;
+const plugins = [
+  withNx,
+];
+
+module.exports = composePlugins(...plugins)(nextConfig);
