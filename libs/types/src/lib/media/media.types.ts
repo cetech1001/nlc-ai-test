@@ -4,6 +4,15 @@ export enum MediaResourceType {
   RAW = 'raw'
 }
 
+export enum MediaTransformationType {
+  QUALITY = "quality",
+  FORMAT = "format",
+  ROTATE = "rotate",
+  RESIZE = "resize",
+  CROP = "crop",
+  EFFECT = "effect",
+}
+
 export enum MediaProcessingStatus {
   PENDING = 'pending',
   PROCESSING = 'processing',
@@ -62,23 +71,24 @@ export interface MediaUsageStats {
   transformations: number;
 }
 
-export interface MediaTransformation {
-  type: "resize" | "crop" | "quality" | "format" | "rotate" | "effect";
+export interface TransformationOptions {
+  type: MediaTransformationType;
   width?: number;
   height?: number;
-  quality?: number | "auto";
+  quality?: number | 'auto';
+  fetch_format?: 'auto',
   format?: string;
-  crop?: "crop" | "fit" | "fill" | "scale";
+  crop?: 'crop' | 'fit' | 'fill' | 'scale';
   gravity?: string;
   angle?: number;
   effect?: string;
 }
 
-export interface UploadAsset {
+export interface MediaUploadOptions {
   folder?: string;
   publicID?: string;
   overwrite?: boolean;
   tags?: string[];
   metadata?: Record<string, any>;
-  transformation?: MediaTransformation[];
+  transformation?: TransformationOptions[];
 }

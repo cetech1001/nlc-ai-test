@@ -4,8 +4,7 @@ import {useSettings} from '../context/settings.context';
 import {PasswordFormData, ProfileFormData, ProfileFormErrors} from '../types/settings.types';
 import {ProfileSectionSkeleton} from "./skeletons";
 import {ImageCropper} from "./partials/image-cropper";
-import {UserType} from "@nlc-ai/types";
-import {MediaTransformationType} from "@nlc-ai/sdk-media";
+import {UserType, MediaTransformationType} from "@nlc-ai/types";
 import {NLCClient} from "@nlc-ai/sdk-main";
 import {toast} from "sonner";
 
@@ -340,8 +339,8 @@ export const ProfileSection: FC<ProfileSectionProps> = ({
         ]
       });
 
-      if (uploadResult.success && uploadResult.data) {
-        await onUploadAvatar(uploadResult.data.secureUrl);
+      if (uploadResult.success && uploadResult.data?.asset) {
+        await onUploadAvatar(uploadResult.data.asset.secureUrl);
         closeUploadModal();
         setSuccess('Profile photo updated successfully!');
       } else {

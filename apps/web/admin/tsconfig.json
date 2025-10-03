@@ -60,13 +60,10 @@
       "path": "../../../libs/sdk/messages"
     },
     {
-      "path": "../../../libs/sdk/media"
+      "path": "../../../libs/sdk/analytics"
     },
     {
       "path": "../../../libs/sdk/communities"
-    },
-    {
-      "path": "../../../libs/sdk/analytics"
     },
     {
       "path": "../../../libs/sdk/core"

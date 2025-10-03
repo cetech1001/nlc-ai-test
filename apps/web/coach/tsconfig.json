@@ -75,16 +75,10 @@
       "path": "../../../libs/sdk/analytics"
     },
     {
-      "path": "../../../libs/sdk/media"
-    },
-    {
       "path": "../../../libs/sdk/courses"
     },
     {
       "path": "../../../libs/sdk/content"
-    },
-    {
-      "path": "../../../libs/sdk/communities"
     },
     {
       "path": "../../../libs/sdk/users"

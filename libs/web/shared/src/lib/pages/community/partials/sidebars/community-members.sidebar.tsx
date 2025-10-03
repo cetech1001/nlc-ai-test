@@ -1,7 +1,6 @@
 'use client'
 
 import React, {useEffect, useState, useRef} from 'react';
-import {useRouter} from 'next/navigation';
 import {Crown, Menu, MessageCircle, Search, Shield, User, X,} from 'lucide-react';
 import {MembersSectionSkeleton} from '../skeletons';
 import {ExtendedCommunityMember} from '@nlc-ai/sdk-communities';
@@ -13,6 +12,7 @@ interface CommunityMembersSidebarProps {
   user: UserProfile | null;
   sdkClient: NLCClient;
   communityID: string;
+  handleMessages: (conversationID: string) => void;
   isMobileOpen?: boolean;
   onMobileToggle?: () => void;
   onMemberClick?: (memberID: string, memberType: string) => void;
@@ -27,10 +27,10 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
   user,
   sdkClient,
   isMobileOpen = false,
+  handleMessages,
   onMobileToggle,
   onMemberClick,
 }) => {
-  const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [members, setMembers] = useState<ExtendedCommunityMember[]>([]);
@@ -69,7 +69,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
         participantTypes: [user?.type || UserType.COACH, member.userType]
       });
 
-      router.push(`/messages?conversationID=${conversation.id}`);
+      handleMessages(conversation.id);
       if (onMobileToggle) {
         onMobileToggle();
       }

@@ -22,7 +22,7 @@ import {
   LessonTypeSelector
 } from '@/lib';
 import {toast} from "sonner";
-import {MediaTransformationType} from "@nlc-ai/sdk-media";
+import {MediaTransformationType} from "@nlc-ai/types";
 
 interface CurriculumState {
   chapters: Array<{
@@ -462,7 +462,7 @@ const CourseEditPage = () => {
         ]
       });
 
-      if (uploadResult.success && uploadResult.data) {
+      if (uploadResult.success && uploadResult.data?.asset) {
         const { data } = uploadResult;
 
         // Check if this is an async processing response
@@ -475,8 +475,8 @@ const CourseEditPage = () => {
         }
 
         return {
-          url: data.secureUrl,
-          assetID: data.id,
+          url: data.asset!.secureUrl,
+          assetID: data.asset!.id,
           processingStatus: data.processingStatus || 'complete',
           message: data.message || (isAsyncProcessing ?
             'Video uploaded successfully. Processing may take a few minutes for optimal playback quality.' :
@@ -522,9 +522,9 @@ const CourseEditPage = () => {
         }
       });
 
-      if (uploadResult.success && uploadResult.data) {
+      if (uploadResult.success && uploadResult.data?.asset) {
         toast.success('PDF uploaded successfully!');
-        return uploadResult.data.secureUrl;
+        return uploadResult.data.asset.secureUrl;
       } else {
         throw new Error(uploadResult.error?.message || 'PDF upload failed');
       }
@@ -548,8 +548,8 @@ const CourseEditPage = () => {
         }
       });
 
-      if (uploadResult.success && uploadResult.data) {
-        return uploadResult.data.secureUrl;
+      if (uploadResult.success && uploadResult.data?.asset) {
+        return uploadResult.data.asset.secureUrl;
       } else {
         throw new Error(uploadResult.error?.message || 'File upload failed');
       }

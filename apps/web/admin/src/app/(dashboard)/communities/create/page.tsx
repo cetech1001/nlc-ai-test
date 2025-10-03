@@ -14,7 +14,7 @@ import {
   CreateCommunityForm,
 } from '@nlc-ai/sdk-communities';
 import {CreateCommunityRequest, CommunityPricingType} from "@nlc-ai/types";
-import {MediaTransformationType} from "@nlc-ai/sdk-media";
+import {MediaTransformationType} from "@nlc-ai/types";
 
 const stepNames = [
   "Basic Info",
@@ -225,9 +225,9 @@ const AdminCreateCommunityPage = () => {
         ]
       });
 
-      if (uploadResult.success && uploadResult.data) {
+      if (uploadResult.success && uploadResult.data?.asset) {
         toast.success(`${field === 'avatar' ? 'Avatar' : 'Banner'} uploaded successfully!`);
-        return uploadResult.data.secureUrl;
+        return uploadResult.data.asset.secureUrl;
       } else {
         throw new Error(uploadResult.error?.message || 'Upload failed');
       }

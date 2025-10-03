@@ -5,7 +5,7 @@ import {CommunityResponse} from '@nlc-ai/types';
 import {ImageCropper} from '@nlc-ai/web-settings';
 import {sdkClient} from "@/lib";
 import {toast} from 'sonner';
-import {MediaTransformationType} from "@nlc-ai/sdk-media";
+import {MediaTransformationType} from "@nlc-ai/types";
 
 interface BasicInfoSettingsProps {
   community: CommunityResponse;
@@ -101,8 +101,8 @@ export const BasicInfoSettings = ({ community, errors, onUpdate }: BasicInfoSett
         ]
       });
 
-      if (uploadResult.success && uploadResult.data) {
-        onUpdate({ avatarUrl: uploadResult.data.secureUrl });
+      if (uploadResult.success && uploadResult.data?.asset) {
+        onUpdate({ avatarUrl: uploadResult.data.asset.secureUrl });
         closeAvatarModal();
         toast.success('Avatar uploaded successfully!');
       } else {
@@ -173,8 +173,8 @@ export const BasicInfoSettings = ({ community, errors, onUpdate }: BasicInfoSett
         ]
       });
 
-      if (uploadResult.success && uploadResult.data) {
-        onUpdate({ bannerUrl: uploadResult.data.secureUrl });
+      if (uploadResult.success && uploadResult.data?.asset) {
+        onUpdate({ bannerUrl: uploadResult.data.asset.secureUrl });
         closeBannerModal();
         toast.success('Banner uploaded successfully!');
       } else {

@@ -3,9 +3,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../sdk/media"
-    },
-    {
       "path": "../../types"
     },
     {

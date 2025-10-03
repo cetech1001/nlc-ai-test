@@ -235,6 +235,7 @@ export const CommunityPage: FC<IProps> = ({ sdkClient, handleMessages, community
 
       {community && (
         <CommunityMembersSidebar
+          handleMessages={handleMessages}
           user={user}
           sdkClient={sdkClient}
           communityID={community.id}
@@ -246,6 +247,7 @@ export const CommunityPage: FC<IProps> = ({ sdkClient, handleMessages, community
 
       {showUserProfile && (
         <UserProfileSidebar
+          handleMessages={handleMessages}
           user={user}
           sdkClient={sdkClient}
           isOpen={showUserProfile}

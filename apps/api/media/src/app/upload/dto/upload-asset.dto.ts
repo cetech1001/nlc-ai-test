@@ -1,17 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {IsOptional, IsString, IsArray, IsBoolean, IsObject} from 'class-validator';
 import { Transform } from 'class-transformer';
+import {MediaUploadOptions, TransformationOptions, MediaTransformationType} from "@nlc-ai/types";
 
-export enum ResourceType {
-  IMAGE = 'image',
-  VIDEO = 'video',
-  RAW = 'raw'
-}
-
-export class TransformationDto {
+export class TransformationDto implements TransformationOptions{
   @ApiProperty({ enum: ['resize', 'crop', 'quality', 'format', 'rotate', 'effect'] })
   @IsString()
-  type: "resize" | "crop" | "quality" | "format" | "rotate" | "effect";
+  type: MediaTransformationType;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -53,7 +48,7 @@ export class TransformationDto {
   effect?: string;
 }
 
-export class UploadAssetDto {
+export class UploadAssetDto implements MediaUploadOptions{
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -107,5 +102,5 @@ export class UploadAssetDto {
     return value || [];
   })
   @IsArray()
-  transformation?: TransformationDto[];
+  transformation?: TransformationOptions[];
 }

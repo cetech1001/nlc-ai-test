@@ -1,4 +1,4 @@
-import { BaseEvent } from '@nlc-ai/api-messaging';
+import { BaseEvent } from '../base-event';
 import { MediaResourceType, MediaProviderType } from './media.types';
 
 export interface MediaUploadedEvent extends BaseEvent {

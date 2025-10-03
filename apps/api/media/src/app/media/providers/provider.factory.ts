@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { MediaProvider, MediaProviderType } from '@nlc-ai/types';
-import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
-import { S3Provider } from './s3/s3.provider';
+import {Injectable, Logger} from '@nestjs/common';
+import {ConfigService} from '@nestjs/config';
+import {MediaProvider, MediaProviderType} from '@nlc-ai/types';
+import {CloudinaryProvider} from './cloudinary/cloudinary.provider';
+import {S3Provider} from './s3/s3.provider';
 
 @Injectable()
 export class MediaProviderFactory {
@@ -68,6 +68,10 @@ export class MediaProviderFactory {
     }
 
     return configuredProvider as MediaProviderType;
+  }
+
+  getProviderType(isVideo: boolean) {
+    return isVideo ? MediaProviderType.S3 : MediaProviderType.CLOUDINARY;
   }
 
   getAllProviders(): MediaProvider[] {

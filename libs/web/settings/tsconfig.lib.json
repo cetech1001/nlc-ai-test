@@ -32,9 +32,6 @@
   ],
   "references": [
     {
-      "path": "../../sdk/media/tsconfig.lib.json"
-    },
-    {
       "path": "../../types/tsconfig.lib.json"
     },
     {

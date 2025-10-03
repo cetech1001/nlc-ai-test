@@ -8,7 +8,7 @@ import {
   MediaResourceType,
   MediaUploadResult,
   MediaProcessingStatus,
-  UploadAsset
+  MediaProviderType, MediaUploadOptions
 } from '@nlc-ai/types';
 import {UploadHelper} from './helpers/upload.helper';
 import {MediaRepository} from './repositories/media.repository';
@@ -27,7 +27,7 @@ export class MediaService {
   async uploadAsset(
     userID: string,
     file: Express.Multer.File,
-    uploadDto: UploadAsset
+    uploadDto: MediaUploadOptions
   ): Promise<MediaUploadResult> {
     const validation = this.uploadHelper.validateFile(file);
     if (!validation.isValid) {
@@ -35,9 +35,7 @@ export class MediaService {
     }
 
     const provider = this.mediaProviderFactory.getProviderForFile(validation.isVideo);
-    const providerType = validation.isVideo
-      ? this.mediaProviderFactory.getDefaultProvider()
-      : this.mediaProviderFactory.getDefaultProvider();
+    const providerType = this.mediaProviderFactory.getProviderType(validation.isVideo);
 
     const folder = uploadDto.folder || this.uploadHelper.getFolderPath(userID, validation.isVideo);
     const publicID = uploadDto.publicID || this.uploadHelper.generatePublicID(file.originalname, userID);
@@ -131,7 +129,7 @@ export class MediaService {
     }
 
     try {
-      const provider = this.mediaProviderFactory.getProvider();
+      const provider = this.mediaProviderFactory.getProvider(asset.provider as MediaProviderType);
 
       if ('checkProcessingStatus' in provider && typeof provider.checkProcessingStatus === 'function') {
         const status = await (provider as any).checkProcessingStatus(asset.publicID);

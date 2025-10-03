@@ -3,7 +3,7 @@ import { AlertCircle, Image as ImageIcon, X, Upload, RotateCw } from 'lucide-rea
 import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 import { sdkClient } from '@/lib';
 import { toast } from 'sonner';
-import { MediaTransformationType } from "@nlc-ai/sdk-media";
+import { MediaTransformationType } from "@nlc-ai/types";
 import { ImageCropper } from '@nlc-ai/web-settings';
 
 interface UploadedFile {
@@ -149,13 +149,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ course, onCourseUpdate
       // @ts-ignore
       const result = await sdkClient.media.uploadAsset(coverCroppedBlob, uploadOptions);
 
-      if (result.success && result.data) {
+      if (result.success && result.data?.asset) {
         const uploadedFile: UploadedFile = {
-          id: result.data.id,
-          url: result.data.secureUrl,
-          name: result.data.originalName || 'cover-image',
-          type: result.data.resourceType as 'image' | 'video' | 'raw',
-          size: result.data.fileSize || 0,
+          id: result.data.asset.id,
+          url: result.data.asset.secureUrl,
+          name: result.data.asset.originalName || 'cover-image',
+          type: result.data.asset.resourceType as 'image' | 'video' | 'raw',
+          size: result.data.asset.fileSize || 0,
         };
 
         setCoverImage(uploadedFile);

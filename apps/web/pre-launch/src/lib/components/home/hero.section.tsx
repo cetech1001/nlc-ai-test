@@ -57,7 +57,7 @@ export const HeroSection = () => {
                   {!isVideoPlaying ? (
                     <>
                       <img
-                        src="https://elasticbeanstalk-us-east-1-765430960003.s3.us-east-1.amazonaws.com/nlc-ai/videos/phonto.JPG"
+                        src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/hero-thumbnail.jpg"
                         alt="Video thumbnail"
                         className="absolute inset-0 w-full h-full object-cover rounded-2xl"
                       />
@@ -71,6 +71,7 @@ export const HeroSection = () => {
                             <path d="M8 5v14l11-7z"/>
                           </svg>
                         </div>
+                        <p className="text-gray-300 font-semibold drop-shadow-lg">Watch Demo</p>
                       </div>
                     </>
                   ) : (
@@ -78,7 +79,9 @@ export const HeroSection = () => {
                       className="w-full h-full object-cover rounded-2xl"
                       controls
                       autoPlay
-                      src="https://elasticbeanstalk-us-east-1-765430960003.s3.us-east-1.amazonaws.com/nlc-ai/videos/PreLaunch+VSL+Final.mp4"
+                      preload="auto"
+                      playsInline
+                      src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/hero.mp4"
                     >
                       Your browser does not support the video tag.
                     </video>

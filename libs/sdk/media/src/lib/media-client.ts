@@ -1,6 +1,7 @@
-import {BaseClient} from '@nlc-ai/sdk-core';
-import {MediaAsset, MediaUploadOptions, MediaUploadResult} from '@nlc-ai/types';
-import {MediaFilters} from './media.types'
+import { BaseClient } from '@nlc-ai/sdk-core';
+import { MediaFilters } from './media.types';
+import {MediaUploadOptions, MediaUploadResult, MediaAsset} from "@nlc-ai/types";
+
 
 export class MediaServiceClient extends BaseClient {
   async uploadAsset(file: File, options?: MediaUploadOptions) {
@@ -34,7 +35,7 @@ export class MediaServiceClient extends BaseClient {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await this.request<MediaUploadResult>(
+    return this.request<MediaUploadResult>(
       'POST',
       '/upload/avatar',
       {
@@ -42,8 +43,6 @@ export class MediaServiceClient extends BaseClient {
         headers: {}
       }
     );
-
-    return response.data!;
   }
 
   async getAssets(filters?: MediaFilters): Promise<{
@@ -70,25 +69,25 @@ export class MediaServiceClient extends BaseClient {
       total: number;
       page: number;
       limit: number;
-    }>('GET', `/media?${searchParams}`);
+    }>('GET', `?${searchParams}`);
 
     return response.data!;
   }
 
   async getAsset(id: string): Promise<MediaAsset> {
-    const response = await this.request<MediaAsset>('GET', `/media/${id}`);
+    const response = await this.request<MediaAsset>('GET', `/${id}`);
     return response.data!;
   }
 
   async deleteAsset(id: string): Promise<{ message: string }> {
-    const response = await this.request<{ message: string }>('DELETE', `/media/${id}`);
+    const response = await this.request<{ message: string }>('DELETE', `/${id}`);
     return response.data!;
   }
 
   async generateUrl(id: string, transformations?: any[]): Promise<{ url: string }> {
     const response = await this.request<{ url: string }>(
       'POST',
-      `/media/${id}/url`,
+      `/${id}/url`,
       { body: transformations || [] }
     );
     return response.data!;
@@ -105,11 +104,14 @@ export class MediaServiceClient extends BaseClient {
       views: number;
       downloads: number;
       lastAccessed: string | null;
-    }>('GET', `/media/${id}/stats`);
+    }>('GET', `/${id}/stats`);
     return response.data!;
   }
 
   async checkProcessingStatus(assetID: string) {
-    return this.request<{ status: string; asset?: any }>('GET', `/${assetID}/processing-status`);
-  };
+    return this.request<{
+      status: 'pending' | 'processing' | 'complete' | 'error';
+      asset?: MediaAsset;
+    }>('GET', `/${assetID}/processing-status`);
+  }
 }

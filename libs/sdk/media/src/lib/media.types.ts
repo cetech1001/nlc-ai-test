@@ -4,15 +4,6 @@ export enum MediaResourceType {
   RAW = 'raw'
 }
 
-export enum MediaTransformationType {
-  QUALITY = "quality",
-  FORMAT = "format",
-  ROTATE = "rotate",
-  RESIZE = "resize",
-  CROP = "crop",
-  EFFECT = "effect",
-}
-
 export interface MediaFilters {
   resourceType?: MediaResourceType;
   folder?: string;

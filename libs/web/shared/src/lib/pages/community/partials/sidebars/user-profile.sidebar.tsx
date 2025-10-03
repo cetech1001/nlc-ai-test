@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, MessageCircle, Calendar, MapPin, Globe, Award, Users, Star, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import {UserProfile, UserStats, UserType} from '@nlc-ai/types';
 import { formatTimeAgo, getInitials } from '@nlc-ai/web-utils';
 import {NLCClient} from "@nlc-ai/sdk-main";
@@ -13,6 +12,7 @@ interface UserProfileSidebarProps {
   sdkClient: NLCClient;
   isOpen: boolean;
   onClose: () => void;
+  handleMessages: (conversationID: string) => void;
   userID: string;
   userType: UserType;
   user: UserProfile | null;
@@ -26,12 +26,11 @@ export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
   user,
   sdkClient,
   onClose,
+  handleMessages,
   userID,
   userType,
   isMobile = false
 }) => {
-  const router = useRouter();
-
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,7 +73,7 @@ export const UserProfileSidebar: React.FC<UserProfileSidebarProps> = ({
         participantTypes: [user?.type || UserType.COACH, userType]
       });
 
-      router.push(`/messages?conversationID=${conversation.id}`);
+      handleMessages(conversation.id);
       onClose();
     } catch (error: any) {
       toast.error('Failed to start conversation');

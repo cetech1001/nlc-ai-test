@@ -1,23 +1,15 @@
-import {
-  Controller,
-  Post,
-  UseInterceptors,
-  UploadedFile,
-  Body,
-  UseGuards,
-  BadRequestException
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiConsumes, ApiResponse } from '@nestjs/swagger';
-import { CurrentUser, UserTypesGuard, UserTypes } from '@nlc-ai/api-auth';
-import {type AuthUser, UserType} from '@nlc-ai/api-types';
-import { MediaService } from '../media/media.service';
-import { UploadAssetDto } from './dto';
+import {BadRequestException, Body, Controller, Post, UploadedFile, UseGuards, UseInterceptors} from '@nestjs/common';
+import {FileInterceptor} from '@nestjs/platform-express';
+import {ApiConsumes, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
+import {CurrentUser, UserTypes, UserTypesGuard} from '@nlc-ai/api-auth';
+import {type AuthUser, UserType, MediaTransformationType} from '@nlc-ai/types';
+import {MediaService} from '../media/media.service';
+import {UploadAssetDto} from './dto';
 
 @ApiTags('Media Upload')
 @Controller('upload')
 @UseGuards(UserTypesGuard)
-@UserTypes(UserType.coach, UserType.admin, UserType.client)
+@UserTypes(UserType.COACH, UserType.ADMIN, UserType.CLIENT)
 export class UploadController {
   constructor(private readonly mediaService: MediaService) {}
 
@@ -89,18 +81,18 @@ export class UploadController {
       tags: ['avatar', user.type],
       transformation: [
         {
-          type: 'resize',
+          type: MediaTransformationType.RESIZE,
           width: 200,
           height: 200,
           crop: 'fill',
           gravity: 'face'
         },
         {
-          type: 'quality',
+          type: MediaTransformationType.QUALITY,
           quality: 'auto'
         },
         {
-          type: 'format',
+          type: MediaTransformationType.FORMAT                             ,
           format: 'webp'
         }
       ]
