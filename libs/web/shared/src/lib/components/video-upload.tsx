@@ -149,11 +149,11 @@ export const VideoUpload: FC<VideoUploadProps> = ({
               },
             ],
           },
-          (progress) => {
+          /*(progress) => {
             // browser->gateway progress
             const loaded = (progress / 100) * file.size;
             updateProgress(fileID, loaded, file.size);
-          }
+          }*/
         );
 
         if (result.success && result.data?.asset) {
