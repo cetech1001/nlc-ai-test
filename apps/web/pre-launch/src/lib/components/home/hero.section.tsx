@@ -83,7 +83,7 @@ export const HeroSection = () => {
                       autoPlay
                       preload="auto"
                       playsInline
-                      src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/hero.mp4"
+                      src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/hero-2.mp4"
                     >
                       Your browser does not support the video tag.
                     </video>
