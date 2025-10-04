@@ -43,7 +43,7 @@ export const gatewayConfig = registerAs('gateway', () => {
       },
       media: {
         url: config.MEDIA_SERVICE_URL,
-        timeout: config.REQUEST_TIMEOUT,
+        timeout: 900000,
       },
       email: {
         url: config.EMAIL_SERVICE_URL,
