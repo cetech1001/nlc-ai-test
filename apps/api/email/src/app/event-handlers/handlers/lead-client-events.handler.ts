@@ -145,12 +145,15 @@ export class LeadClientEventsHandler {
           return;
         }
 
+        console.log("Error: ", errorData);
+
         throw new Error(`Failed to create coach account: ${errorData.message}`);
       }
 
       const coachData: Coach = await response.json() as Coach;
       this.logger.log(`Coach account created successfully: ${coachData.id}`);
     } catch (error) {
+      console.error("Error thrown: ", error);
       this.logger.error(`Failed to create coach account for lead ${leadID}:`, error);
       await this.sendWelcomeEmailFallback(email, name);
     }

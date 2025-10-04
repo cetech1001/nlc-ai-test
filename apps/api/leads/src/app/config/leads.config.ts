@@ -25,7 +25,6 @@ export default registerAs('leads', () => {
   return {
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
     },
     rabbitmq: {
       url: config.RABBITMQ_URL,
@@ -33,11 +32,6 @@ export default registerAs('leads', () => {
     },
     service: {
       name: config.SERVICE_NAME,
-    },
-    landingPage: {
-      publicToken: config.LEADS_PUBLIC_TOKEN,
-      tokenWindowMs: config.LEADS_TOKEN_WINDOW_MS,
-      replayTtlMs: config.LEADS_REPLAY_TTL_MS,
     },
   };
 });

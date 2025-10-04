@@ -1,54 +1,38 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class LeadsConfigSchema {
   @IsString()
   DATABASE_URL: string;
 
-  @IsOptional()
   @IsString()
-  DATABASE_SCHEMA?: string = 'public';
+  REDIS_URL: string;
 
   @IsString()
   RABBITMQ_URL: string;
 
-  @IsOptional()
   @IsString()
-  RABBITMQ_EXCHANGE?: string = 'nlc.domain.events';
+  RABBITMQ_EXCHANGE: string;
 
-  @IsOptional()
   @IsString()
-  SERVICE_NAME?: string = 'leads-service';
+  SERVICE_NAME?: string = 'leads';
 
-  // Landing Page Integration
-  @IsOptional()
   @IsString()
-  LEADS_PUBLIC_TOKEN?: string;
+  ANTI_SPAM_TOKEN: string;
 
-  @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
-  LEADS_TOKEN_WINDOW_MS?: number = 300000; // 5 minutes
+  ANTI_SPAM_WINDOW_MS: number;
 
-  @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
-  LEADS_REPLAY_TTL_MS?: number = 600000; // 10 minutes
+  ANTI_SPAM_REPLAY_TTL_MS: number;
 
-  // External Services
-  @IsOptional()
-  @IsString()
-  EMAIL_SERVICE_URL?: string = 'http://localhost:3002';
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value))
+  ANTI_SPAM_RATE_WINDOW_MS: number;
 
-  @IsOptional()
-  @IsString()
-  EMAIL_SERVICE_TOKEN?: string;
-
-  @IsOptional()
-  @IsString()
-  GATEWAY_SERVICE_URL?: string = 'http://localhost:3001';
-
-  @IsOptional()
-  @IsString()
-  GATEWAY_SERVICE_TOKEN?: string;
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value))
+  ANTI_SPAM_RATE_MAX: number;
 }

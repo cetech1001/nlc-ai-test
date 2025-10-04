@@ -190,14 +190,14 @@ const LeadFormPage = () => {
                   </label>
                   <input
                     type="text"
-                    value={leadInfo.firstName}
-                    onChange={(e) => setLeadInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                    onBlur={() => setTouched(prev => ({ ...prev, firstName: true }))}
-                    aria-invalid={!!nameError && touched.firstName}
-                    className={`w-full px-6 py-4 rounded-xl bg-black/30 border ${touched.firstName && nameError ? 'border-red-500' : 'border-gray-700'} focus:border-purple-400 focus:outline-none text-white placeholder-white/50`}
+                    value={leadInfo.lastName}
+                    onChange={(e) => setLeadInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                    onBlur={() => setTouched(prev => ({ ...prev, lastName: true }))}
+                    aria-invalid={!!nameError && touched.lastName}
+                    className={`w-full px-6 py-4 rounded-xl bg-black/30 border ${touched.lastName && nameError ? 'border-red-500' : 'border-gray-700'} focus:border-purple-400 focus:outline-none text-white placeholder-white/50`}
                     placeholder="Your last name"
                   />
-                  {touched.firstName && nameError && (
+                  {touched.lastName && nameError && (
                     <p className="text-red-400 text-sm mt-2">{nameError}</p>
                   )}
                 </div>
