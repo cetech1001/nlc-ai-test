@@ -6,6 +6,7 @@ import { MediaProviderFactory } from './providers/provider.factory';
 import {MediaRepository} from "./repositories/media.repository";
 import {UploadHelper} from "./helpers/upload.helper";
 import {S3Provider} from "./providers/s3/s3.provider";
+import {S3MultipartService} from "./providers/s3/multipart.service";
 
 @Module({
   controllers: [MediaController],
@@ -13,6 +14,7 @@ import {S3Provider} from "./providers/s3/s3.provider";
     MediaService,
     CloudinaryProvider,
     S3Provider,
+    S3MultipartService,
     MediaProviderFactory,
     UploadHelper,
     MediaRepository,
@@ -21,6 +23,7 @@ import {S3Provider} from "./providers/s3/s3.provider";
     MediaService,
     CloudinaryProvider,
     S3Provider,
+    S3MultipartService,
     MediaProviderFactory,
     UploadHelper,
     MediaRepository,

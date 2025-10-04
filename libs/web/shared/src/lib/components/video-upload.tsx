@@ -1,9 +1,10 @@
 'use client'
 
-import React, { FC, useState, useRef, useEffect } from 'react';
-import { Video, X, Upload, AlertCircle, Play, CheckCircle, Clock, Loader2 } from 'lucide-react';
-import { NLCClient } from '@nlc-ai/sdk-main';
-import { MediaTransformationType } from '@nlc-ai/types';
+import React, {FC, useEffect, useRef, useState} from 'react';
+import {AlertCircle, CheckCircle, Clock, Loader2, Play, Upload, Video, X} from 'lucide-react';
+import {NLCClient} from '@nlc-ai/sdk-main';
+import {MediaTransformationType} from '@nlc-ai/types';
+import axios, {AxiosProgressEvent} from 'axios';
 
 export interface UploadedVideo {
   id: string;
@@ -49,6 +50,18 @@ export const VideoUpload: FC<VideoUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollIntervalsRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
+  // Multipart upload tuning
+  const MULTIPART_THRESHOLD = 40 * 1024 * 1024; // 40MB => switch to S3 multipart
+  const DEFAULT_PART_SIZE = 10 * 1024 * 1024;   // 10MB parts
+  const MAX_PARALLEL_PARTS = 3;                 // optional: parallelism (keep modest)
+
+  // Internal helper for overall progress aggregation per file
+  const updateProgress = (fileID: string, loaded: number, total: number) => {
+    const percent = total ? (loaded / total) * 100 : 0;
+    setUploadProgress(prev => ({ ...prev, [fileID]: percent }));
+    setCurrentUploadSize({ current: loaded, total });
+  };
+
   useEffect(() => {
     onVideosUploaded(uploadedVideos);
   }, [uploadedVideos]);
@@ -76,10 +89,12 @@ export const VideoUpload: FC<VideoUploadProps> = ({
   };
 
   const uploadVideo = async (file: File) => {
-    let progressInterval;
     try {
       setIsUploading(true);
       setUploadError('');
+
+      // Decide path (multipart for large files) early
+      const useMultipart = file.size >= MULTIPART_THRESHOLD;
 
       // Validate file
       const allowedVideoTypes = ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm', 'video/x-msvideo'];
@@ -95,53 +110,72 @@ export const VideoUpload: FC<VideoUploadProps> = ({
       setUploadProgress(prev => ({ ...prev, [fileID]: 0 }));
       setCurrentUploadSize({ current: 0, total: file.size });
 
-      // Generate video thumbnail
-      const thumbnail = await generateVideoThumbnail(file);
+      // Generate video thumbnail early
+      const [thumbnail, videoDuration] = await Promise.all([
+        generateVideoThumbnail(file),
+        getVideoDuration(file),
+      ]);
 
-      // Simulate progress for large files
-      progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const current = prev[fileID] || 0;
-          const increment = file.size > 100 * 1024 * 1024 ? Math.random() * 5 : Math.random() * 15;
-          return {
-            ...prev,
-            [fileID]: Math.min(current + increment, 90)
-          };
+      let uploadedVideo: UploadedVideo | null = null;
+
+      if (useMultipart) {
+        // ====> LARGE FILES: DIRECT MULTIPART TO S3 WITH TRUE PROGRESS
+        uploadedVideo = await uploadMultipartToS3({
+          file,
+          fileID,
+          updateOverallProgress: (loaded) => updateProgress(fileID, loaded, file.size),
+          sdkClient,
+          folder,
+          tags,
+          videoDuration,
+          thumbnail,
         });
-      }, file.size > 100 * 1024 * 1024 ? 1000 : 500);
-
-      // Upload with minimal transformations (S3 doesn't support complex transforms)
-      const result = await sdkClient.media.uploadAsset(file, {
-        folder,
-        tags: [...tags, file.size > 40 * 1024 * 1024 ? 'large-video' : 'video'],
-        metadata: {
-          uploadedFor: 'video',
-          originalSize: file.size,
-          duration: await getVideoDuration(file),
-        },
-        transformation: [
+      } else {
+        // ====> SMALL/MEDIUM FILES: EXISTING GATEWAY PATH
+        const result = await sdkClient.media.uploadAsset(
+          file,
           {
-            type: MediaTransformationType.QUALITY,
-            quality: 'auto',
+            folder,
+            tags: [...tags, file.size > 40 * 1024 * 1024 ? 'large-video' : 'video'],
+            metadata: {
+              uploadedFor: 'video',
+              originalSize: file.size,
+              duration: videoDuration,
+            },
+            transformation: [
+              {
+                type: MediaTransformationType.QUALITY,
+                quality: 'auto',
+              },
+            ],
           },
-        ],
-      });
+          (progress) => {
+            // browser->gateway progress
+            const loaded = (progress / 100) * file.size;
+            updateProgress(fileID, loaded, file.size);
+          }
+        );
 
-      clearInterval(progressInterval);
+        if (result.success && result.data?.asset) {
+          uploadedVideo = {
+            id: result.data.asset.id,
+            url: result.data.asset.secureUrl,
+            name: result.data.asset.originalName || file.name,
+            size: result.data.asset.fileSize || file.size,
+            duration: result.data.asset.duration ?? videoDuration,
+            thumbnailUrl: thumbnail || undefined,
+            processingStatus: (result.data.processingStatus as any) || 'complete',
+          };
+        } else {
+          throw new Error(result.error?.message || 'Upload failed');
+        }
+      }
+
+      // finalize progress + UI
       setUploadProgress(prev => ({ ...prev, [fileID]: 100 }));
       setCurrentUploadSize(null);
 
-      if (result.success && result.data?.asset) {
-        const uploadedVideo: UploadedVideo = {
-          id: result.data?.asset.id,
-          url: result.data?.asset.secureUrl,
-          name: result.data?.asset.originalName || file.name,
-          size: result.data?.asset.fileSize || file.size,
-          duration: result.data?.asset.duration,
-          thumbnailUrl: thumbnail || undefined,
-          processingStatus: result.data?.processingStatus as any || 'complete',
-        };
-
+      if (uploadedVideo) {
         const newVideos = [...uploadedVideos, uploadedVideo];
         setUploadedVideos(newVideos);
 
@@ -150,10 +184,9 @@ export const VideoUpload: FC<VideoUploadProps> = ({
           startPollingProcessingStatus(uploadedVideo.id);
         }
       } else {
-        throw new Error(result.error?.message || 'Upload failed');
+        throw new Error('Upload failed (no asset returned)');
       }
     } catch (error: any) {
-      clearInterval(progressInterval);
       setUploadProgress({});
       console.error('Upload error:', error);
       setUploadError(error.message || 'Failed to upload video');
@@ -205,6 +238,133 @@ export const VideoUpload: FC<VideoUploadProps> = ({
     }, 5000);
 
     pollIntervalsRef.current[videoID] = intervalID;
+  };
+
+  /**
+   * Multipart upload: browser -> S3 directly with presigned part URLs.
+   * Uses `putWithProgress` for each part. This is where "real" S3 progress comes from.
+   */
+  const uploadMultipartToS3 = async ({
+    file,
+    fileID,
+    updateOverallProgress,
+    sdkClient,
+    folder,
+    tags,
+    videoDuration,
+    thumbnail,
+  }: {
+    file: File;
+    fileID: string;
+    updateOverallProgress: (loaded: number) => void;
+    sdkClient: NLCClient;
+    folder: string;
+    tags: string[];
+    videoDuration?: number;
+    thumbnail: string | null;
+  }): Promise<UploadedVideo> => {
+    // 1) init multipart
+    const init = await sdkClient.media.initMultipart({
+      filename: file.name,
+      size: file.size,
+      folder,
+      tags: [...tags, 'video', file.size >= MULTIPART_THRESHOLD ? 'large-video' : 'video'],
+      metadata: {
+        uploadedFor: 'video',
+        originalSize: file.size,
+        duration: videoDuration,
+      },
+    });
+    if (!init.success || !init.data) {
+      throw new Error(init.error?.message || 'Failed to init multipart upload');
+    }
+    const uploadId: string = init.data.uploadId;
+    const key: string = init.data.key;
+    const partSize: number = init.data.partSize || DEFAULT_PART_SIZE;
+
+    // 2) slice into parts
+    const totalParts = Math.ceil(file.size / partSize);
+    let uploadedBytes = 0;
+    const partsMeta: { ETag: string; PartNumber: number }[] = [];
+
+    // Optional parallelization helper
+    const queue: number[] = Array.from({ length: totalParts }, (_, i) => i + 1);
+    const runWorker = async () => {
+      while (queue.length) {
+        const partNumber = queue.shift()!;
+        const start = (partNumber - 1) * partSize;
+        const end = Math.min(start + partSize, file.size);
+        const blob = file.slice(start, end);
+
+        // request presigned URL for this part
+        const urlRes = await sdkClient.media.getPartUrl({ uploadId, key, partNumber });
+        if (!urlRes.success || !urlRes.data?.url) {
+          throw new Error(urlRes.error?.message || `Failed to get URL for part ${partNumber}`);
+        }
+
+        // put to S3 with progress for THIS part
+        const etag = await putWithProgress(urlRes.data.url, blob, (e) => {
+          // Aggregate overall loaded bytes: uploadedBytes + current part's loaded
+          const currentLoaded = uploadedBytes + e.loaded;
+          updateOverallProgress(currentLoaded);
+        });
+
+        // Commit bytes & record part
+        uploadedBytes += blob.size;
+        partsMeta.push({ ETag: etag, PartNumber: partNumber });
+
+        // After each part we can update progress to the committed bytes
+        updateOverallProgress(uploadedBytes);
+      }
+    };
+
+    // Run workers
+    const workers = Array.from({ length: Math.min(MAX_PARALLEL_PARTS, totalParts) }, () => runWorker());
+    await Promise.all(workers);
+
+    // 3) complete multipart
+    const complete = await sdkClient.media.completeMultipart({
+      uploadId,
+      key,
+      parts: partsMeta,
+    });
+    if (!complete.success || !complete.data?.asset) {
+      throw new Error(complete.error?.message || 'Failed to complete multipart upload');
+    }
+
+    // 4) return UploadedVideo mapped from API
+    const asset = complete.data.asset;
+    return {
+      id: asset.id,
+      url: asset.secureUrl || asset.url,
+      name: asset.originalName || file.name,
+      size: asset.fileSize || file.size,
+      duration: asset.duration ?? videoDuration,
+      thumbnailUrl: thumbnail || undefined,
+      processingStatus: (complete.data.processingStatus as any) || 'processing',
+    };
+  };
+
+  /**
+   * Low-level PUT with progress to a presigned S3 URL.
+   * THIS is where we use `putWithProgress`.
+   */
+  const putWithProgress = async (
+    url: string,
+    blob: Blob,
+    onProgress: (e: AxiosProgressEvent) => void
+  ): Promise<string> => {
+    const res = await axios.put(url, blob, {
+      headers: { 'Content-Type': 'application/octet-stream' },
+      onUploadProgress: onProgress,
+      maxContentLength: Infinity as any,
+      maxBodyLength: Infinity as any,
+      transitional: { forcedJSONParsing: false },
+      validateStatus: (s) => s >= 200 && s < 300,
+    });
+    const etag = (res.headers.etag || res.headers.ETag || '').replaceAll('"', '');
+    if (!etag) throw new Error('Missing ETag from S3 response');
+    return etag;
   };
 
   const generateVideoThumbnail = async (file: File): Promise<string | null> => {

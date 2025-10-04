@@ -39,7 +39,6 @@ export class ProxyService {
       throw new ServiceUnavailableException(`${serviceName} service is not available`);
     }
 
-    // Check circuit breaker
     if (!this.circuitBreaker.canExecute(serviceName)) {
       throw new ServiceUnavailableException(`${serviceName} service is temporarily unavailable`);
     }
@@ -64,14 +63,14 @@ export class ProxyService {
           data: request.data,
           params: request.params,
           timeout: requestTimeout,
-          validateStatus: () => true, // Don't throw on HTTP error status codes
+          validateStatus: () => true,
         }).pipe(
           timeout(requestTimeout),
           retry({
             count: 2,
             delay: (error, retryCount): ObservableInput<any> => {
               this.logger.warn(`Retrying request to ${serviceName} (attempt ${retryCount}):`, error.message);
-              return timer(1000 * retryCount); // Exponential backoff
+              return timer(1000 * retryCount);
             },
           }),
           catchError((error) => {
@@ -86,7 +85,6 @@ export class ProxyService {
 
       this.logger.debug(`Request to ${serviceName} completed in ${duration}ms with status ${response.status}`);
 
-      // Transform response
       return {
         data: response.data,
         status: response.status,
@@ -110,7 +108,6 @@ export class ProxyService {
     }
   }
 
-  // New method specifically for FormData requests
   async proxyFormDataRequest<T = any>(
     serviceName: string,
     path: string,
@@ -122,13 +119,12 @@ export class ProxyService {
       throw new ServiceUnavailableException(`${serviceName} service is not available`);
     }
 
-    // Check circuit breaker
     if (!this.circuitBreaker.canExecute(serviceName)) {
       throw new ServiceUnavailableException(`${serviceName} service is temporarily unavailable`);
     }
 
     const fullUrl = `${serviceConfig.url}${path}`;
-    const requestTimeout = serviceConfig.timeout || 60000; // Longer timeout for file uploads
+    const requestTimeout = serviceConfig.timeout || 60000;
 
     this.logger.debug(`Proxying FormData ${request.method} request to: ${fullUrl}`);
 
@@ -144,7 +140,7 @@ export class ProxyService {
             'X-Gateway-Request-ID': this.generateRequestID(),
             'X-Forwarded-For': request.headers?.['x-forwarded-for'] || 'gateway',
           },
-          data: request.data, // FormData object
+          data: request.data,
           params: request.params,
           timeout: requestTimeout,
           maxContentLength: Infinity,
@@ -152,7 +148,6 @@ export class ProxyService {
           validateStatus: () => true,
         }).pipe(
           timeout(requestTimeout),
-          // No retry for file uploads - they're expensive
           catchError((error) => {
             this.circuitBreaker.recordFailure(serviceName);
             throw error;

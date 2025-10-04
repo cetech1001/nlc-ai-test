@@ -1,9 +1,7 @@
 import {Injectable, Logger, NotFoundException} from '@nestjs/common';
-import {OutboxService} from '@nlc-ai/api-messaging';
 import {MediaProviderFactory} from './providers/provider.factory';
 import {MediaFiltersDto} from './dto';
 import {
-  MediaEvent,
   MediaFile,
   MediaResourceType,
   MediaUploadResult,
@@ -19,7 +17,6 @@ export class MediaService {
 
   constructor(
     private readonly mediaProviderFactory: MediaProviderFactory,
-    private readonly outboxService: OutboxService,
     private readonly uploadHelper: UploadHelper,
     private readonly mediaRepo: MediaRepository
   ) {}
@@ -27,8 +24,93 @@ export class MediaService {
   async uploadAsset(
     userID: string,
     file: Express.Multer.File,
-    uploadDto: MediaUploadOptions
+    uploadDto: MediaUploadOptions,
   ): Promise<MediaUploadResult> {
+    // Special path: called after S3 multipart COMPLETE — do NOT upload again.
+    if (uploadDto?.metadata?.multipart === true) {
+      // For multipart we treat as video -> S3 provider
+      const provider = this.mediaProviderFactory.getProviderForVideo();
+      const providerType = this.mediaProviderFactory.getProviderType(true);
+
+      const folder =
+        uploadDto.folder ||
+        this.uploadHelper.getFolderPath(userID, /* isVideo */ true);
+      const publicID =
+        uploadDto.publicID ||
+        this.uploadHelper.generatePublicID(
+          // try to preserve original name if provided by caller
+          (uploadDto.metadata as any)?.originalName ||
+            file?.originalname ||
+            'video.mp4',
+          userID
+        );
+
+      // Try to read the just-uploaded object's metadata from the provider
+      let asset = await provider.getAsset(publicID);
+
+      // Fallback if HEAD fails momentarily
+      if (!asset) {
+        asset = {
+          id: publicID,
+          publicID,
+          url: provider.generateUrl(publicID, []),
+          secureUrl: provider.generateUrl(publicID, []),
+          format: publicID.split('.').pop() || 'mp4',
+          resourceType: 'video',
+          width: undefined as any,
+          height: undefined as any,
+          duration: undefined as any,
+          fileSize: (uploadDto.metadata as any)?.originalSize || 0,
+          tags: uploadDto.tags || [],
+          metadata: uploadDto.metadata || {},
+          folder,
+          createdAt: new Date(),
+          version: undefined as any,
+        };
+      }
+
+      const isLargeVideo = true;
+      const processingStatus = MediaProcessingStatus.PROCESSING;
+
+      const mediaFile = await this.mediaRepo.createMediaFile({
+        userID,
+        publicID: asset.publicID,
+        originalName:
+          (uploadDto.metadata as any)?.originalName ||
+          file?.originalname ||
+          asset.publicID.split('/').pop()!,
+        url: asset.url,
+        secureUrl: asset.secureUrl,
+        format: asset.format,
+        resourceType: 'video' as MediaResourceType,
+        fileSize: asset.fileSize || (uploadDto.metadata as any)?.originalSize || 0,
+        width: asset.width,
+        height: asset.height,
+        duration: asset.duration,
+        folder: asset.folder || folder,
+        tags: asset.tags || uploadDto.tags || [],
+        metadata: {
+          ...(asset.metadata || {}),
+          ...(uploadDto.metadata || {}),
+          isAsyncProcessing: isLargeVideo,
+          multipart: true,
+        },
+        provider: providerType,
+        providerData: { version: asset.version },
+        processingStatus,
+      });
+
+
+      const result = this.mediaRepo.serializeMediaFile(mediaFile);
+      return {
+        asset: result,
+        processingStatus,
+        message:
+          'Video registered successfully. Processing may take a few minutes for optimal playback quality.',
+      };
+    }
+
+    // Normal path (non-multipart): validate and upload via provider
     const validation = this.uploadHelper.validateFile(file);
     if (!validation.isValid) {
       throw new Error(validation.error);
@@ -86,8 +168,6 @@ export class MediaService {
       providerData: { version: asset.version },
       processingStatus,
     });
-
-    await this.publishUploadEvent(mediaFile, file.originalname, processingStatus);
 
     const result = this.mediaRepo.serializeMediaFile(mediaFile);
 
@@ -204,9 +284,6 @@ export class MediaService {
 
     if (deleted) {
       await this.mediaRepo.deleteMediaFile(id);
-
-      // Publish event
-      await this.publishDeleteEvent(asset, deletedBy);
     }
 
     return deleted;
@@ -220,52 +297,5 @@ export class MediaService {
       : this.mediaProviderFactory.getProviderForImage();
 
     return provider.generateUrl(asset.publicID, transformations);
-  }
-
-  private async publishUploadEvent(
-    mediaFile: any,
-    originalName: string,
-    processingStatus: string
-  ): Promise<void> {
-    await this.outboxService.saveAndPublishEvent<MediaEvent>(
-      {
-        eventType: 'media.asset.uploaded',
-        schemaVersion: 1,
-        payload: {
-          assetID: mediaFile.id,
-          userID: mediaFile.userID,
-          publicID: mediaFile.publicID,
-          originalName,
-          resourceType: mediaFile.resourceType,
-          fileSize: Number(mediaFile.fileSize),
-          provider: mediaFile.provider,
-          folder: mediaFile.folder,
-          tags: mediaFile.tags,
-          url: mediaFile.secureUrl,
-          uploadedAt: new Date().toISOString(),
-          processingStatus,
-        },
-      },
-      'media.asset.uploaded'
-    );
-  }
-
-  private async publishDeleteEvent(asset: MediaFile, deletedBy: string): Promise<void> {
-    await this.outboxService.saveAndPublishEvent<MediaEvent>(
-      {
-        eventType: 'media.asset.deleted',
-        schemaVersion: 1,
-        payload: {
-          assetID: asset.id,
-          userID: asset.userID,
-          publicID: asset.publicID,
-          resourceType: asset.resourceType,
-          provider: asset.provider,
-          deletedBy,
-          deletedAt: new Date().toISOString(),
-        },
-      },
-      'media.asset.deleted'
-    );
   }
 }

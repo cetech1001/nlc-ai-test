@@ -17,7 +17,27 @@ import { ProxyService } from '../../proxy/proxy.service';
 export class MediaGatewayController {
   constructor(private readonly proxyService: ProxyService) {}
 
-  // Handle file uploads separately with proper multipart handling
+  @All('upload/multipart/*')
+  async proxyMultiPartRequests(@Req() req: Request) {
+    const path = req.path.replace(/^\/media/, '');
+    const headers = this.extractHeaders(req);
+
+    console.log("Came in here");
+
+    const response = await this.proxyService.proxyRequest(
+      'media',
+      path,
+      {
+        method: req.method as any,
+        data: req.body,
+        params: req.query,
+        headers: headers,
+      }
+    );
+
+    return response.data;
+  }
+
   @All('upload/*')
   @UseInterceptors(FileInterceptor('file'))
   async proxyFileUpload(
@@ -25,13 +45,17 @@ export class MediaGatewayController {
     @UploadedFile() file?: Express.Multer.File,
     @Body() body?: any
   ) {
+    if (req.path.includes('/upload/multipart')) {
+      return;
+    }
+
+    console.log("Should not come in here");
+
     const path = req.path.replace(/^\/media/, '');
 
-    // Create FormData for the proxied request
     const FormData = require('form-data');
     const formData = new FormData();
 
-    // Add the file if it exists
     if (file) {
       formData.append('file', file.buffer, {
         filename: file.originalname,
@@ -39,7 +63,6 @@ export class MediaGatewayController {
       });
     }
 
-    // Add other form fields
     if (body) {
       Object.keys(body).forEach(key => {
         if (body[key] !== undefined && body[key] !== null) {
@@ -49,7 +72,6 @@ export class MediaGatewayController {
     }
 
     const headers = this.extractHeaders(req);
-    // Remove content-type and let form-data set it
     delete headers['content-type'];
 
     try {
@@ -62,7 +84,7 @@ export class MediaGatewayController {
           params: req.query,
           headers: {
             ...headers,
-            ...formData.getHeaders(), // This sets the correct Content-Type with boundary
+            ...formData.getHeaders(),
           },
         }
       );
@@ -74,10 +96,8 @@ export class MediaGatewayController {
     }
   }
 
-  // Handle all other media requests (non-upload)
   @All('*')
   async proxyToMedia(@Req() req: Request) {
-    // Skip if this is an upload request (handled above)
     if (req.path.includes('/upload/')) {
       return;
     }

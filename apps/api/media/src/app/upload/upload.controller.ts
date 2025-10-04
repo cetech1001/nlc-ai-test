@@ -2,16 +2,20 @@ import {BadRequestException, Body, Controller, Post, UploadedFile, UseGuards, Us
 import {FileInterceptor} from '@nestjs/platform-express';
 import {ApiConsumes, ApiOperation, ApiResponse, ApiTags} from '@nestjs/swagger';
 import {CurrentUser, UserTypes, UserTypesGuard} from '@nlc-ai/api-auth';
-import {type AuthUser, UserType, MediaTransformationType} from '@nlc-ai/types';
+import {type AuthUser, MediaTransformationType, UserType} from '@nlc-ai/types';
 import {MediaService} from '../media/media.service';
-import {UploadAssetDto} from './dto';
+import {CompleteMultipartDto, GetPartUrlDto, InitMultipartDto, UploadAssetDto} from './dto';
+import {S3MultipartService} from "../media/providers/s3/multipart.service";
 
 @ApiTags('Media Upload')
 @Controller('upload')
 @UseGuards(UserTypesGuard)
 @UserTypes(UserType.COACH, UserType.ADMIN, UserType.CLIENT)
 export class UploadController {
-  constructor(private readonly mediaService: MediaService) {}
+  constructor(
+    private readonly mediaService: MediaService,
+    private readonly s3mp: S3MultipartService
+  ) {}
 
   @Post('asset')
   @ApiOperation({ summary: 'Upload a media asset' })
@@ -100,4 +104,59 @@ export class UploadController {
 
     return this.mediaService.uploadAsset(user.id, file, avatarDto);
   }
+
+  @Post('multipart/init')
+  @ApiOperation({summary: 'Init video multipart upload (S3 presigned)'})
+  async initMultipart(@Body() dto: InitMultipartDto, @CurrentUser() user: AuthUser) {
+    console.log("Came in here");
+    const folder = dto.folder || `nlc-ai/uploads/videos/${user.id}`;
+    const key = `${folder}/${Date.now()}_${dto.filename}`;
+    const contentType = guessContentType(dto.filename) || 'video/mp4';
+
+    const {uploadId} = await this.s3mp.initMultipart(key, contentType);
+    console.log(`Upload ID: ${uploadId}`);
+
+    return {
+      uploadId,
+      key,
+      partSize: 10 * 1024 * 1024,
+      contentType,
+    };
+  }
+
+  @Post('multipart/part-url')
+  @ApiOperation({ summary: 'Get presigned URL for one part' })
+  async getPartUrl(@Body() dto: GetPartUrlDto) {
+    const url = await this.s3mp.getPartUrl(dto.key, dto.uploadId, dto.partNumber);
+    return { url };
+  }
+
+  @Post('multipart/complete')
+  @ApiOperation({ summary: 'Complete multipart, persist media, emit events' })
+  async completeMultipart(@Body() dto: CompleteMultipartDto, @CurrentUser() user: AuthUser) {
+    await this.s3mp.completeMultipart(dto.key, dto.uploadId, dto.parts);
+
+    const fakeMulterLike: any = {
+      originalname: dto.key.split('/').pop(),
+      mimetype: 'video/mp4',
+      size: 0,
+      buffer: Buffer.alloc(0), // not used
+    };
+
+    return await this.mediaService.uploadAsset(user.id, fakeMulterLike, {
+      folder: dto.key.split('/').slice(0, -1).join('/'),
+      publicID: dto.key,
+      overwrite: true,
+      tags: ['video', 'multipart'],
+      metadata: {multipart: true},
+      transformation: [{type: MediaTransformationType.QUALITY, quality: 'auto'}],
+    });
+  }
+}
+
+function guessContentType(filename: string) {
+  if (filename.endsWith('.mp4')) return 'video/mp4';
+  if (filename.endsWith('.webm')) return 'video/webm';
+  if (filename.endsWith('.mov')) return 'video/quicktime';
+  return undefined;
 }
