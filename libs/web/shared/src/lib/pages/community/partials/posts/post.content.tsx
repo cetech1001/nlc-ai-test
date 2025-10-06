@@ -34,7 +34,7 @@ export const PostContent: React.FC<PostContentProps> = ({
       const thumbnailUrl = mediaThumbnails[url];
 
       return (
-        <div key={index} className="relative rounded-lg overflow-hidden bg-black">
+        <div key={index} className="relative rounded-lg overflow-hidden bg-black" style={{ maxHeight: '500px' }}>
           <S3VideoPlayer
             src={url}
             thumbnailUrl={thumbnailUrl}
@@ -51,7 +51,7 @@ export const PostContent: React.FC<PostContentProps> = ({
           src={url}
           alt={`Post content ${index + 1}`}
           className="w-full h-auto object-contain rounded-lg"
-          style={{ maxHeight: '600px' }}
+          style={{ maxHeight: '500px' }}
           loading="lazy"
         />
       </div>
@@ -60,12 +60,18 @@ export const PostContent: React.FC<PostContentProps> = ({
 
   return (
     <>
-      {/* Text Content */}
+      {/* Text Content - Capped at max height with overflow scroll */}
       <div className="mb-4">
-        <p className="text-white text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
-          {displayContent}
-          {isLongPost && !isExpanded && '...'}
-        </p>
+        <div
+          className={`text-white text-sm sm:text-base leading-relaxed whitespace-pre-wrap ${
+            !isExpanded && isLongPost ? 'max-h-[200px] overflow-hidden' : ''
+          }`}
+        >
+          <p>
+            {displayContent}
+            {isLongPost && !isExpanded && '...'}
+          </p>
+        </div>
 
         {isLongPost && (
           <button
@@ -77,11 +83,11 @@ export const PostContent: React.FC<PostContentProps> = ({
         )}
       </div>
 
-      {/* Media Content */}
+      {/* Media Content - Capped at max height */}
       {mediaUrls && mediaUrls.length > 0 && (
         <div className="mb-4">
           {mediaUrls.length === 1 ? (
-            <div className="rounded-lg overflow-hidden">
+            <div className="rounded-lg overflow-hidden" style={{ maxHeight: '500px' }}>
               {renderMediaItem(mediaUrls[0], 0)}
             </div>
           ) : (
@@ -89,7 +95,7 @@ export const PostContent: React.FC<PostContentProps> = ({
               mediaUrls.length === 2 ? 'grid-cols-2' :
                 mediaUrls.length === 3 ? 'grid-cols-3' :
                   'grid-cols-2'
-            }`}>
+            }`} style={{ maxHeight: '500px' }}>
               {mediaUrls.slice(0, 4).map((url, index) => (
                 <div key={index} className="relative">
                   {renderMediaItem(url, index)}

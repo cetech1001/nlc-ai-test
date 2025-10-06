@@ -188,6 +188,7 @@ export const CommunityPage: FC<IProps> = ({
   };
 
   const loadMorePosts = () => {
+    console.log(`Load posts: ${hasMorePosts}`);
     if (hasMorePosts && !postsLoading) {
       loadPosts(community?.id, currentPage + 1);
       setCurrentPage(prev => prev + 1);

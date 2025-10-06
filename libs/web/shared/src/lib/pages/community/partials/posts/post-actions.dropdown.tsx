@@ -54,9 +54,13 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-8 w-48 bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-lg shadow-lg z-50 py-2"
+      className="absolute right-0 top-8 w-48 bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-lg shadow-lg z-50 py-2 max-h-[280px] overflow-y-auto"
+      style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#a855f7 #404040'
+      }}
     >
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute w-24 h-24 -right-2 -top-4 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px]" />
       </div>
 
@@ -69,12 +73,12 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
             >
               {isPinned ? (
                 <>
-                  <PinOff className="w-4 h-4" />
+                  <PinOff className="w-4 h-4 flex-shrink-0" />
                   <span className="text-sm">Unpin Post</span>
                 </>
               ) : (
                 <>
-                  <Pin className="w-4 h-4" />
+                  <Pin className="w-4 h-4 flex-shrink-0" />
                   <span className="text-sm">Pin Post</span>
                 </>
               )}
@@ -89,7 +93,7 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
               onClick={() => handleAction(onEdit || (() => {}))}
               className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-neutral-700/50 transition-colors text-left"
             >
-              <Edit className="w-4 h-4" />
+              <Edit className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">Edit Post</span>
             </button>
 
@@ -97,7 +101,7 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
               onClick={() => handleAction(onDelete || (() => {}))}
               className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-500/10 transition-colors text-left"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">Delete Post</span>
             </button>
 
@@ -109,7 +113,7 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
           onClick={() => handleAction(onCopyLink || (() => {}))}
           className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-neutral-700/50 transition-colors text-left"
         >
-          <Copy className="w-4 h-4" />
+          <Copy className="w-4 h-4 flex-shrink-0" />
           <span className="text-sm">Copy Link</span>
         </button>
 
@@ -118,11 +122,32 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
             onClick={() => handleAction(onReport || (() => {}))}
             className="w-full flex items-center gap-3 px-4 py-2 text-yellow-400 hover:bg-yellow-500/10 transition-colors text-left"
           >
-            <Flag className="w-4 h-4" />
+            <Flag className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm">Report Post</span>
           </button>
         )}
       </div>
+
+      {/* Custom scrollbar styles */}
+      <style>{`
+        .max-h-\\[280px\\]::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .max-h-\\[280px\\]::-webkit-scrollbar-track {
+          background: #404040;
+          border-radius: 3px;
+        }
+
+        .max-h-\\[280px\\]::-webkit-scrollbar-thumb {
+          background: #a855f7;
+          border-radius: 3px;
+        }
+
+        .max-h-\\[280px\\]::-webkit-scrollbar-thumb:hover {
+          background: #9333ea;
+        }
+      `}</style>
     </div>
   );
 };

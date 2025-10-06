@@ -9,11 +9,11 @@ interface S3VideoPlayerProps {
 }
 
 export const S3VideoPlayer: React.FC<S3VideoPlayerProps> = ({
-  src,
-  thumbnailUrl,
-  className = '',
-  autoGenerateThumbnail = true,
-}) => {
+                                                              src,
+                                                              thumbnailUrl,
+                                                              className = '',
+                                                              autoGenerateThumbnail = true,
+                                                            }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -24,33 +24,108 @@ export const S3VideoPlayer: React.FC<S3VideoPlayerProps> = ({
   const [generatedThumbnail, setGeneratedThumbnail] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Generate thumbnail from video first frame
+  // Generate thumbnail from video first frame with CORS handling
   useEffect(() => {
     if (!thumbnailUrl && autoGenerateThumbnail && videoRef.current) {
       const video = videoRef.current;
+      let thumbnailGenerated = false;
+      let seekAttempted = false;
 
       const generateThumbnail = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        if (thumbnailGenerated) return;
 
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
-          setGeneratedThumbnail(thumbnail);
+        try {
+          // Check if video has loaded enough data
+          if (video.videoWidth === 0 || video.videoHeight === 0) {
+            return;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            try {
+              const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+              setGeneratedThumbnail(thumbnail);
+              thumbnailGenerated = true;
+            } catch (err) {
+              // CORS error - silently fail as we can't generate thumbnail
+              console.warn('Unable to generate thumbnail due to CORS restrictions');
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to generate thumbnail:', err);
         }
       };
 
-      video.addEventListener('loadeddata', () => {
-        video.currentTime = 1; // Seek to 1 second for better thumbnail
-      });
+      const attemptSeek = () => {
+        if (seekAttempted || !video.duration || isNaN(video.duration)) return;
+        seekAttempted = true;
 
-      video.addEventListener('seeked', generateThumbnail);
+        try {
+          const seekTime = Math.min(1, video.duration * 0.1);
+          video.currentTime = seekTime;
+        } catch (err) {
+          console.warn('Failed to seek video:', err);
+        }
+      };
+
+      const handleLoadedMetadata = () => {
+        // Try to seek after metadata is loaded
+        setTimeout(() => {
+          if (video.readyState >= 1 && video.duration) {
+            attemptSeek();
+          }
+        }, 50);
+      };
+
+      const handleLoadedData = () => {
+        // Chrome often has enough data here
+        if (video.readyState >= 2) {
+          if (!seekAttempted) {
+            attemptSeek();
+          }
+          // Try generating if we're at the right position
+          if (video.currentTime > 0) {
+            generateThumbnail();
+          }
+        }
+      };
+
+      const handleSeeked = () => {
+        // Both Chrome and Safari fire this after seeking
+        generateThumbnail();
+      };
+
+      const handleCanPlay = () => {
+        // Safari fallback - try to seek if we haven't already
+        if (!seekAttempted && video.duration) {
+          attemptSeek();
+        }
+        // Also try to generate if we have data
+        if (video.currentTime > 0 && !thumbnailGenerated) {
+          generateThumbnail();
+        }
+      };
+
+      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      video.addEventListener('loadeddata', handleLoadedData);
+      video.addEventListener('seeked', handleSeeked);
+      video.addEventListener('canplay', handleCanPlay);
+
+      // Immediate check if video already has data
+      if (video.readyState >= 1 && video.duration) {
+        handleLoadedMetadata();
+      }
 
       return () => {
-        video.removeEventListener('loadeddata', generateThumbnail);
-        video.removeEventListener('seeked', generateThumbnail);
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        video.removeEventListener('loadeddata', handleLoadedData);
+        video.removeEventListener('seeked', handleSeeked);
+        video.removeEventListener('canplay', handleCanPlay);
       };
     }
     return () => {};
@@ -74,28 +149,41 @@ export const S3VideoPlayer: React.FC<S3VideoPlayerProps> = ({
       setHasStarted(false);
     };
 
+    // Safari-specific handling
+    const handleCanPlay = () => {
+      setIsLoading(false);
+    };
+
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
+    video.addEventListener('canplay', handleCanPlay);
 
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('canplay', handleCanPlay);
     };
   }, []);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (isPlaying) {
-      video.pause();
-    } else {
-      video.play();
-      setHasStarted(true);
+    try {
+      if (isPlaying) {
+        video.pause();
+        setIsPlaying(false);
+      } else {
+        await video.play();
+        setHasStarted(true);
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Failed to toggle play:', error);
+      setIsPlaying(false);
     }
-    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
@@ -121,8 +209,11 @@ export const S3VideoPlayer: React.FC<S3VideoPlayerProps> = ({
 
     if (document.fullscreenElement) {
       document.exitFullscreen();
-    } else {
+    } else if (video.requestFullscreen) {
       video.requestFullscreen();
+    } else if ((video as any).webkitRequestFullscreen) {
+      // Safari support
+      (video as any).webkitRequestFullscreen();
     }
   };
 
@@ -147,7 +238,8 @@ export const S3VideoPlayer: React.FC<S3VideoPlayerProps> = ({
         src={src}
         className="w-full h-full object-contain rounded-lg bg-black"
         playsInline
-        preload="metadata"
+        preload="auto"
+        webkit-playsinline="true"
       />
 
       {/* Thumbnail Overlay (shown before first play) */}

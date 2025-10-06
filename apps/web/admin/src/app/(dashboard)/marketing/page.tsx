@@ -47,7 +47,7 @@ const FormInput: React.FC<FormInputProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={8}
-        className="w-full px-4 sm:px-5 py-2 sm:py-[10px] border border-white/30 rounded-[10px] bg-transparent text-white placeholder:text-white/50 font-inter text-sm sm:text-base outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 transition-all resize-none"
+        className="w-full px-4 sm:px-5 py-2 sm:py-[10px] border border-white/30 rounded-[10px] bg-transparent text-white placeholder:text-white/50 font-inter text-sm sm:text-base outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 transition-all"
       />
     ) : (
       <input
