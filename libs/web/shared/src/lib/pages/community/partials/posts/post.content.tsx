@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
+import { S3VideoPlayer } from '../../../../components';
 
 interface PostContentProps {
   content: string;
   mediaUrls?: string[];
+  mediaThumbnails?: { [key: string]: string }; // Map of video URL to thumbnail URL
 }
 
-export const PostContent: React.FC<PostContentProps> = ({ content, mediaUrls }) => {
+export const PostContent: React.FC<PostContentProps> = ({
+                                                          content,
+                                                          mediaUrls,
+                                                          mediaThumbnails = {}
+                                                        }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [mutedVideos, setMutedVideos] = useState<{ [key: string]: boolean }>({});
 
   const POST_PREVIEW_LENGTH = 280;
   const isLongPost = content.length > POST_PREVIEW_LENGTH;
@@ -16,53 +20,39 @@ export const PostContent: React.FC<PostContentProps> = ({ content, mediaUrls }) 
     ? content.slice(0, POST_PREVIEW_LENGTH)
     : content;
 
-  const toggleVideoMute = (videoID: string) => {
-    setMutedVideos(prev => ({
-      ...prev,
-      [videoID]: !prev[videoID]
-    }));
+  const isVideo = (url: string) => {
+    return url.includes('.mp4') ||
+      url.includes('.mov') ||
+      url.includes('.avi') ||
+      url.includes('.webm') ||
+      url.includes('video') ||
+      url.match(/\.(mp4|mov|avi|webm)$/i);
   };
 
   const renderMediaItem = (url: string, index: number) => {
-    const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.avi') || url.includes('video');
-    const mediaID = `media-${index}`;
+    if (isVideo(url)) {
+      const thumbnailUrl = mediaThumbnails[url];
 
-    if (isVideo) {
       return (
-        <div key={index} className="relative group">
-          <video
-            className="w-full h-auto rounded-lg"
-            controls
-            muted={mutedVideos[mediaID]}
-            preload="metadata"
-            poster={url.replace(/\.(mp4|mov|avi)$/i, '.jpg')}
-          >
-            <source src={url} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-
-          <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => toggleVideoMute(mediaID)}
-              className="bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-            >
-              {mutedVideos[mediaID] ?
-                <VolumeX className="w-4 h-4" /> :
-                <Volume2 className="w-4 h-4" />
-              }
-            </button>
-          </div>
+        <div key={index} className="relative rounded-lg overflow-hidden bg-black">
+          <S3VideoPlayer
+            src={url}
+            thumbnailUrl={thumbnailUrl}
+            className="w-full"
+            autoGenerateThumbnail={!thumbnailUrl}
+          />
         </div>
       );
     }
 
     return (
-      <div key={index} className="relative">
+      <div key={index} className="relative rounded-lg overflow-hidden">
         <img
           src={url}
           alt={`Post content ${index + 1}`}
-          className="w-full h-auto rounded-lg object-contain"
+          className="w-full h-auto object-contain rounded-lg"
           style={{ maxHeight: '600px' }}
+          loading="lazy"
         />
       </div>
     );
@@ -105,7 +95,7 @@ export const PostContent: React.FC<PostContentProps> = ({ content, mediaUrls }) 
                   {renderMediaItem(url, index)}
                   {index === 3 && mediaUrls.length > 4 && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-                      <span className="text-white font-semibold">
+                      <span className="text-white font-semibold text-lg">
                         +{mediaUrls.length - 4}
                       </span>
                     </div>

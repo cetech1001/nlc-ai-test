@@ -10,3 +10,4 @@ export * from './image-upload';
 export * from './rich-text-editor';
 export * from './template-frame';
 export * from './video-upload';
+export * from './s3-video-player';

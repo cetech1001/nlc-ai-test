@@ -46,7 +46,7 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
   const loadCommunityMembers = async () => {
     try {
       setIsLoading(true);
-      const response = await sdkClient.communities.getCommunityMembers(communityID);
+      const response = await sdkClient.communities.members.getCommunityMembers(communityID);
       setMembers(response.data);
     } catch (error: any) {
       toast.error('Failed to load community members');

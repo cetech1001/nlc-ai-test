@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { X, Mail, Calendar } from 'lucide-react';
-import { Button, Input, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@nlc-ai/web-ui';
-import { toast } from 'sonner';
-import { sdkClient } from '@/lib';
+import React, {useState} from 'react';
+import {Calendar, Mail, X} from 'lucide-react';
+import {Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea} from '@nlc-ai/web-ui';
+import {toast} from 'sonner';
+import {sdkClient} from '@/lib';
+import {UserType} from "@nlc-ai/types";
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     inviteeID: '',
-    inviteeType: 'client' as 'coach' | 'client',
+    inviteeType: UserType.CLIENT,
     message: '',
     expiresInDays: '7',
   });
@@ -41,11 +42,10 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + parseInt(formData.expiresInDays));
 
-      await sdkClient.communities.inviteMember(communityID, {
-        inviteeID: formData.inviteeID.trim(),
-        inviteeType: formData.inviteeType,
+      await sdkClient.communities.members.inviteMember(communityID, {
+        userID: formData.inviteeID.trim(),
+        userType: formData.inviteeType,
         message: formData.message.trim() || undefined,
-        expiresAt: expiresAt.toISOString(),
       });
 
       toast.success('Invitation sent successfully!');
@@ -55,7 +55,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
       // Reset form
       setFormData({
         inviteeID: '',
-        inviteeType: 'client',
+        inviteeType: UserType.CLIENT,
         message: '',
         expiresInDays: '7',
       });
@@ -120,15 +120,15 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
               </label>
               <Select
                 value={formData.inviteeType}
-                onValueChange={(value) => setFormData({ ...formData, inviteeType: value as 'coach' | 'client' })}
+                onValueChange={(value) => setFormData({ ...formData, inviteeType: value as UserType })}
                 disabled={isLoading}
               >
                 <SelectTrigger className="bg-neutral-700/50 border-neutral-600 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="client">Client</SelectItem>
-                  <SelectItem value="coach">Coach</SelectItem>
+                  <SelectItem value={UserType.CLIENT}>Client</SelectItem>
+                  <SelectItem value={UserType.COACH}>Coach</SelectItem>
                 </SelectContent>
               </Select>
             </div>

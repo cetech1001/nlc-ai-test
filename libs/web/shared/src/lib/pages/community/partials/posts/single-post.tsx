@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PostResponse, ReactionType, PostCommentResponse } from '@nlc-ai/sdk-communities';
-import { UserProfile, UserType } from '@nlc-ai/types';
+import {CommunityMember, MemberRole, UserProfile, UserType} from '@nlc-ai/types';
 import {
   EditCommentModal,
   CommentsSection
@@ -19,6 +19,7 @@ interface SinglePostProps {
   user: UserProfile | null;
   handleReactToPost: (postID: string, reactionType: ReactionType) => void;
   handleAddComment: (postID: string, newComment: string) => void;
+  myMembership: CommunityMember | null;
   onPostUpdate?: (updatedPost: PostResponse, refresh?: boolean) => void;
   onPostDelete?: (postID: string) => void;
   onUserClick?: (userID: string, userType: UserType) => void;
@@ -63,8 +64,8 @@ export const SinglePost: React.FC<SinglePostProps> = ({
 
   const isOwnPost = props.user?.id === optimisticPost.communityMember?.userID;
 
-  const canModerate = props.user && optimisticPost.communityMember?.role &&
-    ['owner', 'admin', 'moderator'].includes(optimisticPost.communityMember.role);
+  const canModerate = props.myMembership &&
+    [MemberRole.OWNER, MemberRole.ADMIN, MemberRole.MODERATOR].includes(props.myMembership.role);
 
   const handleTogglePin = async () => {
     try {

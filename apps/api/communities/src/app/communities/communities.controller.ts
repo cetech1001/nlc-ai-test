@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Put,
-  Delete,
   Body,
   Param,
   Query,
@@ -23,8 +22,6 @@ import {
   CreateCommunityDto,
   UpdateCommunityDto,
   CommunityFiltersDto,
-  AddMemberDto,
-  CommunityMemberFiltersDto, InviteMemberDto,
 } from './dto';
 
 @ApiTags('Community')
@@ -110,37 +107,6 @@ export class CommunitiesController {
     return this.communityService.updateCommunity(id, updateDto, user);
   }
 
-  @Post(':id/members')
-  @ApiOperation({ summary: 'Add member to community' })
-  @ApiParam({ name: 'id', description: 'Community ID' })
-  @ApiResponse({ status: 201, description: 'Member added successfully' })
-  @UserTypes(UserType.COACH, UserType.ADMIN)
-  async addMember(
-    @Param('id') communityID: string,
-    @Body() addMemberDto: AddMemberDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.communityService.addMemberToCommunity(
-      communityID,
-      addMemberDto.userID,
-      addMemberDto.userType,
-      addMemberDto.role,
-      user.id
-    );
-  }
-
-  @Get(':id/members')
-  @ApiOperation({ summary: 'Get community members' })
-  @ApiParam({ name: 'id', description: 'Community ID' })
-  @ApiResponse({ status: 200, description: 'Members retrieved successfully' })
-  async getCommunityMembers(
-    @Param('id') id: string,
-    @Query() filters: CommunityMemberFiltersDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.communityService.getCommunityMembers(id, filters, user);
-  }
-
   @Get(':id/activity')
   @ApiOperation({ summary: 'Get community activity feed' })
   @ApiParam({ name: 'id', description: 'Community ID' })
@@ -164,58 +130,5 @@ export class CommunitiesController {
     @CurrentUser() user: AuthUser
   ) {
     return this.communityService.getCommunityAnalytics(id, period, user);
-  }
-
-  @Delete(':id/members/:userID/:userType')
-  @ApiOperation({ summary: 'Remove member from community' })
-  @ApiParam({ name: 'id', description: 'Community ID' })
-  @ApiParam({ name: 'userID', description: 'User ID' })
-  @ApiParam({ name: 'userType', description: 'User Type' })
-  @ApiResponse({ status: 200, description: 'Member removed successfully' })
-  @UserTypes(UserType.COACH, UserType.ADMIN)
-  async removeMember(
-    @Param('id') communityID: string,
-    @Param('userID') userID: string,
-    @Param('userType') userType: UserType,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.communityService.removeMemberFromCommunity(
-      communityID,
-      userID,
-      userType,
-      user,
-    );
-  }
-
-  @Get(':id/member-stats')
-  @ApiOperation({ summary: 'Get community member statistics' })
-  @ApiParam({ name: 'id', description: 'Community ID' })
-  @ApiResponse({ status: 200, description: 'Member statistics retrieved successfully' })
-  @UserTypes(UserType.COACH, UserType.ADMIN)
-  async getCommunityMemberStats(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.communityService.getCommunityMemberStats(id);
-  }
-
-  @Post(':id/invites')
-  @ApiOperation({ summary: 'Invite member to community' })
-  @ApiParam({ name: 'id', description: 'Community ID' })
-  @ApiResponse({ status: 201, description: 'Invitation sent successfully' })
-  @UserTypes(UserType.COACH, UserType.ADMIN)
-  async inviteMember(
-    @Param('id') communityID: string,
-    @Body() inviteDto: InviteMemberDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.communityService.inviteMemberToCommunity(
-      communityID,
-      inviteDto.userID,
-      inviteDto.userType,
-      user.id,
-      user.type,
-      inviteDto.message
-    );
   }
 }

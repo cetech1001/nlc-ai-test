@@ -85,7 +85,7 @@ export const AddMemberModal = ({ isOpen, onClose, communityID, onAddSuccess }: A
 
     setIsAddingMember(true);
     try {
-      await sdkClient.communities.addMember(communityID, {
+      await sdkClient.communities.members.addMember(communityID, {
         userID: selectedUser.id,
         userType: selectedUser.userType,
         role: selectedRole as any,

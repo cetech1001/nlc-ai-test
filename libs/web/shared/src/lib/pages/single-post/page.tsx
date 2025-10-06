@@ -4,7 +4,7 @@ import { useState, useEffect, FC } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PostResponse, ReactionType } from "@nlc-ai/sdk-communities";
-import { UserProfile } from "@nlc-ai/types";
+import {CommunityMember, UserProfile} from "@nlc-ai/types";
 import { NLCClient } from "@nlc-ai/sdk-main";
 import { SinglePost } from "../community/partials";
 import { Button } from "@nlc-ai/web-ui";
@@ -29,10 +29,26 @@ export const SinglePostViewPage: FC<IProps> = ({
   const [post, setPost] = useState<PostResponse | null>(null);
   const [communityID, setCommunityID] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [myMembership, setMyMembership] = useState<CommunityMember | null>(null);
 
   useEffect(() => {
     loadPost();
   }, [communitySlug, postID]);
+
+  useEffect(() => {
+    if (communityID) {
+      fetchMemberStatus(communityID);
+    }
+  }, [communityID]);
+
+  const fetchMemberStatus = async (communityID: string) => {
+    try {
+      const member = await sdkClient.communities.members.getMyMembership(communityID);
+      setMyMembership(member);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   const loadPost = async () => {
     try {
@@ -143,6 +159,7 @@ export const SinglePostViewPage: FC<IProps> = ({
       )}
 
       <SinglePost
+        myMembership={myMembership}
         sdkClient={sdkClient}
         user={user}
         post={post}

@@ -27,6 +27,8 @@ interface VideoUploadProps {
   className?: string;
   disabled?: boolean;
   pollProcessingStatus?: boolean;
+  displayWarning?: boolean;
+
 }
 
 export const VideoUpload: FC<VideoUploadProps> = ({
@@ -40,6 +42,7 @@ export const VideoUpload: FC<VideoUploadProps> = ({
                                                     className = '',
                                                     disabled = false,
                                                     pollProcessingStatus = true,
+  displayWarning = false,
                                                   }) => {
   const [uploadedVideos, setUploadedVideos] = useState<UploadedVideo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -625,7 +628,7 @@ export const VideoUpload: FC<VideoUploadProps> = ({
         )}
 
         {/* Large Video Upload Info */}
-        {!uploadedVideos.length && !uploadError && (
+        {displayWarning && !uploadedVideos.length && !uploadError && (
           <div className="mt-3 text-xs text-stone-500 text-center">
             🎥 Videos up to {formatFileSize(maxSizeMB * 1024 * 1024)} • Supports MP4, WebM, MOV, AVI
             {maxSizeMB > 100 && (

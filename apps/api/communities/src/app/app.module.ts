@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module';
 import communityConfig from './config/community.config';
 import {ModerationModule} from "./moderation/moderation.module";
 import {CommentsModule} from "./comments/comments.module";
+import {MembersModule} from "./members/members.module";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import {CommentsModule} from "./comments/comments.module";
     ModerationModule,
     PostsModule,
     CommentsModule,
+    MembersModule,
     EventHandlersModule,
     HealthModule,
   ],

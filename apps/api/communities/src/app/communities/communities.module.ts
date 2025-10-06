@@ -1,14 +1,10 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '@nlc-ai/api-database';
-import { MessagingModule } from '@nlc-ai/api-messaging';
 import { CommunitiesService } from './communities.service';
 import { CommunitiesController } from './communities.controller';
+import {MembersModule} from "../members/members.module";
 
 @Module({
-  imports: [
-    DatabaseModule,
-    MessagingModule.forRoot(),
-  ],
+  imports: [MembersModule],
   controllers: [CommunitiesController],
   providers: [CommunitiesService],
   exports: [CommunitiesService],

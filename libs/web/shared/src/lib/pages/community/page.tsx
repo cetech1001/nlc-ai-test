@@ -17,7 +17,7 @@ import {
   PostType,
   ReactionType,
 } from "@nlc-ai/sdk-communities";
-import {UserType, CommunityResponse, UserProfile} from "@nlc-ai/types";
+import {UserType, CommunityResponse, UserProfile, CommunityMember} from "@nlc-ai/types";
 import {NLCClient} from "@nlc-ai/sdk-main";
 
 interface IProps {
@@ -49,13 +49,24 @@ export const CommunityPage: FC<IProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
 
+  const [myMembership, setMyMembership] = useState<CommunityMember | null>(null);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
 
   useEffect(() => {
     if (community?.id) {
       loadPosts(community.id);
+      fetchMemberStatus(community.id);
     }
   }, [community?.id]);
+
+  const fetchMemberStatus = async (communityID: string) => {
+    try {
+      const member = await sdkClient.communities.members.getMyMembership(communityID);
+      setMyMembership(member);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   const loadPosts = async (communityID?: string, page = 1) => {
     try {
@@ -234,6 +245,7 @@ export const CommunityPage: FC<IProps> = ({
                 onUserClick={handleUserClick}
                 onNavigateToPost={handleNavigateToPost}
                 isDetailView={false}
+                myMembership={myMembership}
               />
             ))
           )}
