@@ -343,7 +343,7 @@ export const SinglePost: React.FC<SinglePostProps> = ({
   };
 
   const handleCopyLink = () => {
-    const baseUrl = props.user?.type === UserType.ADMIN ? appConfig.platforms.admin : appConfig.platforms.coach;
+    const baseUrl = appConfig.platforms[props.user?.type || 'coach'];
     const url = `${baseUrl}/community/${props.post.community?.slug}/post/${props.post.id}`;
     navigator.clipboard.writeText(url)
       .then(() => {

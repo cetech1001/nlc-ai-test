@@ -111,7 +111,7 @@ export class CoachAuthService {
   }
 
   async register(registerDto: RegistrationRequest, provider?: 'google', googleData?: ValidatedGoogleUser) {
-    const { email, firstName, lastName } = registerDto;
+    const { email, firstName, lastName, marketingOptIn } = registerDto;
 
     const existingCoach = await this.findCoachByEmail(email);
     if (existingCoach) {
@@ -123,6 +123,7 @@ export class CoachAuthService {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       isActive: true,
+      marketingOptIn,
       subscriptionStatus: 'trial',
     };
 
@@ -203,6 +204,7 @@ export class CoachAuthService {
         firstName: googleUser.firstName,
         lastName: googleUser.lastName,
         password: '',
+        marketingOptIn: false,
       }, 'google', googleUser);
     }
   }

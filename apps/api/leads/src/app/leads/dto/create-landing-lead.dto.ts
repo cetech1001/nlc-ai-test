@@ -16,6 +16,10 @@ class LandingLeadInfoDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @ApiProperty({ required: true })
+  @IsBoolean()
+  marketingOptIn: boolean;
 }
 
 export class CreateLandingLeadDto {

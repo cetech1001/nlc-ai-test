@@ -80,6 +80,7 @@ export class LeadsService {
           status: qualified ? LeadStatus.CONVERTED : LeadStatus.CONTACTED,
           answers: answers as any,
           qualified,
+          marketingOptIn: lead.marketingOptIn,
           submittedAt: submittedAt ? new Date(submittedAt) : new Date(),
         },
       });
@@ -110,6 +111,7 @@ export class LeadsService {
           email: newLead.email,
           phone: newLead.phone || undefined,
           answers,
+          marketingOptIn: newLead.marketingOptIn,
           qualified,
           submittedAt: newLead.submittedAt?.toISOString() || new Date().toISOString(),
         },

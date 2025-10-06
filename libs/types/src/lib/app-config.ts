@@ -3,6 +3,7 @@ export interface AppConfig {
   platforms: {
     admin: string;
     coach: string;
+    client: string;
     preLaunch: string;
   }
   api: {

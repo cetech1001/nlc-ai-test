@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Phone, User } from 'lucide-react';
 import { PageBackground } from '@/lib/components';
 import Image from "next/image";
+import Link from "next/link";
 import {sdkClient} from "@/lib";
 import {calculateQualification, hashString, LeadAnswers, LeadInfo} from "@nlc-ai/sdk-leads";
 
@@ -31,6 +32,8 @@ const LeadFormPage = () => {
     email: false,
     phone: false
   });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToMarketing, setAgreedToMarketing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);
@@ -46,7 +49,7 @@ const LeadFormPage = () => {
       : (!isValidPhone(leadInfo.phone) ? 'Enter a valid phone number' : ''), [leadInfo.phone]);
 
   const canSubmit = useMemo(() =>
-    !nameError && !emailError && !phoneError, [nameError, emailError, phoneError]);
+    !nameError && !emailError && !phoneError && agreedToTerms, [nameError, emailError, phoneError, agreedToTerms]);
 
   useEffect(() => {
     (async () => {
@@ -93,6 +96,7 @@ const LeadFormPage = () => {
           name: leadInfo.firstName + ' ' + leadInfo.lastName,
           email: leadInfo.email,
           phone: leadInfo.phone,
+          marketingOptIn: agreedToMarketing,
         },
         answers,
         qualified: isQualified,
@@ -242,6 +246,40 @@ const LeadFormPage = () => {
                   {touched.phone && phoneError && (
                     <p className="text-red-400 text-sm mt-2">{phoneError}</p>
                   )}
+                </div>
+
+                <div className="space-y-4 pt-4">
+                  <label className="flex items-center cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-1 w-5 h-5 rounded border-gray-700 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="ml-3 text-sm text-white/80 group-hover:text-white transition-colors">
+                      I agree to the{' '}
+                      <Link href="/terms" target="_blank" className="text-purple-400 hover:text-purple-300 underline">
+                        Terms of Service
+                      </Link>
+                      {' '}and{' '}
+                      <Link href="/privacy" target="_blank" className="text-purple-400 hover:text-purple-300 underline">
+                        Privacy Policy
+                      </Link>
+                      {' '}<span className="text-red-400">*</span>
+                    </span>
+                  </label>
+
+                  <label className="flex items-center cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={agreedToMarketing}
+                      onChange={(e) => setAgreedToMarketing(e.target.checked)}
+                      className="mt-1 w-5 h-5 rounded border-gray-700 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="ml-3 text-sm text-white/80 group-hover:text-white transition-colors">
+                      I'd like to receive exclusive updates, automation strategies, and insider tips via email to help scale my coaching business smarter.
+                    </span>
+                  </label>
                 </div>
 
                 {submitError && (

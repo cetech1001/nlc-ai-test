@@ -6,7 +6,8 @@ export const appConfig: AppConfig = {
   platforms: {
     admin: process.env.NEXT_PUBLIC_ADMIN_PLATFORM_URL || 'http://localhost:4200',
     coach: process.env.NEXT_PUBLIC_COACH_PLATFORM_URL || 'http://localhost:4300',
-    preLaunch: process.env.NEXT_PUBLIC_PRE_LAUNCH_PLATFORM_URL || 'http://localhost:4400',
+    client: process.env.NEXT_PUBLIC_CLIENT_PLATFORM_URL || 'http://localhost:4400',
+    preLaunch: process.env.NEXT_PUBLIC_PRE_LAUNCH_PLATFORM_URL || 'http://localhost:4100',
   },
   api: {
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',

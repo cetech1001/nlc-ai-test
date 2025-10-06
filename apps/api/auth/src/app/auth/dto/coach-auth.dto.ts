@@ -1,6 +1,6 @@
 import {RegistrationRequest} from "@nlc-ai/types";
 import {ApiProperty} from "@nestjs/swagger";
-import {IsEmail, IsString, Matches, MinLength} from "class-validator";
+import {IsBoolean, IsEmail, IsString, Matches, MinLength} from "class-validator";
 
 export class CoachRegisterDto implements RegistrationRequest {
   @ApiProperty({ example: 'John' })
@@ -26,4 +26,8 @@ export class CoachRegisterDto implements RegistrationRequest {
     message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
   password: string;
+
+  @ApiProperty({ required: true })
+  @IsBoolean()
+  marketingOptIn: boolean;
 }

@@ -40,6 +40,7 @@ export interface RegistrationRequest {
   lastName: string;
   email: string;
   password: string;
+  marketingOptIn: boolean;
 }
 
 export interface CoachRegistrationRequest extends RegistrationRequest {}

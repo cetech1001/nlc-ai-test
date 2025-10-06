@@ -104,18 +104,18 @@ export class LeadClientEventsHandler {
   }
 
   private async handleLandingLeadSubmitted(payload: any) {
-    const { leadID, name, email, qualified, answers } = payload;
+    const { leadID, name, email, qualified, marketingOptIn } = payload;
 
     this.logger.log(`Landing lead submitted: ${leadID} (qualified: ${qualified})`);
 
     if (qualified) {
-      await this.createCoachAccountForLead(leadID, name, email, answers);
+      await this.createCoachAccountForLead(leadID, name, email, marketingOptIn);
     } else {
       await this.sendUnqualifiedLeadEmail(email, name);
     }
   }
 
-  private async createCoachAccountForLead(leadID: string, name: string, email: string, answers: any) {
+  private async createCoachAccountForLead(leadID: string, name: string, email: string, marketingOptIn: boolean) {
     try {
       const nameParts = name.trim().split(' ');
       const firstName = nameParts[0] || name;
@@ -132,6 +132,7 @@ export class LeadClientEventsHandler {
           firstName,
           lastName,
           email,
+          marketingOptIn,
           password: this.generateTemporaryPassword(),
         }),
       });

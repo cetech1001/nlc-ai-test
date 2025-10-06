@@ -82,6 +82,7 @@ model Coach {
   isDeleted           Boolean        @default(false)
   deletedAt           DateTime?      @db.Timestamptz(6)
   lastLoginAt         DateTime?      @db.Timestamptz(6)
+  marketingOptIn      Boolean        @default(false)
   onboardingCompleted Boolean        @default(false)
   createdAt           DateTime       @default(now()) @db.Timestamptz(6)
   updatedAt           DateTime       @default(now()) @db.Timestamptz(6)
@@ -134,6 +135,7 @@ model Client {
   isActive          Boolean        @default(true)
   isVerified        Boolean        @default(false)
   isDeleted         Boolean        @default(false)
+  marketingOptIn    Boolean        @default(false)
   deletedAt         DateTime?      @db.Timestamptz(6)
   lastLoginAt       DateTime?      @db.Timestamptz(6)
   createdAt         DateTime       @default(now()) @db.Timestamptz(6)
@@ -1605,6 +1607,7 @@ model Lead {
   notes           String?
   answers         Json?
   qualified       Boolean?   @default(false)
+  marketingOptIn  Boolean    @default(false)
   submittedAt     DateTime?  @db.Timestamptz(6)
   lastContactedAt DateTime?  @db.Timestamptz(6)
   convertedAt     DateTime?  @db.Timestamptz(6)

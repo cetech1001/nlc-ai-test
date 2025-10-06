@@ -50,6 +50,7 @@ export interface CreateLandingLead {
   lead: {
     name: string;
     email: string;
+    marketingOptIn: boolean;
     phone?: string;
   };
   answers: Record<string, unknown>;

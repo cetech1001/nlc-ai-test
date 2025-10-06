@@ -20,6 +20,7 @@ export interface CreateLandingLead {
     name: string;
     email: string;
     phone?: string;
+    marketingOptIn: boolean;
   };
   answers: Record<string, unknown>;
   qualified: boolean;

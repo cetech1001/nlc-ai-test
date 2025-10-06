@@ -1,4 +1,3 @@
-import { tableRenderers } from "@nlc-ai/web-shared";
 import {Button} from "@nlc-ai/web-ui";
 import {DataTableLead, Lead} from "@nlc-ai/sdk-leads";
 import {Mail, Trash, Edit, Eye} from "lucide-react";
@@ -39,13 +38,6 @@ export const leadColumns = [
     key: 'email',
     header: 'Email',
     width: `${colWidth * (4 / 3)}%`,
-    render: (value: string) => tableRenderers.truncateText(value, 22)
-  },
-  {
-    key: 'phone',
-    header: 'Phone',
-    width: `${colWidth}%`,
-    render: (value: string) => value
   },
   {
     key: 'source',
@@ -62,10 +54,18 @@ export const leadColumns = [
     },
   },
   {
+    key: 'marketingOptIn',
+    header: 'Opted-in?',
+    width: `${colWidth * (2 / 3)}%`,
+    render: (value: string) => {
+      return !!value ? 'Yes' : 'No';
+    },
+  },
+  {
     key: 'status',
     header: 'Status',
     width: `${colWidth * (2 / 3)}%`,
-    render: (value: string, row: any) => {
+    render: (_: string, row: any) => {
       const statusConfig = {
         contacted: { bg: 'bg-yellow-600/20', text: 'text-yellow-400', label: 'Not Converted' },
         scheduled: { bg: 'bg-blue-600/20', text: 'text-blue-400', label: 'Scheduled' },
