@@ -20,6 +20,7 @@ import {SchedulingModule} from "./scheduling/scheduling.module";
 import {ThreadsModule} from "./threads/threads.module";
 import {TransactionalModule} from "./transactional/transactional.module";
 import {BullModule} from "@nestjs/bull";
+import {AppController} from "./app.controller";
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import {BullModule} from "@nestjs/bull";
     TransactionalModule,
     WebhooksModule,
   ],
+  controllers: [AppController],
   providers: [
     AppService,
     {

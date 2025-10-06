@@ -34,6 +34,7 @@ export interface AppConfig {
   };
   app: {
     name: string;
+    supportEmail: string;
     version: string;
     environment: 'development' | 'staging' | 'production';
   };

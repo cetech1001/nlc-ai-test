@@ -139,6 +139,8 @@ const Leads = () => {
       router.push(`/leads/${lead.originalID}/edit`);
     } else if (action === 'delete') {
       await handleDeleteLead(lead.originalID);
+    } else if (action === 'send-email') {
+      router.push(`/marketing?leadID=${lead.originalID}`);
     } else if (action === 'email') {
       handleEmailLead(lead);
     } else if (action === 'view-details') {

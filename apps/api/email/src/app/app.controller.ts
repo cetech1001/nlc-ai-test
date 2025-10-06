@@ -6,7 +6,7 @@ import {type AuthUser, EmailMessageStatus, EmailProviderHealth, SendEmailRespons
 import {CurrentUser} from "@nlc-ai/api-auth";
 import {ConfigService} from "@nestjs/config";
 
-@Controller('providers')
+@Controller('')
 export class AppController {
   private readonly logger = new Logger(AppController.name);
 
@@ -21,7 +21,7 @@ export class AppController {
     @CurrentUser() user: AuthUser,
   ): Promise<SendEmailResponse> {
     try {
-      let sender: string = this.config.get('email.mailgun.from')!;
+      let sender: string = `Next Level Coach AI <${this.config.get('email.mailgun.fromEmail')!}>`;
 
       if (user.type === UserType.COACH) {
         const primaryAccount = await this.emailProviderService.getPrimaryEmail(user.id);
@@ -70,7 +70,7 @@ export class AppController {
     @Body() dto: SendBulkEmailsDto,
     @CurrentUser() user: AuthUser,
   ) {
-    let sender: string = this.config.get('email.mailgun.from')!;
+    let sender: string = this.config.get('email.mailgun.fromEmail')!;
 
     if (user.type === UserType.COACH) {
       const primaryAccount = await this.emailProviderService.getPrimaryEmail(user.id);

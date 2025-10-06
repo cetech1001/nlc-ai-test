@@ -8,6 +8,7 @@ import {
   UsersIcon as HiUsers,
 } from "@heroicons/react/24/outline";
 import {Globe, Globe2, MessageCircleReply} from "lucide-react";
+import {PaperAirplaneIcon} from "@heroicons/react/16/solid";
 
 export const menuItems = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
@@ -20,6 +21,7 @@ export const menuItems = [
   { icon: Globe2, label: "Communities", path: "/communities" },
   { icon: Globe, label: "AI Vault", path: "/vault" },
   { icon: MessageCircleReply, label: "Chat", path: "/messages" },
+  { icon: PaperAirplaneIcon, label: "Marketing", path: "/marketing" },
 ];
 
 export const pageConfig = {

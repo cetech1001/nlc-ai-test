@@ -1,6 +1,6 @@
 import {Button} from "@nlc-ai/web-ui";
 import {DataTableLead, Lead} from "@nlc-ai/sdk-leads";
-import {Mail, Trash, Edit, Eye} from "lucide-react";
+import {Mail, Trash, Edit, Eye, Send} from "lucide-react";
 
 export const transformLeadData = (leads: Lead[]): DataTableLead[] => {
   return leads.map(lead => ({
@@ -91,13 +91,20 @@ export const leadColumns = [
     key: 'actions',
     header: 'Actions',
     width: 'auto',
-    render: (value: any, row: any, onRowAction?: (action: string, row: any) => void) => (
+    render: (_: any, row: any, onRowAction?: (action: string, row: any) => void) => (
       <div className="flex gap-2">
         <button
           onClick={() => onRowAction?.('edit', row)}
           className="px-3 py-1 rounded text-sm bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
         >
           <Edit className="w-3 h-3" />
+        </button>
+        <button
+          onClick={() => onRowAction?.('send-email', row)}
+          className="px-3 py-1 rounded text-sm bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
+          title="Send Marketing Email"
+        >
+          <Send className="w-3 h-3" />
         </button>
         <button
           onClick={() => onRowAction?.('email', row)}
