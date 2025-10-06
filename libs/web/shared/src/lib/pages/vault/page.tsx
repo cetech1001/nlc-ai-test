@@ -10,9 +10,10 @@ interface IProps {
   user: UserProfile | null;
   sdkClient: NLCClient;
   handleMessages: (conversationID: string) => void;
+  onNavigateToPost: (postID: string) => void;
 }
 
-export const VaultPage: FC<IProps> = ({ sdkClient, handleMessages, user }) => {
+export const VaultPage: FC<IProps> = ({ sdkClient, handleMessages, user, onNavigateToPost }) => {
   const [community, setCommunity] = useState<CommunityResponse | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +59,7 @@ export const VaultPage: FC<IProps> = ({ sdkClient, handleMessages, user }) => {
         isLoading={isLoading}
         community={community}
         handleMessages={handleMessages}
+        onNavigateToPost={onNavigateToPost}
       />
     </div>
   );

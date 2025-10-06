@@ -8,7 +8,7 @@ import {useParams, useRouter} from "next/navigation";
 
 const Post = () => {
   const router = useRouter();
-  const { user } = useAuth(UserType.ADMIN);
+  const { user } = useAuth(UserType.COACH);
 
   const params = useParams();
   const postID = params.postID as string;

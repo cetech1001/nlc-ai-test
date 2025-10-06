@@ -47,7 +47,7 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-6 w-44 bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-lg shadow-lg z-50 py-2"
+      className="absolute right-0 top-6 w-44 bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-lg shadow-lg z-50 py-2 overflow-y-auto"
     >
       <div className="absolute inset-0 opacity-20">
         <div className="absolute w-20 h-20 -right-2 -top-3 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[30px]" />

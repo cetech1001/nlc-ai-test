@@ -9,11 +9,12 @@ interface CommentBubbleProps {
   comment: PostCommentResponse & { isOptimistic?: boolean; tempID?: string };
   user: UserProfile | null;
   depth?: number;
+  maxDepth?: number;
   onReact: (commentID: string, reactionType: ReactionType) => void;
   onEdit: (commentID: string, content: string) => void;
   onDelete: (commentID: string) => void;
   onReply: (commentID: string) => void;
-  onLoadReplies: (commentID: string) => void;
+  onLoadReplies: (commentID: string, depth: number) => void;
   onUserClick?: (userID: string, userType: UserType) => void;
   replyingTo?: { [key: string]: boolean };
   replyText?: { [key: string]: string };
@@ -24,27 +25,32 @@ interface CommentBubbleProps {
   isLoadingReplies?: { [key: string]: boolean };
   repliesData?: { [key: string]: PostCommentResponse[] };
   isReactionsDisabled?: boolean;
+  isDetailView?: boolean;
+  onViewAllComments?: () => void;
 }
 
 export const CommentBubble: React.FC<CommentBubbleProps> = ({
-  comment,
-  user,
-  depth = 0,
-  onReact,
-  onEdit,
-  onDelete,
-  onReply,
-  onLoadReplies,
-  onUserClick,
-  replyingTo = {},
-  replyText = {},
-  onReplyTextChange,
-  onSubmitReply,
-  repliesExpanded = {},
-  isLoadingReplies = {},
-  repliesData = {},
-  isReactionsDisabled = false,
-}) => {
+                                                              comment,
+                                                              user,
+                                                              depth = 0,
+                                                              maxDepth = 3,
+                                                              onReact,
+                                                              onEdit,
+                                                              onDelete,
+                                                              onReply,
+                                                              onLoadReplies,
+                                                              onUserClick,
+                                                              replyingTo = {},
+                                                              replyText = {},
+                                                              onReplyTextChange,
+                                                              onSubmitReply,
+                                                              repliesExpanded = {},
+                                                              isLoadingReplies = {},
+                                                              repliesData = {},
+                                                              isReactionsDisabled = false,
+                                                              onViewAllComments,
+                                                              isDetailView = false,
+                                                            }) => {
   const [showActions, setShowActions] = useState(false);
   const isOwnComment = user?.id === comment.communityMember?.userID;
   const isDeleted = comment.isDeleted;
@@ -53,6 +59,15 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
   const isExpanded = repliesExpanded[comment.id];
   const isLoading = isLoadingReplies[comment.id];
   const nestedReplies = repliesData[comment.id] || [];
+  const isAtMaxDepth = isDetailView ? false : depth >= maxDepth;
+
+  const handleLoadRepliesClick = () => {
+    if (isAtMaxDepth && onViewAllComments) {
+      onViewAllComments();
+    } else {
+      onLoadReplies(comment.id, depth);
+    }
+  };
 
   const renderMediaItem = (url: string, index: number) => {
     const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.avi') || url.includes('video');
@@ -171,24 +186,31 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
 
           {comment.replyCount > 0 && (
             <button
-              onClick={() => onLoadReplies(comment.id)}
+              onClick={handleLoadRepliesClick}
               disabled={comment.isOptimistic || isLoading}
               className="flex items-center gap-1 text-stone-500 hover:text-fuchsia-400 text-xs disabled:opacity-50 transition-colors"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-3 w-3 border-b border-fuchsia-400"></div>
+              ) : isAtMaxDepth ? (
+                <>
+                  <ChevronDown className="w-3 h-3" />
+                  <span>View in post</span>
+                </>
               ) : isExpanded ? (
                 <ChevronUp className="w-3 h-3" />
               ) : (
                 <ChevronDown className="w-3 h-3" />
               )}
-              <span>
-                {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}
-              </span>
+              {!isAtMaxDepth && (
+                <span>
+                  {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}
+                </span>
+              )}
             </button>
           )}
 
-          {!isDeleted && !isReactionsDisabled && (
+          {!isDeleted && !isReactionsDisabled && !isAtMaxDepth && (
             <button
               onClick={() => onReply(comment.id)}
               disabled={comment.isOptimistic}
@@ -219,7 +241,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         </div>
 
         {/* Reply Input */}
-        {isReplyingToThis && !isDeleted && (
+        {isReplyingToThis && !isDeleted && !isAtMaxDepth && (
           <div className="mt-3 flex items-start gap-2">
             <div className="w-6 h-6 rounded-full flex-shrink-0">
               {getCurrentUserAvatar() ? (
@@ -261,7 +283,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         )}
 
         {/* Nested Replies */}
-        {isExpanded && nestedReplies.length > 0 && (
+        {isExpanded && nestedReplies.length > 0 && !isAtMaxDepth && (
           <div className="mt-3 pl-4 border-l border-neutral-700/50 space-y-2">
             {nestedReplies.map(reply => (
               <CommentBubble
@@ -269,6 +291,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
                 comment={reply}
                 user={user}
                 depth={depth + 1}
+                maxDepth={maxDepth}
                 onReact={onReact}
                 onEdit={onEdit}
                 onDelete={onDelete}
@@ -283,6 +306,8 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
                 isLoadingReplies={isLoadingReplies}
                 repliesData={repliesData}
                 isReactionsDisabled={isDeleted || isReactionsDisabled}
+                onViewAllComments={onViewAllComments}
+                isDetailView={isDetailView}
               />
             ))}
           </div>

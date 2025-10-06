@@ -14,8 +14,17 @@ const CoachVault = () => {
     router.push(`/messages?conversationID=${conversationID}`);
   }
 
+  const handleNavigateToPost = (postID: string) => {
+    router.push(`/community/ai-vault/post/${postID}`);
+  }
+
   return (
-    <VaultPage user={user} sdkClient={sdkClient} handleMessages={handleMessages}/>
+    <VaultPage
+      user={user}
+      sdkClient={sdkClient}
+      handleMessages={handleMessages}
+      onNavigateToPost={handleNavigateToPost}
+    />
   );
 };
 

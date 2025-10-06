@@ -2,8 +2,7 @@ import React from 'react';
 import { PostCommentResponse, ReactionType } from '@nlc-ai/sdk-communities';
 import { UserProfile, UserType } from '@nlc-ai/types';
 import { CommentBubble } from './comment.bubble';
-import {CommentInput} from "./comment.input";
-
+import { CommentInput } from "./comment.input";
 
 interface CommentsSectionProps {
   postID: string;
@@ -26,38 +25,44 @@ interface CommentsSectionProps {
   replyText: { [key: string]: string };
   onReplyTextChange: (commentID: string, text: string) => void;
   onSubmitReply: (commentID: string) => void;
-  onLoadReplies: (commentID: string) => void;
+  onLoadReplies: (commentID: string, depth: number) => void;
   repliesExpanded: { [key: string]: boolean };
   repliesData: { [key: string]: PostCommentResponse[] };
   loadingReplies: { [key: string]: boolean };
+  isDetailView?: boolean;
+  onViewAllComments?: () => void;
+  maxDepth?: number;
 }
 
 export const CommentsSection: React.FC<CommentsSectionProps> = ({
-  postID,
-  comments,
-  commentCount,
-  user,
-  isLoading,
-  hasMore,
-  newComment,
-  isCommenting,
-  onCommentChange,
-  onSubmitComment,
-  onReactToComment,
-  onEditComment,
-  onDeleteComment,
-  onReplyToComment,
-  onLoadMore,
-  onUserClick,
-  replyingTo,
-  replyText,
-  onReplyTextChange,
-  onSubmitReply,
-  onLoadReplies,
-  repliesExpanded,
-  repliesData,
-  loadingReplies,
-}) => {
+                                                                  postID,
+                                                                  comments,
+                                                                  commentCount,
+                                                                  user,
+                                                                  isLoading,
+                                                                  hasMore,
+                                                                  newComment,
+                                                                  isCommenting,
+                                                                  onCommentChange,
+                                                                  onSubmitComment,
+                                                                  onReactToComment,
+                                                                  onEditComment,
+                                                                  onDeleteComment,
+                                                                  onReplyToComment,
+                                                                  onLoadMore,
+                                                                  onUserClick,
+                                                                  replyingTo,
+                                                                  replyText,
+                                                                  onReplyTextChange,
+                                                                  onSubmitReply,
+                                                                  onLoadReplies,
+                                                                  repliesExpanded,
+                                                                  repliesData,
+                                                                  loadingReplies,
+                                                                  isDetailView = false,
+                                                                  onViewAllComments,
+                                                                  maxDepth = 3,
+                                                                }) => {
   return (
     <div className="border-t border-neutral-700 pt-4 mt-4">
       <div className="flex items-center justify-between mb-4">
@@ -86,6 +91,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
               comment={comment}
               user={user}
               depth={0}
+              maxDepth={maxDepth}
               onReact={onReactToComment}
               onEdit={onEditComment}
               onDelete={onDeleteComment}
@@ -99,23 +105,34 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
               repliesExpanded={repliesExpanded}
               isLoadingReplies={loadingReplies}
               repliesData={repliesData}
+              onViewAllComments={onViewAllComments}
+              isDetailView={isDetailView}
             />
           ))}
 
-          {/* Load More Comments */}
+          {/* Load More Comments / View All Comments */}
           {hasMore && (
             <div className="flex justify-center pt-4">
-              <button
-                onClick={onLoadMore}
-                disabled={isLoading}
-                className="text-fuchsia-400 text-sm font-medium hover:text-fuchsia-300 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-fuchsia-400"></div>
-                ) : (
-                  <>Load More Comments</>
-                )}
-              </button>
+              {isDetailView ? (
+                <button
+                  onClick={onLoadMore}
+                  disabled={isLoading}
+                  className="text-fuchsia-400 text-sm font-medium hover:text-fuchsia-300 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-fuchsia-400"></div>
+                  ) : (
+                    <>Load More Comments</>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={onViewAllComments}
+                  className="text-fuchsia-400 text-sm font-medium hover:text-fuchsia-300 transition-colors flex items-center gap-2"
+                >
+                  View All Comments ({commentCount})
+                </button>
+              )}
             </div>
           )}
         </div>

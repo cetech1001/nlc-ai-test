@@ -150,6 +150,7 @@ export const SinglePostViewPage: FC<IProps> = ({
         onPostUpdate={handlePostUpdate}
         handleReactToPost={handleReactToPost}
         handleAddComment={handleAddComment}
+        isDetailView={true}
       />
     </div>
   );

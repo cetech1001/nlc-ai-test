@@ -19,9 +19,11 @@ interface SinglePostProps {
   user: UserProfile | null;
   handleReactToPost: (postID: string, reactionType: ReactionType) => void;
   handleAddComment: (postID: string, newComment: string) => void;
-  onPostUpdate?: (updatedPost: PostResponse) => void;
+  onPostUpdate?: (updatedPost: PostResponse, refresh?: boolean) => void;
   onPostDelete?: (postID: string) => void;
   onUserClick?: (userID: string, userType: UserType) => void;
+  onNavigateToPost?: (postID: string) => void;
+  isDetailView?: boolean; // New prop to indicate if we're on the detail page
 }
 
 interface OptimisticComment extends PostCommentResponse {
@@ -29,7 +31,14 @@ interface OptimisticComment extends PostCommentResponse {
   tempID?: string;
 }
 
-export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) => {
+const MAX_DEPTH = 3; // Maximum nesting depth before redirecting
+const INITIAL_COMMENTS_DISPLAY = 3; // Show only 3 top-level comments initially
+
+export const SinglePost: React.FC<SinglePostProps> = ({
+                                                        sdkClient,
+                                                        isDetailView = false, // Default to false (feed view)
+                                                        ...props
+                                                      }) => {
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<{ [key: string]: OptimisticComment[] }>({});
@@ -65,7 +74,7 @@ export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) =
       );
 
       setOptimisticPost(updatedPost);
-      props.onPostUpdate?.(updatedPost);
+      props.onPostUpdate?.(updatedPost, true);
 
       toast.success(updatedPost.isPinned ? 'Post pinned successfully' : 'Post unpinned successfully');
     } catch (error: any) {
@@ -90,10 +99,12 @@ export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) =
     try {
       setLoadingComments(prev => ({ ...prev, [postID]: true }));
 
+      const limit = isDetailView ? 20 : INITIAL_COMMENTS_DISPLAY;
+
       const response = await sdkClient.communities.comments.getComments(props.post.communityID, {
         postID,
         page,
-        limit: 10,
+        limit,
       });
 
       setComments(prev => ({
@@ -119,7 +130,19 @@ export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) =
     await loadComments(postID, currentPage + 1);
   };
 
-  const handleLoadReplies = async (commentID: string) => {
+  const handleViewAllComments = () => {
+    if (props.onNavigateToPost) {
+      props.onNavigateToPost(optimisticPost.id);
+    }
+  };
+
+  const handleLoadReplies = async (commentID: string, depth: number = 0) => {
+    // If we're at max depth and not in detail view, navigate to post detail
+    if (depth >= MAX_DEPTH && !isDetailView) {
+      handleViewAllComments();
+      return;
+    }
+
     const isExpanded = repliesExpanded[commentID];
 
     setRepliesExpanded(prev => ({
@@ -541,6 +564,9 @@ export const SinglePost: React.FC<SinglePostProps> = ({ sdkClient, ...props }) =
               repliesExpanded={repliesExpanded}
               repliesData={repliesData}
               loadingReplies={loadingReplies}
+              isDetailView={isDetailView}
+              onViewAllComments={handleViewAllComments}
+              maxDepth={MAX_DEPTH}
             />
           )}
         </div>

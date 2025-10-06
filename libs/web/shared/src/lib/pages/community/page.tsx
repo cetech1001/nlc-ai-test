@@ -26,9 +26,17 @@ interface IProps {
   isLoading: boolean;
   community: CommunityResponse | null;
   handleMessages: (conversationID: string) => void;
+  onNavigateToPost?: (postID: string) => void;
 }
 
-export const CommunityPage: FC<IProps> = ({ sdkClient, handleMessages, community, isLoading, user }) => {
+export const CommunityPage: FC<IProps> = ({
+                                            sdkClient,
+                                            handleMessages,
+                                            community,
+                                            isLoading,
+                                            user,
+                                            onNavigateToPost
+                                          }) => {
   const [posts, setPosts] = useState<PostResponse[]>([]);
 
   const [postsLoading, setPostsLoading] = useState(false);
@@ -175,6 +183,12 @@ export const CommunityPage: FC<IProps> = ({ sdkClient, handleMessages, community
     }
   };
 
+  const handleNavigateToPost = (postID: string) => {
+    if (onNavigateToPost) {
+      onNavigateToPost(postID);
+    }
+  };
+
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
 
   return (
@@ -207,8 +221,8 @@ export const CommunityPage: FC<IProps> = ({ sdkClient, handleMessages, community
                     prevState.filter((value) =>
                       value.id !== postID));
                 }}
-                onPostUpdate={(updatedPost) => {
-                  if (updatedPost.isPinned) {
+                onPostUpdate={(updatedPost, refresh = false) => {
+                  if (refresh) {
                     window.location.reload();
                   }
                   setPosts(prev => prev.map(p =>
@@ -218,6 +232,8 @@ export const CommunityPage: FC<IProps> = ({ sdkClient, handleMessages, community
                 handleReactToPost={handleReactToPost}
                 handleAddComment={handleAddComment}
                 onUserClick={handleUserClick}
+                onNavigateToPost={handleNavigateToPost}
+                isDetailView={false}
               />
             ))
           )}
