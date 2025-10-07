@@ -6,7 +6,7 @@
   const coachID = scriptTag.getAttribute('data-coach-id');
 
   if (!coachID) {
-    console.error('NextLevelCoach Chatbot: data-coach-id attribute is required');
+    console.error('Next Level Coach AI Chatbot: data-coach-id attribute is required');
     return;
   }
 
@@ -371,10 +371,9 @@
         });
 
         const data = await response.json();
-        console.log("Data: ", data);
-        console.log("Thread ID from init: ", threadID);
 
-        threadID = data.threadID;
+        threadID = data.data.threadID;
+        console.log("Thread ID: ", threadID);
 
         // Add greeting message
         addMessage('assistant', config.greeting);
@@ -429,12 +428,12 @@
           await new Promise(resolve => setTimeout(resolve, 1000));
 
           const statusResponse = await fetch(
-            `${config.apiBaseURL}/api/agents/public/chat/coach/${config.coachID}/thread/${threadID}/run/${runData.runID}/status`
+            `${config.apiBaseURL}/api/agents/public/chat/coach/${config.coachID}/thread/${threadID}/run/${runData.data.runID}/status`
           );
 
           const statusData = await statusResponse.json();
 
-          if (statusData.status === 'completed') {
+          if (statusData.data.status === 'completed') {
             completed = true;
 
             // Get messages
@@ -443,12 +442,12 @@
             );
 
             const messagesData = await messagesResponse.json();
-            const assistantMessage = messagesData.messages[0].content[0].text.value;
+            const assistantMessage = messagesData.data.messages[0].content[0].text.value;
 
             // Remove typing indicator and add response
             removeTypingIndicator(typingID);
             addMessage('assistant', assistantMessage);
-          } else if (statusData.status === 'failed') {
+          } else if (statusData.data.status === 'failed') {
             throw new Error('Assistant run failed');
           }
 

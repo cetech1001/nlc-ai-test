@@ -19,12 +19,20 @@ import {
   Target,
   Zap,
   MessageCircleReply,
+  LucideUserRoundCog
 } from "lucide-react";
 import {MenuItemType} from "@nlc-ai/types";
-import {RetentionIcon, CoachReplicaIcon, EmailAgentIcon} from "../icons";
+import {RetentionIcon, CoachReplicaIcon, EmailAgentIcon} from "@/lib";
+import {appConfig} from "@nlc-ai/web-shared";
+
+let onBoardingRoute = [];
+if (!appConfig.features.enableLanding) {
+  onBoardingRoute.push({ icon: LucideUserRoundCog, label: "Onboarding", path: "/onboarding" });
+}
 
 export const menuItems: MenuItemType[] = [
   { icon: HiHome, label: "Dashboard", path: "/home" },
+  ...onBoardingRoute,
   { icon: Users, label: "Clients", path: "/clients" },
   { icon: GraduationCap, label: "Courses", path: "/courses" },
   { icon: Target, label: "Leads", path: "/leads" },
@@ -73,6 +81,9 @@ export const settingsItems = [
 export const pageConfig = {
   'home': {
     title: 'Dashboard Overview',
+  },
+  'onboarding': {
+    title: 'Onboarding',
   },
   'clients': {
     title: 'Client Management',
