@@ -26,7 +26,7 @@ export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps
     (socialConnections > 0 ? 10 : 0)
   );
 
-  const isReady = essentialConnections >= 1 && scenariosCompleted >= 8;
+  const isReady = /*essentialConnections >= 1 && */scenariosCompleted >= 8;
 
   const handleLaunch = async () => {
     if (!agreedToTerms || !isReady) return;
