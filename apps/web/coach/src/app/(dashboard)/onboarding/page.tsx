@@ -108,15 +108,12 @@ const OnboardingContainer = () => {
 
   const completeOnboarding = async () => {
     try {
-      const result = await sdkClient.agents.onboarding.complete({
+      await sdkClient.agents.onboarding.complete({
         ...onboardingData,
         completedAt: new Date(),
       });
 
-      if (result.success) {
-        // Redirect to chat
-        router.push('/chat');
-      }
+      router.push('/agents/replica');
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
       throw error;
