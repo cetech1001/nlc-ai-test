@@ -14,6 +14,7 @@ import {EmailDeliverabilityModule} from "./email-deliverability/email-deliverabi
 import {CoachReplicaModule} from "./coach-replica/coach-replica.module";
 import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
 import {ContentSuggestionModule} from "./content-suggestion/content-suggestion.module";
+import {ReplicaModule} from "./replica/replica.module";
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import {ContentSuggestionModule} from "./content-suggestion/content-suggestion.m
     ClientEmailModule,
     EmailDeliverabilityModule,
     LeadFollowupModule,
+    ReplicaModule,
     ContentSuggestionModule,
   ],
   providers: [

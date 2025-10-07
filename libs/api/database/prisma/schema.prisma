@@ -103,6 +103,11 @@ model Coach {
   emailThreads            EmailThread[]
   agentConversations      AgentConversation[]
   agentMemories           AgentMemory[]
+  coachAIConfig           CoachAIConfig?
+  knowledgeFiles          CoachKnowledgeFile[]
+  replicaThreads          CoachReplicaThread[]
+  replicaMessages         CoachReplicaMessage[]
+  replicaUsage            CoachReplicaUsage[]
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
@@ -293,6 +298,133 @@ enum GeneratedEmailStatus {
   failed
   cancelled
   superseded
+}
+
+// Add these models to your schema.prisma file
+// Place them in the AI Agent Domain section
+
+// ============================================
+// Coach Replica / Knowledge Base Models
+// ============================================
+
+enum KnowledgeFileStatus {
+  uploaded
+  indexed
+  failed
+  deleted
+}
+
+enum ReplicaThreadStatus {
+  active
+  archived
+  deleted
+}
+
+model CoachAIConfig {
+  id            String   @id @default(uuid()) @db.Uuid
+  coachID       String   @unique @db.Uuid
+  assistantID   String   @db.VarChar(255) // OpenAI Assistant ID
+  vectorStoreID String   @db.VarChar(255) // OpenAI Vector Store ID
+  assistantName String   @db.VarChar(255)
+  instructions  String   @db.Text
+  model         String   @default("gpt-4o") @db.VarChar(50)
+  isActive      Boolean  @default(true)
+  metadata      Json?    @default("{}")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([coachID])
+  @@index([assistantID])
+  @@map("coach_ai_configs")
+}
+
+model CoachKnowledgeFile {
+  id                String              @id @default(uuid()) @db.Uuid
+  coachID           String              @db.Uuid
+  openaiFileID      String              @db.VarChar(255) // OpenAI File ID
+  vectorStoreFileID String?             @db.VarChar(255) // OpenAI Vector Store File ID (after indexing)
+  filename          String              @db.VarChar(500)
+  fileSize          Int // File size in bytes
+  mimeType          String              @db.VarChar(100)
+  status            KnowledgeFileStatus @default(uploaded)
+  uploadedAt        DateTime            @default(now()) @db.Timestamptz(6)
+  indexedAt         DateTime?           @db.Timestamptz(6)
+  failedAt          DateTime?           @db.Timestamptz(6)
+  errorMessage      String?             @db.Text
+  metadata          Json?               @default("{}")
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([coachID])
+  @@index([openaiFileID])
+  @@index([status])
+  @@index([uploadedAt])
+  @@map("coach_knowledge_files")
+}
+
+model CoachReplicaThread {
+  id             String              @id @default(uuid()) @db.Uuid
+  coachID        String              @db.Uuid
+  openaiThreadID String              @db.VarChar(255) // OpenAI Thread ID
+  title          String?             @db.VarChar(500)
+  status         ReplicaThreadStatus @default(active)
+  messageCount   Int                 @default(0)
+  lastMessageAt  DateTime?           @db.Timestamptz(6)
+  metadata       Json?               @default("{}")
+  createdAt      DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime            @updatedAt @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([coachID])
+  @@index([openaiThreadID])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("coach_replica_threads")
+}
+
+model CoachReplicaMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  threadID  String   @db.Uuid
+  coachID   String   @db.Uuid
+  role      String   @db.VarChar(20) // 'user', 'assistant', 'system'
+  content   String   @db.Text
+  messageID String?  @db.VarChar(255) // OpenAI Message ID
+  runID     String?  @db.VarChar(255) // OpenAI Run ID
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([threadID])
+  @@index([coachID])
+  @@index([messageID])
+  @@index([createdAt])
+  @@map("coach_replica_messages")
+}
+
+model CoachReplicaUsage {
+  id             String   @id @default(uuid()) @db.Uuid
+  coachID        String   @db.Uuid
+  date           DateTime @db.Date
+  totalMessages  Int      @default(0)
+  totalTokens    BigInt   @default(0)
+  totalCost      Decimal  @default(0.00) @db.Decimal(10, 4)
+  averageRunTime Int?     @default(0) // in milliseconds
+  successfulRuns Int      @default(0)
+  failedRuns     Int      @default(0)
+  filesUploaded  Int      @default(0)
+  totalStorageMB Int      @default(0)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@unique([coachID, date])
+  @@index([date])
+  @@index([coachID])
+  @@map("coach_replica_usage")
 }
 
 model AiAgent {

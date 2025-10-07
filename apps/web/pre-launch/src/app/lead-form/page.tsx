@@ -33,7 +33,7 @@ const LeadFormPage = () => {
     phone: false
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [agreedToMarketing, setAgreedToMarketing] = useState(false);
+  const [agreedToMarketing, setAgreedToMarketing] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);

@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import {WelcomeStep, ScenariosStep, DocumentsStep, ConnectionsStep, ReviewCompleteStep} from "@/lib";
+import {appConfig} from "@nlc-ai/web-shared";
+import {useRouter} from "next/navigation";
 
 // Mock steps - in real app these would be separate components
 const ONBOARDING_STEPS = [
@@ -14,6 +16,12 @@ const ONBOARDING_STEPS = [
 ];
 
 const OnboardingContainer = () => {
+  const router = useRouter();
+
+  if (appConfig.features.enableLanding) {
+    router.push('/vault');
+  }
+
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 

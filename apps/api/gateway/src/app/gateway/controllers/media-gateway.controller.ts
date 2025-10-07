@@ -22,8 +22,6 @@ export class MediaGatewayController {
     const path = req.path.replace(/^\/media/, '');
     const headers = this.extractHeaders(req);
 
-    console.log("Came in here");
-
     const response = await this.proxyService.proxyRequest(
       'media',
       path,
@@ -48,8 +46,6 @@ export class MediaGatewayController {
     if (req.path.includes('/upload/multipart')) {
       return;
     }
-
-    console.log("Should not come in here");
 
     const path = req.path.replace(/^\/media/, '');
 

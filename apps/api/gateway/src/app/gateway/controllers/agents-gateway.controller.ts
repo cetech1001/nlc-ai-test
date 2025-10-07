@@ -1,12 +1,13 @@
 import {
   Controller,
   All,
-  Req,
+  Req, UseInterceptors, UploadedFile, Body,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ProxyService } from '../../proxy/proxy.service';
 import { CacheService } from '../../cache/cache.service';
+import {FileInterceptor} from "@nestjs/platform-express";
 
 @ApiTags('Agents')
 @Controller('agents')
@@ -16,6 +17,58 @@ export class AgentsGatewayController {
     private readonly proxyService: ProxyService,
     private readonly cacheService: CacheService,
   ) {}
+
+  @All('replica/files/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async proxyFileUpload(
+    @Req() req: Request,
+    @UploadedFile() file?: Express.Multer.File,
+    @Body() body?: any
+  ) {
+    const path = req.path.replace(/^\/agents/, '');
+
+    const FormData = require('form-data');
+    const formData = new FormData();
+
+    if (file) {
+      formData.append('file', file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
+    }
+
+    if (body) {
+      Object.keys(body).forEach(key => {
+        if (body[key] !== undefined && body[key] !== null) {
+          formData.append(key, body[key]);
+        }
+      });
+    }
+
+    const headers = this.extractHeaders(req);
+    delete headers['content-type'];
+
+    try {
+      const response = await this.proxyService.proxyFormDataRequest(
+        'agents',
+        path,
+        {
+          method: req.method as any,
+          data: formData,
+          params: req.query,
+          headers: {
+            ...headers,
+            ...formData.getHeaders(),
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('File upload proxy error:', error);
+      throw error;
+    }
+  }
 
   @All('*')
   async proxyToAgents(@Req() req: Request) {
