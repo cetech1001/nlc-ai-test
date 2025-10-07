@@ -1,12 +1,14 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import {WelcomeStep, ScenariosStep, DocumentsStep, ConnectionsStep, ReviewCompleteStep} from "@/lib";
 import {appConfig} from "@nlc-ai/web-shared";
 import {useRouter} from "next/navigation";
+import {sdkClient} from "@/lib";
+import {useAuth} from "@nlc-ai/web-auth";
+import type { OnboardingData, ScenarioAnswer, UploadedDocument, ConnectedAccount } from '@nlc-ai/types';
 
-// Mock steps - in real app these would be separate components
 const ONBOARDING_STEPS = [
   { id: 'welcome', title: 'Welcome', component: WelcomeStep },
   { id: 'scenarios', title: 'Your Coaching Style', component: ScenariosStep },
@@ -17,24 +19,143 @@ const ONBOARDING_STEPS = [
 
 const OnboardingContainer = () => {
   const router = useRouter();
+  const { user } = useAuth();
 
   if (appConfig.features.enableLanding) {
-    router.push('/vault');
+    // router.push('/vault');
   }
 
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
+  // Onboarding data state
+  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
+    scenarios: [],
+    documents: [],
+    connections: [],
+  });
+
+  // Load any existing onboarding progress
+  useEffect(() => {
+    if (user) {
+      loadOnboardingProgress();
+    }
+  }, [user]);
+
+  const loadOnboardingProgress = async () => {
+    try {
+      const status = await sdkClient.agents.onboarding.getStatus();
+      if (status.isComplete) {
+        // If already complete, redirect to dashboard
+        // router.push('/home');
+      }
+      // Load any saved progress here if you implement a load progress endpoint
+    } catch (error) {
+      console.error('Failed to load onboarding progress:', error);
+    }
+  };
+
+  const updateScenarios = (scenarios: ScenarioAnswer[]) => {
+    setOnboardingData(prev => ({
+      ...prev,
+      scenarios,
+    }));
+  };
+
+  const updateDocuments = (documents: UploadedDocument[]) => {
+    setOnboardingData(prev => ({
+      ...prev,
+      documents,
+    }));
+  };
+
+  const updateConnections = (connections: ConnectedAccount[]) => {
+    setOnboardingData(prev => ({
+      ...prev,
+      connections,
+    }));
+  };
+
+  const saveProgress = async () => {
+    try {
+      await sdkClient.agents.onboarding.saveProgress(onboardingData);
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  };
+
+  const completeOnboarding = async () => {
+    try {
+      const result = await sdkClient.agents.onboarding.complete({
+        ...onboardingData,
+        completedAt: new Date(),
+      });
+
+      if (result.success) {
+        // Redirect to dashboard or chat
+        router.push('/chat');
+      }
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
+      throw error;
+    }
+  };
+
   const renderComponent = (currentStep: number) => {
     const StepComponent = ONBOARDING_STEPS[currentStep].component;
-    return <StepComponent onComplete={handleNext} onContinue={handleNext}/>
-  }
 
-  const handleNext = () => {
+    const stepProps = {
+      onComplete: handleNext,
+      onContinue: handleNext,
+    };
+
+    // Pass specific props based on step
+    if (currentStep === 1) { // Scenarios
+      return (
+        <ScenariosStep
+          {...stepProps}
+          data={onboardingData}
+          onUpdate={updateScenarios}
+        />
+      );
+    } else if (currentStep === 2) { // Documents
+      return (
+        <DocumentsStep
+          {...stepProps}
+          data={onboardingData}
+          onUpdate={updateDocuments}
+        />
+      );
+    } else if (currentStep === 3) { // Connections
+      return (
+        <ConnectionsStep
+          {...stepProps}
+          data={onboardingData}
+          onUpdate={updateConnections}
+        />
+      );
+    } else if (currentStep === 4) { // Review
+      return (
+        <ReviewCompleteStep
+          {...stepProps}
+          data={onboardingData}
+          onComplete={completeOnboarding}
+        />
+      );
+    }
+
+    return <StepComponent {...stepProps} />;
+  };
+
+  const handleNext = async () => {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       if (!completedSteps.includes(currentStep)) {
         setCompletedSteps([...completedSteps, currentStep]);
       }
+
+      // Save progress when moving to next step
+      await saveProgress();
+
       setCurrentStep(currentStep + 1);
     }
   };
@@ -46,7 +167,6 @@ const OnboardingContainer = () => {
   };
 
   const handleStepClick = (stepIndex: number) => {
-    // Only allow clicking on completed steps or current step
     if (stepIndex <= currentStep || completedSteps.includes(stepIndex)) {
       setCurrentStep(stepIndex);
     }
@@ -133,7 +253,7 @@ const OnboardingContainer = () => {
               </div>
             </div>
 
-            {/* Step content would be rendered here */}
+            {/* Step content */}
             <div className="min-h-[400px] flex items-center justify-center">
               {renderComponent(currentStep)}
             </div>
@@ -155,7 +275,10 @@ const OnboardingContainer = () => {
 
               <button
                 onClick={handleNext}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-fuchsia-700 transition-all"
+                disabled={currentStep === ONBOARDING_STEPS.length - 1}
+                className={`flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-fuchsia-700 transition-all ${
+                  currentStep === ONBOARDING_STEPS.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 {currentStep === ONBOARDING_STEPS.length - 1 ? 'Complete' : 'Continue'}
                 <ChevronRight className="w-4 h-4" />

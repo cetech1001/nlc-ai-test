@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, MessageSquare, ExternalLink, Check, Loader2 } from 'lucide-react';
+import type { OnboardingData, ConnectedAccount } from '@nlc-ai/types';
 
 interface Connection {
   id: string;
@@ -21,7 +22,13 @@ interface SocialConnection {
   status: 'connected' | 'disconnected';
 }
 
-export const ConnectionsStep = ({ onContinue }: { onContinue: () => void }) => {
+interface ConnectionsStepProps {
+  onContinue: () => void;
+  data?: OnboardingData;
+  onUpdate?: (connections: ConnectedAccount[]) => void;
+}
+
+export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepProps) => {
   const [essentialConnections, setEssentialConnections] = useState<Connection[]>([
     {
       id: 'gmail',
@@ -92,24 +99,66 @@ export const ConnectionsStep = ({ onContinue }: { onContinue: () => void }) => {
 
   const [connecting, setConnecting] = useState<string | null>(null);
 
+  // Load existing connections from data prop (only on mount or when data changes)
+  useEffect(() => {
+    if (data?.connections && data.connections.length > 0) {
+      // Update essential connections
+      setEssentialConnections(prev =>
+        prev.map(conn => {
+          const saved = data.connections.find(c => c.id === conn.id);
+          return saved ? { ...conn, status: saved.status } : conn;
+        })
+      );
+
+      // Update social connections
+      setSocialConnections(prev =>
+        prev.map(conn => {
+          const saved = data.connections.find(c => c.id === conn.id);
+          return saved ? { ...conn, status: saved.status } : conn;
+        })
+      );
+    }
+  }, []); // Only run on mount
+
+  // Helper function to build and send updates
+  const notifyParent = (essential: Connection[], social: SocialConnection[]) => {
+    if (onUpdate) {
+      const allConnections: ConnectedAccount[] = [
+        ...essential.map(c => ({
+          id: c.id,
+          name: c.name,
+          type: 'essential' as const,
+          status: c.status,
+        })),
+        ...social.map(c => ({
+          id: c.id,
+          name: c.name,
+          type: 'social' as const,
+          status: c.status,
+        })),
+      ];
+      onUpdate(allConnections);
+    }
+  };
+
   const handleConnect = async (connectionID: string, isEssential: boolean = true) => {
     setConnecting(connectionID);
 
-    // Simulate connection process
+    // Simulate connection process - in real app, this would open OAuth flow
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (isEssential) {
-      setEssentialConnections(prev =>
-        prev.map(conn =>
-          conn.id === connectionID ? { ...conn, status: 'connected' } : conn
-        )
+      const updated = essentialConnections.map(conn =>
+        conn.id === connectionID ? { ...conn, status: 'connected' as const } : conn
       );
+      setEssentialConnections(updated);
+      notifyParent(updated, socialConnections);
     } else {
-      setSocialConnections(prev =>
-        prev.map(conn =>
-          conn.id === connectionID ? { ...conn, status: 'connected' } : conn
-        )
+      const updated = socialConnections.map(conn =>
+        conn.id === connectionID ? { ...conn, status: 'connected' as const } : conn
       );
+      setSocialConnections(updated);
+      notifyParent(essentialConnections, updated);
     }
 
     setConnecting(null);
@@ -117,17 +166,17 @@ export const ConnectionsStep = ({ onContinue }: { onContinue: () => void }) => {
 
   const handleDisconnect = (connectionID: string, isEssential: boolean = true) => {
     if (isEssential) {
-      setEssentialConnections(prev =>
-        prev.map(conn =>
-          conn.id === connectionID ? { ...conn, status: 'disconnected' } : conn
-        )
+      const updated = essentialConnections.map(conn =>
+        conn.id === connectionID ? { ...conn, status: 'disconnected' as const } : conn
       );
+      setEssentialConnections(updated);
+      notifyParent(updated, socialConnections);
     } else {
-      setSocialConnections(prev =>
-        prev.map(conn =>
-          conn.id === connectionID ? { ...conn, status: 'disconnected' } : conn
-        )
+      const updated = socialConnections.map(conn =>
+        conn.id === connectionID ? { ...conn, status: 'disconnected' as const } : conn
       );
+      setSocialConnections(updated);
+      notifyParent(essentialConnections, updated);
     }
   };
 

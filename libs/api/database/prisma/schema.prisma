@@ -108,6 +108,9 @@ model Coach {
   replicaThreads          CoachReplicaThread[]
   replicaMessages         CoachReplicaMessage[]
   replicaUsage            CoachReplicaUsage[]
+  scenarioAnswers         CoachScenarioAnswer[]
+  connections             CoachConnection[]
+  onboarding              CoachOnboarding?
 
   clientCoaches ClientCoach[]
   clientInvites ClientInvite[]
@@ -281,6 +284,71 @@ model ClientInvite {
   @@map("client_invites")
 }
 
+// Add these models to your schema.prisma file
+// Place them after the Coach Replica section (after CoachReplicaUsage model)
+
+// ============================================
+// Onboarding Models
+// ============================================
+
+model CoachScenarioAnswer {
+  id         String   @id @default(uuid()) @db.Uuid
+  coachID    String   @db.Uuid
+  questionID String   @db.VarChar(100)
+  category   String   @db.VarChar(100)
+  question   String   @db.Text
+  answer     String   @db.Text
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@unique([coachID, questionID])
+  @@index([coachID])
+  @@index([category])
+  @@map("coach_scenario_answers")
+}
+
+model CoachConnection {
+  id             String    @id @default(uuid()) @db.Uuid
+  coachID        String    @db.Uuid
+  connectionID   String    @db.VarChar(50) // gmail, calendly, facebook, etc.
+  connectionName String    @db.VarChar(100)
+  connectionType String    @db.VarChar(20) // essential, social
+  status         String    @db.VarChar(20) // connected, disconnected
+  connectedAt    DateTime? @db.Timestamptz(6)
+  metadata       Json?     @default("{}")
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@unique([coachID, connectionID])
+  @@index([coachID])
+  @@index([status])
+  @@index([connectionType])
+  @@map("coach_connections")
+}
+
+model CoachOnboarding {
+  id                 String    @id @default(uuid()) @db.Uuid
+  coachID            String    @unique @db.Uuid
+  completedAt        DateTime? @db.Timestamptz(6)
+  scenariosCompleted Int       @default(0)
+  documentsUploaded  Int       @default(0)
+  connectionsLinked  Int       @default(0)
+  completionScore    Int       @default(0)
+  metadata           Json?     @default("{}")
+  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([coachID])
+  @@index([completedAt])
+  @@map("coach_onboarding")
+}
+
 // AI Agent Domain
 enum AgentType {
   content_creation
@@ -299,13 +367,6 @@ enum GeneratedEmailStatus {
   cancelled
   superseded
 }
-
-// Add these models to your schema.prisma file
-// Place them in the AI Agent Domain section
-
-// ============================================
-// Coach Replica / Knowledge Base Models
-// ============================================
 
 enum KnowledgeFileStatus {
   uploaded
@@ -354,9 +415,11 @@ model CoachKnowledgeFile {
   failedAt          DateTime?           @db.Timestamptz(6)
   errorMessage      String?             @db.Text
   metadata          Json?               @default("{}")
+  category          String?             @db.VarChar(50) // email_threads, frameworks, faqs, transcripts, content
 
   coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
+  @@index([category])
   @@index([coachID])
   @@index([openaiFileID])
   @@index([status])

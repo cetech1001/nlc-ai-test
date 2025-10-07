@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, MessageCircle, AlertCircle } from 'lucide-react';
+import type { OnboardingData, ScenarioAnswer } from '@nlc-ai/types';
 
 interface ScenarioQuestion {
   id: string;
@@ -23,87 +24,121 @@ const SCENARIOS: ScenarioQuestion[] = [
     id: 'client_struggling',
     category: 'Problem Solving',
     question: 'A client messages you saying they\'re struggling to stay motivated. How do you respond?',
-      placeholder: 'Share your typical response approach...',
-  helpText: 'We\'ll learn how you provide emotional support and encouragement.'
-},
-{
-  id: 'missed_deadline',
+    placeholder: 'Share your typical response approach...',
+    helpText: 'We\'ll learn how you provide emotional support and encouragement.'
+  },
+  {
+    id: 'missed_deadline',
     category: 'Accountability',
-  question: 'A client missed an important deadline they committed to. What do you say?',
-  placeholder: 'Describe how you handle accountability while maintaining the relationship...',
-  helpText: 'This shows us how you balance accountability with empathy.'
-},
-{
-  id: 'pricing_inquiry',
+    question: 'A client missed an important deadline they committed to. What do you say?',
+    placeholder: 'Describe how you handle accountability while maintaining the relationship...',
+    helpText: 'This shows us how you balance accountability with empathy.'
+  },
+  {
+    id: 'pricing_inquiry',
     category: 'Sales & Pricing',
-  question: 'Someone asks about your pricing but seems hesitant. How do you handle this conversation?',
-  placeholder: 'Explain your approach to pricing discussions...',
-  helpText: 'Helps us understand your sales style and how you communicate value.'
-},
-{
-  id: 'program_structure',
+    question: 'Someone asks about your pricing but seems hesitant. How do you handle this conversation?',
+    placeholder: 'Explain your approach to pricing discussions...',
+    helpText: 'Helps us understand your sales style and how you communicate value.'
+  },
+  {
+    id: 'program_structure',
     category: 'Methodology',
-  question: 'Describe your coaching methodology or framework in 2-3 sentences.',
-  placeholder: 'Example: I use a three-pillar approach focusing on mindset, strategy, and execution...',
-  helpText: 'This defines the core structure of your coaching approach.'
-},
-{
-  id: 'success_celebration',
+    question: 'Describe your coaching methodology or framework in 2-3 sentences.',
+    placeholder: 'Example: I use a three-pillar approach focusing on mindset, strategy, and execution...',
+    helpText: 'This defines the core structure of your coaching approach.'
+  },
+  {
+    id: 'success_celebration',
     category: 'Client Success',
-  question: 'A client just achieved a major breakthrough. How do you celebrate with them?',
-  placeholder: 'Share how you acknowledge and celebrate wins...',
-  helpText: 'Shows us how you reinforce positive outcomes and build momentum.'
-},
-{
-  id: 'boundary_setting',
+    question: 'A client just achieved a major breakthrough. How do you celebrate with them?',
+    placeholder: 'Share how you acknowledge and celebrate wins...',
+    helpText: 'Shows us how you reinforce positive outcomes and build momentum.'
+  },
+  {
+    id: 'boundary_setting',
     category: 'Professional Boundaries',
-  question: 'A client wants to extend a session beyond scheduled time. How do you respond?',
-  placeholder: 'Describe how you maintain boundaries while being supportive...',
-  helpText: 'Teaches the AI how you maintain professional boundaries.'
-},
-{
-  id: 'difficult_feedback',
+    question: 'A client wants to extend a session beyond scheduled time. How do you respond?',
+    placeholder: 'Describe how you maintain boundaries while being supportive...',
+    helpText: 'Teaches the AI how you maintain professional boundaries.'
+  },
+  {
+    id: 'difficult_feedback',
     category: 'Difficult Conversations',
-  question: 'You need to give a client challenging feedback about their lack of progress. What do you say?',
-  placeholder: 'Explain your approach to tough conversations...',
-  helpText: 'We\'ll learn how you handle difficult situations with care.'
-},
-{
-  id: 'referral_request',
+    question: 'You need to give a client challenging feedback about their lack of progress. What do you say?',
+    placeholder: 'Explain your approach to tough conversations...',
+    helpText: 'We\'ll learn how you handle difficult situations with care.'
+  },
+  {
+    id: 'referral_request',
     category: 'Business Growth',
-  question: 'How do you ask satisfied clients for referrals or testimonials?',
-  placeholder: 'Share your approach to requesting referrals...',
-  helpText: 'Helps us understand your business development style.'
-},
-{
-  id: 'unique_approach',
+    question: 'How do you ask satisfied clients for referrals or testimonials?',
+    placeholder: 'Share your approach to requesting referrals...',
+    helpText: 'Helps us understand your business development style.'
+  },
+  {
+    id: 'unique_approach',
     category: 'Brand Identity',
-  question: 'What makes your coaching approach unique? What do clients say sets you apart?',
-  placeholder: 'Describe your unique value proposition...',
-  helpText: 'This captures your brand identity and differentiation.'
-},
-{
-  id: 'ideal_client',
+    question: 'What makes your coaching approach unique? What do clients say sets you apart?',
+    placeholder: 'Describe your unique value proposition...',
+    helpText: 'This captures your brand identity and differentiation.'
+  },
+  {
+    id: 'ideal_client',
     category: 'Target Audience',
-  question: 'Describe your ideal client. Who do you work best with?',
-  placeholder: 'Example: I work best with entrepreneurs who are growth-minded and action-oriented...',
-  helpText: 'Helps the AI understand who to prioritize and how to qualify leads.'
-},
-{
-  id: 'communication_preferences',
+    question: 'Describe your ideal client. Who do you work best with?',
+    placeholder: 'Example: I work best with entrepreneurs who are growth-minded and action-oriented...',
+    helpText: 'Helps the AI understand who to prioritize and how to qualify leads.'
+  },
+  {
+    id: 'communication_preferences',
     category: 'Communication Style',
-  question: 'Do you prefer formal or casual communication? Give examples of phrases you commonly use.',
-  placeholder: 'Example: I\'m casual but professional. I often say "Let\'s dive in" or "Here\'s what I\'m thinking..."',
-  helpText: 'Captures your authentic voice and language patterns.'
-}
+    question: 'Do you prefer formal or casual communication? Give examples of phrases you commonly use.',
+    placeholder: 'Example: I\'m casual but professional. I often say "Let\'s dive in" or "Here\'s what I\'m thinking..."',
+    helpText: 'Captures your authentic voice and language patterns.'
+  }
 ];
 
-export const ScenariosStep = ({ onContinue }: { onContinue: () => void }) => {
+interface ScenariosStepProps {
+  onContinue: () => void;
+  data?: OnboardingData;
+  onUpdate?: (scenarios: ScenarioAnswer[]) => void;
+}
+
+export const ScenariosStep = ({ onContinue, data, onUpdate }: ScenariosStepProps) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(SCENARIOS[0].id);
 
+  // Load existing answers from data prop
+  useEffect(() => {
+    if (data?.scenarios) {
+      const answersMap: Record<string, string> = {};
+      data.scenarios.forEach(scenario => {
+        answersMap[scenario.questionID] = scenario.answer;
+      });
+      setAnswers(answersMap);
+    }
+  }, [data]);
+
   const handleAnswerChange = (questionID: string, value: string) => {
-    setAnswers(prev => ({ ...prev, [questionID]: value }));
+    const newAnswers = { ...answers, [questionID]: value };
+    setAnswers(newAnswers);
+
+    // Update parent component with scenario data
+    if (onUpdate) {
+      const scenarioAnswers: ScenarioAnswer[] = Object.entries(newAnswers)
+        .filter(([_, answer]) => answer.trim())
+        .map(([qID, answer]) => {
+          const question = SCENARIOS.find(s => s.id === qID)!;
+          return {
+            questionID: qID,
+            category: question.category,
+            question: question.question,
+            answer,
+          };
+        });
+      onUpdate(scenarioAnswers);
+    }
   };
 
   const answeredCount = Object.keys(answers).filter(key => answers[key]?.trim()).length;

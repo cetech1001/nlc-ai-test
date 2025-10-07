@@ -15,6 +15,7 @@ import {CoachReplicaModule} from "./coach-replica/coach-replica.module";
 import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
 import {ContentSuggestionModule} from "./content-suggestion/content-suggestion.module";
 import {ReplicaModule} from "./replica/replica.module";
+import {OnboardingModule} from "./onboarding/onboarding.module";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import {ReplicaModule} from "./replica/replica.module";
     EmailDeliverabilityModule,
     LeadFollowupModule,
     ReplicaModule,
+    OnboardingModule,
     ContentSuggestionModule,
   ],
   providers: [

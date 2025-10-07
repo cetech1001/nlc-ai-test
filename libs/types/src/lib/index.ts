@@ -7,6 +7,7 @@ export * from './courses';
 export * from './content';
 export * from './email';
 export * from './media';
+export * from './onboarding';
 export * from './users';
 
 export * from './activity-log';

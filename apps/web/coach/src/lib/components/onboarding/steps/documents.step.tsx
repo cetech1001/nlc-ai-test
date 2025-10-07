@@ -1,14 +1,13 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, X, Check, AlertCircle, Mail, BookOpen, MessageSquare, FileSpreadsheet } from 'lucide-react';
+import { sdkClient } from '@/lib';
+import type { OnboardingData, UploadedDocument } from '@nlc-ai/types';
 
-interface UploadedDocument {
-  id: string;
-  name: string;
+interface LocalUploadedDocument extends UploadedDocument {
   type: string;
   size: number;
-  category: string;
   status: 'uploading' | 'success' | 'error';
 }
 
@@ -64,16 +63,56 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   }
 ];
 
-export const DocumentsStep = ({ onContinue }: { onContinue: () => void }) => {
-  const [uploadedDocs, setUploadedDocs] = useState<UploadedDocument[]>([]);
+interface DocumentsStepProps {
+  onContinue: () => void;
+  data?: OnboardingData;
+  onUpdate?: (documents: UploadedDocument[]) => void;
+}
+
+export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps) => {
+  const [uploadedDocs, setUploadedDocs] = useState<LocalUploadedDocument[]>([]);
   const [dragOver, setDragOver] = useState<string | null>(null);
 
-  const handleFileSelect = (files: FileList | null, category: string) => {
+  // Load existing documents from data prop
+  useEffect(() => {
+    if (data?.documents && data.documents.length > 0) {
+      const localDocs: LocalUploadedDocument[] = data.documents.map(doc => ({
+        ...doc,
+        type: 'application/pdf', // Default, would need to store this
+        size: 0, // Default, would need to store this
+        status: 'success' as const,
+      }));
+      setUploadedDocs(localDocs);
+    }
+  }, [data?.documents]);
+
+  // Update parent when documents change (but not on initial mount)
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    // Skip the first render to avoid circular updates
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (onUpdate) {
+      const simpleDocuments: UploadedDocument[] = uploadedDocs.map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        category: doc.category,
+        openaiFileID: doc.openaiFileID,
+      }));
+      onUpdate(simpleDocuments);
+    }
+  }, [uploadedDocs]); // Remove onUpdate from dependencies
+
+  const handleFileSelect = async (files: FileList | null, category: string) => {
     if (!files) return;
 
-    Array.from(files).forEach((file) => {
-      const newDoc: UploadedDocument = {
-        id: Math.random().toString(36).substr(2, 9),
+    for (const file of Array.from(files)) {
+      const newDoc: LocalUploadedDocument = {
+        id: Math.random().toString(36).substring(2, 11),
         name: file.name,
         type: file.type,
         size: file.size,
@@ -83,15 +122,30 @@ export const DocumentsStep = ({ onContinue }: { onContinue: () => void }) => {
 
       setUploadedDocs(prev => [...prev, newDoc]);
 
-      // Simulate upload
-      setTimeout(() => {
+      try {
+        // Upload file to OpenAI via replica service
+        const uploadResponse = await sdkClient.agents.coachReplica.uploadFile(file, file.name);
+
+        // Add file to vector store
+        await sdkClient.agents.coachReplica.addFileToVectorStore(uploadResponse.fileID);
+
         setUploadedDocs(prev =>
           prev.map(doc =>
-            doc.id === newDoc.id ? { ...doc, status: 'success' } : doc
+            doc.id === newDoc.id
+              ? { ...doc, status: 'success', openaiFileID: uploadResponse.fileID }
+              : doc
           )
         );
-      }, 1500);
-    });
+
+      } catch (error) {
+        console.error('File upload failed:', error);
+        setUploadedDocs(prev =>
+          prev.map(doc =>
+            doc.id === newDoc.id ? { ...doc, status: 'error' } : doc
+          )
+        );
+      }
+    }
   };
 
   const handleDrop = (e: React.DragEvent, category: string) => {
@@ -100,8 +154,16 @@ export const DocumentsStep = ({ onContinue }: { onContinue: () => void }) => {
     handleFileSelect(e.dataTransfer.files, category);
   };
 
-  const handleRemove = (docID: string) => {
-    setUploadedDocs(prev => prev.filter(doc => doc.id !== docID));
+  const handleRemove = async (docID: string, openaiFileID?: string) => {
+    try {
+      if (openaiFileID) {
+        await sdkClient.agents.coachReplica.removeFileFromVectorStore(openaiFileID);
+      }
+
+      setUploadedDocs(prev => prev.filter(doc => doc.id !== docID));
+    } catch (error) {
+      console.error('Failed to remove file:', error);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -247,8 +309,11 @@ export const DocumentsStep = ({ onContinue }: { onContinue: () => void }) => {
                           {doc.status === 'success' && (
                             <Check className="w-5 h-5 text-green-400" />
                           )}
+                          {doc.status === 'error' && (
+                            <span className="text-red-400 text-xs">✗</span>
+                          )}
                           <button
-                            onClick={() => handleRemove(doc.id)}
+                            onClick={() => handleRemove(doc.id, doc.openaiFileID)}
                             className="p-1 hover:bg-neutral-800 rounded transition-colors"
                           >
                             <X className="w-4 h-4 text-stone-400 hover:text-white" />

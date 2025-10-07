@@ -2,60 +2,45 @@
 
 import React, { useState } from 'react';
 import { Check, AlertTriangle, Sparkles, Rocket, ChevronRight, Edit2, FileText, Link2 } from 'lucide-react';
+import type { OnboardingData } from '@nlc-ai/types';
 
-interface OnboardingData {
-  scenarios: {
-    completed: number;
-    total: number;
-  };
-  documents: {
-    uploaded: number;
-    categories: string[];
-  };
-  connections: {
-    essential: number;
-    social: number;
-  };
+interface ReviewCompleteStepProps {
+  onComplete: () => Promise<void>;
+  data?: OnboardingData;
 }
 
-export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) => {
+export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - in real app this would come from state/props
-  const data: OnboardingData = {
-    scenarios: {
-      completed: 10,
-      total: 12
-    },
-    documents: {
-      uploaded: 8,
-      categories: ['Email Threads', 'Frameworks', 'FAQs', 'Transcripts']
-    },
-    connections: {
-      essential: 2,
-      social: 3
-    }
-  };
+  const scenariosCompleted = data?.scenarios?.length || 0;
+  const documentsUploaded = data?.documents?.length || 0;
+  const essentialConnections = data?.connections?.filter(c => c.type === 'essential' && c.status === 'connected').length || 0;
+  const socialConnections = data?.connections?.filter(c => c.type === 'social' && c.status === 'connected').length || 0;
 
   const completionScore = Math.round(
-    ((data.scenarios.completed / data.scenarios.total) * 40 +
-      (Math.min(data.documents.uploaded, 10) / 10) * 30 +
-      (data.connections.essential >= 1 ? 20 : 0) +
-      (data.connections.social > 0 ? 10 : 0))
+    ((scenariosCompleted / 12) * 40) +
+    ((Math.min(documentsUploaded, 10) / 10) * 30) +
+    (essentialConnections >= 1 ? 20 : 0) +
+    (socialConnections > 0 ? 10 : 0)
   );
 
-  const isReady = data.connections.essential >= 1 && data.scenarios.completed >= 8;
+  const isReady = essentialConnections >= 1 && scenariosCompleted >= 8;
 
   const handleLaunch = async () => {
-    if (!agreedToTerms) return;
+    if (!agreedToTerms || !isReady) return;
 
     setIsProcessing(true);
+    setError(null);
 
-    // Simulate AI training process
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    onComplete();
+    try {
+      await onComplete();
+    } catch (err: any) {
+      console.error('Failed to complete onboarding:', err);
+      setError(err.message || 'Failed to complete onboarding. Please try again.');
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -122,13 +107,10 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
             <div className="w-10 h-10 bg-gradient-to-br from-purple-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
               <Edit2 className="w-5 h-5 text-purple-400" />
             </div>
-            <button className="text-stone-400 hover:text-white text-sm">
-              Edit
-            </button>
           </div>
           <h3 className="text-white font-semibold mb-2">Coaching Style</h3>
           <div className="text-2xl font-bold text-white mb-1">
-            {data.scenarios.completed}/{data.scenarios.total}
+            {scenariosCompleted}/12
           </div>
           <p className="text-stone-400 text-sm">scenarios answered</p>
         </div>
@@ -138,13 +120,10 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
             <div className="w-10 h-10 bg-gradient-to-br from-purple-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
               <FileText className="w-5 h-5 text-fuchsia-400" />
             </div>
-            <button className="text-stone-400 hover:text-white text-sm">
-              Edit
-            </button>
           </div>
           <h3 className="text-white font-semibold mb-2">Documents</h3>
           <div className="text-2xl font-bold text-white mb-1">
-            {data.documents.uploaded}
+            {documentsUploaded}
           </div>
           <p className="text-stone-400 text-sm">files uploaded</p>
         </div>
@@ -154,13 +133,10 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
             <div className="w-10 h-10 bg-gradient-to-br from-purple-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
               <Link2 className="w-5 h-5 text-violet-400" />
             </div>
-            <button className="text-stone-400 hover:text-white text-sm">
-              Edit
-            </button>
           </div>
           <h3 className="text-white font-semibold mb-2">Connections</h3>
           <div className="text-2xl font-bold text-white mb-1">
-            {data.connections.essential + data.connections.social}
+            {essentialConnections + socialConnections}
           </div>
           <p className="text-stone-400 text-sm">accounts connected</p>
         </div>
@@ -175,7 +151,7 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
 
         <div className="p-5 space-y-4">
           <div className="flex items-start gap-3">
-            {data.connections.essential >= 1 ? (
+            {essentialConnections >= 1 ? (
               <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Check className="w-4 h-4 text-green-400" />
               </div>
@@ -187,15 +163,15 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
             <div>
               <p className="text-white font-medium">Essential Account Connected</p>
               <p className="text-stone-400 text-sm">
-                {data.connections.essential >= 1
-                  ? `${data.connections.essential} essential account(s) connected`
+                {essentialConnections >= 1
+                  ? `${essentialConnections} essential account(s) connected`
                   : 'Connect at least one email provider to enable AI automation'}
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            {data.scenarios.completed >= 8 ? (
+            {scenariosCompleted >= 8 ? (
               <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Check className="w-4 h-4 text-green-400" />
               </div>
@@ -207,15 +183,15 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
             <div>
               <p className="text-white font-medium">Coaching Style Defined</p>
               <p className="text-stone-400 text-sm">
-                {data.scenarios.completed >= 8
-                  ? `${data.scenarios.completed} scenarios answered - your style is well-defined`
-                  : `Answer at least 8 scenarios (${data.scenarios.completed}/8 completed)`}
+                {scenariosCompleted >= 8
+                  ? `${scenariosCompleted} scenarios answered - your style is well-defined`
+                  : `Answer at least 8 scenarios (${scenariosCompleted}/8 completed)`}
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            {data.documents.uploaded >= 5 ? (
+            {documentsUploaded >= 5 ? (
               <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Check className="w-4 h-4 text-green-400" />
               </div>
@@ -227,9 +203,9 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
             <div>
               <p className="text-white font-medium">Training Materials Uploaded</p>
               <p className="text-stone-400 text-sm">
-                {data.documents.uploaded >= 5
-                  ? `${data.documents.uploaded} documents uploaded - great foundation!`
-                  : `${data.documents.uploaded} documents uploaded (5+ recommended for best results)`}
+                {documentsUploaded >= 5
+                  ? `${documentsUploaded} documents uploaded - great foundation!`
+                  : `${documentsUploaded} documents uploaded (5+ recommended for best results)`}
               </p>
             </div>
           </div>
@@ -318,6 +294,19 @@ export const ReviewCompleteStep = ({ onComplete }: { onComplete: () => void }) =
           </div>
         </label>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/20 rounded-xl p-4 border border-red-500/30">
+          <div className="flex gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <div>
+              <p className="text-red-400 font-medium text-sm mb-1">Error</p>
+              <p className="text-stone-300 text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Launch Button */}
       {!isReady && (
