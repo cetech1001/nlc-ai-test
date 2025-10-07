@@ -31,6 +31,7 @@ export default function RootLayout({
         <link rel="icon" href="/images/favicon.ico" sizes="any" />
         <link rel="icon" href="/images/icon.svg" type="image/svg" sizes="any"/>
         <link rel="apple-touch-icon" href="/images/apple-icon.png" type="image/png" sizes="any"/>
+        <script src="http://localhost:4300/embed/chatbot.js" data-api-url="http://localhost:4300" data-coach-id="5a7d6e67-9f34-46c9-9289-8eeb24f654bd"></script>
     </head>
       <body className={`${poppins.className} antialiased`}>
         {children}

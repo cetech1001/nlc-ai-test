@@ -16,6 +16,7 @@ import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
 import {ContentSuggestionModule} from "./content-suggestion/content-suggestion.module";
 import {ReplicaModule} from "./replica/replica.module";
 import {OnboardingModule} from "./onboarding/onboarding.module";
+import {PublicChatModule} from "./public-chat/public-chat.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import {OnboardingModule} from "./onboarding/onboarding.module";
     LeadFollowupModule,
     ReplicaModule,
     OnboardingModule,
+    PublicChatModule,
     ContentSuggestionModule,
   ],
   providers: [

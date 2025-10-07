@@ -73,39 +73,42 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
   const [uploadedDocs, setUploadedDocs] = useState<LocalUploadedDocument[]>([]);
   const [dragOver, setDragOver] = useState<string | null>(null);
 
-  // Load existing documents from data prop
+  // Track if we've already loaded initial data
+  const hasLoadedInitialData = useRef(false);
+
+  // Load existing documents from data prop ONLY ONCE on mount
   useEffect(() => {
-    if (data?.documents && data.documents.length > 0) {
+    if (!hasLoadedInitialData.current && data?.documents && data.documents.length > 0) {
       const localDocs: LocalUploadedDocument[] = data.documents.map(doc => ({
         ...doc,
-        type: 'application/pdf', // Default, would need to store this
-        size: 0, // Default, would need to store this
+        type: 'application/pdf',
+        size: 0,
         status: 'success' as const,
       }));
       setUploadedDocs(localDocs);
+      hasLoadedInitialData.current = true;
     }
-  }, [data?.documents]);
+  }, []); // Empty dependency array - only run once
 
-  // Update parent when documents change (but not on initial mount)
-  const isInitialMount = useRef(true);
-
+  // Update parent when documents change (debounced to avoid excessive calls)
   useEffect(() => {
-    // Skip the first render to avoid circular updates
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+    // Skip if we haven't loaded initial data yet
+    if (!hasLoadedInitialData.current) return;
 
-    if (onUpdate) {
-      const simpleDocuments: UploadedDocument[] = uploadedDocs.map(doc => ({
-        id: doc.id,
-        name: doc.name,
-        category: doc.category,
-        openaiFileID: doc.openaiFileID,
-      }));
-      onUpdate(simpleDocuments);
-    }
-  }, [uploadedDocs]); // Remove onUpdate from dependencies
+    const timeoutId = setTimeout(() => {
+      if (onUpdate) {
+        const simpleDocuments: UploadedDocument[] = uploadedDocs.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          category: doc.category,
+          openaiFileID: doc.openaiFileID,
+        }));
+        onUpdate(simpleDocuments);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [uploadedDocs]); // Only depend on uploadedDocs
 
   const handleFileSelect = async (files: FileList | null, category: string) => {
     if (!files) return;
@@ -123,10 +126,7 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
       setUploadedDocs(prev => [...prev, newDoc]);
 
       try {
-        // Upload file to OpenAI via replica service
         const uploadResponse = await sdkClient.agents.coachReplica.uploadFile(file, file.name);
-
-        // Add file to vector store
         await sdkClient.agents.coachReplica.addFileToVectorStore(uploadResponse.fileID);
 
         setUploadedDocs(prev =>

@@ -1,11 +1,19 @@
 'use client'
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { X, Copy, Check, Loader2, AlertCircle } from "lucide-react";
+import {sdkClient} from "@/lib";
+import {useAuth} from "@nlc-ai/web-auth";
+import {useRouter} from "next/navigation";
 
-interface UploadedDocument {
+interface UploadedFile {
   id: string;
-  name: string;
-  icon: React.ReactNode;
+  filename: string;
+  size: number;
+  mimeType: string;
+  status: string;
+  uploadedAt: Date;
+  indexedAt?: Date;
 }
 
 const DocumentIcon = () => (
@@ -25,159 +33,326 @@ const UploadIcon = () => (
   </svg>
 );
 
-const ActionIcon = ({ type }: { type: 'download' | 'delete' | 'view' }) => {
-  if (type === 'download') {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" width="23" height="19" viewBox="0 0 23 19" fill="none">
-        <path fillRule="evenodd" clipRule="evenodd" d="M11.4457 13.5411C11.0056 13.5411 10.6484 13.2051 10.6484 12.7911V0.750122C10.6484 0.336122 11.0056 0.00012207 11.4457 0.00012207C11.8857 0.00012207 12.2429 0.336122 12.2429 0.750122V12.7911C12.2429 13.2051 11.8857 13.5411 11.4457 13.5411Z" fill="#D8D7D7"/>
-        <path fillRule="evenodd" clipRule="evenodd" d="M11.4431 13.5412C11.2315 13.5412 11.0274 13.4622 10.8786 13.3202L7.779 10.3932C7.46862 10.0992 7.46968 9.62415 7.78113 9.33215C8.09364 9.04015 8.59749 9.04015 8.90787 9.33415L11.4431 11.7292L13.9782 9.33415C14.2886 9.04015 14.7925 9.04015 15.105 9.33215C15.4164 9.62415 15.4175 10.0992 15.1071 10.3932L12.0075 13.3202C11.8587 13.4622 11.6546 13.5412 11.4431 13.5412Z" fill="#D8D7D7"/>
-        <mask id="mask0_42670_1701" style={{ maskType: "luminance" }} maskUnits="userSpaceOnUse" x="0" y="4" width="23" height="15">
-          <path fillRule="evenodd" clipRule="evenodd" d="M0.8125 4.73267H22.0717V18.4767H0.8125V4.73267Z" fill="white"/>
-        </mask>
-        <g mask="url(#mask0_42670_1701)">
-          <path fillRule="evenodd" clipRule="evenodd" d="M17.3682 18.4767H5.52677C2.92781 18.4767 0.8125 16.4877 0.8125 14.0417V9.15667C0.8125 6.71667 2.92249 4.73267 5.5172 4.73267H6.51745C6.95752 4.73267 7.31468 5.06867 7.31468 5.48267C7.31468 5.89667 6.95752 6.23267 6.51745 6.23267H5.5172C3.80157 6.23267 2.40695 7.54367 2.40695 9.15667V14.0417C2.40695 15.6607 3.80582 16.9767 5.52677 16.9767H17.3682C19.0817 16.9767 20.4774 15.6637 20.4774 14.0517V9.16767C20.4774 7.54867 19.0775 6.23267 17.3587 6.23267H16.368C15.9279 6.23267 15.5708 5.89667 15.5708 5.48267C15.5708 5.06867 15.9279 4.73267 16.368 4.73267H17.3587C19.9576 4.73267 22.0719 6.72267 22.0719 9.16767V14.0517C22.0719 16.4917 19.9608 18.4767 17.3682 18.4767Z" fill="#D8D7D7"/>
-        </g>
-      </svg>
-    );
-  }
-
-  if (type === 'delete') {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" viewBox="0 0 21 20" fill="none">
-        <path fillRule="evenodd" clipRule="evenodd" d="M10.4748 19.9999C9.03452 19.9999 7.63034 19.9849 6.24104 19.9579C4.46376 19.9249 3.23391 18.8409 3.033 17.1289C2.69817 14.2889 2.12523 7.59491 2.11991 7.52791C2.08377 7.11491 2.41117 6.75291 2.85017 6.71991C3.2828 6.70891 3.67397 6.99491 3.70905 7.40691C3.71437 7.47491 4.28624 14.1459 4.61789 16.9639C4.73163 17.9369 5.28969 18.4389 6.274 18.4579C8.93142 18.5109 11.6431 18.5139 14.5662 18.4639C15.6122 18.4449 16.1777 17.9529 16.2946 16.9569C16.6241 14.1629 17.1981 7.47491 17.2045 7.40691C17.2396 6.99491 17.6276 6.70691 18.0623 6.71991C18.5013 6.75391 18.8287 7.11491 18.7936 7.52791C18.7873 7.59591 18.2111 14.3069 17.8795 17.1219C17.6733 18.8689 16.4466 19.9319 14.5949 19.9639C13.178 19.9869 11.811 19.9999 10.4748 19.9999Z" fill="#D8D7D7"/>
-        <path fillRule="evenodd" clipRule="evenodd" d="M19.4676 4.98926H1.44176C1.00169 4.98926 0.644531 4.65326 0.644531 4.23926C0.644531 3.82526 1.00169 3.48926 1.44176 3.48926H19.4676C19.9076 3.48926 20.2648 3.82526 20.2648 4.23926C20.2648 4.65326 19.9076 4.98926 19.4676 4.98926Z" fill="#D8D7D7"/>
-        <path fillRule="evenodd" clipRule="evenodd" d="M15.9937 4.98924C14.7841 4.98924 13.7339 4.17824 13.4958 3.06224L13.2375 1.84624C13.1832 1.66124 12.959 1.50024 12.7038 1.50024H8.2043C7.94919 1.50024 7.7249 1.66124 7.66006 1.89224L7.41239 3.06224C7.17535 4.17824 6.12407 4.98924 4.91441 4.98924C4.47434 4.98924 4.11719 4.65324 4.11719 4.23924C4.11719 3.82524 4.47434 3.48924 4.91441 3.48924C5.36724 3.48924 5.76054 3.18524 5.84983 2.76724L6.10813 1.55124C6.37068 0.619244 7.2285 0.000244141 8.2043 0.000244141H12.7038C13.6797 0.000244141 14.5375 0.619244 14.7894 1.50624L15.0594 2.76724C15.1476 3.18524 15.5409 3.48924 15.9937 3.48924C16.4338 3.48924 16.791 3.82524 16.791 4.23924C16.791 4.65324 16.4338 4.98924 15.9937 4.98924Z" fill="#D8D7D7"/>
-      </svg>
-    );
-  }
-
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="17" viewBox="0 0 22 17" fill="none">
-      <path fillRule="evenodd" clipRule="evenodd" d="M10.9854 5.64136C9.57165 5.64136 8.42258 6.72336 8.42258 8.05336C8.42258 9.38236 9.57165 10.4634 10.9854 10.4634C12.3991 10.4634 13.5493 9.38236 13.5493 8.05336C13.5493 6.72336 12.3991 5.64136 10.9854 5.64136ZM10.9854 11.9634C8.69257 11.9634 6.82812 10.2094 6.82812 8.05336C6.82812 5.89636 8.69257 4.14136 10.9854 4.14136C13.2782 4.14136 15.1437 5.89636 15.1437 8.05336C15.1437 10.2094 13.2782 11.9634 10.9854 11.9634Z" fill="#D8D7D7"/>
-      <mask id="mask0_42670_1778" style={{ maskType: "luminance" }} maskUnits="userSpaceOnUse" x="0" y="0" width="22" height="17">
-        <path fillRule="evenodd" clipRule="evenodd" d="M0.355469 0.000244141H21.6147V16.1052H0.355469V0.000244141Z" fill="white"/>
-      </mask>
-      <g mask="url(#mask0_42670_1778)">
-        <path fillRule="evenodd" clipRule="evenodd" d="M2.02406 8.05251C4.00119 12.1615 7.33147 14.6045 10.9849 14.6055C14.6383 14.6045 17.9686 12.1615 19.9457 8.05251C17.9686 3.94451 14.6383 1.50151 10.9849 1.50051C7.33253 1.50151 4.00119 3.94451 2.02406 8.05251ZM10.987 16.1055H10.9828H10.9817C6.58526 16.1025 2.6374 13.2035 0.420044 8.34851C0.333944 8.15951 0.333944 7.94551 0.420044 7.75651C2.6374 2.90251 6.58632 0.00350586 10.9817 0.000505859C10.9838 -0.000494141 10.9838 -0.000494141 10.9849 0.000505859C10.987 -0.000494141 10.987 -0.000494141 10.9881 0.000505859C15.3845 0.00350586 19.3324 2.90251 21.5497 7.75651C21.6369 7.94551 21.6369 8.15951 21.5497 8.34851C19.3334 13.2035 15.3845 16.1025 10.9881 16.1055H10.987Z" fill="#D8D7D7"/>
-      </g>
-    </svg>
-  );
-};
-
 const CoachReplica: React.FC = () => {
-  const [uploadedDocuments] = useState<UploadedDocument[]>([
-    { id: '1', name: 'Fitness Coach Training', icon: <DocumentIcon /> },
-    { id: '2', name: 'Fitness Coach Training', icon: <DocumentIcon /> },
-    { id: '3', name: 'Fitness Coach Training', icon: <DocumentIcon /> },
-    { id: '4', name: 'Fitness Coach Training', icon: <DocumentIcon /> },
-    { id: '5', name: 'Fitness Coach Training', icon: <DocumentIcon /> },
-    { id: '6', name: 'Fitness Coach Training', icon: <DocumentIcon /> },
-  ]);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [deletingFileID, setDeletingFileID] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const userID = user?.id;
+  const embedCode = `<script src="${window.location.origin}/embed/chatbot.js" data-coach-id="${userID}"></script>`;
+  const chatbotLink = `${window.location.origin}/chat/${userID}`;
+
+  // Load files on mount
+  useEffect(() => {
+    loadFiles();
+  }, []);
+
+  const loadFiles = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await sdkClient.agents.coachReplica.listFiles();
+
+      setUploadedFiles(response.files);
+    } catch (err) {
+      setError('Failed to load files. Please try again.');
+      console.error('Load files error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      for (const file of Array.from(files)) {
+        const uploadResponse = await sdkClient.agents.coachReplica.uploadFile(file, file.name);
+        await sdkClient.agents.coachReplica.addFileToVectorStore(uploadResponse.fileID);
+
+
+        const newFile: UploadedFile = {
+          id: uploadResponse.fileID,
+          filename: uploadResponse.filename,
+          size: uploadResponse.size,
+          mimeType: file.type,
+          status: 'indexed',
+          uploadedAt: new Date(),
+          indexedAt: new Date()
+        };
+
+        setUploadedFiles(prev => [newFile, ...prev]);
+      }
+    } catch (err) {
+      setError('Failed to upload file. Please try again.');
+      console.error('Upload error:', err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileID: string) => {
+    if (!confirm('Are you sure you want to delete this file? It will be removed from your AI assistant\'s knowledge base.')) {
+      return;
+    }
+
+    setDeletingFileID(fileID);
+    setError(null);
+
+    try {
+      await sdkClient.agents.coachReplica.removeFileFromVectorStore(fileID);
+
+      setUploadedFiles(prev => prev.filter(f => f.id !== fileID));
+    } catch (err) {
+      setError('Failed to delete file. Please try again.');
+      console.error('Delete error:', err);
+    } finally {
+      setDeletingFileID(null);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const copyToClipboard = async (text: string, type: 'embed' | 'link') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (type === 'embed') {
+        setCopiedEmbed(true);
+        setTimeout(() => setCopiedEmbed(false), 2000);
+      } else {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      }
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
-      {/* Header */}
-      <div className="flex w-full px-4 lg:px-[30px] py-5 justify-between items-center border-b border-[#373535] min-h-[86px] flex-wrap gap-4">
-        <h1 className="text-[#F9F9F9] font-inter text-4xl font-semibold leading-normal tracking-[-0.96px]">
-          Bot Training
-        </h1>
+    <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-black via-neutral-900 to-black relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute w-96 h-96 -left-20 top-40 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[120px]" />
+      <div className="absolute w-96 h-96 -right-20 bottom-40 opacity-20 bg-gradient-to-l from-purple-600 via-fuchsia-400 to-violet-600 rounded-full blur-[120px]" />
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-8">
-          <button className="text-[#DF69FF] font-inter text-lg font-semibold leading-[25.6px]">
-            Preview ChatBot
-          </button>
-          <div className="w-px h-[27px] bg-[#373535]"></div>
-          <button className="text-[#DF69FF] font-inter text-lg font-semibold leading-[25.6px]">
-            Copy ChatBot Link
-          </button>
+      <div className="relative z-10 flex-1 flex flex-col">
+        {/* Header */}
+        <div className="flex w-full px-4 lg:px-[30px] py-5 justify-between items-center border-b border-[#373535] min-h-[86px] flex-wrap gap-4">
+          <h1 className="text-[#F9F9F9] font-inter text-4xl font-semibold leading-normal tracking-[-0.96px]">
+            Bot Training
+          </h1>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-8">
+            <button onClick={() => router.push(`/chat/${user?.id}`)} className="text-[#DF69FF] font-inter text-lg font-semibold leading-[25.6px] hover:text-[#B339D4] transition-colors">
+              Preview ChatBot
+            </button>
+            <div className="w-px h-[27px] bg-[#373535]"></div>
+            <button
+              onClick={() => copyToClipboard(chatbotLink, 'link')}
+              className="text-[#DF69FF] font-inter text-lg font-semibold leading-[25.6px] hover:text-[#B339D4] transition-colors flex items-center gap-2"
+            >
+              {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              Copy ChatBot Link
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Page Content */}
-      <div className="flex-1 overflow-auto p-[30px]">
-        <div className="flex flex-col gap-[18px] w-full">
-          {/* Main Content */}
-          <div className="flex flex-col lg:flex-row gap-[30px] w-full">
-            {/* Left Section - Training */}
-            <div className="flex-1 flex flex-col gap-[30px">
-              {/* Train Section */}
-              <div className="flex flex-col gap-3">
-                <h3 className="text-[#F9F9F9] font-inter text-2xl font-medium leading-[25.6px]">
-                  Train The Next Level Coach AI
-                </h3>
-                <p className="text-[#C5C5C5] font-inter text-sm font-normal leading-[150%] max-w-[980px]">
-                  In order to personalize your automated email responses and attune them to your coaching philosophy. Upload document related to your course content, your methods, your philosophy here.
-                </p>
-              </div>
+        {/* Error Alert */}
+        {error && (
+          <div className="mx-4 lg:mx-[30px] mt-5 flex items-center gap-3 p-4 rounded-lg bg-red-500/10 border border-red-500/30">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <p className="text-red-300 text-sm">{error}</p>
+            <button onClick={() => setError(null)} className="ml-auto">
+              <X className="w-5 h-5 text-red-400 hover:text-red-300" />
+            </button>
+          </div>
+        )}
 
-              {/* Upload Section */}
-              <div className="flex flex-col gap-3">
-                <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
-                  Upload Document<span className="text-red-500">*</span>
-                </label>
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto p-[30px]">
+          <div className="flex flex-col gap-[30px] w-full">
+            {/* Embed Code Section */}
+            <div className="w-full rounded-[20px] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] border border-[#373535] p-6">
+              <h3 className="text-[#F9F9F9] font-inter text-2xl font-medium leading-[25.6px] mb-4">
+                Embed ChatBot on Your Website
+              </h3>
+              <p className="text-[#C5C5C5] font-inter text-sm font-normal leading-[150%] mb-5">
+                Copy and paste this code snippet into your website's HTML to add the AI chatbot. It will appear as a floating button on your site.
+              </p>
 
-                <div className="flex h-[388px] justify-center items-center rounded-[30px] border border-dashed border-[#454444] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)]">
-                  <div className="flex flex-col items-center gap-5">
-                    <UploadIcon />
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="text-white text-center font-inter text-xl font-normal leading-5">
-                        Drag or click to upload the file
-                      </div>
-                      <div className="text-white text-center font-inter text-base font-medium leading-5 opacity-50">
-                        Maximum File size 30MB
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-5">
-                <button className="flex px-5 py-[13px] justify-center items-center gap-2 rounded-lg bg-gradient-to-t from-[#FEBEFA] via-[#B339D4] to-[#7B21BA]">
-                    <span className="text-white font-inter text-base font-semibold leading-6 tracking-[-0.32px]">
-                      Upload File
-                    </span>
-                </button>
-                <button className="flex px-5 py-[13px] justify-center items-center gap-2 rounded-lg border border-white">
-                    <span className="text-white font-inter text-base font-medium leading-6 tracking-[-0.32px]">
-                      Cancel
-                    </span>
+              <div className="relative">
+                <pre className="bg-black/50 border border-[#454444] rounded-lg p-4 overflow-x-auto text-[#DF69FF] font-mono text-sm">
+                  {embedCode}
+                </pre>
+                <button
+                  onClick={() => copyToClipboard(embedCode, 'embed')}
+                  className="absolute top-3 right-3 flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 rounded-lg text-white text-sm font-medium hover:from-purple-700 hover:to-fuchsia-700 transition-all"
+                >
+                  {copiedEmbed ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy Code
+                    </>
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Right Section - Uploaded Documents */}
-            <div className="w-full lg:w-[709px] flex flex-col gap-5">
-              <h3 className="text-[#F9F9F9] font-inter text-2xl font-medium leading-[25.6px]">
-                Uploaded Documents
-              </h3>
+            {/* Main Content */}
+            <div className="flex flex-col lg:flex-row gap-[30px] w-full">
+              {/* Left Section - Training */}
+              <div className="flex-1 flex flex-col gap-[30px]">
+                {/* Train Section */}
+                <div className="flex flex-col gap-3">
+                  <h3 className="text-[#F9F9F9] font-inter text-2xl font-medium leading-[25.6px]">
+                    Train The Next Level Coach AI
+                  </h3>
+                  <p className="text-[#C5C5C5] font-inter text-sm font-normal leading-[150%] max-w-[980px]">
+                    In order to personalize your automated email responses and attune them to your coaching philosophy. Upload documents related to your course content, your methods, your philosophy here.
+                  </p>
+                </div>
 
-              <div className="flex flex-col gap-5">
-                {uploadedDocuments.map((doc) => (
-                  <div key={doc.id} className="w-full h-[74px] rounded-[10px] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] relative">
-                    <div className="flex items-center h-full px-5 gap-3">
-                      <div className="flex items-center gap-[10px] flex-1">
-                        {doc.icon}
-                        <span className="text-[#F9F9F9] font-['Mier A'] text-base font-medium leading-5 capitalize">
-                            {doc.name}
-                          </span>
-                      </div>
+                {/* Upload Section */}
+                <div className="flex flex-col gap-3">
+                  <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
+                    Upload Document<span className="text-red-500">*</span>
+                  </label>
 
-                      <div className="flex items-center gap-3">
-                        <button className="w-[26px] h-[24px] flex justify-center items-center">
-                          <ActionIcon type="download" />
-                        </button>
-                        <button className="w-[26px] h-[24px] flex justify-center items-center">
-                          <ActionIcon type="view" />
-                        </button>
-                        <button className="w-[26px] h-[24px] flex justify-center items-center">
-                          <ActionIcon type="delete" />
-                        </button>
-                      </div>
+                  <label className="flex h-[388px] justify-center items-center rounded-[30px] border border-dashed border-[#454444] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] cursor-pointer hover:border-[#DF69FF] transition-colors">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.txt"
+                      onChange={(e) => handleFileUpload(e.target.files)}
+                      className="hidden"
+                      disabled={isUploading}
+                    />
+                    <div className="flex flex-col items-center gap-5">
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="w-12 h-12 text-[#DF69FF] animate-spin" />
+                          <div className="text-white text-center font-inter text-xl font-normal leading-5">
+                            Uploading and indexing file...
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <UploadIcon />
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="text-white text-center font-inter text-xl font-normal leading-5">
+                              Drag or click to upload the file
+                            </div>
+                            <div className="text-white text-center font-inter text-base font-medium leading-5 opacity-50">
+                              Maximum File size 30MB
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Right Section - Uploaded Documents */}
+              <div className="w-full lg:w-[709px] flex flex-col gap-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[#F9F9F9] font-inter text-2xl font-medium leading-[25.6px]">
+                    Uploaded Documents
+                  </h3>
+                  <span className="text-[#C5C5C5] font-inter text-sm">
+                    {uploadedFiles.length} {uploadedFiles.length === 1 ? 'file' : 'files'}
+                  </span>
+                </div>
+
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 text-[#DF69FF] animate-spin" />
                   </div>
-                ))}
+                ) : uploadedFiles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 rounded-[10px] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] border border-dashed border-[#454444]">
+                    <DocumentIcon />
+                    <p className="text-[#C5C5C5] font-inter text-sm mt-4">
+                      No documents uploaded yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2">
+                    {uploadedFiles.map((file) => (
+                      <div key={file.id} className="w-full min-h-[74px] rounded-[10px] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] border border-[#373535] relative hover:border-[#DF69FF]/30 transition-colors">
+                        <div className="flex items-center h-full px-5 py-4 gap-3">
+                          <DocumentIcon />
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[#F9F9F9] font-inter text-base font-medium leading-5 truncate">
+                              {file.filename}
+                            </p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-[#C5C5C5] font-inter text-xs">
+                                {formatFileSize(file.size)}
+                              </span>
+                              <span className="text-[#C5C5C5] font-inter text-xs">•</span>
+                              <span className="text-[#C5C5C5] font-inter text-xs">
+                                Uploaded {formatDate(file.uploadedAt)}
+                              </span>
+                              {file.status === 'indexed' && (
+                                <>
+                                  <span className="text-[#C5C5C5] font-inter text-xs">•</span>
+                                  <span className="text-green-400 font-inter text-xs flex items-center gap-1">
+                                    <Check className="w-3 h-3" />
+                                    Indexed
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDeleteFile(file.id)}
+                              disabled={deletingFileID === file.id}
+                              className="w-9 h-9 flex justify-center items-center rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                              title="Delete file"
+                            >
+                              {deletingFileID === file.id ? (
+                                <Loader2 className="w-5 h-5 text-red-400 animate-spin" />
+                              ) : (
+                                <X className="w-5 h-5 text-red-400" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

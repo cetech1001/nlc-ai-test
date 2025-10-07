@@ -9,7 +9,7 @@ export class OnboardingService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Save onboarding data to database
+   * Save onboarding data to database WITHOUT marking as complete
    */
   async saveOnboardingData(coachID: string, data: OnboardingData) {
     this.logger.log(`Saving onboarding data for coach ${coachID}`);
@@ -75,30 +75,83 @@ export class OnboardingService {
       });
     }
 
-    // Mark onboarding as complete
+    // Update progress WITHOUT marking as complete (no completedAt)
     await this.prisma.coachOnboarding.upsert({
       where: { coachID },
       create: {
         coachID,
-        completedAt: new Date(),
         scenariosCompleted: data.scenarios.length,
         documentsUploaded: data.documents.length,
         connectionsLinked: data.connections.filter(c => c.status === 'connected').length,
       },
       update: {
-        completedAt: new Date(),
         scenariosCompleted: data.scenarios.length,
         documentsUploaded: data.documents.length,
         connectionsLinked: data.connections.filter(c => c.status === 'connected').length,
       },
     });
 
-    return { success: true, message: 'Onboarding data saved successfully' };
+    return { success: true, message: 'Onboarding progress saved successfully' };
   }
 
   /**
-   * Generate coaching profile from scenario answers
+   * Mark onboarding as complete (called only when Launch button is clicked)
    */
+  async markOnboardingComplete(coachID: string) {
+    await this.prisma.coachOnboarding.update({
+      where: { coachID },
+      data: {
+        completedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Get all onboarding data for prefilling
+   */
+  async getOnboardingData(coachID: string): Promise<OnboardingData> {
+    const [scenarios, documents, connections] = await Promise.all([
+      this.prisma.coachScenarioAnswer.findMany({
+        where: { coachID },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.coachKnowledgeFile.findMany({
+        where: { coachID },
+        select: {
+          id: true,
+          openaiFileID: true,
+          filename: true,
+          category: true,
+        },
+      }),
+      this.prisma.coachConnection.findMany({
+        where: { coachID },
+      }),
+    ]);
+
+    return {
+      scenarios: scenarios.map(s => ({
+        questionID: s.questionID,
+        category: s.category,
+        question: s.question,
+        answer: s.answer,
+      })),
+      documents: documents.map(d => ({
+        id: d.id,
+        name: d.filename,
+        openaiFileID: d.openaiFileID,
+        category: d.category || 'general',
+      })),
+      connections: connections.map(c => ({
+        id: c.connectionID,
+        name: c.connectionName,
+        type: c.connectionType as 'essential' | 'social',
+        status: c.status as 'connected' | 'disconnected',
+      })),
+    };
+  }
+
+  // ... rest of the methods remain unchanged ...
   async generateCoachingProfile(coachID: string): Promise<CoachingProfile> {
     const scenarios = await this.prisma.coachScenarioAnswer.findMany({
       where: { coachID },
@@ -134,9 +187,6 @@ export class OnboardingService {
     };
   }
 
-  /**
-   * Build comprehensive AI instructions from onboarding data
-   */
   async buildAIInstructions(coachID: string): Promise<string> {
     const scenarios = await this.prisma.coachScenarioAnswer.findMany({
       where: { coachID },
@@ -205,7 +255,7 @@ ${scenarios.map((s) => `**${s.category}: ${s.question}**\n${s.answer}`).join('\n
 - When uncertain, ask clarifying questions the way this coach would`;
   }
 
-  // Helper methods to extract information from scenarios
+  // Helper methods remain unchanged
   private extractTone(scenarios: ScenarioAnswer[]): string {
     const commStyle = scenarios.find((s) => s.questionID === 'communication_preferences');
     if (commStyle?.answer) {
@@ -289,9 +339,6 @@ ${scenarios.map((s) => `**${s.category}: ${s.question}**\n${s.answer}`).join('\n
     return pattern?.answer || '';
   }
 
-  /**
-   * Get onboarding status
-   */
   async getOnboardingStatus(coachID: string) {
     const onboarding = await this.prisma.coachOnboarding.findUnique({
       where: { coachID },

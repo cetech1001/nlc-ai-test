@@ -20,6 +20,17 @@ const nextConfig = {
   },
 
   env: {},
+  async headers() {
+    return [
+      {
+        source: '/embed/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET' },
+        ],
+      },
+    ];
+  },
 
   webpack: (config, { dev, isServer }) => {
     if (dev) {

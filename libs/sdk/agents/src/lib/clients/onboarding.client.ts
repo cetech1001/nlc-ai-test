@@ -53,6 +53,17 @@ export class OnboardingClient extends BaseClient {
   }
 
   /**
+   * Get onboarding data for prefilling
+   */
+  async getData(): Promise<OnboardingData> {
+    const response = await this.request<OnboardingData>(
+      'GET',
+      '/data'
+    );
+    return response.data!;
+  }
+
+  /**
    * Get onboarding status
    */
   async getStatus(): Promise<OnboardingStatusResponse> {

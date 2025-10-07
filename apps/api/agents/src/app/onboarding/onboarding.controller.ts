@@ -47,8 +47,10 @@ export class OnboardingController {
       instructions
     );
 
+    // Mark onboarding as complete
+    await this.onboardingService.markOnboardingComplete(user.id);
+
     return {
-      success: true,
       message: 'Onboarding completed and AI trained successfully',
       assistantID: aiConfig.assistantID,
       vectorStoreID: aiConfig.vectorStoreID,
@@ -62,7 +64,7 @@ export class OnboardingController {
     @CurrentUser() user: AuthUser,
     @Body() data: Partial<OnboardingData>
   ) {
-    // Save whatever progress has been made
+    // Save progress WITHOUT marking as complete
     if (data.scenarios && data.scenarios.length > 0) {
       const fullData: OnboardingData = {
         scenarios: data.scenarios,
@@ -73,9 +75,15 @@ export class OnboardingController {
     }
 
     return {
-      success: true,
       message: 'Progress saved successfully',
     };
+  }
+
+  @Get('data')
+  @ApiOperation({ summary: 'Get onboarding data for prefilling' })
+  @ApiResponse({ status: 200, description: 'Onboarding data retrieved' })
+  async getOnboardingData(@CurrentUser() user: AuthUser) {
+    return this.onboardingService.getOnboardingData(user.id);
   }
 
   @Get('status')
@@ -104,7 +112,6 @@ export class OnboardingController {
     );
 
     return {
-      success: true,
       message: 'AI instructions regenerated successfully',
     };
   }

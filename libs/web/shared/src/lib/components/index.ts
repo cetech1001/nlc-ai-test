@@ -8,6 +8,7 @@ export * from './input';
 export * from './image-cropper';
 export * from './image-upload';
 export * from './rich-text-editor';
+export * from './s3-video-player';
+export * from './standalone-chat';
 export * from './template-frame';
 export * from './video-upload';
-export * from './s3-video-player';

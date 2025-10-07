@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import {WelcomeStep, ScenariosStep, DocumentsStep, ConnectionsStep, ReviewCompleteStep} from "@/lib";
-import {appConfig} from "@nlc-ai/web-shared";
 import {useRouter} from "next/navigation";
 import {sdkClient} from "@/lib";
 import {useAuth} from "@nlc-ai/web-auth";
 import type { OnboardingData, ScenarioAnswer, UploadedDocument, ConnectedAccount } from '@nlc-ai/types';
+import {appConfig} from "@nlc-ai/web-shared";
 
 const ONBOARDING_STEPS = [
   { id: 'welcome', title: 'Welcome', component: WelcomeStep },
@@ -19,14 +19,16 @@ const ONBOARDING_STEPS = [
 
 const OnboardingContainer = () => {
   const router = useRouter();
-  const { user } = useAuth();
 
   if (appConfig.features.enableLanding) {
-    // router.push('/vault');
+    router.push('/vault');
   }
+
+  const { user } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Onboarding data state
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
@@ -35,7 +37,7 @@ const OnboardingContainer = () => {
     connections: [],
   });
 
-  // Load any existing onboarding progress
+  // Load existing onboarding data and prefill
   useEffect(() => {
     if (user) {
       loadOnboardingProgress();
@@ -44,37 +46,57 @@ const OnboardingContainer = () => {
 
   const loadOnboardingProgress = async () => {
     try {
+      setIsLoadingData(true);
+
+      // Check status first
       const status = await sdkClient.agents.onboarding.getStatus();
       if (status.isComplete) {
         // If already complete, redirect to dashboard
-        // router.push('/home');
+        router.push('/chat');
+        return;
       }
-      // Load any saved progress here if you implement a load progress endpoint
+
+      // Load existing data for prefilling
+      const existingData = await sdkClient.agents.onboarding.getData();
+
+      // Prefill the form with existing data
+      if (existingData.scenarios.length > 0 || existingData.documents.length > 0 || existingData.connections.length > 0) {
+        setOnboardingData(existingData);
+
+        // Mark steps as completed based on what data exists
+        const completed: number[] = [];
+        if (existingData.scenarios.length > 0) completed.push(1);
+        if (existingData.documents.length > 0) completed.push(2);
+        if (existingData.connections.length > 0) completed.push(3);
+        setCompletedSteps(completed);
+      }
     } catch (error) {
       console.error('Failed to load onboarding progress:', error);
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
-  const updateScenarios = (scenarios: ScenarioAnswer[]) => {
+  const updateScenarios = React.useCallback((scenarios: ScenarioAnswer[]) => {
     setOnboardingData(prev => ({
       ...prev,
       scenarios,
     }));
-  };
+  }, []);
 
-  const updateDocuments = (documents: UploadedDocument[]) => {
+  const updateDocuments = React.useCallback((documents: UploadedDocument[]) => {
     setOnboardingData(prev => ({
       ...prev,
       documents,
     }));
-  };
+  }, []);
 
-  const updateConnections = (connections: ConnectedAccount[]) => {
+  const updateConnections = React.useCallback((connections: ConnectedAccount[]) => {
     setOnboardingData(prev => ({
       ...prev,
       connections,
     }));
-  };
+  }, []);
 
   const saveProgress = async () => {
     try {
@@ -92,7 +114,7 @@ const OnboardingContainer = () => {
       });
 
       if (result.success) {
-        // Redirect to dashboard or chat
+        // Redirect to chat
         router.push('/chat');
       }
     } catch (error) {
@@ -175,6 +197,21 @@ const OnboardingContainer = () => {
   const isStepAccessible = (stepIndex: number) => {
     return stepIndex <= currentStep || completedSteps.includes(stepIndex);
   };
+
+  // Show loading state while fetching data
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black relative overflow-hidden flex items-center justify-center">
+        <div className="absolute w-96 h-96 -left-20 top-40 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[120px]" />
+        <div className="absolute w-96 h-96 -right-20 bottom-40 opacity-20 bg-gradient-to-l from-purple-600 via-fuchsia-400 to-violet-600 rounded-full blur-[120px]" />
+
+        <div className="relative z-10 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mx-auto mb-4" />
+          <p className="text-white text-lg">Loading your progress...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black relative overflow-hidden">

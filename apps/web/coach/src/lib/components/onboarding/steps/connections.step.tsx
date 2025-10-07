@@ -2,25 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Mail, MessageSquare, ExternalLink, Check, Loader2 } from 'lucide-react';
+import { sdkClient } from '@/lib';
 import type { OnboardingData, ConnectedAccount } from '@nlc-ai/types';
-
-interface Connection {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  description: string;
-  purpose: string;
-  status: 'connected' | 'disconnected';
-  isEssential: boolean;
-}
-
-interface SocialConnection {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  status: 'connected' | 'disconnected';
-}
 
 interface ConnectionsStepProps {
   onContinue: () => void;
@@ -28,161 +11,114 @@ interface ConnectionsStepProps {
   onUpdate?: (connections: ConnectedAccount[]) => void;
 }
 
+interface ConnectedPlatform {
+  id: string;
+  platformName: string;
+  isActive?: boolean | null;
+}
+
 export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepProps) => {
-  const [essentialConnections, setEssentialConnections] = useState<Connection[]>([
-    {
-      id: 'gmail',
-      name: 'Gmail',
-      icon: <img src="/images/icons/gmail-icon.png" alt="Gmail" className="w-6 h-6" />,
-      description: 'Connect your Gmail to enable AI email automation',
-      purpose: 'Read and send emails on your behalf, create drafts for approval',
-      status: 'disconnected',
-      isEssential: true
-    },
-    {
-      id: 'calendly',
-      name: 'Calendly',
-      icon: <img src="/images/icons/calendly-icon.png" alt="Calendly" className="w-6 h-6" />,
-      description: 'Sync your calendar for scheduling automation',
-      purpose: 'Schedule meetings, send reminders, manage availability',
-      status: 'disconnected',
-      isEssential: true
-    },
-    {
-      id: 'outlook',
-      name: 'Outlook',
-      icon: <img src="/images/icons/outlook-icon.png" alt="Outlook" className="w-6 h-6" />,
-      description: 'Alternative email provider for automation',
-      purpose: 'Read and send emails, calendar management',
-      status: 'disconnected',
-      isEssential: false
-    }
-  ]);
-
-  const [socialConnections, setSocialConnections] = useState<SocialConnection[]>([
-    {
-      id: 'facebook',
-      name: 'Facebook',
-      icon: '/images/icons/facebook-icon.png',
-      description: 'Analyze engagement and sync content',
-      status: 'disconnected'
-    },
-    {
-      id: 'instagram',
-      name: 'Instagram',
-      icon: '/images/icons/instagram-icon.png',
-      description: 'Track performance and engagement',
-      status: 'disconnected'
-    },
-    {
-      id: 'youtube',
-      name: 'YouTube',
-      icon: '/images/icons/youtube-icon.svg',
-      description: 'Monitor video performance metrics',
-      status: 'disconnected'
-    },
-    {
-      id: 'twitter',
-      name: 'X (Twitter)',
-      icon: '/images/icons/twitter-icon.svg',
-      description: 'Track tweets and engagement',
-      status: 'disconnected'
-    },
-    {
-      id: 'tiktok',
-      name: 'TikTok',
-      icon: '/images/icons/tiktok-icon.png',
-      description: 'Analyze content performance',
-      status: 'disconnected'
-    }
-  ]);
-
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [essentialConnected, setEssentialConnected] = useState(0);
+  const [socialConnected, setSocialConnected] = useState(0);
+  const [connectedEssentialPlatforms, setConnectedEssentialPlatforms] = useState<ConnectedPlatform[]>([]);
+  const [connectedSocialPlatforms, setConnectedSocialPlatforms] = useState<ConnectedPlatform[]>([]);
 
-  // Load existing connections from data prop (only on mount or when data changes)
+  // Load integrations on mount
   useEffect(() => {
-    if (data?.connections && data.connections.length > 0) {
-      // Update essential connections
-      setEssentialConnections(prev =>
-        prev.map(conn => {
-          const saved = data.connections.find(c => c.id === conn.id);
-          return saved ? { ...conn, status: saved.status } : conn;
-        })
-      );
+    loadIntegrations();
+  }, []);
 
-      // Update social connections
-      setSocialConnections(prev =>
-        prev.map(conn => {
-          const saved = data.connections.find(c => c.id === conn.id);
-          return saved ? { ...conn, status: saved.status } : conn;
-        })
-      );
-    }
-  }, []); // Only run on mount
+  const loadIntegrations = async () => {
+    try {
+      setIsLoading(true);
+      const [appIntegrations, socialIntegrations] = await Promise.all([
+        sdkClient.integrations.getAppIntegrations(),
+        sdkClient.integrations.getSocialIntegrations(),
+      ]);
 
-  // Helper function to build and send updates
-  const notifyParent = (essential: Connection[], social: SocialConnection[]) => {
-    if (onUpdate) {
-      const allConnections: ConnectedAccount[] = [
-        ...essential.map(c => ({
-          id: c.id,
-          name: c.name,
-          type: 'essential' as const,
-          status: c.status,
-        })),
-        ...social.map(c => ({
-          id: c.id,
-          name: c.name,
-          type: 'social' as const,
-          status: c.status,
-        })),
-      ];
-      onUpdate(allConnections);
-    }
-  };
+      // Store connected platforms
+      setConnectedEssentialPlatforms(appIntegrations.filter(i => i.isActive));
+      setConnectedSocialPlatforms(socialIntegrations.filter(i => i.isActive));
 
-  const handleConnect = async (connectionID: string, isEssential: boolean = true) => {
-    setConnecting(connectionID);
+      // Count connected integrations
+      const essentialCount = appIntegrations.filter(i => i.isActive).length;
+      const socialCount = socialIntegrations.filter(i => i.isActive).length;
 
-    // Simulate connection process - in real app, this would open OAuth flow
-    await new Promise(resolve => setTimeout(resolve, 1500));
+      setEssentialConnected(essentialCount);
+      setSocialConnected(socialCount);
 
-    if (isEssential) {
-      const updated = essentialConnections.map(conn =>
-        conn.id === connectionID ? { ...conn, status: 'connected' as const } : conn
-      );
-      setEssentialConnections(updated);
-      notifyParent(updated, socialConnections);
-    } else {
-      const updated = socialConnections.map(conn =>
-        conn.id === connectionID ? { ...conn, status: 'connected' as const } : conn
-      );
-      setSocialConnections(updated);
-      notifyParent(essentialConnections, updated);
-    }
-
-    setConnecting(null);
-  };
-
-  const handleDisconnect = (connectionID: string, isEssential: boolean = true) => {
-    if (isEssential) {
-      const updated = essentialConnections.map(conn =>
-        conn.id === connectionID ? { ...conn, status: 'disconnected' as const } : conn
-      );
-      setEssentialConnections(updated);
-      notifyParent(updated, socialConnections);
-    } else {
-      const updated = socialConnections.map(conn =>
-        conn.id === connectionID ? { ...conn, status: 'disconnected' as const } : conn
-      );
-      setSocialConnections(updated);
-      notifyParent(essentialConnections, updated);
+      // Update parent with connected accounts
+      if (onUpdate) {
+        const connections: ConnectedAccount[] = [
+          ...appIntegrations.map(i => ({
+            id: i.id,
+            name: i.platformName,
+            type: 'essential' as const,
+            status: i.isActive ? 'connected' as const : 'disconnected' as const,
+          })),
+          ...socialIntegrations.map(i => ({
+            id: i.id,
+            name: i.platformName,
+            type: 'social' as const,
+            status: i.isActive ? 'connected' as const : 'disconnected' as const,
+          })),
+        ];
+        onUpdate(connections);
+      }
+    } catch (error) {
+      console.error('Failed to load integrations:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const essentialConnected = essentialConnections.filter(c => c.isEssential && c.status === 'connected').length;
-  const essentialTotal = essentialConnections.filter(c => c.isEssential).length;
-  const socialConnected = socialConnections.filter(c => c.status === 'connected').length;
+  const isPlatformConnected = (platformName: string, type: 'essential' | 'social'): boolean => {
+    const platforms = type === 'essential' ? connectedEssentialPlatforms : connectedSocialPlatforms;
+    return platforms.some(p => p.platformName === platformName && p.isActive);
+  };
+
+  const handleDisconnect = async (platformName: string, type: 'essential' | 'social') => {
+    const platforms = type === 'essential' ? connectedEssentialPlatforms : connectedSocialPlatforms;
+    const platform = platforms.find(p => p.platformName === platformName);
+
+    if (!platform) return;
+
+    if (!confirm(`Are you sure you want to disconnect ${platformName}?`)) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await sdkClient.integrations.disconnectIntegration(platform.id);
+      await loadIntegrations();
+    } catch (error: any) {
+      console.error(`Failed to disconnect ${platformName}:`, error);
+      alert(`Failed to disconnect ${platformName}. Please try again.`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConnect = async (platform: string, type: 'essential' | 'social') => {
+    setConnecting(platform);
+
+    try {
+      // Use OAuth flow for connection
+      await sdkClient.integrations.initiateOAuthFlow(platform);
+
+      // Refresh integrations after successful connection
+      await loadIntegrations();
+    } catch (error: any) {
+      console.error(`Failed to connect ${platform}:`, error);
+      // alert(`Failed to connect ${platform}. Please try again.`);
+    } finally {
+      setConnecting(null);
+    }
+  };
+
+  const essentialTotal = 3; // gmail, outlook, calendly
 
   return (
     <div className="space-y-6">
@@ -234,76 +170,200 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
           </div>
 
           <div className="space-y-4">
-            {essentialConnections.map((connection) => (
-              <div
-                key={connection.id}
-                className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {connection.icon}
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-white font-semibold">{connection.name}</h4>
-                        {connection.isEssential && (
-                          <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">
-                            Required
-                          </span>
-                        )}
-                        {connection.status === 'connected' && (
-                          <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30 flex items-center gap-1">
-                            <Check className="w-3 h-3" />
-                            Connected
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-stone-400 text-sm mb-2">
-                        {connection.description}
-                      </p>
-
-                      <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700">
-                        <p className="text-stone-300 text-xs">
-                          <span className="font-medium">Purpose:</span> {connection.purpose}
-                        </p>
-                      </div>
-                    </div>
+            {/* Gmail */}
+            <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <img src="/images/icons/gmail-icon.png" alt="Gmail" className="w-6 h-6" />
                   </div>
 
-                  <div className="flex-shrink-0">
-                    {connection.status === 'connected' ? (
-                      <button
-                        onClick={() => handleDisconnect(connection.id, true)}
-                        className="px-4 py-2 border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-sm transition-all"
-                      >
-                        Disconnect
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleConnect(connection.id, true)}
-                        disabled={connecting === connection.id}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 flex items-center gap-2"
-                      >
-                        {connecting === connection.id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Connecting...
-                          </>
-                        ) : (
-                          <>
-                            <ExternalLink className="w-4 h-4" />
-                            Connect
-                          </>
-                        )}
-                      </button>
-                    )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="text-white font-semibold">Gmail</h4>
+                      <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">
+                        Required
+                      </span>
+                      {isPlatformConnected('gmail', 'essential') && (
+                        <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Connected
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-stone-400 text-sm mb-2">
+                      Connect your Gmail to enable AI email automation
+                    </p>
+
+                    <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700">
+                      <p className="text-stone-300 text-xs">
+                        <span className="font-medium">Purpose:</span> Read and send emails on your behalf, create drafts for approval
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                <div className="flex-shrink-0">
+                  {isPlatformConnected('gmail', 'essential') ? (
+                    <button
+                      onClick={() => handleDisconnect('gmail', 'essential')}
+                      disabled={isLoading}
+                      className="px-4 py-2 border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-sm transition-all"
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleConnect('gmail', 'essential')}
+                      disabled={connecting === 'gmail' || isLoading}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {connecting === 'gmail' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="w-4 h-4" />
+                          Connect
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Outlook */}
+            <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <img src="/images/icons/outlook-icon.png" alt="Outlook" className="w-6 h-6" />
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="text-white font-semibold">Outlook</h4>
+                      {isPlatformConnected('outlook', 'essential') && (
+                        <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Connected
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-stone-400 text-sm mb-2">
+                      Alternative email provider for automation
+                    </p>
+
+                    <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700">
+                      <p className="text-stone-300 text-xs">
+                        <span className="font-medium">Purpose:</span> Read and send emails, calendar management
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0">
+                  {isPlatformConnected('outlook', 'essential') ? (
+                    <button
+                      onClick={() => handleDisconnect('outlook', 'essential')}
+                      disabled={isLoading}
+                      className="px-4 py-2 border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-sm transition-all"
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleConnect('outlook', 'essential')}
+                      disabled={connecting === 'outlook' || isLoading}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {connecting === 'outlook' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="w-4 h-4" />
+                          Connect
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Calendly */}
+            <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <img src="/images/icons/calendly-icon.png" alt="Calendly" className="w-6 h-6" />
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="text-white font-semibold">Calendly</h4>
+                      <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">
+                        Required
+                      </span>
+                      {isPlatformConnected('calendly', 'essential') && (
+                        <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Connected
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-stone-400 text-sm mb-2">
+                      Sync your calendar for scheduling automation
+                    </p>
+
+                    <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700">
+                      <p className="text-stone-300 text-xs">
+                        <span className="font-medium">Purpose:</span> Schedule meetings, send reminders, manage availability
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0">
+                  {isPlatformConnected('calendly', 'essential') ? (
+                    <button
+                      onClick={() => handleDisconnect('calendly', 'essential')}
+                      disabled={isLoading}
+                      className="px-4 py-2 border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white rounded-lg text-sm transition-all"
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleConnect('calendly', 'essential')}
+                      disabled={connecting === 'calendly' || isLoading}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {connecting === 'calendly' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="w-4 h-4" />
+                          Connect
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -328,48 +388,69 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {socialConnections.map((connection) => (
-              <div
-                key={connection.id}
-                className="bg-neutral-900/50 rounded-xl p-4 border border-neutral-700"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-neutral-800 rounded-lg flex items-center justify-center">
-                      <img src={connection.icon} alt={connection.name} className="w-6 h-6 object-contain" />
-                    </div>
-                    <div>
-                      <h4 className="text-white font-medium text-sm">{connection.name}</h4>
-                      <p className="text-stone-500 text-xs">{connection.description}</p>
+            {['facebook', 'instagram', 'youtube', 'twitter', 'tiktok'].map((platform) => {
+              const isConnected = isPlatformConnected(platform, 'social');
+
+              return (
+                <div key={platform} className="bg-neutral-900/50 rounded-xl p-4 border border-neutral-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-neutral-800 rounded-lg flex items-center justify-center">
+                        <img
+                          src={`/images/icons/${platform}-icon.${platform === 'youtube' || platform === 'twitter' ? 'svg' : 'png'}`}
+                          alt={platform}
+                          className="w-6 h-6 object-contain"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-white font-medium text-sm capitalize">
+                            {platform === 'twitter' ? 'X (Twitter)' : platform}
+                          </h4>
+                          {isConnected && (
+                            <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full border border-green-500/30 flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-stone-500 text-xs">
+                          {platform === 'facebook' && 'Analyze engagement and sync content'}
+                          {platform === 'instagram' && 'Track performance and engagement'}
+                          {platform === 'youtube' && 'Monitor video performance metrics'}
+                          {platform === 'twitter' && 'Track tweets and engagement'}
+                          {platform === 'tiktok' && 'Analyze content performance'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {connection.status === 'connected' ? (
-                  <button
-                    onClick={() => handleDisconnect(connection.id, false)}
-                    className="w-full py-2 border border-neutral-600 text-stone-300 hover:border-red-500 hover:text-red-400 rounded-lg text-sm transition-all"
-                  >
-                    Disconnect
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleConnect(connection.id, false)}
-                    disabled={connecting === connection.id}
-                    className="w-full py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg text-sm font-medium hover:from-violet-700 hover:to-fuchsia-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {connecting === connection.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Connecting...
-                      </>
-                    ) : (
-                      'Connect'
-                    )}
-                  </button>
-                )}
-              </div>
-            ))}
+                  {isConnected ? (
+                    <button
+                      onClick={() => handleDisconnect(platform, 'social')}
+                      disabled={isLoading}
+                      className="w-full py-2 border border-neutral-600 text-stone-300 hover:border-red-500 hover:text-red-400 rounded-lg text-sm transition-all"
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleConnect(platform, 'social')}
+                      disabled={connecting === platform || isLoading}
+                      className="w-full py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg text-sm font-medium hover:from-violet-700 hover:to-fuchsia-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {connecting === platform ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        'Connect'
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -40,6 +40,8 @@ export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps
       console.error('Failed to complete onboarding:', err);
       setError(err.message || 'Failed to complete onboarding. Please try again.');
       setIsProcessing(false);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
