@@ -2,7 +2,12 @@
 
 import React from "react";
 import {StandaloneChat} from "@nlc-ai/web-shared";
+import {useParams} from "next/navigation";
 
-export default function ChatPage({ params }: { params: { coachID: string } }) {
-  return <StandaloneChat coachID={params.coachID} />;
+const ChatPage = () => {
+  const params = useParams();
+
+  return <StandaloneChat coachID={params.coachID as string} />;
 }
+
+export default ChatPage;

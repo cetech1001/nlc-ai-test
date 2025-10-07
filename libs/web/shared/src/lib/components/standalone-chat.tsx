@@ -40,14 +40,14 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({ coachID }) => {
   const initializeChat = async () => {
     try {
       // Get coach info
-      const infoResponse = await fetch(`/api/public/chat/coach/${coachID}/info`);
+      const infoResponse = await fetch(`/api/agents/public/chat/coach/${coachID}/info`);
       if (!infoResponse.ok) throw new Error('Coach not found');
 
       const infoData = await infoResponse.json();
       setCoachName(infoData.coachName);
 
       // Create thread
-      const threadResponse = await fetch(`/api/public/chat/coach/${coachID}/thread/create`, {
+      const threadResponse = await fetch(`/api/agents/public/chat/coach/${coachID}/thread/create`, {
         method: 'POST'
       });
 
@@ -87,14 +87,14 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({ coachID }) => {
 
     try {
       // Add message to thread
-      await fetch(`/api/public/chat/coach/${coachID}/thread/${threadID}/message`, {
+      await fetch(`/api/agents/public/chat/coach/${coachID}/thread/${threadID}/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: inputValue })
       });
 
       // Run assistant
-      const runResponse = await fetch(`/api/public/chat/coach/${coachID}/thread/${threadID}/run`, {
+      const runResponse = await fetch(`/api/agents/public/chat/coach/${coachID}/thread/${threadID}/run`, {
         method: 'POST'
       });
 
@@ -108,7 +108,7 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({ coachID }) => {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         const statusResponse = await fetch(
-          `/api/public/chat/coach/${coachID}/thread/${threadID}/run/${runData.runID}/status`
+          `/api/agents/public/chat/coach/${coachID}/thread/${threadID}/run/${runData.runID}/status`
         );
 
         const statusData = await statusResponse.json();
@@ -118,7 +118,7 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({ coachID }) => {
 
           // Get assistant's response
           const messagesResponse = await fetch(
-            `/api/public/chat/coach/${coachID}/thread/${threadID}/messages`
+            `/api/agents/public/chat/coach/${coachID}/thread/${threadID}/messages`
           );
 
           const messagesData = await messagesResponse.json();
