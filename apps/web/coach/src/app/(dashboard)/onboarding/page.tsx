@@ -52,7 +52,7 @@ const OnboardingContainer = () => {
       const status = await sdkClient.agents.onboarding.getStatus();
       if (status.isComplete) {
         // If already complete, redirect to dashboard
-        router.push('/chat');
+        router.push(`/chat/${user?.id}`);
         return;
       }
 

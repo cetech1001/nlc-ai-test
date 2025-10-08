@@ -22,7 +22,7 @@ import {
   LucideUserRoundCog
 } from "lucide-react";
 import {MenuItemType} from "@nlc-ai/types";
-import {RetentionIcon, CoachReplicaIcon, EmailAgentIcon} from "@/lib";
+import {RetentionIcon, CoachReplicaIcon, EmailAgentIcon} from "../icons";
 import {appConfig} from "@nlc-ai/web-shared";
 
 let onBoardingRoute = [];
