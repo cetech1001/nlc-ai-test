@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { PublicChatClient } from '@nlc-ai/sdk-agents';
 
 interface Message {
   id: string;
@@ -12,9 +13,13 @@ interface Message {
 
 interface StandaloneChatProps {
   coachID: string;
+  publicChatClient: PublicChatClient;
 }
 
-export const StandaloneChat: React.FC<StandaloneChatProps> = ({ coachID }) => {
+export const StandaloneChat: React.FC<StandaloneChatProps> = ({
+                                                                coachID,
+                                                                publicChatClient
+                                                              }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,31 +44,28 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({ coachID }) => {
 
   const initializeChat = async () => {
     try {
-      // Get coach info
-      const infoResponse = await fetch(`/api/agents/public/chat/coach/${coachID}/info`);
-      if (!infoResponse.ok) throw new Error('Coach not found');
+      const { coachName, threadID, greetingMessage } = await publicChatClient.initializeChat();
 
-      const infoData = await infoResponse.json();
-      setCoachName(infoData.data.coachName);
+      setCoachName(coachName);
+      setThreadID(threadID);
 
-      // Create thread
-      const threadResponse = await fetch(`/api/agents/public/chat/coach/${coachID}/thread/create`, {
-        method: 'POST'
-      });
+      const {messages} = await publicChatClient.getThreadMessages(threadID);
 
-      if (!threadResponse.ok) throw new Error('Failed to create chat');
-
-      const threadData = await threadResponse.json();
-      setThreadID(threadData.data.threadID);
-
-      // Add greeting message
-      const greetingMsg: Message = {
-        id: '1',
-        role: 'assistant',
-        content: `Hi! I'm ${infoData.data.coachName}'s AI assistant. How can I help you today?`,
-        timestamp: new Date()
-      };
-      setMessages([greetingMsg]);
+      if (messages.length > 0) {
+        setMessages(messages.map(m => ({
+          ...m,
+          timestamp: new Date(m.created_at),
+          content: m.content[0].text.value,
+        })));
+      } else {
+        const greetingMsg: Message = {
+          id: '1',
+          role: 'assistant',
+          content: greetingMessage,
+          timestamp: new Date()
+        };
+        setMessages([greetingMsg]);
+      }
 
     } catch (err) {
       console.error('Failed to initialize chat:', err);
@@ -82,65 +84,24 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({ coachID }) => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageToSend = inputValue;
     setInputValue('');
     setIsLoading(true);
 
     try {
-      // Add message to thread
-      await fetch(`/api/agents/public/chat/coach/${coachID}/thread/${threadID}/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: inputValue })
-      });
+      const assistantResponse = await publicChatClient.sendMessageAndWaitForResponse(
+        threadID,
+        messageToSend
+      );
 
-      // Run assistant
-      const runResponse = await fetch(`/api/agents/public/chat/coach/${coachID}/thread/${threadID}/run`, {
-        method: 'POST'
-      });
+      const assistantMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: assistantResponse,
+        timestamp: new Date()
+      };
 
-      const runData = await runResponse.json();
-
-      // Poll for completion
-      let completed = false;
-      let attempts = 0;
-
-      while (!completed && attempts < 30) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const statusResponse = await fetch(
-          `/api/agents/public/chat/coach/${coachID}/thread/${threadID}/run/${runData.data.runID}/status`
-        );
-
-        const statusData = await statusResponse.json();
-
-        if (statusData.data.status === 'completed') {
-          completed = true;
-
-          // Get assistant's response
-          const messagesResponse = await fetch(
-            `/api/agents/public/chat/coach/${coachID}/thread/${threadID}/messages`
-          );
-
-          const messagesData = await messagesResponse.json();
-
-          const assistantMessage: Message = {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content: messagesData.data.messages.data[0].content[0].text.value,
-            timestamp: new Date()
-          };
-
-          setMessages(prev => [...prev, assistantMessage]);
-        } else if (statusData.data.status === 'failed') {
-          throw new Error('Assistant run failed');
-        }
-
-        attempts++;
-      }
-
-      if (!completed) {
-        throw new Error('Request timed out');
-      }
+      setMessages(prev => [...prev, assistantMessage]);
 
     } catch (err) {
       console.error('Failed to send message:', err);

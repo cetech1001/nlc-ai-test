@@ -6,6 +6,7 @@ import { ContentSuggestionClient } from "./content-suggestion.client";
 import { ContentSuggestionConversationClient } from "./content-suggestion-conversation.client";
 import { CoachReplicaClient } from "./coach-replica.client";
 import { OnboardingClient } from "./onboarding.client";
+import { PublicChatClient } from "./public-chat.client";
 import { ServiceClientConfig } from "@nlc-ai/sdk-core";
 
 export class AgentsClient {
@@ -18,7 +19,7 @@ export class AgentsClient {
   public coachReplica: CoachReplicaClient;
   public onboarding: OnboardingClient;
 
-  constructor(props: ServiceClientConfig) {
+  constructor(private props: ServiceClientConfig) {
     this.courseStructure = new CourseStructureClient({
       ...props,
       baseURL: `${props.baseURL}/course-structure`,
@@ -60,6 +61,21 @@ export class AgentsClient {
     });
   }
 
+  /**
+   * Create a public chat client for a specific coach
+   * @param coachID - The coach's ID
+   * @returns PublicChatClient instance
+   */
+  createPublicChatClient(coachID: string): PublicChatClient {
+    return new PublicChatClient(
+      {
+        ...this.props,
+        baseURL: `${this.props.baseURL}/public/chat`,
+      },
+      coachID
+    );
+  }
+
   updateApiKey(apiKey: string | null) {
     const services = [
       this.courseStructure,
@@ -77,3 +93,5 @@ export class AgentsClient {
     });
   }
 }
+
+export { PublicChatClient } from './public-chat.client';
