@@ -369,7 +369,7 @@ export class ReplicaService {
       });
 
       // Create streaming run
-      const stream = await this.openai.beta.threads.runs.stream(threadID, {
+      const stream = this.openai.beta.threads.runs.stream(threadID, {
         assistant_id: config.assistantID
       });
 
