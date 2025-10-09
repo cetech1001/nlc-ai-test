@@ -98,35 +98,25 @@ model Coach {
   lastLoginAt         DateTime?      @db.Timestamptz(6)
   marketingOptIn      Boolean        @default(false)
   onboardingCompleted Boolean        @default(false)
+  metadata            Json           @default("{}")
   createdAt           DateTime       @default(now()) @db.Timestamptz(6)
   updatedAt           DateTime       @default(now()) @db.Timestamptz(6)
 
-  aiInteractions          AiInteraction[]
-  coachAiAgents           CoachAiAgent[]
-  contentPieces           ContentPiece[]
-  contentSuggestions      ContentSuggestion[]
-  courses                 Course[]
-  paymentMethods          PaymentMethod[]
-  leads                   Lead[]
-  contentCategories       ContentCategory[]
-  emailSequences          EmailSequence[]
-  emailMessages           EmailMessage[]
-  generatedEmailResponses GeneratedEmailResponse[]
-  deliverabilityAnalyses  DeliverabilityAnalysis[]
-  emailThreads            EmailThread[]
-  agentConversations      AgentConversation[]
-  agentMemories           AgentMemory[]
-  coachAIConfig           CoachAIConfig?
-  knowledgeFiles          CoachKnowledgeFile[]
-  replicaThreads          CoachReplicaThread[]
-  replicaMessages         CoachReplicaMessage[]
-  replicaUsage            CoachReplicaUsage[]
-  scenarioAnswers         CoachScenarioAnswer[]
-  connections             CoachConnection[]
-  onboarding              CoachOnboarding?
-  clientCoaches           ClientCoach[]
-  clientInvites           ClientInvite[]
-  coachFollows            CoachFollow[]
+  coachAiAgents      CoachAiAgent[]
+  contentPieces      ContentPiece[]
+  courses            Course[]
+  paymentMethods     PaymentMethod[]
+  leads              Lead[]
+  emailSequences     EmailSequence[]
+  emailMessages      EmailMessage[]
+  emailThreads       EmailThread[]
+  knowledgeFiles     CoachKnowledgeFile[]
+  agentThreads       AgentThread[]
+  agentMessages      AgentMessage[]
+  clientCoaches      ClientCoach[]
+  clientInvites      ClientInvite[]
+  coachFollows       CoachFollow[]
+  contentSuggestions ContentSuggestion[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -151,7 +141,8 @@ model Client {
   engagementScore   Decimal?       @default(0.00) @db.Decimal(3, 2)
   stripeCustomerID  String?        @db.VarChar(255)
   location          String?        @db.VarChar(100)
-  customFields      Json?          @default("{}")
+  timezone          String?        @default("UTC") @db.VarChar(50)
+  metadata          Json           @default("{}")
   isActive          Boolean        @default(true)
   isVerified        Boolean        @default(false)
   isDeleted         Boolean        @default(false)
@@ -161,14 +152,12 @@ model Client {
   createdAt         DateTime       @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime       @default(now()) @db.Timestamptz(6)
 
-  aiInteractions          AiInteraction[]
-  courseEnrollments       CourseEnrollment[]
-  emailMessages           EmailMessage[]
-  clientCoaches           ClientCoach[]
-  emailSequences          EmailSequence[]
-  paymentMethods          PaymentMethod[]
-  generatedEmailResponses GeneratedEmailResponse[]
-  emailThreads            EmailThread[]
+  courseEnrollments CourseEnrollment[]
+  emailMessages     EmailMessage[]
+  clientCoaches     ClientCoach[]
+  emailSequences    EmailSequence[]
+  paymentMethods    PaymentMethod[]
+  emailThreads      EmailThread[]
 
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
@@ -217,18 +206,17 @@ model ClientCoach {
   clientID   String            @db.Uuid
   coachID    String            @db.Uuid
   status     ClientCoachStatus @default(active)
-  role       ClientCoachRole?  @default(client)
   assignedAt DateTime          @default(now()) @db.Timestamptz(6)
-  assignedBy String?           @db.Uuid // Which coach/admin assigned this relationship
-  notes      String? // Coach-specific notes about this client
-  isPrimary  Boolean           @default(false) // Which coach is the primary coach
+  assignedBy String?           @db.Uuid
+  notes      String?
+  isPrimary  Boolean           @default(false)
   createdAt  DateTime          @default(now()) @db.Timestamptz(6)
   updatedAt  DateTime          @updatedAt @db.Timestamptz(6)
 
   client Client @relation(fields: [clientID], references: [id], onDelete: Cascade)
   coach  Coach  @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
-  @@unique([clientID, coachID]) // Prevent duplicate relationships
+  @@unique([clientID, coachID])
   @@index([clientID])
   @@index([coachID])
   @@index([status])
@@ -241,10 +229,10 @@ model ClientInvite {
   email     String    @db.VarChar(255)
   token     String    @unique @db.VarChar(255)
   role      String?   @default("client") @db.VarChar(50)
-  message   String? // Personal message from coach
+  message   String?
   expiresAt DateTime  @db.Timestamptz(6)
   usedAt    DateTime? @db.Timestamptz(6)
-  usedBy    String?   @db.Uuid // Which client used this invite
+  usedBy    String?   @db.Uuid
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
 
   coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
@@ -255,69 +243,30 @@ model ClientInvite {
   @@map("client_invites")
 }
 
-// Add these models to your schema.prisma file
-// Place them after the Coach Replica section (after CoachReplicaUsage model)
-
-// ============================================
-// Onboarding Models
-// ============================================
-
-model CoachScenarioAnswer {
-  id         String   @id @default(uuid()) @db.Uuid
-  coachID    String   @db.Uuid
-  questionID String   @db.VarChar(100)
-  category   String   @db.VarChar(100)
-  question   String   @db.Text
-  answer     String   @db.Text
-  createdAt  DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+model CoachKnowledgeFile {
+  id                String              @id @default(uuid()) @db.Uuid
+  coachID           String              @db.Uuid
+  openaiFileID      String              @db.VarChar(255)
+  vectorStoreFileID String?             @db.VarChar(255)
+  filename          String              @db.VarChar(500)
+  fileSize          Int
+  mimeType          String              @db.VarChar(100)
+  status            KnowledgeFileStatus @default(uploaded)
+  uploadedAt        DateTime            @default(now()) @db.Timestamptz(6)
+  indexedAt         DateTime?           @db.Timestamptz(6)
+  failedAt          DateTime?           @db.Timestamptz(6)
+  errorMessage      String?             @db.Text
+  metadata          Json?               @default("{}")
+  category          String?             @db.VarChar(50)
 
   coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
-  @@unique([coachID, questionID])
-  @@index([coachID])
   @@index([category])
-  @@map("coach_scenario_answers")
-}
-
-model CoachConnection {
-  id             String    @id @default(uuid()) @db.Uuid
-  coachID        String    @db.Uuid
-  connectionID   String    @db.VarChar(50) // gmail, calendly, facebook, etc.
-  connectionName String    @db.VarChar(100)
-  connectionType String    @db.VarChar(20) // essential, social
-  status         String    @db.VarChar(20) // connected, disconnected
-  connectedAt    DateTime? @db.Timestamptz(6)
-  metadata       Json?     @default("{}")
-  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@unique([coachID, connectionID])
   @@index([coachID])
+  @@index([openaiFileID])
   @@index([status])
-  @@index([connectionType])
-  @@map("coach_connections")
-}
-
-model CoachOnboarding {
-  id                 String    @id @default(uuid()) @db.Uuid
-  coachID            String    @unique @db.Uuid
-  completedAt        DateTime? @db.Timestamptz(6)
-  scenariosCompleted Int       @default(0)
-  documentsUploaded  Int       @default(0)
-  connectionsLinked  Int       @default(0)
-  completionScore    Int       @default(0)
-  metadata           Json?     @default("{}")
-  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime  @updatedAt @db.Timestamptz(6)
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([coachID])
-  @@index([completedAt])
-  @@map("coach_onboarding")
+  @@index([uploadedAt])
+  @@map("coach_knowledge_files")
 }
 
 // AI Agent Domain
@@ -352,239 +301,57 @@ enum ReplicaThreadStatus {
   deleted
 }
 
-model CoachAIConfig {
-  id            String   @id @default(uuid()) @db.Uuid
-  coachID       String   @unique @db.Uuid
-  assistantID   String   @db.VarChar(255) // OpenAI Assistant ID
-  vectorStoreID String   @db.VarChar(255) // OpenAI Vector Store ID
-  assistantName String   @db.VarChar(255)
-  instructions  String   @db.Text
-  model         String   @default("gpt-4o") @db.VarChar(50)
-  isActive      Boolean  @default(true)
-  metadata      Json?    @default("{}")
-  createdAt     DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([coachID])
-  @@index([assistantID])
-  @@map("coach_ai_configs")
-}
-
-model CoachKnowledgeFile {
-  id                String              @id @default(uuid()) @db.Uuid
-  coachID           String              @db.Uuid
-  openaiFileID      String              @db.VarChar(255) // OpenAI File ID
-  vectorStoreFileID String?             @db.VarChar(255) // OpenAI Vector Store File ID (after indexing)
-  filename          String              @db.VarChar(500)
-  fileSize          Int // File size in bytes
-  mimeType          String              @db.VarChar(100)
-  status            KnowledgeFileStatus @default(uploaded)
-  uploadedAt        DateTime            @default(now()) @db.Timestamptz(6)
-  indexedAt         DateTime?           @db.Timestamptz(6)
-  failedAt          DateTime?           @db.Timestamptz(6)
-  errorMessage      String?             @db.Text
-  metadata          Json?               @default("{}")
-  category          String?             @db.VarChar(50) // email_threads, frameworks, faqs, transcripts, content
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([category])
-  @@index([coachID])
-  @@index([openaiFileID])
-  @@index([status])
-  @@index([uploadedAt])
-  @@map("coach_knowledge_files")
-}
-
-model CoachReplicaThread {
-  id             String              @id @default(uuid()) @db.Uuid
-  coachID        String              @db.Uuid
-  openaiThreadID String              @db.VarChar(255) // OpenAI Thread ID
-  title          String?             @db.VarChar(500)
-  status         ReplicaThreadStatus @default(active)
-  messageCount   Int                 @default(0)
-  lastMessageAt  DateTime?           @db.Timestamptz(6)
-  metadata       Json?               @default("{}")
-  createdAt      DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime            @updatedAt @db.Timestamptz(6)
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([coachID])
-  @@index([openaiThreadID])
-  @@index([status])
-  @@index([lastMessageAt])
-  @@map("coach_replica_threads")
-}
-
-model CoachReplicaMessage {
-  id        String   @id @default(uuid()) @db.Uuid
-  threadID  String   @db.Uuid
-  coachID   String   @db.Uuid
-  role      String   @db.VarChar(20) // 'user', 'assistant', 'system'
-  content   String   @db.Text
-  messageID String?  @db.VarChar(255) // OpenAI Message ID
-  runID     String?  @db.VarChar(255) // OpenAI Run ID
-  metadata  Json?    @default("{}")
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([threadID])
-  @@index([coachID])
-  @@index([messageID])
-  @@index([createdAt])
-  @@map("coach_replica_messages")
-}
-
-model CoachReplicaUsage {
-  id             String   @id @default(uuid()) @db.Uuid
-  coachID        String   @db.Uuid
-  date           DateTime @db.Date
-  totalMessages  Int      @default(0)
-  totalTokens    BigInt   @default(0)
-  totalCost      Decimal  @default(0.00) @db.Decimal(10, 4)
-  averageRunTime Int?     @default(0) // in milliseconds
-  successfulRuns Int      @default(0)
-  failedRuns     Int      @default(0)
-  filesUploaded  Int      @default(0)
-  totalStorageMB Int      @default(0)
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@unique([coachID, date])
-  @@index([date])
-  @@index([coachID])
-  @@map("coach_replica_usage")
-}
-
 model AiAgent {
-  id              String    @id @default(uuid()) @db.Uuid
-  name            String    @unique @db.VarChar(100)
-  type            String    @db.VarChar(50)
-  description     String?
-  isActive        Boolean?  @default(true)
-  totalRequests   Int?      @default(0)
-  totalTokensUsed BigInt?   @default(0)
-  lastUsedAt      DateTime? @db.Timestamptz(6)
-  defaultConfig   Json?     @default("{}")
-  createdAt       DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime? @default(now()) @db.Timestamptz(6)
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String    @unique @db.VarChar(100)
+  type          AgentType
+  description   String?
+  isActive      Boolean   @default(true)
+  lastUsedAt    DateTime? @db.Timestamptz(6)
+  defaultConfig Json?     @default("{}")
+  createdAt     DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @db.Timestamptz(6)
 
-  aiInteractions AiInteraction[]
-  coachAiAgents  CoachAiAgent[]
-  planAiAgents   PlanAiAgent[]
+  coachAiAgents CoachAiAgent[]
+  planAiAgents  PlanAiAgent[]
 
   @@map("ai_agents")
 }
 
-model AiInteraction {
-  id               String    @id @default(uuid()) @db.Uuid
-  userID           String    @db.Uuid
-  userType         UserType
-  agentID          String    @db.Uuid
-  interactionType  String    @db.VarChar(50)
-  inputData        Json
-  outputData       Json
-  tokensUsed       Int?      @default(0)
-  processingTimeMs Int?
-  confidenceScore  Decimal?  @db.Decimal(3, 2)
-  status           String?   @default("completed") @db.VarChar(50)
-  errorMessage     String?
-  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
-
-  generatedEmailResponses GeneratedEmailResponse[]
-
-  aiAgent  AiAgent @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  Coach    Coach?  @relation(fields: [coachID], references: [id])
-  coachID  String? @db.Uuid
-  Client   Client? @relation(fields: [clientID], references: [id])
-  clientID String? @db.Uuid
-
-  @@index([agentID], map: "idx_ai_interactions_agent_id")
-  @@index([userID], map: "idx_ai_interactions_user_id")
-  @@index([createdAt], map: "idx_ai_interactions_created_at")
-  @@map("ai_interactions")
-}
-
-model AgentConversation {
+model AgentThread {
   id             String    @id @default(uuid()) @db.Uuid
   coachID        String    @db.Uuid
-  agentType      AgentType
-  title          String?   @db.VarChar(255)
-  contextSummary String?   @db.Text
-  totalMessages  Int       @default(0)
+  agentID        String    @db.Uuid
+  openaiThreadID String?   @db.VarChar(255)
+  title          String?   @db.VarChar(500)
+  status         String    @default("active") @db.VarChar(20)
+  messageCount   Int       @default(0)
   lastMessageAt  DateTime? @db.Timestamptz(6)
-  isActive       Boolean   @default(true)
+  metadata       Json?     @default("{}")
   createdAt      DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 
-  coach     Coach                      @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  messages  AgentConversationMessage[]
-  artifacts ConversationArtifact[]
+  coach    Coach          @relation(fields: [coachID], references: [id], onDelete: Cascade)
+  messages AgentMessage[]
 
-  @@index([coachID, agentType])
-  @@index([isActive])
-  @@map("agent_conversations")
+  @@index([coachID, agentID])
 }
 
-model AgentConversationMessage {
-  id             String   @id @default(uuid()) @db.Uuid
-  conversationID String   @db.Uuid
-  senderType     String   @db.VarChar(20) // 'coach', 'agent'
-  content        String   @db.Text
-  messageType    String   @default("text") @db.VarChar(20) // 'text', 'artifact_request', 'artifact_response'
-  metadata       Json?    @default("{}")
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+model AgentMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  threadID  String   @db.Uuid
+  coachID   String   @db.Uuid
+  role      String   @db.VarChar(20)
+  content   String   @db.Text
+  messageID String?  @db.VarChar(255)
+  runID     String?  @db.VarChar(255)
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
 
-  conversation AgentConversation      @relation(fields: [conversationID], references: [id], onDelete: Cascade)
-  artifacts    ConversationArtifact[]
+  thread AgentThread @relation(fields: [threadID], references: [id], onDelete: Cascade)
+  coach  Coach       @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
-  @@index([conversationID])
-  @@index([createdAt])
-  @@map("agent_conversation_messages")
-}
-
-model ConversationArtifact {
-  id             String   @id @default(uuid()) @db.Uuid
-  conversationID String   @db.Uuid
-  messageID      String?  @db.Uuid
-  artifactType   String   @db.VarChar(50) // 'email_draft', 'content_script', 'sequence_plan'
-  title          String   @db.VarChar(255)
-  content        String   @db.Text
-  metadata       Json?    @default("{}")
-  version        Int      @default(1)
-  isCurrent      Boolean  @default(true)
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
-
-  conversation AgentConversation         @relation(fields: [conversationID], references: [id], onDelete: Cascade)
-  message      AgentConversationMessage? @relation(fields: [messageID], references: [id], onDelete: SetNull)
-
-  @@index([conversationID])
-  @@index([artifactType])
-  @@map("conversation_artifacts")
-}
-
-model AgentMemory {
-  id              String   @id @default(uuid()) @db.Uuid
-  coachID         String   @db.Uuid
-  agentType       String   @db.VarChar(50)
-  memoryType      String   @db.VarChar(50) // 'personality_trait', 'preference', 'success_pattern'
-  content         String   @db.Text
-  importanceScore Decimal  @default(0.5) @db.Decimal(3, 2) // 0.0 to 1.0
-  lastAccessed    DateTime @default(now()) @db.Timestamptz(6)
-  accessCount     Int      @default(1)
-  createdAt       DateTime @default(now()) @db.Timestamptz(6)
-
-  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  @@index([coachID, agentType])
-  @@index([memoryType])
-  @@map("agent_memories")
+  @@index([threadID])
 }
 
 // Community Domain
@@ -675,6 +442,13 @@ enum ModerationActionType {
   user_reported
 }
 
+enum CommunityInviteStatus {
+  pending
+  accepted
+  declined
+  expired
+}
+
 model Community {
   id          String              @id @default(uuid()) @db.Uuid
   name        String              @db.VarChar(255)
@@ -729,18 +503,18 @@ model Community {
 }
 
 model CommunityInvite {
-  id          String    @id @default(uuid()) @db.Uuid
-  communityID String    @db.Uuid
-  inviterID   String    @db.Uuid
-  inviterType String    @db.VarChar(20)
-  inviteeID   String    @db.Uuid
-  inviteeType String    @db.VarChar(20)
-  message     String?   @db.Text
-  token       String    @unique @db.VarChar(255)
-  status      String    @default("pending") @db.VarChar(20) // pending, accepted, declined, expired
-  expiresAt   DateTime  @db.Timestamptz(6)
-  acceptedAt  DateTime? @db.Timestamptz(6)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  id          String                @id @default(uuid()) @db.Uuid
+  communityID String                @db.Uuid
+  inviterID   String                @db.Uuid
+  inviterType String                @db.VarChar(20)
+  inviteeID   String                @db.Uuid
+  inviteeType String                @db.VarChar(20)
+  message     String?               @db.Text
+  token       String                @unique @db.VarChar(255)
+  status      CommunityInviteStatus @default(pending)
+  expiresAt   DateTime              @db.Timestamptz(6)
+  acceptedAt  DateTime?             @db.Timestamptz(6)
+  createdAt   DateTime              @default(now()) @db.Timestamptz(6)
 
   community Community @relation(fields: [communityID], references: [id], onDelete: Cascade)
 
@@ -1064,16 +838,13 @@ model CommunityAnalytics {
 model ContentCategory {
   id          String   @id @default(uuid()) @db.Uuid
   name        String   @db.VarChar(100)
-  coachID     String?  @db.Uuid // Made optional for global categories
   description String?
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
-  coach       Coach?   @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
   contentPieces ContentPiece[]
 
-  @@unique([name, coachID])
-  @@index([coachID])
+  @@unique([name])
   @@map("content_categories")
 }
 
@@ -1225,6 +996,9 @@ model EmailMessage {
   emailTemplateID          String? @db.Uuid
   emailSequenceID          String? @db.Uuid
   deliverabilityAnalysisID String? @db.Uuid
+  coachID                  String? @db.Uuid
+  clientID                 String? @db.Uuid
+  leadID                   String? @db.Uuid
 
   userID   String   @db.Uuid
   userType UserType
@@ -1261,10 +1035,9 @@ model EmailMessage {
   emailSequence          EmailSequence?          @relation(fields: [emailSequenceID], references: [id])
   deliverabilityAnalysis DeliverabilityAnalysis?
 
-  Coach    Coach?  @relation(fields: [coachId], references: [id])
-  coachId  String? @db.Uuid
-  Client   Client? @relation(fields: [clientId], references: [id])
-  clientId String? @db.Uuid
+  coach  Coach?  @relation(fields: [coachID], references: [id])
+  client Client? @relation(fields: [clientID], references: [id])
+  lead   Lead?   @relation(fields: [leadID], references: [id])
 
   @@index([userID, userType])
   @@index([status, scheduledFor])
@@ -1342,9 +1115,9 @@ model EmailThread {
   generatedResponses GeneratedEmailResponse[]
 
   emailAccount EmailAccount @relation(fields: [emailAccountID], references: [id])
-  Coach        Coach?       @relation(fields: [coachID], references: [id])
-  Client       Client?      @relation(fields: [clientID], references: [id])
-  Lead         Lead?        @relation(fields: [leadID], references: [id])
+  coach        Coach?       @relation(fields: [coachID], references: [id])
+  client       Client?      @relation(fields: [clientID], references: [id])
+  lead         Lead?        @relation(fields: [leadID], references: [id])
 
   @@index([userID, userType])
   @@index([emailAccountID])
@@ -1356,11 +1129,8 @@ model EmailThread {
 }
 
 model GeneratedEmailResponse {
-  id            String   @id @default(uuid()) @db.Uuid
-  userID        String   @db.Uuid
-  userType      UserType
-  threadID      String   @db.Uuid
-  interactionID String?  @db.Uuid
+  id       String @id @default(uuid()) @db.Uuid
+  threadID String @db.Uuid
 
   subject String @db.VarChar(500)
   body    String @db.Text
@@ -1378,14 +1148,8 @@ model GeneratedEmailResponse {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
-  emailThread   EmailThread    @relation(fields: [threadID], references: [id], onDelete: Cascade)
-  aiInteraction AiInteraction? @relation(fields: [interactionID], references: [id])
-  Coach         Coach?         @relation(fields: [coachId], references: [id])
-  coachId       String?        @db.Uuid
-  Client        Client?        @relation(fields: [clientId], references: [id])
-  clientId      String?        @db.Uuid
+  emailThread EmailThread @relation(fields: [threadID], references: [id], onDelete: Cascade)
 
-  @@index([userID, userType])
   @@index([threadID])
   @@index([status])
   @@map("generated_email_responses")
@@ -1406,8 +1170,6 @@ model DeliverabilityAnalysis {
   createdAt   DateTime  @default(now()) @db.Timestamptz(6)
 
   emailMessage EmailMessage @relation(fields: [emailMessageID], references: [id], onDelete: Cascade)
-  Coach        Coach?       @relation(fields: [coachId], references: [id])
-  coachId      String?      @db.Uuid
 
   @@index([emailMessageID])
   @@map("deliverability_analyses")
@@ -1801,6 +1563,7 @@ model Lead {
 
   emailSequences EmailSequence[]
   emailThreads   EmailThread[]
+  emailMessages  EmailMessage[]
 
   @@map("leads")
 }
