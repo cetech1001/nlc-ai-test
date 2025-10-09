@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import {Injectable, Logger} from '@nestjs/common';
+import {ConfigService} from '@nestjs/config';
+import {Cron, CronExpression} from '@nestjs/schedule';
 import {v4 as uuid} from "uuid";
-import { PrismaService } from '@nlc-ai/api-database';
+import {PrismaService} from '@nlc-ai/api-database';
 import {EventBusService} from "./event-bus.service";
-import {BaseEvent, type OutboxConfig} from "../types";
+import {BaseEvent, isEventCritical, type OutboxConfig} from "../types";
 
 @Injectable()
 export class OutboxService {
@@ -12,6 +12,7 @@ export class OutboxService {
   private readonly batchSize: number;
   private readonly maxRetries: number;
   private readonly retentionDays: number;
+  private readonly dlqRetentionDays: number;
   private isProcessing = false;
 
   constructor(
@@ -23,6 +24,7 @@ export class OutboxService {
     this.batchSize = config?.batchSize ?? this.configService.get<number>('OUTBOX_BATCH_SIZE', 100);
     this.maxRetries = config?.maxRetries ?? this.configService.get<number>('OUTBOX_MAX_RETRIES', 3);
     this.retentionDays = config?.retentionDays ?? this.configService.get<number>('OUTBOX_RETENTION_DAYS', 7);
+    this.dlqRetentionDays = config?.dlqRetentionDays ?? this.configService.get<number>('DLQ_RETENTION_DAYS', 30);
   }
 
   async saveAndPublishEvent<T extends BaseEvent>(
@@ -40,7 +42,6 @@ export class OutboxService {
     } as T;
 
     try {
-      // Save to outbox in transaction
       await this.prisma.eventOutbox.create({
         data: {
           eventID: fullEvent.eventID,
@@ -57,9 +58,7 @@ export class OutboxService {
         routingKey,
       });
 
-      // Try to publish immediately if not scheduled for later
       if (!scheduledFor || scheduledFor <= new Date()) {
-        // Use setImmediate to avoid blocking the current operation
         setImmediate(() => {
           this.processOutboxEvents().catch(error => {
             this.logger.error('Error in immediate outbox processing:', error);
@@ -75,7 +74,7 @@ export class OutboxService {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async processOutboxEvents(): Promise<void> {
     if (this.isProcessing) {
-      return; // Prevent overlapping executions
+      return;
     }
 
     this.isProcessing = true;
@@ -125,29 +124,134 @@ export class OutboxService {
 
         } catch (error) {
           const newRetryCount = outboxEvent.retryCount + 1;
-          const status = newRetryCount >= this.maxRetries ? 'failed' : 'pending';
 
-          await this.prisma.eventOutbox.update({
-            where: { id: outboxEvent.id },
-            data: {
-              status,
-              retryCount: newRetryCount,
-              lastError: error instanceof Error ? error.message : String(error),
-              updatedAt: new Date(),
-            },
-          });
+          if (newRetryCount >= this.maxRetries) {
+            await this.handleMaxRetriesReached(outboxEvent, error);
+          } else {
+            await this.prisma.eventOutbox.update({
+              where: { id: outboxEvent.id },
+              data: {
+                status: 'pending',
+                retryCount: newRetryCount,
+                lastError: error instanceof Error ? error.message : String(error),
+                updatedAt: new Date(),
+              },
+            });
 
-          this.logger.error(`Failed to publish event: ${outboxEvent.eventType}`, {
-            eventID: outboxEvent.eventID,
-            retryCount: newRetryCount,
-            error: error instanceof Error ? error.message : String(error),
-          });
+            this.logger.warn(`Event retry ${newRetryCount}/${this.maxRetries}: ${outboxEvent.eventType}`, {
+              eventID: outboxEvent.eventID,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
         }
       }
     } catch (error) {
       this.logger.error('Error processing outbox events', error);
     } finally {
       this.isProcessing = false;
+    }
+  }
+
+  private async handleMaxRetriesReached(outboxEvent: any, error: unknown): Promise<void> {
+    const isCritical = isEventCritical(outboxEvent.routingKey);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if (isCritical) {
+      await this.moveToDLQ(outboxEvent, errorMessage);
+
+      this.logger.error(`Critical event moved to DLQ after ${outboxEvent.retryCount + 1} attempts`, {
+        eventID: outboxEvent.eventID,
+        eventType: outboxEvent.eventType,
+        routingKey: outboxEvent.routingKey,
+        error: errorMessage,
+      });
+    } else {
+      await this.logAndDelete(outboxEvent, errorMessage);
+
+      this.logger.warn(`Non-critical event deleted after ${outboxEvent.retryCount + 1} failed attempts`, {
+        eventID: outboxEvent.eventID,
+        eventType: outboxEvent.eventType,
+        routingKey: outboxEvent.routingKey,
+        error: errorMessage,
+      });
+    }
+  }
+
+  private async moveToDLQ(outboxEvent: any, errorMessage: string): Promise<void> {
+    try {
+      await this.prisma.deadLetterQueue.create({
+        data: {
+          originalEventID: outboxEvent.eventID,
+          eventType: outboxEvent.eventType,
+          routingKey: outboxEvent.routingKey,
+          payload: outboxEvent.payload,
+          failureReason: errorMessage,
+          retryCount: outboxEvent.retryCount + 1,
+          originalCreatedAt: outboxEvent.createdAt,
+          status: 'pending_review',
+        },
+      });
+
+      await this.prisma.eventOutbox.update({
+        where: { id: outboxEvent.id },
+        data: {
+          status: 'moved_to_dlq',
+          lastError: `Moved to DLQ after ${outboxEvent.retryCount + 1} attempts: ${errorMessage}`,
+          updatedAt: new Date(),
+        },
+      });
+
+      // TODO: Send alert to ops team (integrate with your alerting service)
+      // await this.alertingService.sendDLQAlert(outboxEvent);
+
+    } catch (dlqError) {
+      this.logger.error('Failed to move event to DLQ', {
+        eventID: outboxEvent.eventID,
+        originalError: errorMessage,
+        dlqError: dlqError instanceof Error ? dlqError.message : String(dlqError),
+      });
+
+      await this.prisma.eventOutbox.update({
+        where: { id: outboxEvent.id },
+        data: {
+          status: 'failed',
+          lastError: `Failed to move to DLQ: ${dlqError instanceof Error ? dlqError.message : String(dlqError)}`,
+          updatedAt: new Date(),
+        },
+      });
+    }
+  }
+
+  private async logAndDelete(outboxEvent: any, errorMessage: string): Promise<void> {
+    try {
+      this.logger.log('Deleting non-critical failed event', {
+        eventID: outboxEvent.eventID,
+        eventType: outboxEvent.eventType,
+        routingKey: outboxEvent.routingKey,
+        payload: outboxEvent.payload,
+        failureReason: errorMessage,
+        retryCount: outboxEvent.retryCount + 1,
+        originalCreatedAt: outboxEvent.createdAt,
+      });
+
+      await this.prisma.eventOutbox.delete({
+        where: { id: outboxEvent.id },
+      });
+
+    } catch (deleteError) {
+      this.logger.error('Failed to delete failed event', {
+        eventID: outboxEvent.eventID,
+        error: deleteError instanceof Error ? deleteError.message : String(deleteError),
+      });
+
+      await this.prisma.eventOutbox.update({
+        where: { id: outboxEvent.id },
+        data: {
+          status: 'failed',
+          lastError: errorMessage,
+          updatedAt: new Date(),
+        },
+      });
     }
   }
 
@@ -170,27 +274,118 @@ export class OutboxService {
     }
   }
 
-  async retryFailedEvents(eventIDs?: string[]): Promise<void> {
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupOldDLQEvents(): Promise<void> {
     try {
-      const where: any = { status: 'failed' };
-      if (eventIDs && eventIDs.length > 0) {
-        where.eventID = { in: eventIDs };
-      }
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - this.dlqRetentionDays);
 
-      const result = await this.prisma.eventOutbox.updateMany({
-        where,
+      const result = await this.prisma.deadLetterQueue.deleteMany({
+        where: {
+          status: { in: ['reviewed', 'discarded'] },
+          reviewedAt: { lte: cutoffDate },
+        },
+      });
+
+      this.logger.log(`Cleaned up ${result.count} old DLQ events`);
+    } catch (error) {
+      this.logger.error('Error cleaning up old DLQ events:', error);
+    }
+  }
+
+
+  async getDLQEvents(status?: string) {
+    const where: any = {};
+    if (status) {
+      where.status = status;
+    }
+
+    return this.prisma.deadLetterQueue.findMany({
+      where,
+      orderBy: { movedToDLQAt: 'desc' },
+    });
+  }
+
+  async getDLQEventByID(id: string) {
+    return this.prisma.deadLetterQueue.findUnique({
+      where: { id },
+    });
+  }
+
+  async requeueDLQEvent(id: string, reviewedBy: string): Promise<void> {
+    const dlqEvent = await this.prisma.deadLetterQueue.findUnique({
+      where: { id },
+    });
+
+    if (!dlqEvent) {
+      throw new Error('DLQ event not found');
+    }
+
+    try {
+      await this.prisma.eventOutbox.create({
         data: {
+          eventID: dlqEvent.originalEventID,
+          eventType: dlqEvent.eventType,
+          routingKey: dlqEvent.routingKey,
+          payload: dlqEvent.payload,
           status: 'pending',
           retryCount: 0,
-          lastError: null,
+          scheduledFor: new Date(),
+        },
+      });
+
+      await this.prisma.deadLetterQueue.update({
+        where: { id },
+        data: {
+          status: 'requeued',
+          reviewedAt: new Date(),
+          reviewedBy,
           updatedAt: new Date(),
         },
       });
 
-      this.logger.log(`Reset ${result.count} failed events for retry`, { eventIDs });
+      this.logger.log(`DLQ event requeued: ${dlqEvent.eventType}`, {
+        eventID: dlqEvent.originalEventID,
+        reviewedBy,
+      });
+
+      setImmediate(() => {
+        this.processOutboxEvents().catch(error => {
+          this.logger.error('Error in immediate outbox processing after requeue:', error);
+        });
+      });
+
     } catch (error) {
-      this.logger.error('Error retrying failed events:', error);
+      this.logger.error('Failed to requeue DLQ event', {
+        id,
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
+  }
+
+  async reviewDLQEvent(id: string, reviewedBy: string, reviewNotes: string, discard: boolean = false): Promise<void> {
+    await this.prisma.deadLetterQueue.update({
+      where: { id },
+      data: {
+        status: discard ? 'discarded' : 'reviewed',
+        reviewedAt: new Date(),
+        reviewedBy,
+        reviewNotes,
+        updatedAt: new Date(),
+      },
+    });
+
+    this.logger.log(`DLQ event ${discard ? 'discarded' : 'reviewed'}: ${id}`, {
+      reviewedBy,
+      reviewNotes,
+    });
+  }
+
+  async getDLQStats() {
+    return this.prisma.deadLetterQueue.groupBy({
+      by: ['eventType', 'status'],
+      _count: true,
+    });
   }
 }

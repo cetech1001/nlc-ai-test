@@ -1209,6 +1209,14 @@ enum EventOutboxStatus {
   pending
   published
   failed
+  moved_to_dlq
+}
+
+enum DLQStatus {
+  pending_review
+  reviewed
+  requeued
+  discarded
 }
 
 model EventOutbox {
@@ -1216,7 +1224,7 @@ model EventOutbox {
   eventID      String            @unique @db.Uuid
   eventType    String            @db.VarChar(100)
   routingKey   String            @db.VarChar(100)
-  payload      String // JSON as string for cross-service compatibility
+  payload      String
   status       EventOutboxStatus @default(pending)
   retryCount   Int               @default(0)
   maxRetries   Int               @default(3)
@@ -1230,6 +1238,30 @@ model EventOutbox {
   @@index([eventType])
   @@index([createdAt])
   @@map("event_outbox")
+}
+
+model DeadLetterQueue {
+  id                String    @id @default(uuid()) @db.Uuid
+  originalEventID   String    @unique @db.Uuid
+  eventType         String    @db.VarChar(100)
+  routingKey        String    @db.VarChar(100)
+  payload           String
+  failureReason     String
+  retryCount        Int
+  status            DLQStatus @default(pending_review)
+  reviewNotes       String?
+  originalCreatedAt DateTime  @db.Timestamptz(6)
+  movedToDLQAt      DateTime  @default(now()) @db.Timestamptz(6)
+  reviewedAt        DateTime? @db.Timestamptz(6)
+  reviewedBy        String?   @db.VarChar(100)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([eventType])
+  @@index([movedToDLQAt])
+  @@index([originalCreatedAt])
+  @@map("dead_letter_queue")
 }
 
 // Integration Domain
