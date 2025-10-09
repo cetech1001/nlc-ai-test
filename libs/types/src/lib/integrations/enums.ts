@@ -1,7 +1,6 @@
 export enum IntegrationType {
   SOCIAL = 'social',
   APP = 'app',
-  COURSE = 'course',
 }
 
 export enum AuthType {

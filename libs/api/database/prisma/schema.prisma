@@ -183,22 +183,30 @@ model CoachFollow {
 }
 
 model CoachAiAgent {
-  id               String    @id @default(uuid()) @db.Uuid
-  coachID          String    @db.Uuid
-  agentID          String    @db.Uuid
-  isEnabled        Boolean?  @default(true)
-  customConfig     Json?     @default("{}")
-  fineTunedModelID String?   @db.VarChar(255)
-  totalRequests    Int?      @default(0)
-  totalTokensUsed  BigInt?   @default(0)
-  lastUsedAt       DateTime? @db.Timestamptz(6)
-  createdAt        DateTime? @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime? @default(now()) @db.Timestamptz(6)
-  aiAgent          AiAgent   @relation(fields: [agentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  coach            Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id        String  @id @default(uuid()) @db.Uuid
+  coachID   String  @db.Uuid
+  agentID   String  @db.Uuid
+  isEnabled Boolean @default(true)
+
+  customConfig Json? @default("{}")
+
+  assistantID      String? @db.VarChar(255)
+  vectorStoreID    String? @db.VarChar(255)
+  assistantName    String? @db.VarChar(255)
+  instructions     String? @db.Text
+  model            String? @default("gpt-4o") @db.VarChar(50)
+  fineTunedModelID String? @db.VarChar(255)
+
+  totalRequests   Int       @default(0)
+  totalTokensUsed BigInt    @default(0)
+  lastUsedAt      DateTime? @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
+
+  aiAgent AiAgent @relation(fields: [agentID], references: [id], onDelete: Cascade)
+  coach   Coach   @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
   @@unique([coachID, agentID])
-  @@map("coach_ai_agents")
 }
 
 model ClientCoach {
@@ -304,7 +312,7 @@ enum ReplicaThreadStatus {
 model AiAgent {
   id            String    @id @default(uuid()) @db.Uuid
   name          String    @unique @db.VarChar(100)
-  type          AgentType
+  type          AgentType @unique
   description   String?
   isActive      Boolean   @default(true)
   lastUsedAt    DateTime? @db.Timestamptz(6)
@@ -1267,7 +1275,6 @@ model DeadLetterQueue {
 // Integration Domain
 
 enum IntegrationType {
-  course
   social
   app
 }

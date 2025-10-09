@@ -5,6 +5,15 @@ export interface ScenarioAnswer {
   answer: string;
 }
 
+export interface CoachMetadata {
+  onboarding?: {
+    scenarios?: ScenarioAnswer[];
+    completedAt?: string;
+    scenariosCompleted?: number;
+  };
+  [key: string]: any;
+}
+
 export interface UploadedDocument {
   id: string;
   name: string;
@@ -12,23 +21,9 @@ export interface UploadedDocument {
   openaiFileID?: string;
 }
 
-export interface ConnectedAccount {
-  id: string;
-  name: string;
-  type: 'essential' | 'social';
-  status: 'connected' | 'disconnected';
-}
-
-export interface OnboardingData {
-  scenarios: ScenarioAnswer[];
-  documents: UploadedDocument[];
-  connections: ConnectedAccount[];
-  completedAt?: Date;
-}
-
 export interface CoachingProfile {
   communicationStyle: {
-    tone: string; // formal, casual, professional
+    tone: string;
     commonPhrases: string[];
     preferredGreetings: string[];
     preferredClosings: string[];

@@ -1,5 +1,5 @@
 import { BaseClient } from '@nlc-ai/sdk-core';
-import type { OnboardingData, CoachingProfile } from '@nlc-ai/types';
+import type { OnboardingRequest, CoachingProfile } from '@nlc-ai/types';
 
 export interface OnboardingCompleteResponse {
   success: boolean;
@@ -31,7 +31,7 @@ export class OnboardingClient extends BaseClient {
   /**
    * Complete onboarding and train AI assistant
    */
-  async complete(data: OnboardingData): Promise<OnboardingCompleteResponse> {
+  async complete(data: OnboardingRequest): Promise<OnboardingCompleteResponse> {
     const response = await this.request<OnboardingCompleteResponse>(
       'POST',
       '/complete',
@@ -43,7 +43,7 @@ export class OnboardingClient extends BaseClient {
   /**
    * Save onboarding progress without completing
    */
-  async saveProgress(data: Partial<OnboardingData>): Promise<SaveProgressResponse> {
+  async saveProgress(data: Partial<OnboardingRequest>): Promise<SaveProgressResponse> {
     const response = await this.request<SaveProgressResponse>(
       'POST',
       '/save-progress',
@@ -55,8 +55,8 @@ export class OnboardingClient extends BaseClient {
   /**
    * Get onboarding data for prefilling
    */
-  async getData(): Promise<OnboardingData> {
-    const response = await this.request<OnboardingData>(
+  async getData(): Promise<OnboardingRequest> {
+    const response = await this.request<OnboardingRequest>(
       'GET',
       '/data'
     );

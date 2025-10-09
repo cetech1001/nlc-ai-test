@@ -151,23 +151,18 @@ export class PublicChatClient extends BaseClient {
     maxAttempts: number = 30,
     pollInterval: number = 1000
   ): Promise<string> {
-    // Add message to thread
     await this.addMessageToThread(threadID, message);
 
-    // Run assistant
     const runResponse = await this.runAssistant(threadID);
 
-    // Poll for completion
     let attempts = 0;
 
     while (attempts < maxAttempts) {
       const statusResponse = await this.getRunStatus(threadID, runResponse.runID);
 
       if (statusResponse.status === 'completed') {
-        // Get messages
         const messagesResponse = await this.getThreadMessages(threadID);
 
-        // Return the latest assistant message
         const latestMessage = messagesResponse.messages[0];
         return latestMessage.content[0].text.value;
       }

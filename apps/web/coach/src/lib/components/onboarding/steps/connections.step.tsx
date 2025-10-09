@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, MessageSquare, ExternalLink, Check, Loader2 } from 'lucide-react';
 import { sdkClient } from '@/lib';
-import type { OnboardingData, ConnectedAccount } from '@nlc-ai/types';
+import type { OnboardingRequest, ConnectedAccount } from '@nlc-ai/types';
 
 interface ConnectionsStepProps {
   onContinue: () => void;
-  data?: OnboardingData;
+  data?: OnboardingRequest;
   onUpdate?: (connections: ConnectedAccount[]) => void;
 }
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, X, Check, AlertCircle, Mail, BookOpen, MessageSquare, FileSpreadsheet } from 'lucide-react';
 import { sdkClient } from '@/lib';
-import type { OnboardingData, UploadedDocument } from '@nlc-ai/types';
+import type { OnboardingRequest, UploadedDocument } from '@nlc-ai/types';
 
 interface LocalUploadedDocument extends UploadedDocument {
   type: string;
@@ -65,7 +65,7 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
 
 interface DocumentsStepProps {
   onContinue: () => void;
-  data?: OnboardingData;
+  data?: OnboardingRequest;
   onUpdate?: (documents: UploadedDocument[]) => void;
 }
 

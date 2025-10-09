@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { Check, AlertTriangle, Sparkles, Rocket, ChevronRight, Edit2, FileText, Link2 } from 'lucide-react';
-import type { OnboardingData } from '@nlc-ai/types';
+import type { OnboardingRequest } from '@nlc-ai/types';
 
 interface ReviewCompleteStepProps {
   onComplete: () => Promise<void>;
-  data?: OnboardingData;
+  data?: OnboardingRequest;
 }
 
 export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps) => {

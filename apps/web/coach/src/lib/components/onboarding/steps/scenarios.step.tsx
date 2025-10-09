@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, MessageCircle, AlertCircle } from 'lucide-react';
-import type { OnboardingData, ScenarioAnswer } from '@nlc-ai/types';
+import type { OnboardingRequest, ScenarioAnswer } from '@nlc-ai/types';
 
 interface ScenarioQuestion {
   id: string;
@@ -101,7 +101,7 @@ const SCENARIOS: ScenarioQuestion[] = [
 
 interface ScenariosStepProps {
   onContinue: () => void;
-  data?: OnboardingData;
+  data?: OnboardingRequest;
   onUpdate?: (scenarios: ScenarioAnswer[]) => void;
 }
 

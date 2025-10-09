@@ -6,8 +6,8 @@ export * from './communities';
 export * from './courses';
 export * from './content';
 export * from './email';
+export * from './integrations';
 export * from './media';
-export * from './onboarding';
 export * from './users';
 
 export * from './activity-log';
@@ -22,7 +22,6 @@ export * from './coach-payment-request';
 export * from './course';
 export * from './data-table';
 export * from './filter';
-export * from './integration';
 export * from './invoice';
 export * from './kpi';
 export * from './lead';

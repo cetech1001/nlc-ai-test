@@ -7,9 +7,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
-import { UserType, type AuthUser, type OnboardingData } from '@nlc-ai/types';
+import { UserType, type AuthUser, type OnboardingRequest } from '@nlc-ai/types';
 import { OnboardingService } from './onboarding.service';
-import { ReplicaService } from '../replica/replica.service';
 
 @ApiTags('Onboarding')
 @Controller('onboarding')
@@ -19,7 +18,6 @@ import { ReplicaService } from '../replica/replica.service';
 export class OnboardingController {
   constructor(
     private readonly onboardingService: OnboardingService,
-    private readonly replicaService: ReplicaService,
   ) {}
 
   @Post('complete')
@@ -27,7 +25,7 @@ export class OnboardingController {
   @ApiResponse({ status: 200, description: 'Onboarding completed successfully' })
   async completeOnboarding(
     @CurrentUser() user: AuthUser,
-    @Body() data: OnboardingData
+    @Body() data: OnboardingRequest
   ) {
     // Save all onboarding data
     await this.onboardingService.saveOnboardingData(user.id, data);
@@ -62,14 +60,12 @@ export class OnboardingController {
   @ApiResponse({ status: 200, description: 'Progress saved successfully' })
   async saveProgress(
     @CurrentUser() user: AuthUser,
-    @Body() data: Partial<OnboardingData>
+    @Body() data: Partial<OnboardingRequest>
   ) {
-    // Save progress WITHOUT marking as complete
     if (data.scenarios && data.scenarios.length > 0) {
-      const fullData: OnboardingData = {
+      const fullData: OnboardingRequest = {
         scenarios: data.scenarios,
         documents: data.documents || [],
-        connections: data.connections || [],
       };
       await this.onboardingService.saveOnboardingData(user.id, fullData);
     }

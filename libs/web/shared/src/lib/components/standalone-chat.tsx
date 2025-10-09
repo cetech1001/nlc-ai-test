@@ -37,7 +37,6 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Initialize chat on mount
   useEffect(() => {
     initializeChat();
   }, [coachID]);

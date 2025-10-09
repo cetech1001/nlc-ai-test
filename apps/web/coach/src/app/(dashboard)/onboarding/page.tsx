@@ -6,7 +6,7 @@ import {WelcomeStep, ScenariosStep, DocumentsStep, ConnectionsStep, ReviewComple
 import {useRouter} from "next/navigation";
 import {sdkClient} from "@/lib";
 import {useAuth} from "@nlc-ai/web-auth";
-import type { OnboardingData, ScenarioAnswer, UploadedDocument, ConnectedAccount } from '@nlc-ai/types';
+import type { OnboardingRequest, ScenarioAnswer, UploadedDocument, ConnectedAccount } from '@nlc-ai/types';
 import {appConfig} from "@nlc-ai/web-shared";
 
 const ONBOARDING_STEPS = [
@@ -31,7 +31,7 @@ const OnboardingContainer = () => {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Onboarding data state
-  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
+  const [onboardingData, setOnboardingData] = useState<OnboardingRequest>({
     scenarios: [],
     documents: [],
     connections: [],
