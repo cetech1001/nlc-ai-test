@@ -5,7 +5,7 @@ import { Upload, FileText, X, Check, AlertCircle, Mail, BookOpen, MessageSquare,
 import { sdkClient } from '@/lib';
 import type { OnboardingRequest, UploadedDocument } from '@nlc-ai/types';
 
-interface LocalUploadedDocument extends UploadedDocument {
+interface LocalUploadedDocument extends Omit<UploadedDocument, 'fileSize'> {
   type: string;
   size: number;
   status: 'uploading' | 'success' | 'error';
@@ -79,7 +79,7 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
       const localDocs: LocalUploadedDocument[] = data.documents.map(doc => ({
         ...doc,
         type: 'application/pdf',
-        size: 0,
+        size: doc.fileSize,
         status: 'success' as const,
       }));
       setUploadedDocs(localDocs);
@@ -97,6 +97,7 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
           name: doc.name,
           category: doc.category,
           openaiFileID: doc.openaiFileID,
+          fileSize: doc.size,
         }));
         onUpdate(simpleDocuments);
       }
@@ -121,8 +122,7 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
       setUploadedDocs(prev => [...prev, newDoc]);
 
       try {
-        const uploadResponse = await sdkClient.agents.coachReplica.uploadFile(file, file.name);
-        await sdkClient.agents.coachReplica.addFileToVectorStore(uploadResponse.fileID);
+        const uploadResponse = await sdkClient.agents.coachReplica.uploadFile(file, file.name, category);
 
         setUploadedDocs(prev =>
           prev.map(doc =>
@@ -168,7 +168,9 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
   };
 
   const getUploadedByCategory = (category: string) => {
-    return uploadedDocs.filter(doc => doc.category === category);
+    return uploadedDocs.filter(doc => category === 'faqs'
+      ? doc.category === 'general'
+      : doc.category === category);
   };
 
   const totalUploaded = uploadedDocs.length;

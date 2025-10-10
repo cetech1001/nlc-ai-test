@@ -45,6 +45,7 @@ export class ReplicaController {
   @ApiResponse({ status: 200, description: 'File uploaded successfully' })
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
+    @Body('category') category: string,
     @CurrentUser() user: AuthUser,
     @UploadedFile() file: Express.Multer.File
   ) {
@@ -52,7 +53,7 @@ export class ReplicaController {
       throw new BadRequestException('No file provided');
     }
 
-    return this.replica.uploadFile(user.id, file);
+    return this.replica.uploadFile(user.id, file, category);
   }
 
   @Post('vector-store/add-file')

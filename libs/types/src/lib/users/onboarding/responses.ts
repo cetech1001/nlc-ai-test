@@ -18,6 +18,7 @@ export interface UploadedDocument {
   id: string;
   name: string;
   category: string;
+  fileSize: number;
   openaiFileID?: string;
 }
 

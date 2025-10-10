@@ -161,7 +161,7 @@ export class ReplicaService {
     }
   }
 
-  async uploadFile(coachID: string, file: Express.Multer.File) {
+  async uploadFile(coachID: string, file: Express.Multer.File, category: string) {
     if (file.size > MAX_FILE_SIZE) {
       throw new BadRequestException('File size exceeds 512 MB limit');
     }
@@ -187,6 +187,7 @@ export class ReplicaService {
           fileSize: file.size,
           mimeType: file.mimetype,
           status: 'uploaded',
+          category,
         }
       });
 

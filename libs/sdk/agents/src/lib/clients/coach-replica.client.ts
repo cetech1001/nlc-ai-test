@@ -95,9 +95,12 @@ export class CoachReplicaClient extends BaseClient {
   /**
    * Upload file to OpenAI
    */
-  async uploadFile(file: File | Blob, filename: string): Promise<FileUploadResponse> {
+  async uploadFile(file: File | Blob, filename: string, category?: string): Promise<FileUploadResponse> {
     const formData = new FormData();
     formData.append('file', file, filename);
+    if (category) {
+      formData.append('category', category);
+    }
 
     const response = await this.request<FileUploadResponse>(
       'POST',

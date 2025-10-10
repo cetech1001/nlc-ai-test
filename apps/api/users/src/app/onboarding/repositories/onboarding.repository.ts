@@ -84,6 +84,7 @@ export class OnboardingRepository {
           openaiFileID: true,
           filename: true,
           category: true,
+          fileSize: true,
         },
       }),
     ]);
@@ -98,6 +99,7 @@ export class OnboardingRepository {
         name: d.filename,
         openaiFileID: d.openaiFileID,
         category: d.category || 'general',
+        fileSize: d.fileSize,
       })),
     };
   }
