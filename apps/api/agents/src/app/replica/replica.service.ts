@@ -466,9 +466,9 @@ export class ReplicaService {
     }
   }
 
-  async getAssistantInfo(coachID: string) {
+  async getAssistantInfo(coachID: string, includeCoach?: boolean) {
     const agent = await this.getAgent();
-    const config = await this.getCoachConfig(coachID, agent.id);
+    const config = await this.getCoachConfig(coachID, agent.id, includeCoach);
 
     try {
       const assistant = await this.openai.beta.assistants.retrieve(config.assistantID!);
@@ -480,7 +480,8 @@ export class ReplicaService {
           model: assistant.model,
           instructions: assistant.instructions,
           tools: assistant.tools,
-        }
+        },
+        coach: (config as any).coach,
       };
 
     } catch (error: any) {
@@ -518,14 +519,27 @@ export class ReplicaService {
     }
   }
 
-  private async getCoachConfig(coachID: string, agentID: string) {
+  private async getCoachConfig(coachID: string, agentID: string, includeCoach?: boolean) {
+    let include = {};
+    if (includeCoach) {
+      include = {
+        coach: {
+          select: {
+            firstName: true,
+            lastName: true,
+          }
+        }
+      };
+    }
+
     const config = await this.prisma.coachAiAgent.findUnique({
       where: {
         coachID_agentID: {
           coachID,
           agentID,
         }
-      }
+      },
+      include,
     });
 
     if (!config || !config.assistantID || !config.vectorStoreID) {

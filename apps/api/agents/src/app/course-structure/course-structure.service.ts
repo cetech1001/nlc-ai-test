@@ -1,145 +1,31 @@
 import {Injectable, InternalServerErrorException, Logger} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
-import {PrismaService} from '@nlc-ai/api-database';
-import {OutboxService} from '@nlc-ai/api-messaging';
 import {OpenAI} from 'openai';
 import {
-  CourseStructureGeneratedEvent,
   CourseStructureRequest,
   CourseStructureSuggestion,
   SuggestedChapter,
   SuggestedLesson,
 } from '@nlc-ai/api-types';
-import {UserType} from "@nlc-ai/types";
 
 @Injectable()
 export class CourseStructureService {
   private readonly logger = new Logger(CourseStructureService.name);
   private openai: OpenAI;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly outboxService: OutboxService,
-    private readonly configService: ConfigService,
-  ) {
+  constructor(private readonly config: ConfigService) {
     this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('agents.openai.apiKey'),
+      apiKey: this.config.get<string>('agents.openai.apiKey'),
     });
   }
 
-  async generateCourseStructure(
-    request: CourseStructureRequest,
-    userID: string,
-    userType: UserType,
-  ): Promise<CourseStructureSuggestion> {
-    this.logger.log('Generating course structure suggestions', {
-      descriptionLength: request.description.length,
-      targetAudience: request.targetAudience,
-      difficultyLevel: request.difficultyLevel,
-      userID,
-    });
-
-    const startTime = Date.now();
-
+  async generateCourseStructure(request: CourseStructureRequest): Promise<CourseStructureSuggestion> {
     try {
-      const interaction = await this.prisma.aiInteraction.create({
-        data: {
-          userID,
-          userType,
-          agentID: await this.getOrCreateCourseStructureAgent(),
-          interactionType: 'course_structure_generation',
-          inputData: {
-            description: request.description,
-            targetAudience: request.targetAudience,
-            difficultyLevel: request.difficultyLevel,
-            estimatedDuration: request.estimatedDuration,
-            preferredFormat: request.preferredFormat,
-            budget: request.budget,
-            specialRequirements: request.specialRequirements,
-          },
-          outputData: {},
-          status: 'processing',
-        },
-      });
-
-      const courseStructure = await this.generateWithOpenAI(request);
-      const processingTime = Date.now() - startTime;
-
-      const confidenceScore = this.calculateConfidenceScore(courseStructure, request);
-
-      await this.prisma.aiInteraction.update({
-        where: { id: interaction.id },
-        data: {
-          outputData: JSON.stringify(courseStructure),
-          status: 'completed',
-          processingTimeMs: processingTime,
-          confidenceScore,
-          tokensUsed: this.estimateTokensUsed(request, courseStructure),
-        },
-      });
-
-      await this.updateAgentStats(await this.getOrCreateCourseStructureAgent());
-
-      await this.outboxService.saveAndPublishEvent<CourseStructureGeneratedEvent>(
-        {
-          eventType: 'course.structure.generated',
-          schemaVersion: 1,
-          payload: {
-            interactionID: interaction.id,
-            userID,
-            userType,
-            courseTitle: courseStructure.courseTitle,
-            chaptersCount: courseStructure.suggestedChapters.length,
-            totalLessons: courseStructure.suggestedChapters.reduce(
-              (acc, chapter) => acc + chapter.lessons.length,
-              0,
-            ),
-            estimatedTotalHours: courseStructure.estimatedTotalHours,
-            targetAudience: courseStructure.targetAudience,
-            generatedAt: new Date().toISOString(),
-          },
-        },
-        'course.structure.generated',
-      );
-
-      this.logger.log('Course structure generated successfully', {
-        interactionID: interaction.id,
-        courseTitle: courseStructure.courseTitle,
-        chaptersCount: courseStructure.suggestedChapters.length,
-        processingTimeMs: processingTime,
-        confidenceScore,
-      });
-
-      return courseStructure;
+      return this.generateWithOpenAI(request);
     } catch (error) {
       this.logger.error('Error generating course structure', error);
       throw new InternalServerErrorException('Failed to generate course structure');
     }
-  }
-
-  private async getOrCreateCourseStructureAgent(): Promise<string> {
-    let agent = await this.prisma.aiAgent.findFirst({
-      where: { name: 'Course Structure Generator' },
-    });
-
-    if (!agent) {
-      agent = await this.prisma.aiAgent.create({
-        data: {
-          name: 'Course Structure Generator',
-          type: 'course_planning',
-          description: 'AI agent specialized in generating comprehensive course structures with chapters and lessons',
-          defaultConfig: {
-            model: 'gpt-4o-mini',
-            temperature: 0.7,
-            maxTokens: 3000,
-            systemPrompt: this.getSystemPrompt(),
-          },
-          isActive: true,
-        },
-      });
-    }
-
-    return agent.id;
   }
 
   private async generateWithOpenAI(
@@ -373,52 +259,5 @@ Ensure the course structure is pedagogically sound, engaging, and provides clear
     );
 
     return meaningfulWords.slice(0, 2).join(' ') || 'Your Subject';
-  }
-
-  private calculateConfidenceScore(
-    courseStructure: CourseStructureSuggestion,
-    request: CourseStructureRequest,
-  ): number {
-    let score = 0.5;
-
-    if (courseStructure.suggestedChapters.length >= 3) score += 0.1;
-    if (courseStructure.suggestedChapters.length <= 8) score += 0.1;
-
-    const totalLessons = courseStructure.suggestedChapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
-    if (totalLessons >= 10 && totalLessons <= 50) score += 0.1;
-
-    if (courseStructure.learningOutcomes.length >= 3) score += 0.05;
-    if (courseStructure.prerequisites.length > 0) score += 0.05;
-    if (courseStructure.pricingGuidance) score += 0.05;
-
-    if (request.targetAudience && courseStructure.targetAudience.toLowerCase().includes(request.targetAudience.toLowerCase())) {
-      score += 0.1;
-    }
-    if (request.difficultyLevel && courseStructure.recommendedDifficulty === request.difficultyLevel.toLowerCase()) {
-      score += 0.05;
-    }
-
-    return Math.min(score, 1.0);
-  }
-
-  private estimateTokensUsed(request: CourseStructureRequest, response: CourseStructureSuggestion): number {
-    const inputText = JSON.stringify(request);
-    const outputText = JSON.stringify(response);
-
-    return Math.ceil((inputText.length + outputText.length) / 4);
-  }
-
-  private async updateAgentStats(agentID: string): Promise<void> {
-    try {
-      await this.prisma.aiAgent.update({
-        where: { id: agentID },
-        data: {
-          totalRequests: { increment: 1 },
-          lastUsedAt: new Date(),
-        },
-      });
-    } catch (error) {
-      this.logger.warn('Failed to update agent stats:', error);
-    }
   }
 }

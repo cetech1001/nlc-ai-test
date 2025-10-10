@@ -5,7 +5,6 @@ import { EmailDeliverabilityClient } from "./email-deliverability.client";
 import { ContentSuggestionClient } from "./content-suggestion.client";
 import { ContentSuggestionConversationClient } from "./content-suggestion-conversation.client";
 import { CoachReplicaClient } from "./coach-replica.client";
-import { OnboardingClient } from "./onboarding.client";
 import { PublicChatClient } from "./public-chat.client";
 import { ServiceClientConfig } from "@nlc-ai/sdk-core";
 
@@ -17,7 +16,6 @@ export class AgentsClient {
   public contentSuggestion: ContentSuggestionClient;
   public contentConversation: ContentSuggestionConversationClient;
   public coachReplica: CoachReplicaClient;
-  public onboarding: OnboardingClient;
 
   constructor(private props: ServiceClientConfig) {
     this.courseStructure = new CourseStructureClient({
@@ -54,11 +52,6 @@ export class AgentsClient {
       ...props,
       baseURL: `${props.baseURL}/replica`,
     });
-
-    this.onboarding = new OnboardingClient({
-      ...props,
-      baseURL: `${props.baseURL}/onboarding`,
-    });
   }
 
   /**
@@ -85,7 +78,6 @@ export class AgentsClient {
       this.contentConversation,
       this.contentSuggestion,
       this.coachReplica,
-      this.onboarding,
     ];
 
     services.forEach(service => {

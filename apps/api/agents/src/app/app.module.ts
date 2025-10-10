@@ -6,16 +6,9 @@ import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-a
 import {AuthLibModule, JwtAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-import { HealthModule } from './health/health.module';
 import analyticsConfig from './config/analytics.config';
 import {CourseStructureModule} from "./course-structure/course-structure.module";
-import {ClientEmailModule} from "./client-email/client-email.module";
-import {EmailDeliverabilityModule} from "./email-deliverability/email-deliverability.module";
-import {CoachReplicaModule} from "./coach-replica/coach-replica.module";
-import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
-import {ContentSuggestionModule} from "./content-suggestion/content-suggestion.module";
 import {ReplicaModule} from "./replica/replica.module";
-import {OnboardingModule} from "./onboarding/onboarding.module";
 import {PublicChatModule} from "./public-chat/public-chat.module";
 
 @Module({
@@ -30,16 +23,9 @@ import {PublicChatModule} from "./public-chat/public-chat.module";
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
-    HealthModule,
-    CoachReplicaModule,
     CourseStructureModule,
-    ClientEmailModule,
-    EmailDeliverabilityModule,
-    LeadFollowupModule,
     ReplicaModule,
-    OnboardingModule,
     PublicChatModule,
-    ContentSuggestionModule,
   ],
   providers: [
     {

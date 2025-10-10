@@ -3,12 +3,14 @@ import {ServiceClientConfig} from "@nlc-ai/sdk-core";
 import {ClientsClient} from "./clients.client";
 import { ProfilesClient } from "./profiles.client";
 import { RelationshipClient } from "./relationship.client";
+import {OnboardingClient} from "./onboarding.client";
 
 export class UsersClient{
   public coaches: CoachesClient;
   public clients: ClientsClient;
   public profiles: ProfilesClient;
   public relationship: RelationshipClient;
+  public onboarding: OnboardingClient;
 
   constructor(config: ServiceClientConfig) {
     this.coaches = new CoachesClient({
@@ -30,11 +32,16 @@ export class UsersClient{
       ...config,
       baseURL: `${config.baseURL}`,
     });
+
+    this.onboarding = new OnboardingClient({
+      ...config,
+      baseURL: `${config.baseURL}/onboarding`,
+    });
   }
 
   updateApiKey(apiKey: string | null) {
     const services = [
-      this.coaches, this.clients, this.profiles
+      this.coaches, this.clients, this.profiles, this.relationship, this.onboarding
     ];
 
     services.forEach(service => {

@@ -21,10 +21,10 @@ export class OutboxService {
     private readonly configService: ConfigService,
     config?: OutboxConfig
   ) {
-    this.batchSize = config?.batchSize ?? this.configService.get<number>('OUTBOX_BATCH_SIZE', 100);
-    this.maxRetries = config?.maxRetries ?? this.configService.get<number>('OUTBOX_MAX_RETRIES', 3);
-    this.retentionDays = config?.retentionDays ?? this.configService.get<number>('OUTBOX_RETENTION_DAYS', 7);
-    this.dlqRetentionDays = config?.dlqRetentionDays ?? this.configService.get<number>('DLQ_RETENTION_DAYS', 30);
+    this.batchSize = Number(config?.batchSize ?? this.configService.get<number>('OUTBOX_BATCH_SIZE', 100));
+    this.maxRetries = Number(config?.maxRetries ?? this.configService.get<number>('OUTBOX_MAX_RETRIES', 3));
+    this.retentionDays = Number(config?.retentionDays ?? this.configService.get<number>('OUTBOX_RETENTION_DAYS', 7));
+    this.dlqRetentionDays = Number(config?.dlqRetentionDays ?? this.configService.get<number>('DLQ_RETENTION_DAYS', 30));
   }
 
   async saveAndPublishEvent<T extends BaseEvent>(

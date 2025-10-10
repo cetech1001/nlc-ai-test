@@ -10,7 +10,6 @@ import { ClientsModule } from './clients/clients.module';
 import { CoachesModule } from './coaches/coaches.module';
 import { AdminModule } from './admin/admin.module';
 import { ProfilesModule } from './profiles/profiles.module';
-import { HealthModule } from './health/health.module';
 import {usersConfig} from './config/users.config';
 
 @Module({
@@ -29,7 +28,6 @@ import {usersConfig} from './config/users.config';
     CoachesModule,
     AdminModule,
     ProfilesModule,
-    HealthModule,
   ],
   providers: [
     {
