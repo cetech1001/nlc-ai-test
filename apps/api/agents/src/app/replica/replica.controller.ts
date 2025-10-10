@@ -8,13 +8,14 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
-  BadRequestException,
+  BadRequestException, Sse,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType, type AuthUser } from '@nlc-ai/types';
 import { ReplicaService } from './replica.service';
+import {Observable} from "rxjs";
 
 @ApiTags('Coach Replica / Knowledge Base')
 @Controller('replica')
@@ -158,16 +159,63 @@ export class ReplicaController {
   @Post('thread/:threadID/stream')
   @ApiOperation({ summary: 'Stream assistant response' })
   @ApiResponse({ status: 200, description: 'Streaming response' })
+  @Sse()
   async streamAssistantResponse(
     @CurrentUser() user: AuthUser,
     @Param('threadID') threadID: string,
     @Body() body: { message: string }
-  ) {
-    return this.replica.streamAssistantResponse(
-      user.id,
-      threadID,
-      body.message
-    );
+  ): Promise<Observable<MessageEvent>> {
+    return new Observable((observer) => {
+      (async () => {
+        try {
+          const stream = await this.replica.streamAssistantResponse(
+            user.id,
+            threadID,
+            body.message
+          );
+
+          let fullContent = '';
+
+          stream
+            .on('textCreated', () => {
+              observer.next({ data: JSON.stringify({ type: 'start' }) } as MessageEvent);
+            })
+            .on('textDelta', (textDelta) => {
+              const content = textDelta.value || '';
+              fullContent += content;
+              observer.next({
+                data: JSON.stringify({
+                  type: 'content',
+                  content
+                })
+              } as MessageEvent);
+            })
+            .on('messageDone', async (message) => {
+              await this.replica.saveAssistantMessage(
+                user.id,
+                threadID,
+                message.id,
+                fullContent
+              );
+
+              observer.next({
+                data: JSON.stringify({
+                  type: 'done',
+                  messageID: message.id,
+                  fullContent
+                })
+              } as MessageEvent);
+              observer.complete();
+            })
+            .on('error', (error) => {
+              observer.error(error);
+            });
+
+        } catch (error) {
+          observer.error(error);
+        }
+      })();
+    });
   }
 
   @Get('assistant/info')

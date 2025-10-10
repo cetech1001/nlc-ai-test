@@ -1,9 +1,8 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '@nlc-ai/api-database';
-import { ConfigService } from '@nestjs/config';
-import { OpenAI } from 'openai';
+import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {PrismaService} from '@nlc-ai/api-database';
+import {ConfigService} from '@nestjs/config';
+import {OpenAI} from 'openai';
 import {AgentType, CoachingProfile, ScenarioAnswer} from "@nlc-ai/types";
-import {TextContentBlock} from "openai/resources/beta/threads";
 
 const MAX_FILE_SIZE = 512 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = {
@@ -443,26 +442,11 @@ export class ReplicaService {
     const thread = await this.validateThread(coachID, threadID);
 
     try {
-      const messages = await this.openai.beta.threads.messages.list(threadID, {
-        order: 'desc',
-        limit: 1
-      });
-
-      if (messages.data.length > 0) {
-        await this.prisma.agentMessage.create({
-          data: {
-            coachID,
-            role: messages.data[0].role,
-            threadID: thread.id,
-            messageID: messages.data[0].id,
-            content: (messages.data[0].content[0] as TextContentBlock).text.value,
-          }
-        });
-      }
-
-      return {
-        messages: messages.data,
-      };
+      return this.prisma.agentMessage.findMany({
+        where: {
+          threadID: thread.id,
+        }
+      })
 
     } catch (error: any) {
       this.logger.error('Failed to get messages:', error);
@@ -473,7 +457,7 @@ export class ReplicaService {
   async streamAssistantResponse(coachID: string, threadID: string, message: string) {
     const agent = await this.getAgent();
     const config = await this.getCoachConfig(coachID, agent.id);
-    await this.validateThread(coachID, threadID);
+    const thread = await this.validateThread(coachID, threadID);
 
     try {
       await this.openai.beta.threads.messages.create(threadID, {
@@ -481,18 +465,44 @@ export class ReplicaService {
         content: message
       });
 
-      const stream = this.openai.beta.threads.runs.stream(threadID, {
-        assistant_id: config.assistantID!
+      await this.prisma.agentMessage.create({
+        data: {
+          coachID,
+          role: 'user',
+          threadID: thread.id,
+          content: message,
+        }
       });
 
-      return {
-        stream: stream,
-      };
+      return this.openai.beta.threads.runs.stream(threadID, {
+        assistant_id: config.assistantID!
+      });
 
     } catch (error: any) {
       this.logger.error('Streaming failed:', error);
       throw new BadRequestException(`Streaming failed: ${error.message}`);
     }
+  }
+
+  async saveAssistantMessage(
+    coachID: string,
+    threadID: string,
+    messageID: string,
+    content: string
+  ) {
+    const thread = await this.validateThread(coachID, threadID);
+
+    await this.prisma.agentMessage.create({
+      data: {
+        coachID,
+        role: 'assistant',
+        threadID: thread.id,
+        messageID,
+        content,
+      }
+    });
+
+    return { success: true };
   }
 
   async getAssistantInfo(coachID: string, includeCoach?: boolean) {

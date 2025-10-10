@@ -63,9 +63,8 @@ export class AgentsClient {
     return new PublicChatClient(
       {
         ...this.props,
-        baseURL: `${this.props.baseURL}/public/chat`,
-      },
-      coachID
+        baseURL: `${this.props.baseURL}/public/chat/coach/${coachID}`,
+      }
     );
   }
 

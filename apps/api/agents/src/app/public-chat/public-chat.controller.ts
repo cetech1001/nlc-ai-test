@@ -3,11 +3,12 @@ import {
   Get,
   Post,
   Body,
-  Param,
+  Param, Sse,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ReplicaService } from '../replica/replica.service';
 import {Public} from "@nlc-ai/api-auth";
+import {Observable} from "rxjs";
 
 @Public()
 @ApiTags('Public Chatbot')
@@ -37,42 +38,6 @@ export class PublicChatController {
     return this.replica.createThread(coachID);
   }
 
-  @Post('coach/:coachID/thread/:threadID/message')
-  @ApiOperation({ summary: 'Add message to thread (public)' })
-  @ApiResponse({ status: 200, description: 'Message added successfully' })
-  async addMessageToThread(
-    @Param('coachID') coachID: string,
-    @Param('threadID') threadID: string,
-    @Body() body: { message: string },
-  ) {
-    return this.replica.addMessageToThread(
-      coachID,
-      threadID,
-      body.message,
-    );
-  }
-
-  @Post('coach/:coachID/thread/:threadID/run')
-  @ApiOperation({ summary: 'Run assistant on thread (public)' })
-  @ApiResponse({ status: 200, description: 'Assistant run started' })
-  async runAssistant(
-    @Param('coachID') coachID: string,
-    @Param('threadID') threadID: string,
-  ) {
-    return this.replica.runAssistant(coachID, threadID);
-  }
-
-  @Get('coach/:coachID/thread/:threadID/run/:runID/status')
-  @ApiOperation({ summary: 'Get run status (public)' })
-  @ApiResponse({ status: 200, description: 'Run status retrieved' })
-  async getRunStatus(
-    @Param('coachID') coachID: string,
-    @Param('threadID') threadID: string,
-    @Param('runID') runID: string,
-  ) {
-    return this.replica.getRunStatus(coachID, threadID, runID);
-  }
-
   @Get('coach/:coachID/thread/:threadID/messages')
   @ApiOperation({ summary: 'Get all messages in thread (public)' })
   @ApiResponse({ status: 200, description: 'Messages retrieved successfully' })
@@ -81,5 +46,68 @@ export class PublicChatController {
     @Param('threadID') threadID: string,
   ) {
     return this.replica.getThreadMessages(coachID, threadID);
+  }
+
+  @Post('coach/:coachID/thread/:threadID/stream')
+  @ApiOperation({ summary: 'Stream assistant response (public)' })
+  @ApiResponse({ status: 200, description: 'Streaming response' })
+  @Sse()
+  async streamAssistantResponse(
+    @Param('coachID') coachID: string,
+    @Param('threadID') threadID: string,
+    @Body() body: { message: string }
+  ): Promise<Observable<MessageEvent>> {
+    return new Observable((observer) => {
+      (async () => {
+        try {
+          const stream = await this.replica.streamAssistantResponse(
+            coachID,
+            threadID,
+            body.message
+          );
+
+          let fullContent = '';
+
+          stream
+            .on('textCreated', () => {
+              observer.next({ data: JSON.stringify({ type: 'start' }) } as MessageEvent);
+            })
+            .on('textDelta', (textDelta) => {
+              const content = textDelta.value || '';
+              fullContent += content;
+              observer.next({
+                data: JSON.stringify({
+                  type: 'content',
+                  content
+                })
+              } as MessageEvent);
+            })
+            .on('messageDone', async (message) => {
+              // Save assistant message to database
+              await this.replica.saveAssistantMessage(
+                coachID,
+                threadID,
+                message.id,
+                fullContent
+              );
+
+              observer.next({
+                data: JSON.stringify({
+                  type: 'done',
+                  messageID: message.id,
+                  fullContent
+                })
+              } as MessageEvent);
+              observer.complete();
+            })
+            .on('error', (error) => {
+              observer.error(error);
+            });
+
+        } catch (error) {
+          observer.error(error);
+        }
+      })();
+    });
   }
 }

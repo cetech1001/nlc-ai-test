@@ -9,12 +9,22 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 interface StandaloneChatProps {
   coachID: string;
   publicChatClient: PublicChatClient;
 }
+
+interface SessionThread {
+  threadID: string;
+  createdAt: number;
+  coachID: string;
+}
+
+const SESSION_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+const SESSION_KEY = 'nlc_chat_session';
 
 export const StandaloneChat: React.FC<StandaloneChatProps> = ({
                                                                 coachID,
@@ -28,6 +38,7 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingMessageIDRef = useRef<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -41,35 +52,107 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({
     initializeChat();
   }, [coachID]);
 
+  // Get session thread from sessionStorage
+  const getSessionThread = (): SessionThread | null => {
+    try {
+      const stored = sessionStorage.getItem(SESSION_KEY);
+      if (!stored) return null;
+
+      const session: SessionThread = JSON.parse(stored);
+
+      // Check if session is for the same coach
+      if (session.coachID !== coachID) {
+        sessionStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+
+      // Check if session has expired (older than 1 hour)
+      const now = Date.now();
+      const age = now - session.createdAt;
+
+      if (age > SESSION_DURATION) {
+        sessionStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+
+      return session;
+    } catch (err) {
+      console.error('Failed to parse session:', err);
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+  };
+
+  // Save thread to sessionStorage
+  const saveSessionThread = (threadID: string) => {
+    const session: SessionThread = {
+      threadID,
+      createdAt: Date.now(),
+      coachID
+    };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  };
+
+  // Clear session thread
+  const clearSessionThread = () => {
+    sessionStorage.removeItem(SESSION_KEY);
+  };
+
   const initializeChat = async () => {
     try {
-      const { coachName, threadID, greetingMessage } = await publicChatClient.initializeChat();
+      const info = await publicChatClient.getChatbotInfo();
+      setCoachName(info.coachName);
 
-      setCoachName(coachName);
-      setThreadID(threadID);
+      const existingSession = getSessionThread();
 
-      const {messages} = await publicChatClient.getThreadMessages(threadID);
+      let activeThreadID: string;
+      let shouldLoadMessages = false;
 
-      if (messages.length > 0) {
-        setMessages(messages.map(m => ({
-          ...m,
-          timestamp: new Date(m.created_at),
-          content: m.content[0].text.value,
-        })));
+      if (existingSession) {
+        console.log('Using existing session thread:', existingSession.threadID);
+        activeThreadID = existingSession.threadID;
+        shouldLoadMessages = true;
       } else {
-        const greetingMsg: Message = {
-          id: '1',
-          role: 'assistant',
-          content: greetingMessage,
-          timestamp: new Date()
-        };
-        setMessages([greetingMsg]);
+        console.log('Creating new thread...');
+        const thread = await publicChatClient.createThread();
+        activeThreadID = thread.threadID;
+        saveSessionThread(activeThreadID);
+      }
+
+      setThreadID(activeThreadID);
+
+      if (shouldLoadMessages) {
+        const messages = await publicChatClient.getThreadMessages(activeThreadID);
+
+        if (messages.length > 0) {
+          // const sortedMessages = [...messages].reverse();
+          setMessages(messages.map(m => ({
+            id: m.id,
+            role: m.role,
+            timestamp: new Date(m.createdAt),
+            content: m.content,
+          })));
+        } else {
+          showGreeting(info.coachName);
+        }
+      } else {
+        showGreeting(info.coachName);
       }
 
     } catch (err) {
       console.error('Failed to initialize chat:', err);
       setError('Failed to connect to chatbot. Please try refreshing the page.');
     }
+  };
+
+  const showGreeting = (name: string) => {
+    const greetingMsg: Message = {
+      id: '1',
+      role: 'assistant',
+      content: `Hi! I'm ${name}'s AI assistant. How can I help you today?`,
+      timestamp: new Date()
+    };
+    setMessages([greetingMsg]);
   };
 
   const handleSendMessage = async () => {
@@ -87,40 +170,90 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({
     setInputValue('');
     setIsLoading(true);
 
+    const assistantMessageID = (Date.now() + 1).toString();
+    streamingMessageIDRef.current = assistantMessageID;
+
+    const assistantMessage: Message = {
+      id: assistantMessageID,
+      role: 'assistant',
+      content: '...',
+      timestamp: new Date(),
+      isStreaming: true
+    };
+
+    setMessages(prev => [...prev, assistantMessage]);
+
     try {
-      const assistantResponse = await publicChatClient.sendMessageAndWaitForResponse(
+      await publicChatClient.streamMessage(
         threadID,
-        messageToSend
+        messageToSend,
+        (content: string) => {
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMessageID
+                ? { ...msg, content: msg.content + content }
+                : msg
+            )
+          );
+        },
+        (fullContent: string) => {
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMessageID
+                ? { ...msg, content: fullContent, isStreaming: false }
+                : msg
+            )
+          );
+          setIsLoading(false);
+          streamingMessageIDRef.current = null;
+        },
+        (error: Error) => {
+          console.error('Streaming error:', error);
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMessageID
+                ? {
+                  ...msg,
+                  content: "I'm having trouble responding right now. Please try again in a moment.",
+                  isStreaming: false
+                }
+                : msg
+            )
+          );
+          setIsLoading(false);
+          streamingMessageIDRef.current = null;
+        }
       );
-
-      const assistantMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: assistantResponse,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
 
     } catch (err) {
       console.error('Failed to send message:', err);
 
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: "I'm having trouble responding right now. Please try again in a moment.",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === assistantMessageID
+            ? {
+              ...msg,
+              content: "I'm having trouble responding right now. Please try again in a moment.",
+              isStreaming: false
+            }
+            : msg
+        )
+      );
       setIsLoading(false);
+      streamingMessageIDRef.current = null;
     }
+  };
+
+  const handleNewChat = () => {
+    clearSessionThread();
+    setMessages([]);
+    setThreadID(null);
+    initializeChat();
   };
 
   if (error) {
     return (
       <div className="h-screen bg-gradient-to-br from-black via-neutral-900 to-black flex items-center justify-center p-4">
-        {/* Background Orbs */}
         <div className="absolute w-96 h-96 -left-20 top-40 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[120px]" />
         <div className="absolute w-96 h-96 -right-20 bottom-40 opacity-20 bg-gradient-to-l from-purple-600 via-fuchsia-400 to-violet-600 rounded-full blur-[120px]" />
 
@@ -133,25 +266,32 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({
 
   return (
     <div className="h-full bg-gradient-to-br from-black via-neutral-900 to-black relative overflow-hidden flex flex-col">
-      {/* Background Orbs */}
       <div className="absolute w-96 h-96 -left-20 top-40 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[120px]" />
       <div className="absolute w-96 h-96 -right-20 bottom-40 opacity-20 bg-gradient-to-l from-purple-600 via-fuchsia-400 to-violet-600 rounded-full blur-[120px]" />
 
       <div className="relative z-10 flex flex-col h-[93vh] max-w-4xl mx-auto w-full">
-        {/* Header */}
         <div className="flex-shrink-0 p-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 border-b border-neutral-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-white font-semibold text-lg">{coachName}</h1>
+                <p className="text-white/80 text-xs">AI Assistant</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-white font-semibold text-lg">{coachName}</h1>
-              <p className="text-white/80 text-xs">AI Assistant</p>
-            </div>
+
+            <button
+              onClick={handleNewChat}
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-colors"
+              title="Start new conversation"
+            >
+              New Chat
+            </button>
           </div>
         </div>
 
-        {/* Chat Messages - Fixed height and overflow */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.map((message) => (
             <div
@@ -176,7 +316,12 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({
                     ? 'bg-blue-600/20 border border-blue-500/30'
                     : 'bg-neutral-800/50 border border-neutral-700'
                 } rounded-lg p-3`}>
-                  <p className="text-white text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-white text-sm whitespace-pre-wrap">
+                    {message.content}
+                    {message.isStreaming && (
+                      <span className="inline-block w-2 h-4 ml-1 bg-purple-400 animate-pulse" />
+                    )}
+                  </p>
                 </div>
                 <p className="text-stone-500 text-xs mt-1">
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -185,25 +330,9 @@ export const StandaloneChat: React.FC<StandaloneChatProps> = ({
             </div>
           ))}
 
-          {isLoading && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-fuchsia-600 rounded-lg flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div className="bg-neutral-800/50 border border-neutral-700 rounded-lg p-3">
-                <div className="flex gap-2">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
-            </div>
-          )}
-
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area - Fixed at bottom */}
         <div className="flex-shrink-0 p-4 bg-neutral-900/80 border-t border-neutral-700 backdrop-blur-sm">
           <div className="flex gap-3">
             <input
