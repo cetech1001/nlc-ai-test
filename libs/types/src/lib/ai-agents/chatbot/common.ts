@@ -24,6 +24,12 @@ export interface ChatbotCustomization {
   position: 'bottom-right' | 'bottom-left';
   greeting?: string;
 
+  // User info requirements
+  requireUserInfo: boolean;
+  requireName: boolean;
+  requireEmail: boolean;
+  requirePhone: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +49,10 @@ export interface ChatbotCustomizationFormData {
   glowColor: string;
   position: 'bottom-right' | 'bottom-left';
   greeting?: string;
+  requireUserInfo: boolean;
+  requireName: boolean;
+  requireEmail: boolean;
+  requirePhone: boolean;
 }
 
 export interface ChatbotCustomizationErrors {

@@ -16,6 +16,10 @@ interface ChatbotCustomizationData {
   glowColor: string;
   position: string;
   greeting?: string;
+  requireUserInfo?: boolean;
+  requireName?: boolean;
+  requireEmail?: boolean;
+  requirePhone?: boolean;
 }
 
 @Injectable()
@@ -58,7 +62,11 @@ export class ChatbotCustomizationService {
         backgroundColor: '#0A0A0A',
         glowColor: '#7B21BA',
         position: 'bottom-right',
-        greeting: "Hey! How's everything going with your program?\nLet me know if you need any help today!"
+        greeting: "Hey! How's everything going with your program?\nLet me know if you need any help today!",
+        requireUserInfo: false,
+        requireName: false,
+        requireEmail: false,
+        requirePhone: false
       }
     });
   }
@@ -101,7 +109,11 @@ export class ChatbotCustomizationService {
         backgroundColor: '#0A0A0A',
         glowColor: '#7B21BA',
         position: 'bottom-right',
-        greeting: "Hi! How can I help you today?"
+        greeting: "Hi! How can I help you today?",
+        requireUserInfo: false,
+        requireName: false,
+        requireEmail: false,
+        requirePhone: false
       };
     }
 
@@ -119,7 +131,11 @@ export class ChatbotCustomizationService {
       backgroundColor: customization.backgroundColor,
       glowColor: customization.glowColor,
       position: customization.position,
-      greeting: customization.greeting
+      greeting: customization.greeting,
+      requireUserInfo: customization.requireUserInfo || false,
+      requireName: customization.requireName || false,
+      requireEmail: customization.requireEmail || false,
+      requirePhone: customization.requirePhone || false
     };
   }
 }

@@ -16,12 +16,13 @@ export interface ChatbotCustomizationUpdateData {
   glowColor: string;
   position: string;
   greeting?: string;
+  requireUserInfo: boolean;
+  requireName: boolean;
+  requireEmail: boolean;
+  requirePhone: boolean;
 }
 
 export class ChatbotCustomizationClient extends BaseClient {
-  /**
-   * Get chatbot customization for current coach
-   */
   async getCustomization(): Promise<ChatbotCustomization> {
     const response = await this.request<ChatbotCustomization>(
       'GET',
@@ -30,9 +31,6 @@ export class ChatbotCustomizationClient extends BaseClient {
     return response.data!;
   }
 
-  /**
-   * Update chatbot customization
-   */
   async updateCustomization(data: ChatbotCustomizationUpdateData): Promise<ChatbotCustomization> {
     const response = await this.request<ChatbotCustomization>(
       'PUT',
@@ -42,9 +40,6 @@ export class ChatbotCustomizationClient extends BaseClient {
     return response.data!;
   }
 
-  /**
-   * Get public chatbot customization for a specific coach
-   */
   async getPublicCustomization(coachID: string): Promise<Partial<ChatbotCustomization>> {
     const response = await this.request<Partial<ChatbotCustomization>>(
       'GET',

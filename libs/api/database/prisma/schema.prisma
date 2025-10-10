@@ -188,6 +188,11 @@ model ChatbotCustomization {
   position String  @default("bottom-right") @db.VarChar(20)
   greeting String? @db.Text
 
+  requireUserInfo Boolean @default(false)
+  requireName     Boolean @default(false)
+  requireEmail    Boolean @default(false)
+  requirePhone    Boolean @default(false)
+
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
 

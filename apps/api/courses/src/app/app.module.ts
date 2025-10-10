@@ -9,7 +9,6 @@ import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/
 import {CoursesService} from "./courses/courses.service";
 import {CoursesController} from "./courses/courses.controller";
 import coursesConfig from './config/courses.config';
-import { HealthModule } from './health/health.module';
 import {ChaptersModule} from "./chapters/chapters.module";
 import {DripScheduleModule} from "./drip-schedule/drip-schedule.module";
 import {CoursesModule} from "./courses/courses.module";
@@ -33,7 +32,6 @@ import {PaywallModule} from "./paywall/paywall.module";
     DripScheduleModule,
     LessonsModule,
     PaywallModule,
-    HealthModule,
   ],
   controllers: [CoursesController],
   providers: [

@@ -27,6 +27,10 @@ interface CustomizationForm {
   glowColor: string;
   position: 'bottom-right' | 'bottom-left';
   greeting?: string;
+  requireUserInfo: boolean;
+  requireName: boolean;
+  requireEmail: boolean;
+  requirePhone: boolean;
 }
 
 const DEFAULT_FORM: CustomizationForm = {
@@ -41,13 +45,17 @@ const DEFAULT_FORM: CustomizationForm = {
   backgroundColor: '#0A0A0A',
   glowColor: '#7B21BA',
   position: 'bottom-right',
-  greeting: "Hey! How's everything going with your program?\nLet me know if you need any help today!"
+  greeting: "Hey! How's everything going with your program?\nLet me know if you need any help today!",
+  requireUserInfo: false,
+  requireName: false,
+  requireEmail: false,
+  requirePhone: false
 };
 
 export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> = ({
-  sdkClient,
-  coachID
-}) => {
+                                                                                    sdkClient,
+                                                                                    coachID
+                                                                                  }) => {
   const [form, setForm] = useState<CustomizationForm>(DEFAULT_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,7 +79,8 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
       setLoading(true);
       const response = await sdkClient.users.chatbotCustomization.getCustomization();
       if (response) {
-        setForm(response);
+        const { coachID, ...data } = response;
+        setForm(data);
       }
     } catch (error) {
       console.error('Failed to load customization:', error);
@@ -82,7 +91,17 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
   };
 
   const handleInputChange = (field: keyof CustomizationForm, value: any) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+
+      if (field === 'requireUserInfo' && !value) {
+        updated.requireName = false;
+        updated.requireEmail = false;
+        updated.requirePhone = false;
+      }
+
+      return updated;
+    });
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'logo') => {
@@ -247,7 +266,6 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden">
-      {/* Glow orbs */}
       <div className="absolute -left-[273px] -top-[209px] w-[547px] h-[547px] rounded-full opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 blur-[112.55px] pointer-events-none" />
       <div className="absolute right-[168px] bottom-[-209px] w-[547px] h-[547px] rounded-full opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 blur-[112.55px] pointer-events-none" />
 
@@ -344,6 +362,81 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* User Information Requirements */}
+            <div className="bg-neutral-900/50 border border-neutral-700 rounded-xl p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">User Information Requirements</h2>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-stone-300 text-sm font-medium">Require User Info Before Chat</label>
+                  <button
+                    onClick={() => handleInputChange('requireUserInfo', !form.requireUserInfo)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      form.requireUserInfo ? 'bg-violet-600' : 'bg-neutral-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        form.requireUserInfo ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {form.requireUserInfo && (
+                  <div className="ml-4 space-y-3 pt-2 border-t border-neutral-700">
+                    <div className="flex items-center justify-between">
+                      <label className="text-stone-400 text-sm">Require Name</label>
+                      <button
+                        onClick={() => handleInputChange('requireName', !form.requireName)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          form.requireName ? 'bg-violet-600' : 'bg-neutral-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            form.requireName ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-stone-400 text-sm">Require Email</label>
+                      <button
+                        onClick={() => handleInputChange('requireEmail', !form.requireEmail)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          form.requireEmail ? 'bg-violet-600' : 'bg-neutral-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            form.requireEmail ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <label className="text-stone-400 text-sm">Require Phone</label>
+                      <button
+                        onClick={() => handleInputChange('requirePhone', !form.requirePhone)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          form.requirePhone ? 'bg-violet-600' : 'bg-neutral-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            form.requirePhone ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -454,7 +547,6 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
               </div>
 
               <div className="bg-neutral-800 rounded-lg p-8 min-h-[600px] relative overflow-hidden">
-                {/* Preview glow orbs */}
                 <div
                   className="absolute -left-20 -top-20 w-40 h-40 rounded-full opacity-20 blur-3xl"
                   style={{ background: form.glowColor }}
@@ -464,12 +556,10 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
                   style={{ background: form.glowColor }}
                 />
 
-                {/* Preview chatbot window */}
                 <div
                   className="relative z-10 max-w-sm mx-auto rounded-xl overflow-hidden shadow-2xl"
                   style={{ background: form.backgroundColor }}
                 >
-                  {/* Header */}
                   <div
                     className="p-4 text-white"
                     style={{
@@ -493,46 +583,100 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
                     </div>
                   </div>
 
-                  {/* Messages */}
                   <div className="p-4 space-y-4 min-h-[300px]">
-                    {/* Assistant message */}
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2 text-xs" style={{ color: form.assistantTextColor }}>
-                        <span>{form.name}</span>
-                        <div className="w-1 h-1 rounded-full bg-gray-400" />
-                        <span>12:10 PM</span>
+                    {form.requireUserInfo ? (
+                      <div className="space-y-3">
+                        <div className="text-xs text-center" style={{ color: form.assistantTextColor }}>
+                          Please provide your information to start chatting
+                        </div>
+                        {form.requireName && (
+                          <input
+                            type="text"
+                            placeholder="Name"
+                            disabled
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                            style={{
+                              background: 'rgba(0,0,0,0.3)',
+                              borderColor: 'rgba(255,255,255,0.3)',
+                              color: form.assistantTextColor
+                            }}
+                          />
+                        )}
+                        {form.requireEmail && (
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            disabled
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                            style={{
+                              background: 'rgba(0,0,0,0.3)',
+                              borderColor: 'rgba(255,255,255,0.3)',
+                              color: form.assistantTextColor
+                            }}
+                          />
+                        )}
+                        {form.requirePhone && (
+                          <input
+                            type="tel"
+                            placeholder="Phone"
+                            disabled
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                            style={{
+                              background: 'rgba(0,0,0,0.3)',
+                              borderColor: 'rgba(255,255,255,0.3)',
+                              color: form.assistantTextColor
+                            }}
+                          />
+                        )}
+                        <button
+                          disabled
+                          className="w-full py-2 rounded-lg text-sm font-semibold text-white"
+                          style={{
+                            background: `linear-gradient(to right, ${form.gradientStart}, ${form.gradientEnd})`
+                          }}
+                        >
+                          Start Chat
+                        </button>
                       </div>
-                      <div
-                        className="px-4 py-2 rounded-lg max-w-[85%] text-sm"
-                        style={{
-                          background: form.assistantBubbleColor,
-                          color: form.assistantTextColor
-                        }}
-                      >
-                        {form.greeting || "Hi! How can I help you today?"}
-                      </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-xs" style={{ color: form.assistantTextColor }}>
+                            <span>{form.name}</span>
+                            <div className="w-1 h-1 rounded-full bg-gray-400" />
+                            <span>12:10 PM</span>
+                          </div>
+                          <div
+                            className="px-4 py-2 rounded-lg max-w-[85%] text-sm"
+                            style={{
+                              background: form.assistantBubbleColor,
+                              color: form.assistantTextColor
+                            }}
+                          >
+                            {form.greeting || "Hi! How can I help you today?"}
+                          </div>
+                        </div>
 
-                    {/* User message */}
-                    <div className="flex flex-col gap-1 items-end">
-                      <div className="flex items-center gap-2 text-xs" style={{ color: form.userTextColor }}>
-                        <span>You</span>
-                        <div className="w-1 h-1 rounded-full bg-gray-400" />
-                        <span>12:12 PM</span>
-                      </div>
-                      <div
-                        className="px-4 py-2 rounded-lg max-w-[85%] text-sm"
-                        style={{
-                          background: form.userBubbleColor,
-                          color: form.userTextColor
-                        }}
-                      >
-                        This is a preview message
-                      </div>
-                    </div>
+                        <div className="flex flex-col gap-1 items-end">
+                          <div className="flex items-center gap-2 text-xs" style={{ color: form.userTextColor }}>
+                            <span>You</span>
+                            <div className="w-1 h-1 rounded-full bg-gray-400" />
+                            <span>12:12 PM</span>
+                          </div>
+                          <div
+                            className="px-4 py-2 rounded-lg max-w-[85%] text-sm"
+                            style={{
+                              background: form.userBubbleColor,
+                              color: form.userTextColor
+                            }}
+                          >
+                            This is a preview message
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Input */}
                   <div className="p-4 border-t border-neutral-700">
                     <div className="flex gap-2 items-center px-3 py-2 bg-black/20 border border-neutral-600 rounded-lg">
                       <input
@@ -560,7 +704,6 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
         </div>
       </div>
 
-      {/* Avatar Upload Modal */}
       {showAvatarModal && (
         <UploadModal
           title="Upload Avatar"
@@ -574,7 +717,6 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
         />
       )}
 
-      {/* Logo Upload Modal */}
       {showLogoModal && (
         <UploadModal
           title="Upload Logo"
@@ -588,7 +730,6 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
         />
       )}
 
-      {/* Image Cropper */}
       {showCropModal && originalImageUrl && (
         <ImageCropper
           imageSrc={originalImageUrl}
@@ -601,7 +742,6 @@ export const ChatbotCustomizationPage: React.FC<ChatbotCustomizationPageProps> =
   );
 };
 
-// Color Input Component
 const ColorInput: React.FC<{
   label: string;
   value: string;
@@ -626,7 +766,6 @@ const ColorInput: React.FC<{
   </div>
 );
 
-// Upload Modal Component
 const UploadModal: React.FC<{
   title: string;
   previewUrl: string | null;
