@@ -11,16 +11,16 @@
 
   const config = {
     coachID: coachID,
-    apiBaseURL: scriptTag.src.split('/embed/')[0],
-    primaryColor: scriptTag.getAttribute('data-color') || '#DF69FF',
-    position: scriptTag.getAttribute('data-position') || 'bottom-right',
-    greeting: scriptTag.getAttribute('data-greeting') || 'Hi! How can I help you today?'
+    apiBaseURL: scriptTag.src.split('/embed/')[0]
   };
 
   const SESSION_DURATION = 60 * 60 * 1000;
   const SESSION_KEY = 'nlc_chat_session_' + coachID;
+  const USER_INFO_KEY = 'nlc_user_info_' + coachID;
 
-  const styles = `
+  let customization = null;
+
+  const baseStyles = `
     .nlc-chatbot-container {
       position: fixed;
       z-index: 999999;
@@ -41,7 +41,6 @@
       width: 60px;
       height: 60px;
       border-radius: 50%;
-      background: linear-gradient(135deg, ${config.primaryColor} 0%, #B339D4 100%);
       border: none;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -49,6 +48,8 @@
       align-items: center;
       justify-content: center;
       transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      z-index: 2;
     }
 
     .nlc-chatbot-button:hover {
@@ -67,14 +68,13 @@
       bottom: 80px;
       width: 420px;
       height: 650px;
-      background: #0A0A0A;
       border-radius: 16px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       border: 1px solid #373535;
       display: none;
       flex-direction: column;
       overflow: hidden;
-      position: relative;
+      z-index: 1;
     }
 
     .nlc-chatbot-container.bottom-right .nlc-chatbot-window {
@@ -109,7 +109,6 @@
       height: 547px;
       border-radius: 50%;
       opacity: 0.2;
-      background: linear-gradient(to right, #7B21BA, #E587FF, #7B21BA);
       filter: blur(112.55px);
       pointer-events: none;
       z-index: 0;
@@ -123,7 +122,6 @@
       height: 547px;
       border-radius: 50%;
       opacity: 0.2;
-      background: linear-gradient(to left, #7B21BA, #E587FF, #7B26F0);
       filter: blur(112.55px);
       pointer-events: none;
       z-index: 0;
@@ -131,7 +129,6 @@
 
     .nlc-chatbot-header {
       padding: 20px;
-      background: linear-gradient(135deg, ${config.primaryColor} 0%, #B339D4 100%);
       color: white;
       display: flex;
       align-items: center;
@@ -238,7 +235,6 @@
       align-items: center;
       gap: 6px;
       font-size: 11px;
-      color: #C5C5C5;
     }
 
     .nlc-chatbot-message-dot {
@@ -252,32 +248,42 @@
       max-width: 85%;
       padding: 12px 16px;
       border-radius: 10px;
-      color: #C5C5C5;
       font-size: 14px;
       line-height: 1.5;
       white-space: pre-wrap;
     }
 
-    .nlc-chatbot-message.assistant .nlc-chatbot-bubble {
-      background: #1A1A1A;
+    .nlc-chatbot-typing {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
     }
 
-    .nlc-chatbot-message.user .nlc-chatbot-bubble {
-      background: rgba(223, 105, 255, 0.08);
-    }
-
-    .nlc-chatbot-cursor {
-      display: inline-block;
-      width: 2px;
-      height: 16px;
+    .nlc-chatbot-typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
       background: #B339D4;
-      margin-left: 2px;
-      animation: blink 1s infinite;
+      animation: typing 1.4s infinite;
     }
 
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
+    .nlc-chatbot-typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .nlc-chatbot-typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+      0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.7;
+      }
+      30% {
+        transform: translateY(-10px);
+        opacity: 1;
+      }
     }
 
     .nlc-chatbot-input-container {
@@ -334,7 +340,6 @@
     }
 
     .nlc-chatbot-send {
-      background: linear-gradient(to right, #B339D4, #7B21BA, #7B26F0);
       border: none;
       border-radius: 50%;
       width: 40px;
@@ -362,6 +367,70 @@
       fill: #F9F9F9;
     }
 
+    .nlc-user-info-form {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 1;
+      position: relative;
+    }
+
+    .nlc-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nlc-form-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .nlc-form-input {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .nlc-form-input:focus {
+      border-color: #B339D4;
+    }
+
+    .nlc-form-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .nlc-form-error {
+      color: #ff6b6b;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .nlc-form-submit {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .nlc-form-submit:hover {
+      opacity: 0.9;
+    }
+
+    .nlc-form-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     @media (max-width: 480px) {
       .nlc-chatbot-window {
         width: calc(100vw - 40px);
@@ -372,14 +441,14 @@
   `;
 
   const styleSheet = document.createElement('style');
-  styleSheet.textContent = styles;
+  styleSheet.textContent = baseStyles;
   document.head.appendChild(styleSheet);
 
   const chatbotHTML = `
-    <div class="nlc-chatbot-container ${config.position}">
+    <div class="nlc-chatbot-container">
       <button class="nlc-chatbot-button" id="nlc-toggle-btn">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM8.5 11C9.33 11 10 10.33 10 9.5C10 8.67 9.33 8 8.5 8C7.67 8 7 8.67 7 9.5C7 10.33 7.67 11 8.5 11ZM15.5 11C16.33 11 17 10.33 17 9.5C17 8.67 16.33 8 15.5 8C14.67 8 14 8.67 14 9.5C14 10.33 14.67 11 15.5 11ZM12 17.5C14.33 17.5 16.31 16.04 17.11 14H6.89C7.69 16.04 9.67 17.5 12 17.5Z"/>
+          <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H6L4 18V4H20V16ZM7 9H9V11H7V9ZM11 9H13V11H11V9ZM15 9H17V11H15V9Z"/>
         </svg>
       </button>
 
@@ -402,6 +471,27 @@
               <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </button>
+        </div>
+
+        <div id="nlc-user-info-container" style="display: none;">
+          <form class="nlc-user-info-form" id="nlc-user-info-form">
+            <div class="nlc-form-group">
+              <label class="nlc-form-label" id="nlc-name-label">Name *</label>
+              <input type="text" class="nlc-form-input" id="nlc-name-input" placeholder="Enter your name" />
+              <span class="nlc-form-error" id="nlc-name-error"></span>
+            </div>
+            <div class="nlc-form-group" id="nlc-email-group">
+              <label class="nlc-form-label" id="nlc-email-label">Email *</label>
+              <input type="email" class="nlc-form-input" id="nlc-email-input" placeholder="Enter your email" />
+              <span class="nlc-form-error" id="nlc-email-error"></span>
+            </div>
+            <div class="nlc-form-group" id="nlc-phone-group">
+              <label class="nlc-form-label" id="nlc-phone-label">Phone *</label>
+              <input type="tel" class="nlc-form-input" id="nlc-phone-input" placeholder="Enter your phone" />
+              <span class="nlc-form-error" id="nlc-phone-error"></span>
+            </div>
+            <button type="submit" class="nlc-form-submit" id="nlc-form-submit">Start Chat</button>
+          </form>
         </div>
 
         <div class="nlc-chatbot-messages" id="nlc-messages"></div>
@@ -436,10 +526,53 @@
     init();
   }
 
-  function init() {
+  async function init() {
+    try {
+      await loadCustomization();
+      initializeUI();
+    } catch (error) {
+      console.error('Failed to initialize chatbot:', error);
+    }
+  }
+
+  async function loadCustomization() {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/api/users/chatbot-customization/public/${config.coachID}`);
+      const data = await response.json();
+      customization = data.data || data;
+    } catch (error) {
+      console.error('Failed to load customization:', error);
+      customization = getDefaultCustomization();
+    }
+  }
+
+  function getDefaultCustomization() {
+    return {
+      name: 'AI Coach',
+      primaryColor: '#DF69FF',
+      gradientStart: '#B339D4',
+      gradientEnd: '#7B21BA',
+      assistantTextColor: '#C5C5C5',
+      assistantBubbleColor: '#1A1A1A',
+      userTextColor: '#C5C5C5',
+      userBubbleColor: 'rgba(223,105,255,0.08)',
+      backgroundColor: '#0A0A0A',
+      glowColor: '#7B21BA',
+      position: 'bottom-right',
+      greeting: "Hey! How's everything going with your program?\nLet me know if you need any help today!",
+      requireUserInfo: false,
+      requireName: false,
+      requireEmail: false,
+      requirePhone: false
+    };
+  }
+
+  function initializeUI() {
     const container = document.createElement('div');
     container.innerHTML = chatbotHTML;
     document.body.appendChild(container.firstElementChild);
+
+    applyCustomization();
 
     const toggleBtn = document.getElementById('nlc-toggle-btn');
     const closeBtn = document.getElementById('nlc-close-btn');
@@ -449,11 +582,22 @@
     const sendBtn = document.getElementById('nlc-send-btn');
     const coachNameEl = document.getElementById('nlc-coach-name');
     const avatarEl = document.getElementById('nlc-avatar');
+    const userInfoForm = document.getElementById('nlc-user-info-form');
+    const userInfoContainer = document.getElementById('nlc-user-info-container');
 
     let threadID = null;
     let isLoading = false;
-    let coachName = 'Coach';
+    let coachName = customization.name;
     let streamingMessageID = null;
+    let showTypingIndicator = false;
+
+    coachNameEl.textContent = coachName;
+    const firstInitial = coachName.charAt(0).toUpperCase();
+    avatarEl.querySelector('.nlc-chatbot-avatar-text').textContent = firstInitial;
+
+    if (customization.avatarUrl) {
+      avatarEl.innerHTML = `<img src="${customization.avatarUrl}" alt="${coachName}" />`;
+    }
 
     toggleBtn.addEventListener('click', toggleChat);
     closeBtn.addEventListener('click', closeChat);
@@ -463,6 +607,57 @@
         sendMessage();
       }
     });
+
+    if (userInfoForm) {
+      userInfoForm.addEventListener('submit', handleUserInfoSubmit);
+    }
+
+    function applyCustomization() {
+      const chatbotContainer = document.querySelector('.nlc-chatbot-container');
+      if (chatbotContainer) {
+        chatbotContainer.className = `nlc-chatbot-container ${customization.position}`;
+      }
+
+      const style = document.createElement('style');
+      style.textContent = `
+        .nlc-chatbot-button {
+          background: linear-gradient(135deg, ${customization.primaryColor} 0%, ${customization.gradientStart} 100%) !important;
+        }
+        .nlc-chatbot-window {
+          background: ${customization.backgroundColor} !important;
+        }
+        .nlc-chatbot-header {
+          background: linear-gradient(135deg, ${customization.primaryColor} 0%, ${customization.gradientStart} 100%) !important;
+        }
+        .nlc-chatbot-glow-left {
+          background: linear-gradient(to right, ${customization.glowColor}, ${customization.primaryColor}, ${customization.glowColor}) !important;
+        }
+        .nlc-chatbot-glow-right {
+          background: linear-gradient(to left, ${customization.glowColor}, ${customization.primaryColor}, ${customization.glowColor}) !important;
+        }
+        .nlc-chatbot-message.assistant .nlc-chatbot-bubble {
+          background: ${customization.assistantBubbleColor} !important;
+          color: ${customization.assistantTextColor} !important;
+        }
+        .nlc-chatbot-message.user .nlc-chatbot-bubble {
+          background: ${customization.userBubbleColor} !important;
+          color: ${customization.userTextColor} !important;
+        }
+        .nlc-chatbot-message-header {
+          color: ${customization.assistantTextColor} !important;
+        }
+        .nlc-chatbot-send {
+          background: linear-gradient(to right, ${customization.gradientStart}, ${customization.gradientEnd}, ${customization.primaryColor}) !important;
+        }
+        .nlc-form-label {
+          color: ${customization.assistantTextColor} !important;
+        }
+        .nlc-form-submit {
+          background: linear-gradient(to right, ${customization.gradientStart}, ${customization.gradientEnd}, ${customization.primaryColor}) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
 
     function getSessionThread() {
       try {
@@ -494,10 +689,37 @@
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
     }
 
+    function getUserInfo() {
+      try {
+        const stored = sessionStorage.getItem(USER_INFO_KEY);
+        return stored ? JSON.parse(stored) : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function saveUserInfo(info) {
+      sessionStorage.setItem(USER_INFO_KEY, JSON.stringify(info));
+    }
+
     function toggleChat() {
-      chatWindow.classList.toggle('open');
-      if (chatWindow.classList.contains('open') && !threadID) {
-        initializeChat();
+      const isOpen = chatWindow.classList.contains('open');
+
+      if (!isOpen) {
+        chatWindow.classList.add('open');
+
+        if (!threadID) {
+          if (customization.requireUserInfo) {
+            const userInfo = getUserInfo();
+            if (!userInfo) {
+              showUserInfoForm();
+              return;
+            }
+          }
+          initializeChat();
+        }
+      } else {
+        chatWindow.classList.remove('open');
       }
     }
 
@@ -505,17 +727,73 @@
       chatWindow.classList.remove('open');
     }
 
+    function showUserInfoForm() {
+      messagesContainer.style.display = 'none';
+      document.querySelector('.nlc-chatbot-input-container').style.display = 'none';
+      userInfoContainer.style.display = 'block';
+
+      if (!customization.requireEmail) {
+        document.getElementById('nlc-email-group').style.display = 'none';
+      }
+      if (!customization.requirePhone) {
+        document.getElementById('nlc-phone-group').style.display = 'none';
+      }
+    }
+
+    function hideUserInfoForm() {
+      messagesContainer.style.display = 'block';
+      document.querySelector('.nlc-chatbot-input-container').style.display = 'flex';
+      userInfoContainer.style.display = 'none';
+    }
+
+    function handleUserInfoSubmit(e) {
+      e.preventDefault();
+
+      document.getElementById('nlc-name-error').textContent = '';
+      document.getElementById('nlc-email-error').textContent = '';
+      document.getElementById('nlc-phone-error').textContent = '';
+
+      const name = document.getElementById('nlc-name-input').value.trim();
+      const email = document.getElementById('nlc-email-input').value.trim();
+      const phone = document.getElementById('nlc-phone-input').value.trim();
+
+      let hasError = false;
+
+      if (customization.requireName && !name) {
+        document.getElementById('nlc-name-error').textContent = 'Name is required';
+        hasError = true;
+      }
+
+      if (customization.requireEmail) {
+        if (!email) {
+          document.getElementById('nlc-email-error').textContent = 'Email is required';
+          hasError = true;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          document.getElementById('nlc-email-error').textContent = 'Invalid email address';
+          hasError = true;
+        }
+      }
+
+      if (customization.requirePhone && !phone) {
+        document.getElementById('nlc-phone-error').textContent = 'Phone is required';
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      const userInfo = {
+        name: name || undefined,
+        email: email || undefined,
+        phone: phone || undefined
+      };
+
+      saveUserInfo(userInfo);
+      hideUserInfoForm();
+      initializeChat();
+    }
+
     async function initializeChat() {
       try {
-        const infoResponse = await fetch(`${config.apiBaseURL}/api/agents/public/chat/coach/${config.coachID}/info`);
-        const infoData = await infoResponse.json();
-
-        coachName = infoData.data.coachName;
-        coachNameEl.textContent = coachName;
-
-        const firstInitial = coachName.charAt(0).toUpperCase();
-        avatarEl.querySelector('.nlc-chatbot-avatar-text').textContent = firstInitial;
-
         const existingSession = getSessionThread();
         let shouldLoadMessages = false;
 
@@ -555,7 +833,7 @@
     }
 
     function showGreeting() {
-      addMessage('assistant', `Hey! How's everything going with your program?\nLet me know if you need any help today!`);
+      addMessage('assistant', customization.greeting || "Hey! How's everything going with your program?\nLet me know if you need any help today!");
     }
 
     async function sendMessage() {
@@ -569,7 +847,8 @@
       sendBtn.disabled = true;
 
       streamingMessageID = 'msg-' + Date.now();
-      const messageEl = addMessage('assistant', '', null, true);
+      showTypingIndicator = true;
+      const messageEl = addTypingIndicator();
 
       try {
         const response = await fetch(
@@ -585,6 +864,7 @@
         const decoder = new TextDecoder();
         let buffer = '';
         let fullContent = '';
+        let firstContentReceived = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -600,10 +880,25 @@
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.type === 'content') {
-                  fullContent += parsed.content;
-                  updateMessageContent(messageEl, fullContent, true);
+                  if (!firstContentReceived) {
+                    removeTypingIndicator(messageEl);
+                    const newMessageEl = addMessage('assistant', '', null, true);
+                    messageEl.replaceWith(newMessageEl);
+                    firstContentReceived = true;
+                    fullContent += parsed.content;
+                    updateMessageContent(newMessageEl, fullContent, true);
+                  } else {
+                    fullContent += parsed.content;
+                    const existingMsg = messagesContainer.querySelector(`[data-message-id="${streamingMessageID}"]`);
+                    if (existingMsg) {
+                      updateMessageContent(existingMsg, fullContent, true);
+                    }
+                  }
                 } else if (parsed.type === 'done') {
-                  updateMessageContent(messageEl, parsed.fullContent, false);
+                  const existingMsg = messagesContainer.querySelector(`[data-message-id="${streamingMessageID}"]`);
+                  if (existingMsg) {
+                    updateMessageContent(existingMsg, parsed.fullContent, false);
+                  }
                 }
               } catch (e) {
                 console.error('Parse error:', e);
@@ -613,11 +908,54 @@
         }
       } catch (error) {
         console.error('Failed to send message:', error);
-        updateMessageContent(messageEl, 'Sorry, I encountered an error. Please try again.', false);
+        removeTypingIndicator(messageEl);
+        addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
       } finally {
         isLoading = false;
         sendBtn.disabled = false;
         streamingMessageID = null;
+        showTypingIndicator = false;
+      }
+    }
+
+    function addTypingIndicator() {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'nlc-chatbot-message assistant';
+      messageDiv.dataset.messageID = streamingMessageID;
+
+      const time = new Date();
+      const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'nlc-chatbot-message-header';
+      headerDiv.innerHTML = `
+        <span>${coachName}</span>
+        <div class="nlc-chatbot-message-dot"></div>
+        <span>${timeStr}</span>
+      `;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'nlc-chatbot-bubble';
+      bubble.innerHTML = `
+        <div class="nlc-chatbot-typing">
+          <div class="nlc-chatbot-typing-dot"></div>
+          <div class="nlc-chatbot-typing-dot"></div>
+          <div class="nlc-chatbot-typing-dot"></div>
+        </div>
+      `;
+
+      messageDiv.appendChild(headerDiv);
+      messageDiv.appendChild(bubble);
+      messagesContainer.appendChild(messageDiv);
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      return messageDiv;
+    }
+
+    function removeTypingIndicator(messageEl) {
+      if (messageEl && messageEl.parentNode) {
+        messageEl.remove();
       }
     }
 
@@ -641,12 +979,6 @@
       bubble.className = 'nlc-chatbot-bubble';
       bubble.textContent = content;
 
-      if (isStreaming) {
-        const cursor = document.createElement('span');
-        cursor.className = 'nlc-chatbot-cursor';
-        bubble.appendChild(cursor);
-      }
-
       messageDiv.appendChild(headerDiv);
       messageDiv.appendChild(bubble);
       messagesContainer.appendChild(messageDiv);
@@ -659,12 +991,6 @@
     function updateMessageContent(messageEl, content, isStreaming) {
       const bubble = messageEl.querySelector('.nlc-chatbot-bubble');
       bubble.textContent = content;
-
-      if (isStreaming) {
-        const cursor = document.createElement('span');
-        cursor.className = 'nlc-chatbot-cursor';
-        bubble.appendChild(cursor);
-      }
 
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
