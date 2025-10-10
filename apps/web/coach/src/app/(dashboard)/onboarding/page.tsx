@@ -204,7 +204,7 @@ const OnboardingContainer = () => {
       <div className="absolute w-96 h-96 -right-20 bottom-40 opacity-20 bg-gradient-to-l from-purple-600 via-fuchsia-400 to-violet-600 rounded-full blur-[120px]" />
 
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="max-w-5xl mx-auto mb-12">
+        <div className="w-full mx-auto mb-12">
           <div className="flex items-center justify-between">
             {ONBOARDING_STEPS.map((step, index) => {
               const isCompleted = completedSteps.includes(index);
@@ -261,7 +261,7 @@ const OnboardingContainer = () => {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full mx-auto">
           <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 md:p-12">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-white mb-2">

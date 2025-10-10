@@ -151,6 +151,7 @@ export class OnboardingRepository {
         email: true,
         firstName: true,
         lastName: true,
+        metadata: true,
       },
     });
   }

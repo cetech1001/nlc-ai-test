@@ -21,20 +21,15 @@ export class OnboardingService {
     await this.repository.markComplete(coachID);
 
     const coach = await this.repository.getCoach(coachID);
-    const status = await this.repository.getStatus(coachID);
 
     await this.outbox.saveAndPublishEvent<OnboardingEvent>({
       eventType: ONBOARDING_EVENTS.COMPLETED,
       schemaVersion: 1,
       payload: {
         coachID,
-        email: coach?.email || '',
         firstName: coach?.firstName || '',
-        lastName: coach?.lastName || '',
-        scenariosCount: status.scenariosCompleted,
-        documentsCount: status.documentsUploaded,
-        connectionsCount: status.connectionsLinked,
-        completedAt: new Date().toISOString(),
+        profile: await this.generateCoachingProfile(coachID),
+        scenarios: (coach?.metadata as any)?.onboarding.scenarios,
       },
     }, ONBOARDING_EVENTS.COMPLETED);
   }

@@ -89,7 +89,7 @@ export const ConnectionsStep = () => {
   const essentialTotal = 2;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div className="bg-neutral-800/50 rounded-2xl p-6 border border-neutral-700">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -135,10 +135,10 @@ export const ConnectionsStep = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4 flex-1">
+              <div className="flex flex-col items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 flex-1">
                   <div className="w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">
                     <img src="/images/icons/gmail-icon.png" alt="Gmail" className="w-6 h-6" />
                   </div>
@@ -202,8 +202,8 @@ export const ConnectionsStep = () => {
             </div>
 
             <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4 flex-1">
+              <div className="flex flex-col items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start gap-4 flex-1">
                   <div className="w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">
                     <img src="/images/icons/outlook-icon.png" alt="Outlook" className="w-6 h-6" />
                   </div>
@@ -220,7 +220,7 @@ export const ConnectionsStep = () => {
                     </div>
 
                     <p className="text-stone-400 text-sm mb-2">
-                      Alternative email provider for automation
+                      Alternative email provider for AI email automation
                     </p>
 
                     <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700">
@@ -264,8 +264,8 @@ export const ConnectionsStep = () => {
             </div>
 
             <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4 flex-1">
+              <div className="flex flex-col items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start gap-4 flex-1">
                   <div className="w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center flex-shrink-0">
                     <img src="/images/icons/calendly-icon.png" alt="Calendly" className="w-6 h-6" />
                   </div>

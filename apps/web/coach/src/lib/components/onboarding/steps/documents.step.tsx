@@ -209,7 +209,7 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {DOCUMENT_CATEGORIES.map((category) => {
           const categoryDocs = getUploadedByCategory(category.id);
 

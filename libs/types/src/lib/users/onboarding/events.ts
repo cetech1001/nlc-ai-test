@@ -1,4 +1,5 @@
 import {BaseEvent} from "../../base-event";
+import {CoachingProfile, ScenarioAnswer} from "./responses";
 
 export const ONBOARDING_EVENTS = {
   COMPLETED: 'onboarding.coach.completed',
@@ -10,13 +11,9 @@ export interface OnboardingCompletedPayload extends BaseEvent{
   eventType: 'onboarding.coach.completed',
   payload: {
     coachID: string;
-    email: string;
     firstName: string;
-    lastName: string;
-    scenariosCount: number;
-    documentsCount: number;
-    connectionsCount: number;
-    completedAt: string;
+    profile: CoachingProfile;
+    scenarios: ScenarioAnswer[];
   }
 }
 

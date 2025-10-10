@@ -10,6 +10,7 @@ import analyticsConfig from './config/analytics.config';
 import {CourseStructureModule} from "./course-structure/course-structure.module";
 import {ReplicaModule} from "./replica/replica.module";
 import {PublicChatModule} from "./public-chat/public-chat.module";
+import {EventsModule} from "./events/events.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import {PublicChatModule} from "./public-chat/public-chat.module";
     CourseStructureModule,
     ReplicaModule,
     PublicChatModule,
+    EventsModule,
   ],
   providers: [
     {

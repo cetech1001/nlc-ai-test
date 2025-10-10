@@ -448,15 +448,17 @@ export class ReplicaService {
         limit: 1
       });
 
-      await this.prisma.agentMessage.create({
-        data: {
-          coachID,
-          role: messages.data[0].role,
-          threadID: thread.id,
-          messageID: messages.data[0].id,
-          content: (messages.data[0].content[0] as TextContentBlock).text.value,
-        }
-      })
+      if (messages.data.length > 0) {
+        await this.prisma.agentMessage.create({
+          data: {
+            coachID,
+            role: messages.data[0].role,
+            threadID: thread.id,
+            messageID: messages.data[0].id,
+            content: (messages.data[0].content[0] as TextContentBlock).text.value,
+          }
+        });
+      }
 
       return {
         messages: messages.data,
@@ -552,8 +554,10 @@ export class ReplicaService {
         coachID,
       }
     });
-    const operations = files.map(file =>
-      this.addFileToVectorStore(coachID, file.openaiFileID));
+    const operations = files
+      .filter(file => !file.vectorStoreFileID)
+      .map(file =>
+        this.addFileToVectorStore(coachID, file.openaiFileID));
     return Promise.all(operations);
   }
 

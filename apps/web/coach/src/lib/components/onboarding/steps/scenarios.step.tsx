@@ -156,7 +156,7 @@ export const ScenariosStep = ({ data, onUpdate }: ScenariosStepProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div className="bg-neutral-800/50 rounded-2xl p-6 border border-neutral-700">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -192,7 +192,7 @@ export const ScenariosStep = ({ data, onUpdate }: ScenariosStepProps) => {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {SCENARIOS.map((scenario, index) => {
           const isExpanded = expandedQuestion === scenario.id;
           const isAnswered = answers[scenario.id]?.trim().length > 0;
