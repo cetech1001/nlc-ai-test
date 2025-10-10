@@ -1,3 +1,4 @@
+export * from './chatbot';
 export * from './client-email';
 export * from './coach-replica';
 export * from './email-deliverability';

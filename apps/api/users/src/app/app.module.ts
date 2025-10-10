@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import {usersConfig} from './config/users.config';
 import {OnboardingModule} from "./onboarding/onboarding.module";
+import {ChatbotCustomizationModule} from "./chatbot-customization/chatbot-customization.module";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import {OnboardingModule} from "./onboarding/onboarding.module";
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     AuthLibModule,
+    ChatbotCustomizationModule,
     ClientsModule,
     CoachesModule,
     AdminModule,

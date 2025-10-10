@@ -4,6 +4,7 @@ import {ClientsClient} from "./clients.client";
 import { ProfilesClient } from "./profiles.client";
 import { RelationshipClient } from "./relationship.client";
 import {OnboardingClient} from "./onboarding.client";
+import {ChatbotCustomizationClient} from "./chatbot-customization.client";
 
 export class UsersClient{
   public coaches: CoachesClient;
@@ -11,6 +12,7 @@ export class UsersClient{
   public profiles: ProfilesClient;
   public relationship: RelationshipClient;
   public onboarding: OnboardingClient;
+  public chatbotCustomization: ChatbotCustomizationClient;
 
   constructor(config: ServiceClientConfig) {
     this.coaches = new CoachesClient({
@@ -37,11 +39,17 @@ export class UsersClient{
       ...config,
       baseURL: `${config.baseURL}/onboarding`,
     });
+
+    this.chatbotCustomization = new ChatbotCustomizationClient({
+      ...config,
+      baseURL: `${config.baseURL}/chatbot-customization`,
+    });
   }
 
   updateApiKey(apiKey: string | null) {
     const services = [
-      this.coaches, this.clients, this.profiles, this.relationship, this.onboarding
+      this.coaches, this.clients, this.profiles,
+      this.relationship, this.onboarding, this.chatbotCustomization
     ];
 
     services.forEach(service => {
@@ -49,3 +57,5 @@ export class UsersClient{
     });
   }
 }
+
+export { ChatbotCustomizationClient } from './chatbot-customization.client';

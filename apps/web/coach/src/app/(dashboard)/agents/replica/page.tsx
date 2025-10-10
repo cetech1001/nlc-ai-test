@@ -166,6 +166,10 @@ const CoachReplica: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-8">
+            <button onClick={() => router.push(`/agents/replica/customize`)} className="text-[#DF69FF] font-inter text-lg font-semibold leading-[25.6px] hover:text-[#B339D4] transition-colors">
+              Customize Chatbot
+            </button>
+            <div className="w-px h-[27px] bg-[#373535]"></div>
             <button onClick={() => router.push(`/chat/${user?.id}`)} className="text-[#DF69FF] font-inter text-lg font-semibold leading-[25.6px] hover:text-[#B339D4] transition-colors">
               Preview ChatBot
             </button>

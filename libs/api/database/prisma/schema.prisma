@@ -102,6 +102,8 @@ model Coach {
   createdAt           DateTime       @default(now()) @db.Timestamptz(6)
   updatedAt           DateTime       @default(now()) @db.Timestamptz(6)
 
+  chatbotCustomization ChatbotCustomization?
+
   coachAiAgents      CoachAiAgent[]
   contentPieces      ContentPiece[]
   courses            Course[]
@@ -162,6 +164,36 @@ model Client {
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
   @@map("clients")
+}
+
+model ChatbotCustomization {
+  id        String  @id @default(uuid()) @db.Uuid
+  coachID   String  @unique @db.Uuid
+  name      String  @db.VarChar(100)
+  avatarUrl String? @db.Text
+  logoUrl   String? @db.Text
+
+  primaryColor  String @default("#DF69FF") @db.VarChar(7)
+  gradientStart String @default("#B339D4") @db.VarChar(7)
+  gradientEnd   String @default("#7B21BA") @db.VarChar(7)
+
+  assistantTextColor   String @default("#C5C5C5") @db.VarChar(7)
+  assistantBubbleColor String @default("#1A1A1A") @db.VarChar(7)
+  userTextColor        String @default("#C5C5C5") @db.VarChar(7)
+  userBubbleColor      String @default("rgba(223,105,255,0.08)") @db.VarChar(30)
+
+  backgroundColor String @default("#0A0A0A") @db.VarChar(7)
+  glowColor       String @default("#7B21BA") @db.VarChar(7)
+
+  position String  @default("bottom-right") @db.VarChar(20)
+  greeting String? @db.Text
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  coach Coach @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@map("chatbot_customizations")
 }
 
 model CoachFollow {
