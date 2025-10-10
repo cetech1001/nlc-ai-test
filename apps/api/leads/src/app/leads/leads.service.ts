@@ -123,6 +123,94 @@ export class LeadsService {
     return newLead;
   }
 
+  // Add this method to the LeadsService class
+
+  async createFromChatbot(dto: {
+    coachID: string;
+    threadID: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    marketingOptIn?: boolean;
+  }) {
+    const { coachID, threadID, name, email, phone, marketingOptIn } = dto;
+
+    // Check if lead already exists for this coach and email
+    let existingLead = null;
+    if (email) {
+      existingLead = await this.prisma.lead.findFirst({
+        where: {
+          email,
+          coachID,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }
+
+    let lead;
+
+    if (existingLead) {
+      // Update existing lead with new information
+      lead = await this.prisma.lead.update({
+        where: {
+          id: existingLead.id,
+        },
+        data: {
+          name,
+          phone: phone ?? existingLead.phone,
+          marketingOptIn: marketingOptIn ?? existingLead.marketingOptIn,
+          notes: existingLead.notes
+            ? `${existingLead.notes}\n\nChatbot Thread: ${threadID}`
+            : `Chatbot Thread: ${threadID}`,
+          updatedAt: new Date(),
+        },
+      });
+
+      this.logger.log(`Updated existing lead from chatbot: ${lead.id} (${lead.email})`);
+    } else {
+      // Create new lead
+      lead = await this.prisma.lead.create({
+        data: {
+          leadType: LeadType.COACH_LEAD,
+          coachID,
+          name,
+          email: email || `${threadID}@chatbot.temp`,
+          phone: phone ?? null,
+          source: 'Chatbot',
+          status: LeadStatus.CONTACTED,
+          marketingOptIn: marketingOptIn ?? false,
+          notes: `Chatbot Thread: ${threadID}`,
+        },
+      });
+
+      // Emit event for new lead
+      await this.outbox.saveAndPublishEvent<LeadEvent>(
+        {
+          eventType: 'lead.created',
+          schemaVersion: 1,
+          payload: {
+            leadID: lead.id,
+            coachID: lead.coachID || undefined,
+            leadType: lead.leadType as LeadType,
+            name: lead.name,
+            email: lead.email,
+            phone: lead.phone || undefined,
+            source: lead.source || undefined,
+            status: lead.status as LeadStatus,
+            createdAt: lead.createdAt.toISOString(),
+          },
+        },
+        LEAD_ROUTING_KEYS.CREATED
+      );
+
+      this.logger.log(`Chatbot lead created: ${lead.id} (${lead.email})`);
+    }
+
+    return lead;
+  }
+
   async findAll(query: LeadQueryParams) {
     const {
       page = 1,

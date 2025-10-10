@@ -38,6 +38,15 @@
       "path": "../../sdk/communities/tsconfig.lib.json"
     },
     {
+      "path": "../../sdk/users/tsconfig.lib.json"
+    },
+    {
+      "path": "../../sdk/agents/tsconfig.lib.json"
+    },
+    {
+      "path": "../settings/tsconfig.lib.json"
+    },
+    {
       "path": "../../sdk/notifications/tsconfig.lib.json"
     },
     {

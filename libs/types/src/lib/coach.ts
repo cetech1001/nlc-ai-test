@@ -4,7 +4,7 @@ import {ContentPiece, ContentSuggestion} from "./content";
 import {Course} from "./course";
 import {DailyKPI} from "./kpi";
 import {EmailAccount, EmailTemplate, EmailThread} from "./email";
-import {Integration} from "../integrations";
+import {Integration} from "./integrations";
 import {Notification} from "./notification";
 import {PaymentLink, PaymentMethod} from "./payment";
 import {Transaction} from "./transaction";

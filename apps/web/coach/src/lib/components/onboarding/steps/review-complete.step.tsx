@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Check, AlertTriangle, Sparkles, Rocket, ChevronRight, Edit2, FileText, Link2 } from 'lucide-react';
 import type { OnboardingRequest } from '@nlc-ai/types';
+import {sdkClient} from "@/lib";
 
 interface ReviewCompleteStepProps {
   onComplete: () => Promise<void>;
@@ -13,20 +14,45 @@ export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps
   const [isProcessing, setIsProcessing] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [_, setIsLoading] = useState(true);
+  const [essentialConnected, setEssentialConnected] = useState(0);
+  const [socialConnected, setSocialConnected] = useState(0);
 
   const scenariosCompleted = data?.scenarios?.length || 0;
   const documentsUploaded = data?.documents?.length || 0;
-  const essentialConnections = data?.connections?.filter(c => c.type === 'essential' && c.status === 'connected').length || 0;
-  const socialConnections = data?.connections?.filter(c => c.type === 'social' && c.status === 'connected').length || 0;
 
   const completionScore = Math.round(
     ((scenariosCompleted / 12) * 40) +
     ((Math.min(documentsUploaded, 10) / 10) * 30) +
-    (essentialConnections >= 1 ? 20 : 0) +
-    (socialConnections > 0 ? 10 : 0)
+    (essentialConnected >= 1 ? 20 : 0) +
+    (socialConnected > 0 ? 10 : 0)
   );
 
-  const isReady = /*essentialConnections >= 1 && */scenariosCompleted >= 8;
+  useEffect(() => {
+    loadIntegrations();
+  }, []);
+
+  const loadIntegrations = async () => {
+    try {
+      setIsLoading(true);
+      const [appIntegrations, socialIntegrations] = await Promise.all([
+        sdkClient.integrations.getAppIntegrations(),
+        sdkClient.integrations.getSocialIntegrations(),
+      ]);
+
+      const essentialCount = appIntegrations.filter(i => i.isActive).length;
+      const socialCount = socialIntegrations.filter(i => i.isActive).length;
+
+      setEssentialConnected(essentialCount);
+      setSocialConnected(socialCount);
+    } catch (error) {
+      console.error('Failed to load integrations:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isReady = /*essentialConnected >= 1 && */scenariosCompleted >= 8;
 
   const handleLaunch = async () => {
     if (!agreedToTerms || !isReady) return;
@@ -138,7 +164,7 @@ export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps
           </div>
           <h3 className="text-white font-semibold mb-2">Connections</h3>
           <div className="text-2xl font-bold text-white mb-1">
-            {essentialConnections + socialConnections}
+            {essentialConnected + socialConnected}
           </div>
           <p className="text-stone-400 text-sm">accounts connected</p>
         </div>
@@ -153,7 +179,7 @@ export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps
 
         <div className="p-5 space-y-4">
           <div className="flex items-start gap-3">
-            {essentialConnections >= 1 ? (
+            {essentialConnected >= 1 ? (
               <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Check className="w-4 h-4 text-green-400" />
               </div>
@@ -165,8 +191,8 @@ export const ReviewCompleteStep = ({ onComplete, data }: ReviewCompleteStepProps
             <div>
               <p className="text-white font-medium">Essential Account Connected</p>
               <p className="text-stone-400 text-sm">
-                {essentialConnections >= 1
-                  ? `${essentialConnections} essential account(s) connected`
+                {essentialConnected >= 1
+                  ? `${essentialConnected} essential account(s) connected`
                   : 'Connect at least one email provider to enable AI automation'}
               </p>
             </div>

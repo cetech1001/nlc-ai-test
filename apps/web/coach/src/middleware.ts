@@ -4,10 +4,13 @@ import {NextResponse} from 'next/server';
 export async function middleware(request: NextRequest) {
   const routes = [
     '/api/agents/public/chat',
-    '/api/users/chatbot-customization/public'
+    '/api/users/chatbot-customization/public',
+    '/api/leads/chatbot'
   ]
   const shouldProcess =
-    request.nextUrl.pathname.startsWith(routes[0]) || request.nextUrl.pathname.startsWith(routes[1]);
+    request.nextUrl.pathname.startsWith(routes[0]) ||
+    request.nextUrl.pathname.startsWith(routes[1]) ||
+    request.nextUrl.pathname.startsWith(routes[2]);
 
   if (!shouldProcess) {
     return NextResponse.next();
@@ -90,6 +93,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/api/agents/public/chat/:path*',
-    '/api/users/chatbot-customization/public/:path*'
+    '/api/users/chatbot-customization/public/:path*',
+    '/api/leads/chatbot'
   ],
 };

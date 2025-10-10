@@ -1,4 +1,4 @@
-import {Integration} from "../integrations";
+import {Integration} from "./integrations";
 
 export interface WebhookEvent {
   id: string;

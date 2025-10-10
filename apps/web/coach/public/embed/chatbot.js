@@ -431,6 +431,27 @@
       cursor: not-allowed;
     }
 
+    .nlc-form-checkbox-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .nlc-form-checkbox {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+      accent-color: #B339D4;
+    }
+
+    .nlc-form-checkbox-label {
+      font-size: 12px;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.8);
+      cursor: pointer;
+    }
+
     @media (max-width: 480px) {
       .nlc-chatbot-window {
         width: calc(100vw - 40px);
@@ -489,6 +510,12 @@
               <label class="nlc-form-label" id="nlc-phone-label">Phone *</label>
               <input type="tel" class="nlc-form-input" id="nlc-phone-input" placeholder="Enter your phone" />
               <span class="nlc-form-error" id="nlc-phone-error"></span>
+            </div>
+            <div class="nlc-form-checkbox-group">
+              <input type="checkbox" class="nlc-form-checkbox" id="nlc-marketing-optin" />
+              <label class="nlc-form-checkbox-label" for="nlc-marketing-optin">
+                I agree to receive marketing communications and updates
+              </label>
             </div>
             <button type="submit" class="nlc-form-submit" id="nlc-form-submit">Start Chat</button>
           </form>
@@ -746,7 +773,7 @@
       userInfoContainer.style.display = 'none';
     }
 
-    function handleUserInfoSubmit(e) {
+    async function handleUserInfoSubmit(e) {
       e.preventDefault();
 
       document.getElementById('nlc-name-error').textContent = '';
@@ -756,6 +783,7 @@
       const name = document.getElementById('nlc-name-input').value.trim();
       const email = document.getElementById('nlc-email-input').value.trim();
       const phone = document.getElementById('nlc-phone-input').value.trim();
+      const marketingOptIn = document.getElementById('nlc-marketing-optin').checked;
 
       let hasError = false;
 
@@ -784,12 +812,46 @@
       const userInfo = {
         name: name || undefined,
         email: email || undefined,
-        phone: phone || undefined
+        phone: phone || undefined,
+        marketingOptIn: marketingOptIn
       };
 
       saveUserInfo(userInfo);
-      hideUserInfoForm();
-      initializeChat();
+
+      // Disable form while submitting
+      document.getElementById('nlc-form-submit').disabled = true;
+
+      try {
+        // Create thread first
+        const threadResponse = await fetch(`${config.apiBaseURL}/api/agents/public/chat/coach/${config.coachID}/thread/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const threadData = await threadResponse.json();
+        threadID = threadData.data.threadID;
+        saveSessionThread(threadID);
+
+        // Submit lead to API
+        await fetch(`${config.apiBaseURL}/api/leads/chatbot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            coachID: config.coachID,
+            threadID: threadData.data.agentThreadID,
+            name: userInfo.name,
+            email: userInfo.email,
+            phone: userInfo.phone,
+            marketingOptIn: userInfo.marketingOptIn
+          })
+        });
+
+        hideUserInfoForm();
+        await initializeChat();
+      } catch (error) {
+        console.error('Failed to submit user info:', error);
+        document.getElementById('nlc-name-error').textContent = 'Failed to start chat. Please try again.';
+        document.getElementById('nlc-form-submit').disabled = false;
+      }
     }
 
     async function initializeChat() {
@@ -800,7 +862,7 @@
         if (existingSession) {
           threadID = existingSession.threadID;
           shouldLoadMessages = true;
-        } else {
+        } else if (!threadID) {
           const response = await fetch(`${config.apiBaseURL}/api/agents/public/chat/coach/${config.coachID}/thread/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }

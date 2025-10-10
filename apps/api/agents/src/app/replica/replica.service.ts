@@ -345,7 +345,7 @@ export class ReplicaService {
     try {
       const thread = await this.openai.beta.threads.create();
 
-      await this.prisma.agentThread.create({
+      const agentThread = await this.prisma.agentThread.create({
         data: {
           agentID: agent.id,
           coachID,
@@ -356,6 +356,7 @@ export class ReplicaService {
 
       return {
         threadID: thread.id,
+        agentThreadID: agentThread.id,
       };
 
     } catch (error: any) {

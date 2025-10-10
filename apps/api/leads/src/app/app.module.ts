@@ -7,7 +7,6 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 
 import { LeadsModule } from './leads/leads.module';
-import { HealthModule } from './health/health.module';
 import { EventHandlersModule } from './event-handlers/event-handlers.module';
 import leadsConfig from './config/leads.config';
 
@@ -22,7 +21,6 @@ import leadsConfig from './config/leads.config';
     AuthLibModule,
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
-    HealthModule,
     LeadsModule,
     EventHandlersModule,
   ],

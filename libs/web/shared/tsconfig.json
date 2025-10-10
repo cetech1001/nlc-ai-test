@@ -9,6 +9,15 @@
       "path": "../../sdk/communities"
     },
     {
+      "path": "../../sdk/users"
+    },
+    {
+      "path": "../../sdk/agents"
+    },
+    {
+      "path": "../settings"
+    },
+    {
       "path": "../../sdk/notifications"
     },
     {

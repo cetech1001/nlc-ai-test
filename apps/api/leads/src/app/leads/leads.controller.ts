@@ -4,6 +4,7 @@ import {CurrentUser, JwtAuthGuard, AntiSpamGuard, Public, UserTypes, UserTypesGu
 import {type AuthUser, UserType} from '@nlc-ai/api-types';
 import {LeadsService} from './leads.service';
 import {CreateLandingLeadDto, CreateLeadDto, LeadQueryDto, UpdateLeadDto} from './dto';
+import {CreateChatbotLeadDto} from './dto/create-chatbot-lead.dto';
 
 @ApiTags('Leads')
 @Controller('')
@@ -96,6 +97,15 @@ export class LeadsController {
   @ApiResponse({ status: 403, description: 'Replay detected' })
   createFromLanding(@Body() dto: CreateLandingLeadDto) {
     return this.leadsService.createFromLanding(dto);
+  }
+
+  @Post('chatbot')
+  @Public()
+  @ApiOperation({ summary: 'Create a new lead from chatbot user info form' })
+  @ApiResponse({ status: 201, description: 'Chatbot lead created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  createFromChatbot(@Body() dto: CreateChatbotLeadDto) {
+    return this.leadsService.createFromChatbot(dto);
   }
 
   @Patch(':id')

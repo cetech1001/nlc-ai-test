@@ -1,7 +1,7 @@
 import { BaseAPI } from './base';
 import { Integration } from '@nlc-ai/types';
 
-export interface IntegrationResponse extends Omit<Integration, 'coach' | 'webhookEvents'> {
+export interface IntegrationResponse extends Omit<Integration, 'coach' | 'webhookEvents' | 'config'> {
   config?: any;
 }
 
