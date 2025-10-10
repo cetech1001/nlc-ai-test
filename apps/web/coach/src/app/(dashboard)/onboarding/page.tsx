@@ -6,7 +6,7 @@ import {WelcomeStep, ScenariosStep, DocumentsStep, ConnectionsStep, ReviewComple
 import {useRouter} from "next/navigation";
 import {sdkClient} from "@/lib";
 import {useAuth} from "@nlc-ai/web-auth";
-import type { OnboardingRequest, ScenarioAnswer, UploadedDocument, ConnectedAccount } from '@nlc-ai/types';
+import type { OnboardingRequest, ScenarioAnswer, UploadedDocument } from '@nlc-ai/types';
 import {appConfig} from "@nlc-ai/web-shared";
 
 const ONBOARDING_STEPS = [
@@ -30,14 +30,11 @@ const OnboardingContainer = () => {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Onboarding data state
   const [onboardingData, setOnboardingData] = useState<OnboardingRequest>({
     scenarios: [],
     documents: [],
-    connections: [],
   });
 
-  // Load existing onboarding data and prefill
   useEffect(() => {
     if (user) {
       loadOnboardingProgress();
@@ -48,26 +45,29 @@ const OnboardingContainer = () => {
     try {
       setIsLoadingData(true);
 
-      // Check status first
-      const status = await sdkClient.agents.onboarding.getStatus();
+      const status = await sdkClient.users.onboarding.getStatus();
       if (status.isComplete) {
-        // If already complete, redirect to dashboard
         router.push(`/chat/${user?.id}`);
         return;
       }
 
-      // Load existing data for prefilling
-      const existingData = await sdkClient.agents.onboarding.getData();
+      const existingData = await sdkClient.users.onboarding.getData();
 
-      // Prefill the form with existing data
-      if (existingData.scenarios.length > 0 || existingData.documents.length > 0 || existingData.connections.length > 0) {
+      if (
+        existingData.scenarios.length > 0
+        || existingData.documents.length > 0
+      ) {
         setOnboardingData(existingData);
 
-        // Mark steps as completed based on what data exists
         const completed: number[] = [];
-        if (existingData.scenarios.length > 0) completed.push(1);
+
+        if (existingData.scenarios.length > 0) completed.push(0, 1);
         if (existingData.documents.length > 0) completed.push(2);
-        if (existingData.connections.length > 0) completed.push(3);
+
+        if (existingData.scenarios.length === 12) {
+          setCurrentStep(2);
+        }
+
         setCompletedSteps(completed);
       }
     } catch (error) {
@@ -91,16 +91,9 @@ const OnboardingContainer = () => {
     }));
   }, []);
 
-  const updateConnections = React.useCallback((connections: ConnectedAccount[]) => {
-    setOnboardingData(prev => ({
-      ...prev,
-      connections,
-    }));
-  }, []);
-
   const saveProgress = async () => {
     try {
-      await sdkClient.agents.onboarding.saveProgress(onboardingData);
+      await sdkClient.users.onboarding.saveProgress(onboardingData);
     } catch (error) {
       console.error('Failed to save progress:', error);
     }
@@ -108,7 +101,7 @@ const OnboardingContainer = () => {
 
   const completeOnboarding = async () => {
     try {
-      await sdkClient.agents.onboarding.complete({
+      await sdkClient.users.onboarding.complete({
         ...onboardingData,
         completedAt: new Date(),
       });
@@ -128,8 +121,7 @@ const OnboardingContainer = () => {
       onContinue: handleNext,
     };
 
-    // Pass specific props based on step
-    if (currentStep === 1) { // Scenarios
+    if (currentStep === 1) {
       return (
         <ScenariosStep
           {...stepProps}
@@ -137,7 +129,7 @@ const OnboardingContainer = () => {
           onUpdate={updateScenarios}
         />
       );
-    } else if (currentStep === 2) { // Documents
+    } else if (currentStep === 2) {
       return (
         <DocumentsStep
           {...stepProps}
@@ -145,15 +137,11 @@ const OnboardingContainer = () => {
           onUpdate={updateDocuments}
         />
       );
-    } else if (currentStep === 3) { // Connections
+    } else if (currentStep === 3) {
       return (
-        <ConnectionsStep
-          {...stepProps}
-          data={onboardingData}
-          onUpdate={updateConnections}
-        />
+        <ConnectionsStep/>
       );
-    } else if (currentStep === 4) { // Review
+    } else if (currentStep === 4) {
       return (
         <ReviewCompleteStep
           {...stepProps}
@@ -172,8 +160,9 @@ const OnboardingContainer = () => {
         setCompletedSteps([...completedSteps, currentStep]);
       }
 
-      // Save progress when moving to next step
-      await saveProgress();
+      if (currentStep !== 3) {
+        await saveProgress();
+      }
 
       setCurrentStep(currentStep + 1);
     }
@@ -195,7 +184,6 @@ const OnboardingContainer = () => {
     return stepIndex <= currentStep || completedSteps.includes(stepIndex);
   };
 
-  // Show loading state while fetching data
   if (isLoadingData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black relative overflow-hidden flex items-center justify-center">
@@ -212,12 +200,10 @@ const OnboardingContainer = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black relative overflow-hidden">
-      {/* Background Orbs */}
       <div className="absolute w-96 h-96 -left-20 top-40 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[120px]" />
       <div className="absolute w-96 h-96 -right-20 bottom-40 opacity-20 bg-gradient-to-l from-purple-600 via-fuchsia-400 to-violet-600 rounded-full blur-[120px]" />
 
       <div className="relative z-10 container mx-auto px-6 py-8">
-        {/* Progress Steps */}
         <div className="max-w-5xl mx-auto mb-12">
           <div className="flex items-center justify-between">
             {ONBOARDING_STEPS.map((step, index) => {
@@ -275,7 +261,6 @@ const OnboardingContainer = () => {
           </div>
         </div>
 
-        {/* Step Content */}
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 md:p-12">
             <div className="mb-8">
@@ -287,12 +272,10 @@ const OnboardingContainer = () => {
               </div>
             </div>
 
-            {/* Step content */}
             <div className="min-h-[400px] flex items-center justify-center">
               {renderComponent(currentStep)}
             </div>
 
-            {/* Navigation Buttons */}
             <div className="flex items-center justify-between mt-8 pt-8 border-t border-neutral-700">
               <button
                 onClick={handleBack}

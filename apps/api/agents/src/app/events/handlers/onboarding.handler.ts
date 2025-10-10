@@ -34,6 +34,7 @@ export class OnboardingHandler {
 
       const instructions = await this.replica.buildAIInstructions(profile, scenarios);
       await this.replica.updateAssistantInstructions(coachID, instructions);
+      await this.replica.addFilesToVectorStore(coachID);
 
       this.logger.log(`AI assistant configured for coach ${coachID}`, {
         assistantID: aiConfig.assistantID,

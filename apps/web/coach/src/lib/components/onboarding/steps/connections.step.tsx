@@ -3,13 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, MessageSquare, ExternalLink, Check, Loader2 } from 'lucide-react';
 import { sdkClient } from '@/lib';
-import type { OnboardingRequest, ConnectedAccount } from '@nlc-ai/types';
-
-interface ConnectionsStepProps {
-  onContinue: () => void;
-  data?: OnboardingRequest;
-  onUpdate?: (connections: ConnectedAccount[]) => void;
-}
 
 interface ConnectedPlatform {
   id: string;
@@ -17,7 +10,7 @@ interface ConnectedPlatform {
   isActive?: boolean | null;
 }
 
-export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepProps) => {
+export const ConnectionsStep = () => {
   const [connecting, setConnecting] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [essentialConnected, setEssentialConnected] = useState(0);
@@ -25,7 +18,6 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
   const [connectedEssentialPlatforms, setConnectedEssentialPlatforms] = useState<ConnectedPlatform[]>([]);
   const [connectedSocialPlatforms, setConnectedSocialPlatforms] = useState<ConnectedPlatform[]>([]);
 
-  // Load integrations on mount
   useEffect(() => {
     loadIntegrations();
   }, []);
@@ -38,35 +30,14 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
         sdkClient.integrations.getSocialIntegrations(),
       ]);
 
-      // Store connected platforms
       setConnectedEssentialPlatforms(appIntegrations.filter(i => i.isActive));
       setConnectedSocialPlatforms(socialIntegrations.filter(i => i.isActive));
 
-      // Count connected integrations
       const essentialCount = appIntegrations.filter(i => i.isActive).length;
       const socialCount = socialIntegrations.filter(i => i.isActive).length;
 
       setEssentialConnected(essentialCount);
       setSocialConnected(socialCount);
-
-      // Update parent with connected accounts
-      if (onUpdate) {
-        const connections: ConnectedAccount[] = [
-          ...appIntegrations.map(i => ({
-            id: i.id,
-            name: i.platformName,
-            type: 'essential' as const,
-            status: i.isActive ? 'connected' as const : 'disconnected' as const,
-          })),
-          ...socialIntegrations.map(i => ({
-            id: i.id,
-            name: i.platformName,
-            type: 'social' as const,
-            status: i.isActive ? 'connected' as const : 'disconnected' as const,
-          })),
-        ];
-        onUpdate(connections);
-      }
     } catch (error) {
       console.error('Failed to load integrations:', error);
     } finally {
@@ -105,24 +76,20 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
     setConnecting(platform);
 
     try {
-      // Use OAuth flow for connection
       await sdkClient.integrations.initiateOAuthFlow(platform);
 
-      // Refresh integrations after successful connection
       await loadIntegrations();
     } catch (error: any) {
       console.error(`Failed to connect ${platform}:`, error);
-      // alert(`Failed to connect ${platform}. Please try again.`);
     } finally {
       setConnecting(null);
     }
   };
 
-  const essentialTotal = 3; // gmail, outlook, calendly
+  const essentialTotal = 2;
 
   return (
     <div className="space-y-6">
-      {/* Progress Header */}
       <div className="bg-neutral-800/50 rounded-2xl p-6 border border-neutral-700">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -150,7 +117,6 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
         </div>
       </div>
 
-      {/* Essential Apps Section */}
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-2xl border border-neutral-700 p-6 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-40 h-40 -left-8 -top-10 bg-gradient-to-l from-blue-200 via-blue-600 to-violet-600 rounded-full blur-[80px]" />
@@ -170,7 +136,6 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
           </div>
 
           <div className="space-y-4">
-            {/* Gmail */}
             <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1">
@@ -236,7 +201,6 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
               </div>
             </div>
 
-            {/* Outlook */}
             <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1">
@@ -299,7 +263,6 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
               </div>
             </div>
 
-            {/* Calendly */}
             <div className="bg-neutral-900/50 rounded-xl p-5 border border-neutral-700">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1">
@@ -368,7 +331,6 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
         </div>
       </div>
 
-      {/* Social Media Section */}
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-2xl border border-neutral-700 p-6 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-40 h-40 -right-8 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[80px]" />
@@ -455,7 +417,6 @@ export const ConnectionsStep = ({ onContinue, data, onUpdate }: ConnectionsStepP
         </div>
       </div>
 
-      {/* Info Box */}
       <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700">
         <p className="text-stone-400 text-sm text-center">
           🔒 All connections are secure and encrypted. You can disconnect anytime from settings.

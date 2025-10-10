@@ -72,7 +72,7 @@ export class OnboardingRepository {
   }
 
   async getOnboardingData(coachID: string): Promise<OnboardingData> {
-    const [coach, documents, connections] = await Promise.all([
+    const [coach, documents] = await Promise.all([
       this.prisma.coach.findUnique({
         where: { id: coachID },
         select: { metadata: true },
@@ -86,9 +86,6 @@ export class OnboardingRepository {
           category: true,
         },
       }),
-      this.prisma.integration.findMany({
-        where: { userID: coachID }
-      })
     ]);
 
     const metadata = (coach?.metadata as CoachMetadata) || {};
@@ -102,8 +99,6 @@ export class OnboardingRepository {
         openaiFileID: d.openaiFileID,
         category: d.category || 'general',
       })),
-      // @ts-ignore
-      connections: connections || [],
     };
   }
 

@@ -64,19 +64,16 @@ const DOCUMENT_CATEGORIES: DocumentCategory[] = [
 ];
 
 interface DocumentsStepProps {
-  onContinue: () => void;
   data?: OnboardingRequest;
   onUpdate?: (documents: UploadedDocument[]) => void;
 }
 
-export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps) => {
+export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
   const [uploadedDocs, setUploadedDocs] = useState<LocalUploadedDocument[]>([]);
   const [dragOver, setDragOver] = useState<string | null>(null);
 
-  // Track if we've already loaded initial data
   const hasLoadedInitialData = useRef(false);
 
-  // Load existing documents from data prop ONLY ONCE on mount
   useEffect(() => {
     if (!hasLoadedInitialData.current && data?.documents && data.documents.length > 0) {
       const localDocs: LocalUploadedDocument[] = data.documents.map(doc => ({
@@ -88,11 +85,9 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
       setUploadedDocs(localDocs);
       hasLoadedInitialData.current = true;
     }
-  }, []); // Empty dependency array - only run once
+  }, []);
 
-  // Update parent when documents change (debounced to avoid excessive calls)
   useEffect(() => {
-    // Skip if we haven't loaded initial data yet
     if (!hasLoadedInitialData.current) return;
 
     const timeoutId = setTimeout(() => {
@@ -105,10 +100,10 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
         }));
         onUpdate(simpleDocuments);
       }
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [uploadedDocs]); // Only depend on uploadedDocs
+  }, [uploadedDocs]);
 
   const handleFileSelect = async (files: FileList | null, category: string) => {
     if (!files) return;
@@ -180,7 +175,6 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
 
   return (
     <div className="space-y-6">
-      {/* Header Stats */}
       <div className="bg-neutral-800/50 rounded-2xl p-6 border border-neutral-700">
         <div className="flex items-center justify-between">
           <div>
@@ -196,7 +190,6 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
         </div>
       </div>
 
-      {/* Info Box */}
       <div className="bg-gradient-to-r from-purple-900/20 to-fuchsia-900/20 rounded-xl p-4 border border-purple-500/30">
         <div className="flex gap-3">
           <AlertCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
@@ -210,14 +203,12 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
         </div>
       </div>
 
-      {/* Upload Categories */}
       <div className="space-y-6">
         {DOCUMENT_CATEGORIES.map((category) => {
           const categoryDocs = getUploadedByCategory(category.id);
 
           return (
             <div key={category.id} className="bg-neutral-800/30 rounded-2xl border border-neutral-700 overflow-hidden">
-              {/* Category Header */}
               <div className="p-5 border-b border-neutral-700">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-600/20 to-fuchsia-600/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -244,7 +235,6 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
                 </div>
               </div>
 
-              {/* Upload Area */}
               <div className="p-5">
                 <div
                   onDragOver={(e) => {
@@ -282,7 +272,6 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
                   </label>
                 </div>
 
-                {/* Uploaded Files */}
                 {categoryDocs.length > 0 && (
                   <div className="mt-4 space-y-2">
                     {categoryDocs.map((doc) => (
@@ -329,7 +318,6 @@ export const DocumentsStep = ({ onContinue, data, onUpdate }: DocumentsStepProps
         })}
       </div>
 
-      {/* Tips Section */}
       <div className="bg-neutral-800/50 rounded-xl p-5 border border-neutral-700">
         <h4 className="text-white font-medium mb-3 flex items-center gap-2">
           <span>💡</span> Tips for Better AI Training

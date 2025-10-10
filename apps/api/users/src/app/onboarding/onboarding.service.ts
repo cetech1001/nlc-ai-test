@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { OutboxService } from '@nlc-ai/api-messaging';
 import {CoachingProfile, OnboardingRequest, OnboardingEvent, ScenarioAnswer} from '@nlc-ai/types';
 import { OnboardingRepository } from './repositories/onboarding.repository';
@@ -6,26 +6,13 @@ import { ONBOARDING_EVENTS } from '@nlc-ai/types';
 
 @Injectable()
 export class OnboardingService {
-  private readonly logger = new Logger(OnboardingService.name);
-
   constructor(
     private readonly repository: OnboardingRepository,
     private readonly outbox: OutboxService,
   ) {}
 
   async saveOnboardingData(coachID: string, data: OnboardingRequest) {
-    this.logger.log(`Saving onboarding data for coach ${coachID}`);
-
     await this.repository.saveOnboardingData(coachID, data);
-
-    await this.outbox.saveAndPublishEvent<OnboardingEvent>({
-      eventType: ONBOARDING_EVENTS.PROGRESS_SAVED,
-      schemaVersion: 1,
-      payload: {
-        coachID,
-        scenariosCompleted: data.scenarios.length,
-      },
-    }, ONBOARDING_EVENTS.PROGRESS_SAVED);
 
     return { success: true, message: 'Onboarding progress saved successfully' };
   }

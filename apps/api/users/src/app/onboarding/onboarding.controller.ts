@@ -27,32 +27,10 @@ export class OnboardingController {
     @CurrentUser() user: AuthUser,
     @Body() data: OnboardingRequest
   ) {
-    // Save all onboarding data
     await this.onboardingService.saveOnboardingData(user.id, data);
-
-    // Build comprehensive AI instructions from onboarding data
-    const instructions = await this.onboardingService.buildAIInstructions(user.id);
-
-    // Initialize or update the AI assistant with personalized instructions
-    const aiConfig = await this.replicaService.initializeCoachAI(
-      user.id,
-      `${user.name.split(' ')[0]}'s AI Assistant`
-    );
-
-    // Update assistant with personalized instructions
-    await this.replicaService.updateAssistantInstructions(
-      user.id,
-      instructions
-    );
-
-    // Mark onboarding as complete
     await this.onboardingService.markOnboardingComplete(user.id);
 
-    return {
-      message: 'Onboarding completed and AI trained successfully',
-      assistantID: aiConfig.assistantID,
-      vectorStoreID: aiConfig.vectorStoreID,
-    };
+    return { message: 'Onboarding completed and AI trained successfully' };
   }
 
   @Post('save-progress')
@@ -94,21 +72,5 @@ export class OnboardingController {
   @ApiResponse({ status: 200, description: 'Coaching profile retrieved' })
   async getProfile(@CurrentUser() user: AuthUser) {
     return this.onboardingService.generateCoachingProfile(user.id);
-  }
-
-  @Post('regenerate-instructions')
-  @ApiOperation({ summary: 'Regenerate AI instructions from onboarding data' })
-  @ApiResponse({ status: 200, description: 'Instructions regenerated successfully' })
-  async regenerateInstructions(@CurrentUser() user: AuthUser) {
-    const instructions = await this.onboardingService.buildAIInstructions(user.id);
-
-    await this.replicaService.updateAssistantInstructions(
-      user.id,
-      instructions
-    );
-
-    return {
-      message: 'AI instructions regenerated successfully',
-    };
   }
 }

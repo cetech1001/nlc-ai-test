@@ -11,6 +11,7 @@ import { CoachesModule } from './coaches/coaches.module';
 import { AdminModule } from './admin/admin.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import {usersConfig} from './config/users.config';
+import {OnboardingModule} from "./onboarding/onboarding.module";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import {usersConfig} from './config/users.config';
     CoachesModule,
     AdminModule,
     ProfilesModule,
+    OnboardingModule,
   ],
   providers: [
     {

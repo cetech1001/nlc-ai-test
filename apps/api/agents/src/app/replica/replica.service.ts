@@ -519,6 +519,17 @@ export class ReplicaService {
     }
   }
 
+  async addFilesToVectorStore(coachID: string) {
+    const files = await this.prisma.coachKnowledgeFile.findMany({
+      where: {
+        coachID,
+      }
+    });
+    const operations = files.map(file =>
+      this.addFileToVectorStore(coachID, file.openaiFileID));
+    return Promise.all(operations);
+  }
+
   private async getCoachConfig(coachID: string, agentID: string, includeCoach?: boolean) {
     let include = {};
     if (includeCoach) {

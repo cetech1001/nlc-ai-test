@@ -100,16 +100,14 @@ const SCENARIOS: ScenarioQuestion[] = [
 ];
 
 interface ScenariosStepProps {
-  onContinue: () => void;
   data?: OnboardingRequest;
   onUpdate?: (scenarios: ScenarioAnswer[]) => void;
 }
 
-export const ScenariosStep = ({ onContinue, data, onUpdate }: ScenariosStepProps) => {
+export const ScenariosStep = ({ data, onUpdate }: ScenariosStepProps) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(SCENARIOS[0].id);
 
-  // Load existing answers from data prop
   useEffect(() => {
     if (data?.scenarios) {
       const answersMap: Record<string, string> = {};
@@ -124,7 +122,6 @@ export const ScenariosStep = ({ onContinue, data, onUpdate }: ScenariosStepProps
     const newAnswers = { ...answers, [questionID]: value };
     setAnswers(newAnswers);
 
-    // Update parent component with scenario data
     if (onUpdate) {
       const scenarioAnswers: ScenarioAnswer[] = Object.entries(newAnswers)
         .filter(([_, answer]) => answer.trim())
@@ -160,7 +157,6 @@ export const ScenariosStep = ({ onContinue, data, onUpdate }: ScenariosStepProps
 
   return (
     <div className="space-y-6">
-      {/* Progress Header */}
       <div className="bg-neutral-800/50 rounded-2xl p-6 border border-neutral-700">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -183,7 +179,6 @@ export const ScenariosStep = ({ onContinue, data, onUpdate }: ScenariosStepProps
         </div>
       </div>
 
-      {/* Info Box */}
       <div className="bg-gradient-to-r from-purple-900/20 to-fuchsia-900/20 rounded-xl p-4 border border-purple-500/30">
         <div className="flex gap-3">
           <MessageCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
@@ -197,7 +192,6 @@ export const ScenariosStep = ({ onContinue, data, onUpdate }: ScenariosStepProps
         </div>
       </div>
 
-      {/* Questions */}
       <div className="space-y-4">
         {SCENARIOS.map((scenario, index) => {
           const isExpanded = expandedQuestion === scenario.id;
@@ -274,7 +268,6 @@ export const ScenariosStep = ({ onContinue, data, onUpdate }: ScenariosStepProps
         })}
       </div>
 
-      {/* Bottom Reminder */}
       <div className="bg-neutral-800/50 rounded-xl p-4 border border-neutral-700 text-center">
         <p className="text-stone-400 text-sm">
           💡 You can always update these responses later in your settings

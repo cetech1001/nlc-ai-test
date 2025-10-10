@@ -1,5 +1,5 @@
 import { BaseClient } from '@nlc-ai/sdk-core';
-import type { OnboardingRequest, CoachingProfile } from '@nlc-ai/types';
+import type {OnboardingRequest, CoachingProfile, OnboardingData} from '@nlc-ai/types';
 
 export interface OnboardingCompleteResponse {
   success: boolean;
@@ -55,8 +55,8 @@ export class OnboardingClient extends BaseClient {
   /**
    * Get onboarding data for prefilling
    */
-  async getData(): Promise<OnboardingRequest> {
-    const response = await this.request<OnboardingRequest>(
+  async getData() {
+    const response = await this.request<OnboardingData>(
       'GET',
       '/data'
     );
