@@ -123,6 +123,7 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
 
       try {
         const uploadResponse = await sdkClient.agents.coachReplica.uploadFile(file, file.name, category);
+        console.log(uploadResponse);
 
         setUploadedDocs(prev =>
           prev.map(doc =>
@@ -152,7 +153,7 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
   const handleRemove = async (docID: string, openaiFileID?: string) => {
     try {
       if (openaiFileID) {
-        await sdkClient.agents.coachReplica.removeFileFromVectorStore(openaiFileID);
+        await sdkClient.agents.coachReplica.removeFileUpload(openaiFileID);
       }
 
       setUploadedDocs(prev => prev.filter(doc => doc.id !== docID));
@@ -168,9 +169,12 @@ export const DocumentsStep = ({ data, onUpdate }: DocumentsStepProps) => {
   };
 
   const getUploadedByCategory = (category: string) => {
-    return uploadedDocs.filter(doc => category === 'faqs'
-      ? doc.category === 'general'
-      : doc.category === category);
+    return uploadedDocs.filter(doc => {
+      if (category === 'faqs' && doc.category === 'general') {
+        return true;
+      }
+      return doc.category === category
+    });
   };
 
   const totalUploaded = uploadedDocs.length;

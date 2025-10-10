@@ -258,6 +258,32 @@ export class ReplicaService {
     }
   }
 
+  async removeFileUpload(coachID: string, fileID: string) {
+    const fileRecord = await this.prisma.coachKnowledgeFile.findFirst({
+      where: { coachID, openaiFileID: fileID }
+    });
+
+    if (!fileRecord) {
+      throw new NotFoundException('File not found');
+    }
+
+    try {
+      await this.openai.files.delete(fileID);
+
+      await this.prisma.coachKnowledgeFile.delete({
+        where: { id: fileRecord.id }
+      });
+
+      return {
+        message: 'File removed successfully',
+      };
+
+    } catch (error: any) {
+      this.logger.error('Failed to remove file:', error);
+      throw new BadRequestException(`Failed to remove file: ${error.message}`);
+    }
+  }
+
   async removeFileFromVectorStore(coachID: string, fileID: string) {
     const agent = await this.getAgent();
     const config = await this.getCoachConfig(coachID, agent.id);

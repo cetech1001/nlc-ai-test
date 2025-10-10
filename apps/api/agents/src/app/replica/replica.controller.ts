@@ -39,6 +39,13 @@ export class ReplicaController {
     );
   }
 
+  @Get('files')
+  @ApiOperation({ summary: 'List all files in vector store' })
+  @ApiResponse({ status: 200, description: 'Files retrieved successfully' })
+  async listFiles(@CurrentUser() user: AuthUser) {
+    return this.replica.listFiles(user.id);
+  }
+
   @Post('files/upload')
   @ApiOperation({ summary: 'Upload file to OpenAI for vector store' })
   @ApiConsumes('multipart/form-data')
@@ -54,6 +61,19 @@ export class ReplicaController {
     }
 
     return this.replica.uploadFile(user.id, file, category);
+  }
+
+  @Delete('files/remove-file/:fileID')
+  @ApiOperation({ summary: 'Remove file from OpenAI only' })
+  @ApiResponse({ status: 200, description: 'File removed successfully' })
+  async removeFileUpload(
+    @CurrentUser() user: AuthUser,
+    @Param('fileID') fileID: string
+  ) {
+    return this.replica.removeFileUpload(
+      user.id,
+      fileID
+    );
   }
 
   @Post('vector-store/add-file')
@@ -80,13 +100,6 @@ export class ReplicaController {
       user.id,
       fileID
     );
-  }
-
-  @Get('files')
-  @ApiOperation({ summary: 'List all files in vector store' })
-  @ApiResponse({ status: 200, description: 'Files retrieved successfully' })
-  async listFiles(@CurrentUser() user: AuthUser) {
-    return this.replica.listFiles(user.id);
   }
 
   @Post('thread/create')

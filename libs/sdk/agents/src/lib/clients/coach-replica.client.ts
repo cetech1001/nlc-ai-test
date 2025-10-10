@@ -123,6 +123,17 @@ export class CoachReplicaClient extends BaseClient {
   }
 
   /**
+   * Remove file from OpenAI
+   */
+  async removeFileUpload(fileID: string): Promise<VectorStoreFileResponse> {
+    const response = await this.request<VectorStoreFileResponse>(
+      'DELETE',
+      `/files/remove-file/${fileID}`
+    );
+    return response.data!;
+  }
+
+  /**
    * Remove file from vector store
    */
   async removeFileFromVectorStore(fileID: string): Promise<VectorStoreFileResponse> {
