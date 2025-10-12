@@ -4,13 +4,11 @@ import {
   Post,
   Param,
   UseGuards,
-  Body,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType, type AuthUser } from '@nlc-ai/api-types';
 import { AccountsService } from './accounts.service';
-import { SyncAccountDto, BulkSyncDto } from './dto';
 
 @ApiTags('Accounts')
 @Controller('accounts')
@@ -44,25 +42,13 @@ export class AccountsController {
     return this.accountsService.setPrimaryEmailAccount(accountID, user.id);
   }
 
-  @Post('sync')
-  async syncAccount(@Body() body: SyncAccountDto) {
-    return this.accountsService.syncAccount(body);
-  }
-
-  @Post('sync/all')
-  async syncAllAccounts(@CurrentUser('id') id: string) {
-    return this.accountsService.autoSyncAllActiveAccounts(id);
-  }
-
-  @Post('sync/bulk')
-  async bulkSync(@Body() body: BulkSyncDto) {
-    return this.accountsService.bulkSync(body);
-  }
-
-  @Get('stats')
-  @ApiOperation({ summary: 'Get email sync statistics' })
-  @ApiResponse({ status: 200, description: 'Email stats retrieved successfully' })
-  async getSyncStats(@CurrentUser() user: AuthUser) {
-    return this.accountsService.getSyncStats(user.id);
+  @Get(':accountID/status')
+  @ApiOperation({ summary: 'Get account connection status' })
+  @ApiResponse({ status: 200, description: 'Account status retrieved successfully' })
+  getAccountStatus(
+    @Param('accountID') accountID: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.accountsService.getAccountStatus(accountID, user.id);
   }
 }

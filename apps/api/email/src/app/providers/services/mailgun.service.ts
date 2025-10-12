@@ -15,19 +15,23 @@ export class MailgunService implements IEmailProvider {
   private readonly logger = new Logger(MailgunService.name);
   private readonly mailgun: any;
   private readonly domain: string;
+  private readonly defaultSender: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private config: ConfigService) {
     const mg = new Mailgun(formData);
     this.mailgun = mg.client({
       username: 'api',
-      key: this.configService.get<string>('email.mailgun.apiKey')!,
-      url: this.configService.get<string>('email.mailgun.url', 'https://api.mailgun.net'),
+      key: this.config.get<string>('email.mailgun.apiKey')!,
+      url: this.config.get<string>('email.mailgun.url', 'https://api.mailgun.net'),
     });
-    this.domain = this.configService.get<string>('email.mailgun.domain')!;
+    this.domain = this.config.get<string>('email.mailgun.domain')!;
+    this.defaultSender = this.config.get('email.mailgun.fromEmail')!;
   }
 
-  async sendEmail(message: SendEmailRequest, from: string): Promise<EmailDeliveryResult> {
+  async sendEmail(message: SendEmailRequest, from?: string): Promise<EmailDeliveryResult> {
     try {
+      from = from || this.defaultSender;
+
       const mailgunMessage = this.transformMessage(message);
 
       const result = await this.mailgun.messages.create(this.domain, {

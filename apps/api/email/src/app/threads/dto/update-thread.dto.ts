@@ -1,20 +1,16 @@
-import { IsOptional, IsBoolean, IsString, IsArray } from 'class-validator';
+import { IsOptional, IsBoolean, IsString } from 'class-validator';
+import {EmailThreadPriority, EmailThreadStatus, UpdateEmailThreadRequest} from "@nlc-ai/types";
 
-export class UpdateThreadDto {
+export class UpdateThreadDto implements UpdateEmailThreadRequest{
   @IsOptional()
   @IsBoolean()
   isRead?: boolean;
 
   @IsOptional()
   @IsString()
-  status?: string;
+  status?: EmailThreadStatus;
 
   @IsOptional()
   @IsString()
-  priority?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
+  priority?: EmailThreadPriority;
 }

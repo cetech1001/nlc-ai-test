@@ -1,11 +1,8 @@
-export enum EmailAccountProvider {
-  GMAIL = 'gmail',
-  OUTLOOK = 'outlook',
-  YAHOO = 'yahoo',
-  IMAP = 'imap',
-  EXCHANGE = 'exchange',
-  CUSTOM = 'custom'
-}
+export const EmailAccountProvider = {
+  GMAIL: 'gmail',
+  OUTLOOK: 'outlook',
+} as const;
+export type EmailAccountProvider = (typeof EmailAccountProvider)[keyof typeof EmailAccountProvider]
 
 export enum EmailAccountStatus {
   ACTIVE = 'active',

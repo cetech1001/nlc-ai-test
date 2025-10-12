@@ -10,33 +10,26 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
-import { UserType, type AuthUser } from '@nlc-ai/api-types';
+import { UserType, type AuthUser } from '@nlc-ai/types';
 import { ThreadsService } from './threads.service';
 import { ReplyToThreadDto, UpdateThreadDto } from './dto';
+import {ThreadsQueryDto} from "./dto";
 
 @ApiTags('Email Threads')
 @Controller('threads')
 @UseGuards(JwtAuthGuard, UserTypesGuard)
-@UserTypes(UserType.coach)
+@UserTypes(UserType.COACH)
 @ApiBearerAuth()
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get email threads for coach' })
+  @ApiOperation({ summary: 'Get email threads' })
   async getThreads(
     @CurrentUser() user: AuthUser,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-    @Query('isRead') isRead?: string,
-    @Query('clientID') clientID?: string,
+    @Query() query: ThreadsQueryDto,
   ) {
-    return this.threadsService.getThreads(user.id, {
-      limit: limit ? parseInt(limit) : 20,
-      status,
-      isRead: isRead ? isRead === 'true' : undefined,
-      clientID,
-    });
+    return this.threadsService.getThreads(user.id, query);
   }
 
   @Get(':threadID')
@@ -55,7 +48,7 @@ export class ThreadsController {
     @Param('threadID') threadID: string,
     @Body() dto: ReplyToThreadDto,
   ) {
-    return this.threadsService.replyToThread(user.id, threadID, dto);
+    return this.threadsService.replyToThread(user.id, user.type, threadID, dto);
   }
 
   @Patch(':threadID')
@@ -66,14 +59,5 @@ export class ThreadsController {
     @Body() dto: UpdateThreadDto,
   ) {
     return this.threadsService.updateThread(user.id, threadID, dto);
-  }
-
-  @Get(':threadID/mark-read')
-  @ApiOperation({ summary: 'Mark thread as read' })
-  async markThreadRead(
-    @CurrentUser() user: AuthUser,
-    @Param('threadID') threadID: string,
-  ) {
-    return this.threadsService.updateThread(user.id, threadID, { isRead: true });
   }
 }

@@ -8,19 +8,15 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { TemplatesModule } from './templates/templates.module';
 import { SequencesModule } from './sequences/sequences.module';
-import { EventHandlersModule } from './event-handlers/event-handlers.module';
-import { HealthModule } from './health/health.module';
+import { EventsModule } from './events/events.module';
 import emailConfig from './config/email.config';
 import {WebhooksModule} from "./webhooks/webhooks.module";
 import {AccountsModule} from "./accounts/accounts.module";
-import {AppService} from "./app.service";
-import {DeliveryModule} from "./delivery/delivery.module";
+import {SendModule} from "./send/send.module";
 import {ProvidersModule} from "./providers/providers.module";
-import {SchedulingModule} from "./scheduling/scheduling.module";
 import {ThreadsModule} from "./threads/threads.module";
 import {TransactionalModule} from "./transactional/transactional.module";
 import {BullModule} from "@nestjs/bull";
-import {AppController} from "./app.controller";
 
 @Module({
   imports: [
@@ -50,20 +46,16 @@ import {AppController} from "./app.controller";
     MessagingModule.forRoot(),
     AuthLibModule,
     AccountsModule,
-    DeliveryModule,
-    EventHandlersModule,
-    HealthModule,
+    SendModule,
+    EventsModule,
     ProvidersModule,
-    SchedulingModule,
     SequencesModule,
     TemplatesModule,
     ThreadsModule,
     TransactionalModule,
     WebhooksModule,
   ],
-  controllers: [AppController],
   providers: [
-    AppService,
     {
       provide: APP_PIPE,
       useClass: ValidationPipe,

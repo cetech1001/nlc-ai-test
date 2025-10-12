@@ -4,3 +4,8 @@ export interface QueryParams {
   search?: string;
   status?: string;
 }
+
+export interface DateRange {
+  start?: string;
+  end?: string;
+}

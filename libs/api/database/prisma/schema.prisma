@@ -111,7 +111,6 @@ model Coach {
   leads              Lead[]
   emailSequences     EmailSequence[]
   emailMessages      EmailMessage[]
-  emailThreads       EmailThread[]
   knowledgeFiles     CoachKnowledgeFile[]
   agentThreads       AgentThread[]
   agentMessages      AgentMessage[]
@@ -159,7 +158,6 @@ model Client {
   clientCoaches     ClientCoach[]
   emailSequences    EmailSequence[]
   paymentMethods    PaymentMethod[]
-  emailThreads      EmailThread[]
 
   @@index([email], map: "idx_clients_email")
   @@index([lastInteractionAt], map: "idx_clients_last_interaction")
@@ -996,7 +994,7 @@ enum TemplateType {
   system
 }
 
-enum EmailProviders {
+enum EmailAccountProviders {
   gmail
   outlook
 }
@@ -1012,21 +1010,27 @@ enum EmailThreadStatus {
   archived
 }
 
+enum EmailThreadParticipantType {
+  coach
+  client
+  lead
+}
+
 model EmailAccount {
-  id             String         @id @default(uuid()) @db.Uuid
-  userID         String         @db.Uuid
+  id             String                @id @default(uuid()) @db.Uuid
+  userID         String                @db.Uuid
   userType       UserType
-  emailAddress   String         @db.VarChar(255)
-  provider       EmailProviders
+  emailAddress   String                @db.VarChar(255)
+  provider       EmailAccountProviders
   accessToken    String?
   refreshToken   String?
-  tokenExpiresAt DateTime?      @db.Timestamptz(6)
-  isPrimary      Boolean        @default(false)
-  isActive       Boolean        @default(true)
-  syncEnabled    Boolean        @default(true)
-  lastSyncAt     DateTime?      @db.Timestamptz(6)
-  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime       @updatedAt @db.Timestamptz(6)
+  tokenExpiresAt DateTime?             @db.Timestamptz(6)
+  isPrimary      Boolean               @default(false)
+  isActive       Boolean               @default(true)
+  syncEnabled    Boolean               @default(true)
+  lastSyncAt     DateTime?             @db.Timestamptz(6)
+  createdAt      DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime              @updatedAt @db.Timestamptz(6)
 
   emailThreads EmailThread[]
 
@@ -1135,9 +1139,8 @@ model EmailThread {
   userType       UserType
   emailAccountID String   @db.Uuid
 
-  coachID  String? @db.Uuid
-  clientID String? @db.Uuid
-  leadID   String? @db.Uuid
+  participantID   String?                     @db.Uuid
+  participantType EmailThreadParticipantType?
 
   threadID String @db.VarChar(255)
 
@@ -1160,15 +1163,9 @@ model EmailThread {
   generatedResponses GeneratedEmailResponse[]
 
   emailAccount EmailAccount @relation(fields: [emailAccountID], references: [id])
-  coach        Coach?       @relation(fields: [coachID], references: [id])
-  client       Client?      @relation(fields: [clientID], references: [id])
-  lead         Lead?        @relation(fields: [leadID], references: [id])
 
   @@index([userID, userType])
   @@index([emailAccountID])
-  @@index([coachID])
-  @@index([clientID])
-  @@index([leadID])
   @@index([lastMessageAt])
   @@map("email_threads")
 }
@@ -1638,7 +1635,6 @@ model Lead {
   coach           Coach?     @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
   emailSequences EmailSequence[]
-  emailThreads   EmailThread[]
   emailMessages  EmailMessage[]
 
   @@map("leads")

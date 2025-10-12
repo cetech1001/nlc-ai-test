@@ -1,16 +1,18 @@
 export enum EmailThreadStatus {
   ACTIVE = 'active',
-  CLOSED = 'closed',
   ARCHIVED = 'archived',
-  SPAM = 'spam',
-  TRASH = 'trash'
 }
 
 export enum EmailThreadPriority {
   LOW = 'low',
   NORMAL = 'normal',
   HIGH = 'high',
-  URGENT = 'urgent'
+}
+
+export enum EmailThreadParticipantType {
+  COACH = 'coach',
+  CLIENT = 'client',
+  LEAD = 'lead',
 }
 
 export enum EmailMessageStatus {

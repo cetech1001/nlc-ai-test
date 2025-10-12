@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { Public } from '@nlc-ai/api-auth';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nlc-ai/api-database';
-import type {MailgunWebhookEvent} from "@nlc-ai/api-types";
+import {EmailStatus, MailgunWebhookEvent} from "@nlc-ai/api-types";
 import {MailgunWebhookDto} from "./dto";
 import {createHmac} from "crypto";
 import {WebhookHandlerService} from "./handlers/webhook-handler.service";
@@ -165,18 +165,29 @@ export class MailgunWebhookController {
     try {
       await this.prisma.lead.updateMany({
         where: { email },
-        data: { status: 'unsubscribed' },
+        data: { marketingOptIn: false },
       });
 
-      await this.prisma.scheduledEmail.updateMany({
+      await this.prisma.coach.updateMany({
+        where: { email },
+        data: { marketingOptIn: false },
+      });
+
+      await this.prisma.client.updateMany({
+        where: { email },
+        data: { marketingOptIn: false },
+      });
+
+      await this.prisma.emailMessage.updateMany({
         where: {
           OR: [
+            { coach: { email } },
             { lead: { email } },
             { client: { email } },
           ],
-          status: { in: ['scheduled', 'paused'] },
+          status: { in: [EmailStatus.SCHEDULED, EmailStatus.PAUSED] },
         },
-        data: { status: 'cancelled' },
+        data: { status: EmailStatus.CANCELLED },
       });
 
       this.logger.log(`Updated database for unsubscribed email: ${email}`);

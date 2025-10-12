@@ -18,7 +18,7 @@ export interface ClientEmailReceivedEvent extends BaseEvent{
   schemaVersion: number;
   payload: {
     coachID: string;
-    clientID: string;
+    participantID: string;
     threadID: string;
     emailID: string;
     subject: string;

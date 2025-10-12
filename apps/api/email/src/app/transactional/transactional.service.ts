@@ -14,7 +14,7 @@ export class TransactionalService {
   private readonly systemFromEmail: string;
 
   constructor(
-    private readonly providersService: ProvidersService,
+    private readonly providers: ProvidersService,
     private readonly configService: ConfigService,
   ) {
     this.systemFromEmail =
@@ -125,7 +125,7 @@ export class TransactionalService {
 
   private async sendSystemEmail(data: SendEmailRequest): Promise<void> {
     try {
-      const result = await this.providersService.sendEmail({
+      const result = await this.providers.sendEmail({
         ...data,
         metadata: {
           type: 'system',

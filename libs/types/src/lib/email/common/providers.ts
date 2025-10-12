@@ -1,4 +1,21 @@
-import {EmailMessageStatus, SendEmailRequest} from "../threads";
+import {EmailAttachment, EmailMessageStatus, EmailThreadPriority} from "../threads";
+
+export interface SendEmailRequest {
+  threadID?: string;
+  to: string | string[];
+  cc?: string[];
+  bcc?: string[];
+  subject?: string;
+  text?: string;
+  html?: string;
+  templateID?: string;
+  templateVariables?: Record<string, any>;
+  attachments?: EmailAttachment[];
+  scheduleFor?: string;
+  priority?: EmailThreadPriority;
+  tags?: string[];
+  metadata?: Record<string, any>;
+}
 
 export interface EmailDeliveryResult {
   messageID: string;
@@ -24,7 +41,7 @@ export interface EmailProviderHealth {
 }
 
 export interface IEmailProvider {
-  sendEmail(message: SendEmailRequest, from: string): Promise<EmailDeliveryResult>;
+  sendEmail(message: SendEmailRequest, from?: string): Promise<EmailDeliveryResult>;
   sendBulkEmails(messages: SendEmailRequest[], from: string): Promise<EmailDeliveryResult[]>;
   getHealth(): Promise<EmailProviderHealth>;
   validateEmail(email: string): boolean;
