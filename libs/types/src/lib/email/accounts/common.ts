@@ -13,8 +13,7 @@ export interface EmailAccount {
   isPrimary: boolean;
   isActive: boolean;
   syncEnabled: boolean;
-  lastSyncAt: Date;
-  syncSettings: EmailSyncSettings;
+  lastSyncAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,7 +71,7 @@ export interface IEmailSyncProvider {
 
   refreshToken(refreshToken: string): Promise<{
     accessToken: string;
-    refreshToken: string;
+    refreshToken?: string | null;
     expiresAt?: string;
   }>;
 

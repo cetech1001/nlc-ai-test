@@ -13,7 +13,7 @@ import {
   SyncEmailAccountRequest,
   SyncEmailAccountResponse,
   SyncStatus,
-  UserType, EmailAccountProvider, EmailSyncSettings
+  UserType, EmailAccountProvider
 } from "@nlc-ai/types";
 import {AccountsRepository} from "./repositories/accounts.repository";
 
@@ -38,7 +38,6 @@ export class AccountsService {
         provider: account.provider as EmailAccountProvider,
         accessToken: account.accessToken ? '***' : null,
         refreshToken: account.refreshToken ? '***' : null,
-        syncSettings: account.syncSettings as unknown as EmailSyncSettings,
       }));
     } catch (error: any) {
       throw new BadRequestException('Failed to retrieve email accounts');
@@ -265,7 +264,7 @@ export class AccountsService {
     try {
       syncResult = await syncProvider.syncEmails(
         validAccessToken,
-        account.syncSettings as any,
+        {} as any,
         lastSync
       );
     } catch (error: any) {
@@ -365,7 +364,7 @@ export class AccountsService {
 
     const threadCreated = !await this.accountsRepo.threadExists(email.threadID);
 
-    await this.accountsRepo.createEmailMessage({
+    /*await this.accountsRepo.createEmailMessage({
       threadID: thread.id,
       providerMessageID: email.providerMessageID,
       from: email.from,
@@ -376,7 +375,7 @@ export class AccountsService {
       sentAt: new Date(email.sentAt),
       receivedAt: new Date(email.receivedAt || ''),
       isRead: email.isRead,
-    });
+    });*/
 
     await this.outbox.saveAndPublishEvent<ClientEmailReceivedEvent>(
       {

@@ -1017,10 +1017,10 @@ model EmailAccount {
   userID         String         @db.Uuid
   userType       UserType
   emailAddress   String         @db.VarChar(255)
-  provider       EmailProviders @default(gmail) //TODO: remove the default after db fields have been populated
-  accessToken    String
+  provider       EmailProviders
+  accessToken    String?
   refreshToken   String?
-  tokenExpiresAt DateTime       @db.Timestamptz(6)
+  tokenExpiresAt DateTime?      @db.Timestamptz(6)
   isPrimary      Boolean        @default(false)
   isActive       Boolean        @default(true)
   syncEnabled    Boolean        @default(true)

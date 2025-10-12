@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from "@nlc-ai/api-database";
-import {EmailMessageStatus, EmailThreadStatus, UserType} from "@nlc-ai/types";
+import {EmailThreadStatus, UserType} from "@nlc-ai/types";
 
 @Injectable()
 export class AccountsRepository {
@@ -88,7 +88,7 @@ export class AccountsRepository {
    */
   async updateTokens(accountID: string, tokens: {
     accessToken: string;
-    refreshToken?: string;
+    refreshToken?: string | null;
     tokenExpiresAt?: Date | null;
   }) {
     return this.prisma.emailAccount.update({
@@ -243,7 +243,6 @@ export class AccountsRepository {
           messageCount: 0,
           lastMessageAt: new Date(),
           participants: [],
-          tags: [],
         },
       });
     }
@@ -251,7 +250,7 @@ export class AccountsRepository {
     return thread;
   }
 
-  async createEmailMessage(data: {
+  /*async createEmailMessage(data: {
     threadID: string;
     providerMessageID: string;
     from: string;
@@ -282,13 +281,10 @@ export class AccountsRepository {
         text: data.text,
         html: data.html,
         sentAt: data.sentAt,
-        receivedAt: data.receivedAt,
         status: EmailMessageStatus.DELIVERED,
-        aiProcessed: false,
-        suggestedActions: [],
       },
     });
-  }
+  }*/
 
   async getSyncStats(userID: string) {
     const today = new Date();

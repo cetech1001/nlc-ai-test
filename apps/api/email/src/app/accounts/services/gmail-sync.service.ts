@@ -57,7 +57,7 @@ export class GmailSyncService implements IEmailSyncProvider {
 
   async syncEmails(
     accessToken: string,
-    settings: EmailSyncSettings,
+    settings?: EmailSyncSettings,
     lastSyncToken?: string
   ) {
     try {
@@ -68,7 +68,7 @@ export class GmailSyncService implements IEmailSyncProvider {
 
       const listParams: any = {
         userId: 'me',
-        maxResults: settings.maxEmailsPerSync || 100,
+        maxResults: settings?.maxEmailsPerSync || 100,
         q: query,
       };
 
@@ -152,36 +152,36 @@ export class GmailSyncService implements IEmailSyncProvider {
     }
   }
 
-  private buildGmailQuery(settings: EmailSyncSettings): string {
+  private buildGmailQuery(settings?: EmailSyncSettings): string {
     const conditions = [];
 
-    if (settings.filterSettings?.fromDomain?.length) {
-      const domainConditions = settings.filterSettings.fromDomain
+    if (settings?.filterSettings?.fromDomain?.length) {
+      const domainConditions = settings?.filterSettings.fromDomain
         .map(domain => `from:${domain}`)
         .join(' OR ');
       conditions.push(`(${domainConditions})`);
     }
 
-    if (settings.filterSettings?.keywords?.length) {
-      const keywordConditions = settings.filterSettings.keywords
+    if (settings?.filterSettings?.keywords?.length) {
+      const keywordConditions = settings?.filterSettings.keywords
         .map(keyword => `"${keyword}"`)
         .join(' OR ');
       conditions.push(`(${keywordConditions})`);
     }
 
-    if (settings.filterSettings?.dateRange?.start) {
-      conditions.push(`after:${settings.filterSettings.dateRange.start}`);
+    if (settings?.filterSettings?.dateRange?.start) {
+      conditions.push(`after:${settings?.filterSettings.dateRange.start}`);
     }
 
-    if (settings.filterSettings?.dateRange?.end) {
-      conditions.push(`before:${settings.filterSettings.dateRange.end}`);
+    if (settings?.filterSettings?.dateRange?.end) {
+      conditions.push(`before:${settings?.filterSettings.dateRange.end}`);
     }
 
-    if (settings.filterSettings?.excludeSpam) {
+    if (settings?.filterSettings?.excludeSpam) {
       conditions.push('-in:spam');
     }
 
-    if (settings.filterSettings?.excludePromotional) {
+    if (settings?.filterSettings?.excludePromotional) {
       conditions.push('-category:promotions');
     }
 
