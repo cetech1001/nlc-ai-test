@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY nx.json tsconfig.base.json ./
 
-RUN set -eux; pnpm install --frozen-lockfile && pnpm add -w nx;
+RUN set -eux; pnpm install --frozen-lockfile
 
 COPY apps/api/auth ./apps/api/auth
 COPY libs/api ./libs/api

@@ -15,8 +15,7 @@ COPY apps/api/prisma/schema.prisma ./apps/api/prisma/
 COPY libs ./libs
 
 # Install ALL dependencies (including devDependencies for building)
-RUN pnpm install --prod --frozen-lockfile
-RUN pnpm add -w nx@latest
+RUN pnpm install --frozen-lockfile
 
 # Pre-install platform-specific packages to avoid build issues
 RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional
