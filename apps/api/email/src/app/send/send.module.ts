@@ -9,6 +9,7 @@ import {MailgunService} from "./services/mailgun.service";
 import {ScheduleModule} from "@nestjs/schedule";
 import {ScheduledProcessor} from "./processors/scheduled.processor";
 import {SchedulerService} from "./services/scheduler.service";
+import {TemplateEngineService} from "./services/template-engine.service";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import {SchedulerService} from "./services/scheduler.service";
     SmtpService,
     ScheduledProcessor,
     SchedulerService,
+    TemplateEngineService,
   ],
   exports: [SendService],
 })

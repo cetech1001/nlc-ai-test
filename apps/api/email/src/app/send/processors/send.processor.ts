@@ -2,7 +2,7 @@ import { Processor, Process } from '@nestjs/bull';
 import { type Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { ProvidersService } from '../../providers/providers.service';
+import { ProvidersService } from '../services/providers.service';
 import { SmtpService } from '../services/smtp.service';
 import { EmailMessageStatus } from '@nlc-ai/types';
 
@@ -94,13 +94,8 @@ export class SendProcessor {
         throw new Error('Message not found');
       }
 
-      const coachID = message.coachID;
-      if (!coachID) {
-        throw new Error('No coach ID associated with this message');
-      }
-
       const primaryAccount = await this.prisma.emailAccount.findFirst({
-        where: { userID: coachID, isPrimary: true },
+        where: { userID: message.userID, isPrimary: true },
       });
 
       if (primaryAccount) {
@@ -127,7 +122,7 @@ export class SendProcessor {
           throw new Error(result.error || 'Failed to send via coach account');
         }
       } else {
-        this.logger.warn(`No primary account for coach ${coachID}, falling back to Mailgun`);
+        this.logger.warn(`No primary account for coach ${message.userID}, falling back to Mailgun`);
 
         const result = await this.providers.sendEmail({
           to: message.to,
@@ -138,7 +133,7 @@ export class SendProcessor {
           metadata: {
             messageID: message.id,
             type: 'coach_email',
-            coachID,
+            coachID: message.userID,
           },
         });
 

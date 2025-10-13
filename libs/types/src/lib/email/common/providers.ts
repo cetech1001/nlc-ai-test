@@ -20,7 +20,7 @@ export interface SendEmailRequest {
 export interface EmailDeliveryResult {
   messageID: string;
   providerMessageID: string;
-  status: EmailMessageStatus.SENT | EmailMessageStatus.FAILED;
+  status: EmailMessageStatus;
   timestamp: string;
   error?: string;
 }
