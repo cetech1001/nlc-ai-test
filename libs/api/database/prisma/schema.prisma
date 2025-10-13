@@ -982,7 +982,6 @@ enum TemplateCategory {
   lead_followup
   billing
   custom
-
   auth
   system
   notification

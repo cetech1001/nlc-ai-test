@@ -21,14 +21,56 @@ export class TemplateEngineService {
       ...this.variables,
       ...variables,
     };
+
+    template = this.processConditionals(template, variables);
+    template = this.processLoops(template, variables);
+    template = this.processVariables(template, variables);
+
+    return template;
+  }
+
+  private processConditionals(template: string, variables: Record<string, any>): string {
+    const ifRegex = /\{\{#if\s+(\w+)}}([\s\S]*?)\{\{\/if}}/g;
+
+    template = template.replace(ifRegex, (match, variable, content) => {
+      const value = variables[variable];
+      if (value !== undefined && value !== null && value !== false && value !== '' && value !== 0) {
+        return content;
+      }
+      return '';
+    });
+
+    return template;
+  }
+
+  private processLoops(template: string, variables: Record<string, any>): string {
+    const eachRegex = /\{\{#each\s+(\w+)}}([\s\S]*?)\{\{\/each}}/g;
+
+    template = template.replace(eachRegex, (match, variable, content) => {
+      const array = variables[variable];
+
+      if (!Array.isArray(array)) {
+        return '';
+      }
+
+      return array.map((item, index) => {
+        let itemContent = content;
+
+        itemContent = itemContent.replace(/\{\{this}}/g, String(item));
+
+        itemContent = itemContent.replace(/\{\{@index}}/g, String(index + 1));
+
+        return itemContent;
+      }).join('');
+    });
+
+    return template;
+  }
+
+  processVariables(template: string, variables: Record<string, any>): string {
     return template.replace(/\{\{(\w+)}}/g, (match, variable) => {
       return variables[variable] ?? match;
     });
-  }
-
-  extractVariables(template: string): string[] {
-    const matches = template.match(/\{\{(\w+)\}\}/g);
-    return matches ? [...new Set(matches.map(match => match.replace(/[{}]/g, '')))] : [];
   }
 
   async renderEmailFromTemplate(
@@ -59,8 +101,7 @@ export class TemplateEngineService {
 
     await this.prisma.emailTemplate.update({
       where: {
-        id: userID ? templateID : undefined,
-        systemKey: userID ? undefined : templateID,
+        id: template.id
       },
       data: {
         usageCount: { increment: 1 },
