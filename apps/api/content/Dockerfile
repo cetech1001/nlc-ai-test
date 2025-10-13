@@ -12,7 +12,6 @@ COPY libs/api ./libs/api
 COPY libs/types ./libs/types
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional
 
 FROM base AS builder
 WORKDIR /app

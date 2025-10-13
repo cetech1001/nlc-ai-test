@@ -18,7 +18,6 @@ COPY libs ./libs
 RUN pnpm install --frozen-lockfile
 
 # Pre-install platform-specific packages to avoid build issues
-RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional
 
 # Build stage
 FROM base AS builder

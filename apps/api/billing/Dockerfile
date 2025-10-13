@@ -11,7 +11,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY libs/api ./libs/api
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional
 
 FROM base AS builder
 WORKDIR /app
