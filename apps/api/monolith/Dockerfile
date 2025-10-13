@@ -6,7 +6,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy dependency files first (better layer caching)
-COPY package*.json ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
@@ -14,11 +15,11 @@ COPY apps/api/prisma/schema.prisma ./apps/api/prisma/
 COPY libs ./libs
 
 # Install ALL dependencies (including devDependencies for building)
-RUN npm ci --only=production
-RUN npm install nx@latest
+RUN pnpm install --prod --frozen-lockfile
+RUN pnpm add nx@latest
 
 # Pre-install platform-specific packages to avoid build issues
-RUN npm install @rollup/rollup-linux-x64-musl --save-optional --no-save
+RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional
 
 # Build stage
 FROM base AS builder
@@ -32,8 +33,8 @@ COPY --from=deps /app/package*.json ./
 COPY . .
 
 # Generate Prisma client and build
-RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
-RUN npx nx build api --prod
+RUN pnpm prisma generate --schema=apps/api/prisma/schema.prisma
+RUN pnpm nx build api --prod
 
 # Runtime stage
 FROM base AS runner

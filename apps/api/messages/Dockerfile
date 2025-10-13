@@ -6,13 +6,14 @@ WORKDIR /app
 
 COPY nx.json ./
 COPY tsconfig.base.json ./
-COPY package*.json ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 COPY libs/api ./libs/api
 COPY libs/types ./libs/types
 
-RUN npm ci --only=production
-RUN npm install nx@latest
-RUN npm install @rollup/rollup-linux-x64-musl --save-optional --no-save
+RUN pnpm install --prod --frozen-lockfile
+RUN pnpm add nx@latest
+RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional
 
 FROM base AS builder
 WORKDIR /app
@@ -24,14 +25,15 @@ COPY eslint.config.mjs ./
 COPY nx.json ./
 COPY tsconfig.json ./
 COPY tsconfig.base.json ./
-COPY package*.json ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 COPY libs/api ./libs/api
 COPY libs/types ./libs/types
 COPY apps/api/messages ./apps/api/messages
 
-RUN npx nx sync
-RUN npx prisma generate --schema=libs/api/database/prisma/schema.prisma
-RUN NX_DAEMON=false npx nx build messages-service
+RUN pnpm nx sync
+RUN pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma
+RUN NX_DAEMON=false pnpm nx build messages-service
 
 FROM base AS runner
 WORKDIR /app

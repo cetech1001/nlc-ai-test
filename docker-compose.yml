@@ -84,7 +84,6 @@ services:
         condition: service_healthy
       postgres-init:
         condition: service_completed_successfully
-#      - db_migrate
     volumes:
       - ./apps/api/gateway:/app/apps/api/gateway
       - ./libs/api:/app/libs/api

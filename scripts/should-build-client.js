@@ -4,7 +4,7 @@ try {
   const changedFiles = execSync('git diff --name-only HEAD~1 HEAD', { encoding: 'utf8' });
 
   const triggerPaths = [
-    'apps/web/coach/',
+    'apps/web/client/',
     'libs/web/',
     'libs/types/',
     'libs/sdk/',
@@ -19,10 +19,10 @@ try {
   );
 
   if (shouldBuild) {
-    console.log('✅ Changes detected in coach dashboard dependencies - proceeding with build');
+    console.log('✅ Changes detected in client dashboard dependencies - proceeding with build');
     process.exit(1);
   } else {
-    console.log('❌ No relevant changes for coach dashboard - skipping deployment');
+    console.log('❌ No relevant changes for client dashboard - skipping deployment');
     process.exit(0);
   }
 } catch (error) {
