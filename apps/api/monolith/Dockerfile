@@ -50,7 +50,7 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy Prisma schema and generated client if needed
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+RUN pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma
 
 RUN chown -R nestjs:nodejs /app
 USER nestjs

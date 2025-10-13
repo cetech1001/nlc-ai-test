@@ -15,7 +15,6 @@ COPY libs/api ./libs/api
 COPY libs/types ./libs/types
 COPY eslint.config.mjs tsconfig.json ./
 
-RUN pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma
 
 ENV NODE_ENV=development \
     NX_CACHE_DIRECTORY=/app/.nx/cache

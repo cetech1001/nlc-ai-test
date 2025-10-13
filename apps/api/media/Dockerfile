@@ -28,7 +28,6 @@ COPY libs/types ./libs/types
 COPY apps/api/media ./apps/api/media
 
 RUN pnpm nx sync
-RUN pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma
 RUN NX_DAEMON=false pnpm nx build media-service
 
 FROM base AS runner
@@ -45,7 +44,7 @@ COPY --from=builder /app/libs/api/database ./libs/api/database
 
 COPY --from=deps /app/node_modules ./node_modules
 
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+RUN pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma
 
 RUN chown -R nestjs:nodejs /app
 USER nestjs
