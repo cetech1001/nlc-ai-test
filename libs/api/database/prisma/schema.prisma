@@ -109,8 +109,6 @@ model Coach {
   courses            Course[]
   paymentMethods     PaymentMethod[]
   leads              Lead[]
-  emailSequences     EmailSequence[]
-  emailMessages      EmailMessage[]
   knowledgeFiles     CoachKnowledgeFile[]
   agentThreads       AgentThread[]
   agentMessages      AgentMessage[]
@@ -154,9 +152,7 @@ model Client {
   updatedAt         DateTime       @default(now()) @db.Timestamptz(6)
 
   courseEnrollments CourseEnrollment[]
-  emailMessages     EmailMessage[]
   clientCoaches     ClientCoach[]
-  emailSequences    EmailSequence[]
   paymentMethods    PaymentMethod[]
 
   @@index([email], map: "idx_clients_email")
@@ -1009,7 +1005,7 @@ enum EmailThreadStatus {
   archived
 }
 
-enum EmailThreadParticipantType {
+enum EmailParticipantType {
   coach
   client
   lead
@@ -1044,9 +1040,6 @@ model EmailMessage {
   emailTemplateID          String? @db.Uuid
   emailSequenceID          String? @db.Uuid
   deliverabilityAnalysisID String? @db.Uuid
-  coachID                  String? @db.Uuid
-  clientID                 String? @db.Uuid
-  leadID                   String? @db.Uuid
 
   userID   String   @db.Uuid
   userType UserType
@@ -1082,10 +1075,6 @@ model EmailMessage {
   emailTemplate          EmailTemplate?          @relation(fields: [emailTemplateID], references: [id])
   emailSequence          EmailSequence?          @relation(fields: [emailSequenceID], references: [id])
   deliverabilityAnalysis DeliverabilityAnalysis?
-
-  coach  Coach?  @relation(fields: [coachID], references: [id])
-  client Client? @relation(fields: [clientID], references: [id])
-  lead   Lead?   @relation(fields: [leadID], references: [id])
 
   @@index([userID, userType])
   @@index([status, scheduledFor])
@@ -1138,8 +1127,8 @@ model EmailThread {
   userType       UserType
   emailAccountID String   @db.Uuid
 
-  participantID   String?                     @db.Uuid
-  participantType EmailThreadParticipantType?
+  participantID   String?               @db.Uuid
+  participantType EmailParticipantType?
 
   threadID String @db.VarChar(255)
 
@@ -1217,30 +1206,24 @@ model DeliverabilityAnalysis {
 }
 
 model EmailSequence {
-  id          String   @id @default(uuid()) @db.Uuid
-  userID      String   @db.VarChar(50)
-  userType    UserType
-  leadID      String?  @db.Uuid
-  coachID     String?  @db.Uuid
-  clientID    String?  @db.Uuid
+  id       String   @id @default(uuid()) @db.Uuid
+  userID   String   @db.VarChar(50)
+  userType UserType
+
+  targetID   String?               @db.Uuid
+  targetType EmailParticipantType?
+
   name        String   @db.VarChar(255)
   status      String   @db.VarChar(50)
-  sequence    Json
+  sequence    Json     @default("[]")
   description String?
   triggerType String   @db.VarChar(50)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
-  lead   Lead?   @relation(fields: [leadID], references: [id], onDelete: Cascade)
-  coach  Coach?  @relation(fields: [coachID], references: [id], onDelete: Cascade)
-  client Client? @relation(fields: [clientID], references: [id], onDelete: Cascade)
-
   emailMessages EmailMessage[]
 
-  @@index([coachID])
-  @@index([leadID])
-  @@index([clientID])
   @@map("email_sequences")
 }
 
@@ -1632,9 +1615,6 @@ model Lead {
   createdAt       DateTime   @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @db.Timestamptz(6)
   coach           Coach?     @relation(fields: [coachID], references: [id], onDelete: Cascade)
-
-  emailSequences EmailSequence[]
-  emailMessages  EmailMessage[]
 
   @@map("leads")
 }

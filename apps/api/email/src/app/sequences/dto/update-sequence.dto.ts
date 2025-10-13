@@ -1,15 +1,10 @@
-import {ApiProperty} from "@nestjs/swagger";
-import {IsArray, IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength, ValidateNested} from "class-validator";
-import {
-  EmailSequenceStatus,
-  EmailSequenceTriggerType,
-  EmailSequenceType,
-  UpdateEmailSequenceRequest
-} from "@nlc-ai/types";
-import {Type} from "class-transformer";
-import {EmailConditionDto} from "./create-sequence.dto";
+import { ApiProperty } from "@nestjs/swagger";
+import { IsArray, IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength, ValidateNested } from "class-validator";
+import { EmailSequenceStatus, EmailSequenceTriggerType, UpdateEmailSequenceRequest } from "@nlc-ai/types";
+import { Type } from "class-transformer";
+import {EmailConditionDto, SequenceStepDto} from "./create-sequence.dto";
 
-export class UpdateSequenceDto implements UpdateEmailSequenceRequest{
+export class UpdateSequenceDto implements UpdateEmailSequenceRequest {
   @ApiProperty({ required: false, description: 'Sequence name' })
   @IsOptional()
   @IsString()
@@ -23,11 +18,6 @@ export class UpdateSequenceDto implements UpdateEmailSequenceRequest{
   @MaxLength(500)
   description?: string;
 
-  @ApiProperty({ enum: EmailSequenceType, required: false, description: 'Sequence type' })
-  @IsOptional()
-  @IsEnum(EmailSequenceType)
-  type?: EmailSequenceType;
-
   @ApiProperty({ enum: EmailSequenceTriggerType, required: false, description: 'How this sequence is triggered' })
   @IsOptional()
   @IsEnum(EmailSequenceTriggerType)
@@ -39,6 +29,13 @@ export class UpdateSequenceDto implements UpdateEmailSequenceRequest{
   @ValidateNested({ each: true })
   @Type(() => EmailConditionDto)
   triggerConditions?: EmailConditionDto[];
+
+  @ApiProperty({ type: [SequenceStepDto], required: false, description: 'Updated sequence steps' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SequenceStepDto)
+  steps?: SequenceStepDto[];
 
   @ApiProperty({ enum: EmailSequenceStatus, required: false, description: 'Sequence status' })
   @IsOptional()

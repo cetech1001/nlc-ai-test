@@ -7,12 +7,21 @@ import {
 } from './enums';
 import { SequenceEmail, EmailCondition } from './common';
 
+export interface SequenceStep {
+  order: number;
+  delayDays: number;
+  templateID: string;
+  subject: string;
+  conditions?: EmailCondition[];
+}
+
 export interface CreateEmailSequenceRequest {
   name: string;
   description?: string;
   type: EmailSequenceType;
   triggerType: EmailSequenceTriggerType;
   triggerConditions?: EmailCondition[];
+  steps: SequenceStep[];
 }
 
 export interface UpdateEmailSequenceRequest {
@@ -23,6 +32,7 @@ export interface UpdateEmailSequenceRequest {
   triggerConditions?: EmailCondition[];
   emails?: SequenceEmail[];
   status?: EmailSequenceStatus;
+  steps?: SequenceStep[];
   isActive?: boolean;
 }
 

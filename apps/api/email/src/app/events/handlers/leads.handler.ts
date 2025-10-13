@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBusService } from '@nlc-ai/api-messaging';
-import {ConfigService} from "@nestjs/config";
-import {Coach} from "@prisma/client";
+import { ConfigService } from "@nestjs/config";
+import { Coach } from "@prisma/client";
 
 @Injectable()
 export class LeadsHandler {
@@ -9,7 +9,7 @@ export class LeadsHandler {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly eventBus: EventBusService,
+    private readonly eventBus: EventBusService
   ) {
     this.subscribeToEvents();
   }
@@ -125,15 +125,12 @@ export class LeadsHandler {
           return;
         }
 
-        console.log("Error: ", errorData);
-
         throw new Error(`Failed to create coach account: ${errorData.message}`);
       }
 
       const coachData: Coach = await response.json() as Coach;
       this.logger.log(`Coach account created successfully: ${coachData.id}`);
     } catch (error) {
-      console.error("Error thrown: ", error);
       this.logger.error(`Failed to create coach account for lead ${leadID}:`, error);
     }
   }
@@ -159,13 +156,11 @@ export class LeadsHandler {
       }
 
       this.logger.log(`Password reset initiated for new coach: ${email}`);
-
     } catch (error) {
       this.logger.error(`Failed to send password reset to new coach ${email}:`, error);
     }
   }
 
-  // NEW: Send password reset for existing coach
   private async sendPasswordResetForExistingCoach(email: string, firstName: string) {
     try {
       const response = await fetch(`${this.configService.get('email.services.auth')}/auth/forgot-password?type=coach`, {
@@ -190,17 +185,10 @@ export class LeadsHandler {
     return Math.random().toString(36).slice(-12) + 'A1!';
   }
 
-
-  // Existing methods (kept the same)
   private async handleLeadCreated(payload: any) {
     const { leadID, source } = payload;
-
-    // Start appropriate email sequence based on lead source
-    const sequenceType = this.getSequenceTypeForSource(source);
-
-    if (sequenceType) {
-      this.logger.log(`Email sequence ${sequenceType} initiated for lead ${leadID}`);
-    }
+    // TODO: Start appropriate email sequence based on lead source
+    this.logger.log(`Lead created: ${leadID} from ${source}`);
   }
 
   private async handleLeadStatusUpdated(payload: any) {
@@ -220,7 +208,6 @@ export class LeadsHandler {
 
   private async handleSequenceCompleted(payload: any) {
     const { leadID, sequenceID } = payload;
-    // await this.emailIntegrationService.handleSequenceCompletion(leadID, coachID);
     this.logger.log(`Sequence ${sequenceID} completed for lead ${leadID}`);
   }
 
@@ -234,20 +221,8 @@ export class LeadsHandler {
     this.logger.log(`Sequence ${sequenceID} resumed`);
   }
 
-  private getSequenceTypeForSource(source: string): string | null {
-    const sourceSequenceMap: Record<string, string> = {
-      'website': 'standard-nurture',
-      'Website': 'standard-nurture',
-      'social-media': 'social-follow-up',
-      'referral': 'referral-welcome',
-      'webinar': 'webinar-follow-up',
-      'free-consultation': 'consultation-follow-up',
-    };
-
-    return sourceSequenceMap[source] || 'default-follow-up';
-  }
-
   private async sendLeadConversionEmail(leadID: string, coachID: string) {
+    // TODO: Send conversion notification to coach
     this.logger.log(`Conversion email triggered for lead ${leadID}`);
   }
 }

@@ -1,9 +1,9 @@
 import {Module} from "@nestjs/common";
 import {AuthHandler, UsersHandler, BillingHandler, LeadsHandler} from "./handlers";
-import {TransactionalModule} from "../transactional/transactional.module";
+import {SendModule} from "../send/send.module";
 
 @Module({
-  imports: [TransactionalModule],
+  imports: [SendModule],
   providers: [
     AuthHandler,
     BillingHandler,

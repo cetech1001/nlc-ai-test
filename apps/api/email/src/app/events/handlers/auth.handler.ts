@@ -1,15 +1,25 @@
-import {Injectable, Logger} from "@nestjs/common";
-import {EventBusService} from "@nlc-ai/api-messaging";
-import {TransactionalService} from "../../transactional/transactional.service";
+import { Injectable, Logger } from "@nestjs/common";
+import { EventBusService } from "@nlc-ai/api-messaging";
+import { PrismaService } from "@nlc-ai/api-database";
+import { SendService } from "../../send/send.service";
+import { ConfigService } from "@nestjs/config";
+import { EmailStatus, UserType } from "@nlc-ai/types";
 
 @Injectable()
 export class AuthHandler {
   private readonly logger = new Logger(AuthHandler.name);
+  private readonly systemFromEmail: string;
 
   constructor(
     private readonly eventBus: EventBusService,
-    private readonly transactionalService: TransactionalService,
+    private readonly prisma: PrismaService,
+    private readonly sendService: SendService,
+    private readonly configService: ConfigService,
   ) {
+    this.systemFromEmail = this.configService.get<string>(
+      'email.mailgun.fromEmail',
+      'support@nextlevelcoach.ai'
+    );
     this.subscribeToEvents();
   }
 
@@ -47,16 +57,30 @@ export class AuthHandler {
 
   private async handleVerificationRequested(event: any) {
     try {
-      this.logger.log(`This was called: ${event.payload}`);
       const { email, type, code } = event.payload;
 
-      if (type === 'email_verification') {
-        await this.transactionalService.sendVerificationEmail(email, code);
-        this.logger.log(`Verification email sent to ${email}`);
-      } else if (type === 'password_reset') {
-        await this.transactionalService.sendPasswordResetEmail(email, code);
-        this.logger.log(`Password reset email sent to ${email}`);
-      }
+      const templateID = type === 'email_verification'
+        ? 'email_verification'
+        : 'password_reset';
+
+      const message = await this.prisma.emailMessage.create({
+        data: {
+          userID: 'system',
+          userType: UserType.ADMIN,
+          from: this.systemFromEmail,
+          to: email,
+          emailTemplateID: templateID,
+          status: EmailStatus.PENDING,
+          metadata: {
+            type: 'transactional',
+            verificationCode: code,
+            email: email,
+          },
+        },
+      });
+
+      await this.sendService.sendSystemEmail(message.id);
+      this.logger.log(`Verification email queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to handle verification request:', error);
     }
@@ -65,10 +89,24 @@ export class AuthHandler {
   private async handleCoachRegistered(event: any) {
     try {
       const { email, firstName, lastName } = event.payload;
-      const fullName = `${firstName} ${lastName}`;
 
-      await this.transactionalService.sendWelcomeEmail(email, fullName);
-      this.logger.log(`Welcome email sent to ${email}`);
+      const message = await this.prisma.emailMessage.create({
+        data: {
+          userID: 'system',
+          userType: UserType.ADMIN,
+          from: this.systemFromEmail,
+          to: email,
+          emailTemplateID: 'welcome_coach',
+          status: EmailStatus.PENDING,
+          metadata: {
+            type: 'transactional',
+            name: `${firstName} ${lastName}`,
+          },
+        },
+      });
+
+      await this.sendService.sendSystemEmail(message.id);
+      this.logger.log(`Welcome email queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to send welcome email:', error);
     }
@@ -76,10 +114,12 @@ export class AuthHandler {
 
   private async handleCoachVerified(event: any) {
     try {
-      const { email, coachID } = event.payload;
+      const { email } = event.payload;
 
-      await this.sendOnboardingSequence(coachID, email);
-      this.logger.log(`Onboarding sequence initiated for ${email}`);
+      // In the future, trigger onboarding sequence here
+      // await this.sequencesService.executeSequence(...)
+
+      this.logger.log(`Coach verified: ${email}. Onboarding sequence would trigger here.`);
     } catch (error) {
       this.logger.error('Failed to handle coach verification:', error);
     }
@@ -89,8 +129,22 @@ export class AuthHandler {
     try {
       const { email } = event.payload;
 
-      await this.transactionalService.sendPasswordResetConfirmationEmail(email);
-      this.logger.log(`Password reset confirmation sent to ${email}`);
+      const message = await this.prisma.emailMessage.create({
+        data: {
+          userID: 'system',
+          userType: UserType.ADMIN,
+          from: this.systemFromEmail,
+          to: email,
+          emailTemplateID: 'password_reset_success',
+          status: EmailStatus.PENDING,
+          metadata: {
+            type: 'transactional',
+          },
+        },
+      });
+
+      await this.sendService.sendSystemEmail(message.id);
+      this.logger.log(`Password reset confirmation queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to send password reset confirmation:', error);
     }
@@ -98,40 +152,35 @@ export class AuthHandler {
 
   private async handleClientInvited(event: any) {
     try {
-      const {email} = event.payload;
+      const { email, coachName, token, expiresAt, businessName, message: inviteMessage } = event.payload;
+      const baseUrl = this.configService.get<string>('email.platforms.client', '');
+      const inviteUrl = `${baseUrl}/login?token=${token}`;
 
-      await this.transactionalService.sendClientInvitationEmail(event.payload);
+      const message = await this.prisma.emailMessage.create({
+        data: {
+          userID: 'system',
+          userType: UserType.ADMIN,
+          from: this.systemFromEmail,
+          to: email,
+          emailTemplateID: 'client_invite',
+          status: EmailStatus.PENDING,
+          metadata: {
+            type: 'transactional',
+            inviteUrl,
+            coachName,
+            businessName: businessName || `${coachName}'s coaching program`,
+            message: inviteMessage || 'N/A',
+            expiryText: expiresAt
+              ? `This invitation expires on ${new Date(expiresAt).toLocaleDateString()}.`
+              : 'This invitation will expire in 7 days.',
+          },
+        },
+      });
 
-      this.logger.log(`Client invitation sent to ${email}`);
+      await this.sendService.sendSystemEmail(message.id);
+      this.logger.log(`Client invitation queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to send client invitation:', error);
     }
-  }
-
-  private async sendOnboardingSequence(coachID: string, email: string) {
-    /*const onboardingEmails = [
-      {
-        delay: 1, // 1 day
-        subject: 'Getting Started with Next Level Coach AI',
-        template: 'onboarding-step-1',
-      },
-      {
-        delay: 3, // 3 days
-        subject: 'Setting Up Your First Email Sequence',
-        template: 'onboarding-step-2',
-      },
-      {
-        delay: 7, // 7 days
-        subject: 'Advanced Features and Best Practices',
-        template: 'onboarding-step-3',
-      },
-    ];
-
-    for (const emailData of onboardingEmails) {
-      const scheduledFor = new Date(Date.now() + emailData.delay * 24 * 60 * 60 * 1000);
-
-      // Schedule onboarding email (you'd need to implement this)
-      await this.scheduleOnboardingEmail(coachID, email, emailData, scheduledFor);
-    }*/
   }
 }

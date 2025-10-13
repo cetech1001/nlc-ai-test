@@ -6,16 +6,13 @@ import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-a
 import {AuthLibModule, JwtAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-import { TemplatesModule } from './templates/templates.module';
 import { SequencesModule } from './sequences/sequences.module';
 import { EventsModule } from './events/events.module';
-import emailConfig from './config/email.config';
+import {emailConfig} from './config/email.config';
 import {WebhooksModule} from "./webhooks/webhooks.module";
 import {AccountsModule} from "./accounts/accounts.module";
 import {SendModule} from "./send/send.module";
-import {ProvidersModule} from "./providers/providers.module";
 import {ThreadsModule} from "./threads/threads.module";
-import {TransactionalModule} from "./transactional/transactional.module";
 import {BullModule} from "@nestjs/bull";
 
 @Module({
@@ -48,11 +45,8 @@ import {BullModule} from "@nestjs/bull";
     AccountsModule,
     SendModule,
     EventsModule,
-    ProvidersModule,
     SequencesModule,
-    TemplatesModule,
     ThreadsModule,
-    TransactionalModule,
     WebhooksModule,
   ],
   providers: [

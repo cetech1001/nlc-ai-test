@@ -6,6 +6,17 @@ export enum EmailSequenceStatus {
   DRAFT = 'draft'
 }
 
+export enum EmailStatus {
+  PENDING = 'pending',
+  SENT = 'sent',
+  FAILED = 'failed',
+  BOUNCED = 'bounced',
+  SCHEDULED = 'scheduled',
+  PROCESSING = 'processing',
+  CANCELLED = 'cancelled',
+  PAUSED = 'paused'
+}
+
 export enum EmailSequenceTriggerType {
   MANUAL = 'manual',
   LEAD_CREATED = 'lead_created',

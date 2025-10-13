@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import type {IEmailProvider, EmailDeliveryResult, SendEmailRequest} from '@nlc-ai/types';
-import {TemplateEngineService} from "../templates/services/template-engine.service";
+import {TemplateEngineService} from "./template-engine.service";
 
 @Injectable()
 export class ProvidersService {

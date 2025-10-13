@@ -19,7 +19,7 @@ const validateConfig = (config: Record<string, unknown>) => {
   return validatedConfig;
 }
 
-export default registerAs('email', () => {
+export const emailConfig = registerAs('email', () => {
   const config = validateConfig(process.env);
 
   return {
