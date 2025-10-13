@@ -56,6 +56,7 @@
     "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
@@ -66,6 +67,7 @@
     "googleapis": "^154.1.0",
     "helmet": "^8.1.0",
     "input-otp": "^1.4.2",
+    "ioredis": "^5.8.1",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.516.0",
     "mailgun.js": "^12.0.3",
@@ -95,6 +97,7 @@
     "stripe": "^18.3.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^13.0.0",
     "vaul": "^1.1.2",
     "zod": "^3.25.67"
   },

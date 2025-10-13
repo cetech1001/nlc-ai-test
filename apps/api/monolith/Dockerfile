@@ -1,4 +1,5 @@
 FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Install dependencies stage
 FROM base AS deps
@@ -6,8 +7,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy dependency files first (better layer caching)
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY nx.json ./
 COPY tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
@@ -16,7 +16,7 @@ COPY libs ./libs
 
 # Install ALL dependencies (including devDependencies for building)
 RUN pnpm install --prod --frozen-lockfile
-RUN pnpm add nx@latest
+RUN pnpm add -w nx@latest
 
 # Pre-install platform-specific packages to avoid build issues
 RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional

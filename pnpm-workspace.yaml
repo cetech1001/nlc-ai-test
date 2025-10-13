@@ -1,0 +1,7 @@
+packages:
+  - 'apps/api/*'
+  - 'apps/web/*'
+  - 'libs/*'
+  - 'libs/web/*'
+  - 'libs/api/*'
+  - 'libs/sdk/*'

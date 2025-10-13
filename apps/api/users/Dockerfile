@@ -1,4 +1,5 @@
 FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -6,13 +7,12 @@ WORKDIR /app
 
 COPY nx.json ./
 COPY tsconfig.base.json ./
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY libs/api ./libs/api
 COPY libs/types ./libs/types
 
 RUN pnpm install --prod --frozen-lockfile
-RUN pnpm add nx@latest
+RUN pnpm add -w nx@latest
 RUN pnpm add @rollup/rollup-linux-x64-musl --save-optional
 
 FROM base AS builder
@@ -25,8 +25,7 @@ COPY eslint.config.mjs ./
 COPY nx.json ./
 COPY tsconfig.json ./
 COPY tsconfig.base.json ./
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY libs/api ./libs/api
 COPY libs/types ./libs/types
 COPY apps/api/users ./apps/api/users

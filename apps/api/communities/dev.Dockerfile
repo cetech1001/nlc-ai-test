@@ -1,14 +1,14 @@
 FROM node:20-bookworm-slim
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY nx.json tsconfig.base.json ./
 
-RUN set -eux; pnpm install --frozen-lockfile && pnpm add nx;
+RUN set -eux; pnpm install --frozen-lockfile && pnpm add -w nx;
 
 COPY apps/api/communities ./apps/api/communities
 COPY libs/api ./libs/api

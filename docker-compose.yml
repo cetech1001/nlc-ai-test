@@ -82,6 +82,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       postgres-init:
         condition: service_completed_successfully
     volumes:
@@ -104,6 +106,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/agents:/app/apps/api/agents
       - ./libs/types:/app/libs/types
@@ -123,6 +127,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./apps/api/analytics:/app/apps/api/analytics
@@ -166,6 +172,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/billing:/app/apps/api/billing
       - ./libs/api:/app/libs/api
@@ -185,6 +193,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./apps/api/content:/app/apps/api/content
@@ -206,6 +216,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/messages:/app/apps/api/messages
       - ./libs/api:/app/libs/api
@@ -226,6 +238,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/communities:/app/apps/api/communities
       - ./libs/api:/app/libs/api
@@ -245,6 +259,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./apps/api/courses:/app/apps/api/courses
@@ -287,6 +303,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/integrations:/app/apps/api/integrations
       - ./libs/api:/app/libs/api
@@ -305,6 +323,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./apps/api/leads:/app/apps/api/leads
@@ -326,6 +346,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/media:/app/apps/api/media
       - ./libs/api:/app/libs/api
@@ -346,6 +368,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api/notifications:/app/apps/api/notifications
       - ./libs/api:/app/libs/api
@@ -365,6 +389,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./apps/api/users:/app/apps/api/users

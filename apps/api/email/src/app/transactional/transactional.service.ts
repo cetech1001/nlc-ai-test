@@ -1,10 +1,6 @@
 import {Injectable, Logger} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {ProvidersService} from '../providers/providers.service';
-import {
-  getPaymentRequestEmailTemplate,
-  getPaymentRequestText,
-} from '../templates/templates';
 import {EmailMessageStatus, SendEmailRequest} from "@nlc-ai/types";
 import {ClientInvitedEvent} from "@nlc-ai/api-types";
 
@@ -97,15 +93,11 @@ export class TransactionalService {
     description?: string;
   }): Promise<void> {
     const subject = `Payment Request - ${data.planName} Plan Subscription`;
-    const html = getPaymentRequestEmailTemplate(data);
-    const text = getPaymentRequestText(data);
 
     await this.sendSystemEmail({
       to: data.to,
       subject,
-      html,
-      text,
-      templateID: 'payment-request',
+      templateID: 'payment_request',
     });
   }
 
