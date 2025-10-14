@@ -8,7 +8,7 @@ import {
   OAuthCredentials,
   SyncResult,
   TestResult, UserType
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 
 @Injectable()
 export class OutlookService extends BaseIntegrationService {

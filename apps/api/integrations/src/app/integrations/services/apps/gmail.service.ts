@@ -2,14 +2,14 @@ import {BadRequestException, Injectable} from "@nestjs/common";
 import {
   AppPlatform,
   AuthType,
-  EmailAccount,
+  EmailAccount, EmailAccountProvider,
   Integration,
   IntegrationType,
   OAuthCredentials,
   SyncResult,
   TestResult,
   UserType
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 import {BaseIntegrationService} from "../base-integration.service";
 import {Prisma} from '@prisma/client';
 
@@ -121,7 +121,7 @@ export class GmailService extends BaseIntegrationService {
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/gmail/callback`,
       response_type: 'code',
       access_type: 'offline',
-      prompt: 'consent',
+      prompt: 'select_account consent',
       state,
     });
 
@@ -141,7 +141,7 @@ export class GmailService extends BaseIntegrationService {
     params: {
       userID: string;
       userType: UserType;
-      provider: string;
+      provider: EmailAccountProvider;
       credentials: OAuthCredentials;
       profileData: any;
     }

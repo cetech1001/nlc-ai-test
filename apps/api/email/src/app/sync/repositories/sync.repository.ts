@@ -1,6 +1,6 @@
 import {Injectable} from '@nestjs/common';
 import {PrismaService} from '@nlc-ai/api-database';
-import {EmailThreadParticipantType, EmailThreadStatus, UserType} from '@nlc-ai/types';
+import {EmailParticipantType, EmailThreadStatus, UserType} from '@nlc-ai/types';
 
 @Injectable()
 export class SyncRepository {
@@ -103,7 +103,7 @@ export class SyncRepository {
 
   async findClientByEmail(email: string, coachID: string) {
     let client;
-    let type: EmailThreadParticipantType = EmailThreadParticipantType.CLIENT;
+    let type: EmailParticipantType = EmailParticipantType.CLIENT;
 
     client = await this.prisma.client.findFirst({
       where: {
@@ -121,14 +121,14 @@ export class SyncRepository {
       client = await this.prisma.lead.findFirst({
         where: { email }
       });
-      type = EmailThreadParticipantType.LEAD;
+      type = EmailParticipantType.LEAD;
     }
 
     if (!client) {
       client = await this.prisma.coach.findFirst({
         where: { email }
       });
-      type = EmailThreadParticipantType.COACH;
+      type = EmailParticipantType.COACH;
     }
 
     if (client) {
@@ -162,7 +162,7 @@ export class SyncRepository {
     userID: string;
     userType: UserType;
     participantID: string;
-    participantType: EmailThreadParticipantType;
+    participantType: EmailParticipantType;
     emailAccountID: string;
     threadID: string;
     subject: string;

@@ -283,8 +283,8 @@ export class IntegrationsClient extends BaseClient {
   async getConnectedPlatforms(): Promise<string[]> {
     const integrations = await this.getIntegrations();
     return integrations.data
-      .filter(integration => integration.isActive)
-      .map(integration => integration.platformName);
+      .filter((integration: Integration) => integration.isActive)
+      .map((integration: Integration) => integration.platformName);
   }
 
   /**
@@ -326,133 +326,89 @@ export class IntegrationsClient extends BaseClient {
     const top = (window.screen.height - height) / 2;
 
     let authWindow: Window | null = null;
-    let popupBlocked = false;
 
     try {
-      // Attempt to create popup window immediately with about:blank
       authWindow = window.open(
         'about:blank',
-        `${platform}_oauth`,
+        `${platform}_oauth_${Date.now()}`,
         `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
       );
 
-      // Check if popup creation failed or was blocked by the browser
       if (!authWindow || authWindow.closed || typeof authWindow.closed === 'undefined') {
-        popupBlocked = true;
+        throw new Error('Popup was blocked. Please allow popups for this site.');
       }
     } catch (e) {
-      // In some rare cases, window.open itself might throw, treat as blocked
       console.error("Error opening popup:", e);
-      popupBlocked = true;
+      throw new Error('Failed to open authentication window. Please allow popups for this site.');
     }
 
-
-    if (popupBlocked) {
-      // Popup was blocked, fallback to new tab
-      console.warn('Popup blocked, getting auth URL and opening in new tab');
-      const { authUrl, state } = await this.getAuthUrl(platform);
-
-      // Store state in localStorage for verification
-      localStorage.setItem(`oauth_state_${platform}`, state);
-
-      const newTabWindow = window.open(authUrl, '_blank');
-
-      if (!newTabWindow) {
-        throw new Error('Both popup and new tab were blocked. Please allow popups for this site.');
-      }
-
-      // When opening in a new tab, you won't get direct messages from it.
-      // You'll need to poll your backend or rely on a user-driven refresh/notification.
-      // For simplicity, we'll resolve immediately here, but you might want to add a note
-      // to the user to check their integrations or add a small loading indicator.
-      console.info("Opened in new tab. User will need to manually close it and verify integration.");
-      return Promise.resolve(); // Or add more sophisticated polling if needed.
-    }
-
-    // Get auth URL after popup is created and confirmed open
     const { authUrl, state } = await this.getAuthUrl(platform);
 
-    // Store state in localStorage for verification
     localStorage.setItem(`oauth_state_${platform}`, state);
 
-    // Navigate the popup to the auth URL
-    if (authWindow) {
-      authWindow.location.href = authUrl;
-    }
+    authWindow.location.href = authUrl;
 
     return new Promise((resolve, reject) => {
-      let checkClosedInterval: number | null = null;
-      let timeoutId: number | null = null;
+      let timeoutID: number | null = null;
+      let resolved = false;
 
       const cleanup = () => {
-        window.removeEventListener('message', messageHandler);
-        if (checkClosedInterval !== null) {
-          clearInterval(checkClosedInterval);
-        }
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
-        }
-        // Attempt to close the window if it's still open and we initiated it
-        if (authWindow && !authWindow.closed) {
-          try {
-            authWindow.close();
-          } catch (e) {
-            console.warn("Could not close auth window:", e);
-          }
+        localStorage.removeItem(`oauth_state_${platform}`);
+        // window.removeEventListener('message', messageHandler);
+        if (timeoutID !== null) {
+          clearTimeout(timeoutID);
         }
       };
 
-      // Listen for messages from the OAuth callback
       const messageHandler = (event: MessageEvent) => {
-        // Ensure the message is from a trusted origin, if possible (e.g., your own callback domain)
-        // For simplicity, we'll assume the callback script sends the correct platform and type.
-        if (event.data?.platform === platform && (event.data?.type === 'integration_success' || event.data?.type === 'integration_error')) {
+        console.log("Called event: ", event);
+        if (!event.data || typeof event.data !== 'object') {
+          return;
+        }
+
+        const { type, platform: messagePlatform } = event.data;
+
+        if (messagePlatform !== platform) {
+          return;
+        }
+
+        console.log("Event data: ", event.data);
+        console.log(`Type: ${type}`);
+
+        if (type === 'integration_success' && !resolved) {
+          resolved = true;
           cleanup();
-          if (event.data.type === 'integration_success') {
-            resolve();
-          } else {
-            reject(new Error(event.data.error || 'OAuth flow failed'));
-          }
+          resolve();
+          return;
+        }
+
+        if (type === 'integration_error' && !resolved) {
+          resolved = true;
+          cleanup();
+          reject(new Error(event.data.error || 'OAuth flow failed'));
+          return;
         }
       };
 
       window.addEventListener('message', messageHandler);
 
-      // --- Improved check for manual window closure ---
-      // This will check if the user manually closes the popup before it redirects back
-      // and sends a message. The key is to check authWindow.opener, which should still
-      // refer to your window even after cross-origin navigation.
-      checkClosedInterval = window.setInterval(() => {
-        // authWindow.closed can be unreliable cross-origin.
-        // A more reliable way is to check if the window still exists and its opener hasn't changed.
-        if (!authWindow || authWindow.closed || !authWindow.opener) {
-          // If the window is truly closed, or its opener reference is lost (implying closure/security block)
+      timeoutID = window.setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
           cleanup();
-          // Before rejecting, check if the integration was actually successful (e.g., user closed it *after* success)
-          this.getSocialIntegrations()
-            .then(integrations => {
-              const newIntegration = integrations.find(i => i.platformName === platform);
-              if (newIntegration) {
-                resolve(); // Success: User closed window after successful integration
-              } else {
-                reject(new Error('OAuth flow was cancelled or failed by user.'));
-              }
-            })
-            .catch(err => {
-              console.error("Failed to verify OAuth completion on manual close:", err);
-              reject(new Error('OAuth flow was cancelled or failed by user. (Verification failed)'));
-            });
-        }
-      }, 1000);
 
-      // Cleanup if window doesn't close within 5 minutes
-      timeoutId = window.setTimeout(() => {
-        if (authWindow && !authWindow.closed) { // Check if it's still open
-          console.warn('OAuth flow timed out. Attempting to close popup.');
-          cleanup(); // This will also close the window
-          reject(new Error('OAuth flow timed out'));
+          try {
+            if (authWindow && !authWindow.closed) {
+              authWindow.close();
+              localStorage.removeItem(`oauth_state_${platform}`);
+            }
+          } catch (e) {
+            console.warn("Could not close auth window:", e);
+          }
+
+          reject(new Error('OAuth flow timed out. Please try again.'));
         }
-      }, 300000); // 5 minutes
+      }, 300000);
     });
   }
 }

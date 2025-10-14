@@ -1,10 +1,10 @@
 import { registerAs } from '@nestjs/config';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { AnalyticsConfigSchema } from './analytics-config.schema';
+import { AgentsConfigSchema } from './agents-config.schema';
 
 function validateConfig(config: Record<string, unknown>) {
-  const validatedConfig = plainToInstance(AnalyticsConfigSchema, config, {
+  const validatedConfig = plainToInstance(AgentsConfigSchema, config, {
     enableImplicitConversion: true,
   });
 
@@ -19,7 +19,7 @@ function validateConfig(config: Record<string, unknown>) {
   return validatedConfig;
 }
 
-export default registerAs('openai', () => {
+export const agentsConfig = registerAs('agents', () => {
   const config = validateConfig(process.env);
 
   return {
@@ -39,6 +39,11 @@ export default registerAs('openai', () => {
       name: config.SERVICE_NAME,
       version: config.SERVICE_VERSION,
       environment: config.NODE_ENV,
+    },
+    services: {
+      email: {
+        url: config.EMAIL_SERVICE_URL,
+      },
     },
     performance: {
       maxRetries: config.MAX_RETRIES,

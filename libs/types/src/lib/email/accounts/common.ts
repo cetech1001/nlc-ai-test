@@ -41,6 +41,29 @@ export interface EmailSyncSettings {
   };
 }
 
+export interface StoredEmailContent {
+  messageID: string;
+  threadID: string;
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+  sentAt: string;
+  isFromCoach: boolean;
+  attachments?: any[];
+}
+
+export interface ThreadMessage {
+  messageID: string;
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+  sentAt: string;
+  isFromCoach: boolean;
+}
+
 export interface SyncedEmail {
   providerMessageID: string;
   threadID: string;

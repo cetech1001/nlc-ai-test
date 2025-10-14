@@ -12,5 +12,7 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@nlc-ai/api-messaging": "workspace:*"
+  }
 }

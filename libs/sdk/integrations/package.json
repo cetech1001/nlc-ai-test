@@ -12,5 +12,8 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@nlc-ai/sdk-core": "workspace:*",
+    "@nlc-ai/sdk-agents": "workspace:*"
+  }
 }

@@ -1,7 +1,7 @@
 import {BadRequestException, Injectable} from "@nestjs/common";
 import {ConfigService} from "@nestjs/config";
 import crypto from 'crypto';
-import { JwtService } from '@nestjs/jwt';
+import {JwtService} from '@nestjs/jwt';
 
 @Injectable()
 export class StateTokenService {
@@ -17,6 +17,7 @@ export class StateTokenService {
       nonce: crypto.randomBytes(16).toString('hex'),
     };
 
+
     const secret = this.configService.get('integrations.auth.jwtSecret');
     return this.jwt.sign(payload, {
       secret,
@@ -30,6 +31,7 @@ export class StateTokenService {
       const payload = this.jwt.verify(state, {
         secret,
       }) as any;
+
 
       return {
         userID: payload.userID,

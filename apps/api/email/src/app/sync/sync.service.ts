@@ -14,6 +14,9 @@ import {
   SyncStatus,
 } from '@nlc-ai/types';
 import { SyncRepository } from './repositories/sync.repository';
+import { S3EmailService } from './services/s3-email.service';
+import { EmailFineTuningService } from './services/email-fine-tuning.service';
+import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
 export class SyncService {
@@ -24,6 +27,9 @@ export class SyncService {
     @InjectQueue('email-sync') private syncQueue: Queue,
     private readonly syncRepo: SyncRepository,
     private readonly outbox: OutboxService,
+    private readonly s3EmailService: S3EmailService,
+    private readonly fineTuningService: EmailFineTuningService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async syncAccount(request: SyncEmailAccountRequest): Promise<SyncEmailAccountResponse> {
@@ -186,7 +192,8 @@ export class SyncService {
 
   async processAccountSync(accountID: string, forceFull?: boolean): Promise<{
     totalProcessed: number;
-    threadsUpdated: number;
+    clientEmailsFound: number;
+    threadsCreated: number;
   }> {
     const account = await this.syncRepo.getAccountByID(accountID);
     if (!account) {
@@ -233,13 +240,17 @@ export class SyncService {
       throw error;
     }
 
-    let threadsUpdated = 0;
+    let clientEmailsFound = 0;
+    let threadsCreated = 0;
 
     for (const email of syncResult.emails) {
       try {
-        const wasUpdated = await this.processIncomingEmail(account, email);
-        if (wasUpdated) {
-          threadsUpdated++;
+        const result = await this.processIncomingEmail(account, email);
+        if (result.isClientEmail) {
+          clientEmailsFound++;
+        }
+        if (result.threadCreated) {
+          threadsCreated++;
         }
       } catch (error: any) {
         this.logger.error(`Error processing email ${email.providerMessageID}:`, error);
@@ -255,7 +266,7 @@ export class SyncService {
         payload: {
           coachID: account.userID,
           totalProcessed: syncResult.emails.length,
-          clientEmailsFound: threadsUpdated,
+          clientEmailsFound,
           syncedAt: new Date().toISOString(),
         },
       },
@@ -264,7 +275,8 @@ export class SyncService {
 
     return {
       totalProcessed: syncResult.emails.length,
-      threadsUpdated,
+      clientEmailsFound,
+      threadsCreated,
     };
   }
 
@@ -283,15 +295,59 @@ export class SyncService {
     );
   }
 
-  private async processIncomingEmail(account: any, email: SyncedEmail): Promise<boolean> {
-    if (await this.isEmailFromCoach(email.from, account.userID)) {
-      return false;
+  private async processIncomingEmail(
+    account: any,
+    email: SyncedEmail
+  ): Promise<{ isClientEmail: boolean; threadCreated: boolean }> {
+    const isFromCoach = await this.isEmailFromCoach(email.from, account.userID);
+    const isToCoach = await this.isEmailFromCoach(email.to, account.userID);
+
+    // Store full email content in S3
+    const s3Key = await this.s3EmailService.storeEmailContent(
+      account.userID,
+      email.threadID,
+      email.providerMessageID,
+      {
+        ...email,
+        isFromCoach,
+      }
+    );
+
+    // If email is FROM coach (sent messages), queue for fine-tuning
+    if (isFromCoach) {
+      const isToClientOrLead = !isToCoach; // If not to another coach, assume client/lead
+
+      await this.fineTuningService.queueEmailForFineTuning(account.userID, {
+        threadID: email.threadID,
+        messageID: email.providerMessageID,
+        s3Key,
+        from: email.from,
+        to: email.to,
+        subject: email.subject,
+        sentAt: new Date(email.sentAt),
+        isFromCoach: true,
+        isToClientOrLead,
+      });
+
+      this.logger.log(`Queued coach email ${email.providerMessageID} for fine-tuning`);
+    }
+
+    // Handle client emails (existing logic)
+    if (isFromCoach) {
+      return { isClientEmail: false, threadCreated: false };
     }
 
     const client = await this.syncRepo.findClientByEmail(email.from, account.userID);
     if (!client) {
-      return false;
+      return { isClientEmail: false, threadCreated: false };
     }
+
+    const existingThread = await this.prisma.emailThread.findFirst({
+      where: {
+        userID: account.userID,
+        threadID: email.threadID,
+      },
+    });
 
     const thread = await this.syncRepo.findOrCreateEmailThread({
       userID: account.userID,
@@ -321,7 +377,7 @@ export class SyncService {
       'email.client.received'
     );
 
-    return true;
+    return { isClientEmail: true, threadCreated: !existingThread };
   }
 
   private async isEmailFromCoach(senderEmail: string, coachID: string): Promise<boolean> {

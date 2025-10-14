@@ -1,16 +1,16 @@
 import { Processor, Process } from '@nestjs/bull';
 import { type Job } from 'bull';
 import { Logger } from '@nestjs/common';
-import { AccountsService } from "../accounts.service";
-import { AccountsRepository } from "../repositories/accounts.repository";
+import {SyncService} from "../sync.service";
+import {SyncRepository} from "../repositories/sync.repository";
 
 @Processor('email-sync')
 export class SyncProcessor {
   private readonly logger = new Logger(SyncProcessor.name);
 
   constructor(
-    private accountsService: AccountsService,
-    private accountsRepo: AccountsRepository,
+    private sync: SyncService,
+    private syncRepo: SyncRepository,
   ) {}
 
   @Process('sync-account')
@@ -24,9 +24,9 @@ export class SyncProcessor {
     try {
       this.logger.log(`Processing sync for account: ${accountID}`);
 
-      const result = await this.accountsService.processAccountSync(accountID, forceFull);
+      const result = await this.sync.processAccountSync(accountID, forceFull);
 
-      await this.accountsRepo.createSyncResult({
+      await this.syncRepo.createSyncResult({
         accountID,
         emailsProcessed: result.totalProcessed,
         newEmails: result.clientEmailsFound,
@@ -49,7 +49,7 @@ export class SyncProcessor {
     } catch (error: any) {
       this.logger.error(`Sync failed for account: ${accountID}`, error);
 
-      await this.accountsRepo.createSyncResult({
+      await this.syncRepo.createSyncResult({
         accountID,
         status: 'failed',
         error: error.message,

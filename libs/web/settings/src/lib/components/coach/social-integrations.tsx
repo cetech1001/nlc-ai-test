@@ -1,3 +1,6 @@
+/// <reference lib="dom"/>
+'use client'
+
 import {useState, useEffect, FC} from 'react';
 import {
   Check,

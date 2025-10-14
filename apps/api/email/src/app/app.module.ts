@@ -14,6 +14,7 @@ import {AccountsModule} from "./accounts/accounts.module";
 import {SendModule} from "./send/send.module";
 import {ThreadsModule} from "./threads/threads.module";
 import {BullModule} from "@nestjs/bull";
+import {EmailInternalController} from "./internal/email-internal.controller";
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import {BullModule} from "@nestjs/bull";
     ThreadsModule,
     WebhooksModule,
   ],
+  controllers: [EmailInternalController],
   providers: [
     {
       provide: APP_PIPE,

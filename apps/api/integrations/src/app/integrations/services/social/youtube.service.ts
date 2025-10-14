@@ -8,7 +8,7 @@ import {
   IntegrationType,
   AuthType,
   SocialPlatform, IntegrationEvent, UserType
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 import {google} from "googleapis";
 import {IntegrationError} from "../../errors/integration.error";
 
@@ -55,6 +55,7 @@ export class YoutubeService extends BaseIntegrationService {
       redirect_uri: `${this.configService.get('integrations.baseUrl', '')}/integrations/auth/youtube/callback`,
       response_type: 'code',
       state,
+      prompt: 'select_account consent',
     });
 
     return {

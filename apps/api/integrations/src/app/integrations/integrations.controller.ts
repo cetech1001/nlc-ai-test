@@ -137,12 +137,6 @@ export class IntegrationsController {
     @Query('error_message') errorMessage?: string,
     @Query('error_description') errorDescription?: string,
   ) {
-    console.log("Platform: ", platform);
-    console.log("Code: ", code);
-    console.log("State: ", state);
-    console.log("Error: ", error);
-    console.log("Error Description: ", errorDescription);
-    console.log("Error Message: ", errorMessage);
 
     const nonce = crypto.randomBytes(16).toString('base64');
     res.setHeader('Content-Security-Policy', `script-src 'self' 'nonce-${nonce}'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`);
@@ -161,10 +155,6 @@ export class IntegrationsController {
 
     try {
       const { userID, userType, platform: statePlatform } = this.stateTokenService.verifyState(state);
-
-      console.log("User ID: ", userID);
-      console.log("User Type: ", userType);
-      console.log("Platform: ", platform);
 
       if (statePlatform !== platform) {
         throw new Error('Platform mismatch in state verification');

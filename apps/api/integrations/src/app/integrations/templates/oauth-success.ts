@@ -196,55 +196,53 @@ export const oauthSuccess = (platform: string, integration: Integration, nonce: 
 
         <script nonce="${nonce}">
           (function() {
-            function notifyParentAndClose() {
-            try {
-              // Try different methods to communicate with parent
-              if (window.opener && !window.opener.closed) {
-                console.log('Sending success message to parent window');
-                window.opener.postMessage({
-                  type: 'integration_success',
-                  platform: '${platform}',
-                  integration: ${JSON.stringify({
-                    id: integration.id,
-                    platformName: integration.platformName,
-                    isActive: integration.isActive,
-                    createdAt: integration.createdAt
-                  })}
-                }, '*');
+            const integrationData = {
+              type: 'integration_success',
+              platform: '${platform}',
+              integration: ${JSON.stringify({
+    id: integration.id,
+    platformName: integration.platformName,
+    isActive: integration.isActive,
+    createdAt: integration.createdAt
+  })}
+            };
 
-                // Small delay to ensure message is received
-                setTimeout(() => {
-                  try {
-                    window.close();
-                  } catch (e) {
-                    console.log('Could not close window automatically');
-                  }
-                }, 500);
-              } else if (window.parent && window.parent !== window) {
-                // Fallback for iframe scenarios
-                window.parent.postMessage({
-                  type: 'integration_success',
-                  platform: '${platform}',
-                  integration: ${JSON.stringify({
-                    id: integration.id,
-                    platformName: integration.platformName,
-                    isActive: integration.isActive,
-                    createdAt: integration.createdAt
-                  })}
-                }, '*');
-              } else {
-                console.log('No parent window found, closing automatically');
-                setTimeout(() => window.close(), 2000);
+            // Send message immediately
+            function sendMessage() {
+              console.log("Sending message");
+              console.log("Parent: ", window.parent);
+              console.log("Opener: ", window.opener);
+              window.parent.postMessage(integrationData, '*');
+              console.log("Posted message");
+              try {
+                if (window.opener && !window.opener.closed) {
+                  window.opener.postMessage(integrationData, '*');
+                  console.log('Message sent to opener');
+                } else if (window.parent && window.parent !== window) {
+                  window.parent.postMessage(integrationData, '*');
+                  console.log('Message sent to parent');
+                }
+              } catch (e) {
+                console.error('Error sending message:', e);
               }
-            } catch (error) {
-              console.error('Error communicating with parent:', error);
-              setTimeout(() => window.close(), 3000);
             }
-          }
+            console.log("Got here");
 
-          // Call immediately and also set backup timeout
-          notifyParentAndClose();
-          setTimeout(notifyParentAndClose, 1000); // Backup call
+            // Send immediately
+            sendMessage();
+
+            // Send again after short delay to ensure receipt
+            setTimeout(sendMessage, 100);
+            setTimeout(sendMessage, 300);
+
+            // Close window after messages sent
+            /*setTimeout(() => {
+              try {
+                window.close();
+              } catch (e) {
+                console.log('Could not close window');
+              }
+            }, 1000);*/
           })();
         </script>
       </body>

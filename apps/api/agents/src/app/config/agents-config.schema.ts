@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsNumber } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class AnalyticsConfigSchema {
+export class AgentsConfigSchema {
   @IsString()
   DATABASE_URL: string;
 
@@ -30,6 +30,9 @@ export class AnalyticsConfigSchema {
   @IsOptional()
   @IsString()
   SERVICE_VERSION?: string = '1.0.0';
+
+  @IsString()
+  EMAIL_SERVICE_URL: string;
 
   @IsOptional()
   @IsString()

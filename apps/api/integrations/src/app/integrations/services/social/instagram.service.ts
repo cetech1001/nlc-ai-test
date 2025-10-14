@@ -6,7 +6,7 @@ import {
   SocialPlatform,
   SyncResult,
   TestResult, UserType
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 import {Injectable} from "@nestjs/common";
 import {BaseIntegrationService} from "../base-integration.service";
 
@@ -97,6 +97,7 @@ export class InstagramService extends BaseIntegrationService {
         'pages_show_list',
       ].join(','),
       state,
+      auth_type: 'rerequest',
     });
 
     return {

@@ -6,17 +6,18 @@ import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-a
 import {AuthLibModule, JwtAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-import analyticsConfig from './config/analytics.config';
+import {agentsConfig} from './config/agents.config';
 import {CourseStructureModule} from "./course-structure/course-structure.module";
 import {ReplicaModule} from "./replica/replica.module";
 import {PublicChatModule} from "./public-chat/public-chat.module";
 import {EventsModule} from "./events/events.module";
+import {EmailAgentModule} from "./email-agent/email-agent.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [analyticsConfig],
+      load: [agentsConfig],
       cache: true,
       expandVariables: true,
     }),
@@ -28,6 +29,7 @@ import {EventsModule} from "./events/events.module";
     ReplicaModule,
     PublicChatModule,
     EventsModule,
+    EmailAgentModule,
   ],
   providers: [
     {

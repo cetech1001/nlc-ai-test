@@ -175,40 +175,42 @@ export const oauthError = (errorMessage: string, platform: string, nonce: string
 
         <script nonce="${nonce}">
           (function() {
-            function notifyParentAndClose() {
-            try {
-              if (window.opener && !window.opener.closed) {
-                console.log('Sending error message to parent window');
-                window.opener.postMessage({
-                  type: 'integration_error',
-                  platform: '${platform}',
-                  error: '${errorMessage.replace(/'/g, "\\'").replace(/\n/g, ' ')}'
-                }, '*');
+            const errorData = {
+              type: 'integration_error',
+              platform: '${platform}',
+              error: '${errorMessage.replace(/'/g, "\\'").replace(/\n/g, ' ')}'
+            };
 
-                setTimeout(() => {
-                  try {
-                    window.close();
-                  } catch (e) {
-                    console.log('Could not close window automatically');
-                  }
-                }, 500);
-              } else if (window.parent && window.parent !== window) {
-                window.parent.postMessage({
-                  type: 'integration_error',
-                  platform: '${platform}',
-                  error: '${errorMessage.replace(/'/g, "\\'").replace(/\n/g, ' ')}'
-                }, '*');
-              } else {
-                setTimeout(() => window.close(), 3000);
-              }
-              } catch (error) {
-                console.error('Error communicating with parent:', error);
-                setTimeout(() => window.close(), 5000);
+            // Send message immediately
+            function sendMessage() {
+              try {
+                if (window.opener && !window.opener.closed) {
+                  window.opener.postMessage(errorData, '*');
+                  console.log('Error message sent to opener');
+                } else if (window.parent && window.parent !== window) {
+                  window.parent.postMessage(errorData, '*');
+                  console.log('Error message sent to parent');
+                }
+              } catch (e) {
+                console.error('Error sending message:', e);
               }
             }
 
-            notifyParentAndClose();
-            setTimeout(notifyParentAndClose, 1000);
+            // Send immediately
+            sendMessage();
+
+            // Send again after short delay to ensure receipt
+            setTimeout(sendMessage, 100);
+            setTimeout(sendMessage, 300);
+
+            // Close window after messages sent
+            /*setTimeout(() => {
+              try {
+                window.close();
+              } catch (e) {
+                console.log('Could not close window');
+              }
+            }, 2000);*/
           })();
         </script>
       </body>

@@ -234,6 +234,9 @@ model CoachAiAgent {
   createdAt       DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
 
+  lastFineTuningAt     DateTime? @db.Timestamptz(6)
+  fineTuningEmailCount Int?      @default(0)
+
   aiAgent AiAgent @relation(fields: [agentID], references: [id], onDelete: Cascade)
   coach   Coach   @relation(fields: [coachID], references: [id], onDelete: Cascade)
 
@@ -338,6 +341,77 @@ enum ReplicaThreadStatus {
   active
   archived
   deleted
+}
+
+enum FineTuningJobStatus {
+  pending
+  preparing_data
+  running
+  completed
+  failed
+  cancelled
+}
+
+model FineTuningJob {
+  id          String @id @default(uuid()) @db.Uuid
+  coachID     String @db.Uuid
+  assistantID String @db.VarChar(255)
+
+  s3DatasetKey String @db.VarChar(500)
+  emailCount   Int
+
+  openaiJobID      String? @db.VarChar(255)
+  openaiFileID     String? @db.VarChar(255)
+  fineTunedModelID String? @db.VarChar(255)
+
+  status       FineTuningJobStatus @default(pending)
+  errorMessage String?             @db.Text
+
+  startedAt   DateTime? @db.Timestamptz(6)
+  completedAt DateTime? @db.Timestamptz(6)
+
+  trainedOn DateTime @db.Timestamptz(6)
+  dateFrom  DateTime @db.Timestamptz(6)
+  dateTo    DateTime @db.Timestamptz(6)
+
+  trainingMetrics Json? @default("{}")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([coachID])
+  @@index([status])
+  @@index([createdAt])
+  @@map("fine_tuning_jobs")
+}
+
+model CoachEmailCache {
+  id        String @id @default(uuid()) @db.Uuid
+  coachID   String @db.Uuid
+  threadID  String @db.VarChar(255)
+  messageID String @db.VarChar(255)
+
+  s3Key String @db.VarChar(500)
+
+  from    String  @db.VarChar(255)
+  to      String  @db.VarChar(255)
+  subject String? @db.VarChar(500)
+
+  isFromCoach      Boolean
+  isToClientOrLead Boolean
+
+  includedInFineTuning Boolean @default(false)
+  fineTuningJobID      String? @db.Uuid
+
+  sentAt    DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([coachID, messageID])
+  @@index([coachID, isFromCoach])
+  @@index([coachID, includedInFineTuning])
+  @@index([threadID])
+  @@index([sentAt])
+  @@map("coach_email_cache")
 }
 
 model AiAgent {

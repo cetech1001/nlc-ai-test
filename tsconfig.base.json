@@ -43,6 +43,54 @@
       ],
       "@nlc-ai/types": [
         "libs/types/src/index.ts"
+      ],
+      "@nlc-ai/sdk-core": [
+        "libs/sdk/core/src/index.ts"
+      ],
+      "@nlc-ai/sdk-agents": [
+        "libs/sdk/agents/src/index.ts"
+      ],
+      "@nlc-ai/sdk-integrations": [
+        "libs/sdk/integrations/src/index.ts"
+      ],
+      "@nlc-ai/sdk-users": [
+        "libs/sdk/users/src/index.ts"
+      ],
+      "@nlc-ai/sdk-auth": [
+        "libs/sdk/auth/src/index.ts"
+      ],
+      "@nlc-ai/sdk-email": [
+        "libs/sdk/email/src/index.ts"
+      ],
+      "@nlc-ai/sdk-billing": [
+        "libs/sdk/billing/src/index.ts"
+      ],
+      "@nlc-ai/sdk-main": [
+        "libs/sdk/main/src/index.ts"
+      ],
+      "@nlc-ai/sdk-analytics": [
+        "libs/sdk/analytics/src/index.ts"
+      ],
+      "@nlc-ai/sdk-leads": [
+        "libs/sdk/leads/src/index.ts"
+      ],
+      "@nlc-ai/sdk-community": [
+        "libs/sdk/community/src/index.ts"
+      ],
+      "@nlc-ai/sdk-media": [
+        "libs/sdk/media/src/index.ts"
+      ],
+      "@nlc-ai/sdk-notifications": [
+        "libs/sdk/notifications/src/index.ts"
+      ],
+      "@nlc-ai/sdk-messages": [
+        "libs/sdk/messages/src/index.ts"
+      ],
+      "@nlc-ai/sdk-course": [
+        "libs/sdk/course/src/index.ts"
+      ],
+      "@nlc-ai/sdk-content": [
+        "libs/sdk/content/src/index.ts"
       ]
     }
   }

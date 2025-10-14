@@ -8,7 +8,7 @@ import {
   SocialPlatform,
   SyncResult,
   TestResult, UserType
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 
 @Injectable()
 export class TwitterService extends BaseIntegrationService {

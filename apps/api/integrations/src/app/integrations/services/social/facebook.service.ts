@@ -8,7 +8,7 @@ import {
   SocialPlatform,
   SyncResult,
   TestResult, UserType
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 
 @Injectable()
 export class FacebookService extends BaseIntegrationService {
@@ -94,6 +94,7 @@ export class FacebookService extends BaseIntegrationService {
       redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
       response_type: 'code',
       state,
+      auth_type: 'rerequest',
     });
 
     return {

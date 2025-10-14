@@ -8,7 +8,7 @@ import {
   IntegrationType,
   SyncResult,
   TestResult
-} from "@nlc-ai/api-types";
+} from "@nlc-ai/types";
 import { PrismaService } from "@nlc-ai/api-database";
 import { OutboxService } from "@nlc-ai/api-messaging";
 import { TokenManagementService } from "./token-management.service";

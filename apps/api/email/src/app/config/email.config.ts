@@ -69,5 +69,14 @@ export const emailConfig = registerAs('email', () => {
       password: config.REDIS_PASSWORD,
       db: config.REDIS_DB,
     },
+    aws: {
+      s3: {
+        bucketName: config.AWS_S3_BUCKET_NAME,
+        region: config.AWS_S3_REGION,
+        accessKeyID: config.AWS_ACCESS_KEY_ID,
+        secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
+        cloudFrontDomain: config.AWS_CLOUDFRONT_DOMAIN,
+      }
+    }
   };
 });

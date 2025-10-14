@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Integration } from "@nlc-ai/api-types";
+import { Integration } from "@nlc-ai/types";
 import {PrismaService} from "@nlc-ai/api-database";
 import { EncryptionService } from "./encryption.service";
 import {ConfigService} from "@nestjs/config";
