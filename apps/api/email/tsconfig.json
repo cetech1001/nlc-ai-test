@@ -16,6 +16,9 @@
       "path": "../../../libs/api/database"
     },
     {
+      "path": "../../../libs/api/caching"
+    },
+    {
       "path": "../../../libs/api/auth"
     },
     {

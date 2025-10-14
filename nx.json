@@ -53,7 +53,8 @@
         "libs/sdk/agents/*",
         "libs/sdk/course/*",
         "libs/sdk/integrations/*",
-        "libs/sdk/content/*"
+        "libs/sdk/content/*",
+        "libs/api/caching/*"
       ]
     },
     {
@@ -128,7 +129,8 @@
         "libs/sdk/agents/*",
         "libs/sdk/course/*",
         "libs/sdk/integrations/*",
-        "libs/sdk/content/*"
+        "libs/sdk/content/*",
+        "libs/api/caching/*"
       ],
       "options": {
         "typecheck": {

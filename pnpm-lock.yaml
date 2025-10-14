@@ -71,6 +71,27 @@ importers:
       '@nestjs/websockets':
         specifier: ^11.1.6
         version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@11.1.6)(@nestjs/platform-socket.io@11.1.6)(reflect-metadata@0.1.14)(rxjs@7.8.2)
+      '@nlc-ai/api-auth':
+        specifier: workspace:*
+        version: link:libs/api/auth
+      '@nlc-ai/api-caching':
+        specifier: workspace:*
+        version: link:libs/api/caching
+      '@nlc-ai/api-database':
+        specifier: workspace:*
+        version: link:libs/api/database
+      '@nlc-ai/api-dto':
+        specifier: workspace:*
+        version: link:libs/api/dto
+      '@nlc-ai/api-messaging':
+        specifier: workspace:*
+        version: link:libs/api/messaging
+      '@nlc-ai/api-types':
+        specifier: workspace:*
+        version: link:libs/api/types
+      '@nlc-ai/api-validation':
+        specifier: workspace:*
+        version: link:libs/api/validation
       '@nlc-ai/sdk-agents':
         specifier: workspace:*
         version: link:libs/sdk/agents
@@ -692,6 +713,8 @@ importers:
         version: 19.0.0(react@19.0.0)
 
   libs/api/auth: {}
+
+  libs/api/caching: {}
 
   libs/api/database: {}
 

@@ -149,6 +149,9 @@
     },
     {
       "path": "./libs/sdk/content"
+    },
+    {
+      "path": "./libs/api/caching"
     }
   ]
 }

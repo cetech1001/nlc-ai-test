@@ -44,7 +44,7 @@ export interface ClientEmailThread {
 }
 
 export interface EmailThreadDetail extends ClientEmailThread {
-  emailMessages: EmailMessage[];
+  messages: EmailMessage[];
 }
 
 export interface GetThreadsParams {

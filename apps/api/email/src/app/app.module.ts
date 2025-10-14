@@ -16,6 +16,7 @@ import {ThreadsModule} from "./threads/threads.module";
 import {BullModule} from "@nestjs/bull";
 import {EmailInternalController} from "./internal/email-internal.controller";
 import {SyncModule} from "./sync/sync.module";
+import {CachingModule} from "@nlc-ai/api-caching";
 
 @Module({
   imports: [
@@ -39,6 +40,13 @@ import {SyncModule} from "./sync/sync.module";
         },
       }),
       inject: [ConfigService],
+    }),
+    CachingModule.forRoot({
+      isGlobal: false,
+      config: {
+        keyPrefix: 'nlc:email:',
+        defaultTTL: 300,
+      }
     }),
     ScheduleModule.forRoot(),
     DatabaseModule.forFeature(),

@@ -1,5 +1,6 @@
 import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import {PrismaService} from '@nlc-ai/api-database';
+import {CacheService} from '@nlc-ai/api-caching';
 import {EmailParticipantType, EmailThreadStatus, UpdateEmailThreadRequest, UserType} from "@nlc-ai/types";
 import {SendService} from "../send/send.service";
 import {google} from 'googleapis';
@@ -13,15 +14,32 @@ interface ThreadFilters {
   clientID?: string;
 }
 
+interface ThreadMessage {
+  id: string;
+  from: string;
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  sentAt: Date;
+  isRead: boolean;
+}
+
 @Injectable()
 export class ThreadsService {
   private readonly logger = new Logger(ThreadsService.name);
   private readonly oauth2Client;
+  private readonly CACHE_TTL = {
+    THREAD_MESSAGES: 300, // 5 minutes
+    THREAD_LIST: 60, // 1 minute
+    GENERATED_RESPONSES: 180, // 3 minutes
+  };
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly deliveryService: SendService,
     private readonly configService: ConfigService,
+    private readonly cacheService: CacheService,
   ) {
     this.oauth2Client = new google.auth.OAuth2(
       this.configService.get<string>('email.oauth.google.clientID'),
@@ -33,19 +51,43 @@ export class ThreadsService {
   async getThreads(userID: string, filters: ThreadFilters = {}) {
     const { limit = 20, status, isRead, clientID } = filters;
 
-    return this.prisma.emailThread.findMany({
-      where: {
-        userID,
-        ...(status && { status }),
-        ...(isRead !== undefined && { isRead }),
-        ...(clientID && { clientID }),
+    const cacheKey = `threads:list:${userID}:${JSON.stringify(filters)}`;
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        return this.prisma.emailThread.findMany({
+          where: {
+            userID,
+            ...(status && { status }),
+            ...(isRead !== undefined && { isRead }),
+            ...(clientID && { clientID }),
+          },
+          orderBy: { lastMessageAt: 'desc' },
+          take: limit,
+        });
       },
-      orderBy: { lastMessageAt: 'desc' },
-      take: limit,
-    });
+      {
+        ttl: this.CACHE_TTL.THREAD_LIST,
+        tags: [`user:${userID}`, 'threads:list']
+      }
+    );
   }
 
   async getThread(userID: string, threadID: string) {
+    const cacheKey = `threads:detail:${threadID}:${userID}`;
+
+    const cached = await this.cacheService.get<{ thread: any; messages: ThreadMessage[] }>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Cache hit for thread: ${threadID}`);
+
+      if (!cached.thread.isRead) {
+        await this.markThreadAsRead(threadID);
+      }
+
+      return cached;
+    }
+
     const thread = await this.prisma.emailThread.findFirst({
       where: { id: threadID, userID },
       include: {
@@ -57,7 +99,7 @@ export class ThreadsService {
       throw new BadRequestException('Thread not found');
     }
 
-    let messages = [];
+    let messages: ThreadMessage[] = [];
     try {
       if (thread.emailAccount.provider === 'gmail') {
         messages = await this.fetchGmailThreadMessages(
@@ -76,37 +118,65 @@ export class ThreadsService {
     }
 
     if (!thread.isRead) {
-      await this.prisma.emailThread.update({
-        where: { id: threadID },
-        data: { isRead: true },
-      });
+      await this.markThreadAsRead(threadID);
     }
 
-    return {
+    const result = {
       ...thread,
       messages,
     };
+
+    await this.cacheService.set(
+      cacheKey,
+      result,
+      {
+        ttl: this.CACHE_TTL.THREAD_MESSAGES,
+        tags: [`user:${userID}`, `thread:${threadID}`, 'threads:detail']
+      }
+    );
+
+    this.logger.debug(`Cache set for thread: ${threadID}`);
+
+    return result;
+  }
+
+  private async markThreadAsRead(threadID: string): Promise<void> {
+    await this.prisma.emailThread.update({
+      where: { id: threadID },
+      data: { isRead: true },
+    });
   }
 
   /**
    * Get generated AI responses for a thread
    */
   async getGeneratedResponses(userID: string, threadID: string) {
-    const thread = await this.prisma.emailThread.findFirst({
-      where: { id: threadID, userID },
-    });
+    const cacheKey = `threads:responses:${threadID}:${userID}`;
 
-    if (!thread) {
-      throw new BadRequestException('Thread not found');
-    }
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const thread = await this.prisma.emailThread.findFirst({
+          where: { id: threadID, userID },
+        });
 
-    return await this.prisma.generatedEmailResponse.findMany({
-      where: {threadID},
-      orderBy: {createdAt: 'desc'},
-    });
+        if (!thread) {
+          throw new BadRequestException('Thread not found');
+        }
+
+        return await this.prisma.generatedEmailResponse.findMany({
+          where: {threadID},
+          orderBy: {createdAt: 'desc'},
+        });
+      },
+      {
+        ttl: this.CACHE_TTL.GENERATED_RESPONSES,
+        tags: [`user:${userID}`, `thread:${threadID}`, 'threads:responses']
+      }
+    );
   }
 
-  private async fetchGmailThreadMessages(accessToken: string, threadID: string) {
+  private async fetchGmailThreadMessages(accessToken: string, threadID: string): Promise<ThreadMessage[]> {
     try {
       this.oauth2Client.setCredentials({ access_token: accessToken });
       const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
@@ -139,7 +209,7 @@ export class ThreadsService {
     }
   }
 
-  private async fetchOutlookThreadMessages(accessToken: string, conversationID: string) {
+  private async fetchOutlookThreadMessages(accessToken: string, conversationID: string): Promise<ThreadMessage[]> {
     try {
       const response = await axios.get(
         `https://graph.microsoft.com/v1.0/me/messages`,
@@ -251,6 +321,8 @@ export class ThreadsService {
       },
     });
 
+    await this.invalidateThreadCache(userID, threadID);
+
     await this.deliveryService.sendThreadReply(message.id);
 
     return {
@@ -277,7 +349,23 @@ export class ThreadsService {
       },
     });
 
+    await this.invalidateThreadCache(userID, threadID);
+
     return { message: 'Thread updated successfully', thread: updatedThread };
+  }
+
+  private async invalidateThreadCache(userID: string, threadID: string): Promise<void> {
+    try {
+      await Promise.all([
+        this.cacheService.delByTag(`user:${userID}`),
+        this.cacheService.delByTag(`thread:${threadID}`),
+        this.cacheService.delByPattern(`threads:list:${userID}:*`),
+      ]);
+
+      this.logger.debug(`Cache invalidated for user: ${userID}, thread: ${threadID}`);
+    } catch (error) {
+      this.logger.error('Failed to invalidate thread cache', error);
+    }
   }
 
   private async getClientEmail(

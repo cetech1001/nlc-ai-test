@@ -401,11 +401,11 @@ export default function EmailThreadDetailPage() {
       <div className="space-y-4">
         <h3 className="text-white text-lg font-semibold flex items-center gap-2">
           <Mail className="w-5 h-5 text-blue-400" />
-          Email Thread ({threadData.emailMessages.length} messages)
+          Email Thread ({threadData.messages.length} messages)
         </h3>
 
         <div className="space-y-4">
-          {threadData.emailMessages.map((message) => (
+          {threadData.messages.map((message) => (
             <div
               key={message.id}
               className={`rounded-[20px] border p-6 ${
