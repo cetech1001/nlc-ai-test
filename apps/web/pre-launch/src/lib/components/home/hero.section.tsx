@@ -72,7 +72,7 @@ export const HeroSection = () => {
                     <>
                       <img
                         src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/hero-thumbnail.jpg"
-                        alt="Video thumbnail"
+                        alt="Video thumbnail default"
                         className="absolute inset-0 w-full h-full object-cover rounded-2xl"
                       />
                       <div className="absolute inset-0 bg-black/20 rounded-2xl"></div>
