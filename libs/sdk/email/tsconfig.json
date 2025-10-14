@@ -7,9 +7,6 @@
       "path": "../main"
     },
     {
-      "path": "../integrations"
-    },
-    {
       "path": "../../types"
     },
     {

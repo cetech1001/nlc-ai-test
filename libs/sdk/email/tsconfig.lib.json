@@ -26,9 +26,6 @@
       "path": "../main/tsconfig.lib.json"
     },
     {
-      "path": "../integrations/tsconfig.lib.json"
-    },
-    {
       "path": "../../types/tsconfig.lib.json"
     },
     {

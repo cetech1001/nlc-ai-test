@@ -75,6 +75,9 @@
       "path": "../../../libs/sdk/analytics"
     },
     {
+      "path": "../../../libs/sdk/agents"
+    },
+    {
       "path": "../../../libs/sdk/courses"
     },
     {
@@ -90,10 +93,7 @@
       "path": "../../../libs/web/api-client"
     },
     {
-      "path": "../../../libs/sdk/integrations"
-    },
-    {
-      "path": "../../../libs/sdk/agents"
+      "path": "../../../libs/sdk/email"
     },
     {
       "path": "../../../libs/web/ui"

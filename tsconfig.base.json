@@ -26,6 +26,9 @@
       "@nlc-ai/api-auth": [
         "libs/api/auth/src/index.ts"
       ],
+      "@nlc-ai/api-caching": [
+        "libs/api/caching/src/index.ts"
+      ],
       "@nlc-ai/api-database": [
         "libs/api/database/src/index.ts"
       ],
@@ -37,9 +40,6 @@
       ],
       "@nlc-ai/api-types": [
         "libs/api/types/src/index.ts"
-      ],
-      "@nlc-ai/api-caching": [
-        "libs/api/caching/src/index.ts"
       ],
       "@nlc-ai/api-validation": [
         "libs/api/validation/src/index.ts"

@@ -4,7 +4,7 @@ export interface CreateTransactionRequest {
   payerID: string;
   payerType: UserType;
   payeeID?: string;
-  payeeType?: UserType.COACH | 'platform';
+  payeeType?: 'coach' | 'platform';
 
   planID?: string;
   courseID?: string;
@@ -42,7 +42,7 @@ export interface TransactionFilters {
   payerID?: string;
   payerType?: UserType;
   payeeID?: string;
-  payeeType?: UserType.COACH | 'platform';
+  payeeType?: 'coach' | 'platform';
 
   planID?: string;
   courseID?: string;
