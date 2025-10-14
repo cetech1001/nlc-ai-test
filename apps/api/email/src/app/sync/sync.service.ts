@@ -302,7 +302,6 @@ export class SyncService {
     const isFromCoach = await this.isEmailFromCoach(email.from, account.userID);
     const isToCoach = await this.isEmailFromCoach(email.to, account.userID);
 
-    // Store full email content in S3
     const s3Key = await this.s3EmailService.storeEmailContent(
       account.userID,
       email.threadID,
@@ -313,9 +312,8 @@ export class SyncService {
       }
     );
 
-    // If email is FROM coach (sent messages), queue for fine-tuning
     if (isFromCoach) {
-      const isToClientOrLead = !isToCoach; // If not to another coach, assume client/lead
+      const isToClientOrLead = !isToCoach;
 
       await this.fineTuningService.queueEmailForFineTuning(account.userID, {
         threadID: email.threadID,
@@ -332,7 +330,6 @@ export class SyncService {
       this.logger.log(`Queued coach email ${email.providerMessageID} for fine-tuning`);
     }
 
-    // Handle client emails (existing logic)
     if (isFromCoach) {
       return { isClientEmail: false, threadCreated: false };
     }
@@ -349,15 +346,25 @@ export class SyncService {
       },
     });
 
+    const senderName = this.extractNameFromEmail(email.from);
+    const senderEmail = this.extractEmailAddress(email.from);
+
+    const preview = this.createMessagePreview(email.text || email.html || '');
+
     const thread = await this.syncRepo.findOrCreateEmailThread({
       userID: account.userID,
       userType: account.userType,
       participantID: client.id,
       participantType: client.type,
+      participantName: senderName,
+      participantEmail: senderEmail,
       emailAccountID: account.id,
       threadID: email.threadID,
       subject: email.subject || 'No Subject',
       lastMessageAt: new Date(email.receivedAt || email.sentAt),
+      lastMessageFrom: senderName,
+      lastMessageFromEmail: senderEmail,
+      lastMessagePreview: preview,
       isRead: email.isRead,
     });
 
@@ -378,6 +385,26 @@ export class SyncService {
     );
 
     return { isClientEmail: true, threadCreated: !existingThread };
+  }
+
+  private extractNameFromEmail(emailString: string): string {
+    const match = emailString.match(/^(.+?)\s*<.+>$/);
+    if (match) {
+      return match[1].trim().replace(/^["']|["']$/g, ''); // Remove quotes if present
+    }
+    const emailMatch = emailString.match(/^([^@]+)@/);
+    return emailMatch ? emailMatch[1] : emailString;
+  }
+
+  private extractEmailAddress(emailString: string): string {
+    const match = emailString.match(/<(.+?)>/);
+    return match ? match[1] : emailString.trim();
+  }
+
+  private createMessagePreview(content: string): string {
+    const text = content.replace(/<[^>]*>/g, ' ');
+    const cleaned = text.replace(/\s+/g, ' ').trim();
+    return cleaned.length > 500 ? cleaned.substring(0, 497) + '...' : cleaned;
   }
 
   private async isEmailFromCoach(senderEmail: string, coachID: string): Promise<boolean> {

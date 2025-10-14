@@ -1204,6 +1204,10 @@ model EmailThread {
   participantID   String?               @db.Uuid
   participantType EmailParticipantType?
 
+  // New fields for participant tracking
+  participantName  String? @db.VarChar(255)
+  participantEmail String? @db.VarChar(255)
+
   threadID String @db.VarChar(255)
 
   subject      String?  @db.VarChar(500)
@@ -1217,9 +1221,14 @@ model EmailThread {
   s3Bucket    String? @db.VarChar(100)
   s3KeyPrefix String? @db.VarChar(500)
 
-  lastMessageAt DateTime? @db.Timestamptz(6)
-  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime  @updatedAt @db.Timestamptz(6)
+  // New fields for last message tracking
+  lastMessageFrom      String?   @db.VarChar(255)
+  lastMessageFromEmail String?   @db.VarChar(255)
+  lastMessagePreview   String?   @db.VarChar(500)
+  lastMessageAt        DateTime? @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
   sentMessages       EmailMessage[]
   generatedResponses GeneratedEmailResponse[]
@@ -1229,6 +1238,7 @@ model EmailThread {
   @@index([userID, userType])
   @@index([emailAccountID])
   @@index([lastMessageAt])
+  @@index([participantEmail])
   @@map("email_threads")
 }
 

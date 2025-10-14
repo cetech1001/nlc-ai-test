@@ -14,7 +14,7 @@ interface ThreadFilters {
   clientID?: string;
 }
 
-interface ThreadMessage {
+export interface ThreadMessage {
   id: string;
   from: string;
   to: string;
@@ -77,11 +77,11 @@ export class ThreadsService {
   async getThread(userID: string, threadID: string) {
     const cacheKey = `threads:detail:${threadID}:${userID}`;
 
-    const cached = await this.cacheService.get<{ thread: any; messages: ThreadMessage[] }>(cacheKey);
+    const cached = await this.cacheService.get<any>(cacheKey);
     if (cached) {
       this.logger.debug(`Cache hit for thread: ${threadID}`);
 
-      if (!cached.thread.isRead) {
+      if (!cached.isRead) {
         await this.markThreadAsRead(threadID);
       }
 
@@ -313,10 +313,22 @@ export class ThreadsService {
       },
     });
 
+    // Get coach name for display
+    const coach = await this.prisma.coach.findUnique({
+      where: { id: userID },
+      select: { firstName: true, lastName: true }
+    });
+
+    const coachName = coach ? `${coach.firstName} ${coach.lastName}`.trim() : 'You';
+    const preview = this.createMessagePreview(replyData.text || replyData.html || '');
+
     await this.prisma.emailThread.update({
       where: { id: threadID },
       data: {
         lastMessageAt: new Date(),
+        lastMessageFrom: coachName,
+        lastMessageFromEmail: thread.emailAccount.emailAddress,
+        lastMessagePreview: preview,
         messageCount: { increment: 1 },
       },
     });
@@ -330,6 +342,12 @@ export class ThreadsService {
       messageID: message.id,
       threadID,
     };
+  }
+
+  private createMessagePreview(content: string): string {
+    const text = content.replace(/<[^>]*>/g, ' ');
+    const cleaned = text.replace(/\s+/g, ' ').trim();
+    return cleaned.length > 500 ? cleaned.substring(0, 497) + '...' : cleaned;
   }
 
   async updateThread(userID: string, threadID: string, updates: UpdateEmailThreadRequest) {

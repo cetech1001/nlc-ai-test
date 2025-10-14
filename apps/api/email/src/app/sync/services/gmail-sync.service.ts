@@ -58,7 +58,7 @@ export class GmailSyncService implements IEmailSyncProvider {
   async syncEmails(
     accessToken: string,
     settings?: EmailSyncSettings,
-    lastSyncToken?: string
+    lastSyncToken?: string,
   ) {
     try {
       this.oauth2Client.setCredentials({ access_token: accessToken });

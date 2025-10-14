@@ -19,20 +19,20 @@ export interface EmailAccount {
 }
 
 export interface EmailSyncSettings {
-  syncInterval: number;
-  maxEmailsPerSync: number;
-  syncDirection: EmailSyncDirection;
+  syncInterval?: number;
+  maxEmailsPerSync?: number;
+  syncDirection?: EmailSyncDirection;
   filterSettings: {
     fromDomain?: string[];
-    excludeSpam: boolean;
-    excludePromotional: boolean;
+    excludeSpam?: boolean;
+    excludePromotional?: boolean;
     keywords?: string[];
     dateRange?: {
       start?: string;
       end?: string;
     };
   };
-  folderSettings: {
+  folderSettings?: {
     inbox: boolean;
     sent: boolean;
     drafts: boolean;

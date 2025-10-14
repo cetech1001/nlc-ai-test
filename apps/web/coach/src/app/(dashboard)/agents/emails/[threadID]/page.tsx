@@ -187,7 +187,7 @@ export default function EmailThreadDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse px-4">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
         </div>

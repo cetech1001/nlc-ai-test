@@ -163,10 +163,15 @@ export class SyncRepository {
     userType: UserType;
     participantID: string;
     participantType: EmailParticipantType;
+    participantName: string;
+    participantEmail: string;
     emailAccountID: string;
     threadID: string;
     subject: string;
     lastMessageAt: Date;
+    lastMessageFrom: string;
+    lastMessageFromEmail: string;
+    lastMessagePreview: string;
     isRead: boolean;
   }) {
     let thread = await this.prisma.emailThread.findFirst({
@@ -183,6 +188,8 @@ export class SyncRepository {
           userType: params.userType,
           participantID: params.participantID,
           participantType: params.participantType,
+          participantName: params.participantName,
+          participantEmail: params.participantEmail,
           emailAccountID: params.emailAccountID,
           threadID: params.threadID,
           subject: params.subject,
@@ -191,6 +198,9 @@ export class SyncRepository {
           priority: 'normal',
           messageCount: 1,
           lastMessageAt: params.lastMessageAt,
+          lastMessageFrom: params.lastMessageFrom,
+          lastMessageFromEmail: params.lastMessageFromEmail,
+          lastMessagePreview: params.lastMessagePreview,
           participants: [],
         },
       });
@@ -199,6 +209,9 @@ export class SyncRepository {
         where: { id: thread.id },
         data: {
           lastMessageAt: params.lastMessageAt,
+          lastMessageFrom: params.lastMessageFrom,
+          lastMessageFromEmail: params.lastMessageFromEmail,
+          lastMessagePreview: params.lastMessagePreview,
           isRead: params.isRead,
           messageCount: { increment: 1 },
         },
