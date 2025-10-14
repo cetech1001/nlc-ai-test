@@ -1,11 +1,13 @@
-import {BaseClient} from "@nlc-ai/sdk-core";
-import {NLCClientConfig} from "@nlc-ai/sdk-main";
-import {AccountsClient} from "./accounts.client";
+import { BaseClient } from "@nlc-ai/sdk-core";
+import { NLCClientConfig } from "@nlc-ai/sdk-main";
+import { AccountsClient } from "./accounts.client";
 import { ThreadsClient } from "./threads.client";
+import { SyncClient } from "./sync.client";
 
 export class EmailClient extends BaseClient {
   public accounts: AccountsClient;
   public threads: ThreadsClient;
+  public sync: SyncClient;
 
   constructor(props: NLCClientConfig) {
     super(props);
@@ -19,18 +21,34 @@ export class EmailClient extends BaseClient {
       ...props,
       baseURL: `${props.baseURL}/threads`,
     });
+
+    this.sync = new SyncClient({
+      ...props,
+      baseURL: `${props.baseURL}/sync`,
+    });
   }
 
-  async sendEmail(body: any) {
+  /**
+   * Send a custom email
+   */
+  async sendEmail(body: {
+    to: string;
+    subject: string;
+    message: string;
+    name?: string;
+    appName?: string;
+  }): Promise<{ success: boolean; messageID?: string }> {
     if (!body.to || !body.subject || !body.message) {
-      throw 'Missing required fields: to, subject, or message';
+      throw new Error('Missing required fields: to, subject, or message');
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(body.to)) {
-      throw 'Invalid email address';
+      throw new Error('Invalid email address');
     }
+
+    const appName = body.appName || 'NLC AI';
 
     // Construct HTML email
     const htmlContent = `
@@ -62,7 +80,6 @@ export class EmailClient extends BaseClient {
     .header-icon {
       margin-bottom: 10px;
     }
-
     .logo-img {
       max-width: 192px;
       height: auto;
@@ -118,7 +135,7 @@ export class EmailClient extends BaseClient {
   <div class="email-container">
     <div class="header">
       <div class="header-icon">
-        <img src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/logo-large.png" alt="${body.appName} Logo" class="logo-img">
+        <img src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/logo-large.png" alt="${appName} Logo" class="logo-img">
       </div>
     </div>
 
@@ -128,33 +145,37 @@ export class EmailClient extends BaseClient {
 
       <div class="signature">
         <p>Best regards,</p>
-        <p class="name">${body.appName} Team</p>
+        <p class="name">${appName} Team</p>
       </div>
     </div>
 
     <div class="footer">
       <p>This email was sent to ${body.to}</p>
-      <p>&copy; ${new Date().getFullYear()} ${body.appName}. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} ${appName}. All rights reserved.</p>
     </div>
   </div>
 </body>
 </html>
     `;
-    const response = await this.request('POST', '/send', {
-      body: {
-        to: body.to,
-        subject: body.subject,
-        html: htmlContent,
+
+    const response = await this.request<{ success: boolean; messageID?: string }>(
+      'POST',
+      '/send',
+      {
+        body: {
+          to: body.to,
+          subject: body.subject,
+          html: htmlContent,
+        }
       }
-    });
+    );
     return response.data!;
   }
 
   override updateApiKey(apiKey: string | null) {
-    const services = [
-      this.accounts, this.threads
-    ];
+    super.updateApiKey(apiKey);
 
+    const services = [this.accounts, this.threads, this.sync];
     services.forEach(service => {
       service.updateApiKey(apiKey);
     });

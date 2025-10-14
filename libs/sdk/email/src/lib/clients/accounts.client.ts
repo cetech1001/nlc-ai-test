@@ -1,18 +1,6 @@
 import { BaseClient } from "@nlc-ai/sdk-core";
 import { EmailAccount } from "@nlc-ai/types";
 
-export interface ClientEmailSyncResult {
-  success: boolean;
-  message: string;
-  syncedAccounts?: number;
-}
-
-export interface EmailSyncStats {
-  unreadThreads: number;
-  totalThreadsToday: number;
-  lastSyncAt: Date | null;
-}
-
 export class AccountsClient extends BaseClient {
   /**
    * Get all email accounts for the authenticated coach
@@ -27,22 +15,6 @@ export class AccountsClient extends BaseClient {
    */
   async hasAnAccount(): Promise<{ exists: boolean }> {
     const response = await this.request<{ exists: boolean }>('GET', '/exists');
-    return response.data!;
-  }
-
-  /**
-   * Get email sync statistics
-   */
-  async getSyncStats(): Promise<EmailSyncStats> {
-    const response = await this.request<EmailSyncStats>('GET', '/stats');
-    return response.data!;
-  }
-
-  /**
-   * Trigger sync for all client emails
-   */
-  async syncClientEmails(): Promise<ClientEmailSyncResult> {
-    const response = await this.request<ClientEmailSyncResult>('POST', '/sync/all');
     return response.data!;
   }
 

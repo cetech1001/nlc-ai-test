@@ -5,20 +5,17 @@ import { useRouter, useParams } from "next/navigation";
 import {
   RefreshCw,
   CheckCircle,
-  Edit,
   Mail,
   User,
   Calendar,
   TrendingUp,
   Send,
-  Clock,
   X
 } from "lucide-react";
 import { BackTo, RichTextEditor } from "@nlc-ai/web-shared";
 import { AlertBanner, Button, Skeleton } from '@nlc-ai/web-ui';
 import { sdkClient } from '@/lib';
-import { ClientEmailResponse } from '@nlc-ai/sdk-agents';
-import {EmailThreadDetail} from "@nlc-ai/sdk-integrations";
+import type { GeneratedEmailResponse, EmailThreadDetail } from '@nlc-ai/sdk-email';
 
 export default function ResponseReviewPage() {
   const router = useRouter();
@@ -27,20 +24,16 @@ export default function ResponseReviewPage() {
   const threadID = params.threadID as string;
   const responseID = params.responseID as string;
 
-  const [responseData, setResponseData] = useState<ClientEmailResponse | null>(null);
+  const [responseData, setResponseData] = useState<GeneratedEmailResponse | null>(null);
   const [threadData, setThreadData] = useState<EmailThreadDetail | null>(null);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailContent, setEmailContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [isScheduling, setIsScheduling] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [hasModifications, setHasModifications] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState("");
-  const [scheduleTime, setScheduleTime] = useState("");
 
   useEffect(() => {
     if (threadID && responseID) {
@@ -54,7 +47,7 @@ export default function ResponseReviewPage() {
       setError("");
 
       const [responses, thread] = await Promise.all([
-        sdkClient.agents.clientEmail.getResponsesForThread(threadID),
+        sdkClient.email.threads.getThreadResponses(threadID),
         sdkClient.email.threads.getEmailThread(threadID)
       ]);
 
@@ -77,7 +70,7 @@ export default function ResponseReviewPage() {
   };
 
   const handleBackClick = () => {
-    router.push(`/emails/${threadID}`);
+    router.push(`/agents/emails/${threadID}`);
   };
 
   const handleSendEmail = async () => {
@@ -87,14 +80,22 @@ export default function ResponseReviewPage() {
       setIsSending(true);
       setError("");
 
-      const modifications = {
+      const replyData = {
         subject: emailSubject,
         html: emailContent
       };
 
-      const result = await sdkClient.email.threads.replyToThread(threadID, modifications);
+      const result = await sdkClient.email.threads.replyToThread(threadID, replyData);
 
       if (result.success) {
+        // Update the response record with what was actually sent
+        if (hasModifications) {
+          await sdkClient.agents.clientEmail.updateGeneratedResponse(responseID, {
+            actualSubject: emailSubject,
+            actualBody: emailContent,
+          });
+        }
+
         setSuccessMessage(`Email sent successfully to ${threadData?.client?.email}`);
 
         // Redirect back to thread after a delay
@@ -111,60 +112,18 @@ export default function ResponseReviewPage() {
     }
   };
 
-  const handleScheduleEmail = async () => {
-    if (!responseData || !scheduleDate || !scheduleTime) return;
-
-    try {
-      setIsScheduling(true);
-      setError("");
-
-      /*const scheduledFor = `${scheduleDate}T${scheduleTime}:00.000Z`;
-      const modifications = hasModifications ? {
-        subject: emailSubject,
-        body: emailContent
-      } : undefined;*/
-
-      // const result = await sdkClient.email.clientEmail.scheduleResponse(
-      //   responseData.id,
-      //   {
-      //     scheduledFor,
-      //     ...modifications,
-      //   }
-      // );
-      //
-      // if (result.success) {
-      //   setSuccessMessage(`Email scheduled for ${new Date(scheduledFor).toLocaleString()}`);
-      //   setShowScheduleModal(false);
-      //
-      //   // Redirect back to thread after a delay
-      //   setTimeout(() => {
-      //     router.push(`/emails/${threadID}`);
-      //   }, 2000);
-      // } else {
-      //   setError(result.error?.message || "Failed to schedule email");
-      // }
-    } catch (err: any) {
-      setError(err.message || "Failed to schedule email");
-    } finally {
-      setIsScheduling(false);
-    }
-  };
-
   const handleRejectResponse = async () => {
     if (!responseData) return;
 
-    const confirmed = confirm("Are you sure you want to delete this response? This action cannot be undone.");
+    const confirmed = confirm("Are you sure you want to discard this response? This action cannot be undone.");
     if (!confirmed) return;
 
     try {
       setError("");
-
-      // For now, we'll just navigate back since there's no delete endpoint
-      // In the future, you might want to add a delete/reject endpoint
       setSuccessMessage("Response discarded");
 
       setTimeout(() => {
-        router.push(`/emails/${threadID}`);
+        router.push(`/agents/emails/${threadID}`);
       }, 1500);
     } catch (err: any) {
       setError(err.message || "Failed to discard response");
@@ -178,12 +137,43 @@ export default function ResponseReviewPage() {
       setIsRegenerating(true);
       setError("");
 
-      const newResponse = await sdkClient.agents.clientEmail.regenerateResponse(responseData.id);
+      // Use streaming to regenerate response
+      const stream = await sdkClient.agents.clientEmail.streamEmailResponse(threadID);
+
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      let subject = '';
+      let body = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'content') {
+                fullContent += data.content;
+              } else if (data.type === 'done') {
+                subject = data.subject;
+                body = data.body;
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
 
       // Update local state with new response
-      setResponseData(newResponse);
-      setEmailSubject(newResponse.subject);
-      setEmailContent(newResponse.body);
+      setEmailSubject(subject);
+      setEmailContent(body);
       setHasModifications(false);
 
       setSuccessMessage("Response regenerated successfully!");
@@ -230,15 +220,6 @@ export default function ResponseReviewPage() {
     return 'text-red-400';
   };
 
-  // Set default schedule time to 1 hour from now
-  useEffect(() => {
-    const now = new Date();
-    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-
-    setScheduleDate(oneHourLater.toISOString().split('T')[0]);
-    setScheduleTime(oneHourLater.toTimeString().slice(0, 5));
-  }, []);
-
   if (isLoading) {
     return (
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
@@ -282,22 +263,6 @@ export default function ResponseReviewPage() {
     );
   }
 
-  /*const recipientInfo = threadData.client ? {
-    name: `${threadData.client.firstName} ${threadData.client.lastName}`,
-    email: threadData.client.email,
-    userID: threadData.client.id,
-    plan: threadData.client.status || 'Unknown',
-    dateJoined: "N/A",
-    lastActive: "N/A"
-  } : {
-    name: "Unknown Client",
-    email: "unknown@email.com",
-    userID: "unknown",
-    plan: "Unknown",
-    dateJoined: "N/A",
-    lastActive: "N/A"
-  };*/
-
   return (
     <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
       <BackTo onClick={handleBackClick} title="Review AI Response" />
@@ -331,25 +296,6 @@ export default function ResponseReviewPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="space-y-1">
-              <div className="text-stone-300 text-sm font-normal leading-relaxed">Client Email</div>
-              <div className="text-stone-50 text-base font-medium">{threadData.client?.email}</div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-stone-300 text-sm font-normal leading-relaxed">Generated</div>
-              <div className="text-stone-50 text-base font-medium">
-                {formatTimeAgo(responseData.createdAt)}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-stone-300 text-sm font-normal leading-relaxed">AI Confidence</div>
-              <div className="text-stone-50 text-base font-medium">
-                {Math.round(responseData.confidence * 100)}%
-              </div>
-            </div>
-
-            <div className="space-y-1">
               <div className="text-stone-300 text-sm font-normal leading-relaxed">Deliverability Score</div>
               <div className={`text-base font-medium ${getDeliverabilityColor(responseData.deliverabilityScore || 85)}`}>
                 {responseData.deliverabilityScore || 85}/100
@@ -368,7 +314,7 @@ export default function ResponseReviewPage() {
           </h3>
 
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {threadData.emailMessages.slice(0, 3).map((message, index) => (
+            {threadData.emailMessages.slice(0, 3).map((message) => (
               <div
                 key={message.id}
                 className={`p-4 rounded-lg border ${
@@ -414,7 +360,6 @@ export default function ResponseReviewPage() {
           <div className="flex items-center gap-2">
             {hasModifications && (
               <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
-                <Edit className="w-3 h-3 text-yellow-400" />
                 <span className="text-yellow-400 text-xs font-medium">Modified</span>
               </div>
             )}
@@ -439,20 +384,18 @@ export default function ResponseReviewPage() {
               type="text"
               value={emailSubject}
               onChange={(e) => handleSubjectChange(e.target.value)}
-              className="w-full bg-background border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none"
+              className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none"
             />
           </div>
 
           {/* Email Body */}
           <div className="mb-12 h-56">
             <label className="block text-stone-300 text-sm font-medium mb-2">Email Content</label>
-            <RichTextEditor view={'desktop'} content={emailContent} updateContent={handleContentChange}/>
-            {/*<textarea
-              value={emailContent}
-              onChange={(e) => handleContentChange(e.target.value)}
-              className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none resize-none"
-              rows={12}
-            />*/}
+            <RichTextEditor
+              view={'desktop'}
+              content={emailContent}
+              updateContent={handleContentChange}
+            />
           </div>
 
           {/* Action Buttons */}
@@ -467,15 +410,6 @@ export default function ResponseReviewPage() {
             </Button>
 
             <div className="flex items-center gap-3">
-              <Button
-                onClick={() => setShowScheduleModal(true)}
-                variant="outline"
-                className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                Schedule
-              </Button>
-
               <Button
                 onClick={handleSendEmail}
                 disabled={isSending}
@@ -552,65 +486,6 @@ export default function ResponseReviewPage() {
           </ul>
         </div>
       </div>
-
-      {/* Schedule Modal */}
-      {showScheduleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gradient-to-b from-neutral-800 to-neutral-900 rounded-[20px] border border-neutral-700 p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white text-lg font-semibold">Schedule Email</h3>
-              <Button
-                onClick={() => setShowScheduleModal(false)}
-                variant="outline"
-                size="sm"
-                className="border-neutral-700 text-stone-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-stone-300 text-sm font-medium mb-2">Date</label>
-                <input
-                  type="date"
-                  value={scheduleDate}
-                  onChange={(e) => setScheduleDate(e.target.value)}
-                  className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:border-fuchsia-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-stone-300 text-sm font-medium mb-2">Time</label>
-                <input
-                  type="time"
-                  value={scheduleTime}
-                  onChange={(e) => setScheduleTime(e.target.value)}
-                  className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:border-fuchsia-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-4">
-                <Button
-                  onClick={() => setShowScheduleModal(false)}
-                  variant="outline"
-                  className="flex-1 border-neutral-700 text-stone-300 hover:text-white"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleScheduleEmail}
-                  disabled={isScheduling || !scheduleDate || !scheduleTime}
-                  className="flex-1 bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white"
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  {isScheduling ? 'Scheduling...' : 'Schedule'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

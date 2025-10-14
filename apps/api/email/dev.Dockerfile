@@ -15,7 +15,6 @@ COPY libs/types ./libs/types
 COPY libs/api ./libs/api
 COPY eslint.config.mjs tsconfig.json ./
 
-
 ENV NODE_ENV=development \
     NX_DAEMON=false \
     NX_CACHE_DIRECTORY=/app/.nx/cache
@@ -26,6 +25,8 @@ EXPOSE 3004
 CMD ["/bin/sh","-lc","\
   echo 'Running nx sync to align TS project references...'; \
   pnpm nx sync --no-interactive --verbose || true; \
+  echo 'Running prisma generate...'; \
+  pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma \
   echo 'Starting dev server...'; \
   pnpm nx serve email-service --configuration=development --verbose \
 "]

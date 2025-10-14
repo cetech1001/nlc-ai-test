@@ -26,6 +26,8 @@ EXPOSE 3007
 CMD ["/bin/sh","-lc","\
   echo 'Running nx sync to align TS project references...'; \
   pnpm nx sync --no-interactive --verbose || true; \
+  echo 'Running prisma generate...'; \
+  pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma \
   echo 'Starting dev server...'; \
   pnpm nx serve notifications-service --configuration=development --verbose \
 "]

@@ -29,6 +29,8 @@ CMD ["/bin/sh","-lc","\
   rm -rf /tmp/nx || true; \
   echo 'Running nx sync to align TS project references...'; \
   pnpm nx sync --no-interactive --verbose || true; \
+  echo 'Running prisma generate...'; \
+  pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma \
   echo 'Starting dev server...'; \
   npm run db:deploy --no-interactive --verbose || true; \
   pnpm nx serve gateway-service --configuration=development --verbose \

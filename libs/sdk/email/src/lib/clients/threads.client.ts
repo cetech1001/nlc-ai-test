@@ -1,74 +1,11 @@
 import { BaseClient } from "@nlc-ai/sdk-core";
-
-export interface EmailMessage {
-  id: string;
-  messageID: string;
-  from: string;
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
-  sentAt: Date;
-}
-
-export interface Client {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  status?: string;
-}
-
-export interface GeneratedEmailResponse {
-  id: string;
-  threadID: string;
-  subject: string;
-  body: string;
-  confidence: number;
-  status: 'generated' | 'sent' | 'scheduled' | 'failed';
-  deliverabilityScore?: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ClientEmailThread {
-  id: string;
-  threadID: string;
-  subject: string;
-  status: 'active' | 'archived' | 'closed';
-  priority: 'high' | 'normal' | 'low';
-  isRead: boolean;
-  lastMessageAt: Date;
-  messageCount: number;
-  client?: Client;
-  emailMessages?: EmailMessage[];
-  generatedResponses?: GeneratedEmailResponse[];
-}
-
-export interface EmailThreadDetail extends ClientEmailThread {
-  emailMessages: EmailMessage[];
-}
-
-export interface GetThreadsParams {
-  limit?: number;
-  status?: string;
-  clientID?: string;
-  isRead?: boolean;
-  priority?: string;
-  search?: string;
-}
-
-export interface ReplyToThreadParams {
-  subject: string;
-  text?: string;
-  html?: string;
-}
-
-export interface UpdateThreadParams {
-  isRead?: boolean;
-  status?: string;
-  priority?: string;
-}
+import {
+  ClientEmailThread,
+  EmailThreadDetail,
+  GeneratedEmailResponse,
+  GetThreadsParams,
+  ReplyToThreadParams, UpdateThreadParams
+} from "../types";
 
 export class ThreadsClient extends BaseClient {
   /**

@@ -11,28 +11,23 @@ import {
   CheckCircle2,
   Star,
   Sparkles,
-  Edit,
   MessageSquare,
   Bot
 } from "lucide-react";
 import { BackTo } from "@nlc-ai/web-shared";
 import { AlertBanner, Button, Skeleton } from '@nlc-ai/web-ui';
 import { sdkClient } from '@/lib';
-import { ClientEmailResponse } from '@nlc-ai/sdk-agents';
-import {EmailThreadDetail} from "@nlc-ai/sdk-integrations";
-
+import type { EmailThreadDetail, GeneratedEmailResponse } from '@nlc-ai/sdk-email';
 
 export default function EmailThreadDetailPage() {
   const router = useRouter();
   const params = useParams();
-
   const threadID = params.threadID as string;
 
   const [threadData, setThreadData] = useState<EmailThreadDetail | null>(null);
-  const [responses, setResponses] = useState<ClientEmailResponse[]>([]);
+  const [responses, setResponses] = useState<GeneratedEmailResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  // const [isMarkingRead, setIsMarkingRead] = useState(false);
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [customInstructions, setCustomInstructions] = useState("");
@@ -50,7 +45,7 @@ export default function EmailThreadDetailPage() {
 
       const [thread, threadResponses] = await Promise.all([
         sdkClient.email.threads.getEmailThread(threadID),
-        sdkClient.agents.clientEmail.getResponsesForThread(threadID)
+        sdkClient.email.threads.getThreadResponses(threadID)
       ]);
 
       setThreadData(thread);
@@ -59,7 +54,7 @@ export default function EmailThreadDetailPage() {
       // Mark as read if it's unread
       if (!thread.isRead) {
         await sdkClient.email.threads.markThreadRead(threadID, true);
-        setThreadData(prev => prev ? { ...prev, isRead: true } : null);
+        setThreadData((prev) => prev ? { ...prev, isRead: true } : null);
       }
     } catch (err: any) {
       setError(err.message || "Failed to load thread data");
@@ -79,12 +74,57 @@ export default function EmailThreadDetailPage() {
       setIsGenerating(true);
       setError("");
 
-      const response = await sdkClient.agents.clientEmail.generateResponse(
+      // Use streaming to generate response
+      const stream = await sdkClient.agents.clientEmail.streamEmailResponse(
         threadID,
         customInstructions || undefined
       );
 
-      setResponses(prev => [response, ...prev]);
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      let subject = '';
+      let body = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'content') {
+                fullContent += data.content;
+              } else if (data.type === 'done') {
+                subject = data.subject;
+                body = data.body;
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      // Save the generated response
+      if (subject && body) {
+        await sdkClient.agents.clientEmail.saveGeneratedResponse({
+          threadID,
+          subject,
+          body,
+          confidence: 0.85,
+        });
+
+        // Reload responses
+        const updatedResponses = await sdkClient.email.threads.getThreadResponses(threadID);
+        setResponses(updatedResponses);
+      }
+
       setCustomInstructions("");
       setSuccessMessage("AI response generated successfully!");
     } catch (err: any) {
@@ -192,7 +232,7 @@ export default function EmailThreadDetailPage() {
   }
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
+    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden px-4">
       <BackTo onClick={handleBackClick} title="Email Thread" />
 
       {successMessage && (
@@ -347,7 +387,6 @@ export default function EmailThreadDetailPage() {
                       variant="outline"
                       className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
                     >
-                      <Edit className="w-4 h-4 mr-2" />
                       Review & Send
                     </Button>
                   </div>
@@ -402,7 +441,12 @@ export default function EmailThreadDetailPage() {
                 <div className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">
                   {message.text}
                 </div>
-              ) : <div dangerouslySetInnerHTML={{ __html: message.html }} className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap"/>}
+              ) : (
+                <div
+                  dangerouslySetInnerHTML={{ __html: message.html || '' }}
+                  className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap"
+                />
+              )}
             </div>
           ))}
         </div>

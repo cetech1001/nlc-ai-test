@@ -12,8 +12,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType, type AuthUser } from '@nlc-ai/types';
 import { ThreadsService } from './threads.service';
-import { ReplyToThreadDto, UpdateThreadDto } from './dto';
-import {ThreadsQueryDto} from "./dto";
+import { ReplyToThreadDto, UpdateThreadDto, ThreadsQueryDto } from './dto';
 
 @ApiTags('Email Threads')
 @Controller('threads')
@@ -39,6 +38,15 @@ export class ThreadsController {
     @Param('threadID') threadID: string,
   ) {
     return this.threadsService.getThread(user.id, threadID);
+  }
+
+  @Get(':threadID/responses')
+  @ApiOperation({ summary: 'Get generated AI responses for thread' })
+  async getThreadResponses(
+    @CurrentUser() user: AuthUser,
+    @Param('threadID') threadID: string,
+  ) {
+    return this.threadsService.getGeneratedResponses(user.id, threadID);
   }
 
   @Post(':threadID/reply')

@@ -15,6 +15,7 @@ import {SendModule} from "./send/send.module";
 import {ThreadsModule} from "./threads/threads.module";
 import {BullModule} from "@nestjs/bull";
 import {EmailInternalController} from "./internal/email-internal.controller";
+import {SyncModule} from "./sync/sync.module";
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import {EmailInternalController} from "./internal/email-internal.controller";
     SequencesModule,
     ThreadsModule,
     WebhooksModule,
+    SyncModule,
   ],
   controllers: [EmailInternalController],
   providers: [

@@ -1,6 +1,6 @@
 import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import {PrismaService} from '@nlc-ai/api-database';
-import {EmailThreadParticipantType, EmailThreadStatus, UpdateEmailThreadRequest, UserType} from "@nlc-ai/types";
+import {EmailParticipantType, EmailThreadStatus, UpdateEmailThreadRequest, UserType} from "@nlc-ai/types";
 import {SendService} from "../send/send.service";
 import {google} from 'googleapis';
 import {ConfigService} from '@nestjs/config';
@@ -86,6 +86,24 @@ export class ThreadsService {
       ...thread,
       messages,
     };
+  }
+
+  /**
+   * Get generated AI responses for a thread
+   */
+  async getGeneratedResponses(userID: string, threadID: string) {
+    const thread = await this.prisma.emailThread.findFirst({
+      where: { id: threadID, userID },
+    });
+
+    if (!thread) {
+      throw new BadRequestException('Thread not found');
+    }
+
+    return await this.prisma.generatedEmailResponse.findMany({
+      where: {threadID},
+      orderBy: {createdAt: 'desc'},
+    });
   }
 
   private async fetchGmailThreadMessages(accessToken: string, threadID: string) {
@@ -207,7 +225,7 @@ export class ThreadsService {
 
     const clientEmail = await this.getClientEmail(
       thread.participantID,
-      thread.participantType as EmailThreadParticipantType
+      thread.participantType as EmailParticipantType
     );
 
     const message = await this.prisma.emailMessage.create({
@@ -264,20 +282,20 @@ export class ThreadsService {
 
   private async getClientEmail(
     participantID: string | null,
-    participantType: EmailThreadParticipantType | null
+    participantType: EmailParticipantType | null
   ) {
     let client;
 
     if (participantID) {
-      if (participantType === EmailThreadParticipantType.CLIENT) {
+      if (participantType === EmailParticipantType.CLIENT) {
         client = await this.prisma.client.findUnique({
           where: { id: participantID }
         });
-      } else if (participantType === EmailThreadParticipantType.COACH) {
+      } else if (participantType === EmailParticipantType.COACH) {
         client = await this.prisma.coach.findUnique({
           where: { id: participantID }
         });
-      } else if (participantType === EmailThreadParticipantType.LEAD) {
+      } else if (participantType === EmailParticipantType.LEAD) {
         client = await this.prisma.lead.findUnique({
           where: { id: participantID }
         });

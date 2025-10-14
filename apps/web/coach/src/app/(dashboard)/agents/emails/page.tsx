@@ -13,9 +13,10 @@ import {
   MobilePagination,
 } from "@nlc-ai/web-shared";
 import { AlertBanner, Button, Skeleton } from '@nlc-ai/web-ui';
-import {ClientEmailThread, FilterValues} from "@nlc-ai/types";
+import { FilterValues } from "@nlc-ai/types";
 import { emailFilters, emptyEmailFilterValues } from "@/lib/components/emails/filters";
 import { sdkClient } from "@/lib";
+import type { ClientEmailThread } from '@nlc-ai/sdk-email';
 
 interface EmailThreadCardProps {
   thread: ClientEmailThread;
@@ -252,7 +253,7 @@ const ClientEmailsList = () => {
 
       const [threadsData, statsData] = await Promise.all([
         sdkClient.email.threads.getEmailThreads(params),
-        sdkClient.email.accounts.getSyncStats()
+        sdkClient.email.sync.getSyncStats()
       ]);
 
       setThreads(threadsData);
@@ -268,12 +269,12 @@ const ClientEmailsList = () => {
       });
 
       setStats({
-        pendingResponses: threadsData.filter((t) =>
+        pendingResponses: threadsData.filter(t =>
           t.generatedResponses && t.generatedResponses.length > 0
         ).length,
         unreadThreads: statsData?.unreadThreads || 0,
         totalThreads: statsData?.totalThreadsToday || 0,
-        activeThreads: threadsData.filter((t) => t.status === 'active').length,
+        activeThreads: threadsData.filter(t => t.status === 'active').length,
       });
 
     } catch (err: any) {
@@ -289,7 +290,7 @@ const ClientEmailsList = () => {
       setIsSyncing(true);
       setError("");
 
-      await sdkClient.email.accounts.syncClientEmails();
+      await sdkClient.email.sync.syncAllAccounts();
 
       setTimeout(() => {
         loadData();
@@ -334,7 +335,7 @@ const ClientEmailsList = () => {
   );
 
   return (
-    <div className={`flex flex-col ${isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'}`}>
+    <div className={`flex flex-col ${isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'} px-4`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         {successMessage && (
           <AlertBanner type="success" message={successMessage} onDismiss={clearMessages} />
@@ -400,20 +401,61 @@ const ClientEmailsList = () => {
         </PageHeader>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
-            <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
-            <div className="relative z-10 flex items-center gap-3">
-              <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-pink-400" />
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
+              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <div className="text-stone-300 text-sm">Total Threads</div>
+                  <div className="text-white text-2xl font-bold">{stats.totalThreads}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-stone-300 text-sm">AI Responses</div>
-                <div className="text-white text-2xl font-bold">{stats.pendingResponses}</div>
+            </div>
+
+            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
+              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="w-10 h-10 bg-fuchsia-500/20 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-fuchsia-400" />
+                </div>
+                <div>
+                  <div className="text-stone-300 text-sm">Unread</div>
+                  <div className="text-white text-2xl font-bold">{stats.unreadThreads}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
+              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-violet-400" />
+                </div>
+                <div>
+                  <div className="text-stone-300 text-sm">Active</div>
+                  <div className="text-white text-2xl font-bold">{stats.activeThreads}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
+              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
+                  <Star className="w-5 h-5 text-pink-400" />
+                </div>
+                <div>
+                  <div className="text-stone-300 text-sm">AI Responses</div>
+                  <div className="text-white text-2xl font-bold">{stats.pendingResponses}</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Email Threads List */}
         {isLoading && <EmailsSkeleton />}
