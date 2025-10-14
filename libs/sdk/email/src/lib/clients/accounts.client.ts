@@ -1,29 +1,77 @@
 import { BaseClient } from "@nlc-ai/sdk-core";
-import {EmailAccount} from "@nlc-ai/types";
-import {ClientEmailSyncResult} from "@nlc-ai/sdk-integrations";
+import { EmailAccount } from "@nlc-ai/types";
+
+export interface ClientEmailSyncResult {
+  success: boolean;
+  message: string;
+  syncedAccounts?: number;
+}
+
+export interface EmailSyncStats {
+  unreadThreads: number;
+  totalThreadsToday: number;
+  lastSyncAt: Date | null;
+}
 
 export class AccountsClient extends BaseClient {
-  async getEmailAccounts() {
+  /**
+   * Get all email accounts for the authenticated coach
+   */
+  async getEmailAccounts(): Promise<EmailAccount[]> {
     const response = await this.request<EmailAccount[]>('GET', '');
-    return response.data;
+    return response.data!;
   }
 
-  async hasAnAccount() {
+  /**
+   * Check if the authenticated coach has any email accounts
+   */
+  async hasAnAccount(): Promise<{ exists: boolean }> {
     const response = await this.request<{ exists: boolean }>('GET', '/exists');
     return response.data!;
   }
 
-  async getSyncStats() {
-    const response = await this.request<{
-      unreadThreads: number;
-      totalThreadsToday: number;
-      lastSyncAt: Date | null;
-    }>('GET', '/stats');
+  /**
+   * Get email sync statistics
+   */
+  async getSyncStats(): Promise<EmailSyncStats> {
+    const response = await this.request<EmailSyncStats>('GET', '/stats');
     return response.data!;
   }
 
-  async syncClientEmails() {
+  /**
+   * Trigger sync for all client emails
+   */
+  async syncClientEmails(): Promise<ClientEmailSyncResult> {
     const response = await this.request<ClientEmailSyncResult>('POST', '/sync/all');
+    return response.data!;
+  }
+
+  /**
+   * Set an email account as primary
+   */
+  async setPrimaryEmailAccount(accountID: string): Promise<{ success: boolean }> {
+    const response = await this.request<{ success: boolean }>(
+      'POST',
+      `/${accountID}/set-primary`
+    );
+    return response.data!;
+  }
+
+  /**
+   * Get account connection status
+   */
+  async getAccountStatus(accountID: string): Promise<{
+    accountID: string;
+    isConnected: boolean;
+    lastSyncAt?: Date;
+    error?: string;
+  }> {
+    const response = await this.request<{
+      accountID: string;
+      isConnected: boolean;
+      lastSyncAt?: Date;
+      error?: string;
+    }>('GET', `/${accountID}/status`);
     return response.data!;
   }
 }

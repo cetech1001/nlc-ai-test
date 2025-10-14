@@ -71,6 +71,75 @@ importers:
       '@nestjs/websockets':
         specifier: ^11.1.6
         version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@11.1.6)(@nestjs/platform-socket.io@11.1.6)(reflect-metadata@0.1.14)(rxjs@7.8.2)
+      '@nlc-ai/sdk-agents':
+        specifier: workspace:*
+        version: link:libs/sdk/agents
+      '@nlc-ai/sdk-analytics':
+        specifier: workspace:*
+        version: link:libs/sdk/analytics
+      '@nlc-ai/sdk-auth':
+        specifier: workspace:*
+        version: link:libs/sdk/auth
+      '@nlc-ai/sdk-billing':
+        specifier: workspace:*
+        version: link:libs/sdk/billing
+      '@nlc-ai/sdk-communities':
+        specifier: workspace:*
+        version: link:libs/sdk/communities
+      '@nlc-ai/sdk-content':
+        specifier: workspace:*
+        version: link:libs/sdk/content
+      '@nlc-ai/sdk-core':
+        specifier: workspace:*
+        version: link:libs/sdk/core
+      '@nlc-ai/sdk-courses':
+        specifier: workspace:*
+        version: link:libs/sdk/courses
+      '@nlc-ai/sdk-email':
+        specifier: workspace:*
+        version: link:libs/sdk/email
+      '@nlc-ai/sdk-integrations':
+        specifier: workspace:*
+        version: link:libs/sdk/integrations
+      '@nlc-ai/sdk-leads':
+        specifier: workspace:*
+        version: link:libs/sdk/leads
+      '@nlc-ai/sdk-main':
+        specifier: workspace:*
+        version: link:libs/sdk/main
+      '@nlc-ai/sdk-media':
+        specifier: workspace:*
+        version: link:libs/sdk/media
+      '@nlc-ai/sdk-messages':
+        specifier: workspace:*
+        version: link:libs/sdk/messages
+      '@nlc-ai/sdk-notifications':
+        specifier: workspace:*
+        version: link:libs/sdk/notifications
+      '@nlc-ai/sdk-users':
+        specifier: workspace:*
+        version: link:libs/sdk/users
+      '@nlc-ai/types':
+        specifier: workspace:*
+        version: link:libs/types
+      '@nlc-ai/web-api-client':
+        specifier: workspace:*
+        version: link:libs/web/api-client
+      '@nlc-ai/web-auth':
+        specifier: workspace:*
+        version: link:libs/web/auth
+      '@nlc-ai/web-settings':
+        specifier: workspace:*
+        version: link:libs/web/settings
+      '@nlc-ai/web-shared':
+        specifier: workspace:*
+        version: link:libs/web/shared
+      '@nlc-ai/web-ui':
+        specifier: workspace:*
+        version: link:libs/web/ui
+      '@nlc-ai/web-utils':
+        specifier: workspace:*
+        version: link:libs/web/utils
       '@prisma/client':
         specifier: ^6.14.0
         version: 6.16.1(prisma@6.16.1(typescript@5.8.3))(typescript@5.8.3)
@@ -656,14 +725,7 @@ importers:
 
   libs/sdk/email: {}
 
-  libs/sdk/integrations:
-    dependencies:
-      '@nlc-ai/sdk-agents':
-        specifier: workspace:*
-        version: link:../agents
-      '@nlc-ai/sdk-core':
-        specifier: workspace:*
-        version: link:../core
+  libs/sdk/integrations: {}
 
   libs/sdk/leads: {}
 

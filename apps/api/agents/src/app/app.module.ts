@@ -11,7 +11,7 @@ import {CourseStructureModule} from "./course-structure/course-structure.module"
 import {ReplicaModule} from "./replica/replica.module";
 import {PublicChatModule} from "./public-chat/public-chat.module";
 import {EventsModule} from "./events/events.module";
-import {EmailAgentModule} from "./email-agent/email-agent.module";
+import {ClientEmailModule} from "./client-email/client-email.module";
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import {EmailAgentModule} from "./email-agent/email-agent.module";
     ReplicaModule,
     PublicChatModule,
     EventsModule,
-    EmailAgentModule,
+    ClientEmailModule,
   ],
   providers: [
     {

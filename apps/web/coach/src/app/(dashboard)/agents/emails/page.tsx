@@ -13,12 +13,9 @@ import {
   MobilePagination,
 } from "@nlc-ai/web-shared";
 import { AlertBanner, Button, Skeleton } from '@nlc-ai/web-ui';
-import { FilterValues } from "@nlc-ai/types";
+import {ClientEmailThread, FilterValues} from "@nlc-ai/types";
 import { emailFilters, emptyEmailFilterValues } from "@/lib/components/emails/filters";
 import { sdkClient } from "@/lib";
-import { ClientEmailStats } from '@nlc-ai/sdk-agents';
-import {ClientEmailThread} from "@nlc-ai/sdk-integrations";
-
 
 interface EmailThreadCardProps {
   thread: ClientEmailThread;
@@ -195,8 +192,6 @@ const EmailsSkeleton = () => (
 const ClientEmailsList = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // Get client ID from URL params if provided
   const clientID = searchParams.get('clientID');
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -207,13 +202,14 @@ const ClientEmailsList = () => {
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [accountExists, setAccountExists] = useState(true);
-
-  // Filter state
   const [filterValues, setFilterValues] = useState<FilterValues>(emptyEmailFilterValues);
-
-  // Data states
   const [threads, setThreads] = useState<ClientEmailThread[]>([]);
-  const [stats, setStats] = useState<ClientEmailStats | null>(null);
+  const [stats, setStats] = useState({
+    unreadThreads: 0,
+    totalThreads: 0,
+    activeThreads: 0,
+    pendingResponses: 0,
+  });
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -230,7 +226,7 @@ const ClientEmailsList = () => {
       .then((data) => {
         setAccountExists(data.exists);
         if (data.exists) {
-          return loadData().catch();
+          return loadData();
         }
         return null;
       })
@@ -244,14 +240,12 @@ const ClientEmailsList = () => {
       setIsLoading(true);
       setError("");
 
-      // Build search parameters
       const params: any = {
         limit: threadsPerPage,
         search: searchQuery || undefined,
         clientID: clientID || undefined,
       };
 
-      // Add filter values to params
       if (filterValues.status) params.status = filterValues.status;
       if (filterValues.isRead !== '') params.isRead = filterValues.isRead === 'true';
       if (filterValues.priority) params.priority = filterValues.priority;
@@ -263,7 +257,6 @@ const ClientEmailsList = () => {
 
       setThreads(threadsData);
 
-      // Create mock pagination since the API doesn't return pagination info
       const totalPages = Math.ceil(threadsData.length / threadsPerPage);
       setPagination({
         page: currentPage,
@@ -274,17 +267,13 @@ const ClientEmailsList = () => {
         hasPrev: currentPage > 1,
       });
 
-      // Convert stats to our interface
       setStats({
-        pendingResponses: 0, // We'll calculate this from responses
-        emailsProcessedToday: 0, // Not available in current API
-        emailsProcessedThisWeek: 0, // Not available in current API
-        averageResponseTime: 0, // Not available in current API
+        pendingResponses: threadsData.filter((t) =>
+          t.generatedResponses && t.generatedResponses.length > 0
+        ).length,
         unreadThreads: statsData?.unreadThreads || 0,
         totalThreads: statsData?.totalThreadsToday || 0,
-        activeThreads: threadsData.filter(t => t.status === 'active').length,
-        responsesSentToday: 0, // Not available in current API
-        responsesSentThisWeek: 0, // Not available in current API
+        activeThreads: threadsData.filter((t) => t.status === 'active').length,
       });
 
     } catch (err: any) {
@@ -302,16 +291,11 @@ const ClientEmailsList = () => {
 
       await sdkClient.email.accounts.syncClientEmails();
 
-      let timeoutID = setTimeout(() => {
+      setTimeout(() => {
         loadData();
       }, 2000);
 
-      clearTimeout(timeoutID);
-
       setSuccessMessage(`Sync started! Refresh to see results.`);
-
-      // Refresh data
-      await loadData();
     } catch (err: any) {
       setError('Failed to sync emails: ' + err.message);
     } finally {
@@ -344,7 +328,6 @@ const ClientEmailsList = () => {
     setSuccessMessage("");
   };
 
-  // Filter threads based on current page
   const paginatedThreads = threads.slice(
     (currentPage - 1) * threadsPerPage,
     currentPage * threadsPerPage
@@ -369,9 +352,7 @@ const ClientEmailsList = () => {
               <p className="text-yellow-300 text-xs">Connect an email account to automate your email workflow.</p>
             </div>
             <Button
-              onClick={() => {
-                router.push('/settings/account?tab=integrations')
-              }}
+              onClick={() => router.push('/settings/account?tab=integrations')}
               className="bg-yellow-600 hover:bg-yellow-700 cursor-pointer text-white text-sm px-3 py-1.5"
             >
               Configure
@@ -379,7 +360,6 @@ const ClientEmailsList = () => {
           </div>
         )}
 
-        {/* Header */}
         <PageHeader
           title={"Client Email Agent"}
           actionButton={{
@@ -420,61 +400,20 @@ const ClientEmailsList = () => {
         </PageHeader>
 
         {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
-              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-purple-400" />
-                </div>
-                <div>
-                  <div className="text-stone-300 text-sm">Total Threads</div>
-                  <div className="text-white text-2xl font-bold">{stats.totalThreads}</div>
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
+            <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
+                <Star className="w-5 h-5 text-pink-400" />
               </div>
-            </div>
-
-            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
-              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="w-10 h-10 bg-fuchsia-500/20 rounded-lg flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-fuchsia-400" />
-                </div>
-                <div>
-                  <div className="text-stone-300 text-sm">Unread</div>
-                  <div className="text-white text-2xl font-bold">{stats.unreadThreads}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
-              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-violet-400" />
-                </div>
-                <div>
-                  <div className="text-stone-300 text-sm">Active</div>
-                  <div className="text-white text-2xl font-bold">{stats.activeThreads}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-4 overflow-hidden">
-              <div className="absolute w-16 h-16 -left-3 -top-3 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[28px]" />
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center">
-                  <Star className="w-5 h-5 text-pink-400" />
-                </div>
-                <div>
-                  <div className="text-stone-300 text-sm">AI Responses</div>
-                  <div className="text-white text-2xl font-bold">{stats.pendingResponses}</div>
-                </div>
+              <div>
+                <div className="text-stone-300 text-sm">AI Responses</div>
+                <div className="text-white text-2xl font-bold">{stats.pendingResponses}</div>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Email Threads List */}
         {isLoading && <EmailsSkeleton />}

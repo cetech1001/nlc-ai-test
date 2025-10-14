@@ -1,3 +1,6 @@
+import {Client} from "../client";
+import {EmailMessage} from "../email";
+
 export interface ClientEmailResponse {
   id: string;
   threadID: string;
@@ -34,23 +37,30 @@ export interface ClientEmailSyncResult {
   syncedAt: Date;
 }
 
+export interface GeneratedEmailResponse {
+  id: string;
+  threadID: string;
+  subject: string;
+  body: string;
+  confidence: number;
+  status: 'generated' | 'sent' | 'scheduled' | 'failed';
+  deliverabilityScore?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface ClientEmailThread {
   id: string;
+  threadID: string;
   subject: string;
   status: 'active' | 'archived' | 'closed';
+  priority: 'high' | 'normal' | 'low';
   isRead: boolean;
-  priority: 'low' | 'normal' | 'high';
-  messageCount: number;
   lastMessageAt: Date;
-  client: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    status: string;
-  };
-  hasPendingResponse: boolean;
-  pendingResponseID?: string;
+  messageCount: number;
+  client?: Client;
+  emailMessages?: EmailMessage[];
+  generatedResponses?: GeneratedEmailResponse[];
 }
 
 export interface ClientEmailStats {

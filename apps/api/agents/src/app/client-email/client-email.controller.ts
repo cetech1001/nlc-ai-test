@@ -10,63 +10,29 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
 import { UserType, type AuthUser } from '@nlc-ai/types';
-import { EmailAgentService } from './email-agent.service';
+import { ClientEmailService } from './client-email.service';
 import { Observable } from 'rxjs';
 
-@ApiTags('Email Agent')
-@Controller('email-agent')
+@ApiTags('Client Email Agent')
+@Controller('client-email')
 @UseGuards(UserTypesGuard)
 @UserTypes(UserType.COACH, UserType.ADMIN)
 @ApiBearerAuth()
-export class EmailAgentController {
+export class ClientEmailController {
   constructor(
-    private readonly emailAgentService: EmailAgentService,
+    private readonly emailAgentService: ClientEmailService,
   ) {}
-
-  @Post('generate-response')
-  @ApiOperation({ summary: 'Generate email response for a thread' })
-  @ApiResponse({ status: 200, description: 'Response generated successfully' })
-  async generateEmailResponse(
-    @CurrentUser() user: AuthUser,
-    @Body() body: {
-      threadID: string;
-      messageContext?: string;
-      saveResponse?: boolean;
-    }
-  ) {
-    const { subject, body: emailBody } = await this.emailAgentService.generateEmailResponse(
-      user.id,
-      body.threadID,
-      body.messageContext
-    );
-
-    let savedResponse;
-    if (body.saveResponse) {
-      savedResponse = await this.emailAgentService.saveGeneratedResponse(
-        body.threadID,
-        subject,
-        emailBody,
-        0.85
-      );
-    }
-
-    return {
-      subject,
-      body: emailBody,
-      threadID: body.threadID,
-      responseID: savedResponse?.id,
-    };
-  }
 
   @Post('stream-response')
   @ApiOperation({ summary: 'Stream email response generation' })
-  @ApiResponse({ status: 200, description: 'Streaming response' })
+  @ApiResponse({ status: 200, description: 'Streaming email response' })
   @Sse()
   async streamEmailResponse(
     @CurrentUser() user: AuthUser,
     @Body() body: {
       threadID: string;
       messageContext?: string;
+      saveResponse?: boolean;
     }
   ): Promise<Observable<MessageEvent>> {
     return new Observable((observer) => {
@@ -79,6 +45,8 @@ export class EmailAgentController {
           );
 
           let fullContent = '';
+          let subject = '';
+          let emailBody = '';
 
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content || '';
@@ -92,10 +60,29 @@ export class EmailAgentController {
             } as MessageEvent);
           }
 
+          // Parse the complete response
+          const parsed = this.parseEmailContent(fullContent);
+          subject = parsed.subject;
+          emailBody = parsed.body;
+
+          // Save if requested
+          let savedResponse;
+          if (body.saveResponse) {
+            savedResponse = await this.emailAgentService.saveGeneratedResponse(
+              body.threadID,
+              subject,
+              emailBody,
+              0.85
+            );
+          }
+
           observer.next({
             data: JSON.stringify({
               type: 'done',
+              subject,
+              body: emailBody,
               fullContent,
+              responseID: savedResponse?.id,
             })
           } as MessageEvent);
 
@@ -135,5 +122,21 @@ export class EmailAgentController {
   @ApiResponse({ status: 200, description: 'Email agent info retrieved successfully' })
   async getEmailAgentInfo(@CurrentUser() user: AuthUser) {
     return this.emailAgentService.getCoachEmailAgentInfo(user.id);
+  }
+
+  private parseEmailContent(content: string): { subject: string; body: string } {
+    const subjectMatch = content.match(/^Subject:\s*(.+?)$/im);
+
+    if (subjectMatch) {
+      const subject = subjectMatch[1].trim();
+      const body = content.replace(/^Subject:.*$/im, '').trim();
+      return { subject, body };
+    }
+
+    // Fallback if no subject line found
+    return {
+      subject: 'Re: Your message',
+      body: content.trim()
+    };
   }
 }

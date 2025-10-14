@@ -57,6 +57,7 @@ export interface EmailThread {
   tags: string[];
   lastMessageAt?: string;
   lastMessage?: EmailMessage;
+  generatedResponses: any[];
   createdAt: string;
   updatedAt: string;
 }

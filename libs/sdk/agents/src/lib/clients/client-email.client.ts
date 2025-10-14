@@ -1,116 +1,94 @@
 import { BaseClient } from '@nlc-ai/sdk-core';
-import {
-  ClientEmailResponse,
-} from '../types';
+
+export interface EmailAgentInfo {
+  hasEmailAgent: boolean;
+  hasFineTunedModel: boolean;
+  modelID?: string;
+  lastFineTuningAt?: Date;
+  fineTuningEmailCount?: number;
+  baseModel?: string;
+  assistantID?: string;
+  totalRequests?: number;
+  lastUsedAt?: Date;
+  message?: string;
+}
+
+export interface SaveResponseParams {
+  threadID: string;
+  subject: string;
+  body: string;
+  confidence?: number;
+}
+
+export interface UpdateResponseParams {
+  actualSubject: string;
+  actualBody: string;
+}
 
 export class ClientEmailClient extends BaseClient {
   /**
-   * Generate AI response for email thread
+   * Stream AI-generated email response
+   * Returns an EventSource-compatible stream
    */
-  async generateResponse(threadID: string, customInstructions?: string): Promise<ClientEmailResponse> {
-    const response = await this.request<ClientEmailResponse>(
+  async streamEmailResponse(
+    threadID: string,
+    messageContext?: string
+  ): Promise<ReadableStream> {
+    const url = `${this.baseURL}/stream-response`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        threadID,
+        messageContext,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Stream request failed: ${response.statusText}`);
+    }
+
+    return response.body!;
+  }
+
+  /**
+   * Save a generated response for tracking
+   */
+  async saveGeneratedResponse(params: SaveResponseParams): Promise<{ message: string; responseID: string }> {
+    const response = await this.request<{ message: string; responseID: string }>(
       'POST',
-      `/generate/${threadID}`,
-      { body: { customInstructions } }
+      `/response/save`,
+      { body: params }
     );
     return response.data!;
   }
 
   /**
-   * Regenerate existing response
+   * Update a generated response with what was actually sent
    */
-  async regenerateResponse(responseID: string, customInstructions?: string): Promise<ClientEmailResponse> {
-    const response = await this.request<ClientEmailResponse>(
+  async updateGeneratedResponse(
+    responseID: string,
+    params: UpdateResponseParams
+  ): Promise<{ message: string; responseID: string }> {
+    const response = await this.request<{ message: string; responseID: string }>(
       'POST',
-      `/regenerate/${responseID}`,
-      { body: { customInstructions } }
+      `/response/${responseID}/update`,
+      { body: params }
     );
     return response.data!;
   }
 
   /**
-   * Get generated responses for a thread
+   * Get email agent information and capabilities
    */
-  async getResponsesForThread(threadID: string): Promise<ClientEmailResponse[]> {
-    const response = await this.request<ClientEmailResponse[]>(
+  async getAgentInfo(): Promise<EmailAgentInfo> {
+    const response = await this.request<EmailAgentInfo>(
       'GET',
-      `/responses/${threadID}`
-    );
-    return response.data!;
-  }
-
-  /**
-   * Get all generated responses for coach
-   */
-  async getAllResponses(): Promise<ClientEmailResponse[]> {
-    const response = await this.request<ClientEmailResponse[]>(
-      'GET',
-      `/responses`
-    );
-    return response.data!;
-  }
-
-  /**
-   * Update response before sending
-   */
-  async updateResponse(responseID: string, updates: { subject?: string; body?: string }): Promise<ClientEmailResponse> {
-    const response = await this.request<ClientEmailResponse>(
-      'POST',
-      `/responses/${responseID}/update`,
-      { body: updates }
-    );
-    return response.data!;
-  }
-
-  /**
-   * Send generated response immediately
-   */
-  async sendResponse(responseID: string, modifications?: { subject?: string; body?: string }): Promise<{ success: boolean; message: string; messageID?: string; sentAt?: Date }> {
-    const response = await this.request<{ success: boolean; message: string; messageID?: string; sentAt?: Date }>(
-      'POST',
-      `/send/${responseID}`,
-      { body: modifications }
-    );
-    return response.data!;
-  }
-
-  /**
-   * Schedule response for later
-   */
-  async scheduleResponse(responseID: string, scheduledFor: string, modifications?: { subject?: string; body?: string }): Promise<{ success: boolean; message: string; scheduledEmailID?: string; scheduledFor?: Date }> {
-    const response = await this.request<{ success: boolean; message: string; scheduledEmailID?: string; scheduledFor?: Date }>(
-      'POST',
-      `/schedule/${responseID}`,
-      { body: { scheduledFor, ...modifications } }
-    );
-    return response.data!;
-  }
-
-  /**
-   * Send custom email to client
-   */
-  async sendCustomEmail(data: {
-    clientID: string;
-    threadID?: string;
-    subject: string;
-    body: string;
-    scheduledFor?: string;
-  }): Promise<{ success: boolean; message: string; messageID?: string; scheduledEmailID?: string }> {
-    const response = await this.request<{ success: boolean; message: string; messageID?: string; scheduledEmailID?: string }>(
-      'POST',
-      `/send-custom`,
-      { body: data }
-    );
-    return response.data!;
-  }
-
-  /**
-   * Cancel scheduled email
-   */
-  async cancelScheduledEmail(scheduledEmailID: string): Promise<{ success: boolean; message: string }> {
-    const response = await this.request<{ success: boolean; message: string }>(
-      'POST',
-      `/cancel-scheduled/${scheduledEmailID}`
+      '/info'
     );
     return response.data!;
   }
