@@ -5,6 +5,7 @@ import { OpenAI } from 'openai';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AgentType } from '@nlc-ai/types';
+import {JwtService} from "@nestjs/jwt";
 
 interface ThreadMessage {
   messageID: string;
@@ -26,6 +27,7 @@ export class ClientEmailService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    private readonly jwt: JwtService
   ) {
     this.openai = new OpenAI({
       apiKey: this.configService.get<string>('agents.openai.apiKey'),
@@ -35,13 +37,17 @@ export class ClientEmailService {
 
   private async fetchThreadMessages(coachID: string, threadID: string): Promise<ThreadMessage[]> {
     try {
+      const serviceToken = this.jwt.sign({
+        origin: 'agents',
+        destination: 'email',
+        coachID,
+      });
       const response = await firstValueFrom(
         this.httpService.get<{ messages: ThreadMessage[] }>(
-          `${this.emailServiceUrl}/internal/threads/${threadID}/messages`,
+          `${this.emailServiceUrl}/api/email/internal/threads/${threadID}/messages`,
           {
             headers: {
-              'X-Internal-Service': 'agents',
-              'X-Coach-ID': coachID,
+              'x-service-token': serviceToken,
             },
           }
         )

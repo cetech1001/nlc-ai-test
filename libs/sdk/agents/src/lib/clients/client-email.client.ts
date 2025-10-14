@@ -52,6 +52,12 @@ export class ClientEmailClient extends BaseClient {
       throw new Error(`Stream request failed: ${response.statusText}`);
     }
 
+    const text = await response.text();
+
+    if (text.includes('event: error')) {
+      throw new Error(text.split('data: ').pop());
+    }
+
     return response.body!;
   }
 

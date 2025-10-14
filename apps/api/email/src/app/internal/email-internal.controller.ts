@@ -2,12 +2,12 @@ import {
   Controller,
   Get,
   Param,
-  Headers,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { S3EmailService } from '../sync/services/s3-email.service';
 import { PrismaService } from '@nlc-ai/api-database';
+import {CurrentUser} from "@nlc-ai/api-auth";
 
 @ApiTags('Internal')
 @Controller('internal')
@@ -20,10 +20,8 @@ export class EmailInternalController {
   /**
    * Verify internal service request
    */
-  private verifyInternalRequest(headers: any): void {
-    const internalServiceHeader = headers['x-internal-service'];
-
-    if (internalServiceHeader !== 'agents') {
+  private verifyInternalRequest(user: any): void {
+    if (user.origin !== 'agents' || user.destination !== 'email') {
       throw new UnauthorizedException('Invalid internal service credentials');
     }
   }
@@ -34,11 +32,11 @@ export class EmailInternalController {
   @ApiResponse({ status: 200, description: 'Thread messages retrieved successfully' })
   async getThreadMessages(
     @Param('threadID') threadID: string,
-    @Headers() headers: any,
+    @CurrentUser() user: any,
   ) {
-    this.verifyInternalRequest(headers);
+    this.verifyInternalRequest(user);
 
-    const coachID = headers['x-coach-id'];
+    const coachID = user.coachID;
     if (!coachID) {
       throw new UnauthorizedException('Missing coach ID header');
     }
@@ -46,10 +44,12 @@ export class EmailInternalController {
     // Get thread from database to get the provider threadID
     const emailThread = await this.prisma.emailThread.findFirst({
       where: {
-        id: threadID,
+        threadID,
         userID: coachID,
       },
     });
+
+    console.log("Email thread: ", emailThread);
 
     if (!emailThread) {
       return { messages: [] };
@@ -61,6 +61,8 @@ export class EmailInternalController {
       emailThread.threadID
     );
 
+    console.log("Messages: ", messages);
+
     return { messages };
   }
 
@@ -70,9 +72,9 @@ export class EmailInternalController {
   @ApiResponse({ status: 200, description: 'Coach emails retrieved successfully' })
   async getCoachEmailsForFineTuning(
     @Param('coachID') coachID: string,
-    @Headers() headers: any,
+    @CurrentUser() user: any,
   ) {
-    this.verifyInternalRequest(headers);
+    this.verifyInternalRequest(user);
 
     // Get email cache entries
     const emailCache = await this.prisma.coachEmailCache.findMany({
