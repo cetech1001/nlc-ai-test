@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { OpenAI } from 'openai';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { AgentType, EmailParticipantType, EmailStatus } from '@nlc-ai/types';
+import { AgentType, EmailParticipantType } from '@nlc-ai/types';
 import { JwtService } from "@nestjs/jwt";
 
 export interface SequenceConfig {
@@ -14,29 +14,12 @@ export interface SequenceConfig {
   timings?: string[];
 }
 
-export interface EmailInSequence {
-  id: string;
+export interface GeneratedEmail {
   sequenceOrder: number;
   subject: string;
   body: string;
-  timing: string;
-  scheduledFor: Date;
-  status: string;
-  deliverabilityScore?: number;
-  isEdited: boolean;
-  sentAt?: Date;
-}
-
-export interface EmailSequenceWithEmails {
-  id: string;
-  name: string;
-  description: string;
-  leadID: string;
-  totalEmails: number;
-  emailsSent: number;
-  emailsPending: number;
-  isActive: boolean;
-  emails: EmailInSequence[];
+  keyPoints: string[];
+  callToAction: string;
 }
 
 export interface ThreadMessage {
@@ -131,7 +114,6 @@ export class LeadFollowupService {
 
   private async fetchLeadEmailHistory(coachID: string, leadEmail: string): Promise<ThreadMessage[]> {
     try {
-      // Find email threads with this lead
       const threads = await this.prisma.emailThread.findMany({
         where: {
           userID: coachID,
@@ -141,7 +123,7 @@ export class LeadFollowupService {
         select: {
           threadID: true,
         },
-        take: 5, // Get up to 5 most recent threads
+        take: 5,
         orderBy: {
           lastMessageAt: 'desc',
         },
@@ -151,7 +133,6 @@ export class LeadFollowupService {
         return [];
       }
 
-      // Fetch messages from each thread
       const allMessages: ThreadMessage[] = [];
       const serviceToken = this.jwt.sign({
         origin: 'agents',
@@ -178,7 +159,6 @@ export class LeadFollowupService {
         }
       }
 
-      // Sort by date and return most recent 20
       return allMessages
         .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())
         .slice(0, 20);
@@ -260,10 +240,17 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
     coachID: string,
     leadID: string,
     config: SequenceConfig = {}
-  ): Promise<EmailSequenceWithEmails> {
+  ): Promise<{
+    sequenceID: string;
+    emails: GeneratedEmail[];
+    sequenceConfig: {
+      emailCount: number;
+      sequenceType: string;
+      timings: string[];
+    };
+  }> {
     const { replicaConfig } = await this.getCoachReplicaConfig(coachID);
 
-    // Fetch lead details
     const lead = await this.prisma.lead.findFirst({
       where: {
         id: leadID,
@@ -281,7 +268,7 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
         userID: coachID,
         targetID: leadID,
         targetType: EmailParticipantType.LEAD,
-        status: EmailStatus.SCHEDULED,
+        isActive: true,
       },
     });
 
@@ -289,10 +276,8 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
       throw new BadRequestException('An active sequence already exists for this lead');
     }
 
-    // Fetch email history
     const emailHistory = await this.fetchLeadEmailHistory(coachID, lead.email);
 
-    // Generate sequence using AI
     const template = SEQUENCE_TEMPLATES[config.sequenceType || 'standard'];
     const emailCount = config.emailCount || template.recommendedEmailCount;
     const timings = config.timings || template.defaultTimings.slice(0, emailCount);
@@ -331,8 +316,7 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
         throw new Error('No response from AI');
       }
 
-      // Parse AI response
-      let emails: any[];
+      let emails: GeneratedEmail[];
       try {
         const parsed = JSON.parse(responseContent);
         emails = Array.isArray(parsed) ? parsed : parsed.emails || [];
@@ -345,86 +329,26 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
         throw new BadRequestException(`Expected ${emailCount} emails, got ${emails.length}`);
       }
 
-      // Create sequence in database
-      const sequence = await this.prisma.emailSequence.create({
-        data: {
-          userID: coachID,
-          userType: 'coach',
-          targetID: leadID,
-          targetType: EmailParticipantType.LEAD,
-          name: `Follow-up: ${lead.name}`,
-          description: `${template.name} sequence for ${lead.name}`,
-          triggerType: 'manual',
-          status: EmailStatus.SCHEDULED,
-          isActive: true,
-          sequence: emails,
-        },
-      });
+      // Create the sequence immediately
+      const sequenceID = await this.createSequenceInEmailService(
+        coachID,
+        leadID,
+        lead.name,
+        emails,
+        timings,
+        template.name
+      );
 
-      // Create individual email messages
-      const now = new Date();
-      const coach = await this.prisma.coach.findUnique({
-        where: { id: coachID },
-        select: { email: true },
-      });
-
-      const createdEmails: EmailInSequence[] = [];
-
-      for (let i = 0; i < emails.length; i++) {
-        const email = emails[i];
-        const timing = timings[i] || '1-week';
-        const timingConfig = TIMING_CONFIGS[timing as keyof typeof TIMING_CONFIGS];
-
-        const scheduledFor = new Date(now);
-        scheduledFor.setDate(scheduledFor.getDate() + timingConfig.days);
-
-        const emailMessage = await this.prisma.emailMessage.create({
-          data: {
-            emailSequenceID: sequence.id,
-            userID: coachID,
-            userType: 'coach',
-            from: coach?.email || '',
-            to: lead.email,
-            subject: email.subject,
-            html: email.body,
-            text: email.body.replace(/<[^>]*>/g, ''),
-            scheduledFor,
-            status: EmailStatus.SCHEDULED,
-            metadata: {
-              sequenceOrder: email.sequenceOrder,
-              timing,
-              keyPoints: email.keyPoints,
-              callToAction: email.callToAction,
-              leadID,
-              leadName: lead.name,
-            },
-          },
-        });
-
-        createdEmails.push({
-          id: emailMessage.id,
-          sequenceOrder: email.sequenceOrder,
-          subject: email.subject,
-          body: email.body,
-          timing,
-          scheduledFor,
-          status: EmailStatus.SCHEDULED,
-          isEdited: false,
-        });
-      }
-
-      this.logger.log(`Created ${emailCount}-email sequence for lead ${leadID}`);
+      this.logger.log(`Generated and created ${emailCount}-email sequence for lead ${leadID}`);
 
       return {
-        id: sequence.id,
-        name: sequence.name,
-        description: sequence.description || '',
-        leadID,
-        totalEmails: emailCount,
-        emailsSent: 0,
-        emailsPending: emailCount,
-        isActive: true,
-        emails: createdEmails,
+        sequenceID,
+        emails,
+        sequenceConfig: {
+          emailCount,
+          sequenceType: config.sequenceType || 'standard',
+          timings,
+        },
       };
 
     } catch (error: any) {
@@ -433,224 +357,80 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
     }
   }
 
-  async getSequencesForLead(coachID: string, leadID: string) {
-    const sequences = await this.prisma.emailSequence.findMany({
-      where: {
+  private async createSequenceInEmailService(
+    coachID: string,
+    leadID: string,
+    leadName: string,
+    emails: GeneratedEmail[],
+    timings: string[],
+    templateName: string
+  ): Promise<string> {
+    const now = new Date();
+
+    // Create sequence
+    const sequence = await this.prisma.emailSequence.create({
+      data: {
         userID: coachID,
+        userType: 'coach',
         targetID: leadID,
         targetType: EmailParticipantType.LEAD,
-      },
-      orderBy: {
-        createdAt: 'desc',
+        name: `Follow-up: ${leadName}`,
+        description: `${templateName} sequence for ${leadName}`,
+        triggerType: 'manual',
+        status: 'active',
+        isActive: true,
+        sequence: JSON.stringify(emails),
       },
     });
 
-    const enrichedSequences: EmailSequenceWithEmails[] = await Promise.all(
-      sequences.map(async (seq) => {
-        const emails = await this.prisma.emailMessage.findMany({
-          where: {
-            emailSequenceID: seq.id,
+    // Get coach email
+    const coach = await this.prisma.coach.findUnique({
+      where: { id: coachID },
+      select: { email: true },
+    });
+
+    // Get lead email
+    const lead = await this.prisma.lead.findUnique({
+      where: { id: leadID },
+      select: { email: true },
+    });
+
+    // Create and schedule individual email messages
+    for (let i = 0; i < emails.length; i++) {
+      const email = emails[i];
+      const timing = timings[i] || '1-week';
+      const timingConfig = TIMING_CONFIGS[timing as keyof typeof TIMING_CONFIGS];
+
+      const scheduledFor = new Date(now);
+      scheduledFor.setDate(scheduledFor.getDate() + timingConfig.days);
+
+      await this.prisma.emailMessage.create({
+        data: {
+          emailSequenceID: sequence.id,
+          userID: coachID,
+          userType: 'coach',
+          from: coach?.email || '',
+          to: lead?.email || '',
+          subject: email.subject,
+          html: email.body,
+          text: email.body.replace(/<[^>]*>/g, ''),
+          scheduledFor,
+          status: 'scheduled',
+          metadata: {
+            sequenceOrder: email.sequenceOrder,
+            timing,
+            keyPoints: email.keyPoints,
+            callToAction: email.callToAction,
+            leadID,
+            leadName,
           },
-          orderBy: {
-            scheduledFor: 'asc',
-          },
-        });
-
-        const emailsSent = emails.filter(e => e.status === EmailStatus.SENT).length;
-        const emailsPending = emails.filter(e =>
-          e.status === EmailStatus.SCHEDULED || e.status === EmailStatus.PENDING
-        ).length;
-
-        return {
-          id: seq.id,
-          name: seq.name,
-          description: seq.description || '',
-          leadID,
-          totalEmails: emails.length,
-          emailsSent,
-          emailsPending,
-          isActive: seq.isActive,
-          emails: emails.map(e => ({
-            id: e.id,
-            sequenceOrder: (e.metadata as any)?.sequenceOrder || 0,
-            subject: e.subject || '',
-            body: e.html || e.text || '',
-            timing: (e.metadata as any)?.timing || '1-week',
-            scheduledFor: e.scheduledFor || new Date(),
-            status: e.status,
-            deliverabilityScore: undefined,
-            isEdited: false,
-            sentAt: e.sentAt || undefined,
-          })),
-        };
-      })
-    );
-
-    return { sequences: enrichedSequences };
-  }
-
-  async pauseSequence(coachID: string, sequenceID: string) {
-    const sequence = await this.prisma.emailSequence.findFirst({
-      where: {
-        id: sequenceID,
-        userID: coachID,
-      },
-    });
-
-    if (!sequence) {
-      throw new NotFoundException('Sequence not found');
-    }
-
-    await this.prisma.emailSequence.update({
-      where: { id: sequenceID },
-      data: { isActive: false },
-    });
-
-    await this.prisma.emailMessage.updateMany({
-      where: {
-        emailSequenceID: sequenceID,
-        status: EmailStatus.SCHEDULED,
-      },
-      data: {
-        status: EmailStatus.PAUSED,
-      },
-    });
-
-    return { success: true, message: 'Sequence paused' };
-  }
-
-  async resumeSequence(coachID: string, sequenceID: string) {
-    const sequence = await this.prisma.emailSequence.findFirst({
-      where: {
-        id: sequenceID,
-        userID: coachID,
-      },
-    });
-
-    if (!sequence) {
-      throw new NotFoundException('Sequence not found');
-    }
-
-    await this.prisma.emailSequence.update({
-      where: { id: sequenceID },
-      data: { isActive: true },
-    });
-
-    await this.prisma.emailMessage.updateMany({
-      where: {
-        emailSequenceID: sequenceID,
-        status: EmailStatus.PAUSED,
-      },
-      data: {
-        status: EmailStatus.SCHEDULED,
-      },
-    });
-
-    return { success: true, message: 'Sequence resumed' };
-  }
-
-  async cancelSequence(coachID: string, sequenceID: string) {
-    const sequence = await this.prisma.emailSequence.findFirst({
-      where: {
-        id: sequenceID,
-        userID: coachID,
-      },
-    });
-
-    if (!sequence) {
-      throw new NotFoundException('Sequence not found');
-    }
-
-    await this.prisma.emailSequence.update({
-      where: { id: sequenceID },
-      data: {
-        isActive: false,
-        status: EmailStatus.CANCELLED,
-      },
-    });
-
-    await this.prisma.emailMessage.updateMany({
-      where: {
-        emailSequenceID: sequenceID,
-        status: {
-          in: [EmailStatus.SCHEDULED, EmailStatus.PENDING, EmailStatus.PAUSED],
         },
-      },
-      data: {
-        status: EmailStatus.CANCELLED,
-      },
-    });
-
-    return { success: true, message: 'Sequence cancelled' };
-  }
-
-  async getEmailByID(coachID: string, emailID: string): Promise<{ email: EmailInSequence }> {
-    const email = await this.prisma.emailMessage.findFirst({
-      where: {
-        id: emailID,
-        userID: coachID,
-      },
-    });
-
-    if (!email) {
-      throw new NotFoundException('Email not found');
+      });
     }
 
-    return {
-      email: {
-        id: email.id,
-        sequenceOrder: (email.metadata as any)?.sequenceOrder || 0,
-        subject: email.subject || '',
-        body: email.html || email.text || '',
-        timing: (email.metadata as any)?.timing || '1-week',
-        scheduledFor: email.scheduledFor || new Date(),
-        status: email.status,
-        deliverabilityScore: undefined,
-        isEdited: false,
-        sentAt: email.sentAt || undefined,
-      },
-    };
-  }
+    this.logger.log(`Created sequence ${sequence.id} with ${emails.length} scheduled emails`);
 
-  async updateEmail(
-    coachID: string,
-    emailID: string,
-    updates: {
-      subject?: string;
-      body?: string;
-      scheduledFor?: string;
-      timing?: string;
-    }
-  ) {
-    const email = await this.prisma.emailMessage.findFirst({
-      where: {
-        id: emailID,
-        userID: coachID,
-      },
-    });
-
-    if (!email) {
-      throw new NotFoundException('Email not found');
-    }
-
-    const metadata = email.metadata as any || {};
-
-    await this.prisma.emailMessage.update({
-      where: { id: emailID },
-      data: {
-        subject: updates.subject,
-        html: updates.body,
-        text: updates.body ? updates.body.replace(/<[^>]*>/g, '') : undefined,
-        scheduledFor: updates.scheduledFor ? new Date(updates.scheduledFor) : undefined,
-        metadata: {
-          ...metadata,
-          timing: updates.timing || metadata.timing,
-          isEdited: true,
-        },
-      },
-    });
-
-    return { success: true, message: 'Email updated' };
+    return sequence.id;
   }
 
   async regenerateEmails(
@@ -660,7 +440,7 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
       emailOrders: number[];
       customInstructions?: string;
     }
-  ) {
+  ): Promise<GeneratedEmail[]> {
     const sequence = await this.prisma.emailSequence.findFirst({
       where: {
         id: params.sequenceID,
@@ -681,9 +461,7 @@ Generate the complete ${emailCount}-email sequence now as a JSON array:`;
     }
 
     const { replicaConfig } = await this.getCoachReplicaConfig(coachID);
-    // const emailHistory = await this.fetchLeadEmailHistory(coachID, lead.email);
 
-    // Fetch existing emails in sequence
     const existingEmails = await this.prisma.emailMessage.findMany({
       where: { emailSequenceID: params.sequenceID },
       orderBy: { scheduledFor: 'asc' },
@@ -722,31 +500,6 @@ Return as JSON array with sequenceOrder, subject, body, keyPoints, and callToAct
 
     const parsed = JSON.parse(responseContent);
     const newEmails = Array.isArray(parsed) ? parsed : parsed.emails || [];
-
-    // Update emails
-    for (let i = 0; i < params.emailOrders.length; i++) {
-      const order = params.emailOrders[i];
-      const emailToUpdate = existingEmails[order - 1];
-      const newEmail = newEmails[i];
-
-      if (emailToUpdate && newEmail) {
-        await this.prisma.emailMessage.update({
-          where: { id: emailToUpdate.id },
-          data: {
-            subject: newEmail.subject,
-            html: newEmail.body,
-            text: newEmail.body.replace(/<[^>]*>/g, ''),
-            metadata: {
-              ...((emailToUpdate.metadata as any) || {}),
-              keyPoints: newEmail.keyPoints,
-              callToAction: newEmail.callToAction,
-              isEdited: true,
-              regeneratedAt: new Date().toISOString(),
-            },
-          },
-        });
-      }
-    }
 
     return newEmails;
   }

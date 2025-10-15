@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination, StatCard } from "@nlc-ai/web-shared";
 import { AlertBanner, Button } from '@nlc-ai/web-ui';
 import { LeadStats, Lead } from "@nlc-ai/sdk-leads";
-import { EmailSequenceWithEmails, FilterValues } from "@nlc-ai/types";
+import { EmailSequence, FilterValues, EmailParticipantType } from "@nlc-ai/types";
 import {
   EmailAutomationModal,
   CreateSequenceModal,
@@ -44,7 +44,7 @@ export const CoachLeads = () => {
   const [showCreateSequenceModal, setShowCreateSequenceModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [stats, setStats] = useState<LeadStats>();
-  const [activeSequences, setActiveSequences] = useState<EmailSequenceWithEmails[]>([]);
+  const [activeSequences, setActiveSequences] = useState<EmailSequence[]>([]);
 
   const leadsPerPage = 10;
 
@@ -135,7 +135,7 @@ export const CoachLeads = () => {
       // Fetch sequences for all visible leads
       const sequencePromises = leads.map(async (lead) => {
         try {
-          const {sequences} = await sdkClient.agents.leadFollowup.getSequencesForLead(lead.id);
+          const { sequences } = await sdkClient.email.sequences.getSequencesForLead(lead.id);
           return sequences.length > 0 ? sequences[0] : null;
         } catch (error) {
           return null;
@@ -143,7 +143,7 @@ export const CoachLeads = () => {
       });
 
       const sequenceResults = await Promise.all(sequencePromises);
-      const validSequences = sequenceResults.filter(seq => seq !== null) as EmailSequenceWithEmails[];
+      const validSequences = sequenceResults.filter(seq => seq !== null) as EmailSequence[];
       setActiveSequences(validSequences);
     } catch (error) {
       console.error('Failed to fetch active sequences:', error);
@@ -158,7 +158,7 @@ export const CoachLeads = () => {
     }
   };
 
-  const handleSequenceCreated = async (sequence: EmailSequenceWithEmails) => {
+  const handleSequenceCreated = async () => {
     setSuccessMessage('AI email sequence created successfully!');
     setShowCreateSequenceModal(false);
     await fetchActiveSequences();
@@ -169,7 +169,7 @@ export const CoachLeads = () => {
     try {
       setIsGeneratingSequence(leadID);
 
-      // Use flexible sequence creation with default settings
+      // Generate and create sequence in one call
       await sdkClient.agents.leadFollowup.generateFollowupSequence({
         leadID,
         sequenceConfig: {
@@ -191,7 +191,14 @@ export const CoachLeads = () => {
 
   const handlePauseSequence = async (leadID: string) => {
     try {
-      await sdkClient.agents.leadFollowup.pauseSequence(leadID);
+      const sequence = activeSequences.find(s => s.targetID === leadID);
+      if (!sequence) return;
+
+      await sdkClient.email.sequences.pauseSequence(
+        sequence.id,
+        leadID,
+        EmailParticipantType.LEAD
+      );
       setSuccessMessage('Email sequence paused');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -202,7 +209,14 @@ export const CoachLeads = () => {
 
   const handleResumeSequence = async (leadID: string) => {
     try {
-      await sdkClient.agents.leadFollowup.resumeSequence(leadID);
+      const sequence = activeSequences.find(s => s.targetID === leadID);
+      if (!sequence) return;
+
+      await sdkClient.email.sequences.resumeSequence(
+        sequence.id,
+        leadID,
+        EmailParticipantType.LEAD
+      );
       setSuccessMessage('Email sequence resumed');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -215,7 +229,10 @@ export const CoachLeads = () => {
     if (!confirm('Are you sure you want to cancel this email sequence?')) return;
 
     try {
-      await sdkClient.agents.leadFollowup.cancelSequence(leadID);
+      const sequence = activeSequences.find(s => s.targetID === leadID);
+      if (!sequence) return;
+
+      await sdkClient.email.sequences.deleteSequence(sequence.id);
       setSuccessMessage('Email sequence cancelled');
       await fetchActiveSequences();
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -286,7 +303,7 @@ export const CoachLeads = () => {
   };
 
   const getSequenceForLead = (leadID: string) => {
-    return activeSequences.find(seq => seq.leadID === leadID);
+    return activeSequences.find(seq => seq.targetID === leadID);
   };
 
   return (

@@ -95,7 +95,7 @@ const EditEmailPage = () => {
 
   const loadEmail = async () => {
     try {
-      const emailData = await sdkClient.agents.leadFollowup.getEmailByID(emailID!);
+      const emailData = await sdkClient.email.sequences.getEmailByID(emailID!);
       setEmail(emailData.email);
       setSubject(emailData.email.subject);
       setScheduledFor(new Date(emailData.email.scheduledFor || '').toISOString().slice(0, 16));
@@ -184,8 +184,8 @@ const EditEmailPage = () => {
         customInstructions: 'Regenerate with fresh content while maintaining the coach\'s authentic voice'
       });
 
-      if (regeneratedEmails.length > 0) {
-        const newEmail = regeneratedEmails[0];
+      if (regeneratedEmails.emails.length > 0) {
+        const newEmail = regeneratedEmails.emails[0];
         setSubject(newEmail.subject);
         setEmailContent(newEmail.body);
         setHasChanges(true);

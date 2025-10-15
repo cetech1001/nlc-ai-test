@@ -151,7 +151,7 @@ export const CoachDetailsPage = () => {
   ];
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
+    <div className="py-4 px-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full overflow-hidden">
       <div className="grid grid-cols-2 gap-4">
         <StatCard
           isLoading={isLoading}

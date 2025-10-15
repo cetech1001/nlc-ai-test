@@ -10,15 +10,15 @@ import {
   CheckCircle,
   AlertCircle,
   Edit3,
-  Plus,
   RotateCcw,
   Play,
   Pause,
-  StopCircle
+  StopCircle,
+  Eye
 } from 'lucide-react';
 import { Button } from '@nlc-ai/web-ui';
-import { EmailSequenceWithEmails, SEQUENCE_TEMPLATES } from '@nlc-ai/types';
-import {sdkClient} from "@/lib";
+import { EmailSequence, EmailMessage, EmailParticipantType } from '@nlc-ai/types';
+import { sdkClient } from "@/lib";
 
 interface EmailAutomationModalProps {
   isOpen: boolean;
@@ -30,26 +30,19 @@ interface EmailAutomationModalProps {
 }
 
 export const EmailAutomationModal = ({
- isOpen,
- onCloseAction,
- leadName,
- leadEmail,
- leadStatus,
- leadID,
-}: EmailAutomationModalProps) => {
+                                       isOpen,
+                                       onCloseAction,
+                                       leadName,
+                                       leadEmail,
+                                       leadStatus,
+                                       leadID,
+                                     }: EmailAutomationModalProps) => {
   const router = useRouter();
-  const [sequence, setSequence] = useState<EmailSequenceWithEmails | null>(null);
+  const [sequence, setSequence] = useState<EmailSequence | null>(null);
+  const [emails, setEmails] = useState<EmailMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'sequence' | 'create' | 'preview'>('sequence');
-  const [_, setShowCreateForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Create sequence form state
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('standard');
-  const [emailCount, setEmailCount] = useState(4);
-  const [customInstructions, setCustomInstructions] = useState('');
-  const [customTimings, setCustomTimings] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'emails' | 'analytics'>('emails');
 
   useEffect(() => {
     if (isOpen) {
@@ -60,50 +53,29 @@ export const EmailAutomationModal = ({
   const fetchSequence = async () => {
     try {
       setIsLoading(true);
-      // Fetch an existing sequence for this lead
-      const {sequences} = await sdkClient.agents.leadFollowup.getSequencesForLead(leadID);
+      const { sequences } = await sdkClient.email.sequences.getSequencesForLead(leadID);
+
       if (sequences.length > 0) {
-        setSequence(sequences[0]);
+        const seq = sequences[0];
+        setSequence(seq);
+
+        // Fetch full sequence details with emails
+        const { sequence: fullSequence } = await sdkClient.email.sequences.getSequence(seq.id);
+        setEmails(fullSequence.emailMessages || []);
       } else {
         setSequence(null);
-        setShowCreateForm(true);
+        setEmails([]);
       }
     } catch (error) {
       console.error('Failed to fetch sequence:', error);
       setSequence(null);
-      setShowCreateForm(true);
+      setEmails([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreateSequence = async () => {
-    try {
-      setIsGenerating(true);
-      // const template = SEQUENCE_TEMPLATES.find(t => t.type === selectedTemplate);
-
-      const newSequence = await sdkClient.agents.leadFollowup.generateFollowupSequence({
-        leadID,
-        sequenceConfig: {
-          emailCount,
-          sequenceType: selectedTemplate as any,
-          customInstructions: customInstructions || undefined,
-          timings: customTimings.length > 0 ? customTimings : undefined,
-        }
-      });
-
-      setSequence(newSequence);
-      setShowCreateForm(false);
-      setActiveTab('sequence');
-    } catch (error) {
-      console.error('Failed to create sequence:', error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleEditEmail = (emailID: string) => {
-    // Navigate to email edit page with all necessary data
     const params = new URLSearchParams({
       emailID,
       leadID,
@@ -123,14 +95,22 @@ export const EmailAutomationModal = ({
       setIsProcessing(true);
       switch (action) {
         case 'pause':
-          await sdkClient.agents.leadFollowup.pauseSequence(sequence.id);
+          await sdkClient.email.sequences.pauseSequence(
+            sequence.id,
+            leadID,
+            EmailParticipantType.LEAD
+          );
           break;
         case 'resume':
-          await sdkClient.agents.leadFollowup.resumeSequence(sequence.id);
+          await sdkClient.email.sequences.resumeSequence(
+            sequence.id,
+            leadID,
+            EmailParticipantType.LEAD
+          );
           break;
         case 'cancel':
           if (confirm('Are you sure you want to cancel this sequence?')) {
-            await sdkClient.agents.leadFollowup.cancelSequence(sequence.id);
+            await sdkClient.email.sequences.deleteSequence(sequence.id);
           }
           break;
       }
@@ -147,11 +127,28 @@ export const EmailAutomationModal = ({
 
     try {
       setIsProcessing(true);
-      await sdkClient.agents.leadFollowup.regenerateEmails({
+
+      // Generate new content with AI
+      const newEmails = await sdkClient.agents.leadFollowup.regenerateEmails({
         sequenceID: sequence.id,
         emailOrders,
-        customInstructions: customInstructions || undefined
       });
+
+      // Update each email in the sequence
+      for (const email of newEmails.emails) {
+        const existingEmail = emails.find(e => {
+          const metadata = e.metadata as any;
+          return metadata?.sequenceOrder === email.sequenceOrder;
+        });
+
+        if (existingEmail) {
+          await sdkClient.email.sequences.updateEmail(existingEmail.id, {
+            subject: email.subject,
+            body: email.body,
+          });
+        }
+      }
+
       await fetchSequence();
     } catch (error) {
       console.error('Failed to regenerate emails:', error);
@@ -190,8 +187,8 @@ export const EmailAutomationModal = ({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: Date | string) => {
+    return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -214,7 +211,7 @@ export const EmailAutomationModal = ({
                 <Mail className="w-5 h-5 text-violet-400" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">AI Email Automation</h2>
+                <h2 className="text-xl font-semibold text-white">Email Sequence</h2>
                 <p className="text-sm text-[#A0A0A0]">{leadName} ({leadEmail})</p>
               </div>
             </div>
@@ -225,20 +222,11 @@ export const EmailAutomationModal = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSequenceAction('pause')}
+                    onClick={() => handleSequenceAction(sequence.isActive ? 'pause' : 'resume')}
                     disabled={isProcessing}
                     className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-[#555]"
                   >
-                    <Pause className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSequenceAction('resume')}
-                    disabled={isProcessing}
-                    className="border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-[#555]"
-                  >
-                    <Play className="w-4 h-4" />
+                    {sequence.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                   </Button>
                   <Button
                     variant="outline"
@@ -264,43 +252,28 @@ export const EmailAutomationModal = ({
           {/* Tabs */}
           <div className="flex border-b border-[#3A3A3A]">
             <button
-              onClick={() => setActiveTab('sequence')}
+              onClick={() => setActiveTab('emails')}
               className={`px-6 py-3 text-sm font-medium transition-colors relative ${
-                activeTab === 'sequence'
+                activeTab === 'emails'
                   ? 'text-violet-400 bg-violet-600/10'
                   : 'text-[#A0A0A0] hover:text-white'
               }`}
             >
               Email Sequence
-              {activeTab === 'sequence' && (
+              {activeTab === 'emails' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-400"></div>
               )}
             </button>
-            {!sequence && (
-              <button
-                onClick={() => setActiveTab('create')}
-                className={`px-6 py-3 text-sm font-medium transition-colors relative ${
-                  activeTab === 'create'
-                    ? 'text-violet-400 bg-violet-600/10'
-                    : 'text-[#A0A0A0] hover:text-white'
-                }`}
-              >
-                Create Sequence
-                {activeTab === 'create' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-400"></div>
-                )}
-              </button>
-            )}
             <button
-              onClick={() => setActiveTab('preview')}
+              onClick={() => setActiveTab('analytics')}
               className={`px-6 py-3 text-sm font-medium transition-colors relative ${
-                activeTab === 'preview'
+                activeTab === 'analytics'
                   ? 'text-violet-400 bg-violet-600/10'
                   : 'text-[#A0A0A0] hover:text-white'
               }`}
             >
-              Templates
-              {activeTab === 'preview' && (
+              Analytics
+              {activeTab === 'analytics' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-400"></div>
               )}
             </button>
@@ -308,200 +281,253 @@ export const EmailAutomationModal = ({
 
           {/* Content */}
           <div className="p-6 max-h-[60vh] overflow-y-auto">
-            {/* Email Sequence Tab */}
-            {activeTab === 'sequence' && (
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-2 border-violet-600/30 border-t-violet-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-[#A0A0A0]">Loading email sequence...</p>
+              </div>
+            ) : !sequence ? (
+              <div className="text-center py-8">
+                <Mail className="w-12 h-12 text-[#666] mx-auto mb-4" />
+                <p className="text-[#A0A0A0] mb-4">No email sequence found for this lead.</p>
+                <Button
+                  onClick={onCloseAction}
+                  className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Create New Sequence
+                </Button>
+              </div>
+            ) : activeTab === 'emails' ? (
               <div className="space-y-4">
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <div className="w-8 h-8 border-2 border-violet-600/30 border-t-violet-600 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-[#A0A0A0]">Loading email sequence...</p>
-                  </div>
-                ) : !sequence ? (
-                  <div className="text-center py-8">
-                    <Mail className="w-12 h-12 text-[#666] mx-auto mb-4" />
-                    <p className="text-[#A0A0A0] mb-4">No email sequence found for this lead.</p>
-                    <Button
-                      onClick={() => setActiveTab('create')}
-                      className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create AI Sequence
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    {/* Sequence Overview */}
-                    <div className="bg-gradient-to-br from-violet-600/10 to-fuchsia-600/10 border border-violet-600/20 rounded-xl p-4 mb-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-white font-medium">{sequence.description}</h3>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            sequence.isActive ? 'bg-green-600/20 text-green-400' : 'bg-gray-600/20 text-gray-400'
-                          }`}>
-                            {sequence.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-[#A0A0A0]">Total Emails:</span>
-                          <span className="text-white ml-2">{sequence.totalEmails}</span>
-                        </div>
-                        <div>
-                          <span className="text-[#A0A0A0]">Sent:</span>
-                          <span className="text-green-400 ml-2">{sequence.emailsSent}</span>
-                        </div>
-                        <div>
-                          <span className="text-[#A0A0A0]">Pending:</span>
-                          <span className="text-blue-400 ml-2">{sequence.emailsPending}</span>
-                        </div>
-                      </div>
+                {/* Sequence Overview */}
+                <div className="bg-gradient-to-br from-violet-600/10 to-fuchsia-600/10 border border-violet-600/20 rounded-xl p-4 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-white font-medium">{sequence.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        sequence.isActive ? 'bg-green-600/20 text-green-400' : 'bg-gray-600/20 text-gray-400'
+                      }`}>
+                        {sequence.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        sequence.status === 'active' ? 'bg-blue-600/20 text-blue-400' :
+                          sequence.status === 'completed' ? 'bg-green-600/20 text-green-400' :
+                            sequence.status === 'cancelled' ? 'bg-red-600/20 text-red-400' :
+                              'bg-gray-600/20 text-gray-400'
+                      }`}>
+                        {sequence.status}
+                      </span>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-[#A0A0A0]">Total Emails:</span>
+                      <span className="text-white ml-2">{emails.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#A0A0A0]">Sent:</span>
+                      <span className="text-green-400 ml-2">{emails.filter(e => e.status === 'sent').length}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#A0A0A0]">Pending:</span>
+                      <span className="text-blue-400 ml-2">{emails.filter(e => e.status === 'scheduled').length}</span>
+                    </div>
+                  </div>
+                </div>
 
-                    {/* Email List */}
-                    {sequence.emails.map((email, index) => (
-                      <div
-                        key={email.id}
-                        className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4 hover:border-violet-600/30 transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
-                              <span className="text-sm font-medium text-violet-400">
-                                {email.sequenceOrder}
-                              </span>
-                            </div>
-                            <div>
-                              <h4 className="text-white font-medium">{email.subject}</h4>
-                              <div className="flex items-center gap-3 text-sm text-[#A0A0A0]">
-                                <span>
-                                  {email.status === 'sent'
-                                    ? `Sent ${formatDate(email.sentAt?.toString() || email.scheduledFor.toString())}`
-                                    : `Scheduled for ${formatDate(email.scheduledFor.toString())}`
-                                  }
+                {/* Email List */}
+                {emails.length > 0 ? (
+                  emails
+                    .sort((a, b) => {
+                      const aOrder = (a.metadata as any)?.sequenceOrder || 0;
+                      const bOrder = (b.metadata as any)?.sequenceOrder || 0;
+                      return aOrder - bOrder;
+                    })
+                    .map((email, index) => {
+                      const metadata = email.metadata as any;
+                      const sequenceOrder = metadata?.sequenceOrder || index + 1;
+
+                      return (
+                        <div
+                          key={email.id}
+                          className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4 hover:border-violet-600/30 transition-colors"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="w-8 h-8 bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span className="text-sm font-medium text-violet-400">
+                                  {sequenceOrder}
                                 </span>
-                                <span>•</span>
-                                <span>Timing: {email.timing}</span>
-                                {email.deliverabilityScore && (
-                                  <>
-                                    <span>•</span>
-                                    <span className={`${
-                                      email.deliverabilityScore >= 80 ? 'text-green-400' :
-                                        email.deliverabilityScore >= 60 ? 'text-yellow-400' : 'text-red-400'
-                                    }`}>
-                                      {email.deliverabilityScore}% deliverability
-                                    </span>
-                                  </>
-                                )}
                               </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-white font-medium truncate">{email.subject}</h4>
+                                <div className="flex items-center gap-3 text-sm text-[#A0A0A0] mt-1">
+                                  <span>
+                                    {email.status === 'sent'
+                                      ? `Sent ${formatDate(email.sentAt || email.scheduledFor || new Date())}`
+                                      : `Scheduled for ${formatDate(email.scheduledFor || new Date())}`
+                                    }
+                                  </span>
+                                  {metadata?.timing && (
+                                    <>
+                                      <span>•</span>
+                                      <span>Timing: {metadata.timing}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                              {getStatusIcon(email.status)}
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(email.status)}`}>
+                                {email.status}
+                              </span>
+
+                              {email.status !== 'sent' && (
+                                <div className="flex gap-1 ml-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditEmail(email.id)}
+                                    className="h-8 px-2 border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-violet-600/50"
+                                  >
+                                    <Edit3 className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleRegenerateEmails([sequenceOrder])}
+                                    disabled={isProcessing}
+                                    className="h-8 px-2 border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-fuchsia-600/50"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(email.status)}
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(email.status)}`}>
-                              {email.status.charAt(0).toUpperCase() + email.status.slice(1)}
-                            </span>
-
-                            {email.status !== 'sent' && (
-                              <div className="flex gap-1 ml-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditEmail(email.id)}
-                                  className="h-8 px-2 border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-violet-600/50"
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleRegenerateEmails([email.sequenceOrder])}
-                                  disabled={isProcessing}
-                                  className="h-8 px-2 border-[#3A3A3A] text-[#A0A0A0] hover:text-white hover:border-fuchsia-600/50"
-                                >
-                                  <RotateCcw className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            )}
+                          <div className="bg-[#1A1A1A] rounded-lg p-3">
+                            <div
+                              className="text-sm text-[#D0D0D0] line-clamp-3"
+                              dangerouslySetInnerHTML={{
+                                __html: (email.html || email.text || '').substring(0, 300) + '...'
+                              }}
+                            />
                           </div>
-                        </div>
 
-                        <div className="bg-[#1A1A1A] rounded-lg p-3">
-                          <p className="text-sm text-[#D0D0D0] whitespace-pre-wrap">
-                            {email.body.substring(0, 200)}
-                            {email.body.length > 200 && '...'}
-                          </p>
-                          {email.isEdited && (
-                            <div className="mt-2 text-xs text-yellow-400 flex items-center gap-1">
-                              <Edit3 className="w-3 h-3" />
-                              Manually edited
+                          {metadata?.keyPoints && metadata.keyPoints.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {metadata.keyPoints.slice(0, 3).map((point: string, idx: number) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-1 bg-violet-600/10 border border-violet-600/20 rounded text-xs text-violet-400"
+                                >
+                                  {point}
+                                </span>
+                              ))}
                             </div>
                           )}
                         </div>
-                      </div>
-                    ))}
-                  </>
+                      );
+                    })
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-[#A0A0A0]">No emails found in this sequence</p>
+                  </div>
                 )}
               </div>
-            )}
-
-            {/* Create Sequence Tab */}
-            {activeTab === 'create' && (
-              <CreateSequenceForm
-                selectedTemplate={selectedTemplate}
-                setSelectedTemplate={setSelectedTemplate}
-                emailCount={emailCount}
-                setEmailCount={setEmailCount}
-                customInstructions={customInstructions}
-                setCustomInstructions={setCustomInstructions}
-                customTimings={customTimings}
-                setCustomTimings={setCustomTimings}
-                onCreateSequence={handleCreateSequence}
-                isGenerating={isGenerating}
-              />
-            )}
-
-            {/* Templates Preview Tab */}
-            {activeTab === 'preview' && (
+            ) : (
+              // Analytics Tab
               <div className="space-y-6">
-                <div className="bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-600/20 rounded-xl p-4">
-                  <h3 className="text-white font-medium mb-2">Current Lead Status: {leadStatus}</h3>
-                  <p className="text-[#A0A0A0] text-sm">
-                    Choose from pre-built templates or create a custom sequence.
-                    Templates are optimized based on proven email marketing strategies.
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail className="w-4 h-4 text-violet-400" />
+                      <span className="text-sm text-[#A0A0A0]">Total Emails</span>
+                    </div>
+                    <div className="text-2xl font-bold text-white">{emails.length}</div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-sm text-[#A0A0A0]">Sent</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {emails.filter(e => e.status === 'sent').length}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm text-[#A0A0A0]">Scheduled</span>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-400">
+                      {emails.filter(e => e.status === 'scheduled').length}
+                    </div>
+                  </div>
+
+                  <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                      <span className="text-sm text-[#A0A0A0]">Failed</span>
+                    </div>
+                    <div className="text-2xl font-bold text-red-400">
+                      {emails.filter(e => e.status === 'failed').length}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {SEQUENCE_TEMPLATES.map((template) => (
-                    <div
-                      key={template.type}
-                      className={`border rounded-xl p-4 cursor-pointer transition-all ${
-                        selectedTemplate === template.type
-                          ? 'border-violet-600 bg-violet-600/10'
-                          : 'border-[#3A3A3A] bg-[#2A2A2A] hover:border-violet-600/50'
-                      }`}
-                      onClick={() => setSelectedTemplate(template.type)}
-                    >
-                      <h4 className="text-white font-medium mb-2">{template.name}</h4>
-                      <p className="text-[#A0A0A0] text-sm mb-3">{template.description}</p>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#666]">Recommended emails:</span>
-                          <span className="text-violet-400">{template.recommendedEmailCount}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#666]">Use case:</span>
-                          <span className="text-[#A0A0A0] text-right max-w-[60%]">{template.useCase}</span>
-                        </div>
-                        <div className="text-[#666]">
-                          Timings: {template.defaultTimings.slice(0, 3).join(', ')}
-                          {template.defaultTimings.length > 3 && '...'}
-                        </div>
-                      </div>
+                {/* Sequence Information */}
+                <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
+                  <h3 className="text-white font-medium mb-4">Sequence Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#A0A0A0]">Sequence Name:</span>
+                      <span className="text-white">{sequence.name}</span>
                     </div>
-                  ))}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#A0A0A0]">Type:</span>
+                      <span className="text-white">{sequence.type || 'lead_followup'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#A0A0A0]">Trigger:</span>
+                      <span className="text-white">{sequence.triggerType}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#A0A0A0]">Created:</span>
+                      <span className="text-white">{formatDate(sequence.createdAt)}</span>
+                    </div>
+                    {sequence.updatedAt && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#A0A0A0]">Last Updated:</span>
+                        <span className="text-white">{formatDate(sequence.updatedAt)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lead Information */}
+                <div className="bg-gradient-to-br from-violet-600/10 to-fuchsia-600/10 border border-violet-600/20 rounded-xl p-4">
+                  <h3 className="text-white font-medium mb-4">Lead Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#A0A0A0]">Name:</span>
+                      <span className="text-white">{leadName}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#A0A0A0]">Email:</span>
+                      <span className="text-white">{leadEmail}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#A0A0A0]">Status:</span>
+                      <span className="text-white capitalize">{leadStatus}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -511,11 +537,21 @@ export const EmailAutomationModal = ({
           <div className="flex items-center justify-between p-6 border-t border-[#3A3A3A]">
             <div className="text-sm text-[#A0A0A0]">
               {sequence ?
-                `${sequence.emailsSent} emails sent • ${sequence.emailsPending} pending` :
-                'AI-powered sequences adapt to lead behavior'
+                `${emails.filter(e => e.status === 'sent').length} emails sent • ${emails.filter(e => e.status === 'scheduled').length} pending` :
+                'No active sequence'
               }
             </div>
             <div className="flex gap-3">
+              {sequence && (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/agents/followup`)}
+                  className="border-violet-600/30 text-violet-400 hover:bg-violet-600/10"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View All Sequences
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={onCloseAction}
@@ -523,133 +559,10 @@ export const EmailAutomationModal = ({
               >
                 Close
               </Button>
-              {!sequence && activeTab === 'create' && (
-                <Button
-                  onClick={handleCreateSequence}
-                  disabled={isGenerating}
-                  className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-violet-700 text-white"
-                >
-                  {isGenerating ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Creating...
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Create Sequence
-                    </div>
-                  )}
-                </Button>
-              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-// Create Sequence Form Component
-const CreateSequenceForm = ({
-  selectedTemplate,
-  setSelectedTemplate,
-  emailCount,
-  setEmailCount,
-  customInstructions,
-  setCustomInstructions,
-  customTimings,
-  setCustomTimings,
-  onCreateSequence,
-  isGenerating
-}: any) => {
-  const template = SEQUENCE_TEMPLATES.find(t => t.type === selectedTemplate);
-
-  return (
-    <div className="space-y-6">
-      {/* Template Selection */}
-      <div>
-        <h3 className="text-white font-medium mb-3">1. Choose Template</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {SEQUENCE_TEMPLATES.map((tmpl) => (
-            <button
-              key={tmpl.type}
-              onClick={() => {
-                setSelectedTemplate(tmpl.type);
-                setEmailCount(tmpl.recommendedEmailCount);
-              }}
-              className={`text-left p-3 rounded-lg border transition-all ${
-                selectedTemplate === tmpl.type
-                  ? 'border-violet-600 bg-violet-600/10'
-                  : 'border-[#3A3A3A] bg-[#2A2A2A] hover:border-violet-600/50'
-              }`}
-            >
-              <div className="font-medium text-white">{tmpl.name}</div>
-              <div className="text-sm text-[#A0A0A0] mt-1">{tmpl.description}</div>
-              <div className="text-xs text-[#666] mt-2">
-                {tmpl.recommendedEmailCount} emails • {tmpl.defaultTimings.slice(0, 2).join(', ')}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Email Count */}
-      <div>
-        <h3 className="text-white font-medium mb-3">2. Number of Emails</h3>
-        <div className="flex items-center gap-4">
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={emailCount}
-            onChange={(e) => setEmailCount(parseInt(e.target.value))}
-            className="flex-1 h-2 bg-[#3A3A3A] rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="w-12 text-center">
-            <span className="text-violet-400 font-medium">{emailCount}</span>
-          </div>
-        </div>
-        <div className="flex justify-between text-xs text-[#666] mt-1">
-          <span>1 email</span>
-          <span>10 emails</span>
-        </div>
-      </div>
-
-      {/* Custom Instructions */}
-      <div>
-        <h3 className="text-white font-medium mb-3">3. Custom Instructions (Optional)</h3>
-        <textarea
-          value={customInstructions}
-          onChange={(e) => setCustomInstructions(e.target.value)}
-          placeholder="e.g., Focus on productivity challenges for entrepreneurs. Mention specific tools and frameworks."
-          className="w-full h-20 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg px-3 py-2 text-white placeholder:text-[#666] focus:border-violet-600/50 focus:outline-none resize-none"
-        />
-        <p className="text-xs text-[#666] mt-1">
-          AI will incorporate these instructions when generating your emails
-        </p>
-      </div>
-
-      {/* Preview */}
-      {template && (
-        <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg p-4">
-          <h4 className="text-white font-medium mb-2">Preview: {template.name}</h4>
-          <div className="text-sm text-[#A0A0A0] mb-3">{template.description}</div>
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div>
-              <span className="text-[#666]">Emails:</span>
-              <span className="text-violet-400 ml-2">{emailCount}</span>
-            </div>
-            <div>
-              <span className="text-[#666]">Type:</span>
-              <span className="text-white ml-2 capitalize">{template.type}</span>
-            </div>
-          </div>
-          <div className="text-xs text-[#666] mt-2">
-            Default timings: {template.defaultTimings.slice(0, emailCount).join(' → ')}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

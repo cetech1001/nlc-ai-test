@@ -11,14 +11,14 @@ import {
   Plus,
   CheckCircle,
   Clock,
-  AlertTriangle
+  AlertTriangle, Trash
 } from "lucide-react";
-import {EmailSequenceWithEmails} from "@nlc-ai/types";
+import {EmailSequence} from "@nlc-ai/types";
 
 const colWidth = 100 / 7;
 
 export const coachLeadColumns = (
-  getSequenceForLead: (leadID: string) => EmailSequenceWithEmails | undefined,
+  getSequenceForLead: (leadID: string) => EmailSequence | undefined,
   isGeneratingSequence: string
 ) => [
   {
@@ -94,9 +94,9 @@ export const coachLeadColumns = (
         );
       }
 
-      const sentEmails = sequence.emails?.filter(email => email.status === 'sent').length || 0;
-      const scheduledEmails = sequence.emails?.filter(email => email.status === 'scheduled').length || 0;
-      const failedEmails = sequence.emails?.filter(email => email.status === 'failed').length || 0;
+      const sentEmails = sequence.emailMessages?.filter(email => email.status === 'sent').length || 0;
+      const scheduledEmails = sequence.emailMessages?.filter(email => email.status === 'scheduled').length || 0;
+      const failedEmails = sequence.emailMessages?.filter(email => email.status === 'failed').length || 0;
 
       return (
         <div className="space-y-1">
@@ -123,7 +123,7 @@ export const coachLeadColumns = (
               <Clock className="w-3 h-3" />
               <span>{scheduledEmails}</span>
             </div>
-            <span className="text-gray-500">/{sequence.totalEmails}</span>
+            <span className="text-gray-500">/{sequence.emailMessages.length}</span>
           </div>
         </div>
       );
@@ -226,7 +226,7 @@ export const coachLeadColumns = (
             className="p-1.5 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
             title="Delete Lead"
           >
-            <X className="w-3 h-3" />
+            <Trash className="w-3 h-3" />
           </button>
         </div>
       );

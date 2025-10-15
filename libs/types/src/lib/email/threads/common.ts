@@ -26,6 +26,7 @@ export interface EmailMessage {
   suggestedActions: string[];
   status: EmailMessageStatus;
   errorMessage?: string;
+  scheduledFor?: string;
   metadata?: Record<string, any>;
   openedAt?: string;
   clickedAt?: string;

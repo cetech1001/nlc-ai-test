@@ -5,6 +5,7 @@ import {
   EmailSequenceTriggerType,
   EmailSequenceType, SequenceParticipantType
 } from "./enums";
+import {EmailMessage, EmailParticipantType} from "../threads";
 
 export interface SequenceEmail {
   id: string;
@@ -49,7 +50,9 @@ export interface EmailSequence {
   type: EmailSequenceType;
   triggerType: EmailSequenceTriggerType;
   triggerConditions?: EmailCondition[];
-  emails: SequenceEmail[];
+  targetID: string;
+  targetType: EmailParticipantType;
+  emailMessages: EmailMessage[];
   status: EmailSequenceStatus;
   isActive: boolean;
   totalParticipants: number;

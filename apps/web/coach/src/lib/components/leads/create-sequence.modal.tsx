@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { X, Sparkles, Settings, Zap, Clock, Target } from 'lucide-react';
 import { Button } from '@nlc-ai/web-ui';
-import { SEQUENCE_TEMPLATES, TIMING_OPTIONS, EmailSequenceWithEmails } from '@nlc-ai/types';
-import {sdkClient} from "@/lib";
+import { SEQUENCE_TEMPLATES, TIMING_OPTIONS } from '@nlc-ai/types';
+import { sdkClient } from "@/lib";
 
 interface CreateSequenceModalProps {
   isOpen: boolean;
@@ -13,18 +13,18 @@ interface CreateSequenceModalProps {
   leadName: string;
   leadEmail: string;
   leadStatus: string;
-  onSequenceCreatedAction: (sequence: EmailSequenceWithEmails) => void;
+  onSequenceCreatedAction: () => void;
 }
 
 export const CreateSequenceModal = ({
-  isOpen,
-  onCloseAction,
-  leadID,
-  leadName,
-  leadEmail,
-  leadStatus,
-  onSequenceCreatedAction,
-}: CreateSequenceModalProps) => {
+                                      isOpen,
+                                      onCloseAction,
+                                      leadID,
+                                      leadName,
+                                      leadEmail,
+                                      leadStatus,
+                                      onSequenceCreatedAction,
+                                    }: CreateSequenceModalProps) => {
   const [step, setStep] = useState<'template' | 'customize' | 'confirm'>('template');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -50,7 +50,8 @@ export const CreateSequenceModal = ({
     try {
       setIsCreating(true);
 
-      const sequence = await sdkClient.agents.leadFollowup.generateFollowupSequence({
+      // Generate AI content
+      await sdkClient.agents.leadFollowup.generateFollowupSequence({
         leadID,
         sequenceConfig: {
           emailCount,
@@ -60,9 +61,10 @@ export const CreateSequenceModal = ({
         }
       });
 
-      onSequenceCreatedAction(sequence);
-      onCloseAction();
+      // Notify parent that sequence was created
+      onSequenceCreatedAction();
 
+      // Reset form
       setStep('template');
       setSelectedTemplate('standard');
       setEmailCount(4);
@@ -91,6 +93,7 @@ export const CreateSequenceModal = ({
         <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-fuchsia-600/20 to-violet-600/20 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
 
         <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#1A1A1A] border border-[#3A3A3A] rounded-2xl overflow-hidden">
+          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-[#3A3A3A]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-xl flex items-center justify-center">
@@ -110,6 +113,7 @@ export const CreateSequenceModal = ({
             </button>
           </div>
 
+          {/* Step Indicator */}
           <div className="flex items-center justify-center p-4 border-b border-[#3A3A3A]">
             <div className="flex items-center gap-4">
               <div className={`flex items-center gap-2 ${step === 'template' ? 'text-violet-400' : 'text-[#666]'}`}>
@@ -145,7 +149,9 @@ export const CreateSequenceModal = ({
             </div>
           </div>
 
+          {/* Content */}
           <div className="p-6 max-h-[60vh] overflow-y-auto">
+            {/* Step 1: Template Selection */}
             {step === 'template' && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
@@ -193,6 +199,7 @@ export const CreateSequenceModal = ({
               </div>
             )}
 
+            {/* Step 2: Customize */}
             {step === 'customize' && currentTemplate && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
@@ -200,6 +207,7 @@ export const CreateSequenceModal = ({
                   <p className="text-[#A0A0A0]">Fine-tune the {currentTemplate.name.toLowerCase()} for {leadName}</p>
                 </div>
 
+                {/* Email Count */}
                 <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
                   <h4 className="text-white font-medium mb-3">Number of Emails</h4>
                   <div className="flex items-center gap-4">
@@ -219,7 +227,7 @@ export const CreateSequenceModal = ({
                           setCustomTimings(newTimings.slice(0, count));
                         }
                       }}
-                      className="flex-1 h-2 bg-[#3A3A3A] rounded-lg appearance-none cursor-pointer slider"
+                      className="flex-1 h-2 bg-[#3A3A3A] rounded-lg appearance-none cursor-pointer"
                     />
                     <div className="w-12 text-center">
                       <span className="text-violet-400 font-medium text-lg">{emailCount}</span>
@@ -231,6 +239,7 @@ export const CreateSequenceModal = ({
                   </div>
                 </div>
 
+                {/* Custom Instructions */}
                 <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
                   <h4 className="text-white font-medium mb-3">Custom Instructions (Optional)</h4>
                   <textarea
@@ -244,6 +253,7 @@ export const CreateSequenceModal = ({
                   </p>
                 </div>
 
+                {/* Email Timing */}
                 <div className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-white font-medium">Email Timing</h4>
@@ -294,6 +304,7 @@ export const CreateSequenceModal = ({
               </div>
             )}
 
+            {/* Step 3: Confirm */}
             {step === 'confirm' && currentTemplate && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
@@ -357,6 +368,7 @@ export const CreateSequenceModal = ({
             )}
           </div>
 
+          {/* Footer */}
           <div className="flex items-center justify-between py-3 px-6 border-t border-[#3A3A3A]">
             <div className="text-sm text-[#A0A0A0]">
               {step === 'template' && 'Choose a template to get started'}

@@ -3,10 +3,12 @@ import { NLCClientConfig } from "@nlc-ai/sdk-main";
 import { AccountsClient } from "./accounts.client";
 import { ThreadsClient } from "./threads.client";
 import { SyncClient } from "./sync.client";
+import {SequencesClient} from "./sequences.client";
 
 export class EmailClient extends BaseClient {
   public accounts: AccountsClient;
   public threads: ThreadsClient;
+  public sequences: SequencesClient;
   public sync: SyncClient;
 
   constructor(props: NLCClientConfig) {
@@ -25,6 +27,11 @@ export class EmailClient extends BaseClient {
     this.sync = new SyncClient({
       ...props,
       baseURL: `${props.baseURL}/sync`,
+    });
+
+    this.sequences = new SequencesClient({
+      ...props,
+      baseURL: `${props.baseURL}/sequences`,
     });
   }
 

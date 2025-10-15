@@ -66,11 +66,7 @@ export class SequencesService {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: {
-          select: {
-            emailMessages: true,
-          },
-        },
+        emailMessages: true,
       },
     });
 
