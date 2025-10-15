@@ -12,6 +12,7 @@ import {ReplicaModule} from "./replica/replica.module";
 import {PublicChatModule} from "./public-chat/public-chat.module";
 import {EventsModule} from "./events/events.module";
 import {ClientEmailModule} from "./client-email/client-email.module";
+import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import {ClientEmailModule} from "./client-email/client-email.module";
     PublicChatModule,
     EventsModule,
     ClientEmailModule,
+    LeadFollowupModule,
   ],
   providers: [
     {
