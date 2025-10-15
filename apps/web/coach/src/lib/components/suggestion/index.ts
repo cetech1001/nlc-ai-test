@@ -6,5 +6,6 @@ export * from './generate-idea.modal';
 export * from './glass-card';
 export * from './gradient-button';
 export * from './progress-bar';
+export * from './script-run.card';
 export * from './skeletons';
 export * from './top-performing-content';

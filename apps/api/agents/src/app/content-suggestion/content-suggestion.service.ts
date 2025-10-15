@@ -47,11 +47,25 @@ export class ContentSuggestionService {
 
 When a transcript and/or frame summaries are provided, analyze the content and produce EXACTLY 3 short-form video script variants in THIS COACH'S VOICE.
 
-Output STRICT JSON (no prose):
+**CRITICAL: You MUST respond with ONLY valid JSON. No explanatory text before or after. Just the JSON object.**
+
+Output format (STRICT JSON only):
 {
   "variants": [
     {
-      "vibe": "playful | authoritative | empathetic | high-energy | calm",
+      "vibe": "playful",
+      "hook": "string (<=20 words)",
+      "main": "string (3–6 tight sentences, spoken style)",
+      "cta": "string (<=20 words)"
+    },
+    {
+      "vibe": "authoritative",
+      "hook": "string (<=20 words)",
+      "main": "string (3–6 tight sentences, spoken style)",
+      "cta": "string (<=20 words)"
+    },
+    {
+      "vibe": "empathetic",
       "hook": "string (<=20 words)",
       "main": "string (3–6 tight sentences, spoken style)",
       "cta": "string (<=20 words)"
@@ -59,13 +73,17 @@ Output STRICT JSON (no prose):
   ]
 }
 
+Valid vibe values: playful, authoritative, empathetic, high-energy, calm
+
 Rules:
-- Hooks must be scroll-stoppers tied to the source video’s topic.
-- Keep the coach’s tone, phrases, and boundaries.
-- Use insights from transcript; do not invent facts that contradict it.
-- If transcript is weak/inaudible, state what’s missing and ask for specifics.
-- For partial regeneration, return ONLY the modified section and its variant index in the same JSON shape:
-  { "variantIndex": 2, "section": "hook", "value": "..." }
+- Return ONLY the JSON object, no other text
+- Hooks must be scroll-stoppers tied to the source video's topic (max 20 words)
+- Main content must be 3-6 tight sentences in spoken conversational style
+- CTA must be actionable and brief (max 20 words)
+- Keep the coach's tone, phrases, and boundaries
+- Use insights from transcript; do not invent facts that contradict it
+- If transcript is weak/inaudible, state what's missing in the main content
+- For partial regeneration, return ONLY: { "variantIndex": number, "section": "hook|main|cta", "value": "string" }
 `;
   }
 
@@ -110,29 +128,62 @@ Rules:
     return {messageID: msg.id};
   }
 
-  private async runAndGetLatestAssistantText(threadID: string, assistantID: string, timeoutMs = 60_000): Promise<string> {
+  private async runAndGetLatestAssistantText(threadID: string, assistantID: string, timeoutMs = 120_000): Promise<string> {
     const started = Date.now();
     const run = await this.openai.beta.threads.runs.create(threadID, {assistant_id: assistantID});
+
+    this.logger.debug(`Run created: ${run.id}`);
 
     // poll
     while (true) {
       const r = await this.openai.beta.threads.runs.retrieve(run.id, {thread_id: threadID});
+
+      this.logger.debug(`Run status: ${r.status}`);
+
       if (r.status === 'completed') break;
       if (['failed', 'expired', 'cancelled'].includes(r.status as string)) {
-        throw new BadRequestException(`Assistant run did not complete. Status: ${r.status}`);
+        this.logger.error(`Run failed with status: ${r.status}`, r.last_error);
+        throw new BadRequestException(`Assistant run did not complete. Status: ${r.status}. Error: ${JSON.stringify(r.last_error)}`);
       }
       if (Date.now() - started > timeoutMs) throw new BadRequestException('Assistant run timed out');
       await new Promise(res => setTimeout(res, 1000));
     }
 
-    const list = await this.openai.beta.threads.messages.list(threadID, {order: 'desc', limit: 5});
-    const latestAssistant = list.data.find((m) => m.role === 'assistant');
-    if (!latestAssistant) throw new NotFoundException('No assistant message found');
+    const list = await this.openai.beta.threads.messages.list(threadID, {order: 'desc', limit: 10});
 
+    this.logger.debug(`Retrieved ${list.data.length} messages`);
+
+    const latestAssistant = list.data.find((m) => m.role === 'assistant');
+    if (!latestAssistant) {
+      this.logger.error('No assistant message found in thread');
+      throw new NotFoundException('No assistant message found');
+    }
+
+    this.logger.debug(`Assistant message content blocks: ${latestAssistant.content.length}`);
+
+    // Enhanced content extraction - handle both 'text' and 'output_text' types
     const textParts = (latestAssistant.content || [])
-      .filter((p: any) => p.type === 'output_text' && p.text?.value)
+      .filter((p: any) => {
+        const isText = p.type === 'text' && p.text?.value;
+        const isOutputText = p.type === 'output_text' && p.text?.value;
+        return isText || isOutputText;
+      })
       .map((p: any) => p.text.value);
-    return (textParts.join('\n') || '').trim();
+
+    const fullText = textParts.join('\n').trim();
+
+    this.logger.debug(`Extracted text length: ${fullText.length}`);
+    this.logger.debug(`Extracted text preview: ${fullText.substring(0, 200)}...`);
+
+    if (!fullText) {
+      this.logger.error('Assistant message has no text content', {
+        messageID: latestAssistant.id,
+        contentBlocks: latestAssistant.content.map((p: any) => ({ type: p.type }))
+      });
+      throw new BadRequestException('Assistant returned no text content');
+    }
+
+    return fullText;
   }
 
   // ---- Transcription ----
@@ -155,8 +206,26 @@ Rules:
     }
   }
 
+  // ---- JSON Extraction Helper ----
+  private extractJSON(text: string): any {
+    // Remove markdown code blocks if present
+    let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Try to find JSON object in the text
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleaned = jsonMatch[0];
+    }
+
+    try {
+      return JSON.parse(cleaned);
+    } catch (e) {
+      this.logger.error('JSON parse failed', { text: cleaned.substring(0, 500) });
+      throw e;
+    }
+  }
+
   // ---- Core generation APIs ----
-  // Update the generateVideoContentIdeas method
   async generateVideoContentIdeas(
     coachID: string,
     threadID: string,
@@ -167,6 +236,8 @@ Rules:
     await this.enableContentSuggestionMode(coachID);
 
     const promptLines = [
+      '⚠️ IMPORTANT: Respond with ONLY valid JSON. No explanatory text.',
+      '',
       'Analyze the transcript and produce 3 short-form scripts in the coach\'s voice.',
       'Constraints:',
       '- Hook ≤ 20 words. CTA ≤ 20 words. Main: 3–6 sentences, spoken cadence.',
@@ -174,6 +245,10 @@ Rules:
     ];
     if (options?.desiredVibes?.length) promptLines.push(`Target vibes (hints): ${options.desiredVibes.join(', ')}`);
     if (options?.extraContext) promptLines.push(`Extra context: ${options.extraContext}`);
+
+    promptLines.push('');
+    promptLines.push('Return ONLY this JSON structure (no other text):');
+    promptLines.push('{"variants":[{"vibe":"playful","hook":"...","main":"...","cta":"..."},{"vibe":"authoritative","hook":"...","main":"...","cta":"..."},{"vibe":"empathetic","hook":"...","main":"...","cta":"..."}]}');
 
     await this.addRichMessageToThread(coachID, threadID, [
       {type: 'text', text: promptLines.join('\n')},
@@ -183,8 +258,20 @@ Rules:
     const raw = await this.runAndGetLatestAssistantText(threadID, assistantID);
 
     try {
-      const parsed = JSON.parse(raw) as { variants: ScriptVariant[] };
-      if (!parsed?.variants?.length) throw new Error('No variants');
+      const parsed = this.extractJSON(raw);
+
+      if (!parsed?.variants?.length) {
+        this.logger.error('Parsed JSON has no variants', parsed);
+        throw new Error('No variants in response');
+      }
+
+      // Validate variant structure
+      for (const variant of parsed.variants) {
+        if (!variant.vibe || !variant.hook || !variant.main || !variant.cta) {
+          this.logger.error('Invalid variant structure', variant);
+          throw new Error('Incomplete variant structure');
+        }
+      }
 
       // ✅ PERSIST THE RUN
       const run = await this.prisma.videoIdeaRun.create({
@@ -196,7 +283,7 @@ Rules:
           desiredVibes: options?.desiredVibes || [],
           extraContext: options?.extraContext,
           variants: {
-            create: parsed.variants.map((v, idx) => ({
+            create: parsed.variants.map((v: ScriptVariant, idx: number) => ({
               index: idx,
               vibe: v.vibe,
               hook: v.hook,
@@ -218,9 +305,9 @@ Rules:
         }))
       };
 
-    } catch {
-      this.logger.error('Invalid JSON from assistant:', raw);
-      throw new BadRequestException('Assistant did not return valid JSON for script variants');
+    } catch (e: any) {
+      this.logger.error('Invalid JSON from assistant:', { raw, error: e.message });
+      throw new BadRequestException(`Assistant did not return valid JSON for script variants. Raw response: ${raw.substring(0, 500)}`);
     }
   }
 
@@ -247,8 +334,9 @@ Rules:
     const { assistantID } = await this.getCoachConfig(coachID);
     await this.enableContentSuggestionMode(coachID);
 
-    // Build enhanced prompt using the coach's knowledge base
     const promptLines = [
+      '⚠️ CRITICAL: Respond with ONLY valid JSON. No explanatory text before or after.',
+      '',
       `Generate 3 short-form video script variants for this content idea: "${dto.idea}"`,
       '',
       'Use your knowledge of the coach\'s style, methodologies, and voice from the uploaded documents.',
@@ -260,7 +348,6 @@ Rules:
       '- Each variant should have a DISTINCT vibe',
     ];
 
-    // Add content type context
     if (dto.contentType) {
       const contentTypeContext: Record<string, string> = {
         'video': 'This is for standard video content - focus on visual storytelling',
@@ -274,12 +361,10 @@ Rules:
       promptLines.push('', `Content Format: ${contentTypeContext[dto.contentType] || dto.contentType}`);
     }
 
-    // Add category context
     if (dto.category) {
       promptLines.push(`Category: ${dto.category} - align the tone and approach accordingly`);
     }
 
-    // Add platform-specific guidance
     if (dto.targetPlatforms?.length) {
       const platformGuidance: Record<string, string> = {
         'instagram': 'Instagram-friendly: visually appealing, hashtag-ready, 60-90 second optimal',
@@ -295,7 +380,6 @@ Rules:
       );
     }
 
-    // Add video-specific options
     if (dto.videoOptions && (dto.contentType === 'video' || dto.contentType === 'reel')) {
       promptLines.push('', 'Video Specifications:');
 
@@ -331,8 +415,7 @@ Rules:
 
     if (dto.referenceVideoURLs?.length) {
       promptLines.push('', 'Reference Videos Context:');
-
-      for (const url of dto.referenceVideoURLs.slice(0, 2)) { // Limit to 2 videos
+      for (const url of dto.referenceVideoURLs.slice(0, 2)) {
         try {
           const transcript = await this.transcribeFromUrl(url);
           promptLines.push(`- Video: ${transcript.substring(0, 500)}...`);
@@ -342,29 +425,18 @@ Rules:
       }
     }
 
-    // Add vibe hints
     if (dto.desiredVibes?.length) {
       promptLines.push('', `Suggested vibes (incorporate these): ${dto.desiredVibes.join(', ')}`);
     }
 
-    // Add custom instructions
     if (dto.customInstructions) {
       promptLines.push('', 'Additional Instructions:', dto.customInstructions);
     }
 
     promptLines.push(
       '',
-      'Output as strict JSON:',
-      '{',
-      '  "variants": [',
-      '    {',
-      '      "vibe": "playful | authoritative | empathetic | high-energy | calm",',
-      '      "hook": "...",',
-      '      "main": "...",',
-      '      "cta": "..."',
-      '    }',
-      '  ]',
-      '}'
+      'Return ONLY this JSON (no other text):',
+      '{"variants":[{"vibe":"playful","hook":"...","main":"...","cta":"..."},{"vibe":"authoritative","hook":"...","main":"...","cta":"..."},{"vibe":"empathetic","hook":"...","main":"...","cta":"..."}]}'
     );
 
     await this.addRichMessageToThread(coachID, threadID, [
@@ -374,10 +446,13 @@ Rules:
     const raw = await this.runAndGetLatestAssistantText(threadID, assistantID);
 
     try {
-      const parsed = JSON.parse(raw) as { variants: ScriptVariant[] };
-      if (!parsed?.variants?.length) throw new Error('No variants');
+      const parsed = this.extractJSON(raw);
 
-      // Persist the run
+      if (!parsed?.variants?.length) {
+        this.logger.error('Parsed JSON has no variants', parsed);
+        throw new Error('No variants in response');
+      }
+
       const run = await this.prisma.videoIdeaRun.create({
         data: {
           coachID,
@@ -394,7 +469,7 @@ Rules:
             videoOptions: dto.videoOptions,
           }),
           variants: {
-            create: parsed.variants.map((v, idx) => ({
+            create: parsed.variants.map((v: ScriptVariant, idx: number) => ({
               index: idx,
               vibe: v.vibe,
               hook: v.hook,
@@ -417,8 +492,8 @@ Rules:
       };
 
     } catch (e: any) {
-      this.logger.error('Invalid JSON from assistant:', raw);
-      throw new BadRequestException('Assistant did not return valid JSON for script variants');
+      this.logger.error('Invalid JSON from assistant:', { raw, error: e.message });
+      throw new BadRequestException(`Assistant did not return valid JSON. Raw response: ${raw.substring(0, 500)}`);
     }
   }
 
@@ -431,22 +506,28 @@ Rules:
     await this.enableContentSuggestionMode(coachID);
 
     const prompt = [
+      '⚠️ CRITICAL: Respond with ONLY valid JSON. No explanatory text.',
+      '',
       `Regenerate ONLY the ${request.section} for variant ${request.variantIndex}.`,
       'Keep topic and facts consistent with the transcript or prior context in this thread.',
       "Keep the coach's voice and boundaries.",
     ];
     if (request.constraints) prompt.push(`Change request: ${request.constraints}`);
-    prompt.push('Return JSON: { "variantIndex": N, "section": "hook|main|cta", "value": "..." }');
+    prompt.push('');
+    prompt.push('Return ONLY this JSON: {"variantIndex":' + request.variantIndex + ',"section":"' + request.section + '","value":"..."}');
 
     await this.addRichMessageToThread(coachID, threadID, [{ type: 'text', text: prompt.join('\n') }]);
 
     const raw = await this.runAndGetLatestAssistantText(threadID, assistantID);
 
     try {
-      const parsed = JSON.parse(raw) as RegenerationResponse;
-      if (!parsed || typeof parsed.value !== 'string') throw new Error('Malformed');
+      const parsed = this.extractJSON(raw);
 
-      // ✅ UPDATE THE VARIANT IN DATABASE
+      if (!parsed || typeof parsed.value !== 'string') {
+        this.logger.error('Invalid regeneration response', parsed);
+        throw new Error('Malformed regeneration response');
+      }
+
       const run = await this.prisma.videoIdeaRun.findFirst({
         where: { coachID, threadID },
         orderBy: { createdAt: 'desc' },
@@ -468,9 +549,9 @@ Rules:
 
       return parsed;
 
-    } catch {
-      this.logger.error('Invalid JSON from assistant:', raw);
-      throw new BadRequestException('Assistant did not return valid JSON for regeneration');
+    } catch (e: any) {
+      this.logger.error('Invalid JSON from assistant:', { raw, error: e.message });
+      throw new BadRequestException(`Assistant did not return valid JSON. Raw response: ${raw.substring(0, 500)}`);
     }
   }
 
@@ -484,7 +565,6 @@ Rules:
 
     const result = await this.generateVideoContentIdeas(coachID, threadID, transcript, options);
 
-    // Update run to mark as media upload
     if (result.runID) {
       await this.prisma.videoIdeaRun.update({
         where: { id: result.runID },
@@ -498,6 +578,114 @@ Rules:
     return result;
   }
 
+  // Add these methods to your ContentSuggestionService class
+
+  /**
+   * Get a specific script run by ID
+   */
+  async getScriptRun(coachID: string, runID: string) {
+    const run = await this.prisma.videoIdeaRun.findFirst({
+      where: {
+        id: runID,
+        coachID,
+      },
+      include: {
+        variants: {
+          orderBy: {
+            index: 'asc',
+          }
+        }
+      }
+    });
+
+    if (!run) {
+      throw new NotFoundException('Script run not found');
+    }
+
+    return {
+      id: run.id,
+      coachID: run.coachID,
+      threadID: run.threadID,
+      sourceType: run.sourceType,
+      sourceReference: run.sourceReference,
+      transcriptText: run.transcriptText,
+      desiredVibes: run.desiredVibes,
+      extraContext: run.extraContext,
+      createdAt: run.createdAt,
+      updatedAt: run.updatedAt,
+      variants: run.variants.map(v => ({
+        index: v.index,
+        vibe: v.vibe as 'playful' | 'authoritative' | 'empathetic' | 'high-energy' | 'calm',
+        hook: v.hook,
+        main: v.main,
+        cta: v.cta,
+      }))
+    };
+  }
+
+  /**
+   * Get all script runs for a coach
+   */
+  async getScriptRuns(
+    coachID: string,
+    params?: {
+      limit?: number;
+      offset?: number;
+      sourceType?: string;
+    }
+  ) {
+    const limit = params?.limit || 20;
+    const offset = params?.offset || 0;
+
+    const where: any = { coachID };
+    if (params?.sourceType) {
+      where.sourceType = params.sourceType;
+    }
+
+    const [runs, total] = await Promise.all([
+      this.prisma.videoIdeaRun.findMany({
+        where,
+        include: {
+          variants: {
+            orderBy: {
+              index: 'asc',
+            },
+            take: 3, // Only get first 3 variants for list view
+          }
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.videoIdeaRun.count({ where })
+    ]);
+
+    return {
+      data: runs.map(run => ({
+        id: run.id,
+        coachID: run.coachID,
+        threadID: run.threadID,
+        sourceType: run.sourceType,
+        sourceReference: run.sourceReference,
+        transcriptText: run.transcriptText,
+        desiredVibes: run.desiredVibes,
+        extraContext: run.extraContext,
+        createdAt: run.createdAt,
+        updatedAt: run.updatedAt,
+        variants: run.variants.map(v => ({
+          index: v.index,
+          vibe: v.vibe as 'playful' | 'authoritative' | 'empathetic' | 'high-energy' | 'calm',
+          hook: v.hook,
+          main: v.main,
+          cta: v.cta,
+        }))
+      })),
+      total,
+    };
+  }
+
   async generateFromContentPiece(
     coachID: string,
     threadID: string,
@@ -507,7 +695,6 @@ Rules:
     await this.getCoachConfig(coachID);
     await this.enableContentSuggestionMode(coachID);
 
-    // Get the content piece
     const contentPiece = await this.prisma.contentPiece.findFirst({
       where: {id: contentPieceID, coachID}
     });
@@ -518,24 +705,19 @@ Rules:
 
     let transcript = '';
 
-    // Check if we need to transcribe from URL
     if (contentPiece.url && contentPiece.contentType === 'video') {
       try {
         transcript = await this.transcribeFromUrl(contentPiece.url);
       } catch (e: any) {
         this.logger.warn(`Failed to transcribe from URL, using metadata: ${e.message}`);
-        // Fallback to description
         transcript = this.buildTranscriptFromMetadata(contentPiece);
       }
     } else {
-      // Use description and metadata
       transcript = this.buildTranscriptFromMetadata(contentPiece);
     }
 
-    // Create run with sourceType = 'content_piece'
     const result = await this.generateVideoContentIdeas(coachID, threadID, transcript, options);
 
-    // Update the run to reference the content piece
     if (result.runID) {
       await this.prisma.videoIdeaRun.update({
         where: {id: result.runID},
@@ -577,14 +759,12 @@ Rules:
 
   private async transcribeFromUrl(url: string): Promise<string> {
     try {
-      // Download the video
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to download video');
 
       const buffer = await response.arrayBuffer();
       const blob = new Blob([buffer], {type: response.headers.get('content-type') || 'video/mp4'});
 
-      // Convert to File
       const file: Express.Multer.File = {
         buffer: Buffer.from(buffer),
         mimetype: blob.type,

@@ -13,6 +13,7 @@ interface GlassCardProps {
   className?: string;
   glowOrbs?: GlowOrbProps[];
   padding?: string;
+  onClick?: () => void;
 }
 
 const GlowOrb: React.FC<GlowOrbProps> = ({
@@ -56,10 +57,11 @@ export const GlassCard: React.FC<GlassCardProps> = ({
                                                children,
                                                className = '',
                                                glowOrbs = [],
-                                               padding = 'p-[30px]'
+                                               padding = 'p-[30px]',
+  onClick
                                              }) => {
   return (
-    <div className={`rounded-[30px] border border-[#454444] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] ${padding} relative overflow-hidden ${className}`}>
+    <div onClick={onClick} className={`rounded-[30px] border border-[#454444] bg-gradient-to-br from-[rgba(38,38,38,0.30)] to-[rgba(19,19,19,0.30)] ${padding} relative overflow-hidden ${className}`}>
       {/* Render glow orbs */}
       {glowOrbs.map((orb, index) => (
         <GlowOrb

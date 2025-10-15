@@ -2,9 +2,12 @@ import {
   BadRequestException,
   Controller,
   Post,
+  Get,
   UploadedFile,
   UseInterceptors,
   Body,
+  Param,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ContentSuggestionService } from './content-suggestion.service';
@@ -19,6 +22,28 @@ export class ContentSuggestionController {
   @Post('enable')
   async enable(@Body('coachID') coachID: string) {
     return this.svc.enableContentSuggestionMode(coachID);
+  }
+
+  @Get('runs/:runID')
+  async getScriptRun(
+    @CurrentUser() user: AuthUser,
+    @Param('runID') runID: string
+  ) {
+    return this.svc.getScriptRun(user.id, runID);
+  }
+
+  @Get('runs')
+  async getScriptRuns(
+    @CurrentUser() user: AuthUser,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('sourceType') sourceType?: string
+  ) {
+    return this.svc.getScriptRuns(user.id, {
+      limit: limit ? parseInt(limit) : undefined,
+      offset: offset ? parseInt(offset) : undefined,
+      sourceType,
+    });
   }
 
   @Post('from-transcript')

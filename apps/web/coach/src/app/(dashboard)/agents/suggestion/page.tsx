@@ -4,13 +4,15 @@ import React, {useEffect, useState} from 'react';
 import {
   CategoryList,
   TopPerformingContentSuggestion,
-  ContentIdeaCard,
-  GradientButton, sdkClient, ContentIdeaCardSkeleton
+  GradientButton,
+  sdkClient,
+  ScriptRunCard,
+  ScriptRunCardSkeleton
 } from '@/lib';
 import { PageHeader } from "@nlc-ai/web-shared";
 import { GenerateIdeaModal } from '@/lib/components/suggestion/generate-idea.modal';
 import {toast} from "sonner";
-import {useRouter} from "next/navigation";
+// import {useRouter} from "next/navigation";
 
 // Type definitions
 interface ContentCardData {
@@ -24,48 +26,40 @@ interface ContentCardData {
   engagement: number;
 }
 
-/*interface ContentIdeaData {
-  id: string;
-  title: string;
-  category: string;
-  platform: string;
-  predictedEngagement: string;
-}*/
-
 interface CategoryData {
   name: string;
   views: number;
   percentage: number;
 }
 
-interface ContentSuggestion {
+interface ScriptVariant {
+  index: number;
+  vibe: 'playful' | 'authoritative' | 'empathetic' | 'high-energy' | 'calm';
+  hook: string;
+  main: string;
+  cta: string;
+}
+
+interface ScriptRun {
   id: string;
-  title: string;
-  originalIdea: string;
-  script: {
-    hook: string;
-    mainContent: string;
-    callToAction: string;
-  };
-  contentCategory: string;
-  recommendedPlatforms: string[];
-  bestPostingTimes: string[];
-  estimatedEngagement: {
-    min: number;
-    max: number;
-  };
-  confidence: number;
-  status: string;
+  coachID: string;
+  threadID: string;
+  sourceType: string;
+  sourceReference?: string;
+  transcriptText: string;
+  desiredVibes: string[];
+  extraContext?: string;
+  variants: ScriptVariant[];
   createdAt: Date;
-  updatedAt?: Date;
+  updatedAt: Date;
 }
 
 const ContentSuggestion: React.FC = () => {
-  const router = useRouter();
+  // const router = useRouter();
 
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
-  // Sample data
+  // Sample data for analytics
   const contentCards: ContentCardData[] = [
     {
       id: '1',
@@ -109,51 +103,6 @@ const ContentSuggestion: React.FC = () => {
     }
   ];
 
-  /*const contentIdeas: ContentIdeaData[] = [
-    {
-      id: '1',
-      title: 'The Unspoken Truth About Fitness Myths',
-      category: 'Controversial',
-      platform: 'Instagram, TikTok',
-      predictedEngagement: '3000-5000'
-    },
-    {
-      id: '2',
-      title: 'The Ultimate Guide to Building Muscle',
-      category: 'Educational',
-      platform: 'Instagram, TikTok',
-      predictedEngagement: '3000-5000'
-    },
-    {
-      id: '3',
-      title: 'Fitness Challenge: 30 Days to Get Fit',
-      category: 'Challenge',
-      platform: 'Instagram, TikTok',
-      predictedEngagement: '3000-5000'
-    },
-    {
-      id: '4',
-      title: 'Q&A with Followers',
-      category: 'Interactive',
-      platform: 'Instagram, TikTok',
-      predictedEngagement: '3000-5000'
-    },
-    {
-      id: '5',
-      title: 'Behind the Scenes: My Daily Routine',
-      category: 'Lifestyle',
-      platform: 'Instagram, TikTok',
-      predictedEngagement: '3000-5000'
-    },
-    {
-      id: '6',
-      title: 'Common Workout Mistakes to Avoid',
-      category: 'Educational',
-      platform: 'Instagram, TikTok',
-      predictedEngagement: '3000-5000'
-    }
-  ];*/
-
   const categoryData: CategoryData[] = [
     { name: 'Controversial', views: 11121, percentage: 82 },
     { name: 'Informative', views: 3150, percentage: 33 },
@@ -162,21 +111,20 @@ const ContentSuggestion: React.FC = () => {
     { name: 'Case Studies', views: 4375, percentage: 41 }
   ];
 
-  const [suggestions, setSuggestions] = useState<ContentSuggestion[]>([]);
+  const [scriptRuns, setScriptRuns] = useState<ScriptRun[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchSuggestions();
+    fetchScriptRuns();
   }, []);
 
-  const fetchSuggestions = async () => {
+  const fetchScriptRuns = async () => {
     try {
       setIsLoading(true);
-      const data = await sdkClient.agents.contentSuggestion.getAllSuggestions();
-      setSuggestions(data);
+      const data = await sdkClient.agents.contentSuggestion.getScriptRuns({ limit: 20 });
+      setScriptRuns(data.data);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to load content suggestion');
-      router.push('/agents/suggestion');
+      toast.error(error.message || 'Failed to load script runs');
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +132,6 @@ const ContentSuggestion: React.FC = () => {
 
   const handleGenerateNewIdea = () => {
     setIsGenerateModalOpen(true);
-    // router.push('/agents/suggestion/chat');
   };
 
   return (
@@ -207,15 +154,15 @@ const ContentSuggestion: React.FC = () => {
         </div>
       </div>
 
-      {/* Content Ideas Section */}
+      {/* Script Runs Section */}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-[#F9F9F9] font-inter text-xl sm:text-2xl font-medium leading-[25.6px]">
-              Content Ideas
+              Generated Scripts
             </h2>
             <p className="text-[#C5C5C5] font-inter text-sm font-normal leading-[25.6px]">
-              Here you will see ideas for future videos based on the analytics of your top performing content.
+              AI-generated content scripts based on your style and successful content patterns.
             </p>
           </div>
 
@@ -223,17 +170,48 @@ const ContentSuggestion: React.FC = () => {
             onClick={handleGenerateNewIdea}
             className="w-full sm:w-auto whitespace-nowrap"
           >
-            Generate New Idea
+            Generate New Script
           </GradientButton>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-5">
           {isLoading && [1, 2, 3, 4, 5, 6].map((_, index) =>
-            <ContentIdeaCardSkeleton key={index}/>)}
-          {!isLoading && suggestions.map((idea) => (
-            <ContentIdeaCard
-              key={idea.id}
-              idea={idea}
+            <ScriptRunCardSkeleton key={index}/>)}
+          {!isLoading && scriptRuns.length === 0 && (
+            <div className="col-span-full flex flex-col items-center justify-center py-12 px-4">
+              <div className="relative">
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute w-48 h-48 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+                </div>
+                <div className="relative z-10 text-center space-y-4">
+                  <div className="w-16 h-16 mx-auto bg-gradient-to-r from-purple-600/20 to-violet-600/20 border border-purple-500/30 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-[#F9F9F9] font-inter text-lg font-semibold mb-2">
+                      No Scripts Yet
+                    </h3>
+                    <p className="text-[#C5C5C5] font-inter text-sm max-w-md">
+                      Generate your first AI-powered content script by clicking the button above.
+                      Our AI will analyze your style and create multiple script variants for you to choose from.
+                    </p>
+                  </div>
+                  <GradientButton
+                    onClick={handleGenerateNewIdea}
+                    className="mt-4"
+                  >
+                    Create Your First Script
+                  </GradientButton>
+                </div>
+              </div>
+            </div>
+          )}
+          {!isLoading && scriptRuns.map((run) => (
+            <ScriptRunCard
+              key={run.id}
+              run={run}
               className="w-full"
             />
           ))}

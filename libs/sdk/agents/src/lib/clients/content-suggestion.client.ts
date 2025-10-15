@@ -8,6 +8,28 @@ export interface ScriptVibe {
   cta: string;
 }
 
+export interface ScriptVariant {
+  index: number;
+  vibe: 'playful' | 'authoritative' | 'empathetic' | 'high-energy' | 'calm';
+  hook: string;
+  main: string;
+  cta: string;
+}
+
+export interface ScriptRun {
+  id: string;
+  coachID: string;
+  threadID: string;
+  sourceType: string;
+  sourceReference?: string;
+  transcriptText: string;
+  desiredVibes: string[];
+  extraContext?: string;
+  variants: ScriptVariant[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface ScriptVariantsResponse {
   runID?: string;
   variants: ScriptVibe[];
@@ -33,6 +55,37 @@ export class ContentSuggestionClient extends BaseClient {
     const response = await this.request<{ message: string }>(
       'POST',
       '/enable'
+    );
+    return response.data!;
+  }
+
+  /**
+   * Get a specific script run by ID
+   */
+  async getScriptRun(runID: string): Promise<ScriptRun> {
+    const response = await this.request<ScriptRun>(
+      'GET',
+      `/runs/${runID}`
+    );
+    return response.data!;
+  }
+
+  /**
+   * Get all script runs for the coach
+   */
+  async getScriptRuns(params?: {
+    limit?: number;
+    offset?: number;
+    sourceType?: string;
+  }): Promise<{ data: ScriptRun[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    if (params?.sourceType) queryParams.append('sourceType', params.sourceType);
+
+    const response = await this.request<{ data: ScriptRun[]; total: number }>(
+      'GET',
+      `/runs?${queryParams.toString()}`
     );
     return response.data!;
   }
@@ -76,6 +129,7 @@ export class ContentSuggestionClient extends BaseClient {
           includeCaptions: data.videoOptions?.includeCaptions,
           videoOrientation: data.videoOptions?.orientation,
           desiredVibes: data.desiredVibes,
+          referenceVideoURLs: data.referenceVideoURLs,
         }
       }
     );
