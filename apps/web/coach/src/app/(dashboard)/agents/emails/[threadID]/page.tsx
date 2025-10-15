@@ -272,10 +272,10 @@ export default function EmailThreadDetailPage() {
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-fuchsia-400" />
                 <div className="text-stone-50 text-base font-medium">
-                  {threadData.client ? `${threadData.client.firstName} ${threadData.client.lastName}` : 'Unknown Client'}
+                  {threadData.participantName || 'Unknown Client'}
                 </div>
               </div>
-              <div className="text-stone-400 text-sm">{threadData.client?.email}</div>
+              <div className="text-stone-400 text-sm">{threadData.participantEmail}</div>
             </div>
 
             <div className="space-y-1">
@@ -409,7 +409,7 @@ export default function EmailThreadDetailPage() {
             <div
               key={message.id}
               className={`rounded-[20px] border p-6 ${
-                message.from === threadData.client?.email
+                message.from === threadData.participantEmail
                   ? 'bg-blue-500/10 border-blue-500/30 ml-0 mr-8'
                   : 'bg-purple-500/10 border-purple-500/30 ml-8 mr-0'
               }`}
@@ -418,8 +418,8 @@ export default function EmailThreadDetailPage() {
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-stone-400" />
                   <span className="text-stone-300 text-sm font-medium">
-                    {message.from === threadData.client?.email
-                      ? `${threadData.client?.firstName} ${threadData.client?.lastName}`
+                    {message.from === threadData.participantEmail
+                      ? `${threadData.participantName}`
                       : 'You'
                     }
                   </span>

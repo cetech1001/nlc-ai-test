@@ -127,17 +127,17 @@ export class SyncRepository {
 
     if (!client) {
       client = await this.prisma.lead.findFirst({
-        where: { email }
+        where: { email, coachID }
       });
       type = EmailParticipantType.LEAD;
     }
 
-    if (!client) {
+    /*if (!client) {
       client = await this.prisma.coach.findFirst({
         where: { email }
       });
       type = EmailParticipantType.COACH;
-    }
+    }*/
 
     if (client) {
       return {

@@ -21,19 +21,67 @@ export class S3EmailService {
   }
 
   /**
-   * Store email content in S3
+   * Store coach-sent email for fine-tuning (training data storage)
    */
-  async storeEmailContent(
+  async storeCoachEmail(
     coachID: string,
     threadID: string,
     messageID: string,
-    email: Partial<SyncedEmail> & { isFromCoach: boolean }
+    email: Partial<SyncedEmail>
   ): Promise<string> {
     const date = new Date(email.sentAt!);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
 
     const key = `email-training-data/${coachID}/raw-emails/${year}-${month}/${messageID}.json`;
+
+    const content: StoredEmailContent = {
+      messageID,
+      threadID,
+      from: email.from!,
+      to: email.to!,
+      subject: email.subject || '',
+      text: email.text || '',
+      html: email.html,
+      sentAt: email.sentAt!,
+      isFromCoach: true,
+      attachments: email.attachments,
+    };
+
+    try {
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+          Body: JSON.stringify(content),
+          ContentType: 'application/json',
+          Metadata: {
+            coachID,
+            threadID,
+            messageID,
+            isFromCoach: 'true',
+          },
+        })
+      );
+
+      this.logger.log(`Stored coach email for training: ${key}`);
+      return key;
+    } catch (error: any) {
+      this.logger.error(`Failed to store coach email in S3: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Store thread message for agent context retrieval
+   */
+  async storeThreadMessage(
+    coachID: string,
+    threadID: string,
+    messageID: string,
+    email: Partial<SyncedEmail> & { isFromCoach: boolean }
+  ): Promise<string> {
+    const key = `email-threads/${coachID}/${threadID}/${messageID}.json`;
 
     const content: StoredEmailContent = {
       messageID,
@@ -64,10 +112,10 @@ export class S3EmailService {
         })
       );
 
-      this.logger.log(`Stored email content: ${key}`);
+      this.logger.log(`Stored thread message: ${key}`);
       return key;
     } catch (error: any) {
-      this.logger.error(`Failed to store email content in S3: ${error.message}`, error);
+      this.logger.error(`Failed to store thread message in S3: ${error.message}`, error);
       throw error;
     }
   }

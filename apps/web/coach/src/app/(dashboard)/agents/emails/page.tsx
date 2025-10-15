@@ -85,7 +85,7 @@ const EmailThreadCard: FC<EmailThreadCardProps> = ({ thread, onClick }) => {
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-fuchsia-400" />
                 <h3 className="text-stone-50 text-lg font-semibold leading-tight truncate">
-                  {thread.client ? `${thread.client.firstName} ${thread.client.lastName}` : 'Unknown Client'}
+                  {thread.participantName || 'Unknown Client'}
                 </h3>
               </div>
 
@@ -99,7 +99,7 @@ const EmailThreadCard: FC<EmailThreadCardProps> = ({ thread, onClick }) => {
             </div>
 
             <div className="text-stone-400 text-xs mb-2">
-              {thread.client?.email}
+              {thread.participantEmail}
             </div>
 
             <div className="flex items-center gap-2">
@@ -124,23 +124,14 @@ const EmailThreadCard: FC<EmailThreadCardProps> = ({ thread, onClick }) => {
         </div>
 
         {/* Latest Message Preview */}
-        {thread.emailMessages && thread.emailMessages[0] && (
-          thread.emailMessages[0].text
-            ? (
-              <div className="text-stone-300 text-sm leading-relaxed line-clamp-2 mb-4 rounded-lg">
-                {thread.emailMessages[0]?.text?.substring(0, 120)}...
-              </div>
-            ) : (
-              <div dangerouslySetInnerHTML={{
-                __html: thread.emailMessages[0].html!.substring(0, 120) + '...'
-              }} className="text-stone-300 text-sm leading-relaxed line-clamp-2 mb-4 rounded-lg"/>
-            )
-        )}
+        <div className="text-stone-300 text-sm leading-relaxed line-clamp-2 mb-4 rounded-lg">
+          {thread.lastMessagePreview}
+        </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-stone-400">
-            <span>From: {thread.emailMessages?.[0]?.from}</span>
+            <span>From: {thread.lastMessageFrom}</span>
           </div>
 
           <div className="flex items-center gap-2">

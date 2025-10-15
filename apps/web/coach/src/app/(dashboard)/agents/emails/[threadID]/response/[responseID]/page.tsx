@@ -96,7 +96,7 @@ export default function ResponseReviewPage() {
           });
         }
 
-        setSuccessMessage(`Email sent successfully to ${threadData?.client?.email}`);
+        setSuccessMessage(`Email sent successfully to ${threadData?.participantEmail}`);
 
         // Redirect back to thread after a delay
         setTimeout(() => {
@@ -283,7 +283,7 @@ export default function ResponseReviewPage() {
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-stone-50 text-2xl font-semibold leading-relaxed">
-              Response for {threadData.client?.firstName} {threadData.client?.lastName}
+              Response for {threadData.participantName}
             </h2>
 
             <div className="flex items-center gap-2">
@@ -306,7 +306,7 @@ export default function ResponseReviewPage() {
       </div>
 
       {/* Original Email Context */}
-      {threadData.emailMessages.length > 0 && (
+      {threadData.messages.length > 0 && (
         <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 p-6">
           <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
             <Mail className="w-5 h-5 text-blue-400" />
@@ -314,11 +314,11 @@ export default function ResponseReviewPage() {
           </h3>
 
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {threadData.emailMessages.slice(0, 3).map((message) => (
+            {threadData.messages.slice(0, 3).map((message) => (
               <div
                 key={message.id}
                 className={`p-4 rounded-lg border ${
-                  message.from === threadData.client?.email
+                  message.from === threadData.participantEmail
                     ? 'bg-blue-500/10 border-blue-500/30'
                     : 'bg-neutral-800/50 border-neutral-700/50'
                 }`}
@@ -327,7 +327,7 @@ export default function ResponseReviewPage() {
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-stone-400" />
                     <span className="text-stone-300 text-sm font-medium">
-                      {message.from === threadData.client?.email ? 'Client' : 'You'}
+                      {message.from === threadData.participantEmail ? 'Client' : 'You'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-stone-500 text-xs">

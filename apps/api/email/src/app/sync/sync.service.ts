@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { OutboxService } from '@nlc-ai/api-messaging';
-import { ClientEmailReceivedEvent, EmailSyncEvent } from '@nlc-ai/api-types';
+import { EmailSyncEvent } from '@nlc-ai/api-types';
 import {
   BulkSyncRequest,
   BulkSyncResponse,
@@ -322,88 +322,103 @@ export class SyncService {
     const isFromCoach = await this.isEmailFromCoach(email.from, account.userID);
     const isToCoach = await this.isEmailFromCoach(email.to, account.userID);
 
-    const s3Key = await this.s3EmailService.storeEmailContent(
-      account.userID,
-      email.threadID,
-      email.providerMessageID,
-      {
-        ...email,
-        isFromCoach,
-      }
-    );
+    // Check if this is a client/lead email
+    const client = !isFromCoach ? await this.syncRepo.findClientByEmail(email.from, account.userID) : null;
 
+    // Determine if we need to create/update a thread
+    let thread = null;
+    let threadCreated = false;
+
+    if (client) {
+      const existingThread = await this.prisma.emailThread.findFirst({
+        where: {
+          userID: account.userID,
+          threadID: email.threadID,
+        },
+      });
+
+      const senderEmail = this.extractEmailAddress(email.from);
+      const preview = this.createMessagePreview(email.text || email.html || '');
+
+      thread = await this.syncRepo.findOrCreateEmailThread({
+        userID: account.userID,
+        userType: account.userType,
+        participantID: client.id,
+        participantType: client.type,
+        participantName: client.name,
+        participantEmail: senderEmail,
+        emailAccountID: account.id,
+        threadID: email.threadID,
+        subject: email.subject || 'No Subject',
+        lastMessageAt: new Date(email.receivedAt || email.sentAt),
+        lastMessageFrom: client.name,
+        lastMessageFromEmail: senderEmail,
+        lastMessagePreview: preview,
+        isRead: email.isRead,
+      });
+
+      threadCreated = !existingThread;
+
+      // Store thread message for agent context (client email in active thread)
+      await this.s3EmailService.storeThreadMessage(
+        account.userID,
+        email.threadID,
+        email.providerMessageID,
+        {
+          ...email,
+          isFromCoach: false,
+        }
+      );
+
+      this.logger.log(`Stored client email ${email.providerMessageID} in thread ${thread.id}`);
+    }
+
+    // If email is from coach to client/lead, store for fine-tuning
     if (isFromCoach) {
       const isToClientOrLead = !isToCoach;
 
-      await this.fineTuningService.queueEmailForFineTuning(account.userID, {
-        threadID: email.threadID,
-        messageID: email.providerMessageID,
-        s3Key,
-        from: email.from,
-        to: email.to,
-        subject: email.subject,
-        sentAt: new Date(email.sentAt),
-        isFromCoach: true,
-        isToClientOrLead,
-      });
+      if (isToClientOrLead) {
+        const s3Key = await this.s3EmailService.storeCoachEmail(
+          account.userID,
+          email.threadID,
+          email.providerMessageID,
+          email
+        );
 
-      this.logger.log(`Queued coach email ${email.providerMessageID} for fine-tuning`);
+        await this.fineTuningService.queueEmailForFineTuning(account.userID, {
+          threadID: email.threadID,
+          messageID: email.providerMessageID,
+          s3Key,
+          from: email.from,
+          to: email.to,
+          subject: email.subject,
+          sentAt: new Date(email.sentAt),
+          isFromCoach: true,
+          isToClientOrLead: true,
+        });
+
+        this.logger.log(`Queued coach email ${email.providerMessageID} for fine-tuning`);
+      }
+
+      // If coach replied in a client thread, also store as thread message
+      if (thread) {
+        await this.s3EmailService.storeThreadMessage(
+          account.userID,
+          email.threadID,
+          email.providerMessageID,
+          {
+            ...email,
+            isFromCoach: true,
+          }
+        );
+
+        this.logger.log(`Stored coach reply ${email.providerMessageID} in thread ${thread.id}`);
+      }
+
+      return { isClientEmail: false, threadCreated };
     }
 
-    if (isFromCoach) {
-      return { isClientEmail: false, threadCreated: false };
-    }
-
-    const client = await this.syncRepo.findClientByEmail(email.from, account.userID);
-    if (!client) {
-      return { isClientEmail: false, threadCreated: false };
-    }
-
-    const existingThread = await this.prisma.emailThread.findFirst({
-      where: {
-        userID: account.userID,
-        threadID: email.threadID,
-      },
-    });
-
-    const senderEmail = this.extractEmailAddress(email.from);
-
-    const preview = this.createMessagePreview(email.text || email.html || '');
-
-    const thread = await this.syncRepo.findOrCreateEmailThread({
-      userID: account.userID,
-      userType: account.userType,
-      participantID: client.id,
-      participantType: client.type,
-      participantName: client.name,
-      participantEmail: senderEmail,
-      emailAccountID: account.id,
-      threadID: email.threadID,
-      subject: email.subject || 'No Subject',
-      lastMessageAt: new Date(email.receivedAt || email.sentAt),
-      lastMessageFrom: client.name,
-      lastMessageFromEmail: senderEmail,
-      lastMessagePreview: preview,
-      isRead: email.isRead,
-    });
-
-    await this.outbox.saveAndPublishEvent<ClientEmailReceivedEvent>(
-      {
-        eventType: 'email.client.received',
-        schemaVersion: 1,
-        payload: {
-          coachID: account.userID,
-          participantID: client.id,
-          threadID: thread.id,
-          emailID: email.providerMessageID,
-          subject: email.subject || '',
-          receivedAt: new Date().toISOString(),
-        },
-      },
-      'email.client.received'
-    );
-
-    return { isClientEmail: true, threadCreated: !existingThread };
+    return { isClientEmail: !!client, threadCreated };
   }
 
   private extractEmailAddress(emailString: string): string {

@@ -38,7 +38,11 @@ export interface ClientEmailThread {
   isRead: boolean;
   lastMessageAt: Date;
   messageCount: number;
-  client?: Client;
+  participantName: string;
+  participantEmail: string;
+  lastMessageFrom: string;
+  lastMessageEmail: string;
+  lastMessagePreview: string;
   emailMessages?: EmailMessage[];
   generatedResponses?: GeneratedEmailResponse[];
 }
