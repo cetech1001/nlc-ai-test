@@ -1,6 +1,7 @@
 export * from './category-list';
 export * from './content-card';
 export * from './content-idea-card';
+export * from './content-selection.modal';
 export * from './generate-idea.modal';
 export * from './glass-card';
 export * from './gradient-button';

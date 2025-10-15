@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ContentSuggestionService } from './content-suggestion.service';
-import { GenerateIdeasDto, RegenDto, FromMediaDto } from './dto';
+import {GenerateIdeasDto, RegenDto, FromMediaDto, GenerateManualDto} from './dto';
+import {CurrentUser} from "@nlc-ai/api-auth";
+import {type AuthUser} from "@nlc-ai/types";
 
 @Controller('content-suggestions')
 export class ContentSuggestionController {
@@ -46,6 +48,46 @@ export class ContentSuggestionController {
       dto.coachID,
       dto.threadID,
       file,
+      { desiredVibes: dto.desiredVibes as any, extraContext: dto.extraContext }
+    );
+  }
+
+  @Post('from-manual')
+  async fromManual(@Body() dto: GenerateManualDto, @CurrentUser() user: AuthUser) {
+    return this.svc.generateFromManualIdea(
+      user.id,
+      dto.threadID,
+      {
+        idea: dto.idea,
+        contentType: dto.contentType,
+        category: dto.category,
+        targetPlatforms: dto.targetPlatforms,
+        customInstructions: dto.customInstructions,
+        videoOptions: {
+          duration: dto.videoDuration,
+          style: dto.videoStyle,
+          includeMusic: dto.includeMusic,
+          includeCaptions: dto.includeCaptions,
+          orientation: dto.videoOrientation,
+        },
+        desiredVibes: dto.desiredVibes as any,
+        referenceVideoURLs: dto.referenceVideoURLs,
+      }
+    );
+  }
+
+  @Post('from-content-piece')
+  async fromContentPiece(@Body() dto: {
+    coachID: string;
+    threadID: string;
+    contentPieceID: string;
+    desiredVibes?: string[];
+    extraContext?: string;
+  }, @CurrentUser() user: AuthUser) {
+    return this.svc.generateFromContentPiece(
+      user.id,
+      dto.threadID,
+      dto.contentPieceID,
       { desiredVibes: dto.desiredVibes as any, extraContext: dto.extraContext }
     );
   }

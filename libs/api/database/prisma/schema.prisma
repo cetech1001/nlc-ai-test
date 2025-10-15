@@ -116,6 +116,7 @@ model Coach {
   clientInvites      ClientInvite[]
   coachFollows       CoachFollow[]
   contentSuggestions ContentSuggestion[]
+  videoIdeaRun       VideoIdeaRun[]
 
   @@index([createdAt], map: "idx_coaches_created_at")
   @@index([email], map: "idx_coaches_email")
@@ -1014,6 +1015,56 @@ model ContentSuggestion {
   coach           Coach     @relation(fields: [coachID], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("content_suggestions")
+}
+
+model VideoIdeaRun {
+  id       String @id @default(cuid())
+  coachID  String @db.Uuid
+  threadID String // Links to AgentThread.openaiThreadID
+
+  // Source tracking
+  sourceType      String // 'transcript' | 'media_upload' | 'content_piece'
+  sourceReference String? // ContentPiece ID or filename
+  transcriptText  String? @db.Text
+
+  // Generation options
+  desiredVibes String[] // ['playful', 'authoritative', etc.]
+  extraContext String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants VideoScriptVariant[]
+  coach    Coach                @relation(fields: [coachID], references: [id], onDelete: Cascade)
+
+  @@index([coachID, createdAt])
+  @@map("video_idea_runs")
+}
+
+model VideoScriptVariant {
+  id    String @id @default(cuid())
+  runID String // Note: ID not Id (as per your convention)
+  index Int // 0, 1, 2 for the 3 variants
+  vibe  String // 'playful', 'authoritative', 'empathetic', 'high-energy', 'calm'
+
+  // Script sections
+  hook String @db.Text
+  main String @db.Text
+  cta  String @db.Text
+
+  // Track regenerations
+  hookRegenCount Int @default(0)
+  mainRegenCount Int @default(0)
+  ctaRegenCount  Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  run VideoIdeaRun @relation(fields: [runID], references: [id], onDelete: Cascade)
+
+  @@unique([runID, index])
+  @@index([runID, index])
+  @@map("video_script_variants")
 }
 
 // Email Domain

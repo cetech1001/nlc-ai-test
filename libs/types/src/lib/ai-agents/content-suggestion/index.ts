@@ -8,6 +8,7 @@ export interface ScriptVariant {
 }
 
 export interface ScriptVariantsResponse {
+  runID: string;
   variants: ScriptVariant[];
 }
 

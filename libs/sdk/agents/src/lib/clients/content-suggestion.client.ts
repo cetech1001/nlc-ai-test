@@ -1,210 +1,187 @@
 import { BaseClient } from '@nlc-ai/sdk-core';
 
-export interface VideoOptions {
-  duration?: string;
-  style?: string;
-  includeMusic?: boolean;
-  includeCaptions?: boolean;
-  orientation?: 'vertical' | 'horizontal' | 'square';
-}
-
-export interface ContentSuggestion {
+export interface ScriptVibe {
   id: string;
-  title: string;
-  originalIdea: string;
-  script: {
-    hook: string;
-    mainContent: string;
-    callToAction: string;
-    videoSpecificNotes?: string;
-  };
-  contentCategory: string;
-  category?: string;
-  recommendedPlatforms: string[];
-  bestPostingTimes: string[];
-  estimatedEngagement: {
-    min: number;
-    max: number;
-  };
-  confidence: number;
-  status: 'generated' | 'updated' | 'superseded';
-  videoOptions?: VideoOptions;
-  videoGuidance?: {
-    sceneBreakdown: string[];
-    visualCues: string[];
-    pacing: string;
-    musicSuggestions?: string[];
-  };
-  createdAt: Date;
-  updatedAt?: Date;
-  metadata?: any;
+  vibe: 'playful' | 'authoritative' | 'empathetic' | 'high-energy' | 'calm';
+  hook: string;
+  main: string;
+  cta: string;
 }
 
-export interface TopPerformingContent {
-  title: string;
-  description: string;
-  contentType: string;
-  platform: string;
-  topicCategories: string[];
-  engagementRate: number;
-  views: number;
-  likes: number;
-  comments: number;
-  publishedAt: Date;
+export interface ScriptVariantsResponse {
+  runID?: string;
+  variants: ScriptVibe[];
 }
 
-export interface ContentTrends {
-  categoryTrends: Array<{
-    category: string;
-    frequency: number;
-    avgEngagement: number;
-    avgViews: number;
-  }>;
-  platformTrends: Array<{
-    platform: string;
-    frequency: number;
-    avgEngagement: number;
-    avgViews: number;
-  }>;
-  timingTrends: Array<{
-    hour: string;
-    frequency: number;
-    avgEngagement: number;
-  }>;
-  totalContentAnalyzed: number;
-  analysisDate: Date;
+export interface RegenerationRequest {
+  variantIndex: number;
+  section: 'hook' | 'main' | 'cta';
+  constraints?: string;
 }
 
-export interface ContentCategories {
-  categories: string[];
-  count: number;
-}
-
-export interface DeleteResponse {
-  success: boolean;
-  message: string;
-  deletedID: string;
+export interface RegenerationResponse {
+  variantIndex: number;
+  section: 'hook' | 'main' | 'cta';
+  value: string;
 }
 
 export class ContentSuggestionClient extends BaseClient {
   /**
-   * Generate content suggestion with script
+   * Enable content suggestion mode for a coach
    */
-  async generateContentSuggestion(data: {
-    idea: string;
-    contentType?: string;
-    targetPlatforms?: string[];
-    category?: string;
-    videoOptions?: VideoOptions;
-    customInstructions?: string;
-  }): Promise<ContentSuggestion> {
-    const response = await this.request<ContentSuggestion>(
+  async enableContentSuggestionMode(): Promise<{ message: string }> {
+    const response = await this.request<{ message: string }>(
       'POST',
-      '/generate',
-      { body: data }
+      '/enable'
     );
     return response.data!;
   }
 
   /**
-   * Regenerate existing content suggestion
+   * Generate video script ideas from manual input with coach's knowledge
    */
-  async regenerateContentSuggestion(
-    suggestionID: string,
-    options?: {
+  async generateFromManualIdea(
+    threadID: string,
+    data: {
+      idea: string;
+      contentType?: string;
+      category?: string;
+      targetPlatforms?: string[];
       customInstructions?: string;
-      videoOptions?: VideoOptions;
+      videoOptions?: {
+        duration?: string;
+        style?: string;
+        includeMusic?: boolean;
+        includeCaptions?: boolean;
+        orientation?: 'vertical' | 'horizontal' | 'square';
+      };
+      desiredVibes?: string[];
+      referenceVideoURLs?: string[];
     }
-  ): Promise<ContentSuggestion> {
-    const response = await this.request<ContentSuggestion>(
+  ): Promise<ScriptVariantsResponse> {
+    const response = await this.request<ScriptVariantsResponse>(
       'POST',
-      `/regenerate/${suggestionID}`,
-      { body: options }
+      '/from-manual',
+      {
+        body: {
+          threadID,
+          idea: data.idea,
+          contentType: data.contentType,
+          category: data.category,
+          targetPlatforms: data.targetPlatforms,
+          customInstructions: data.customInstructions,
+          videoDuration: data.videoOptions?.duration,
+          videoStyle: data.videoOptions?.style,
+          includeMusic: data.videoOptions?.includeMusic,
+          includeCaptions: data.videoOptions?.includeCaptions,
+          videoOrientation: data.videoOptions?.orientation,
+          desiredVibes: data.desiredVibes,
+        }
+      }
     );
     return response.data!;
   }
 
   /**
-   * Get all generated content suggestions for coach
+   * Generate video script ideas from transcript text
    */
-  async getAllSuggestions(): Promise<ContentSuggestion[]> {
-    const response = await this.request<ContentSuggestion[]>(
-      'GET',
-      '/suggestions'
-    );
-    return response.data!;
-  }
-
-  /**
-   * Get specific content suggestion
-   */
-  async getSuggestion(suggestionID: string): Promise<ContentSuggestion> {
-    const response = await this.request<ContentSuggestion>(
-      'GET',
-      `/suggestions/${suggestionID}`
-    );
-    return response.data!;
-  }
-
-  /**
-   * Update content suggestion script
-   */
-  async updateSuggestion(suggestionID: string, updates: {
-    title?: string;
-    script?: string;
-    hook?: string;
-    mainContent?: string;
-    callToAction?: string;
-    videoOptions?: VideoOptions;
-  }): Promise<ContentSuggestion> {
-    const response = await this.request<ContentSuggestion>(
+  async generateFromTranscript(
+    threadID: string,
+    transcriptText: string,
+    options?: {
+      desiredVibes?: string[];
+      extraContext?: string;
+    }
+  ): Promise<ScriptVariantsResponse> {
+    const response = await this.request<ScriptVariantsResponse>(
       'POST',
-      `/suggestions/${suggestionID}/update`,
-      { body: updates }
+      '/from-transcript',
+      {
+        body: {
+          threadID,
+          transcriptText,
+          desiredVibes: options?.desiredVibes,
+          extraContext: options?.extraContext,
+        }
+      }
     );
     return response.data!;
   }
 
   /**
-   * Delete content suggestion
+   * Generate video script ideas from uploaded media file
    */
-  async deleteSuggestion(suggestionID: string): Promise<DeleteResponse> {
-    const response = await this.request<DeleteResponse>(
-      'DELETE',
-      `/suggestions/${suggestionID}`
-    );
-    return response.data!;
-  }
+  async generateFromMedia(
+    threadID: string,
+    file: File,
+    options?: {
+      desiredVibes?: string[];
+      extraContext?: string;
+    }
+  ): Promise<ScriptVariantsResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('threadID', threadID);
 
-  /**
-   * Get available content categories
-   */
-  async getContentCategories(): Promise<ContentCategories> {
-    const response = await this.request<ContentCategories>(
-      'GET',
-      '/categories'
-    );
-    return response.data!;
-  }
+    if (options?.desiredVibes) {
+      formData.append('desiredVibes', JSON.stringify(options.desiredVibes));
+    }
+    if (options?.extraContext) {
+      formData.append('extraContext', options.extraContext);
+    }
 
-  /**
-   * Get top performing content for suggestions
-   */
-  async getTopPerformingContent(): Promise<TopPerformingContent[]> {
-    const response = await this.request<TopPerformingContent[]>(
-      'GET',
-      '/analytics/top-performing'
-    );
-    return response.data!;
-  }
-
-  /**
-   * Analyze content trends for better suggestions
-   */
-  async analyzeContentTrends(): Promise<ContentTrends> {
-    const response = await this.request<ContentTrends>(
+    const response = await this.request<ScriptVariantsResponse>(
       'POST',
-      '/analyze-trends'
+      '/from-media',
+      { body: formData }
+    );
+    return response.data!;
+  }
+
+  /**
+   * Generate video script ideas from existing ContentPiece
+   */
+  async generateFromContentPiece(
+    contentPieceID: string,
+    threadID: string,
+    options?: {
+      desiredVibes?: string[];
+      extraContext?: string;
+    }
+  ): Promise<ScriptVariantsResponse> {
+    const response = await this.request<ScriptVariantsResponse>(
+      'POST',
+      '/from-content-piece',
+      {
+        body: {
+          contentPieceID,
+          threadID,
+          desiredVibes: options?.desiredVibes,
+          extraContext: options?.extraContext,
+        }
+      }
+    );
+    return response.data!;
+  }
+
+  /**
+   * Regenerate a specific section of a script variant
+   */
+  async regenerateSection(
+    threadID: string,
+    request: RegenerationRequest
+  ): Promise<RegenerationResponse> {
+    const response = await this.request<RegenerationResponse>(
+      'POST',
+      '/regen',
+      {
+        body: {
+          threadID,
+          variantIndex: request.variantIndex,
+          section: request.section,
+          constraints: request.constraints,
+        }
+      }
     );
     return response.data!;
   }

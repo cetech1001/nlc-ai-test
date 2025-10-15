@@ -38,7 +38,7 @@ export class AgentsClient {
 
     this.contentSuggestion = new ContentSuggestionClient({
       ...props,
-      baseURL: `${props.baseURL}/content-suggestion`,
+      baseURL: `${props.baseURL}/content-suggestions`,
     });
 
     this.coachReplica = new CoachReplicaClient({
