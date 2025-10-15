@@ -47,9 +47,9 @@ export class ContentSuggestionController {
   }
 
   @Post('from-transcript')
-  async fromTranscript(@Body() dto: GenerateIdeasDto) {
+  async fromTranscript(@Body() dto: GenerateIdeasDto, @CurrentUser() user: AuthUser) {
     return this.svc.generateVideoContentIdeas(
-      dto.coachID,
+      user.id,
       dto.threadID,
       dto.transcriptText,
       { desiredVibes: dto.desiredVibes as any, extraContext: dto.extraContext }
@@ -57,8 +57,8 @@ export class ContentSuggestionController {
   }
 
   @Post('regen')
-  async regenerate(@Body() dto: RegenDto) {
-    return this.svc.regenerateVideoScriptSection(dto.coachID, dto.threadID, {
+  async regenerate(@Body() dto: RegenDto, @CurrentUser() user: AuthUser) {
+    return this.svc.regenerateVideoScriptSection(user.id, dto.threadID, {
       variantIndex: dto.variantIndex,
       section: dto.section,
       constraints: dto.constraints,

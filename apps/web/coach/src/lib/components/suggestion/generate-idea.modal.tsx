@@ -149,7 +149,7 @@ export const GenerateIdeaModal = ({ isOpen, onClose }: GenerateIdeaModalProps) =
 
       toast.success('Content ideas generated successfully!');
       handleClose();
-      router.push(`/agents/suggestion/${result.variants[0].id}`); // Navigate to first variant
+      router.push(`/agents/suggestion/script/${result.runID}`); // Navigate to first variant
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate ideas from content');
     } finally {
