@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {Injectable, NotFoundException, BadRequestException, Logger, ForbiddenException} from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import {
   AuthUser,
@@ -289,6 +289,128 @@ export class SequencesService {
     return {
       success: true,
       pausedCount: result.count,
+    };
+  }
+
+  async getEmailByID(userID: string, emailID: string) {
+    const email = await this.prisma.emailMessage.findFirst({
+      where: {
+        id: emailID,
+      },
+      include: {
+        emailSequence: {
+          select: {
+            id: true,
+            name: true,
+            userID: true,
+          }
+        },
+      }
+    });
+
+    if (!email) {
+      throw new NotFoundException('Email not found');
+    }
+
+    // Verify ownership through sequence
+    if (email.emailSequence?.userID !== userID) {
+      throw new ForbiddenException('You do not have permission to access this email');
+    }
+
+    // Parse metadata to get additional info
+    const metadata = email.metadata as any || {};
+
+    return {
+      email: {
+        ...email,
+        sequenceOrder: metadata.sequenceStep || 1,
+        timing: metadata.timing || '1-week',
+        keyPoints: metadata.keyPoints || [],
+        callToAction: metadata.callToAction || '',
+        isEdited: metadata.isEdited || false,
+      }
+    };
+  }
+
+  async updateEmail(userID: string, emailID: string, updateData: {
+    subject?: string;
+    body?: string;
+    scheduledFor?: string;
+    timing?: string;
+  }) {
+    // First verify the email exists and user has permission
+    const email = await this.prisma.emailMessage.findFirst({
+      where: {
+        id: emailID,
+      },
+      include: {
+        emailSequence: {
+          select: {
+            id: true,
+            userID: true,
+          }
+        }
+      }
+    });
+
+    if (!email) {
+      throw new NotFoundException('Email not found');
+    }
+
+    if (email.emailSequence?.userID !== userID) {
+      throw new ForbiddenException('You do not have permission to update this email');
+    }
+
+    // Only allow updates to scheduled or pending emails
+    if (email.status !== EmailStatus.SCHEDULED && email.status !== EmailStatus.PENDING) {
+      throw new BadRequestException(`Cannot update email with status: ${email.status}`);
+    }
+
+    // Prepare update data
+    const updatePayload: any = {};
+
+    if (updateData.subject !== undefined) {
+      updatePayload.subject = updateData.subject;
+    }
+
+    if (updateData.body !== undefined) {
+      updatePayload.body = updateData.body;
+    }
+
+    if (updateData.scheduledFor !== undefined) {
+      updatePayload.scheduledFor = new Date(updateData.scheduledFor);
+    }
+
+    // Update metadata if timing changes
+    if (updateData.timing !== undefined) {
+      const currentMetadata = (email.metadata as any) || {};
+      updatePayload.metadata = {
+        ...currentMetadata,
+        timing: updateData.timing,
+      };
+    }
+
+    // Mark as edited
+    const currentMetadata = (email.metadata as any) || {};
+    updatePayload.metadata = {
+      ...currentMetadata,
+      ...(updatePayload.metadata || {}),
+      isEdited: true,
+      lastEditedAt: new Date().toISOString(),
+    };
+
+    // Perform update
+    const updatedEmail = await this.prisma.emailMessage.update({
+      where: { id: emailID },
+      data: updatePayload,
+    });
+
+    this.logger.log(`Email updated: ${emailID} by user ${userID}`);
+
+    return {
+      success: true,
+      message: 'Email updated successfully',
+      email: updatedEmail
     };
   }
 

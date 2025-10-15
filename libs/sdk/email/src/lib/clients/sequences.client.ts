@@ -3,7 +3,7 @@ import {
   EmailSequenceStatus,
   EmailParticipantType,
   EmailSequence,
-  EmailMessage,
+  EmailMessage, EmailInSequence,
 } from '@nlc-ai/types';
 
 export interface CreateSequenceFromAIParams {
@@ -227,8 +227,8 @@ export class SequencesClient extends BaseClient {
   /**
    * Get email by ID
    */
-  async getEmail(emailID: string): Promise<{ email: EmailMessage }> {
-    const response = await this.request<{ email: EmailMessage }>(
+  async getEmail(emailID: string) {
+    const response = await this.request<{ email: EmailInSequence }>(
       'GET',
       `/emails/${emailID}`
     );
@@ -238,8 +238,8 @@ export class SequencesClient extends BaseClient {
   /**
    * Update email content or scheduling
    */
-  async updateEmail(emailID: string, updates: UpdateEmailParams): Promise<{ success: boolean; message: string }> {
-    const response = await this.request<{ success: boolean; message: string }>(
+  async updateEmail(emailID: string, updates: UpdateEmailParams) {
+    const response = await this.request<{ message: string }>(
       'PATCH',
       `/emails/${emailID}`,
       { body: updates }

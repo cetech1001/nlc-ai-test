@@ -7,15 +7,14 @@ import {
   Save,
   Eye,
   RotateCcw,
-  TrendingUp,
   Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@nlc-ai/web-ui';
-import { EmailInSequence, DeliverabilityAnalysis, TIMING_OPTIONS } from '@nlc-ai/types';
+import { EmailInSequence, TIMING_OPTIONS } from '@nlc-ai/types';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@nlc-ai/web-ui';
-import {AiImprovements, DeliverabilityAnalysisStats, EmailStats, getScoreBg, getScoreColor, sdkClient} from "@/lib";
+import {EmailStats, sdkClient} from "@/lib";
 
 const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
   ssr: false,
@@ -37,7 +36,7 @@ const EditEmailPage = () => {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   // URL params
@@ -59,8 +58,8 @@ const EditEmailPage = () => {
   const [emailContent, setEmailContent] = useState('');
 
   // Deliverability analysis
-  const [deliverabilityAnalysis, setDeliverabilityAnalysis] = useState<DeliverabilityAnalysis | null>(null);
-  const [quickScore, setQuickScore] = useState<number | null>(null);
+  // const [deliverabilityAnalysis, setDeliverabilityAnalysis] = useState<DeliverabilityAnalysis | null>(null);
+  // const [quickScore, setQuickScore] = useState<number | null>(null);
 
   // Preview mode
   const [showPreview, setShowPreview] = useState(false);
@@ -95,15 +94,15 @@ const EditEmailPage = () => {
 
   const loadEmail = async () => {
     try {
-      const emailData = await sdkClient.email.sequences.getEmailByID(emailID!);
+      const emailData = await sdkClient.email.sequences.getEmail(emailID!);
       setEmail(emailData.email);
       setSubject(emailData.email.subject);
       setScheduledFor(new Date(emailData.email.scheduledFor || '').toISOString().slice(0, 16));
       setSelectedTiming(emailData.email.timing);
-      setEmailContent(emailData.email.body);
+      setEmailContent(emailData.email.text || emailData.email.html);
 
       // Get initial deliverability analysis
-      await analyzeDeliverability(emailData.email.subject, emailData.email.body);
+      // await analyzeDeliverability(emailData.email.subject, emailData.email.body);
     } catch (error) {
       console.error('Failed to load email:', error);
       toast.error('Failed to load email');
@@ -111,7 +110,7 @@ const EditEmailPage = () => {
     }
   };
 
-  const debounceQuickCheck = (() => {
+  /*const debounceQuickCheck = (() => {
     let timeoutId: NodeJS.Timeout;
     return () => {
       clearTimeout(timeoutId);
@@ -120,9 +119,9 @@ const EditEmailPage = () => {
         setQuickScore(result.score);
       }, 1000);
     };
-  })();
+  })();*/
 
-  const analyzeDeliverability = async (emailSubject: string, emailBody: string) => {
+  /*const analyzeDeliverability = async (emailSubject: string, emailBody: string) => {
     try {
       setIsAnalyzing(true);
       const analysis = await sdkClient.agents.emailDeliverability.analyzeEmailDeliverability({
@@ -137,7 +136,7 @@ const EditEmailPage = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  };*/
 
   const handleSave = async () => {
     if (!email) return;
@@ -145,7 +144,7 @@ const EditEmailPage = () => {
     try {
       setIsSaving(true);
 
-      await sdkClient.agents.leadFollowup.updateEmail(emailID!, {
+      await sdkClient.email.sequences.updateEmail(emailID!, {
         subject,
         body: emailContent,
         scheduledFor,
@@ -192,7 +191,7 @@ const EditEmailPage = () => {
         toast.success('Content regenerated successfully!');
 
         // Re-analyze deliverability
-        await analyzeDeliverability(newEmail.subject, newEmail.body);
+        // await analyzeDeliverability(newEmail.subject, newEmail.body);
       }
     } catch (error) {
       console.error('Failed to regenerate content:', error);
@@ -202,14 +201,14 @@ const EditEmailPage = () => {
     }
   };
 
-  const handleFullAnalysis = async () => {
+  /*const handleFullAnalysis = async () => {
     await analyzeDeliverability(subject, emailContent);
-  };
+  };*/
 
   const handleEditorChange = (content: string) => {
     setEmailContent(content);
     setHasChanges(true);
-    debounceQuickCheck();
+    // debounceQuickCheck();
   };
 
   if (isLoading || configLoading || !tinyMCEConfig) {
@@ -282,7 +281,7 @@ const EditEmailPage = () => {
   }
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
+    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden px-4">
       {/* Absolute background elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute w-64 h-64 -left-12 top-1/4 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
@@ -302,14 +301,14 @@ const EditEmailPage = () => {
         </Button>
 
         <div className="flex items-center gap-3">
-          {quickScore !== null && (
+          {/*{quickScore !== null && (
             <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getScoreBg(quickScore)}`}>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className={getScoreColor(quickScore)}>{quickScore}% deliverability</span>
               </div>
             </div>
-          )}
+          )}*/}
 
           <Button
             variant="outline"
@@ -368,7 +367,7 @@ const EditEmailPage = () => {
                     onChange={(e) => {
                       setSubject(e.target.value);
                       setHasChanges(true);
-                      debounceQuickCheck();
+                      // debounceQuickCheck();
                     }}
                     className="w-full bg-neutral-800/50 border border-neutral-600 rounded-lg px-3 py-2 text-stone-50 placeholder:text-stone-400 focus:border-purple-500 focus:outline-none transition-colors"
                     placeholder="Enter email subject..."
@@ -515,7 +514,7 @@ const EditEmailPage = () => {
         <div className="space-y-6">
           <EmailStats email={email} />
 
-          <DeliverabilityAnalysisStats
+          {/*<DeliverabilityAnalysisStats
             isAnalyzing={isAnalyzing}
             quickScore={quickScore}
             deliverabilityAnalysis={deliverabilityAnalysis}
@@ -527,7 +526,7 @@ const EditEmailPage = () => {
             <AiImprovements
               improvements={deliverabilityAnalysis.improvements}
               isLoading={isLoading} />
-          )}
+          )}*/}
         </div>
       </div>
 

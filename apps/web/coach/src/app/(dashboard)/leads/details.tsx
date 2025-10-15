@@ -307,7 +307,7 @@ export const CoachLeads = () => {
   };
 
   return (
-    <div className={`flex flex-col ${ isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' }`}>
+    <div className={`flex flex-col ${ isFilterOpen && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]' } px-4`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         {successMessage && (
           <AlertBanner type={"success"} message={successMessage} onDismiss={clearMessages}/>

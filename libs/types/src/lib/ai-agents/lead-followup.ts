@@ -98,7 +98,8 @@ export interface EmailInSequence {
   sequenceID: string;
   sequenceOrder: number;
   subject: string;
-  body: string;
+  text: string;
+  html: string;
   timing: string;
   scheduledFor: Date;
   status: 'scheduled' | 'sent' | 'failed' | 'cancelled' | 'paused';

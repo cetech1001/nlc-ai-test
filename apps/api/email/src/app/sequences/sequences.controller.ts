@@ -11,6 +11,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -20,7 +21,7 @@ import {
 import { CurrentUser, UserTypes, UserTypesGuard } from "@nlc-ai/api-auth";
 import { SequencesService } from "./sequences.service";
 import {type AuthUser, EmailSequenceStatus, UserType} from "@nlc-ai/types";
-import { CreateSequenceDto, UpdateSequenceDto, ExecuteSequenceDto } from "./dto";
+import { CreateSequenceDto, UpdateSequenceDto, ExecuteSequenceDto, UpdateEmailDto } from "./dto";
 
 @ApiTags('Email Sequences')
 @Controller('sequences')
@@ -69,6 +70,16 @@ export class SequencesController {
     @Param('sequenceID', ParseUUIDPipe) sequenceID: string,
   ) {
     return this.sequencesService.getSequenceAnalytics(userID, sequenceID);
+  }
+
+  @Get('emails/:emailID')
+  @ApiOperation({ summary: 'Get specific email by ID' })
+  @ApiResponse({ status: 200, description: 'Email retrieved successfully' })
+  async getEmailByID(
+    @CurrentUser('id') userID: string,
+    @Param('emailID', ParseUUIDPipe) emailID: string,
+  ) {
+    return this.sequencesService.getEmailByID(userID, emailID);
   }
 
   @Post()
@@ -144,6 +155,17 @@ export class SequencesController {
     @Body() updateData: UpdateSequenceDto,
   ) {
     return this.sequencesService.updateSequence(userID, sequenceID, updateData);
+  }
+
+  @Patch('emails/:emailID')
+  @ApiOperation({ summary: 'Update email content or scheduling' })
+  @ApiResponse({ status: 200, description: 'Email updated successfully' })
+  async updateEmail(
+    @CurrentUser('id') userID: string,
+    @Param('emailID', ParseUUIDPipe) emailID: string,
+    @Body() updateData: UpdateEmailDto,
+  ) {
+    return this.sequencesService.updateEmail(userID, emailID, updateData);
   }
 
   @Delete(':sequenceID')

@@ -137,7 +137,7 @@ const CreateNewLead = () => {
   const currentAutomation = getStatusAutomation(formData.status);
 
   return (
-    <main className="flex-1 pt-2 sm:pt-8">
+    <main className="flex-1 pt-2 sm:pt-8 px-4">
       {/* Absolute background elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute w-64 h-64 -left-12 top-1/4 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
