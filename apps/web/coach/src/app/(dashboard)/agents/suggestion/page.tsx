@@ -188,7 +188,7 @@ const ContentSuggestion: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full mx-auto py-4">
+    <div className="flex flex-col gap-6 w-full mx-auto py-4 px-4">
       <PageHeader title={'Content Suggestion Agent'}/>
 
       <div className="flex flex-col gap-6">

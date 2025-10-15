@@ -71,7 +71,7 @@ const CategoryDetail = () => {
   };
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
+    <div className="py-4 px-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
       <PageHeader
         title={category ? `Category: ${category.name}` : "Videos"}
         actionButton={{

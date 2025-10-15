@@ -2,7 +2,7 @@
 
 import {useState, useEffect, ComponentType} from 'react';
 import { useRouter } from "next/navigation";
-import {FileText, Lightbulb, MessageCircle, Play, Plus, Users} from "lucide-react";
+import {FileText, Lightbulb, MessageCircle, Play, Users} from "lucide-react";
 import { PageHeader } from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
 import {CategoriesSkeleton, CategoryCard, sdkClient} from '@/lib';
@@ -91,7 +91,7 @@ const ContentCategories = () => {
   };
 
   return (
-    <div className={'flex flex-col'}>
+    <div className={'flex flex-col px-4'}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         {error && (
           <AlertBanner type={"error"} message={error} onDismiss={() => setError('')}/>
@@ -99,11 +99,11 @@ const ContentCategories = () => {
 
         <PageHeader
           title={"Content Categories"}
-          actionButton={{
+          /*actionButton={{
             label: 'Create New Category',
             onClick: handleCreateCategory,
             icon: <Plus className="w-4 h-4" />,
-          }}
+          }}*/
         />
         {isLoading ? (
           <CategoriesSkeleton />

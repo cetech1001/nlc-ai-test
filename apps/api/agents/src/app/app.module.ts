@@ -13,6 +13,7 @@ import {PublicChatModule} from "./public-chat/public-chat.module";
 import {EventsModule} from "./events/events.module";
 import {ClientEmailModule} from "./client-email/client-email.module";
 import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
+import {ContentSuggestionModule} from "./content-suggestion/content-suggestion.module";
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import {LeadFollowupModule} from "./lead-followup/lead-followup.module";
     EventsModule,
     ClientEmailModule,
     LeadFollowupModule,
+    ContentSuggestionModule,
   ],
   providers: [
     {

@@ -5,12 +5,11 @@ import { ValidationPipe, HttpExceptionFilter, AllExceptionsFilter } from '@nlc-a
 import {AuthLibModule, JwtAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
-import { HealthModule } from './health/health.module';
 import {contentConfig} from './config/content.config';
 import {CategoriesModule} from "./categories/categories.module";
 import {ContentPiecesModule} from "./content-pieces/content-pieces.module";
 import {ContentSyncModule} from "./content-sync/content-sync.module";
-import {EventHandlersModule} from "./event-handlers/event-handlers.module";
+import {EventsModule} from "./events/events.module";
 
 @Module({
   imports: [
@@ -26,8 +25,7 @@ import {EventHandlersModule} from "./event-handlers/event-handlers.module";
     CategoriesModule,
     ContentPiecesModule,
     ContentSyncModule,
-    EventHandlersModule,
-    HealthModule,
+    EventsModule,
   ],
   providers: [
     {

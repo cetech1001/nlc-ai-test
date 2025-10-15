@@ -1,18 +1,15 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import { UserType } from '@nlc-ai/api-types';
 import { CreateCategoryDto, UpdateCategoryDto, CategoryQueryDto } from './dto';
 
 @Injectable()
 export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(userID: string, userType: UserType, createCategoryDto: CreateCategoryDto) {
-    // Check if category with same name already exists for this coach
+  async create(createCategoryDto: CreateCategoryDto) {
     const existingCategory = await this.prisma.contentCategory.findFirst({
       where: {
         name: createCategoryDto.name,
-        coachID: userID
       }
     });
 
@@ -24,7 +21,6 @@ export class CategoriesService {
       data: {
         name: createCategoryDto.name,
         description: createCategoryDto.description,
-        coachID: userID,
       },
       include: {
         _count: {
@@ -34,11 +30,10 @@ export class CategoriesService {
     });
   }
 
-  async findAll(userID: string, userType: UserType, query: CategoryQueryDto) {
+  async findAll(query: CategoryQueryDto) {
     const { page = 1, limit = 20, search, sortBy = 'name', sortOrder = 'asc' } = query;
 
     const where = {
-      coachID: userID,
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
@@ -60,11 +55,10 @@ export class CategoriesService {
     });
   }
 
-  async findOne(userID: string, userType: UserType, categoryID: string) {
+  async findOne(categoryID: string) {
     const category = await this.prisma.contentCategory.findFirst({
       where: {
         id: categoryID,
-        coachID: userID
       },
       include: {
         _count: {
@@ -80,16 +74,13 @@ export class CategoriesService {
     return category;
   }
 
-  async update(userID: string, userType: UserType, categoryID: string, updateCategoryDto: UpdateCategoryDto) {
-    // Check if category exists and belongs to user
-    const existingCategory = await this.findOne(userID, userType, categoryID);
+  async update(categoryID: string, updateCategoryDto: UpdateCategoryDto) {
+    const existingCategory = await this.findOne(categoryID);
 
-    // If updating name, check for conflicts
     if (updateCategoryDto.name && updateCategoryDto.name !== existingCategory.name) {
       const conflictCategory = await this.prisma.contentCategory.findFirst({
         where: {
           name: updateCategoryDto.name,
-          coachID: userID,
           id: { not: categoryID }
         }
       });
@@ -110,11 +101,9 @@ export class CategoriesService {
     });
   }
 
-  async remove(userID: string, userType: UserType, categoryID: string) {
-    // Check if category exists and belongs to user
-    await this.findOne(userID, userType, categoryID);
+  async remove(categoryID: string) {
+    await this.findOne(categoryID);
 
-    // Check if category has content pieces
     const contentCount = await this.prisma.contentPiece.count({
       where: { categoryID }
     });
@@ -145,7 +134,6 @@ export class CategoriesService {
     let category = await this.prisma.contentCategory.findFirst({
       where: {
         name: categoryName,
-        coachID: coachID
       }
     });
 
@@ -154,7 +142,6 @@ export class CategoriesService {
       category = await this.prisma.contentCategory.findFirst({
         where: {
           name: categoryName,
-          coachID: null
         }
       });
     }
@@ -164,7 +151,6 @@ export class CategoriesService {
       category = await this.prisma.contentCategory.create({
         data: {
           name: categoryName,
-          coachID: coachID,
           description: `Auto-generated category for ${categoryName.toLowerCase()} content`
         }
       });

@@ -4,8 +4,8 @@ import {ContentSyncService} from "../../content-sync/content-sync.service";
 import {ContentCategorizationService} from "../../content-sync/services/content-categorization.service";
 
 @Injectable()
-export class IntegrationEventsHandler {
-  private readonly logger = new Logger(IntegrationEventsHandler.name);
+export class IntegrationHandler {
+  private readonly logger = new Logger(IntegrationHandler.name);
 
   constructor(
     private readonly eventBus: EventBusService,

@@ -17,7 +17,6 @@ export class ContentPiecesService {
     const category = await this.prisma.contentCategory.findFirst({
       where: {
         id: createContentPieceDto.categoryID,
-        coachID: userID
       }
     });
 
@@ -117,7 +116,6 @@ export class ContentPiecesService {
       const category = await this.prisma.contentCategory.findFirst({
         where: {
           id: updateContentPieceDto.categoryID,
-          coachID: userID
         }
       });
 

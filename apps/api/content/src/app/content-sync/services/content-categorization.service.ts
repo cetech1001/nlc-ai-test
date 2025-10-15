@@ -50,7 +50,6 @@ export class ContentCategorizationService {
     let category = await this.prisma.contentCategory.findFirst({
       where: {
         name: categoryName,
-        coachID: coachID
       }
     });
 
@@ -59,7 +58,6 @@ export class ContentCategorizationService {
       category = await this.prisma.contentCategory.findFirst({
         where: {
           name: categoryName,
-          coachID: null
         }
       });
     }
@@ -69,7 +67,6 @@ export class ContentCategorizationService {
       category = await this.prisma.contentCategory.create({
         data: {
           name: categoryName,
-          coachID: coachID,
           description: `Auto-generated category for ${categoryName.toLowerCase()} content`
         }
       });

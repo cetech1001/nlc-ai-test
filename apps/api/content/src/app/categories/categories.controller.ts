@@ -32,7 +32,7 @@ export class CategoriesController {
     @CurrentUser() user: AuthUser,
     @Body() createCategoryDto: CreateCategoryDto
   ) {
-    return this.categoriesService.create(user.id, user.type, createCategoryDto);
+    return this.categoriesService.create(createCategoryDto);
   }
 
   @Get()
@@ -42,7 +42,7 @@ export class CategoriesController {
     @CurrentUser() user: AuthUser,
     @Query() query: CategoryQueryDto
   ) {
-    return this.categoriesService.findAll(user.id, user.type, query);
+    return this.categoriesService.findAll(query);
   }
 
   @Get('defaults')
@@ -61,7 +61,7 @@ export class CategoriesController {
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) categoryID: string
   ) {
-    return this.categoriesService.findOne(user.id, user.type, categoryID);
+    return this.categoriesService.findOne(categoryID);
   }
 
   @Patch(':id')
@@ -74,7 +74,7 @@ export class CategoriesController {
     @Param('id', ParseUUIDPipe) categoryID: string,
     @Body() updateCategoryDto: UpdateCategoryDto
   ) {
-    return this.categoriesService.update(user.id, user.type, categoryID, updateCategoryDto);
+    return this.categoriesService.update(categoryID, updateCategoryDto);
   }
 
   @Delete(':id')
@@ -86,6 +86,6 @@ export class CategoriesController {
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) categoryID: string
   ) {
-    return this.categoriesService.remove(user.id, user.type, categoryID);
+    return this.categoriesService.remove(categoryID);
   }
 }
