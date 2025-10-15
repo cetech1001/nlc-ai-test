@@ -1098,6 +1098,8 @@ model EmailAccount {
   isActive       Boolean               @default(true)
   syncEnabled    Boolean               @default(true)
   lastSyncAt     DateTime?             @db.Timestamptz(6)
+  lastSyncToken  String?               @db.VarChar(500)
+  lastHistoryID  String?               @db.VarChar(100)
   createdAt      DateTime              @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime              @updatedAt @db.Timestamptz(6)
 

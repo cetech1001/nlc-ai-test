@@ -35,13 +35,21 @@ export class SyncRepository {
     });
   }
 
-  async updateLastSyncAndStatus(accountID: string, lastSyncAt: Date, isActive: boolean) {
+  async updateLastSyncAndStatus(
+    accountID: string,
+    lastSyncAt: Date,
+    isActive: boolean,
+    lastSyncToken?: string | null,
+    lastHistoryID?: string
+  ) {
     return this.prisma.emailAccount.update({
       where: { id: accountID },
       data: {
         lastSyncAt,
         isActive,
         syncEnabled: true,
+        ...(lastSyncToken && { lastSyncToken }),
+        ...(lastHistoryID && { lastHistoryID }),
         updatedAt: new Date(),
       },
     });
@@ -134,6 +142,7 @@ export class SyncRepository {
     if (client) {
       return {
         id: client.id,
+        name: (client as any).name || (client as any).firstName + ' ' + (client as any).lastName,
         type,
       };
     }

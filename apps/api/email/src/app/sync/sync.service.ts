@@ -220,7 +220,14 @@ export class SyncService {
       throw new Error('Failed to connect to email provider after token refresh. Please re-authenticate your email account.');
     }
 
-    const lastSync = forceFull ? undefined : account.lastSyncAt?.toISOString();
+    // Use the proper sync token (historyID for Gmail, skipToken for Outlook)
+    const lastSync = forceFull ? undefined : (account.lastSyncToken || account.lastSyncAt?.toISOString());
+
+    this.logger.log(`Starting sync for account ${accountID}`, {
+      provider: account.provider,
+      forceFull,
+      lastSyncToken: lastSync,
+    });
 
     let syncResult;
     try {
@@ -257,7 +264,20 @@ export class SyncService {
       }
     }
 
-    await this.syncRepo.updateLastSyncAndStatus(accountID, new Date(), true);
+    // Store the nextSyncToken for incremental sync
+    await this.syncRepo.updateLastSyncAndStatus(
+      accountID,
+      new Date(),
+      true,
+      syncResult.nextSyncToken
+    );
+
+    this.logger.log(`Sync completed for account ${accountID}`, {
+      totalProcessed: syncResult.emails.length,
+      clientEmailsFound,
+      threadsCreated,
+      nextSyncToken: syncResult.nextSyncToken,
+    });
 
     await this.outbox.saveAndPublishEvent<EmailSyncEvent>(
       {
@@ -346,7 +366,6 @@ export class SyncService {
       },
     });
 
-    const senderName = this.extractNameFromEmail(email.from);
     const senderEmail = this.extractEmailAddress(email.from);
 
     const preview = this.createMessagePreview(email.text || email.html || '');
@@ -356,13 +375,13 @@ export class SyncService {
       userType: account.userType,
       participantID: client.id,
       participantType: client.type,
-      participantName: senderName,
+      participantName: client.name,
       participantEmail: senderEmail,
       emailAccountID: account.id,
       threadID: email.threadID,
       subject: email.subject || 'No Subject',
       lastMessageAt: new Date(email.receivedAt || email.sentAt),
-      lastMessageFrom: senderName,
+      lastMessageFrom: client.name,
       lastMessageFromEmail: senderEmail,
       lastMessagePreview: preview,
       isRead: email.isRead,
@@ -385,15 +404,6 @@ export class SyncService {
     );
 
     return { isClientEmail: true, threadCreated: !existingThread };
-  }
-
-  private extractNameFromEmail(emailString: string): string {
-    const match = emailString.match(/^(.+?)\s*<.+>$/);
-    if (match) {
-      return match[1].trim().replace(/^["']|["']$/g, ''); // Remove quotes if present
-    }
-    const emailMatch = emailString.match(/^([^@]+)@/);
-    return emailMatch ? emailMatch[1] : emailString;
   }
 
   private extractEmailAddress(emailString: string): string {

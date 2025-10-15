@@ -64,61 +64,214 @@ export class GmailSyncService implements IEmailSyncProvider {
       this.oauth2Client.setCredentials({ access_token: accessToken });
       const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
 
-      let query = this.buildGmailQuery(settings);
-
-      const listParams: any = {
-        userId: 'me',
-        maxResults: settings?.maxEmailsPerSync || 100,
-        q: query,
-      };
-
-      if (lastSyncToken && this.isValidPageToken(lastSyncToken)) {
-        listParams.pageToken = lastSyncToken;
-      } else if (lastSyncToken) {
-        const syncDate = this.parseLastSyncToken(lastSyncToken);
-        if (syncDate) {
-          query += ` after:${syncDate}`;
-          listParams.q = query;
-        }
+      // Try to use History API for incremental sync if we have a historyID
+      if (lastSyncToken && this.isHistoryID(lastSyncToken)) {
+        this.logger.log(`Using Gmail History API for incremental sync from historyID: ${lastSyncToken}`);
+        return await this.syncUsingHistoryAPI(gmail, lastSyncToken, settings);
       }
 
-      this.logger.log(`Gmail API request params:`, {
-        query: listParams.q,
-        maxResults: listParams.maxResults,
-        hasPageToken: !!listParams.pageToken
-      });
-
-      const response = await gmail.users.messages.list(listParams);
-      const messages = response.data.messages || [];
-
-      const emails: SyncedEmail[] = [];
-
-      // Fetch detailed message data in batches
-      for (const message of messages) {
-        try {
-          const messageDetail = await gmail.users.messages.get({
-            userId: 'me',
-            id: message.id || undefined,
-            format: 'full',
-          });
-
-          const syncedEmail = this.transformGmailMessage(messageDetail.data);
-          if (syncedEmail) {
-            emails.push(syncedEmail);
-          }
-        } catch (error) {
-          this.logger.warn(`Failed to fetch Gmail message ${message.id}`, error);
-        }
-      }
-
-      return {
-        emails,
-        nextSyncToken: response.data.nextPageToken,
-        hasMore: !!response.data.nextPageToken,
-      };
-    } catch (error) {
+      // Fall back to full sync using messages.list
+      return await this.syncUsingMessagesList(gmail, settings, lastSyncToken);
+    } catch (error: any) {
       this.logger.error('Gmail sync failed', error);
+
+      // If history API fails (e.g., historyID too old), fall back to full sync
+      if (error.code === 404 || error.message?.includes('historyId')) {
+        this.logger.warn('History API failed, falling back to full sync');
+        this.oauth2Client.setCredentials({ access_token: accessToken });
+        const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+        return await this.syncUsingMessagesList(gmail, settings);
+      }
+
       throw error;
+    }
+  }
+
+  private async syncUsingHistoryAPI(
+    gmail: any,
+    startHistoryID: string,
+    settings?: EmailSyncSettings
+  ) {
+    const emails: SyncedEmail[] = [];
+    let historyID = startHistoryID;
+    let hasMore = true;
+    let pageToken: string | undefined;
+
+    while (hasMore) {
+      const historyParams: any = {
+        userId: 'me',
+        startHistoryId: historyID,
+        historyTypes: ['messageAdded'],
+        maxResults: 100,
+      };
+
+      if (pageToken) {
+        historyParams.pageToken = pageToken;
+      }
+
+      const historyResponse = await gmail.users.history.list(historyParams);
+
+      if (historyResponse.data.history) {
+        for (const record of historyResponse.data.history) {
+          if (record.messagesAdded) {
+            for (const addedMessage of record.messagesAdded) {
+              try {
+                const messageDetail = await gmail.users.messages.get({
+                  userId: 'me',
+                  id: addedMessage.message.id,
+                  format: 'full',
+                });
+
+                const syncedEmail = this.transformGmailMessage(messageDetail.data);
+                if (syncedEmail && this.matchesSettings(syncedEmail, settings)) {
+                  emails.push(syncedEmail);
+                }
+              } catch (error) {
+                this.logger.warn(`Failed to fetch message ${addedMessage.message.id}`, error);
+              }
+            }
+          }
+        }
+      }
+
+      // Update historyID to the latest
+      if (historyResponse.data.historyId) {
+        historyID = historyResponse.data.historyId;
+      }
+
+      pageToken = historyResponse.data.nextPageToken;
+      hasMore = !!pageToken;
+    }
+
+    this.logger.log(`History API sync completed: ${emails.length} new emails, latest historyID: ${historyID}`);
+
+    return {
+      emails,
+      nextSyncToken: historyID, // Return the latest historyID for next sync
+      hasMore: false,
+    };
+  }
+
+  private async syncUsingMessagesList(
+    gmail: any,
+    settings?: EmailSyncSettings,
+    lastSyncToken?: string
+  ) {
+    let query = this.buildGmailQuery(settings);
+
+    // Only add date filter if lastSyncToken is a date and it's recent (within 30 days)
+    if (lastSyncToken && !this.isHistoryID(lastSyncToken)) {
+      const syncDate = this.parseLastSyncToken(lastSyncToken);
+      if (syncDate) {
+        const dateObj = this.parseDateString(syncDate);
+        const daysSinceSync = dateObj ? (Date.now() - dateObj.getTime()) / (1000 * 60 * 60 * 24) : 999;
+
+        // Only use date filter if sync was recent (within 30 days)
+        if (daysSinceSync <= 30) {
+          query += ` after:${syncDate}`;
+          this.logger.log(`Using date filter for recent sync: after:${syncDate}`);
+        } else {
+          this.logger.log(`Last sync was ${Math.floor(daysSinceSync)} days ago, performing full sync`);
+        }
+      }
+    }
+
+    const listParams: any = {
+      userId: 'me',
+      maxResults: settings?.maxEmailsPerSync || 100,
+      q: query || undefined,
+    };
+
+    this.logger.log(`Gmail messages.list request:`, {
+      query: listParams.q,
+      maxResults: listParams.maxResults,
+    });
+
+    const response = await gmail.users.messages.list(listParams);
+    const messages = response.data.messages || [];
+
+    this.logger.log(`Found ${messages.length} messages to process`);
+
+    const emails: SyncedEmail[] = [];
+
+    // Fetch detailed message data
+    for (const message of messages) {
+      try {
+        const messageDetail = await gmail.users.messages.get({
+          userId: 'me',
+          id: message.id || undefined,
+          format: 'full',
+        });
+
+        const syncedEmail = this.transformGmailMessage(messageDetail.data);
+        if (syncedEmail) {
+          emails.push(syncedEmail);
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to fetch Gmail message ${message.id}`, error);
+      }
+    }
+
+    // Get the latest historyID for next incremental sync
+    let latestHistoryID: string | undefined;
+    if (emails.length > 0 && messages[0]?.id) {
+      try {
+        const latestMessage = await gmail.users.messages.get({
+          userId: 'me',
+          id: messages[0].id,
+          format: 'minimal',
+        });
+        latestHistoryID = latestMessage.data.historyId;
+        this.logger.log(`Latest historyID for next sync: ${latestHistoryID}`);
+      } catch (error) {
+        this.logger.warn('Failed to get latest historyID', error);
+      }
+    }
+
+    return {
+      emails,
+      nextSyncToken: latestHistoryID || response.data.nextPageToken,
+      hasMore: !!response.data.nextPageToken,
+    };
+  }
+
+  private matchesSettings(email: SyncedEmail, settings?: EmailSyncSettings): boolean {
+    if (!settings?.filterSettings) return true;
+
+    // Check domain filter
+    if (settings.filterSettings.fromDomain?.length) {
+      const emailDomain = email.from.split('@')[1];
+      if (!settings.filterSettings.fromDomain.some(domain => emailDomain?.includes(domain))) {
+        return false;
+      }
+    }
+
+    // Check keyword filter
+    if (settings.filterSettings.keywords?.length) {
+      const content = `${email.subject} ${email.text} ${email.html}`.toLowerCase();
+      if (!settings.filterSettings.keywords.some(keyword => content.includes(keyword.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private isHistoryID(token: string): boolean {
+    // Gmail historyIDs are numeric strings
+    return /^\d+$/.test(token) && token.length >= 5;
+  }
+
+  private parseDateString(dateStr: string): Date | null {
+    try {
+      // Parse YYYY/MM/DD format
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      }
+      return null;
+    } catch {
+      return null;
     }
   }
 
@@ -144,7 +297,7 @@ export class GmailSyncService implements IEmailSyncProvider {
 
       return {
         email: profile.data.emailAddress!,
-        name: profile.data.emailAddress!, // Gmail doesn't provide name in profile
+        name: profile.data.emailAddress!,
       };
     } catch (error) {
       this.logger.error('Failed to get Gmail user info', error);
@@ -188,45 +341,17 @@ export class GmailSyncService implements IEmailSyncProvider {
     return conditions.join(' ');
   }
 
-  /**
-   * Check if a string looks like a valid Gmail pageToken
-   * PageTokens are typically base64-encoded strings
-   */
-  private isValidPageToken(token: string): boolean {
-    if (!token || token.length < 10) return false;
-
-    try {
-      // PageTokens are usually base64 encoded and don't look like timestamps
-      const isTimestamp = /^\d{4}-\d{2}-\d{2}/.test(token) ||
-        /^\d{13}$/.test(token) || // Unix timestamp in ms
-        /^\d{10}$/.test(token);   // Unix timestamp in seconds
-
-      return !isTimestamp && /^[A-Za-z0-9+/=_-]+$/.test(token);
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Parse lastSyncToken if it's a timestamp and convert to Gmail date format
-   */
   private parseLastSyncToken(token: string): string | null {
     try {
       let date: Date;
 
-      // Try parsing as ISO string
       if (token.includes('T') || token.includes('-')) {
         date = new Date(token);
-      }
-      // Try parsing as Unix timestamp (milliseconds)
-      else if (/^\d{13}$/.test(token)) {
+      } else if (/^\d{13}$/.test(token)) {
         date = new Date(parseInt(token));
-      }
-      // Try parsing as Unix timestamp (seconds)
-      else if (/^\d{10}$/.test(token)) {
+      } else if (/^\d{10}$/.test(token)) {
         date = new Date(parseInt(token) * 1000);
-      }
-      else {
+      } else {
         return null;
       }
 
@@ -234,7 +359,6 @@ export class GmailSyncService implements IEmailSyncProvider {
         return null;
       }
 
-      // Convert to Gmail date format (YYYY/MM/DD)
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
