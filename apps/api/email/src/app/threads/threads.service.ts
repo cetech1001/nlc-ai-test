@@ -23,6 +23,9 @@ export interface ThreadMessage {
   html?: string;
   sentAt: Date;
   isRead: boolean;
+  messageID?: string; // Message-ID header for threading
+  inReplyTo?: string; // In-Reply-To header
+  references?: string; // References header
 }
 
 @Injectable()
@@ -179,6 +182,10 @@ export class ThreadsService {
           html: this.extractHtmlFromPayload(msg.payload),
           sentAt: new Date(parseInt(msg.internalDate)),
           isRead: !msg.labelIds?.includes('UNREAD'),
+          // CRITICAL: Extract threading headers
+          messageID: getHeader('Message-ID'),
+          inReplyTo: getHeader('In-Reply-To'),
+          references: getHeader('References'),
         };
       }) || [];
     } catch (error: any) {
@@ -198,7 +205,8 @@ export class ThreadsService {
           params: {
             $filter: `conversationId eq '${conversationID}'`,
             $orderby: 'sentDateTime asc',
-            $select: 'id,subject,bodyPreview,body,sender,toRecipients,sentDateTime,isRead',
+            $select: 'id,subject,bodyPreview,body,sender,toRecipients,sentDateTime,isRead,internetMessageId',
+            $expand: 'singleValueExtendedProperties($filter=id eq \'String 0x1000\')',
           },
         }
       );
@@ -212,6 +220,10 @@ export class ThreadsService {
         html: msg.body?.content,
         sentAt: new Date(msg.sentDateTime),
         isRead: msg.isRead,
+        // CRITICAL: Extract threading headers for Outlook
+        messageID: msg.internetMessageId,
+        inReplyTo: undefined, // Outlook doesn't easily expose this
+        references: undefined, // Outlook doesn't easily expose this
       })) || [];
     } catch (error: any) {
       this.logger.error('Failed to fetch Outlook thread messages', error);
@@ -226,35 +238,143 @@ export class ThreadsService {
   }
 
   private extractTextFromPayload(payload: any): string | undefined {
+    let text: string | undefined;
+
     if (payload.mimeType === 'text/plain' && payload.body?.data) {
-      return Buffer.from(payload.body.data, 'base64').toString('utf-8');
+      text = Buffer.from(payload.body.data, 'base64').toString('utf-8');
     }
 
-    if (payload.parts) {
+    if (!text && payload.parts) {
       for (const part of payload.parts) {
         if (part.mimeType === 'text/plain' && part.body?.data) {
-          return Buffer.from(part.body.data, 'base64').toString('utf-8');
+          text = Buffer.from(part.body.data, 'base64').toString('utf-8');
+          break;
         }
       }
     }
 
-    return undefined;
+    return text ? this.stripQuotedText(text) : undefined;
   }
 
   private extractHtmlFromPayload(payload: any): string | undefined {
+    let html: string | undefined;
+
     if (payload.mimeType === 'text/html' && payload.body?.data) {
-      return Buffer.from(payload.body.data, 'base64').toString('utf-8');
+      html = Buffer.from(payload.body.data, 'base64').toString('utf-8');
     }
 
-    if (payload.parts) {
+    if (!html && payload.parts) {
       for (const part of payload.parts) {
         if (part.mimeType === 'text/html' && part.body?.data) {
-          return Buffer.from(part.body.data, 'base64').toString('utf-8');
+          html = Buffer.from(part.body.data, 'base64').toString('utf-8');
+          break;
         }
       }
     }
 
-    return undefined;
+    return html ? this.stripQuotedHtml(html) : undefined;
+  }
+
+  /**
+   * Strip quoted text from plain text emails
+   */
+  private stripQuotedText(text: string): string {
+    // Common quote indicators
+    const quotePatterns = [
+      /^On .+ wrote:$/m,                    // "On Mon, Jan 1, 2024 at 10:00 AM, someone wrote:"
+      /^From: .+$/m,                         // "From: someone@example.com"
+      /^_{10,}/m,                            // Underscores separator
+      /^-{3,} ?Original Message ?-{3,}/mi,  // "--- Original Message ---"
+      /^>{1,}.+$/m,                          // Lines starting with > or >>
+      /^\d{4}-\d{2}-\d{2} .+ wrote:/m,      // "2024-01-01 10:00 AM someone wrote:"
+    ];
+
+    let cleanText = text;
+
+    // Find the earliest occurrence of any quote pattern
+    let earliestIndex = text.length;
+
+    for (const pattern of quotePatterns) {
+      const match = text.match(pattern);
+      if (match && match.index !== undefined && match.index < earliestIndex) {
+        earliestIndex = match.index;
+      }
+    }
+
+    // If we found a quote indicator, cut off everything after it
+    if (earliestIndex < text.length) {
+      cleanText = text.substring(0, earliestIndex);
+    }
+
+    // Also check for consecutive lines starting with >
+    const lines = cleanText.split('\n');
+    const firstQuotedLine = lines.findIndex(line => line.trim().startsWith('>'));
+
+    if (firstQuotedLine > 0) {
+      cleanText = lines.slice(0, firstQuotedLine).join('\n');
+    }
+
+    return cleanText.trim();
+  }
+
+  /**
+   * Strip quoted HTML from HTML emails
+   */
+  private stripQuotedHtml(html: string): string {
+    // Gmail wraps quoted content in specific divs/classes
+    const gmailQuotePatterns = [
+      /<div class="gmail_quote">.+<\/div>/is,
+      /<div class="gmail_extra">.+<\/div>/is,
+      /<blockquote[^>]*class="gmail_quote"[^>]*>[\s\S]*<\/blockquote>/gi,
+    ];
+
+    // Outlook uses different patterns
+    const outlookQuotePatterns = [
+      /<div[^>]*id="divRplyFwdMsg"[^>]*>[\s\S]*<\/div>/gi,
+      /<hr[^>]*style="[^"]*border[^"]*"[^>]*>[\s\S]*$/i,
+      /<div[^>]*style="[^"]*border-top:[^"]*"[^>]*>[\s\S]*$/i,
+    ];
+
+    // Generic patterns
+    const genericPatterns = [
+      /<blockquote[^>]*>[\s\S]*<\/blockquote>/gi,
+      /<div[^>]*class="[^"]*quoted[^"]*"[^>]*>[\s\S]*<\/div>/gi,
+    ];
+
+    let cleanHtml = html;
+
+    // Try Gmail patterns first
+    for (const pattern of gmailQuotePatterns) {
+      cleanHtml = cleanHtml.replace(pattern, '');
+    }
+
+    // Try Outlook patterns
+    for (const pattern of outlookQuotePatterns) {
+      cleanHtml = cleanHtml.replace(pattern, '');
+    }
+
+    // Try generic patterns
+    for (const pattern of genericPatterns) {
+      cleanHtml = cleanHtml.replace(pattern, '');
+    }
+
+    // Look for common text indicators in HTML
+    const textIndicators = [
+      /On .+?wrote:/i,
+      /From:.+?<br>/i,
+      /_{10,}/,
+      /-{3,}\s*Original Message\s*-{3,}/i,
+    ];
+
+    for (const pattern of textIndicators) {
+      const match = cleanHtml.match(pattern);
+      if (match && match.index !== undefined) {
+        cleanHtml = cleanHtml.substring(0, match.index);
+        break;
+      }
+    }
+
+    return cleanHtml.trim();
   }
 
   async replyToThread(userID: string, userType: UserType, threadID: string, replyData: {
@@ -269,6 +389,42 @@ export class ThreadsService {
 
     if (!thread) {
       throw new BadRequestException('Thread not found');
+    }
+
+    // CRITICAL: Fetch thread messages to get the latest message headers for threading
+    let messages: ThreadMessage[] = [];
+    try {
+      if (thread.emailAccount.provider === 'gmail') {
+        messages = await this.fetchGmailThreadMessages(
+          thread.emailAccount.accessToken || '',
+          thread.threadID
+        );
+      } else if (thread.emailAccount.provider === 'outlook') {
+        messages = await this.fetchOutlookThreadMessages(
+          thread.emailAccount.accessToken || '',
+          thread.threadID
+        );
+      }
+    } catch (error: any) {
+      this.logger.warn('Failed to fetch thread messages for reply headers, proceeding without threading', error);
+    }
+
+    // Get the last message for threading headers
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+
+    // Build references header by combining existing references with the message we're replying to
+    let referencesHeader: string | undefined;
+    if (lastMessage?.messageID) {
+      if (lastMessage.references) {
+        // Append the current messageID to existing references
+        referencesHeader = `${lastMessage.references} ${lastMessage.messageID}`.trim();
+      } else if (lastMessage.inReplyTo) {
+        // If no references but has inReplyTo, use both
+        referencesHeader = `${lastMessage.inReplyTo} ${lastMessage.messageID}`.trim();
+      } else {
+        // Just use the current messageID
+        referencesHeader = lastMessage.messageID;
+      }
     }
 
     const clientEmail = await this.getClientEmail(
@@ -288,6 +444,11 @@ export class ThreadsService {
         sentAt: new Date(),
         userID,
         userType,
+        // Store threading headers in metadata for the processor to use
+        metadata: {
+          inReplyTo: lastMessage?.messageID,
+          references: referencesHeader,
+        } as any,
       },
     });
 
@@ -316,6 +477,7 @@ export class ThreadsService {
     await this.deliveryService.sendThreadReply(message.id);
 
     return {
+      success: true,
       message: 'Reply queued for delivery',
       messageID: message.id,
       threadID,
@@ -323,8 +485,15 @@ export class ThreadsService {
   }
 
   private createMessagePreview(content: string): string {
+    // First strip any HTML tags
     const text = content.replace(/<[^>]*>/g, ' ');
-    const cleaned = text.replace(/\s+/g, ' ').trim();
+
+    // Strip quoted content from preview
+    const stripped = this.stripQuotedText(text);
+
+    // Clean up whitespace
+    const cleaned = stripped.replace(/\s+/g, ' ').trim();
+
     return cleaned.length > 500 ? cleaned.substring(0, 497) + '...' : cleaned;
   }
 

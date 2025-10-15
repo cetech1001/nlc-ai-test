@@ -427,9 +427,58 @@ export class SyncService {
   }
 
   private createMessagePreview(content: string): string {
+    // First strip any HTML tags
     const text = content.replace(/<[^>]*>/g, ' ');
-    const cleaned = text.replace(/\s+/g, ' ').trim();
+
+    // Strip quoted content
+    const stripped = this.stripQuotedText(text);
+
+    // Clean up whitespace
+    const cleaned = stripped.replace(/\s+/g, ' ').trim();
+
     return cleaned.length > 500 ? cleaned.substring(0, 497) + '...' : cleaned;
+  }
+
+  /**
+   * Strip quoted text from plain text emails
+   */
+  private stripQuotedText(text: string): string {
+    // Common quote indicators
+    const quotePatterns = [
+      /^On .+ wrote:$/m,                    // "On Mon, Jan 1, 2024 at 10:00 AM, someone wrote:"
+      /^From: .+$/m,                         // "From: someone@example.com"
+      /^_{10,}/m,                            // Underscores separator
+      /^-{3,} ?Original Message ?-{3,}/mi,  // "--- Original Message ---"
+      /^>{1,}.+$/m,                          // Lines starting with > or >>
+      /^\d{4}-\d{2}-\d{2} .+ wrote:/m,      // "2024-01-01 10:00 AM someone wrote:"
+    ];
+
+    let cleanText = text;
+
+    // Find the earliest occurrence of any quote pattern
+    let earliestIndex = text.length;
+
+    for (const pattern of quotePatterns) {
+      const match = text.match(pattern);
+      if (match && match.index !== undefined && match.index < earliestIndex) {
+        earliestIndex = match.index;
+      }
+    }
+
+    // If we found a quote indicator, cut off everything after it
+    if (earliestIndex < text.length) {
+      cleanText = text.substring(0, earliestIndex);
+    }
+
+    // Also check for consecutive lines starting with >
+    const lines = cleanText.split('\n');
+    const firstQuotedLine = lines.findIndex(line => line.trim().startsWith('>'));
+
+    if (firstQuotedLine > 0) {
+      cleanText = lines.slice(0, firstQuotedLine).join('\n');
+    }
+
+    return cleanText.trim();
   }
 
   private async isEmailFromCoach(senderEmail: string, coachID: string): Promise<boolean> {

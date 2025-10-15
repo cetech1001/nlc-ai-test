@@ -42,6 +42,17 @@ export class SendProcessor {
         throw new Error('No email account connected for this thread');
       }
 
+      // CRITICAL: Extract threading headers from message metadata
+      const metadata = message.metadata as any;
+      const inReplyTo = metadata?.inReplyTo;
+      const references = metadata?.references;
+
+      this.logger.log(`Sending thread reply with headers:`, {
+        threadID: emailThread.threadID,
+        inReplyTo,
+        references,
+      });
+
       const result = await this.smtpService.sendViaCoachAccount({
         accountID: emailThread.emailAccount.id,
         to: message.to,
@@ -49,6 +60,8 @@ export class SendProcessor {
         text: message.text || '',
         html: message.html || '',
         threadID: emailThread.threadID,
+        inReplyTo,
+        references,
       });
 
       if (result.success) {
