@@ -32,6 +32,11 @@ export default function EmailThreadDetailPage() {
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [customInstructions, setCustomInstructions] = useState("");
 
+  // Streaming state
+  const [streamingContent, setStreamingContent] = useState("");
+  const [streamingSubject, setStreamingSubject] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+
   useEffect(() => {
     if (threadID) {
       loadThreadData();
@@ -72,63 +77,55 @@ export default function EmailThreadDetailPage() {
 
     try {
       setIsGenerating(true);
+      setIsStreaming(true);
       setError("");
+      setStreamingContent("");
+      setStreamingSubject("");
 
-      // Use streaming to generate response
-      const stream = await sdkClient.agents.clientEmail.streamEmailResponse(
+      let savedResponseID: string | undefined;
+
+      // Use the async generator for streaming
+      const stream = sdkClient.agents.clientEmail.streamEmailResponse(
         threadID,
         customInstructions || undefined
       );
 
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = '';
-      let subject = '';
-      let body = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              if (data.type === 'content') {
-                fullContent += data.content;
-              } else if (data.type === 'done') {
-                subject = data.subject;
-                body = data.body;
-              }
-            } catch (e) {
-              // Skip invalid JSON
-            }
-          }
+      for await (const chunk of stream) {
+        if (chunk.type === 'content') {
+          // Append streaming content in real-time
+          setStreamingContent((prev) => prev + (chunk.content || ''));
+        } else if (chunk.type === 'done') {
+          // Final response received
+          setStreamingSubject(chunk.subject || '');
+          setStreamingContent(chunk.body || '');
+          savedResponseID = chunk.responseID;
         }
       }
 
-      // Save the generated response
-      if (subject && body) {
-        await sdkClient.agents.clientEmail.saveGeneratedResponse({
-          threadID,
-          subject,
-          body,
-          confidence: 0.85,
-        });
-
-        // Reload responses
-        const updatedResponses = await sdkClient.email.threads.getThreadResponses(threadID);
-        setResponses(updatedResponses);
-      }
-
+      // Clear streaming state
+      setIsStreaming(false);
+      setStreamingContent("");
+      setStreamingSubject("");
       setCustomInstructions("");
+
+      // Reload responses to show the saved one
+      const updatedResponses = await sdkClient.email.threads.getThreadResponses(threadID);
+      setResponses(updatedResponses);
+
       setSuccessMessage("AI response generated successfully!");
+
+      // Navigate to the response review page
+      if (savedResponseID) {
+        setTimeout(() => {
+          router.push(`/agents/emails/${threadID}/response/${savedResponseID}`);
+        }, 1000);
+      }
     } catch (err: any) {
+      console.error('Stream error:', err);
       setError(err.message || "Failed to generate response");
+      setIsStreaming(false);
+      setStreamingContent("");
+      setStreamingSubject("");
     } finally {
       setIsGenerating(false);
     }
@@ -325,6 +322,7 @@ export default function EmailThreadDetailPage() {
               placeholder="Add any specific instructions for the AI response..."
               className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none resize-none"
               rows={3}
+              disabled={isGenerating}
             />
           </div>
 
@@ -336,6 +334,32 @@ export default function EmailThreadDetailPage() {
             <Sparkles className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-pulse' : ''}`} />
             {isGenerating ? 'Generating Response...' : 'Generate AI Response'}
           </Button>
+
+          {/* Live Streaming Preview */}
+          {isStreaming && streamingContent && (
+            <div className="relative mt-4 bg-gradient-to-b from-purple-900/20 to-fuchsia-900/20 rounded-[20px] border border-purple-500/30 p-6 overflow-hidden">
+              <div className="absolute w-32 h-32 -right-8 -top-8 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[80px] animate-pulse" />
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-4 h-4 text-fuchsia-400 animate-pulse" />
+                  <span className="text-fuchsia-400 text-sm font-medium">AI is generating your response...</span>
+                </div>
+
+                {streamingSubject && (
+                  <div className="mb-3">
+                    <div className="text-stone-400 text-xs mb-1">Subject:</div>
+                    <div className="text-stone-200 font-medium">{streamingSubject}</div>
+                  </div>
+                )}
+
+                <div className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
+                  {streamingContent}
+                  <span className="inline-block w-2 h-4 bg-fuchsia-400 animate-pulse ml-1" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

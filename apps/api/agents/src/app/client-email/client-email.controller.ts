@@ -87,11 +87,42 @@ export class ClientEmailController {
           } as MessageEvent);
 
           observer.complete();
-        } catch (error) {
+        } catch (error: any) {
+          observer.next({
+            data: JSON.stringify({
+              type: 'error',
+              error: error.message || 'Failed to generate response',
+            })
+          } as MessageEvent);
           observer.error(error);
         }
       })();
     });
+  }
+
+  @Post('response/save')
+  @ApiOperation({ summary: 'Save a generated email response' })
+  @ApiResponse({ status: 200, description: 'Response saved successfully' })
+  async saveGeneratedResponse(
+    @CurrentUser() user: AuthUser,
+    @Body() body: {
+      threadID: string;
+      subject: string;
+      body: string;
+      confidence?: number;
+    }
+  ) {
+    const saved = await this.emailAgentService.saveGeneratedResponse(
+      body.threadID,
+      body.subject,
+      body.body,
+      body.confidence
+    );
+
+    return {
+      message: 'Response saved successfully',
+      responseID: saved.id,
+    };
   }
 
   @Post('response/:responseID/update')

@@ -1,10 +1,11 @@
-import { BaseClient } from "@nlc-ai/sdk-core";
+import {BaseClient} from "@nlc-ai/sdk-core";
 import {
   ClientEmailThread,
   EmailThreadDetail,
   GeneratedEmailResponse,
   GetThreadsParams,
-  ReplyToThreadParams, UpdateThreadParams
+  ReplyToThreadParams,
+  UpdateThreadParams
 } from "../types";
 
 export class ThreadsClient extends BaseClient {
@@ -69,12 +70,11 @@ export class ThreadsClient extends BaseClient {
     threadID: string,
     replyData: ReplyToThreadParams
   ): Promise<{ success: boolean; error?: { message: string } }> {
-    const response = await this.request<{ success: boolean; error?: { message: string } }>(
+    return await this.request<{ success: boolean; error?: { message: string } }>(
       'POST',
       `/${threadID}/reply`,
-      { body: replyData }
+      {body: replyData}
     );
-    return response.data!;
   }
 
   /**

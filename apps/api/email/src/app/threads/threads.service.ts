@@ -51,27 +51,16 @@ export class ThreadsService {
   async getThreads(userID: string, filters: ThreadFilters = {}) {
     const { limit = 20, status, isRead, clientID } = filters;
 
-    const cacheKey = `threads:list:${userID}:${JSON.stringify(filters)}`;
-
-    return this.cacheService.getOrSet(
-      cacheKey,
-      async () => {
-        return this.prisma.emailThread.findMany({
-          where: {
-            userID,
-            ...(status && { status }),
-            ...(isRead !== undefined && { isRead }),
-            ...(clientID && { clientID }),
-          },
-          orderBy: { lastMessageAt: 'desc' },
-          take: limit,
-        });
+    return this.prisma.emailThread.findMany({
+      where: {
+        userID,
+        ...(status && { status }),
+        ...(isRead !== undefined && { isRead }),
+        ...(clientID && { clientID }),
       },
-      {
-        ttl: this.CACHE_TTL.THREAD_LIST,
-        tags: [`user:${userID}`, 'threads:list']
-      }
-    );
+      orderBy: { lastMessageAt: 'desc' },
+      take: limit,
+    });
   }
 
   async getThread(userID: string, threadID: string) {
@@ -151,29 +140,18 @@ export class ThreadsService {
    * Get generated AI responses for a thread
    */
   async getGeneratedResponses(userID: string, threadID: string) {
-    const cacheKey = `threads:responses:${threadID}:${userID}`;
+    const thread = await this.prisma.emailThread.findFirst({
+      where: { id: threadID, userID },
+    });
 
-    return this.cacheService.getOrSet(
-      cacheKey,
-      async () => {
-        const thread = await this.prisma.emailThread.findFirst({
-          where: { id: threadID, userID },
-        });
+    if (!thread) {
+      throw new BadRequestException('Thread not found');
+    }
 
-        if (!thread) {
-          throw new BadRequestException('Thread not found');
-        }
-
-        return await this.prisma.generatedEmailResponse.findMany({
-          where: {threadID},
-          orderBy: {createdAt: 'desc'},
-        });
-      },
-      {
-        ttl: this.CACHE_TTL.GENERATED_RESPONSES,
-        tags: [`user:${userID}`, `thread:${threadID}`, 'threads:responses']
-      }
-    );
+    return await this.prisma.generatedEmailResponse.findMany({
+      where: {threadID},
+      orderBy: {createdAt: 'desc'},
+    });
   }
 
   private async fetchGmailThreadMessages(accessToken: string, threadID: string): Promise<ThreadMessage[]> {

@@ -25,40 +25,111 @@ export interface UpdateResponseParams {
   actualBody: string;
 }
 
+export interface StreamChunk {
+  type: 'content' | 'done' | 'error';
+  content?: string;
+  subject?: string;
+  body?: string;
+  fullContent?: string;
+  responseID?: string;
+  error?: string;
+}
+
 export class ClientEmailClient extends BaseClient {
   /**
    * Stream AI-generated email response
-   * Returns an EventSource-compatible stream
+   * Returns an async generator that yields chunks as they arrive
    */
-  async streamEmailResponse(
+  async *streamEmailResponse(
     threadID: string,
     messageContext?: string
-  ): Promise<ReadableStream> {
+  ): AsyncGenerator<StreamChunk, void, unknown> {
     const url = `${this.baseURL}/stream-response`;
+
+    const token = this.getToken?.() || this.apiKey;
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         threadID,
         messageContext,
+        saveResponse: true,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Stream request failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Stream request failed: ${response.statusText} - ${errorText}`);
     }
 
-    const text = await response.text();
-
-    if (text.includes('event: error')) {
-      throw new Error(text.split('data: ').pop());
+    if (!response.body) {
+      throw new Error('Response body is null');
     }
 
-    return response.body!;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        // Decode the chunk and add to buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          // SSE format: "data: {...}"
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonStr = line.slice(6).trim();
+              if (jsonStr) {
+                const chunk = JSON.parse(jsonStr) as StreamChunk;
+
+                if (chunk.type === 'error') {
+                  throw new Error(chunk.error || 'Stream error occurred');
+                }
+
+                yield chunk;
+              }
+            } catch (parseError) {
+              console.error('Failed to parse SSE chunk:', line, parseError);
+              // Continue processing other chunks
+            }
+          }
+        }
+      }
+
+      // Process any remaining data in buffer
+      if (buffer.trim() && buffer.startsWith('data: ')) {
+        try {
+          const jsonStr = buffer.slice(6).trim();
+          if (jsonStr) {
+            const chunk = JSON.parse(jsonStr) as StreamChunk;
+            if (chunk.type === 'error') {
+              throw new Error(chunk.error || 'Stream error occurred');
+            }
+            yield chunk;
+          }
+        } catch (parseError) {
+          console.error('Failed to parse final SSE chunk:', buffer, parseError);
+        }
+      }
+    } catch (error) {
+      reader.cancel();
+      throw error;
+    }
   }
 
   /**

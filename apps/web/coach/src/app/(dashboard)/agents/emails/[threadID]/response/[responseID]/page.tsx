@@ -10,7 +10,8 @@ import {
   Calendar,
   TrendingUp,
   Send,
-  X
+  X,
+  Sparkles
 } from "lucide-react";
 import { BackTo, RichTextEditor } from "@nlc-ai/web-shared";
 import { AlertBanner, Button, Skeleton } from '@nlc-ai/web-ui';
@@ -34,6 +35,10 @@ export default function ResponseReviewPage() {
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [hasModifications, setHasModifications] = useState(false);
+
+  // Streaming state for regeneration
+  const [streamingContent, setStreamingContent] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
 
   useEffect(() => {
     if (threadID && responseID) {
@@ -135,39 +140,24 @@ export default function ResponseReviewPage() {
 
     try {
       setIsRegenerating(true);
+      setIsStreaming(true);
       setError("");
+      setStreamingContent("");
 
-      // Use streaming to regenerate response
-      const stream = await sdkClient.agents.clientEmail.streamEmailResponse(threadID);
-
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = '';
       let subject = '';
       let body = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      // Use the async generator for streaming
+      const stream = sdkClient.agents.clientEmail.streamEmailResponse(threadID);
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              if (data.type === 'content') {
-                fullContent += data.content;
-              } else if (data.type === 'done') {
-                subject = data.subject;
-                body = data.body;
-              }
-            } catch (e) {
-              // Skip invalid JSON
-            }
-          }
+      for await (const chunk of stream) {
+        if (chunk.type === 'content') {
+          // Append streaming content in real-time
+          setStreamingContent((prev) => prev + (chunk.content || ''));
+        } else if (chunk.type === 'done') {
+          // Final response received
+          subject = chunk.subject || '';
+          body = chunk.body || '';
         }
       }
 
@@ -175,10 +165,15 @@ export default function ResponseReviewPage() {
       setEmailSubject(subject);
       setEmailContent(body);
       setHasModifications(false);
+      setIsStreaming(false);
+      setStreamingContent("");
 
       setSuccessMessage("Response regenerated successfully!");
     } catch (err: any) {
+      console.error('Regenerate error:', err);
       setError(err.message || "Failed to regenerate response");
+      setIsStreaming(false);
+      setStreamingContent("");
     } finally {
       setIsRegenerating(false);
     }
@@ -222,7 +217,7 @@ export default function ResponseReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse px-4">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
         </div>
@@ -257,14 +252,14 @@ export default function ResponseReviewPage() {
 
   if (!responseData || !threadData) {
     return (
-      <div className="py-8">
+      <div className="py-8 px-4">
         <AlertBanner type="error" message={error || "Response not found"} onDismiss={clearMessages} />
       </div>
     );
   }
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
+    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden px-4">
       <BackTo onClick={handleBackClick} title="Review AI Response" />
 
       {successMessage && (
@@ -352,6 +347,25 @@ export default function ResponseReviewPage() {
         </div>
       )}
 
+      {/* Streaming Preview for Regeneration */}
+      {isStreaming && streamingContent && (
+        <div className="relative bg-gradient-to-b from-purple-900/20 to-fuchsia-900/20 rounded-[20px] border border-purple-500/30 p-6 overflow-hidden">
+          <div className="absolute w-32 h-32 -right-8 -top-8 opacity-30 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[80px] animate-pulse" />
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-4 h-4 text-fuchsia-400 animate-pulse" />
+              <span className="text-fuchsia-400 text-sm font-medium">Regenerating response...</span>
+            </div>
+
+            <div className="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
+              {streamingContent}
+              <span className="inline-block w-2 h-4 bg-fuchsia-400 animate-pulse ml-1" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Email Editor */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -385,6 +399,7 @@ export default function ResponseReviewPage() {
               value={emailSubject}
               onChange={(e) => handleSubjectChange(e.target.value)}
               className="w-full bg-neutral-800/50 border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder:text-stone-400 focus:border-fuchsia-500 focus:outline-none"
+              disabled={isRegenerating}
             />
           </div>
 
@@ -404,6 +419,7 @@ export default function ResponseReviewPage() {
               onClick={handleRejectResponse}
               variant="outline"
               className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+              disabled={isSending || isRegenerating}
             >
               <X className="w-4 h-4 mr-2" />
               Discard Response
@@ -412,7 +428,7 @@ export default function ResponseReviewPage() {
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleSendEmail}
-                disabled={isSending}
+                disabled={isSending || isRegenerating}
                 className="bg-gradient-to-t from-fuchsia-200 via-fuchsia-600 to-violet-600 hover:bg-[#8B31CA] text-white rounded-lg transition-colors"
               >
                 <Send className="w-4 h-4 mr-2" />
