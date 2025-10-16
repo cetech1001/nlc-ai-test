@@ -2,10 +2,6 @@
 import {useRouter} from "next/navigation";
 import {useState} from "react";
 
-/*<iframe title="vimeo-player" src="https://player.vimeo.com/video/1127291836?h=08684a7618" width="640" height="360"
-        frameBorder="0" referrerPolicy="strict-origin-when-cross-origin"
-        allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
-        allowFullScreen></iframe>*/
 export const HeroSection = () => {
   const router = useRouter();
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -68,7 +64,25 @@ export const HeroSection = () => {
 
                 <div
                   className="aspect-video w-full h-full z-20 bg-background rounded-2xl flex items-center justify-center relative overflow-hidden">
-                  {!isVideoPlaying ? (
+                  {/* Preload iframe hidden */}
+                  <iframe
+                    src="https://player.vimeo.com/video/1127299038?badge=0&amp;autopause=0&amp;autoplay=1&amp;player_id=0&amp;app_id=58479"
+                    frameBorder="0"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      display: isVideoPlaying ? "block" : "none"
+                    }}
+                    title="PreLaunch VSL Final"
+                  />
+
+                  {/* Thumbnail overlay */}
+                  {!isVideoPlaying && (
                     <>
                       <img
                         src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/hero-thumbnail.jpg"
@@ -89,11 +103,6 @@ export const HeroSection = () => {
                         <p className="text-gray-300 font-semibold drop-shadow-lg">Watch Demo</p>
                       </div>
                     </>
-                  ) : (
-                    <iframe title="vimeo-player" src="https://player.vimeo.com/video/1127291836?h=08684a7618" style={{ height: '100%', width: '100%' }}
-                            frameBorder="0" referrerPolicy="strict-origin-when-cross-origin"
-                            allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
-                            allowFullScreen></iframe>
                   )}
 
                   {!isVideoPlaying && (
