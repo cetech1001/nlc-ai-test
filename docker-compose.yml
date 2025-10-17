@@ -189,11 +189,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./apps/api/content:/app/apps/api/content
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
-      - /app/node_modules
 
   messages:
     build:
@@ -295,10 +291,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./apps/api/integrations:/app/apps/api/integrations
-      - ./libs/api:/app/libs/api
       - ./.env:/app/.env
-      - /app/node_modules
 
   leads:
     build:
