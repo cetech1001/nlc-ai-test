@@ -1,14 +1,48 @@
 'use client'
 
-import React, {FC, ReactNode, useState} from "react";
+import React, {FC, ReactNode, useEffect, useState} from "react";
 import {PageHeader, Sidebar} from "@/lib";
+import {/*usePathname,*/ useRouter} from "next/navigation";
+import {useAuth} from "@nlc-ai/web-auth";
+import {UserType} from "@nlc-ai/types";
 
 interface IProps {
   children: ReactNode;
 }
 
 const DashboardLayout: FC<IProps> = ({ children }) => {
+  const router = useRouter();
+
+  const { /*user,*/ isLoading, isAuthenticated, /*logout*/ } = useAuth(UserType.CLIENT);
+
+  // const pathname = usePathname();
+  // let path = pathname.split('/').filter(Boolean).shift();
+  // const currentConfig = pageConfig[path as keyof typeof pageConfig] || defaultConfig;
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  /*const navigateTo = (path: string) => {
+    router.push(path);
+  }
+
+  const goToNotifications = () => {
+    router.push('/notifications');
+  }
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  }*/
 
   return (
     <div className="min-h-screen bg-background text-foreground">

@@ -1,6 +1,6 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
 import { TableColumn } from "@nlc-ai/types";
-import {Edit3, Eye} from "lucide-react";
+import {Edit3, Eye, Trash} from "lucide-react";
 import {ExtendedClient} from "@nlc-ai/sdk-users";
 import {formatDate} from "@nlc-ai/sdk-core";
 import {EmailAgentIcon} from "@/lib";
@@ -108,6 +108,12 @@ export const clientColumns: TableColumn<ExtendedClient>[] = [
             className="p-1.5 rounded text-sm hover:bg-purple-600/30 transition-colors text-[#A0A0A0]"
           >
             <Eye className="w-4 h-4"/>
+          </button>
+          <button
+            onClick={() => onRowAction?.('delete', client)}
+            className="p-1.5 rounded text-sm hover:bg-purple-600/30 transition-colors text-[#A0A0A0]"
+          >
+            <Trash className="w-4 h-4"/>
           </button>
         </div>
       );

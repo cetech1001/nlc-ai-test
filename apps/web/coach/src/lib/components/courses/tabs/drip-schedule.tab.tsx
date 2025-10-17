@@ -1,6 +1,6 @@
 import { cn } from "@nlc-ai/web-ui";
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Calendar, Clock, Save, Info } from 'lucide-react';
+import { ChevronRight, Calendar, Clock, Save, Info } from 'lucide-react';
 import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 import { sdkClient } from '@/lib';
 import { toast } from 'sonner';
@@ -9,30 +9,23 @@ interface LessonDripProps {
   lessonID: string;
   title: string;
   defaultDays?: number;
-  dripType: 'course_start' | 'previous_lesson';
-  onDripChange: (lessonID: string, days: number, type: 'course_start' | 'previous_lesson') => void;
-  isFirst?: boolean;
+  onDripChange: (lessonID: string, days: number) => void;
+  isFirstLesson?: boolean;
 }
 
 const LessonDrip: React.FC<LessonDripProps> = ({
                                                  lessonID,
                                                  title,
                                                  defaultDays = 0,
-                                                 dripType,
                                                  onDripChange,
-                                                 isFirst = false
+                                                 isFirstLesson = false
                                                }) => {
   const [days, setDays] = useState(defaultDays);
-  const [selectedType, setSelectedType] = useState(dripType);
 
   const handleDaysChange = (newDays: number) => {
+    if (isFirstLesson) return; // Prevent changes to first lesson
     setDays(newDays);
-    onDripChange(lessonID, newDays, selectedType);
-  };
-
-  const handleTypeChange = (newType: 'course_start' | 'previous_lesson') => {
-    setSelectedType(newType);
-    onDripChange(lessonID, days, newType);
+    onDripChange(lessonID, newDays);
   };
 
   return (
@@ -42,42 +35,27 @@ const LessonDrip: React.FC<LessonDripProps> = ({
           {title}
         </span>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-purple-400" />
-            <input
-              type="number"
-              value={days}
-              onChange={(e) => handleDaysChange(Math.max(0, Number(e.target.value)))}
-              min="0"
-              max="365"
-              disabled={isFirst && selectedType === 'course_start'}
-              className="w-16 bg-neutral-800 border border-neutral-600 text-white rounded px-2 py-1 text-sm focus:border-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <span className="text-sm text-white/70">days</span>
-          </div>
-
-          <div className="relative">
-            <select
-              value={selectedType}
-              onChange={(e) => handleTypeChange(e.target.value as 'course_start' | 'previous_lesson')}
-              disabled={isFirst} // First lesson should always be available from course start
-              className="bg-neutral-800 border border-neutral-600 text-white rounded px-2 py-1 text-sm focus:border-purple-500 focus:outline-none appearance-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="course_start">from course start</option>
-              <option value="previous_lesson">from previous lesson</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-          </div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-purple-400" />
+          <input
+            type="number"
+            value={days}
+            onChange={(e) => handleDaysChange(Math.max(0, Number(e.target.value)))}
+            min="0"
+            max="365"
+            disabled={isFirstLesson}
+            className="w-16 bg-neutral-800 border border-neutral-600 text-white rounded px-2 py-1 text-sm focus:border-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <span className="text-sm text-white/70">days from course start</span>
         </div>
       </div>
 
       <div className="text-xs text-white/50">
-        {isFirst && selectedType === 'course_start' ? (
-          days === 0 ? 'Available immediately upon enrollment' : `Available ${days} days after student enrolls`
-        ) : selectedType === 'course_start'
-          ? `Available ${days} days after student enrolls`
-          : `Available ${days} days after previous lesson is completed`
+        {isFirstLesson
+          ? 'Available immediately upon enrollment (cannot be changed)'
+          : days === 0
+            ? 'Available immediately upon enrollment'
+            : `Available ${days} days after student enrolls`
         }
       </div>
     </div>
@@ -96,8 +74,9 @@ interface CourseModuleProps {
   }>;
   isExpanded?: boolean;
   onToggle: () => void;
-  onDripChange: (lessonID: string, days: number, type: 'course_start' | 'previous_lesson') => void;
-  dripSettings: { [lessonID: string]: { days: number; type: 'course_start' | 'previous_lesson' } };
+  onDripChange: (lessonID: string, days: number) => void;
+  dripSettings: { [lessonID: string]: { days: number } };
+  isFirstChapter: boolean;
 }
 
 const CourseModule: React.FC<CourseModuleProps> = ({
@@ -108,7 +87,8 @@ const CourseModule: React.FC<CourseModuleProps> = ({
                                                      isExpanded = false,
                                                      onToggle,
                                                      onDripChange,
-                                                     dripSettings
+                                                     dripSettings,
+                                                     isFirstChapter
                                                    }) => {
   return (
     <div className="flex p-4 md:p-6 flex-col justify-center items-start gap-5 self-stretch rounded-[20px] border border-[#454444] bg-gradient-to-br from-[rgba(38,38,38,0.3)] to-[rgba(19,19,19,0.3)]">
@@ -139,9 +119,9 @@ const CourseModule: React.FC<CourseModuleProps> = ({
           </div>
           {lessons.map((lesson, index) => {
             const lessonDripSetting = dripSettings[lesson.lessonID] || {
-              days: index === 0 ? 0 : 7,
-              type: index === 0 ? 'course_start' : 'previous_lesson'
+              days: index === 0 && isFirstChapter ? 0 : 7
             };
+            const isVeryFirstLesson = index === 0 && isFirstChapter;
 
             return (
               <LessonDrip
@@ -149,9 +129,8 @@ const CourseModule: React.FC<CourseModuleProps> = ({
                 lessonID={lesson.lessonID}
                 title={lesson.title}
                 defaultDays={lessonDripSetting.days}
-                dripType={lessonDripSetting.type}
                 onDripChange={onDripChange}
-                isFirst={index === 0}
+                isFirstLesson={isVeryFirstLesson}
               />
             );
           })}
@@ -169,7 +148,7 @@ interface DripScheduleTabProps {
 export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, course }) => {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [dripSettings, setDripSettings] = useState<{
-    [lessonID: string]: { days: number; type: 'course_start' | 'previous_lesson' }
+    [lessonID: string]: { days: number }
   }>({});
   const [isDripEnabled, setIsDripEnabled] = useState(course?.isDripEnabled || false);
   const [isLoading, setIsLoading] = useState(false);
@@ -192,25 +171,33 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
 
       // Initialize drip settings for all lessons
       const initialSettings: typeof dripSettings = {};
+      let isFirstChapter = true;
 
       course?.chapters?.forEach(chapter => {
+        let isFirstLessonInFirstChapter = isFirstChapter;
+
         chapter.lessons?.forEach((lesson, index) => {
           // Check if we have existing drip settings for this lesson
           const existingSetting = dripData.lessons?.find((l: any) => l.lessonID === lesson.id);
 
           if (existingSetting) {
             initialSettings[lesson.id] = {
-              days: existingSetting.dripDelay || 0,
-              type: existingSetting.dripType || (index === 0 ? 'course_start' : 'previous_lesson')
+              days: existingSetting.dripDelay || 0
             };
           } else {
-            // Default settings
+            // Default settings - first lesson of first chapter is 0, others are 7 days
+            const isVeryFirstLesson = index === 0 && isFirstLessonInFirstChapter;
             initialSettings[lesson.id] = {
-              days: index === 0 ? 0 : 7, // First lesson immediate, others weekly
-              type: index === 0 ? 'course_start' : 'previous_lesson'
+              days: isVeryFirstLesson ? 0 : 7
             };
           }
+
+          if (index === 0 && isFirstLessonInFirstChapter) {
+            isFirstLessonInFirstChapter = false;
+          }
         });
+
+        isFirstChapter = false;
       });
 
       setDripSettings(initialSettings);
@@ -232,10 +219,10 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
     setExpandedModules(newExpanded);
   };
 
-  const handleDripChange = (lessonID: string, days: number, type: 'course_start' | 'previous_lesson') => {
+  const handleDripChange = (lessonID: string, days: number) => {
     setDripSettings(prev => ({
       ...prev,
-      [lessonID]: { days, type }
+      [lessonID]: { days }
     }));
     setHasUnsavedChanges(true);
   };
@@ -253,15 +240,15 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
       // Update course-level drip settings
       await sdkClient.courses.dripSchedule.updateDripSchedule(courseID, {
         isDripEnabled,
-        dripInterval: 'custom', // Using custom intervals per lesson
+        dripInterval: 'custom',
         dripCount: Object.keys(dripSettings).length
       });
 
-      // Update individual lesson drip settings
+      // Update individual lesson drip settings - all relative to course_start
       const lessonSettings = Object.entries(dripSettings).map(([lessonID, setting]) => ({
         lessonID,
         days: setting.days,
-        type: setting.type
+        type: 'course_start' as const
       }));
 
       await sdkClient.courses.dripSchedule.updateLessonDripSchedule(courseID, {
@@ -278,50 +265,8 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
     }
   };
 
-  const handleQuickSetup = (pattern: 'immediate' | 'daily' | 'weekly' | 'monthly') => {
-    const newSettings: typeof dripSettings = {};
-
-    course?.chapters?.forEach(chapter => {
-      chapter.lessons?.forEach((lesson, lessonIndex, allLessons) => {
-        const globalIndex = course.chapters!.reduce((acc, ch, chIndex) => {
-          if (chIndex < course.chapters!.indexOf(chapter)) {
-            return acc + (ch.lessons?.length || 0);
-          }
-          return acc;
-        }, 0) + lessonIndex;
-
-        let days = 0;
-        let type: 'course_start' | 'previous_lesson' = 'course_start';
-
-        switch (pattern) {
-          case 'immediate':
-            days = 0;
-            type = 'course_start';
-            break;
-          case 'daily':
-            days = globalIndex;
-            type = globalIndex === 0 ? 'course_start' : 'previous_lesson';
-            break;
-          case 'weekly':
-            days = globalIndex * 7;
-            type = globalIndex === 0 ? 'course_start' : 'previous_lesson';
-            break;
-          case 'monthly':
-            days = globalIndex * 30;
-            type = globalIndex === 0 ? 'course_start' : 'previous_lesson';
-            break;
-        }
-
-        newSettings[lesson.id] = { days, type };
-      });
-    });
-
-    setDripSettings(newSettings);
-    setHasUnsavedChanges(true);
-  };
-
   // Transform course data to display format
-  const courseModules = course?.chapters?.map(chapter => ({
+  const courseModules = course?.chapters?.map((chapter, chapterIndex) => ({
     chapterID: chapter.id,
     title: chapter.title,
     lessonCount: chapter.lessons?.length || 0,
@@ -330,7 +275,8 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
       title: lesson.title,
       type: lesson.lessonType,
       estimatedMinutes: lesson.estimatedMinutes
-    })) || []
+    })) || [],
+    isFirstChapter: chapterIndex === 0
   })) || [];
 
   if (isLoading) {
@@ -353,11 +299,11 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
                 Drip Schedule
               </h3>
               <p className="text-[#838383] font-inter text-sm md:text-base font-normal">
-                Control when lessons become available to students. Set up automatic content release based on enrollment date or lesson completion.
+                Control when lessons become available to students. All lessons are scheduled relative to enrollment date.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               {hasUnsavedChanges && (
                 <div className="flex items-center gap-2 text-yellow-400 text-sm">
                   <Info className="w-4 h-4" />
@@ -388,7 +334,7 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
           {/* Drip Schedule Toggle */}
           <div className="flex items-center gap-4 p-4 bg-neutral-800/20 rounded-lg border border-neutral-700/50 w-full">
             <div className="flex items-center gap-3">
-              <div className="relative">
+              <div className="">
                 <input
                   type="checkbox"
                   id="drip-enabled"
@@ -422,49 +368,12 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
             </div>
           </div>
 
-          {/* Quick Setup Options */}
-          {isDripEnabled && (
-            <div className="flex flex-col gap-3 p-4 bg-neutral-800/10 rounded-lg border border-neutral-700/30 w-full">
-              <div className="text-white/80 font-medium text-sm">Quick Setup:</div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => handleQuickSetup('immediate')}
-                  className="px-3 py-1 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded transition-colors"
-                >
-                  All Immediate
-                </button>
-                <button
-                  onClick={() => handleQuickSetup('daily')}
-                  className="px-3 py-1 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded transition-colors"
-                >
-                  Daily Release
-                </button>
-                <button
-                  onClick={() => handleQuickSetup('weekly')}
-                  className="px-3 py-1 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded transition-colors"
-                >
-                  Weekly Release
-                </button>
-                <button
-                  onClick={() => handleQuickSetup('monthly')}
-                  className="px-3 py-1 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded transition-colors"
-                >
-                  Monthly Release
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Legend */}
           {isDripEnabled && (
             <div className="flex flex-wrap gap-4 p-3 bg-neutral-800/20 rounded-lg border border-neutral-700/50 w-full">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-purple-400" />
-                <span className="text-sm text-white/70">Course Start: Available X days after enrollment</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-400" />
-                <span className="text-sm text-white/70">Previous Lesson: Available X days after previous lesson completion</span>
+                <span className="text-sm text-white/70">All lessons are scheduled relative to enrollment date</span>
               </div>
             </div>
           )}
@@ -484,6 +393,7 @@ export const DripScheduleTab: React.FC<DripScheduleTabProps> = ({ courseID, cour
                 onToggle={() => toggleModule(module.chapterID)}
                 onDripChange={handleDripChange}
                 dripSettings={dripSettings}
+                isFirstChapter={module.isFirstChapter}
               />
             ))}
           </div>

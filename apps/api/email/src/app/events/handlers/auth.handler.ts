@@ -3,7 +3,7 @@ import { EventBusService } from "@nlc-ai/api-messaging";
 import { PrismaService } from "@nlc-ai/api-database";
 import { SendService } from "../../send/send.service";
 import { ConfigService } from "@nestjs/config";
-import { EmailStatus, UserType } from "@nlc-ai/types";
+import { EmailStatus } from "@nlc-ai/types";
 
 @Injectable()
 export class AuthHandler {
@@ -21,6 +21,24 @@ export class AuthHandler {
       'support@nextlevelcoach.ai'
     );
     this.subscribeToEvents();
+  }
+
+  private async getTemplateID(key: string): Promise<string> {
+    const template = await this.prisma.emailTemplate.findFirst({
+      where: {
+        OR: [
+          { systemKey: key },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (!template) {
+      this.logger.error(`Email template not found for key "${key}"`);
+      throw new Error(`Missing email template: ${key}`);
+    }
+
+    return template.id;
   }
 
   private async subscribeToEvents() {
@@ -59,17 +77,14 @@ export class AuthHandler {
     try {
       const { email, type, code } = event.payload;
 
-      const templateID = type === 'email_verification'
-        ? 'email_verification'
-        : 'password_reset';
+      const templateKey = type === 'email_verification' ? 'email_verification' : 'password_reset';
+      const emailTemplateID = await this.getTemplateID(templateKey);
 
       const message = await this.prisma.emailMessage.create({
         data: {
-          userID: 'system',
-          userType: UserType.ADMIN,
           from: this.systemFromEmail,
           to: email,
-          emailTemplateID: templateID,
+          emailTemplateID,
           status: EmailStatus.PENDING,
           metadata: {
             type: 'transactional',
@@ -90,13 +105,13 @@ export class AuthHandler {
     try {
       const { email, firstName, lastName } = event.payload;
 
+      const emailTemplateID = await this.getTemplateID('welcome_coach');
+
       const message = await this.prisma.emailMessage.create({
         data: {
-          userID: 'system',
-          userType: UserType.ADMIN,
           from: this.systemFromEmail,
           to: email,
-          emailTemplateID: 'welcome_coach',
+          emailTemplateID,
           status: EmailStatus.PENDING,
           metadata: {
             type: 'transactional',
@@ -129,13 +144,13 @@ export class AuthHandler {
     try {
       const { email } = event.payload;
 
+      const emailTemplateID = await this.getTemplateID('password_reset_success');
+
       const message = await this.prisma.emailMessage.create({
         data: {
-          userID: 'system',
-          userType: UserType.ADMIN,
           from: this.systemFromEmail,
           to: email,
-          emailTemplateID: 'password_reset_success',
+          emailTemplateID,
           status: EmailStatus.PENDING,
           metadata: {
             type: 'transactional',
@@ -156,19 +171,20 @@ export class AuthHandler {
       const baseUrl = this.configService.get<string>('email.platforms.client', '');
       const inviteUrl = `${baseUrl}/login?token=${token}`;
 
+      const emailTemplateID = await this.getTemplateID('client_invite');
+
       const message = await this.prisma.emailMessage.create({
         data: {
-          userID: 'system',
-          userType: UserType.ADMIN,
           from: this.systemFromEmail,
           to: email,
-          emailTemplateID: 'client_invite',
+          emailTemplateID,
           status: EmailStatus.PENDING,
           metadata: {
             type: 'transactional',
             inviteUrl,
             coachName,
             businessName: businessName || `${coachName}'s coaching program`,
+            businessTagline: '',
             message: inviteMessage || 'N/A',
             expiryText: expiresAt
               ? `This invitation expires on ${new Date(expiresAt).toLocaleDateString()}.`

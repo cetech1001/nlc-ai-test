@@ -63,7 +63,7 @@ export const ClientsLandingPage = () => {
   ];
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-8 max-w-full overflow-hidden">
+    <div className="py-4 sm:py-6 lg:py-8 space-y-8 max-w-full overflow-hidden px-4">
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-8 overflow-hidden">
         <div className="absolute w-64 h-64 -left-12 top-32 opacity-20 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />
         <div className="absolute w-64 h-64 right-20 -top-20 opacity-50 bg-gradient-to-r from-purple-600 via-fuchsia-400 to-purple-800 rounded-full blur-[112px]" />

@@ -14,6 +14,7 @@ export class ChaptersService {
     await this.verifyCourseOwnership(courseID, coachID);
 
     const chapter = await this.prisma.courseChapter.create({
+      // @ts-ignore
       data: {
         ...createChapterDto,
         courseID: courseID,
@@ -159,14 +160,19 @@ export class ChaptersService {
   async reorder(courseID: string, chapterIDs: string[], coachID: string) {
     await this.verifyCourseOwnership(courseID, coachID);
 
-    await this.prisma.$transaction(
-      chapterIDs.map((chapterID, index) =>
-        this.prisma.courseChapter.update({
-          where: { id: chapterID },
-          data: { orderIndex: index },
-        })
-      )
-    );
+    await this.prisma.$transaction(async (tx) => {
+      await tx.courseChapter.updateMany({
+        where: { courseID },
+        data: { orderIndex: { increment: 1000 } },
+      });
+
+      for (let i = 0; i < chapterIDs.length; i++) {
+        await tx.courseChapter.update({
+          where: { id: chapterIDs[i] },
+          data: { orderIndex: i },
+        });
+      }
+    });
 
     return { success: true };
   }

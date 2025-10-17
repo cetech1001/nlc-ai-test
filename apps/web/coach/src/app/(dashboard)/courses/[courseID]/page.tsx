@@ -316,16 +316,9 @@ const CourseEditPage = () => {
 
   const handleReorderChapters = async (reorderedChapters: CurriculumState['chapters']) => {
     try {
-      // Update order indexes
-      const updates = reorderedChapters.map((chapter, index) => ({
-        chapterID: chapter.chapterID,
-        orderIndex: index
-      }));
 
-      // Call API to update chapter order
-      await Promise.all(updates.map(update =>
-        sdkClient.courses.chapters.updateChapter(courseID, update.chapterID, { orderIndex: update.orderIndex })
-      ));
+      const chapterIDs = reorderedChapters.map(r => r.chapterID);
+      await sdkClient.courses.chapters.reorderChapters(courseID, chapterIDs);
 
       // Update local state
       setCurriculum({ chapters: reorderedChapters });
@@ -340,15 +333,19 @@ const CourseEditPage = () => {
   const handleReorderLessons = async (chapterID: string, reorderedLessons: CurriculumState['chapters'][0]['lessons']) => {
     try {
       // Update order indexes
-      const updates = reorderedLessons.map((lesson, index) => ({
+      /*const updates = reorderedLessons.map((lesson, index) => ({
         lessonID: lesson.lessonID,
         orderIndex: index
-      }));
+      }));*/
+
+      const lessonIDs = reorderedLessons.map(r => r.lessonID);
+
+      await sdkClient.courses.lessons.reorderLessons(courseID, chapterID, lessonIDs);
 
       // Call API to update lesson order
-      await Promise.all(updates.map(update =>
+      /*await Promise.all(updates.map(update =>
         sdkClient.courses.lessons.updateLesson(courseID, chapterID, update.lessonID, { orderIndex: update.orderIndex })
-      ));
+      ));*/
 
       // Update local state
       setCurriculum(prev => ({

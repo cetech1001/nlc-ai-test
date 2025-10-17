@@ -55,22 +55,24 @@ const ClientInvitesPage = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    (() => fetchClientInvites())();
-  }, [currentPage, searchQuery, filterValues]);
+    fetchClientInvites();
+  }, [currentPage, searchQuery, filterValues, user]);
 
   const fetchClientInvites = async () => {
     try {
       setIsLoading(true);
       setError("");
 
-      const response = await sdkClient.users.relationship.getClientInvites({
-        page: currentPage,
-        limit: clientsPerPage,
-        search: searchQuery || undefined
-      }, filterValues);
+      if (user?.id) {
+        const response = await sdkClient.users.coaches.getClientInvites(user.id, {
+          page: currentPage,
+          limit: clientsPerPage,
+          search: searchQuery || undefined
+        }, filterValues);
 
-      setClientInvites(response.data);
-      setPagination(response.pagination);
+        setClientInvites(response.data);
+        setPagination(response.pagination);
+      }
     } catch (error: any) {
       setError(error.message || "Failed to load client invites");
     } finally {
@@ -101,11 +103,11 @@ const ClientInvitesPage = () => {
 
   const handleRowAction = async (action: string, id: string) => {
     if (action === 'resend') {
-      const data = await sdkClient.users.relationship.resendClientInvite(id);
+      const data = await sdkClient.users.coaches.resendClientInvite(user?.id!, id);
       setSuccessMessage(data.message);
       await fetchClientInvites();
     } else if (action === 'delete') {
-      const data = await sdkClient.users.relationship.deleteClientInvite(id);
+      const data = await sdkClient.users.coaches.deleteClientInvite(id);
       setSuccessMessage(data.message);
       await fetchClientInvites();
     }
@@ -117,7 +119,7 @@ const ClientInvitesPage = () => {
   }
 
   return (
-    <div className={`flex flex-col ${(isFilterOpen) && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'}`}>
+    <div className={`flex flex-col ${(isFilterOpen) && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'} px-4`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         {successMessage && (
           <AlertBanner type="success" message={successMessage} onDismiss={clearMessages}/>

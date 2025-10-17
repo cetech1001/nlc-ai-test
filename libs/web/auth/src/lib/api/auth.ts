@@ -82,7 +82,9 @@ class AuthAPI {
     lastName: string,
     email: string,
     password: string,
-    userType: UserType
+    userType: UserType,
+    marketingOptIn?: boolean,
+    inviteToken?: string,
   ): Promise<{ message: string; coachID?: string; clientID?: string; requiresVerification?: boolean }> {
     const data = { firstName, lastName, email, password };
 
@@ -90,14 +92,23 @@ class AuthAPI {
       case UserType.COACH:
         return this.auth.registerCoach(data);
       case UserType.CLIENT:
-        // Client registration requires invite token
-        throw new Error('Client registration requires invite token');
+        if (!inviteToken) {
+          throw new Error('Invitation token is required');
+        }
+        return this.auth.registerClient({
+          firstName,
+          lastName,
+          email,
+          password,
+          inviteToken,
+          marketingOptIn,
+        });
       default:
         throw new Error('Invalid user type for registration');
     }
   }
 
-  async googleAuth(idToken: string, userType: UserType): Promise<LoginResponse> {
+  async googleAuth(idToken: string, userType: UserType, inviteToken?: string): Promise<LoginResponse> {
     let result: any;
 
     switch (userType) {
@@ -105,12 +116,21 @@ class AuthAPI {
         result = await this.auth.coachGoogleAuth(idToken);
         break;
       case UserType.CLIENT:
-        // Client Google auth requires invite token
-        throw new Error('Client Google auth requires invite token');
+        if (!inviteToken) {
+          throw new Error('Invitation token is required');
+        }
+        result = await this.auth.clientGoogleAuth(idToken, inviteToken);
+        break;
       default:
         throw new Error('Invalid user type for Google auth');
     }
 
+    this.setToken(result.access_token);
+    return result;
+  }
+
+  async clientGoogleAuth(idToken: string, inviteToken: string): Promise<LoginResponse> {
+    const result: any = await this.auth.clientGoogleAuth(idToken, inviteToken);
     this.setToken(result.access_token);
     return result;
   }

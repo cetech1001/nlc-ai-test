@@ -56,6 +56,17 @@ export class ChaptersController {
     return this.chaptersService.findOne(courseID, id);
   }
 
+  @Put('reorder')
+  @ApiOperation({ summary: 'Reorder chapters' })
+  @ApiParam({ name: 'courseID', description: 'Course ID' })
+  async reorder(
+    @Param('courseID', ParseUUIDPipe) courseID: string,
+    @Body() reorderDto: ReorderChaptersDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.chaptersService.reorder(courseID, reorderDto.chapterIDs, user.id);
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update a chapter' })
   @ApiParam({ name: 'courseID', description: 'Course ID' })
@@ -80,16 +91,5 @@ export class ChaptersController {
     @CurrentUser() user: AuthUser
   ) {
     return this.chaptersService.remove(courseID, id, user.id);
-  }
-
-  @Put('reorder')
-  @ApiOperation({ summary: 'Reorder chapters' })
-  @ApiParam({ name: 'courseID', description: 'Course ID' })
-  async reorder(
-    @Param('courseID', ParseUUIDPipe) courseID: string,
-    @Body() reorderDto: ReorderChaptersDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.chaptersService.reorder(courseID, reorderDto.chapterIDs, user.id);
   }
 }

@@ -72,7 +72,7 @@ const EditClient = () => {
   }
 
   return (
-    <main className="flex-1 pt-2 sm:pt-8">
+    <main className="flex-1 pt-2 sm:pt-8 px-4">
       <BackTo title={'Edit Client'} onClick={handleBackToClients} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">

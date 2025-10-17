@@ -20,7 +20,7 @@ import {sdkClient} from "@/lib";
 import {ExtendedClient} from "@nlc-ai/sdk-users";
 
 const ClientDetailsSkeleton = () => (
-  <div className="py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse">
+  <div className="py-4 sm:py-6 lg:py-8 space-y-6 animate-pulse px-4">
     <div className="h-6 bg-neutral-700 rounded w-48"></div>
 
     {/* Main info card */}
@@ -147,7 +147,7 @@ const ClientDetailsPage = () => {
   const engagement = getEngagementLevel(client.engagementScore || 0);
 
   return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
+    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden px-4">
       <BackTo onClick={handleBackClick} title="Client Details" />
 
       {/* Client Header Card */}

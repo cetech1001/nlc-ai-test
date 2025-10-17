@@ -45,10 +45,9 @@ export class LessonsController {
   @ApiParam({ name: 'courseID', description: 'Course ID' })
   @ApiParam({ name: 'chapterID', description: 'Chapter ID' })
   async findAll(
-    @Param('courseID', ParseUUIDPipe) courseID: string,
     @Param('chapterID', ParseUUIDPipe) chapterID: string
   ) {
-    return this.lessonsService.findAll(courseID, chapterID);
+    return this.lessonsService.findAll(chapterID);
   }
 
   @Get(':id')
@@ -57,11 +56,23 @@ export class LessonsController {
   @ApiParam({ name: 'chapterID', description: 'Chapter ID' })
   @ApiParam({ name: 'id', description: 'Lesson ID' })
   async findOne(
-    @Param('courseID', ParseUUIDPipe) courseID: string,
     @Param('chapterID', ParseUUIDPipe) chapterID: string,
     @Param('id', ParseUUIDPipe) id: string
   ) {
-    return this.lessonsService.findOne(courseID, chapterID, id);
+    return this.lessonsService.findOne(chapterID, id);
+  }
+
+  @Put('reorder')
+  @ApiOperation({ summary: 'Reorder lessons within a chapter' })
+  @ApiParam({ name: 'courseID', description: 'Course ID' })
+  @ApiParam({ name: 'chapterID', description: 'Chapter ID' })
+  async reorder(
+    @Param('courseID', ParseUUIDPipe) courseID: string,
+    @Param('chapterID', ParseUUIDPipe) chapterID: string,
+    @Body() reorderDto: ReorderLessonsDto,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.lessonsService.reorder(courseID, chapterID, reorderDto.lessonIDs, user.id);
   }
 
   @Put(':id')
@@ -76,7 +87,7 @@ export class LessonsController {
     @Body() updateLessonDto: UpdateLessonDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.lessonsService.update(courseID, chapterID, id, updateLessonDto, user.id);
+    return this.lessonsService.update(courseID, id, updateLessonDto, user.id);
   }
 
   @Delete(':id')
@@ -91,19 +102,6 @@ export class LessonsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthUser
   ) {
-    return this.lessonsService.remove(courseID, chapterID, id, user.id);
-  }
-
-  @Put('reorder')
-  @ApiOperation({ summary: 'Reorder lessons within a chapter' })
-  @ApiParam({ name: 'courseID', description: 'Course ID' })
-  @ApiParam({ name: 'chapterID', description: 'Chapter ID' })
-  async reorder(
-    @Param('courseID', ParseUUIDPipe) courseID: string,
-    @Param('chapterID', ParseUUIDPipe) chapterID: string,
-    @Body() reorderDto: ReorderLessonsDto,
-    @CurrentUser() user: AuthUser
-  ) {
-    return this.lessonsService.reorder(courseID, chapterID, reorderDto.lessonIDs, user.id);
+    return this.lessonsService.remove(courseID, id, user.id);
   }
 }

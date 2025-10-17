@@ -2,7 +2,6 @@ import {CoachesClient} from "./coaches.client";
 import {ServiceClientConfig} from "@nlc-ai/sdk-core";
 import {ClientsClient} from "./clients.client";
 import { ProfilesClient } from "./profiles.client";
-import { RelationshipClient } from "./relationship.client";
 import {OnboardingClient} from "./onboarding.client";
 import {ChatbotCustomizationClient} from "./chatbot-customization.client";
 
@@ -10,7 +9,6 @@ export class UsersClient{
   public coaches: CoachesClient;
   public clients: ClientsClient;
   public profiles: ProfilesClient;
-  public relationship: RelationshipClient;
   public onboarding: OnboardingClient;
   public chatbotCustomization: ChatbotCustomizationClient;
 
@@ -30,11 +28,6 @@ export class UsersClient{
       baseURL: `${config.baseURL}/profiles`,
     });
 
-    this.relationship = new RelationshipClient({
-      ...config,
-      baseURL: `${config.baseURL}`,
-    });
-
     this.onboarding = new OnboardingClient({
       ...config,
       baseURL: `${config.baseURL}/onboarding`,
@@ -49,7 +42,7 @@ export class UsersClient{
   updateApiKey(apiKey: string | null) {
     const services = [
       this.coaches, this.clients, this.profiles,
-      this.relationship, this.onboarding, this.chatbotCustomization
+      this.onboarding, this.chatbotCustomization
     ];
 
     services.forEach(service => {

@@ -87,11 +87,7 @@ services:
       postgres-init:
         condition: service_completed_successfully
     volumes:
-      - ./apps/api/gateway:/app/apps/api/gateway
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
-      - /app/node_modules
 
   agents:
     build:
@@ -153,11 +149,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./apps/api/auth:/app/apps/api/auth
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
-      - /app/node_modules
 
   billing:
     build:
@@ -285,10 +277,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./apps/api/email:/app/apps/api/email
-      - ./libs/api:/app/libs/api
       - ./.env:/app/.env
-      - /app/node_modules
 
   integrations:
     build:
@@ -371,11 +360,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./apps/api/notifications:/app/apps/api/notifications
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
-      - /app/node_modules
 
   users:
     build:
@@ -393,11 +378,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./apps/api/users:/app/apps/api/users
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
       - ./.env:/app/.env
-      - /app/node_modules
 
 volumes:
   postgres_data:

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import {UserType} from "@nlc-ai/types";
 
 const emailSchema = z
   .string()
@@ -13,12 +14,22 @@ const passwordSchema = z
   .regex(/[0-9]/, 'Password must contain at least one number')
   .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 
-const nameSchema = z
+const firstNameSchema = z
   .string()
-  .min(1, 'Name is required')
-  .min(2, 'Name must be at least 2 characters')
-  .max(50, 'Name must be less than 50 characters')
-  .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces');
+  .min(1, 'First name is required')
+  .min(2, 'First name must be at least 2 characters')
+  .max(50, 'First name must be less than 50 characters')
+  .regex(/^[a-zA-Z\s]+$/, 'First name can only contain letters and spaces');
+
+const lastNameSchema = z
+  .string()
+  .min(1, 'Last name is required')
+  .min(2, 'Last name must be at least 2 characters')
+  .max(50, 'Last name must be less than 50 characters')
+  .regex(/^[a-zA-Z\s]+$/, 'Last name can only contain letters and spaces');
+
+const inviteTokenSchema = z
+  .string();
 
 const verificationCodeSchema = z
   .string()
@@ -32,12 +43,29 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
-export const registerSchema = z
+const registerTypeSchema = z.object({
+  firstName: firstNameSchema,
+  lastName: lastNameSchema,
+  inviteToken: inviteTokenSchema,
+  email: emailSchema,
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+})
+
+export const registerSchema = (userType: UserType) => z
   .object({
-    fullName: nameSchema,
+    firstName: firstNameSchema,
+    lastName: lastNameSchema,
+    inviteToken: inviteTokenSchema,
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => {
+    return userType === UserType.CLIENT && !data.inviteToken;
+  }, {
+    message: 'Invite token is required',
+    path: ['inviteToken'],
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -64,7 +92,7 @@ export const accountVerificationSchema = z.object({
 
 
 export type LoginFormData = z.infer<typeof loginSchema>;
-export type RegisterFormData = z.infer<typeof registerSchema>;
+export type RegisterFormData = z.infer<typeof registerTypeSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export type AccountVerificationFormData = z.infer<typeof accountVerificationSchema>;

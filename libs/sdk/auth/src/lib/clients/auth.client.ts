@@ -67,13 +67,14 @@ export class AuthClient extends BaseClient {
     email: string;
     password: string;
     inviteToken: string;
+    marketingOptIn?: boolean;
   }) {
-    const response = await this.request('POST', '/client/register', { body: data });
+    const response = await this.request<{ message: string; coachID?: string; clientID?: string; requiresVerification?: boolean; }>('POST', '/client/register', { body: data });
     return response.data!;
   }
 
   async clientGoogleAuth(idToken: string, inviteToken: string) {
-    const response = await this.request('POST', '/client/google', {
+    const response = await this.request('POST', '/client/google/auth', {
       body: { idToken, inviteToken }
     });
     return response.data!;

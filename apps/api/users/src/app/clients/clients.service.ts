@@ -22,7 +22,9 @@ export class ClientsService {
       lastInteractionEnd,
     } = query;
 
-    const where: any = {};
+    const where: any = {
+      isDeleted: false,
+    };
 
     if (coachID) {
       where.clientCoaches = {
@@ -293,6 +295,7 @@ export class ClientsService {
       where: { id },
       data: {
         isActive: false,
+        isDeleted: true,
         updatedAt: new Date(),
       },
     });
@@ -349,7 +352,6 @@ export class ClientsService {
           clientID,
           coachID,
           status: 'active',
-          role: 'client',
           notes,
           isPrimary,
           assignedBy,

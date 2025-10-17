@@ -31,7 +31,7 @@ export const InviteClientModal = ({ isOpen, userID, onClose, onInviteSuccess }: 
 
     setIsInviting(true);
     try {
-      await sdkClient.users.relationship.inviteClient(inviteEmail, userID, inviteMessage);
+      await sdkClient.users.coaches.inviteClient(inviteEmail, userID, inviteMessage);
 
       toast.success(`Invitation sent to ${inviteEmail}`);
       handleClose();

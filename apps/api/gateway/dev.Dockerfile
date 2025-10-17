@@ -1,37 +1,34 @@
-FROM node:20-bookworm-slim
+FROM node:20-alpine
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY nx.json tsconfig.base.json ./
 
-RUN set -eux; pnpm install --frozen-lockfile
+RUN set -eux; \
+    pnpm install --frozen-lockfile && \
+    pnpm store prune
 
 COPY apps/api/gateway ./apps/api/gateway
-COPY libs/api ./libs/api
-COPY libs/types ./libs/types
+COPY libs/api/auth ./libs/api/auth
+COPY libs/api/types ./libs/api/types
+COPY libs/api/validation ./libs/api/validation
+COPY libs/api/database/prisma/schema.prisma ./libs/api/database/prisma/schema.prisma
 COPY eslint.config.mjs tsconfig.json ./
-
 
 ENV NODE_ENV=development \
     NX_DAEMON=false \
-    NX_CACHE_DIRECTORY=/tmp/nx-cache
+    NX_CACHE_DIRECTORY=/tmp/.nx/cache \
+    PORT=3000
 
-ENV PORT=3000
 EXPOSE 3000
 
-CMD ["/bin/sh","-lc","\
-  echo 'Resetting Nx state...'; \
-  pnpm nx reset || true; \
-  rm -rf /tmp/nx || true; \
-  echo 'Running nx sync to align TS project references...'; \
-  pnpm nx sync --no-interactive --verbose || true; \
-  echo 'Running prisma generate...'; \
-  pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma \
+CMD ["/bin/sh", "-c", "\
+  echo 'Running nx sync...'; \
+  pnpm nx sync --no-interactive || true; \
   echo 'Starting dev server...'; \
-  npm run db:deploy --no-interactive --verbose || true; \
-  pnpm nx serve gateway-service --configuration=development --verbose \
+  pnpm nx serve gateway-service --configuration=development \
 "]

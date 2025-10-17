@@ -122,7 +122,7 @@ export class ClientAuthService {
         data: clientData,
       });
 
-      await tx.clientCoach.create({
+      const clientCoach = await tx.clientCoach.create({
         data: {
           clientID: client.id,
           coachID: coachID,
@@ -130,7 +130,12 @@ export class ClientAuthService {
           isPrimary: true,
           assignedBy: coachID,
         },
+        include: {
+          coach: true,
+        }
       });
+
+      console.log("Client coach: ", clientCoach);
 
       await tx.clientInvite.update({
         where: { id: invite.id },
@@ -157,8 +162,12 @@ export class ClientAuthService {
       );
 
       if (provider === 'google') {
-        const clientWithCoaches = await this.findClientByEmail(email);
-        return this.generateAuthResponse(clientWithCoaches!, true);
+        return this.generateAuthResponse({
+          ...client,
+          clientCoaches: [
+            clientCoach,
+          ]
+        }, true);
       }
 
       return {
@@ -175,6 +184,9 @@ export class ClientAuthService {
     if (existingClient) {
       return this.handleExistingClientGoogleAuth(existingClient, inviteToken, googleUser);
     } else {
+      if (!inviteToken) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
       return this.register({
         email: googleUser.email,
         firstName: googleUser.firstName,
@@ -209,7 +221,6 @@ export class ClientAuthService {
             firstName: true,
             lastName: true,
             businessName: true,
-            customDomain: true,
           }
         },
       },
@@ -233,7 +244,6 @@ export class ClientAuthService {
         coachID: relationship.coach.id,
         coachName: `${relationship.coach.firstName} ${relationship.coach.lastName}`,
         businessName: relationship.coach.businessName,
-        customDomain: relationship.coach.customDomain,
       },
       message: 'Coach context switched successfully',
     };
@@ -256,7 +266,6 @@ export class ClientAuthService {
                 firstName: true,
                 lastName: true,
                 businessName: true,
-                customDomain: true,
                 avatarUrl: true,
               },
             },
@@ -296,7 +305,6 @@ export class ClientAuthService {
                 firstName: true,
                 lastName: true,
                 businessName: true,
-                customDomain: true,
                 avatarUrl: true,
               },
             },
@@ -378,8 +386,14 @@ export class ClientAuthService {
   }
 
   private async generateAuthResponse(client: any, isNewUser: boolean): Promise<AuthResponse> {
+    console.log("Came in here: ", client);
+    console.log("Is new user: ", isNewUser);
+
     const primaryCoach = client.clientCoaches.find((cc: any) => cc.isPrimary)?.coach;
     const selectedCoach = primaryCoach || client.clientCoaches[0]?.coach;
+
+    console.log("Primary coach: ", primaryCoach);
+    console.log("Selected coach: ", selectedCoach);
 
     const payload = {
       sub: client.id,
@@ -412,7 +426,7 @@ export class ClientAuthService {
         })),
         currentCoach: {
           coachID: selectedCoach?.id,
-          coachName: `${selectedCoach.coach.firstName} ${selectedCoach.coach.lastName}`,
+          coachName: `${selectedCoach.firstName} ${selectedCoach.lastName}`,
           businessName: selectedCoach?.businessName,
         },
       },

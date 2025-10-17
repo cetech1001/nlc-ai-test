@@ -5,7 +5,6 @@ import {Controller, useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {Eye} from "lucide-react";
 import { Button, Input, Checkbox, EyeLashIcon, AlertBanner } from '@nlc-ai/web-ui';
-import {ApiResponse} from "@nlc-ai/sdk-core";
 import { loginSchema, type LoginFormData } from '../../schemas';
 import { type LoginFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
@@ -42,10 +41,10 @@ export const LoginForm = (props: LoginFormProps) => {
 
       await authAPI.googleAuth(credentialResponse.credential, props.userType);
       props.handleHome();
-    } catch (err: unknown) {
-      const apiError = err as ApiResponse<undefined>;
-      console.log(apiError);
-      setError(apiError.error?.message || 'Google login failed');
+    } catch (err: any) {
+      // const apiError = err as ApiResponse<undefined>;
+      console.log(err);
+      setError(err.message || err.error?.message || 'Google login failed');
     } finally {
       setIsLoading(false);
     }

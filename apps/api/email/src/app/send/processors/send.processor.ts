@@ -108,7 +108,7 @@ export class SendProcessor {
       }
 
       const primaryAccount = await this.prisma.emailAccount.findFirst({
-        where: { userID: message.userID, isPrimary: true },
+        where: { userID: message.userID || undefined, isPrimary: true },
       });
 
       if (primaryAccount) {
@@ -168,6 +168,62 @@ export class SendProcessor {
 
     } catch (error: any) {
       this.logger.error(`Failed to send coach email ${messageID}:`, error);
+
+      await this.prisma.emailMessage.update({
+        where: { id: messageID },
+        data: {
+          status: 'failed',
+          errorMessage: error.message,
+        },
+      });
+
+      throw error;
+    }
+  }
+
+  @Process('send-system-email')
+  async processSystemEmail(job: Job<{ messageID: string }>) {
+    const { messageID } = job.data;
+
+    try {
+      const message = await this.prisma.emailMessage.findUnique({
+        where: { id: messageID },
+      });
+
+      if (!message) {
+        throw new Error('Message not found');
+      }
+
+      const result = await this.providers.sendEmail({
+        to: message.to,
+        subject: message.subject || '',
+        text: message.text || '',
+        html: message.html || '',
+        templateID: message.emailTemplateID || '',
+        metadata: {
+          messageID: message.id,
+          type: 'system_email',
+          ...(message.metadata as any),
+        },
+      });
+
+      if (result.status === EmailMessageStatus.SENT) {
+        await this.prisma.emailMessage.update({
+          where: { id: messageID },
+          data: {
+            status: 'sent',
+            providerMessageID: result.providerMessageID,
+            sentAt: new Date(),
+          },
+        });
+
+        this.logger.log(`System email sent successfully: ${messageID}`);
+      } else {
+        throw new Error(result.error || 'Failed to send');
+      }
+
+    } catch (error: any) {
+      this.logger.error(`Failed to send system email ${messageID}:`, error);
 
       await this.prisma.emailMessage.update({
         where: { id: messageID },

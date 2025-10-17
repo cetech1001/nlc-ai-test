@@ -12,6 +12,7 @@ import { type RegisterFormProps } from '../../types';
 import { GoogleIcon } from '../ui';
 import { useGoogleOAuth } from '../../hooks';
 import { authAPI } from '../../api';
+import {UserType} from "@nlc-ai/types";
 
 export const RegisterForm: FC<RegisterFormProps> = (props) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,9 +24,11 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema(props.userType)),
     defaultValues: {
-      fullName: '',
+      firstName: '',
+      lastName: '',
+      inviteToken: props.inviteToken,
       email: '',
       password: '',
       confirmPassword: '',
@@ -37,11 +40,10 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
       setIsLoading(true);
       setError('');
 
-      await authAPI.googleAuth(credentialResponse.credential, props.userType);
+      await authAPI.googleAuth(credentialResponse.credential, props.userType, props.inviteToken);
       props.handleHome();
-    } catch (err: unknown) {
-      const apiError = err as ApiResponse<undefined>;
-      setError(apiError.error?.message || 'Google registration failed');
+    } catch (err: any) {
+      setError(err.message || err.error?.message || 'Google registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -61,12 +63,16 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
     setError('');
 
     try {
-      // Parse full name into firstName and lastName
-      const names = data.fullName.trim().split(' ');
-      const firstName = names[0];
-      const lastName = names.slice(1).join(' ') || firstName; // fallback to firstName if no lastName
 
-      await authAPI.register(firstName, lastName, data.email, data.password, props.userType);
+      await authAPI.register(
+        data.firstName,
+        data.lastName,
+        data.email,
+        data.password,
+        props.userType,
+        false,
+        props.inviteToken
+      );
       props.handleAccountVerification(data.email);
     } catch (err: unknown) {
       const apiError = err as ApiResponse<undefined>;
@@ -75,6 +81,14 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
       setIsLoading(false);
     }
   };
+
+  const handleGoogleSignIn = () => {
+    if (UserType.CLIENT && !props.inviteToken) {
+      setError('Invite token is required');
+    } else {
+      signIn();
+    }
+  }
 
   return (
     <div className={`space-y-6 ${props.className}`}>
@@ -88,16 +102,31 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="space-y-2">
           <label className="block text-[14px] text-[#F9F9F9] leading-6">
-            Name<span className="text-[#FF3030]">*</span>
+            First name<span className="text-[#FF3030]">*</span>
           </label>
           <Input
             type="text"
-            placeholder="Enter your full name"
-            {...register('fullName')}
+            placeholder="Enter your first name"
+            {...register('firstName')}
             className="min-h-[64px] px-4 text-[16px] leading-5 border-[#EFEFEF] bg-transparent text-[#F9F9F9] placeholder:text-[#F9F9F9]/50 focus:border-magenta-light focus:ring-magenta-light/20 rounded-[12px]"
           />
-          {errors.fullName && (
-            <p className="text-sm text-red-400">{errors.fullName.message}</p>
+          {errors.firstName && (
+            <p className="text-sm text-red-400">{errors.firstName.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-[14px] text-[#F9F9F9] leading-6">
+            Last name<span className="text-[#FF3030]">*</span>
+          </label>
+          <Input
+            type="text"
+            placeholder="Enter your last name"
+            {...register('lastName')}
+            className="min-h-[64px] px-4 text-[16px] leading-5 border-[#EFEFEF] bg-transparent text-[#F9F9F9] placeholder:text-[#F9F9F9]/50 focus:border-magenta-light focus:ring-magenta-light/20 rounded-[12px]"
+          />
+          {errors.lastName && (
+            <p className="text-sm text-red-400">{errors.lastName.message}</p>
           )}
         </div>
 
@@ -155,12 +184,30 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
           )}
         </div>
 
+        {props.userType === UserType.CLIENT && (
+          <div className="space-y-2">
+            <label className="block text-[14px] text-[#F9F9F9] leading-6">
+              Invite Token<span className="text-[#FF3030]">*</span>
+            </label>
+            <Input
+              type="text"
+              placeholder="Invite token"
+              disabled={true}
+              {...register('inviteToken')}
+              className="min-h-[64px] px-4 text-[16px] leading-5 border-[#EFEFEF] bg-transparent text-[#F9F9F9] placeholder:text-[#F9F9F9]/50 focus:border-magenta-light focus:ring-magenta-light/20 rounded-[12px]"
+            />
+            {errors.inviteToken && (
+              <p className="text-sm text-red-400">{errors.inviteToken.message}</p>
+            )}
+          </div>
+        )}
+
         {props.showGoogleAuth && (
           <div className="space-y-4">
             <Button
               type="button"
               variant="outline"
-              onClick={signIn}
+              onClick={handleGoogleSignIn}
               disabled={!isLoaded || isLoading}
               className="w-full flex items-center justify-center min-h-[64px] bg-transparent border-[#EFEFEF] hover:bg-white/5 text-[#F9F9F9]/50 hover:text-[#F9F9F9] transition-all duration-200 rounded-[12px] gap-[14px]"
             >

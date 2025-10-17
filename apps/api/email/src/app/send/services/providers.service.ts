@@ -17,7 +17,7 @@ export class ProvidersService {
     if (message.templateID) {
       const template = await this.templateEngine.renderEmailFromTemplate(
         message.templateID,
-        message.templateVariables || {},
+        message.metadata || {},
         userID,
       );
 

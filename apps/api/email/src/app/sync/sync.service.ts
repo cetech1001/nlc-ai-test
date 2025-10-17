@@ -2,8 +2,6 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { OutboxService } from '@nlc-ai/api-messaging';
-import { EmailSyncEvent } from '@nlc-ai/api-types';
 import {
   BulkSyncRequest,
   BulkSyncResponse,
@@ -26,7 +24,6 @@ export class SyncService {
     @Inject('SYNC_PROVIDERS') private syncProviders: Record<string, IEmailSyncProvider>,
     @InjectQueue('email-sync') private syncQueue: Queue,
     private readonly syncRepo: SyncRepository,
-    private readonly outbox: OutboxService,
     private readonly s3EmailService: S3EmailService,
     private readonly fineTuningService: EmailFineTuningService,
     private readonly prisma: PrismaService,
@@ -278,20 +275,6 @@ export class SyncService {
       threadsCreated,
       nextSyncToken: syncResult.nextSyncToken,
     });
-
-    await this.outbox.saveAndPublishEvent<EmailSyncEvent>(
-      {
-        eventType: 'email.sync.completed',
-        schemaVersion: 1,
-        payload: {
-          coachID: account.userID,
-          totalProcessed: syncResult.emails.length,
-          clientEmailsFound,
-          syncedAt: new Date().toISOString(),
-        },
-      },
-      'email.sync.completed'
-    );
 
     return {
       totalProcessed: syncResult.emails.length,

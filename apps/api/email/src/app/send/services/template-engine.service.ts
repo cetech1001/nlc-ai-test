@@ -85,8 +85,8 @@ export class TemplateEngineService {
 
     const template = await this.prisma.emailTemplate.findFirst({
       where: {
-        id: userID ? templateID : undefined,
-        systemKey: userID ? undefined : templateID,
+        id: templateID,
+        // systemKey: userID ? undefined : templateID,
         userID,
         isActive: true
       }
@@ -95,6 +95,9 @@ export class TemplateEngineService {
     if (!template) {
       throw new NotFoundException('Template not found');
     }
+
+    console.log("Template: ", template);
+    console.log("Variables: ", variables);
 
     const subject = this.processTemplate(template.subjectTemplate || '', variables);
     const html = this.processTemplate(template.bodyTemplate, variables);

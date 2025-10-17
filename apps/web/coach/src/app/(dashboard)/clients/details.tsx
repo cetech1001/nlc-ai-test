@@ -108,11 +108,23 @@ export const ClientsPage = () => {
       router.push(`/agents/emails?clientID=${client.id}`);
     } else if (action === 'edit') {
       router.push(`/clients/edit?clientID=${client.id}`);
+    } else if (action === 'delete') {
+      await handleDelete(client.id);
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await sdkClient.users.clients.deleteClient(id);
+      setSuccessMessage('Deleted client');
+      await fetchClients();
+    } catch (e: any) {
+      setError("Failed to delete client: " + e.message);
+    }
+  }
+
   return (
-    <div className={`flex flex-col ${(isFilterOpen) && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'}`}>
+    <div className={`flex flex-col ${(isFilterOpen) && 'bg-[rgba(7, 3, 0, 0.3)] blur-[20px]'} px-4`}>
       <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         {successMessage && (
           <AlertBanner type="success" message={successMessage} onDismiss={clearMessages}/>

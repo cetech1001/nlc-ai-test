@@ -145,13 +145,16 @@ const SidebarContent: React.FC<{
   });
 
   const dragItem = useRef<{ index: number; type: 'chapter' | 'lesson'; chapterID?: string } | null>(null);
-  const dragNode = useRef<HTMLDivElement | null>(null);
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number, type: 'chapter' | 'lesson', chapterID?: string) => {
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      try {
+        // Some browsers (e.g., Firefox) require data to be set to initiate DnD
+        e.dataTransfer.setData('text/plain', '');
+      } catch {}
+    }
     dragItem.current = { index, type, chapterID };
-    dragNode.current = e.target as HTMLDivElement;
-    dragNode.current.addEventListener('dragend', handleDragEnd);
-
     setDragState({
       type,
       dragIndex: index,
@@ -160,14 +163,21 @@ const SidebarContent: React.FC<{
     });
   }, []);
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); // This is crucial - allows dropping
+    e.stopPropagation();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  }, []);
+
   const handleDragEnter = useCallback((e: React.DragEvent, index: number) => {
-    if (dragItem.current && dragItem.current.index !== index) {
+    e.preventDefault();
+    if (dragItem.current && dragItem.current.index !== index && dragItem.current.type === dragState.type) {
       setDragState(prev => ({
         ...prev,
         hoverIndex: index
       }));
     }
-  }, []);
+  }, [dragState.type]);
 
   const handleDragEnd = useCallback(() => {
     if (dragState.type && dragItem.current) {
@@ -200,10 +210,6 @@ const SidebarContent: React.FC<{
     });
 
     dragItem.current = null;
-    if (dragNode.current) {
-      dragNode.current.removeEventListener('dragend', handleDragEnd);
-      dragNode.current = null;
-    }
   }, [dragState, curriculum.chapters, onReorderChapters, onReorderLessons]);
 
   const getDragStyles = (index: number, type: 'chapter' | 'lesson') => {
@@ -260,10 +266,12 @@ const SidebarContent: React.FC<{
               className={`transition-all duration-200 ${getDragStyles(chapterIndex, 'chapter')}`}
             >
               <div
-                className="flex items-center gap-2 py-3 border-b border-neutral-700 hover:bg-white/5 transition-colors rounded-lg group"
-                draggable
+                className="flex items-center gap-2 py-3 border-b border-neutral-700 hover:bg-white/5 transition-colors rounded-lg group cursor-move"
+                draggable={true}
                 onDragStart={(e) => handleDragStart(e, chapterIndex, 'chapter')}
                 onDragEnter={(e) => handleDragEnter(e, chapterIndex)}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
               >
                 <div className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
                   <GripVertical className="w-4 h-4 text-gray-400" />
@@ -310,10 +318,12 @@ const SidebarContent: React.FC<{
                   {chapter.lessons.map((lesson, lessonIndex) => (
                     <div
                       key={lesson.lessonID}
-                      className={`flex items-center gap-2 py-3 pl-9 border-b border-neutral-700/50 hover:bg-white/5 transition-colors rounded-lg group ${getDragStyles(lessonIndex, 'lesson')}`}
-                      draggable
+                      className={`flex items-center gap-2 py-3 pl-9 border-b border-neutral-700/50 hover:bg-white/5 transition-colors rounded-lg group cursor-move ${getDragStyles(lessonIndex, 'lesson')}`}
+                      draggable={true}
                       onDragStart={(e) => handleDragStart(e, lessonIndex, 'lesson', chapter.chapterID)}
                       onDragEnter={(e) => handleDragEnter(e, lessonIndex)}
+                      onDragOver={handleDragOver}
+                      onDragEnd={handleDragEnd}
                     >
                       <div className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
                         <GripVertical className="w-3 h-3 text-gray-400" />

@@ -1168,8 +1168,8 @@ model EmailMessage {
   emailSequenceID          String? @db.Uuid
   deliverabilityAnalysisID String? @db.Uuid
 
-  userID   String   @db.Uuid
-  userType UserType
+  userID   String?   @db.Uuid
+  userType UserType?
 
   to      String  @db.VarChar(255)
   from    String  @db.VarChar(255)

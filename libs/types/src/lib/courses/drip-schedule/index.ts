@@ -1,4 +1,5 @@
 export enum DripInterval {
+  CUSTOM = 'custom',
   DAILY = 'daily',
   WEEKLY = 'weekly',
   MONTHLY = 'monthly'

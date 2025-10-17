@@ -25,7 +25,7 @@ export class MailgunService implements IEmailProvider {
       url: this.config.get<string>('email.mailgun.url', 'https://api.mailgun.net'),
     });
     this.domain = this.config.get<string>('email.mailgun.domain')!;
-    this.defaultSender = this.config.get('email.mailgun.fromEmail')!;
+    this.defaultSender = `${this.config.get('email.appName')} <${this.config.get('email.mailgun.fromEmail')}>`;
   }
 
   async sendEmail(message: SendEmailRequest, from?: string): Promise<EmailDeliveryResult> {
