@@ -1,25 +1,31 @@
 'use client'
 
-import React, {FC, ReactNode, useEffect, useState} from "react";
-import {PageHeader, Sidebar} from "@/lib";
-import {/*usePathname,*/ useRouter} from "next/navigation";
+import {ReactNode, useEffect} from 'react';
+import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
+import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/web-auth";
+import {menuItems, pageConfig, sdkClient, settingsItems} from "@/lib";
 import {UserType} from "@nlc-ai/types";
 
-interface IProps {
+
+interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-const DashboardLayout: FC<IProps> = ({ children }) => {
+const defaultConfig = {
+  title: 'Coach Dashboard',
+  subtitle: 'Manage your coaching business efficiently.',
+  breadcrumb: 'Dashboard'
+};
+
+const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const router = useRouter();
+  const { user, isLoading, isAuthenticated, logout } = useAuth(UserType.CLIENT);
+  const pathname = usePathname();
+  const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
-  const { /*user,*/ isLoading, isAuthenticated, /*logout*/ } = useAuth(UserType.CLIENT);
-
-  // const pathname = usePathname();
-  // let path = pathname.split('/').filter(Boolean).shift();
-  // const currentConfig = pageConfig[path as keyof typeof pageConfig] || defaultConfig;
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  let path = pathname.split('/').filter(Boolean).shift();
+  const currentConfig = pageConfig[path as keyof typeof pageConfig] || defaultConfig;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -31,7 +37,7 @@ const DashboardLayout: FC<IProps> = ({ children }) => {
     return null;
   }
 
-  /*const navigateTo = (path: string) => {
+  const navigateTo = (path: string) => {
     router.push(path);
   }
 
@@ -42,32 +48,40 @@ const DashboardLayout: FC<IProps> = ({ children }) => {
   const handleLogout = () => {
     logout();
     router.push('/login');
-  }*/
+  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="flex min-h-screen">
-        <aside className="hidden lg:flex w-[287px] border-r border-sidebar-border bg-sidebar fixed left-0 top-0 h-full z-30">
-          <Sidebar />
-        </aside>
+    <div className="min-h-screen bg-[#000000]">
+      <SidebarComponent
+        dashboardHeader={"COACH PANEL"}
+        pathname={pathname}
+        navigateTo={navigateTo}
+        menuItems={menuItems}
+        settingsItems={settingsItems}
+        logout={handleLogout}
+        logoSize={'large'}
+      />
 
-        {sidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setSidebarOpen(false)}>
-            <aside
-              className="w-[287px] h-full border-r border-sidebar-border bg-sidebar flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Sidebar onClose={() => setSidebarOpen(false)} />
-            </aside>
-          </div>
-        )}
+      <div className="lg:pl-72">
+        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-[#1A1A1A] bg-[#0A0A0A] px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+          <MobileMenuButton />
 
-        <main className="flex-1 min-w-0 lg:ml-[287px] flex flex-col min-h-screen">
-          <header className="h-[90px] border-b border-sidebar-border px-4 sm:px-6 lg:px-[30px] py-5 bg-background sticky top-0 z-20">
-            <PageHeader onMenuClick={() => setSidebarOpen(true)} />
-          </header>
+          <div className="h-6 w-px bg-[#1A1A1A] lg:hidden" aria-hidden="true" />
 
-          <div className="flex-1 p-4 sm:p-5 lg:p-[20px] lg:pl-[39px] lg:pt-[26px] overflow-y-auto">
+          <DashboardHeader
+            sdkClient={sdkClient}
+            key={`${user?.firstName}-${user?.lastName}`}
+            user={user}
+            isLoading={isLoading}
+            title={currentConfig.title}
+            goToNotifications={goToNotifications}
+            handleNavRouter={router.push}
+            onLogout={handleLogout}
+          />
+        </div>
+
+        <main className="py-6 md:py-0 main-content">
+          <div className="mx-auto">
             {children}
           </div>
         </main>
@@ -76,4 +90,4 @@ const DashboardLayout: FC<IProps> = ({ children }) => {
   );
 }
 
-export default DashboardLayout;
+export default ClientDashboardLayout;
