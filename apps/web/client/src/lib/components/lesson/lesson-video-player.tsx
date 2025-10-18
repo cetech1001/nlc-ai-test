@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CourseLessonWithDetails, CourseChapterWithDetails, ExtendedCourse } from '@nlc-ai/types';
+import {S3VideoPlayer} from "@nlc-ai/web-shared";
 
 interface LessonVideoPlayerProps {
   lesson?: CourseLessonWithDetails;
@@ -8,8 +9,6 @@ interface LessonVideoPlayerProps {
 }
 
 export const LessonVideoPlayer: React.FC<LessonVideoPlayerProps> = ({ lesson, chapter, course }) => {
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-
   if (!lesson) {
     return (
       <div className="glass-card rounded-4xl p-6 sm:p-10 lg:p-16">
@@ -30,59 +29,13 @@ export const LessonVideoPlayer: React.FC<LessonVideoPlayerProps> = ({ lesson, ch
       case 'video':
         return (
           <div className="flex justify-center">
-            <div className="w-full max-w-[900px] aspect-video relative rounded-2xl sm:rounded-3xl overflow-hidden">
+            <div className="w-full max-w-[900px] max-h-[50vh] aspect-video relative rounded-2xl sm:rounded-3xl overflow-hidden">
               {lesson.videoUrl ? (
-                <>
-                  {/* Video element - hidden until playing */}
-                  <video
-                    controls={isVideoPlaying}
-                    autoPlay={isVideoPlaying}
-                    className={`w-full h-full object-cover ${isVideoPlaying ? 'block' : 'hidden'}`}
-                  >
-                    <source src={lesson.videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-
-                  {/* Thumbnail overlay with play button */}
-                  {!isVideoPlaying && (
-                    <>
-                      {/* Thumbnail image */}
-                      <img
-                        src={lesson.videoUrl}
-                        alt={lesson.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-
-                      {/* Dark overlay */}
-                      <div className="absolute inset-0 bg-black/30"></div>
-
-                      {/* Play button */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center relative z-10">
-                          <div
-                            onClick={() => setIsVideoPlaying(true)}
-                            className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto hover:bg-white/20 hover:scale-110 transition-all cursor-pointer backdrop-blur-sm border border-white/20 group"
-                          >
-                            <svg
-                              className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform"
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Animated dots */}
-                      <div className="absolute inset-0 opacity-10">
-                        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
-                        <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-fuchsia-400 rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
-                        <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-violet-400 rounded-full animate-ping" style={{animationDelay: '2s'}}></div>
-                      </div>
-                    </>
-                  )}
-                </>
+                <S3VideoPlayer
+                  src={lesson.videoUrl}
+                  className="w-full"
+                  autoGenerateThumbnail={true}
+                />
               ) : (
                 <div className="w-full h-full bg-[#1A1A1A] flex items-center justify-center">
                   <div className="text-center space-y-2">
@@ -143,7 +96,7 @@ export const LessonVideoPlayer: React.FC<LessonVideoPlayerProps> = ({ lesson, ch
   };
 
   return (
-    <div className="glass-card rounded-4xl p-6 sm:p-10 lg:p-16 space-y-6 sm:space-y-8 relative">
+    <div className="glass-card rounded-4xl p-6 relative">
       {/* Background glow orbs */}
       <div className="absolute left-[30px] -bottom-[142px] w-[267px] h-[267px] bg-streak-gradient opacity-40 blur-[112.55px] rounded-full" />
       <div className="absolute right-[13px] -bottom-[190px] w-[267px] h-[267px] bg-streak-gradient opacity-40 blur-[112.55px] rounded-full" />

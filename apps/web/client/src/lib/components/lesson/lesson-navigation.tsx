@@ -16,28 +16,28 @@ const LessonItem: React.FC<LessonItemProps> = ({ lesson, completed = false, acti
     <button
       onClick={onClick}
       disabled={locked}
-      className={`flex items-center justify-between px-3 sm:px-4 py-3 sm:py-4 rounded-lg transition-colors w-full ${
-        locked
-          ? 'opacity-50 cursor-not-allowed'
-          : active
-            ? 'bg-sidebar-accent'
-            : 'hover:bg-sidebar-accent/20'
+      className={`flex items-center gap-2 py-3 pl-9 border-b border-neutral-700/50 h-16 hover:bg-white/5 transition-colors rounded-lg group w-full text-left ${
+        locked ? 'opacity-50 cursor-not-allowed' : active ? 'bg-white/5' : ''
       }`}
     >
-      <span className={`text-sm sm:text-base truncate flex-1 pr-2 text-left ${
-        active ? 'text-purple-primary font-medium' :
-          completed ? 'text-muted-foreground' : 'text-muted-foreground'
+      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+      </svg>
+
+      <span className={`text-sm flex-1 leading-tight pr-2 ${
+        active ? 'text-white font-medium' : 'text-stone-300'
       }`}>
         {lesson.title}
       </span>
+
       <div className="flex items-center gap-2 flex-shrink-0">
         {locked && (
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 10.5V6.75C16.5 5.55653 16.0259 4.41193 15.182 3.56802C14.3381 2.72411 13.1935 2.25 12 2.25C10.8065 2.25 9.66193 2.72411 8.81802 3.56802C7.97411 4.41193 7.5 5.55653 7.5 6.75V10.5M6.75 21.75H17.25C17.8467 21.75 18.419 21.5129 18.841 21.091C19.2629 20.669 19.5 20.0967 19.5 19.5V12.75C19.5 12.1533 19.2629 11.581 18.841 11.159C18.419 10.7371 17.8467 10.5 17.25 10.5H6.75C6.15326 10.5 5.58097 10.7371 5.15901 11.159C4.73705 11.581 4.5 12.1533 4.5 12.75V19.5C4.5 20.0967 4.73705 20.669 5.15901 21.091C5.58097 21.5129 6.15326 21.75 6.75 21.75Z" />
           </svg>
         )}
         {completed && !locked && (
-          <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M9 12.75L11.25 15L15 9.75M21 12C21 13.1819 20.7672 14.3522 20.3149 15.4442C19.8626 16.5361 19.1997 17.5282 18.364 18.364C17.5282 19.1997 16.5361 19.8626 15.4442 20.3149C14.3522 20.7672 13.1819 21 12 21C10.8181 21 9.64778 20.7672 8.55585 20.3149C7.46392 19.8626 6.47177 19.1997 5.63604 18.364C4.80031 17.5282 4.13738 16.5361 3.68508 15.4442C3.23279 14.3522 3 13.1819 3 12C3 9.61305 3.94821 7.32387 5.63604 5.63604C7.32387 3.94821 9.61305 3 12 3C14.3869 3 16.6761 3.94821 18.364 5.63604C20.0518 7.32387 21 9.61305 21 12Z" stroke="#09B90F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         )}
@@ -75,14 +75,20 @@ export const LessonNavigation: React.FC<LessonNavigationProps> = ({
 
   if (!course.chapters || course.chapters.length === 0) {
     return (
-      <div className="w-full lg:w-[346px] glass-card rounded-4xl p-6">
-        <p className="text-muted-foreground text-center">No chapters available</p>
+      <div className="w-full lg:w-[346px] relative p-6">
+        {/* Glow orbs */}
+        <div className="absolute top-10 left-10 w-16 h-16 bg-gradient-to-br from-purple-400/20 to-violet-500/20 rounded-full blur-xl"></div>
+        <p className="text-stone-400 text-center text-sm relative z-10">No chapters available</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full lg:w-[346px] h-full flex flex-col">
+    <div className="w-full lg:w-[346px] h-full flex flex-col relative">
+      {/* Glow orbs */}
+      <div className="absolute top-10 left-10 w-16 h-16 bg-gradient-to-br from-purple-400/20 to-violet-500/20 rounded-full blur-xl"></div>
+      <div className="absolute bottom-20 right-10 w-20 h-20 bg-gradient-to-br from-purple-500/15 to-pink-500/15 rounded-full blur-xl"></div>
+
       <style jsx>{`
         .sidebar-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -104,28 +110,38 @@ export const LessonNavigation: React.FC<LessonNavigationProps> = ({
         }
       `}</style>
 
-      <div className="flex-1 overflow-y-auto sidebar-scrollbar pr-2 space-y-4 sm:space-y-5">
+      <div className="flex-1 overflow-y-auto sidebar-scrollbar pr-2 space-y-0 relative z-10">
         {course.chapters.map((chapter) => (
-          <div key={chapter.id} className="space-y-2 sm:space-y-2.5">
+          <div key={chapter.id}>
             <button
               onClick={() => toggleChapter(chapter.id)}
-              className="flex items-center justify-between w-full p-3 sm:p-4 rounded-lg border border-border bg-glass-gradient text-white font-medium text-sm sm:text-base hover:bg-glass-gradient/80 transition-colors"
+              className="flex items-center gap-2 w-full py-3 border-b border-neutral-700 hover:bg-white/5 transition-colors rounded-lg group h-20 text-left"
             >
-              <span className="text-left truncate pr-2">{chapter.title}</span>
-              <svg
-                className={`w-5 h-5 sm:w-6 sm:h-6 opacity-40 transition-transform flex-shrink-0 ${
-                  expandedChapters.has(chapter.id) ? 'rotate-180' : ''
-                }`}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 8.5l-7 7-7-7" />
+              <div className="p-1 hover:bg-white/10 rounded transition-colors flex-shrink-0">
+                {expandedChapters.has(chapter.id) ? (
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
+              </div>
+
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
               </svg>
+
+              <span className="text-white text-sm font-medium flex-1 leading-tight pr-2">
+                {chapter.title}
+              </span>
             </button>
 
             {expandedChapters.has(chapter.id) && chapter.lessons && (
               <div className="space-y-0">
                 {chapter.lessons.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-muted-foreground">
+                  <div className="px-4 py-3 text-sm text-stone-400 pl-9">
                     No lessons in this chapter
                   </div>
                 ) : (
