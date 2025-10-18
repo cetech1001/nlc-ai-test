@@ -3,7 +3,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {ChevronLeft, ChevronRight, BookOpen, Users, Calendar} from 'lucide-react';
 import { ExtendedCourse } from '@nlc-ai/types';
-import { CourseCarouselSkeleton } from '@/lib';
+import { CourseCarouselSkeleton } from './skeletons';
 
 interface CourseCarouselProps {
   userID: string;
@@ -200,7 +200,7 @@ export const CourseCarousel: React.FC<CourseCarouselProps> = ({
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }

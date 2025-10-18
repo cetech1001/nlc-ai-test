@@ -1,7 +1,7 @@
 import React from 'react';
 import { Users } from 'lucide-react';
 import { CommunityResponse } from '@nlc-ai/types';
-import { CommunityMembershipsSkeleton } from '@/lib';
+import { CommunityMembershipsSkeleton } from './skeletons';
 
 interface CommunityMembershipsProps {
   communities: CommunityResponse[];

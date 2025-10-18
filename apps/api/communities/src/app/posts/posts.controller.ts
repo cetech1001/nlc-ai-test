@@ -51,7 +51,7 @@ export class PostsController {
     @Query() filters: PostFiltersDto,
     @CurrentUser() user: AuthUser
   ) {
-    return this.postsService.getPosts(filters, user);
+    return this.postsService.getPosts(communityID, filters, user);
   }
 
   @Get(':id')

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { sdkClient } from '@/lib';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {NLCClient} from "@nlc-ai/sdk-main";
 
 interface ActivityHeatmapData {
   date: string;
@@ -13,11 +13,13 @@ interface ActivityHeatmapData {
 interface ActivityHeatmapProps {
   userID?: string;
   className?: string;
+  sdkClient: NLCClient;
 }
 
 export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({
                                                                   userID,
                                                                   className = '',
+  sdkClient
                                                                 }) => {
   const [data, setData] = useState<ActivityHeatmapData[]>([]);
   const [isLoading, setIsLoading] = useState(true);

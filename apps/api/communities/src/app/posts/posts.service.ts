@@ -96,15 +96,13 @@ export class PostsService {
     return post;
   }
 
-  async getPosts(filters: PostFilters, user: AuthUser) {
-    if (filters.communityID) {
-      await this.checkCommunityMembership(filters.communityID, user);
-    }
+  async getPosts(communityID: string, filters: PostFilters, user: AuthUser) {
+    await this.checkCommunityMembership(communityID, user);
 
     const where: any = {};
 
-    if (filters.communityID) {
-      where.communityID = filters.communityID;
+    if (communityID) {
+      where.communityID = communityID;
     }
 
     if (filters.communityMemberID) {

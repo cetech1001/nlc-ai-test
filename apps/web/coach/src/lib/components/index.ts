@@ -10,7 +10,6 @@ export * from './icons';
 export * from './leads';
 export * from './notifications';
 export * from './onboarding';
-export * from './profile';
 export * from './retention';
 export * from './sidebar';
 export * from './suggestion';

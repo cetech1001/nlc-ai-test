@@ -430,7 +430,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push(`/profile?userID=${otherParticipant?.id}`)}
+            onClick={() => router.push(`/profile?userID=${otherParticipant?.id}&userType=${otherParticipant?.type}`)}
             className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
             <Info className="w-5 h-5" />
           </button>

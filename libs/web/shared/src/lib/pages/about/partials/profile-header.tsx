@@ -2,11 +2,10 @@ import {Calendar, Clock, Instagram, Link, MapPin, X, Youtube, Facebook, UserPlus
 import {formatDate, formatTimeAgo} from "@nlc-ai/sdk-core";
 import {UserProfile} from "@nlc-ai/types";
 import {FC, ReactNode, useEffect, useState} from "react";
-import {ProfileHeaderSkeleton} from "@/lib";
-import {sdkClient} from "@/lib";
+import {ProfileHeaderSkeleton} from "./skeletons";
 import {toast} from "sonner";
-import {useAuth} from "@nlc-ai/web-auth";
 import {EnvelopeIcon} from "@heroicons/react/16/solid";
+import {NLCClient} from "@nlc-ai/sdk-main";
 
 interface SocialIntegration {
   id: string;
@@ -23,6 +22,8 @@ interface SocialIntegration {
 interface IProps {
   isLoading: boolean;
   profile: UserProfile | null;
+  user?: UserProfile | null;
+  sdkClient: NLCClient;
   socialIntegrations?: SocialIntegration[];
 }
 
@@ -42,8 +43,7 @@ const getSocialIcon = (platformName: string) => {
   return iconMap[platformName.toLowerCase()] || <Link className="w-6 h-6 text-foreground/40" />;
 };
 
-export const ProfileHeader: FC<IProps> = ({ isLoading, profile, socialIntegrations = [] }) => {
-  const { user } = useAuth();
+export const ProfileHeader: FC<IProps> = ({ isLoading, profile, socialIntegrations = [], user, sdkClient }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
