@@ -223,7 +223,7 @@ const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
       </div>
 
       {props.showCommunitySelector && props.currentCommunity && props.communities && (
-        <div className="px-3 py-4 flex-shrink-0 border-b border-[#1A1A1A]" ref={communityListRef}>
+        <div className="py-4 border-b border-[#1A1A1A]" ref={communityListRef}>
           <div className="relative">
             {(() => {
               const otherCommunities = props.communities.filter(c => c.id !== props.currentCommunity?.id);
@@ -266,7 +266,7 @@ const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
 
                   <button
                     onClick={() => setShowCommunityList(!showCommunityList)}
-                    className="flex items-center gap-3 w-full hover:bg-[#1A1A1A]/50 rounded-lg py-2 transition-colors"
+                    className="flex items-center gap-2 w-full hover:bg-[#1A1A1A]/50 rounded-lg py-2 transition-colors"
                   >
                     <img
                       src={props.currentCommunity.avatarUrl!}
@@ -274,7 +274,7 @@ const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
                       className="w-10 h-10 rounded-lg flex-shrink-0 object-cover"
                     />
                     <div className="flex-1 min-w-0 text-left">
-                      <h2 className="text-lg font-bold text-white leading-tight truncate">
+                      <h2 className="text-base font-bold text-white leading-tight truncate">
                         {props.currentCommunity.name}
                       </h2>
                     </div>
