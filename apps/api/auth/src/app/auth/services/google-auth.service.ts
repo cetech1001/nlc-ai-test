@@ -52,7 +52,7 @@ export class GoogleAuthService {
     return await this.coachAuthService.googleAuth(userData, req) as unknown as AuthResponse;
   }
 
-  async clientGoogleAuth(idToken: string, inviteToken: string): Promise<AuthResponse> {
+  async clientGoogleAuth(idToken: string, inviteToken?: string): Promise<AuthResponse> {
     const userData = await this.validateGoogleToken(idToken);
     return await this.clientAuthService.googleAuth(userData, inviteToken) as unknown as AuthResponse;
   }

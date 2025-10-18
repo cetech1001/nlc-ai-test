@@ -1,3 +1,3 @@
-export * from './lesson.card';
-export * from './lessons-grid';
+export * from './course.card';
+export * from './courses-grid';
 export * from './welcome-hero';

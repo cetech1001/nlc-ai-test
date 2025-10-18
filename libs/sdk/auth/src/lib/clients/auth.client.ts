@@ -73,7 +73,7 @@ export class AuthClient extends BaseClient {
     return response.data!;
   }
 
-  async clientGoogleAuth(idToken: string, inviteToken: string) {
+  async clientGoogleAuth(idToken: string, inviteToken?: string) {
     const response = await this.request('POST', '/client/google/auth', {
       body: { idToken, inviteToken }
     });

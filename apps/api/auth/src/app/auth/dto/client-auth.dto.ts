@@ -1,4 +1,4 @@
-import { IsString, IsUUID } from 'class-validator';
+import {IsOptional, IsString, IsUUID} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import {CoachRegisterDto} from "./coach-auth.dto";
 import {GoogleAuthDto} from "./common.dto";
@@ -16,10 +16,11 @@ export class ClientRegisterDto extends CoachRegisterDto implements ClientRegistr
 }
 
 export class ClientGoogleAuthDto extends GoogleAuthDto implements ClientGoogleAuthRequest{
-  @ApiProperty({ example: 'invite-token-uuid' })
+  @ApiProperty({ example: 'invite-token-uuid', required: false })
+  @IsOptional()
   @IsString()
   @IsUUID()
-  inviteToken: string;
+  inviteToken?: string;
 }
 
 export class SwitchCoachContextDto implements SwitchCoachContextRequest{

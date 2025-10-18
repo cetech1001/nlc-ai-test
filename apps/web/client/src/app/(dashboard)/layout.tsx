@@ -115,8 +115,8 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
           />
         </div>
 
-        <main className="main-content">
-          <div className="m-auto">
+        <main className="flex-1 min-w-0 flex flex-col min-h-screen">
+          <div className="flex-1 p-4 sm:p-5 lg:p-[20px] lg:pl-[39px] lg:pt-[26px] overflow-y-auto">
             {children}
           </div>
         </main>

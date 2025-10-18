@@ -7,7 +7,7 @@ interface IProps {
   locked?: boolean;
 }
 
-export const LessonCard: FC<IProps> = ({ image, title, description, locked = false }) => {
+export const CourseCard: FC<IProps> = ({ image, title, description, locked = false }) => {
   return (
     <div className="glass-card rounded-4xl flex-1 relative overflow-hidden min-w-0">
       <div className="absolute left-[30px] -bottom-[10px] w-[267px] h-[267px] bg-streak-gradient opacity-40 blur-[112.55px] rounded-full" />
@@ -21,7 +21,7 @@ export const LessonCard: FC<IProps> = ({ image, title, description, locked = fal
 
         <div className="p-4 sm:p-6 lg:p-7.5 space-y-5 sm:space-y-6 lg:space-y-7">
           <div className="space-y-2 sm:space-y-3">
-            <h3 className={`text-lg sm:text-xl font-semibold leading-normal ${locked ? 'line-through' : ''} text-foreground`}>
+            <h3 className={`text-lg sm:text-xl font-semibold leading-normal text-foreground`}>
               {title}
             </h3>
             <p className="text-sm sm:text-base text-foreground/40 leading-relaxed sm:leading-[22px]">
@@ -29,7 +29,7 @@ export const LessonCard: FC<IProps> = ({ image, title, description, locked = fal
             </p>
           </div>
 
-          {locked ? (
+          {/*{locked ? (
             <div className="space-y-2 sm:space-y-2.5">
               <div className="flex justify-between items-center">
                 <span className="text-xs sm:text-sm font-semibold text-foreground/40">Lessons</span>
@@ -39,7 +39,7 @@ export const LessonCard: FC<IProps> = ({ image, title, description, locked = fal
               </div>
               <div className="w-full h-1 bg-white/20 rounded-full" />
             </div>
-          ) : (
+          ) : (*/}
             <div className="space-y-2 sm:space-y-2.5">
               <div className="flex justify-between items-center">
                 <span className="text-xs sm:text-sm font-semibold text-foreground/40">Lessons</span>
@@ -49,7 +49,7 @@ export const LessonCard: FC<IProps> = ({ image, title, description, locked = fal
               </div>
               <div className="w-full h-1 bg-white/20 rounded-full" />
             </div>
-          )}
+          {/*)}*/}
         </div>
 
         {locked && (

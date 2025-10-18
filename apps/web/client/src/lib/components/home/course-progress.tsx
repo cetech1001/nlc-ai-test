@@ -13,7 +13,6 @@ export const CourseProgress = () => {
         <div className="relative mx-auto">
           <svg
             width="100%"
-            height="auto"
             viewBox="0 0 226 113"
             className="transform max-w-[180px] sm:max-w-[200px] lg:max-w-[226px]"
           >

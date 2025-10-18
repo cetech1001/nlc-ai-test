@@ -178,11 +178,11 @@ export class ClientAuthService {
     });
   }
 
-  async googleAuth(googleUser: ValidatedGoogleUser, inviteToken: string) {
+  async googleAuth(googleUser: ValidatedGoogleUser, inviteToken?: string) {
     const existingClient = await this.findClientByEmail(googleUser.email);
 
     if (existingClient) {
-      return this.handleExistingClientGoogleAuth(existingClient, inviteToken, googleUser);
+      return this.handleExistingClientGoogleAuth(existingClient, googleUser, inviteToken);
     } else {
       if (!inviteToken) {
         throw new UnauthorizedException('Invalid credentials');
@@ -367,8 +367,11 @@ export class ClientAuthService {
     };
   }
 
-  private async handleExistingClientGoogleAuth(client: any, inviteToken: string, googleUser: ValidatedGoogleUser) {
-    const invite = await this.verifyInviteToken(googleUser.email, inviteToken);
+  private async handleExistingClientGoogleAuth(client: any, googleUser: ValidatedGoogleUser, inviteToken?: string) {
+    let invite: any;
+    if (inviteToken) {
+      invite = await this.verifyInviteToken(googleUser.email, inviteToken);
+    }
 
     if (client.provider !== 'google' || client.providerID !== googleUser.providerID) {
       throw new UnauthorizedException({
@@ -377,23 +380,19 @@ export class ClientAuthService {
       });
     }
 
-    const hasConnection = client.clientCoaches.some((cc: any) => cc.coachID === invite.coachID);
-    if (!hasConnection) {
-      await this.connectExistingClient(client, invite.coachID, invite);
+    if (invite) {
+      const hasConnection = client.clientCoaches.some((cc: any) => cc.coachID === invite.coachID);
+      if (!hasConnection) {
+        await this.connectExistingClient(client, invite.coachID, invite);
+      }
     }
 
     return this.login({ email: client.email, password: '' }, 'google');
   }
 
   private async generateAuthResponse(client: any, isNewUser: boolean): Promise<AuthResponse> {
-    console.log("Came in here: ", client);
-    console.log("Is new user: ", isNewUser);
-
     const primaryCoach = client.clientCoaches.find((cc: any) => cc.isPrimary)?.coach;
     const selectedCoach = primaryCoach || client.clientCoaches[0]?.coach;
-
-    console.log("Primary coach: ", primaryCoach);
-    console.log("Selected coach: ", selectedCoach);
 
     const payload = {
       sub: client.id,
@@ -417,18 +416,13 @@ export class ClientAuthService {
         avatarUrl: client.avatarUrl,
         isActive: client.isActive,
         createdAt: client.createdAt,
-        coaches: client.clientCoaches.map((cc: any) => ({
+        clientCoaches: client.clientCoaches.map((cc: any) => ({
           coachID: cc.coach.id,
           coachName: `${cc.coach.firstName} ${cc.coach.lastName}`,
           businessName: cc.coach.businessName,
           isPrimary: cc.isPrimary,
           status: cc.status,
         })),
-        currentCoach: {
-          coachID: selectedCoach?.id,
-          coachName: `${selectedCoach.firstName} ${selectedCoach.lastName}`,
-          businessName: selectedCoach?.businessName,
-        },
       },
       isNewUser,
     };

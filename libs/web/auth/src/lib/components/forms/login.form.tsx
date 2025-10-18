@@ -39,7 +39,7 @@ export const LoginForm = (props: LoginFormProps) => {
       setError('');
       props.setSuccessMessage('');
 
-      await authAPI.googleAuth(credentialResponse.credential, props.userType);
+      await authAPI.googleAuth(credentialResponse.credential, props.userType, undefined, true);
       props.handleHome();
     } catch (err: any) {
       // const apiError = err as ApiResponse<undefined>;

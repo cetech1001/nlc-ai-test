@@ -50,7 +50,7 @@ export interface ClientRegistrationRequest extends RegistrationRequest {
 }
 
 export interface ClientGoogleAuthRequest extends GoogleAuthRequest {
-  inviteToken: string;
+  inviteToken?: string;
 }
 
 export interface SwitchCoachContextRequest {

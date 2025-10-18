@@ -108,7 +108,7 @@ class AuthAPI {
     }
   }
 
-  async googleAuth(idToken: string, userType: UserType, inviteToken?: string): Promise<LoginResponse> {
+  async googleAuth(idToken: string, userType: UserType, inviteToken?: string, isLogin?: boolean): Promise<LoginResponse> {
     let result: any;
 
     switch (userType) {
@@ -116,7 +116,7 @@ class AuthAPI {
         result = await this.auth.coachGoogleAuth(idToken);
         break;
       case UserType.CLIENT:
-        if (!inviteToken) {
+        if (!isLogin && !inviteToken) {
           throw new Error('Invitation token is required');
         }
         result = await this.auth.clientGoogleAuth(idToken, inviteToken);
