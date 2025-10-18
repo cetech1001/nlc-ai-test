@@ -5,7 +5,7 @@ import {Achievements, CourseProgress, DailyStreak, Leaderboard, Milestones} from
 
 const HomePage = () => {
   return (
-    <div className="space-y-4 lg:space-y-5">
+    <div className="">
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_2.5fr] w-full gap-4 xl:gap-5">
         <div className="w-full">
           <CourseProgress/>

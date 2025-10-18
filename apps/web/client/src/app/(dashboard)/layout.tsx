@@ -115,8 +115,8 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
           />
         </div>
 
-        <main className="py-6 md:py-0 main-content">
-          <div className="mx-auto">
+        <main className="main-content">
+          <div className="m-auto">
             {children}
           </div>
         </main>
