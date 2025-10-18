@@ -1,26 +1,17 @@
-import React, {FC} from "react";
+import React, {FC, useEffect, useState} from "react";
 import {DollarSign, Globe, Lock, UserCheck, Users, CreditCard, Calendar, Zap} from "lucide-react";
 import { Input, Label } from '@nlc-ai/web-ui';
 import {CommunityType, CommunityVisibility, CommunityFormErrors, CreateCommunityForm} from "@nlc-ai/sdk-communities";
+import {sdkClient} from "@/lib";
+import {toast} from "sonner";
+import {ExtendedCoach} from "@nlc-ai/sdk-users";
+import {ExtendedCourse} from "@nlc-ai/types";
 
 interface IProps {
   form: CreateCommunityForm;
   errors: CommunityFormErrors;
   updateForm: (field: string, value: any) => void;
 }
-
-// Mock data for coaches and courses - replace with actual data
-const coaches = [
-  { id: 'coach-1', name: 'John Smith' },
-  { id: 'coach-2', name: 'Sarah Johnson' },
-  { id: 'coach-3', name: 'Mike Wilson' },
-];
-
-const courses = [
-  { id: 'course-1', name: 'Leadership Fundamentals' },
-  { id: 'course-2', name: 'Advanced Communication' },
-  { id: 'course-3', name: 'Team Building Mastery' },
-];
 
 const communityTypes = [
   {
@@ -108,6 +99,34 @@ export const CommunityTypeAndAccessFormStep: FC<IProps> = (props) => {
       [field]: value
     });
   };
+
+  const [coaches, setCoaches] = useState<ExtendedCoach[]>([]);
+  const [courses, setCourses] = useState<ExtendedCourse[]>([]);
+
+  useEffect(() => {
+    fetchCoaches();
+    fetchCourses();
+  }, []);
+
+  const fetchCoaches = async () => {
+    try {
+      const response = await sdkClient.users.coaches.getCoaches();
+      setCoaches(response.data);
+    } catch (e) {
+      console.log("Failed to get coaches: ", e);
+      toast.error("Failed to get coaches");
+    }
+  }
+
+  const fetchCourses = async () => {
+    try {
+      const response = await sdkClient.courses.getCourses();
+      setCourses(response.data);
+    } catch (e) {
+      console.log("Failed to get coaches: ", e);
+      toast.error("Failed to get coaches");
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -277,7 +296,7 @@ export const CommunityTypeAndAccessFormStep: FC<IProps> = (props) => {
               <datalist id="coaches">
                 {coaches.map((coach) => (
                   <option key={coach.id} value={coach.id}>
-                    {coach.name}
+                    {coach.firstName} {coach.lastName}
                   </option>
                 ))}
               </datalist>
@@ -305,7 +324,7 @@ export const CommunityTypeAndAccessFormStep: FC<IProps> = (props) => {
               <datalist id="courses">
                 {courses.map((course) => (
                   <option key={course.id} value={course.id}>
-                    {course.name}
+                    {course.title}
                   </option>
                 ))}
               </datalist>

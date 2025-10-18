@@ -102,8 +102,6 @@ export class ProfilesController {
     return this.profilesService.getUserStats(id, userType);
   }
 
-  // Add these endpoints to apps/api/users/src/app/profiles/profiles.controller.ts
-
   @Post('follow')
   @UserTypes(UserType.ADMIN, UserType.COACH, UserType.CLIENT)
   @ApiOperation({ summary: 'Follow a coach' })

@@ -27,19 +27,25 @@ export interface UserProfile {
   totalInteractions?: number | null;
   lastInteractionAt?: Date | null;
 
-  coaches?: Array<{
+  clientCoaches?: Array<{
     coachID: string;
-    coachName: string;
-    businessName: string;
-    isPrimary: string;
+    isPrimary: boolean;
     status: string;
+    coach: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      avatarUrl: string | null;
+      businessName: string | null;
+    },
+    communities: Array<{
+      id: string;
+      slug: string;
+      avatarUrl: string | null;
+      name: string;
+      coachID: string | null;
+    }>;
   }>;
-
-  currentCoach?: {
-    coachID: string;
-    coachName: string;
-    businessName: string;
-  };
 }
 
 export interface UserStats {

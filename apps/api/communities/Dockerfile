@@ -49,7 +49,7 @@ RUN pnpm prisma generate --schema=libs/api/database/prisma/schema.prisma
 RUN chown -R nestjs:nodejs /app
 USER nestjs
 
-EXPOSE 3002
-ENV PORT=3002
+EXPOSE 3009
+ENV PORT=3009
 
 CMD ["node", "apps/api/communities/dist/main.js"]

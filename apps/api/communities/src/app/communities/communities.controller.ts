@@ -107,6 +107,15 @@ export class CommunitiesController {
     return this.communityService.updateCommunity(id, updateDto, user);
   }
 
+  @Get('user/:userID')
+  @UserTypes(UserType.CLIENT)
+  @ApiOperation({ summary: 'Get a user\'s communities' })
+  @ApiResponse({ status: 200, description: 'Communities retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getMyCommunities(@CurrentUser() user: AuthUser) {
+    return this.communityService.getUserCommunities(user.id);
+  }
+
   @Get(':id/activity')
   @ApiOperation({ summary: 'Get community activity feed' })
   @ApiParam({ name: 'id', description: 'Community ID' })

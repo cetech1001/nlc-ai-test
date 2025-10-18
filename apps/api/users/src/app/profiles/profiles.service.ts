@@ -116,27 +116,7 @@ export class ProfilesService {
         break;
 
       case UserType.CLIENT:
-        profile = await this.prisma.client.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            avatarUrl: true,
-            source: true,
-            tags: true,
-            engagementScore: true,
-            totalInteractions: true,
-            lastInteractionAt: true,
-            isActive: true,
-            isVerified: true,
-            location: true,
-            createdAt: true,
-            lastLoginAt: true,
-          },
-        });
+        profile = await this.getClientProfileWithCoachCommunities(id);
         break;
 
       case UserType.ADMIN:
@@ -170,6 +150,110 @@ export class ProfilesService {
       ...profile,
       engagementScore: score ? Number(score) : undefined,
       type: userType,
+    };
+  }
+
+  private async getClientProfileWithCoachCommunities(id: string) {
+    const profile = await this.prisma.client.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        avatarUrl: true,
+        source: true,
+        tags: true,
+        engagementScore: true,
+        totalInteractions: true,
+        lastInteractionAt: true,
+        isActive: true,
+        isVerified: true,
+        location: true,
+        createdAt: true,
+        lastLoginAt: true,
+        clientCoaches: {
+          select: {
+            coachID: true,
+            isPrimary: true,
+            status: true,
+            assignedAt: true,
+            notes: true,
+            coach: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                businessName: true,
+              },
+            },
+          },
+          orderBy: [{ isPrimary: 'desc' }, { assignedAt: 'asc' }],
+        },
+      },
+    });
+
+    if (!profile) return null;
+
+    const coachIDs = Array.from(
+      new Set(
+        profile.clientCoaches
+          .map((cc) => cc.coachID)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    if (coachIDs.length === 0) {
+      return {
+        ...profile,
+        clientCoaches: profile.clientCoaches.map((cc) => ({
+          ...cc,
+          communities: [] as {
+            id: string;
+            slug: string;
+            avatarUrl: string | null;
+            name: string;
+            coachID: string | null;
+          }[],
+        })),
+      };
+    }
+
+    // 3) Fetch communities by coachID
+    const communitiesByCoach = await this.prisma.community.findMany({
+      where: { coachID: { in: coachIDs } },
+      select: {
+        id: true,
+        slug: true,
+        avatarUrl: true,
+        name: true,
+        coachID: true,
+      },
+    });
+
+    // 4) Index communities by coachID for fast merging
+    const byCoach = new Map<string, typeof communitiesByCoach>();
+    for (const c of communitiesByCoach) {
+      if (!c.coachID) continue;
+      const arr = byCoach.get(c.coachID) || [];
+      arr.push(c);
+      byCoach.set(c.coachID, arr);
+    }
+
+    // 5) Merge: add `communities` onto each clientCoach, preserving isPrimary
+    const mergedClientCoaches = profile.clientCoaches.map((cc) => ({
+      ...cc,
+      communities: byCoach.get(cc.coachID) ?? [],
+    }));
+
+    // (Optional) keep primary first again, in case map changed order
+    mergedClientCoaches.sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+
+    return {
+      ...profile,
+      clientCoaches: mergedClientCoaches,
     };
   }
 
@@ -472,8 +556,6 @@ export class ProfilesService {
       throw new ConflictException('Email already exists');
     }
   }
-
-  // Add these methods to apps/api/users/src/app/profiles/profiles.service.ts
 
   async followCoach(followerID: string, followerType: UserType, coachID: string) {
     // Check if coach exists and is active

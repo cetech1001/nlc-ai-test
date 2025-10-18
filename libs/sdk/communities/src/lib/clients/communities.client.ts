@@ -95,6 +95,11 @@ export class CommunitiesClient extends BaseClient {
     return response.data!;
   }
 
+  async getUserCommunities(userID: string) {
+    const response = await this.request<CommunityResponse[]>('GET', `/user/${userID}`);
+    return response.data!;
+  }
+
   async getCommunityStats(): Promise<{
     total: number;
     active: number;

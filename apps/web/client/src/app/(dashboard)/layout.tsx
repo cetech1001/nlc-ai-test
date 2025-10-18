@@ -1,6 +1,6 @@
 'use client'
 
-import {ReactNode, useEffect} from 'react';
+import {ReactNode, useEffect, useState} from 'react';
 import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
 import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/web-auth";
@@ -10,6 +10,14 @@ import {UserType} from "@nlc-ai/types";
 
 interface DashboardLayoutProps {
   children: ReactNode;
+}
+
+interface Community {
+  id: string;
+  slug: string;
+  avatarUrl: string | null;
+  name: string;
+  coachID: string | null;
 }
 
 const defaultConfig = {
@@ -24,6 +32,11 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
+  const [currentCommunityID, setCurrentCommunityID] = useState<string>('');
+  const [communities, setCommunities] = useState<Community[]>([]);
+
+  const currentCommunity = communities.find(c => c.id === currentCommunityID);
+
   let path = pathname.split('/').filter(Boolean).shift();
   const currentConfig = pageConfig[path as keyof typeof pageConfig] || defaultConfig;
 
@@ -31,7 +44,19 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, isLoading, router]);
+
+    if (user) {
+      const primaryCoach = user.clientCoaches![0];
+      setCurrentCommunityID(primaryCoach.communities[0]?.id);
+
+      const communities: Community[] = [];
+      user.clientCoaches?.forEach(cc => {
+        communities.push(...cc.communities);
+      });
+
+      setCommunities(communities);
+    }
+  }, [isAuthenticated, isLoading, router, user]);
 
   if (!isAuthenticated) {
     return null;
@@ -50,6 +75,12 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
     router.push('/login');
   }
 
+  const handleCommunityChange = (communityID: string) => {
+    setCurrentCommunityID(communityID);
+    // Add any additional logic here (e.g., API calls, state updates, navigation)
+    console.log('Switched to community:', communityID);
+  }
+
   return (
     <div className="min-h-screen bg-[#000000]">
       <SidebarComponent
@@ -60,6 +91,10 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
         settingsItems={settingsItems}
         logout={handleLogout}
         logoSize={'large'}
+        showCommunitySelector={true}
+        currentCommunity={currentCommunity}
+        communities={communities}
+        onCommunityChange={handleCommunityChange}
       />
 
       <div className="lg:pl-72">

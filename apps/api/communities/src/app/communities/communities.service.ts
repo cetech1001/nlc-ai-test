@@ -352,6 +352,25 @@ export class CommunitiesService {
     return this.getCommunity(community, user);
   }
 
+  async getUserCommunities(userID: string) {
+    return this.prisma.community.findMany({
+      where: {
+        members: {
+          some: {
+            userID: userID,
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        avatarUrl: true,
+        memberCount: true,
+      }
+    });
+  }
+
   async updateCommunity(id: string, updateRequest: UpdateCommunityRequest, user: AuthUser) {
     const community = await this.prisma.community.findUnique({
       where: { id },

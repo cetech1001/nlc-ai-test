@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useRef, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   XMarkIcon,
@@ -12,6 +12,14 @@ import {
 } from '@heroicons/react/24/outline';
 import { MenuItem, MenuItemWithDropdown } from "@nlc-ai/types";
 import { Logo } from "../logo";
+
+interface Community {
+  id: string;
+  slug: string;
+  avatarUrl: string | null;
+  name: string;
+  coachID: string | null;
+}
 
 interface SidebarProps extends SidebarComponentProps {
   dashboardHeader: string;
@@ -32,6 +40,24 @@ const hasDropdown = (item: MenuItem | MenuItemWithDropdown): item is MenuItemWit
 
 const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
+  const [showCommunityList, setShowCommunityList] = useState(false);
+  const communityListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (communityListRef.current && !communityListRef.current.contains(event.target as Node)) {
+        setShowCommunityList(false);
+      }
+    };
+
+    if (showCommunityList) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCommunityList]);
 
   const handleNavigation = (path: string) => {
     props.navigateTo(path);
@@ -46,6 +72,13 @@ const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
       newOpenDropdowns.add(itemLabel);
     }
     setOpenDropdowns(newOpenDropdowns);
+  };
+
+  const handleCommunitySelect = (id: string) => {
+    if (props.onCommunityChange) {
+      props.onCommunityChange(id);
+    }
+    setShowCommunityList(false);
   };
 
   const isActive = (path: string) => {
@@ -189,6 +222,109 @@ const HeadlessUISidebar = ({ logoSize = 'small', ...props }: SidebarProps) => {
         </div>
       </div>
 
+      {props.showCommunitySelector && props.currentCommunity && props.communities && (
+        <div className="px-3 py-4 flex-shrink-0 border-b border-[#1A1A1A]" ref={communityListRef}>
+          <div className="relative">
+            {(() => {
+              const otherCommunities = props.communities.filter(c => c.id !== props.currentCommunity?.id);
+              const halfLength = Math.floor(otherCommunities.length / 2);
+              const topCommunities = otherCommunities.slice(0, halfLength);
+              const bottomCommunities = otherCommunities.slice(halfLength);
+
+              return (
+                <>
+                  <Transition
+                    show={showCommunityList && topCommunities.length > 0}
+                    enter="transition duration-200 ease-out"
+                    enterFrom="transform scale-y-0 opacity-0 origin-bottom"
+                    enterTo="transform scale-y-100 opacity-100 origin-bottom"
+                    leave="transition duration-150 ease-in"
+                    leaveFrom="transform scale-y-100 opacity-100 origin-bottom"
+                    leaveTo="transform scale-y-0 opacity-0 origin-bottom"
+                  >
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg shadow-xl shadow-[#7B21BA]/10 overflow-hidden z-50">
+                      <div className="max-h-64 overflow-y-auto">
+                        {topCommunities.map((community) => (
+                          <button
+                            key={community.id}
+                            onClick={() => handleCommunitySelect(community.id)}
+                            className="flex items-center gap-3 w-full p-3 hover:bg-gradient-to-r hover:from-fuchsia-500/10 hover:to-violet-500/10 transition-colors"
+                          >
+                            <img
+                              src={community.avatarUrl!}
+                              alt={community.name}
+                              className="w-8 h-8 rounded-lg flex-shrink-0 object-cover"
+                            />
+                            <span className="text-sm font-medium text-white truncate">
+                              {community.name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </Transition>
+
+                  <button
+                    onClick={() => setShowCommunityList(!showCommunityList)}
+                    className="flex items-center gap-3 w-full hover:bg-[#1A1A1A]/50 rounded-lg py-2 transition-colors"
+                  >
+                    <img
+                      src={props.currentCommunity.avatarUrl!}
+                      alt={props.currentCommunity.name}
+                      className="w-10 h-10 rounded-lg flex-shrink-0 object-cover"
+                    />
+                    <div className="flex-1 min-w-0 text-left">
+                      <h2 className="text-lg font-bold text-white leading-tight truncate">
+                        {props.currentCommunity.name}
+                      </h2>
+                    </div>
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 9l5-4 5 4M7 16l5 4 5-4" />
+                    </svg>
+                  </button>
+
+                  <Transition
+                    show={showCommunityList && bottomCommunities.length > 0}
+                    enter="transition duration-200 ease-out"
+                    enterFrom="transform scale-y-0 opacity-0 origin-top"
+                    enterTo="transform scale-y-100 opacity-100 origin-top"
+                    leave="transition duration-150 ease-in"
+                    leaveFrom="transform scale-y-100 opacity-100 origin-top"
+                    leaveTo="transform scale-y-0 opacity-0 origin-top"
+                  >
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg shadow-xl shadow-[#7B21BA]/10 overflow-hidden z-50">
+                      <div className="max-h-64 overflow-y-auto">
+                        {bottomCommunities.map((community) => (
+                          <button
+                            key={community.id}
+                            onClick={() => handleCommunitySelect(community.id)}
+                            className="flex items-center gap-3 w-full p-3 hover:bg-gradient-to-r hover:from-fuchsia-500/10 hover:to-violet-500/10 transition-colors"
+                          >
+                            <img
+                              src={community.avatarUrl!}
+                              alt={community.name}
+                              className="w-8 h-8 rounded-lg flex-shrink-0 object-cover"
+                            />
+                            <span className="text-sm font-medium text-white truncate">
+                              {community.name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </Transition>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       <nav className="flex flex-1 flex-col">
         <ul role="list" className="flex flex-1 flex-col gap-y-7">
           <li>
@@ -318,6 +454,10 @@ interface SidebarComponentProps {
   navigateTo: (path: string) => void;
   settingsItems?: (MenuItem | MenuItemWithDropdown)[];
   logoSize?: 'small' | 'large';
+  showCommunitySelector?: boolean;
+  currentCommunity?: Community;
+  communities?: Community[];
+  onCommunityChange?: (id: string) => void;
 }
 
 export const DashboardSidebarWrapper = () => {
