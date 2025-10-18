@@ -12,7 +12,7 @@ export const menuItems: MenuItemType[] = [
   { icon: LeaderboardIcon, label: "Leaderboard", path: "/home" },
   { icon: CommunityIcon, label: "Community", path: "/community" },
   { icon: ClassroomIcon, label: "Classroom", path: "/classroom" },
-  { icon: CalendarIcon, label: "Calendar", path: "/leads" },
+  { icon: CalendarIcon, label: "Calendar", path: "/calendar" },
   { icon: MembersIcon, label: "Members", path: "/members" },
   { icon: AboutIcon, label: "About", path: "/about" },
 ];
