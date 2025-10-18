@@ -6,7 +6,7 @@ import {usePathname, useRouter} from "next/navigation";
 import {useAuth} from "@nlc-ai/web-auth";
 import {menuItems, pageConfig, sdkClient, settingsItems} from "@/lib";
 import {UserType} from "@nlc-ai/types";
-
+import { useCommunityStore } from "@/lib/stores/community.store";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -32,10 +32,16 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
-  const [currentCommunityID, setCurrentCommunityID] = useState<string>('');
   const [communities, setCommunities] = useState<Community[]>([]);
 
-  const currentCommunity = communities.find(c => c.id === currentCommunityID);
+  const {
+    selectedCommunityID,
+    setSelectedCommunity,
+    initializeFromUser,
+    clearSelection
+  } = useCommunityStore();
+
+  const currentCommunity = communities.find(c => c.id === selectedCommunityID);
 
   let path = pathname.split('/').filter(Boolean).shift();
   const currentConfig = pageConfig[path as keyof typeof pageConfig] || defaultConfig;
@@ -46,17 +52,16 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
 
     if (user) {
-      const primaryCoach = user.clientCoaches![0];
-      setCurrentCommunityID(primaryCoach.communities[0]?.id);
-
-      const communities: Community[] = [];
+      const allCommunities: Community[] = [];
       user.clientCoaches?.forEach(cc => {
-        communities.push(...cc.communities);
+        allCommunities.push(...cc.communities);
       });
 
-      setCommunities(communities);
+      setCommunities(allCommunities);
+
+      initializeFromUser(allCommunities);
     }
-  }, [isAuthenticated, isLoading, router, user]);
+  }, [isAuthenticated, isLoading, router, user, initializeFromUser]);
 
   if (!isAuthenticated) {
     return null;
@@ -71,14 +76,17 @@ const ClientDashboardLayout = ({ children }: DashboardLayoutProps) => {
   }
 
   const handleLogout = () => {
+    clearSelection();
     logout();
     router.push('/login');
   }
 
   const handleCommunityChange = (communityID: string) => {
-    setCurrentCommunityID(communityID);
-    // Add any additional logic here (e.g., API calls, state updates, navigation)
-    console.log('Switched to community:', communityID);
+    const selectedCom = communities.find(c => c.id === communityID);
+    if (selectedCom && selectedCom.coachID) {
+      setSelectedCommunity(communityID, selectedCom.coachID);
+      console.log('Switched to community:', communityID, 'with coach:', selectedCom.coachID);
+    }
   }
 
   return (

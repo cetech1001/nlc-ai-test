@@ -2,9 +2,33 @@
 
 import React, { useState } from 'react';
 import { LessonNavigation, LessonVideoPlayer } from '@/lib';
+import { ExtendedCourse } from '@nlc-ai/types';
 
-export const LessonLayout = () => {
+interface LessonLayoutProps {
+  course: ExtendedCourse;
+  currentLessonID?: string;
+}
+
+export const LessonLayout: React.FC<LessonLayoutProps> = ({ course, currentLessonID }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedLessonID, setSelectedLessonID] = useState<string>(
+    currentLessonID || course.chapters?.[0]?.lessons?.[0]?.id || ''
+  );
+
+  // Find the current lesson
+  const currentLesson = course.chapters
+    ?.flatMap(chapter => chapter.lessons || [])
+    .find(lesson => lesson.id === selectedLessonID);
+
+  // Find the chapter that contains the current lesson
+  const currentChapter = course.chapters?.find(chapter =>
+    chapter.lessons?.some(lesson => lesson.id === selectedLessonID)
+  );
+
+  const handleLessonSelect = (lessonID: string) => {
+    setSelectedLessonID(lessonID);
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -28,7 +52,7 @@ export const LessonLayout = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Course Navigation</h3>
+                <h3 className="text-lg font-semibold text-foreground">{course.title}</h3>
                 <button
                   onClick={() => setSidebarOpen(false)}
                   className="p-2 text-muted-foreground hover:text-white"
@@ -38,19 +62,31 @@ export const LessonLayout = () => {
                   </svg>
                 </button>
               </div>
-              <LessonNavigation />
+              <LessonNavigation
+                course={course}
+                selectedLessonID={selectedLessonID}
+                onLessonSelect={handleLessonSelect}
+              />
             </div>
           </div>
         )}
 
         {/* Desktop Navigation */}
         <div className="hidden lg:block flex-shrink-0">
-          <LessonNavigation />
+          <LessonNavigation
+            course={course}
+            selectedLessonID={selectedLessonID}
+            onLessonSelect={handleLessonSelect}
+          />
         </div>
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          <LessonVideoPlayer />
+          <LessonVideoPlayer
+            lesson={currentLesson}
+            chapter={currentChapter}
+            course={course}
+          />
         </div>
       </div>
     </div>
