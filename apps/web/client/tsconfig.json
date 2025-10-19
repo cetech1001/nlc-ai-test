@@ -51,7 +51,22 @@
   ],
   "references": [
     {
+      "path": "../../../libs/sdk/communities"
+    },
+    {
+      "path": "../../../libs/sdk/main"
+    },
+    {
       "path": "../../../libs/web/ui"
+    },
+    {
+      "path": "../../../libs/web/shared"
+    },
+    {
+      "path": "../../../libs/types"
+    },
+    {
+      "path": "../../../libs/web/auth"
     }
   ]
 }

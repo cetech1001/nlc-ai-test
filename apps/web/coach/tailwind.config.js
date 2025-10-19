@@ -1,11 +1,7 @@
-const { createGlobPatternsForDependencies } = require('@nx/react/tailwind');
-const { join } = require('path');
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'),
-    ...createGlobPatternsForDependencies(__dirname),
+    "./src/**/*.{ts,tsx}",
     '../../../libs/web/auth/src/**/*.{ts,tsx}',
     '../../../libs/web/ui/src/**/*.{ts,tsx}',
     '../../../libs/web/shared/src/**/*.{ts,tsx}',

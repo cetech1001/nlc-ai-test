@@ -9,8 +9,7 @@
     "db:deploy": "prisma migrate deploy --schema=libs/api/database/prisma/schema.prisma",
     "db:studio": "prisma studio --schema=libs/api/database/prisma/schema.prisma",
     "db:format": "prisma format --schema=libs/api/database/prisma/schema.prisma",
-    "db:push": "prisma db push --schema=libs/api/database/prisma/schema.prisma",
-    "start:users-service": "nx serve users-service --watch --verbose"
+    "db:push": "prisma db push --schema=libs/api/database/prisma/schema.prisma"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.901.0",
