@@ -667,17 +667,7 @@ importers:
 
   apps/api/users: {}
 
-  apps/web/admin:
-    dependencies:
-      next:
-        specifier: ~15.2.4
-        version: 15.2.5(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.92.1)
-      react:
-        specifier: 19.0.0
-        version: 19.0.0
-      react-dom:
-        specifier: 19.0.0
-        version: 19.0.0(react@19.0.0)
+  apps/web/admin: {}
 
   apps/web/client:
     dependencies:
@@ -691,29 +681,9 @@ importers:
         specifier: 19.0.0
         version: 19.0.0(react@19.0.0)
 
-  apps/web/coach:
-    dependencies:
-      next:
-        specifier: ~15.2.4
-        version: 15.2.5(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.92.1)
-      react:
-        specifier: 19.0.0
-        version: 19.0.0
-      react-dom:
-        specifier: 19.0.0
-        version: 19.0.0(react@19.0.0)
+  apps/web/coach: {}
 
-  apps/web/pre-launch:
-    dependencies:
-      next:
-        specifier: ~15.2.4
-        version: 15.2.5(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.92.1)
-      react:
-        specifier: 19.0.0
-        version: 19.0.0
-      react-dom:
-        specifier: 19.0.0
-        version: 19.0.0(react@19.0.0)
+  apps/web/pre-launch: {}
 
   libs/api/auth: {}
 
