@@ -6,7 +6,6 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,7 +14,7 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { CurrentUser, UserTypes, UserTypesGuard } from '@nlc-ai/api-auth';
+import { CurrentUser, UserTypes } from '@nlc-ai/api-auth';
 import { type AuthUser, UserType } from '@nlc-ai/types';
 import { MembersService } from './members.service';
 import {
@@ -26,8 +25,6 @@ import {
 
 @ApiTags('Community Members')
 @Controller(':communityID/members')
-@UseGuards(UserTypesGuard)
-@UserTypes(UserType.COACH, UserType.ADMIN, UserType.CLIENT)
 @ApiBearerAuth()
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
@@ -78,7 +75,6 @@ export class MembersController {
   @ApiOperation({ summary: 'Get community member statistics' })
   @ApiParam({ name: 'communityID', description: 'Community ID' })
   @ApiResponse({ status: 200, description: 'Member statistics retrieved successfully' })
-  @UserTypes(UserType.COACH, UserType.ADMIN)
   async getCommunityMemberStats(
     @Param('communityID') communityID: string,
     @CurrentUser() user: AuthUser
