@@ -1,10 +1,9 @@
 'use client';
 import {useRouter} from "next/navigation";
-import {useState} from "react";
+
 
 export const HeroSection = () => {
   const router = useRouter();
-  const [isVideoPlaying, _] = useState(false);
 
   return (
     <>
@@ -64,32 +63,13 @@ export const HeroSection = () => {
 
                 <div
                   className="aspect-video w-full h-full z-20 bg-background rounded-2xl flex items-center justify-center relative overflow-hidden">
-                  {/* Preload iframe hidden */}
                   <iframe
-                    src="https://player.vimeo.com/video/1127299038?badge=0&amp;autopause=0&amp;autoplay=0&amp;player_id=0&amp;app_id=58479"
-                    frameBorder="0"
-                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                    src="https://player.vimeo.com/video/1127299038?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    frameBorder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                     referrerPolicy="strict-origin-when-cross-origin"
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "100%",
-                      // display: isVideoPlaying ? "block" : "none"
-                    }}
+                    style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
                     title="PreLaunch VSL Final"
                   />
-
-                  {!isVideoPlaying && (
-                    <div className="absolute inset-0 opacity-10">
-                      <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 rounded-full animate-ping"></div>
-                      <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-fuchsia-400 rounded-full animate-ping"
-                           style={{animationDelay: '1s'}}></div>
-                      <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-violet-400 rounded-full animate-ping"
-                           style={{animationDelay: '2s'}}></div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
