@@ -25,7 +25,6 @@ export const gatewayConfig = registerAs('gateway', () => {
   return {
     service: {
       name: config.SERVICE_NAME,
-      version: config.SERVICE_VERSION,
       environment: config.NODE_ENV,
     },
     jwt: {
@@ -107,10 +106,6 @@ export const gatewayConfig = registerAs('gateway', () => {
     circuitBreaker: {
       failureThreshold: config.CIRCUIT_BREAKER_FAILURE_THRESHOLD,
       timeout: config.CIRCUIT_BREAKER_TIMEOUT,
-    },
-    monitoring: {
-      enableMetrics: config.ENABLE_METRICS,
-      enableTracing: config.ENABLE_TRACING,
     },
   };
 });

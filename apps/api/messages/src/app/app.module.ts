@@ -5,7 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { HealthModule } from './health/health.module';
-import messagingConfig from './config/messaging.config';
+import messagingConfig from './config/messages.config';
 import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/api-validation";
 import {AuthLibModule, JwtAuthGuard} from "@nlc-ai/api-auth";
 import {MessagesModule} from "./messages/messages.module";

@@ -2,25 +2,20 @@ import { IsString, IsOptional, IsNumber, IsArray, IsBoolean } from 'class-valida
 import { Transform } from 'class-transformer';
 
 export class GatewayConfigSchema {
+  @IsOptional()
   @IsString()
-  NODE_ENV: string = 'development';
+  NODE_ENV?: string = 'development';
 
   @IsOptional()
   @IsString()
-  SERVICE_NAME?: string = 'api-gateway';
-
-  @IsOptional()
-  @IsString()
-  SERVICE_VERSION?: string = '1.0.0';
+  SERVICE_NAME?: string = 'gateway';
 
   @IsString()
   JWT_SECRET: string;
 
   @IsOptional()
-  @IsString()
-  JWT_EXPIRES_IN?: string = '24h';
+  JWT_EXPIRES_IN: string;
 
-  // Service URLs
   @IsString()
   AUTH_SERVICE_URL: string;
 
@@ -63,7 +58,6 @@ export class GatewayConfigSchema {
   @IsString()
   CONTENT_SERVICE_URL: string;
 
-  // Rate limiting
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
@@ -74,7 +68,6 @@ export class GatewayConfigSchema {
   @Transform(({ value }) => parseInt(value))
   RATE_LIMIT_MAX?: number = 100;
 
-  // CORS
   @IsOptional()
   @IsArray()
   @Transform(({ value }) => value?.split(',') || [])
@@ -82,32 +75,21 @@ export class GatewayConfigSchema {
 
   @IsOptional()
   @IsBoolean()
-  // @Transform(({ value }) => value === 'false')
   CORS_CREDENTIALS?: boolean = true;
 
-  // Cache
-  @IsOptional()
   @IsString()
-  REDIS_URL?: string;
+  REDIS_URL: string;
 
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   CACHE_TTL?: number = 300;
 
-  // Request timeout
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   REQUEST_TIMEOUT?: number = 30000;
 
-  // Load balancing
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => value === 'true')
-  ENABLE_LOAD_BALANCING?: boolean = false;
-
-  // Circuit breaker
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
@@ -117,15 +99,4 @@ export class GatewayConfigSchema {
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   CIRCUIT_BREAKER_TIMEOUT?: number = 10000;
-
-  // Monitoring
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => value === 'true')
-  ENABLE_METRICS?: boolean = true;
-
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => value === 'true')
-  ENABLE_TRACING?: boolean = false;
 }

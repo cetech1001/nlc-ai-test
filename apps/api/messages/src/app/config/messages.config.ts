@@ -1,10 +1,10 @@
 import { registerAs } from '@nestjs/config';
 import { validateSync } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { MessagingConfigSchema } from './messaging-config.schema';
+import { MessagesConfigSchema } from './messages-config.schema';
 
 function validateConfig(config: Record<string, unknown>) {
-  const validatedConfig = plainToInstance(MessagingConfigSchema, config, {
+  const validatedConfig = plainToInstance(MessagesConfigSchema, config, {
     enableImplicitConversion: true,
   });
 
@@ -25,28 +25,10 @@ export default registerAs('messaging', () => {
   return {
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
-    },
-    rabbitmq: {
-      url: config.RABBITMQ_URL,
-      exchange: config.RABBITMQ_EXCHANGE,
-    },
-    jwt: {
-      secret: config.JWT_SECRET,
-      expiresIn: config.JWT_EXPIRES_IN,
     },
     service: {
       name: config.SERVICE_NAME,
-      version: config.SERVICE_VERSION,
       environment: config.NODE_ENV,
-    },
-    performance: {
-      maxRetries: config.MAX_RETRIES,
-      cacheTTL: config.CACHE_TTL,
-    },
-    cors: {
-      origins: config.CORS_ORIGINS || ['http://localhost:4200', 'http://localhost:4300'],
-      credentials: config.CORS_CREDENTIALS,
-    },
+    }
   };
 });

@@ -25,7 +25,6 @@ export const agentsConfig = registerAs('agents', () => {
   return {
     database: {
       url: config.DATABASE_URL,
-      schema: config.DATABASE_SCHEMA,
     },
     rabbitmq: {
       url: config.RABBITMQ_URL,
@@ -37,7 +36,6 @@ export const agentsConfig = registerAs('agents', () => {
     },
     service: {
       name: config.SERVICE_NAME,
-      version: config.SERVICE_VERSION,
       environment: config.NODE_ENV,
     },
     services: {

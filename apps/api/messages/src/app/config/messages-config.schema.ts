@@ -1,7 +1,7 @@
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import {IsString, IsOptional, IsNumber} from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class AgentsConfigSchema {
+export class MessagesConfigSchema {
   @IsString()
   DATABASE_URL: string;
 
@@ -19,10 +19,7 @@ export class AgentsConfigSchema {
 
   @IsOptional()
   @IsString()
-  SERVICE_NAME?: string = 'agents';
-
-  @IsString()
-  EMAIL_SERVICE_URL: string;
+  SERVICE_NAME?: string = 'messages';
 
   @IsOptional()
   @IsString()
@@ -37,7 +34,4 @@ export class AgentsConfigSchema {
   @IsNumber()
   @Transform(({ value }) => parseInt(value))
   CACHE_TTL?: number = 300;
-
-  @IsString()
-  OPENAI_API_KEY: string;
 }
