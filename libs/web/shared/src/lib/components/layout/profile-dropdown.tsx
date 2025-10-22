@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {User, CreditCard, LogOut, ChevronDown, Cog} from 'lucide-react';
+import {UserType} from "@nlc-ai/types";
 
 interface ProfileDropdownProps {
   user: any;
@@ -68,29 +69,33 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
           </div>
 
           <div className="py-2">
-            <button
-              onClick={() => handleNavigation('/profile')}
-              className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
-            >
-              <User className="w-4 h-4 text-stone-400" />
-              <span className="text-sm font-medium">Profile</span>
-            </button>
+            {user?.type !== UserType.ADMIN && (
+              <button
+                onClick={() => handleNavigation('/profile')}
+                className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
+              >
+                <User className="w-4 h-4 text-stone-400" />
+                <span className="text-sm font-medium">Profile</span>
+              </button>
+            )}
 
             <button
-              onClick={() => handleNavigation('/settings/account')}
+              onClick={() => handleNavigation(`/settings${ user?.type === UserType.ADMIN ? '' : '/account' }`)}
               className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
             >
               <Cog className="w-4 h-4 text-stone-400" />
               <span className="text-sm font-medium">Account</span>
             </button>
 
-            <button
-              onClick={() => handleNavigation('/settings/billing')}
-              className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
-            >
-              <CreditCard className="w-4 h-4 text-stone-400" />
-              <span className="text-sm font-medium">Billing</span>
-            </button>
+            {user?.type !== UserType.ADMIN && (
+              <button
+                onClick={() => handleNavigation('/settings/billing')}
+                className="w-full px-4 py-2.5 text-left text-white hover:bg-neutral-800 transition-colors flex items-center gap-3"
+              >
+                <CreditCard className="w-4 h-4 text-stone-400" />
+                <span className="text-sm font-medium">Billing</span>
+              </button>
+            )}
           </div>
 
           <div className="border-t border-neutral-700 my-2"></div>
