@@ -1,23 +1,23 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import {TableColumn, TransactionWithDetails} from "@nlc-ai/types";
+import {ExtendedTransaction, TableColumn} from "@nlc-ai/types";
 import { formatCurrency } from "@nlc-ai/web-utils";
 import {DataTableTransaction} from "@nlc-ai/sdk-billing";
 
-export const transformTransactionData = (transactions: TransactionWithDetails[]): DataTableTransaction[] => {
-  return transactions.map((transaction: TransactionWithDetails) => ({
+export const transformTransactionData = (transactions: ExtendedTransaction[]): DataTableTransaction[] => {
+  return transactions.map((transaction) => ({
     id: transaction.id,
-    coachName: transaction.coachName,
-    coachEmail: transaction.coachEmail,
-    planName: transaction.planName,
+    coachName: transaction.payee?.name || '',
+    coachEmail: transaction.payee?.email || '',
+    planName: transaction.plan?.name || '',
     amount: formatCurrency(transaction.amount),
     status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1),
-    paymentMethod: transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    transactionDate: new Date(transaction.transactionDate).toLocaleDateString('en-US', {
+    paymentMethod: transaction.paymentMethodType,
+    transactionDate: new Date(transaction.createdAt).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
     }),
-    invoiceNumber: transaction.invoiceNumber,
+    invoiceNumber: transaction.invoiceNumber || '',
   }));
 };
 

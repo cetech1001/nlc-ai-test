@@ -1,35 +1,3 @@
-export interface ExtendedTransaction {
-  payer?: {
-    id: string;
-    type: string;
-    name: string;
-    email: string;
-  };
-  payee?: {
-    id: string;
-    type: string;
-    name: string;
-    email: string;
-  };
-  plan?: {
-    name: string;
-    monthlyPrice: number;
-    annualPrice: number;
-  };
-  course?: {
-    title: string;
-    price: number;
-  };
-  community?: {
-    name: string;
-    pricingType: string;
-  };
-  invoice?: {
-    invoiceNumber: string;
-    status: string;
-  } | null;
-}
-
 export interface RevenueData {
   period: string;
   revenue: number;

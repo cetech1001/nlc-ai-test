@@ -1,6 +1,8 @@
+/// <reference lib="dom"/>
+
 import {BaseClient, FilterValues, Paginated, SearchQuery} from "@nlc-ai/sdk-core";
-import {ExtendedTransaction, Transaction, TransactionStats, RevenueGrowthData, RevenueStats} from "../types";
-import {Coach} from "@nlc-ai/sdk-users";
+import {Transaction, TransactionStats, RevenueGrowthData, RevenueStats} from "../types";
+import {ExtendedTransaction, TopCoach} from "@nlc-ai/types";
 
 export interface TransactionSearchQuery extends SearchQuery {
   payerID?: string;
@@ -13,7 +15,7 @@ export class TransactionsClient extends BaseClient{
   async getTransactions(
     searchOptions: TransactionSearchQuery = {},
     filters: FilterValues = {},
-  ): Promise<Paginated<ExtendedTransaction>> {
+  ) {
     const { page = 1, limit = 10, search, payerID, payerType, payeeID, payeeType } = searchOptions;
 
     const params = new URLSearchParams();
@@ -115,8 +117,8 @@ export class TransactionsClient extends BaseClient{
     document.body.removeChild(a);
   }
 
-  async getTopPayingCoaches(limit = 10): Promise<Coach[]> {
-    const response = await this.request<Coach[]>('GET', `/analytics/top-coaches?limit=${limit}`);
+  async getTopPayingCoaches(limit = 10) {
+    const response = await this.request<TopCoach[]>('GET', `/analytics/top-coaches?limit=${limit}`);
     return response.data!
   }
 

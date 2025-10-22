@@ -28,15 +28,22 @@ export class TransactionsController {
   @Get('failed')
   @ApiOperation({ summary: 'Get failed transactions' })
   @ApiResponse({ status: 200, description: 'Failed transactions retrieved successfully' })
-  async getFailedTransactions(@Query('limit') limit: number = 100) {
+  async getFailedTransactions(@Query('limit') limit = 100) {
     return this.transactionsService.getFailedTransactions(limit);
   }
 
   @Get('pending')
   @ApiOperation({ summary: 'Get pending transactions older than specified minutes' })
   @ApiResponse({ status: 200, description: 'Pending transactions retrieved successfully' })
-  async getPendingTransactions(@Query('olderThanMinutes') olderThanMinutes: number = 60) {
+  async getPendingTransactions(@Query('olderThanMinutes') olderThanMinutes = 60) {
     return this.transactionsService.getPendingTransactions(olderThanMinutes);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get transaction statistics' })
+  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  getStats() {
+    return this.transactionsService.getTransactionStats();
   }
 
   @Get(':id')
@@ -117,5 +124,20 @@ export class TransactionsController {
       filters: filters,
       transactions: transactionsData,
     });
+  }
+
+  @Get('analytics/top-coaches')
+  @ApiOperation({ summary: 'Get top paying coaches' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Top paying coaches retrieved successfully' })
+  getTopPayingCoaches(@Query('limit') limit?: string) {
+    return this.transactionsService.getTopPayingCoaches(limit ? parseInt(limit) : 10);
+  }
+
+  @Get('analytics/monthly-comparison')
+  @ApiOperation({ summary: 'Get monthly revenue comparison' })
+  @ApiResponse({ status: 200, description: 'Monthly revenue comparison retrieved successfully' })
+  getMonthlyRevenueComparison() {
+    return this.transactionsService.getMonthlyRevenueComparison();
   }
 }

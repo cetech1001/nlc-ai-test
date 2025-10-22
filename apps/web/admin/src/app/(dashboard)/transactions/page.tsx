@@ -7,7 +7,7 @@ import {
   transformTransactionData,
   transactionFilters,
   TransactionAnalytics,
-  emptyTransactionsFilterValues
+  emptyTransactionsFilterValues, sdkClient
 } from "@/lib";
 import { DataTable, Pagination, PageHeader, DataFilter, MobilePagination } from "@nlc-ai/web-shared";
 import { transactionsAPI } from "@nlc-ai/web-api-client";
@@ -46,11 +46,13 @@ const Transactions = () => {
       setIsLoading(true);
       setError("");
 
-      const response = await transactionsAPI.getTransactions(
-        currentPage,
-        transactionsPerPage,
+      const response = await sdkClient.billing.transactions.getTransactions(
+        {
+          search: searchQuery,
+          page: currentPage,
+          limit: transactionsPerPage,
+        },
         filterValues,
-        searchQuery
       );
 
       setTransactions(transformTransactionData(response.data));

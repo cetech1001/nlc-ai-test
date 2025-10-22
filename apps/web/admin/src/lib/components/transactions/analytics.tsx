@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, DollarSign, CreditCard, Users, Activity } from 'lucide-react';
-import { transactionsAPI } from '@nlc-ai/web-api-client';
 import {AlertBanner, Button } from '@nlc-ai/web-ui';
 import {RevenueComparison, TopCoach, TransactionStats} from "@nlc-ai/types";
 import { StatCard } from '@nlc-ai/web-shared';
+import {sdkClient} from "@/lib";
 
 export const TransactionAnalytics: React.FC = () => {
   // Separate loading states for each section
@@ -25,10 +25,10 @@ export const TransactionAnalytics: React.FC = () => {
   const fetchTransactionStats = async () => {
     try {
       setIsStatsLoading(true);
-      const statsData = await transactionsAPI.getTransactionStats();
+      const statsData = await sdkClient.billing.transactions.getTransactionStats();
       setStats(statsData);
     } catch (e) {
-      throw e;
+      console.error(e);
     } finally {
       setIsStatsLoading(false);
     }
@@ -37,10 +37,10 @@ export const TransactionAnalytics: React.FC = () => {
   const fetchRevenueComparison = async () => {
     try {
       setIsRevenueComparisonLoading(true);
-      const revenueData = await transactionsAPI.getMonthlyRevenueComparison();
+      const revenueData = await sdkClient.billing.transactions.getMonthlyRevenueComparison();
       setRevenueComparison(revenueData);
     } catch (e) {
-      throw e;
+      console.error(e);
     } finally {
       setIsRevenueComparisonLoading(false);
     }
@@ -49,10 +49,10 @@ export const TransactionAnalytics: React.FC = () => {
   const fetchTopCoaches = async () => {
     try {
       setIsTopCoachesLoading(true);
-      const topCoachesData = await transactionsAPI.getTopPayingCoaches(5);
+      const topCoachesData = await sdkClient.billing.transactions.getTopPayingCoaches(5);
       setTopCoaches(topCoachesData);
     } catch (e) {
-      throw e;
+      console.error(e);
     } finally {
       setIsTopCoachesLoading(false);
     }

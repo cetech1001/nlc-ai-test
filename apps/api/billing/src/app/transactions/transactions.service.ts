@@ -103,11 +103,19 @@ export class TransactionsService {
       };
     }
 
-    return this.prisma.paginate(this.prisma.transaction, {
+    const result = await this.prisma.paginate(this.prisma.transaction, {
       where,
       include: this.getTransactionIncludes(),
       orderBy: { createdAt: 'desc' },
     });
+
+    // Enrich with participant information
+    const enrichedData = await this.enrichTransactionsWithParticipants(result.data);
+
+    return {
+      ...result,
+      data: enrichedData,
+    };
   }
 
   async findTransactionByID(id: string): Promise<ExtendedTransaction> {
@@ -208,6 +216,27 @@ export class TransactionsService {
     return result.data.slice(0, limit);
   }
 
+  async getTransactionStats() {
+    const [totalTransactions, completedTransactions, pendingTransactions, failedTransactions, totalRevenue] = await Promise.all([
+      this.prisma.transaction.count(),
+      this.prisma.transaction.count({ where: { status: 'completed' } }),
+      this.prisma.transaction.count({ where: { status: 'pending' } }),
+      this.prisma.transaction.count({ where: { status: 'failed' } }),
+      this.prisma.transaction.aggregate({
+        where: { status: 'completed' },
+        _sum: { amount: true }
+      })
+    ]);
+
+    return {
+      total: totalTransactions,
+      completed: completedTransactions,
+      pending: pendingTransactions,
+      failed: failedTransactions,
+      totalRevenue: Math.round((totalRevenue._sum.amount || 0) / 100), // Convert from cents
+    };
+  }
+
   async getPendingTransactions(olderThanMinutes = 60): Promise<ExtendedTransaction[]> {
     const cutoffTime = new Date();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - olderThanMinutes);
@@ -218,6 +247,100 @@ export class TransactionsService {
     });
 
     return result.data;
+  }
+
+  async getTopPayingCoaches(limit = 10) {
+    const result = await this.prisma.transaction.groupBy({
+      by: ['payeeID'],
+      where: {
+        status: 'completed',
+        payeeType: 'coach', // Ensure we're getting coaches as payees
+        payeeID: {
+          not: null, // Ensure payeeID exists
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _sum: {
+          amount: 'desc',
+        },
+      },
+      take: limit,
+    });
+
+    const coachIDs: string[] = result
+      .map((r: any) => r.payeeID)
+      .filter((id): id is string => id !== null);
+
+    const coaches = await this.prisma.coach.findMany({
+      where: {
+        id: {
+          in: coachIDs,
+        },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
+    return result.map((r: any) => {
+      const coach = coaches.find((c: any) => c.id === r.payeeID);
+      return {
+        coachID: r.payeeID,
+        coachName: coach ? `${coach.firstName} ${coach.lastName}` : 'Unknown',
+        coachEmail: coach?.email || 'Unknown',
+        totalAmount: Math.round((r._sum.amount || 0) / 100),
+        transactionCount: r._count.id,
+      };
+    });
+  }
+
+  async getMonthlyRevenueComparison() {
+    const currentDate = new Date();
+    const currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const previousMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+
+    const [currentMonthRevenue, previousMonthRevenue] = await Promise.all([
+      this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: currentMonth,
+          },
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: previousMonth,
+            lte: previousMonthEnd,
+          },
+        },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const current = Math.round((currentMonthRevenue._sum.amount || 0) / 100);
+    const previous = Math.round((previousMonthRevenue._sum.amount || 0) / 100);
+    const percentageChange = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+
+    return {
+      currentMonth: current,
+      previousMonth: previous,
+      percentageChange: Math.round(percentageChange * 100) / 100,
+      trend: current > previous ? 'up' : current < previous ? 'down' : 'stable',
+    };
   }
 
   async bulkExportTransactions(filters: any = {}) {
@@ -333,6 +456,95 @@ export class TransactionsService {
     if (!paymentMethod.isActive) {
       throw new BadRequestException('Payment method is not active');
     }
+  }
+
+  private async enrichTransactionsWithParticipants(transactions: any[]): Promise<ExtendedTransaction[]> {
+    // Collect all unique coach and client IDs
+    const coachIDs = new Set<string>();
+    const clientIDs = new Set<string>();
+
+    transactions.forEach(t => {
+      if (t.payerType === 'coach') coachIDs.add(t.payerID);
+      if (t.payerType === 'client') clientIDs.add(t.payerID);
+      if (t.payeeType === 'coach' && t.payeeID) coachIDs.add(t.payeeID);
+      if (t.payeeType === 'client' && t.payeeID) clientIDs.add(t.payeeID);
+    });
+
+    // Fetch all coaches and clients in parallel
+    const [coaches, clients] = await Promise.all([
+      this.prisma.coach.findMany({
+        where: { id: { in: Array.from(coachIDs) } },
+        select: { id: true, firstName: true, lastName: true, email: true },
+      }),
+      this.prisma.client.findMany({
+        where: { id: { in: Array.from(clientIDs) } },
+        select: { id: true, firstName: true, lastName: true, email: true },
+      }),
+    ]);
+
+    // Create lookup maps
+    const coachMap = new Map(coaches.map(c => [c.id, c]));
+    const clientMap = new Map(clients.map(c => [c.id, c]));
+
+    // Enrich transactions
+    return transactions.map(transaction => {
+      const getPayer = () => {
+        if (transaction.payerType === 'coach') {
+          const coach = coachMap.get(transaction.payerID);
+          return coach ? {
+            id: transaction.payerID,
+            type: 'coach',
+            name: `${coach.firstName} ${coach.lastName}`,
+            email: coach.email,
+          } : null;
+        } else if (transaction.payerType === 'client') {
+          const client = clientMap.get(transaction.payerID);
+          return client ? {
+            id: transaction.payerID,
+            type: 'client',
+            name: `${client.firstName} ${client.lastName}`,
+            email: client.email,
+          } : null;
+        }
+        return null;
+      };
+
+      const getPayee = () => {
+        if (!transaction.payeeID) return null;
+
+        if (transaction.payeeType === 'coach') {
+          const coach = coachMap.get(transaction.payeeID);
+          return coach ? {
+            id: transaction.payeeID,
+            type: 'coach',
+            name: `${coach.firstName} ${coach.lastName}`,
+            email: coach.email,
+          } : null;
+        } else if (transaction.payeeType === 'client') {
+          const client = clientMap.get(transaction.payeeID);
+          return client ? {
+            id: transaction.payeeID,
+            type: 'client',
+            name: `${client.firstName} ${client.lastName}`,
+            email: client.email,
+          } : null;
+        } else if (transaction.payeeType === 'platform') {
+          return {
+            id: transaction.payeeID,
+            type: 'platform',
+            name: 'Platform',
+            email: '',
+          };
+        }
+        return null;
+      };
+
+      return {
+        ...transaction,
+        payer: getPayer(),
+        payee: getPayee(),
+      };
+    });
   }
 
   private getTransactionIncludes() {

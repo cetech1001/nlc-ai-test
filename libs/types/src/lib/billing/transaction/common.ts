@@ -1,9 +1,10 @@
 import {PaymentMethodType} from "../../payment";
 import {Coach} from "../../coach";
-import {Subscription} from "../../subscription";
+import {BillingCycle, Subscription, SubscriptionStatus} from "../../subscription";
 import {Plan} from "../../plan";
-import {Invoice} from "../../invoice";
+import {Invoice, InvoiceStatus} from "../../invoice";
 import {TransactionStatus} from "../../transaction";
+import {CommunityPricingType} from "../../communities";
 
 export interface Transaction {
   id: string;
@@ -71,4 +72,98 @@ export interface TransactionWithDetails {
   transactionDate: Date;
   paidAt?: Date;
   description?: string;
+}
+
+export interface ExtendedTransaction {
+  id: string;
+
+  // Payer information
+  payerID: string;
+  payerType: string;
+
+  // Payee information
+  payeeID: string | null;
+  payeeType: string | null;
+
+  // Related entities
+  planID: string | null;
+  courseID: string | null;
+  communityID: string | null;
+  subscriptionID: string | null;
+  paymentRequestID: string | null;
+
+  // Payment details
+  paymentMethodID: string | null;
+  amount: number;
+  currency: string;
+  status: TransactionStatus;
+  paymentMethodType: PaymentMethodType;
+
+  // External payment IDs
+  stripePaymentID: string | null;
+  paypalOrderID: string | null;
+
+  // Invoice details
+  invoiceID: string | null;
+  invoiceNumber: string | null;
+  invoiceDate: Date;
+  dueDate: Date | null;
+  paidAt: Date | null;
+
+  // Additional information
+  description: string | null;
+  metadata: Record<string, any> | null;
+  failureReason: string | null;
+  refundReason: string | null;
+  refundedAmount: number | null;
+
+  // Platform fees
+  platformFeeAmount: number | null;
+  platformFeeRate: number | null;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Populated participant information
+  payer: {
+    id: string;
+    type: string;
+    name: string;
+    email: string;
+  } | null;
+
+  payee: {
+    id: string;
+    type: string;
+    name: string;
+    email: string;
+  } | null;
+
+  // Included relations
+  plan?: {
+    name: string;
+    monthlyPrice: number;
+    annualPrice: number;
+  } | null;
+
+  course?: {
+    title: string;
+    price: number | null;
+  } | null;
+
+  community?: {
+    name: string;
+    pricingType: CommunityPricingType;
+  } | null;
+
+  subscription?: {
+    status: SubscriptionStatus;
+    billingCycle: BillingCycle;
+  } | null;
+
+  invoice?: {
+    invoiceNumber: string;
+    status: InvoiceStatus;
+  } | null;
 }
