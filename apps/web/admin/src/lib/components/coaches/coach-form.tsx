@@ -77,8 +77,8 @@ export const CoachForm: React.FC<CoachFormProps> = ({
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (formData.websiteUrl && !/^https?:\/\/.+/.test(formData.websiteUrl)) {
-      newErrors.websiteUrl = 'Please enter a valid URL (must start with http:// or https://)';
+    if (formData.websiteUrl && !formData.websiteUrl.includes('.')) {
+      newErrors.websiteUrl = 'Please enter a valid URL';
     }
 
     setErrors(newErrors);
@@ -213,13 +213,13 @@ export const CoachForm: React.FC<CoachFormProps> = ({
               <div className="relative">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]" />
                 <input
-                  type="url"
+                  type="text"
                   value={formData.websiteUrl || ''}
                   onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
                   className={`w-full pl-10 pr-4 py-3 bg-background border rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 ${
                     errors.websiteUrl ? 'border-red-500' : 'border-[#3A3A3A]'
                   }`}
-                  placeholder="https://example.com"
+                  placeholder="example.com"
                   disabled={isLoading}
                 />
               </div>
