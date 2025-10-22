@@ -4,7 +4,7 @@ import {useState} from "react";
 
 export const HeroSection = () => {
   const router = useRouter();
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isVideoPlaying, _] = useState(false);
 
   return (
     <>
@@ -66,7 +66,7 @@ export const HeroSection = () => {
                   className="aspect-video w-full h-full z-20 bg-background rounded-2xl flex items-center justify-center relative overflow-hidden">
                   {/* Preload iframe hidden */}
                   <iframe
-                    src="https://player.vimeo.com/video/1127299038?badge=0&amp;autopause=0&amp;autoplay=1&amp;player_id=0&amp;app_id=58479"
+                    src="https://player.vimeo.com/video/1127299038?badge=0&amp;autopause=0&amp;autoplay=0&amp;player_id=0&amp;app_id=58479"
                     frameBorder="0"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                     referrerPolicy="strict-origin-when-cross-origin"
@@ -76,34 +76,10 @@ export const HeroSection = () => {
                       left: 0,
                       width: "100%",
                       height: "100%",
-                      display: isVideoPlaying ? "block" : "none"
+                      // display: isVideoPlaying ? "block" : "none"
                     }}
                     title="PreLaunch VSL Final"
                   />
-
-                  {/* Thumbnail overlay */}
-                  {!isVideoPlaying && (
-                    <>
-                      <img
-                        src="https://d159ubt2zvt6ob.cloudfront.net/nlc-ai/brands/hero-thumbnail.jpg"
-                        alt="Video thumbnail default"
-                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-                      />
-                      <div className="absolute inset-0 bg-black/20 rounded-2xl"></div>
-                      <div className="text-center relative z-10">
-                        <div
-                          onClick={() => setIsVideoPlaying(true)}
-                          className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-4 mx-auto hover:bg-white/20 hover:scale-110 transition-all cursor-pointer backdrop-blur-sm border border-white/20 group"
-                        >
-                          <svg className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform"
-                               fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
-                          </svg>
-                        </div>
-                        <p className="text-gray-300 font-semibold drop-shadow-lg">Watch Demo</p>
-                      </div>
-                    </>
-                  )}
 
                   {!isVideoPlaying && (
                     <div className="absolute inset-0 opacity-10">
