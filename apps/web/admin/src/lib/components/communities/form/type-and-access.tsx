@@ -123,8 +123,8 @@ export const CommunityTypeAndAccessFormStep: FC<IProps> = (props) => {
       const response = await sdkClient.courses.getCourses();
       setCourses(response.data);
     } catch (e) {
-      console.log("Failed to get coaches: ", e);
-      toast.error("Failed to get coaches");
+      console.log("Failed to get courses: ", e);
+      toast.error("Failed to get courses");
     }
   }
 

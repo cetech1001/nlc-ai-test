@@ -6,7 +6,7 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
+  UseGuards, Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -122,7 +122,7 @@ export class CommunitiesController {
   @ApiResponse({ status: 200, description: 'Activity feed retrieved successfully' })
   async getCommunityActivity(
     @Param('id') id: string,
-    @Query('limit') limit: number = 10,
+    @Query('limit') limit = 10,
     @CurrentUser() user: AuthUser
   ) {
     return this.communityService.getCommunityActivity(id, limit, user);
@@ -139,5 +139,19 @@ export class CommunitiesController {
     @CurrentUser() user: AuthUser
   ) {
     return this.communityService.getCommunityAnalytics(id, period, user);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete community (soft delete)' })
+  @ApiParam({ name: 'id', description: 'Community ID' })
+  @ApiResponse({ status: 200, description: 'Community deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Community not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only community owner or admin can delete' })
+  @UserTypes(UserType.COACH, UserType.ADMIN)
+  async deleteCommunity(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.communityService.deleteCommunity(id, user);
   }
 }

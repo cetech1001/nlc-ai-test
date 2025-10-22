@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import {sdkClient} from "@/lib";
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { useAuth } from "@nlc-ai/web-auth";
 import {VaultPage} from "@nlc-ai/web-shared";
 

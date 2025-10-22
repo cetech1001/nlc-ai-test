@@ -710,39 +710,40 @@ export class CommunitiesService {
     email: string;
     avatarUrl: string;
   }> {
+    let user: any;
     try {
       switch (userType) {
         case UserType.COACH:
-          const coach = await this.prisma.coach.findUnique({
+          user = await this.prisma.coach.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true, businessName: true },
           });
           return {
-            name: coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach',
-            email: coach?.email || '',
-            avatarUrl: coach?.avatarUrl || '',
+            name: user?.businessName || `${user?.firstName} ${user?.lastName}` || 'Unknown Coach',
+            email: user?.email || '',
+            avatarUrl: user?.avatarUrl || '',
           };
 
         case UserType.CLIENT:
-          const client = await this.prisma.client.findUnique({
+          user = await this.prisma.client.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
           return {
-            name: `${client?.firstName} ${client?.lastName}` || 'Unknown Client',
-            email: client?.email || '',
-            avatarUrl: client?.avatarUrl || '',
+            name: user?.firstName ? `${user?.firstName} ${user?.lastName}` : 'Unknown Client',
+            email: user?.email || '',
+            avatarUrl: user?.avatarUrl || '',
           };
 
         case UserType.ADMIN:
-          const admin = await this.prisma.admin.findUnique({
+          user = await this.prisma.admin.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
           return {
-            name: `${admin?.firstName} ${admin?.lastName}` || 'Admin',
-            email: admin?.email || '',
-            avatarUrl: admin?.avatarUrl || '',
+            name: user?.firstName ? `${user?.firstName} ${user?.lastName}` : 'Admin',
+            email: user?.email || '',
+            avatarUrl: user?.avatarUrl || '',
           };
 
         default:
@@ -819,6 +820,52 @@ export class CommunitiesService {
       totalPosts,
       avgMembersPerCommunity,
       avgPostsPerCommunity,
+    };
+  }
+
+  async deleteCommunity(communityID: string, user: AuthUser) {
+    // Check if community exists
+    const community = await this.prisma.community.findUnique({
+      where: { id: communityID },
+      select: {
+        id: true,
+        name: true,
+        ownerID: true,
+        ownerType: true,
+        isDeleted: true,
+      },
+    });
+
+    if (!community) {
+      throw new NotFoundException('Community not found');
+    }
+
+    // Check if already deleted
+    if (community.isDeleted) {
+      throw new ForbiddenException('Community is already deleted');
+    }
+
+    // Check permissions
+    const isOwner = community.ownerID === user.id && community.ownerType === user.type;
+    const isAdmin = user.type === UserType.ADMIN;
+
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Only the community owner or an admin can delete this community');
+    }
+
+    // Perform soft delete
+    const deletedCommunity = await this.prisma.community.update({
+      where: { id: communityID },
+      data: {
+        isDeleted: true,
+        isActive: false,
+        updatedAt: new Date(),
+      },
+    });
+
+    return {
+      message: 'Community deleted successfully',
+      community: deletedCommunity,
     };
   }
 }

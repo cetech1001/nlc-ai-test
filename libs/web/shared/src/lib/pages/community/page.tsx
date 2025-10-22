@@ -72,7 +72,7 @@ export const CommunityPage: FC<IProps> = ({
     try {
       setPostsLoading(true);
 
-      const response = await sdkClient.communities.posts.getPosts(communityID || community?.id!, {
+      const response = await sdkClient.communities.posts.getPosts(communityID || community?.id || '', {
         page,
         limit: 10,
         sortOrder: 'desc'
@@ -118,23 +118,25 @@ export const CommunityPage: FC<IProps> = ({
       const currentPost = posts.find(p => p.id === postID);
       if (!currentPost) return;
 
-      const isCurrentlyLiked = currentPost.userReaction === reactionType;
+      if (community?.id) {
+        const isCurrentlyLiked = currentPost.userReaction === reactionType;
 
-      await sdkClient.communities.posts.reactToPost(community?.id!, postID, { type: reactionType });
+        await sdkClient.communities.posts.reactToPost(community.id, postID, { type: reactionType });
 
-      setPosts(prev => prev.map(post =>
-        post.id === postID
-          ? {
-            ...post,
-            likeCount: isCurrentlyLiked
-              ? post.likeCount - 1
-              : post.likeCount + 1,
-            userReaction: isCurrentlyLiked
-              ? undefined
-              : reactionType
-          }
-          : post
-      ));
+        setPosts(prev => prev.map(post =>
+          post.id === postID
+            ? {
+              ...post,
+              likeCount: isCurrentlyLiked
+                ? post.likeCount - 1
+                : post.likeCount + 1,
+              userReaction: isCurrentlyLiked
+                ? undefined
+                : reactionType
+            }
+            : post
+        ));
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to react to post");
     }
@@ -144,19 +146,21 @@ export const CommunityPage: FC<IProps> = ({
     if (!newComment.trim()) return;
 
     try {
-      await sdkClient.communities.comments.createComment(community?.id!, {
-        postID,
-        content: newComment.trim(),
-        mediaUrls: []
-      });
+      if (community?.id) {
+        await sdkClient.communities.comments.createComment(community.id, {
+          postID,
+          content: newComment.trim(),
+          mediaUrls: []
+        });
 
-      setPosts(prev => prev.map(post =>
-        post.id === postID
-          ? { ...post, commentCount: post.commentCount + 1 }
-          : post
-      ));
+        setPosts(prev => prev.map(post =>
+          post.id === postID
+            ? { ...post, commentCount: post.commentCount + 1 }
+            : post
+        ));
 
-      toast.success('Comment added successfully!');
+        toast.success('Comment added successfully!');
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to add comment");
     }
@@ -164,10 +168,11 @@ export const CommunityPage: FC<IProps> = ({
 
   const handleMemberClick = async (memberID: string, memberType: string) => {
     try {
+      const senderID = user?.type === UserType.ADMIN ? UserType.ADMIN : user?.id;
       const conversation = await sdkClient.messages.createConversation({
         type: 'direct',
-        participantIDs: [user?.id || '', memberID],
-        participantTypes: ['coach', memberType as any]
+        participantIDs: [senderID || '', memberID],
+        participantTypes: [user?.type || UserType.COACH, memberType as any]
       });
 
       handleMessages(conversation.id);

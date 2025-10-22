@@ -36,7 +36,6 @@ import {
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
-  // Conversations endpoints
   @Post('conversations')
   @ApiOperation({ summary: 'Create a new conversation' })
   @ApiResponse({ status: 201, description: 'Conversation created successfully' })

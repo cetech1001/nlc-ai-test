@@ -77,6 +77,10 @@ export class CommunitiesClient extends BaseClient {
     return response.data!;
   }
 
+  async deleteCommunity(id: string) {
+    return this.request('DELETE', `/${id}`);
+  }
+
   async updateCommunity(id: string, data: UpdateCommunityRequest): Promise<CommunityResponse> {
     const response = await this.request<CommunityResponse>('PUT', `/${id}`, { body: data });
     return response.data!;

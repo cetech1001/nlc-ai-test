@@ -107,6 +107,7 @@ const AdminCommunitySettingsPage = () => {
       newErrors.name = 'Community name is required';
     } else if (community.name.length < 3) {
       newErrors.name = 'Community name must be at least 3 characters';
+      newErrors.name = 'Community name must be at least 3 characters';
     }
 
     if (community.description && community.description.length < 10) {
@@ -195,9 +196,7 @@ const AdminCommunitySettingsPage = () => {
     if (!confirm(confirmMessage)) return;
 
     try {
-      await sdkClient.communities.updateCommunity(communityID, {
-        isActive: false,
-      });
+      await sdkClient.communities.deleteCommunity(communityID);
 
       toast.success('Community deleted successfully');
       router.push('/communities');

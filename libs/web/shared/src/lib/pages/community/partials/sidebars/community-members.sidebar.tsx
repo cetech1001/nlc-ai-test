@@ -57,21 +57,28 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
   };
 
   const handleMemberClick = async (member: ExtendedCommunityMember) => {
+    if (member.userID === user?.id) {
+      return;
+    }
+
     if (onMemberClick) {
       onMemberClick(member.userID, member.userType);
       return;
     }
 
     try {
-      const conversation = await sdkClient.messages.createConversation({
-        type: 'direct',
-        participantIDs: [user?.id || '', member.userID],
-        participantTypes: [user?.type || UserType.COACH, member.userType]
-      });
+      if (user) {
+        const senderID = user?.type === UserType.ADMIN ? UserType.ADMIN : user?.id;
+        const conversation = await sdkClient.messages.createConversation({
+          type: 'direct',
+          participantIDs: [senderID || '', member.userID],
+          participantTypes: [user?.type || UserType.COACH, member.userType]
+        });
 
-      handleMessages(conversation.id);
-      if (onMobileToggle) {
-        onMobileToggle();
+        handleMessages(conversation.id);
+        if (onMobileToggle) {
+          onMobileToggle();
+        }
       }
     } catch (error: any) {
       toast.error('Failed to start conversation');
@@ -197,7 +204,9 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
                         <p className="text-stone-400 text-xs">
                           {member.isOnline ? 'Online' : formatLastActive(member.lastActiveAt)}
                         </p>
-                        <MessageCircle className="w-3 h-3 text-stone-500 group-hover:text-fuchsia-400 transition-colors" />
+                        {member.userID !== user?.id && (
+                          <MessageCircle className="w-3 h-3 text-stone-500 group-hover:text-fuchsia-400 transition-colors" />
+                        )}
                       </div>
                     </div>
                   </div>

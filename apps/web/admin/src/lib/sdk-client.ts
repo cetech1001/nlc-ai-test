@@ -1,3 +1,4 @@
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import {TokenStorage} from "@nlc-ai/web-auth";
 import {NLCClient} from "@nlc-ai/sdk-main";
 import {appConfig} from "@nlc-ai/web-shared";
