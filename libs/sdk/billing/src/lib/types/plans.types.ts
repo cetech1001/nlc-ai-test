@@ -54,6 +54,7 @@ export interface TransformedPlan {
   aiAgents: AiAgent[];
   isCurrentPlan: boolean;
   colorClass: string;
+  colorValue: string;
   isDeleted: boolean;
 }
 
@@ -70,7 +71,7 @@ export interface CreatePlanRequest {
   accessibleAiAgents?: string[];
 }
 
-export interface UpdatePlanRequest extends Partial<CreatePlanRequest> {}
+export type UpdatePlanRequest = Partial<CreatePlanRequest>
 
 export interface PlanAnalytics {
   plan: Plan;

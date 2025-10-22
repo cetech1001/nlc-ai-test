@@ -6,8 +6,7 @@ import {
 } from "@nlc-ai/web-ui";
 import { X, Plus, Palette, Bot } from "lucide-react";
 import {useEffect, useState} from "react";
-import {PLAN_COLORS} from "@nlc-ai/web-utils";
-import {CreatePlanRequest, Plan, PlanFormData, PlanFormErrors, AiAgent} from "@nlc-ai/sdk-billing";
+import {CreatePlanRequest, Plan, PlanFormData, PlanFormErrors, AiAgent, PLAN_COLORS} from "@nlc-ai/sdk-billing";
 import {sdkClient} from "@/lib";
 
 interface IProps {

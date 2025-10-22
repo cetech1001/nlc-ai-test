@@ -39,7 +39,7 @@ const SubscriptionPlans = () => {
       }, 3000);
       return () => clearTimeout(timer);
     }
-    return () => {}
+    return () => { /* empty */ }
   }, [successMessage]);
 
   useEffect(() => {
@@ -239,7 +239,7 @@ const SubscriptionPlans = () => {
               <PlanCard
                 plan={plan}
                 action={(plan: TransformedPlan) => plan.isDeleted ? "Deleted" : "Edit Plan"}
-                onActionClick={plan.isDeleted ? () => {} : handleEditPlan}
+                onActionClick={plan.isDeleted ? () => { /* empty */ } : handleEditPlan}
               />
 
               {plan._count && (

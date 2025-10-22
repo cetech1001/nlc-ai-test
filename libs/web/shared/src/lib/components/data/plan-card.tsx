@@ -10,7 +10,7 @@ interface IProps {
 }
 
 export const PlanCard = ({ plan: rawPlan, currentPlan, action, onActionClick }: IProps) => {
-  let plan = transformPlan(rawPlan, currentPlan);
+  const plan = transformPlan(rawPlan, currentPlan);
 
   const renderActionButton = () => {
     if (plan.isCurrentPlan) {
@@ -49,7 +49,7 @@ export const PlanCard = ({ plan: rawPlan, currentPlan, action, onActionClick }: 
       <div
         className="w-auto px-6 pt-7 pb-5 bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-tl-[20px] rounded-tr-[20px] flex flex-col gap-2.5">
         <div className="flex flex-col gap-3">
-          <div className={`w-6 h-6 ${plan.colorClass} rounded-full border-[3px] border-stone-950`}/>
+          <div className={`w-6 h-6 ${plan.colorClass} rounded-full border-[3px] border-stone-950`} style={{ backgroundColor: plan.colorValue }}/>
           <div className="flex flex-col gap-1">
             <div className="text-stone-50 text-3xl font-bold font-['Inter']">{plan.title}</div>
             <div
