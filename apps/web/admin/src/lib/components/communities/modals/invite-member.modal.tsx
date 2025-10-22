@@ -21,7 +21,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     inviteeID: '',
-    inviteeType: UserType.CLIENT,
+    inviteeType: UserType.CLIENT as UserType,
     message: '',
     expiresInDays: '7',
   });

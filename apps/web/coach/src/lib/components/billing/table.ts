@@ -1,17 +1,17 @@
 import { tableRenderers } from "@nlc-ai/web-shared";
-import {DataTableTransaction, ExtendedTransaction} from "@nlc-ai/sdk-billing";
+import {DataTableTransaction} from "@nlc-ai/sdk-billing";
 import { formatCurrency } from "@nlc-ai/web-utils";
-import {TableColumn} from "@nlc-ai/types";
+import {TableColumn, ExtendedTransaction} from "@nlc-ai/types";
 import {formatDate} from "@nlc-ai/sdk-core";
 
 export const transformPaymentHistoryData = (transactions: ExtendedTransaction[]): DataTableTransaction[] => {
   return transactions.map((transaction: ExtendedTransaction) => ({
     id: transaction.id,
-    invoiceNumber: transaction.invoiceNumber,
+    invoiceNumber: transaction.invoiceNumber || '',
     planName: transaction.plan?.name || '',
     amount: formatCurrency(transaction.amount),
     status: transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1),
-    paymentMethod: transaction.paymentMethod?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    paymentMethod: transaction.paymentMethodType,
     transactionDate: formatDate(transaction.createdAt),
   }));
 };

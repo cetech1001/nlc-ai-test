@@ -3,8 +3,9 @@
 import {useEffect, useState} from "react";
 import {DataTable, Pagination, PageHeader, DataFilter, MobilePagination} from "@nlc-ai/web-shared";
 import { AlertBanner } from '@nlc-ai/web-ui';
-import {ExtendedTransaction, Plan, Subscription, DataTableTransaction} from "@nlc-ai/sdk-billing";
+import {Plan, Subscription, DataTableTransaction} from "@nlc-ai/sdk-billing";
 import {FilterValues} from "@nlc-ai/sdk-core";
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { useAuth } from "@nlc-ai/web-auth";
 import { Search } from "lucide-react";
 import {ExtendedCoach} from "@nlc-ai/sdk-users";
@@ -21,6 +22,7 @@ import {
   PlanUpgradeModal
 } from "@/lib";
 import {useRouter, useSearchParams} from "next/navigation";
+import {ExtendedTransaction} from "@nlc-ai/types";
 
 interface CoachBillingData {
   coach: ExtendedCoach;
@@ -135,26 +137,28 @@ export default function Billing() {
       setIsBillingDataLoading(true);
       setError("");
 
-      // Fetch coach data
-      const coachData = await sdkClient.users.coaches.getCoach(user?.id!);
+      if (user) {
+        // Fetch coach data
+        const coachData = await sdkClient.users.coaches.getCoach(user.id);
 
-      // Fetch current active subscription
-      const currentSubscription = await sdkClient.billing.subscriptions.getCurrentSubscription(
-        user?.id!,
-        'coach'
-      );
+        // Fetch current active subscription
+        const currentSubscription = await sdkClient.billing.subscriptions.getCurrentSubscription(
+          user.id,
+          'coach'
+        );
 
-      // Fetch subscription history
-      const subscriptionHistory = await sdkClient.billing.subscriptions.getSubscriptionHistory(
-        user?.id!,
-        'coach'
-      );
+        // Fetch subscription history
+        const subscriptionHistory = await sdkClient.billing.subscriptions.getSubscriptionHistory(
+          user.id,
+          'coach'
+        );
 
-      setBillingData({
-        coach: coachData,
-        currentSubscription,
-        subscriptionHistory
-      });
+        setBillingData({
+          coach: coachData,
+          currentSubscription,
+          subscriptionHistory
+        });
+      }
     } catch (e: any) {
       setError(e.message || 'Failed to fetch billing data');
     } finally {

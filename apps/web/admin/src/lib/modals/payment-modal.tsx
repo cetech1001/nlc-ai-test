@@ -37,7 +37,6 @@ const billingCycles = [
   { id: "annual", name: "Annual" },
 ];
 
-// Stripe payment form component
 const StripePaymentForm: React.FC<{
   selectedPlan: Plan;
   amount: number;
@@ -53,14 +52,13 @@ const StripePaymentForm: React.FC<{
   const [clientSecret, setClientSecret] = useState<string>('');
 
   useEffect(() => {
-    // Create payment intent when component mounts
     const createPaymentIntent = async () => {
       try {
         const response = await sdkClient.billing.payments.createPaymentIntent({
           payerID: coachID,
           payerType: UserType.COACH,
           planID: selectedPlan.id,
-          amount: amount * 100, // Convert to cents
+          amount: amount * 100,
           description: `Payment for ${coachName} - ${selectedPlan.name} plan`,
         });
         setClientSecret(response.clientSecret);
