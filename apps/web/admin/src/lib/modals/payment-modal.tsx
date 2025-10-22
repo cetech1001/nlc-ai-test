@@ -1,11 +1,10 @@
 import React, {Fragment, useEffect, useState} from "react";
-import {Dialog, Listbox, RadioGroup, Transition} from "@headlessui/react";
-import {CheckIcon, ChevronDown, Copy, CreditCard, Loader2} from "lucide-react";
+import {Dialog, RadioGroup, Transition} from "@headlessui/react";
+import {CheckIcon, Copy, CreditCard, Loader2} from "lucide-react";
 import {Button} from "@nlc-ai/web-ui";
 import {loadStripe, StripeElementsOptions} from '@stripe/stripe-js';
 import {CardElement, Elements, useElements, useStripe} from '@stripe/react-stripe-js';
-import {paymentsAPI, plansAPI} from "@nlc-ai/web-api-client";
-import {PaymentModalSkeleton} from "@/lib";
+import {PaymentModalSkeleton, sdkClient} from "@/lib";
 import {UserType} from "@nlc-ai/types";
 
 interface PaymentModalProps {
@@ -24,11 +23,18 @@ interface Plan {
   annualPrice: number;
 }
 
+type BillingCycle = 'monthly' | 'annual';
+
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 const paymentModes = [
   { id: "send-link", name: "Send A Link" },
   { id: "pay-here", name: "Pay Here" },
+];
+
+const billingCycles = [
+  { id: "monthly", name: "Monthly" },
+  { id: "annual", name: "Annual" },
 ];
 
 // Stripe payment form component
@@ -50,7 +56,7 @@ const StripePaymentForm: React.FC<{
     // Create payment intent when component mounts
     const createPaymentIntent = async () => {
       try {
-        const response = await paymentsAPI.createPaymentIntent({
+        const response = await sdkClient.billing.payments.createPaymentIntent({
           payerID: coachID,
           payerType: UserType.COACH,
           planID: selectedPlan.id,
@@ -175,15 +181,15 @@ const StripePaymentForm: React.FC<{
 };
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
- isOpen,
- onClose,
- coachName,
- coachID,
- selectedPlan = "Growth Pro",
- onPaymentComplete,
-}) => {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [selectedPlanOption, setSelectedPlanOption] = useState<Plan | null>(null);
+                                                            isOpen,
+                                                            onClose,
+                                                            coachName,
+                                                            coachID,
+                                                            selectedPlan = "Growth Pro",
+                                                            onPaymentComplete,
+                                                          }) => {
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [amount, setAmount] = useState(0);
   const [selectedPaymentMode, setSelectedPaymentMode] = useState(paymentModes[0]);
   const [paymentLink, setPaymentLink] = useState("");
@@ -195,49 +201,48 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [paymentError, setPaymentError] = useState<string>('');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Load plans on component mount
+  // Load plan on component mount
   useEffect(() => {
-    const loadPlans = async () => {
+    const loadPlan = async () => {
       try {
         setIsLoading(true);
-        const plansData = await plansAPI.getPlans(false, false); // Only active plans
+        const plansData = await sdkClient.billing.plans.getPlans(false, false); // Only active plans
 
-        const transformedPlans: Plan[] = plansData.map(plan => ({
-          id: plan.id,
-          name: plan.name,
-          monthlyPrice: Math.floor(plan.monthlyPrice / 100), // Convert from cents
-          annualPrice: Math.floor(plan.annualPrice / 100),
+        const transformedPlans: Plan[] = plansData.map(p => ({
+          id: p.id,
+          name: p.name,
+          monthlyPrice: Math.floor(p.monthlyPrice / 100), // Convert from cents
+          annualPrice: Math.floor(p.annualPrice / 100),
         }));
 
-        setPlans(transformedPlans);
-
-        // Set default selected plan
-        const defaultPlan = transformedPlans.find(p => p.name === selectedPlan) || transformedPlans[0];
-        if (defaultPlan) {
-          setSelectedPlanOption(defaultPlan);
-          setAmount(defaultPlan.monthlyPrice);
+        // Find the selected plan
+        const foundPlan = transformedPlans.find(p => p.name === selectedPlan) || transformedPlans[0];
+        if (foundPlan) {
+          setPlan(foundPlan);
+          setAmount(foundPlan.monthlyPrice);
         }
       } catch (error) {
-        console.error('Error loading plans:', error);
+        console.error('Error loading plan:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     if (isOpen) {
-      loadPlans();
+      loadPlan();
     }
   }, [isOpen, selectedPlan]);
 
+  // Update amount when billing cycle changes
   useEffect(() => {
-    if (selectedPlanOption) {
-      setAmount(selectedPlanOption.monthlyPrice);
+    if (plan) {
+      setAmount(billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice);
     }
-  }, [selectedPlanOption]);
+  }, [billingCycle, plan]);
 
   const handleCopyPaymentLink = async () => {
-    if (!selectedPlanOption || !coachID) {
-      setPaymentError('Please select a plan first');
+    if (!plan || !coachID) {
+      setPaymentError('Plan information is missing');
       return;
     }
 
@@ -248,12 +253,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       let linkToSend = paymentLink;
 
       if (!paymentLink) {
-        const response = await paymentsAPI.sendPaymentRequest({
+        const response = await sdkClient.billing.payments.sendPaymentRequest({
           payerID: coachID,
           payerType: UserType.COACH,
-          planID: selectedPlanOption.id,
+          planID: plan.id,
           amount: amount * 100, // Convert to cents
-          description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
+          description: `Payment for ${coachName} - ${plan.name} plan (${billingCycle})`,
         });
 
         linkToSend = response.paymentLink;
@@ -264,12 +269,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           setPaymentError('Payment link was created but the system failed to send it to the coach. Try sending it again!');
         }
       } else {
-        await paymentsAPI.sendPaymentRequest({
+        await sdkClient.billing.payments.sendPaymentRequest({
           payerID: coachID,
           payerType: UserType.COACH,
-          planID: selectedPlanOption.id,
+          planID: plan.id,
           amount: amount * 100,
-          description: `Payment for ${coachName} - ${selectedPlanOption.name} plan`,
+          description: `Payment for ${coachName} - ${plan.name} plan (${billingCycle})`,
           paymentLink,
           linkID,
         });
@@ -303,10 +308,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const handleDiscard = () => {
     // Reset all state
-    const defaultPlan = plans.find(p => p.name === selectedPlan) || plans[0];
-    if (defaultPlan) {
-      setSelectedPlanOption(defaultPlan);
-      setAmount(defaultPlan.monthlyPrice);
+    setBillingCycle('monthly');
+    if (plan) {
+      setAmount(plan.monthlyPrice);
     }
     setSelectedPaymentMode(paymentModes[0]);
     setPaymentLink("");
@@ -425,88 +429,79 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 )}
 
                 <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-white text-sm font-medium block">
-                      Select Plan
-                      <span className="text-red-400 ml-1">*</span>
-                    </label>
-                    <Listbox value={selectedPlanOption} onChange={setSelectedPlanOption}>
-                      <div className="relative">
-                        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-[linear-gradient(202deg,rgba(38, 38, 38, 0.30)_11.62%,rgba(19, 19, 19, 0.30)_87.57%)] border border-[#3A3A3A] py-2 pl-3 pr-10 text-left text-white focus:outline-none focus:ring-2 focus:ring-[#7B21BA]/50 focus:border-[#7B21BA]">
-                          <span className="block truncate">
-                            {selectedPlanOption ? `${selectedPlanOption.name} - ${selectedPlanOption.monthlyPrice}` : 'Select a plan'}
-                          </span>
-                          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                            <ChevronDown
-                              className="h-5 w-5 text-[#A0A0A0]"
-                              aria-hidden="true"
-                            />
-                          </span>
-                        </Listbox.Button>
-                        <Transition
-                          as={Fragment}
-                          leave="transition ease-in duration-100"
-                          leaveFrom="opacity-100"
-                          leaveTo="opacity-0"
-                        >
-                          <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#2A2A2A] border border-[#3A3A3A] py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
-                            {plans.map((plan) => (
-                              <Listbox.Option
-                                key={plan.id}
-                                className={({ active }) =>
-                                  `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                                    active ? "bg-[#3A3A3A] text-white" : "text-white"
-                                  }`
-                                }
-                                value={plan}
-                              >
-                                {({ selected }) => (
-                                  <>
-                                    <span
-                                      className={`block truncate ${
-                                        selected ? "font-medium" : "font-normal"
-                                      }`}
-                                    >
-                                      {plan.name} - ${plan.monthlyPrice}
-                                    </span>
-                                    {selected ? (
-                                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#7B21BA]">
-                                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
-                                      </span>
-                                    ) : null}
-                                  </>
-                                )}
-                              </Listbox.Option>
-                            ))}
-                          </Listbox.Options>
-                        </Transition>
-                      </div>
-                    </Listbox>
+                  {/* Selected Plan Display */}
+                  <div className="p-4 bg-[#2A2A2A] rounded-lg border border-[#3A3A3A]">
+                    <p className="text-[#A0A0A0] text-xs mb-2 font-medium">Selected Plan</p>
+                    <p className="text-white text-xl font-semibold">{plan?.name}</p>
                   </div>
 
-                  <div className="space-y-2">
-                    <label htmlFor="amount" className="text-white text-sm font-medium block">
-                      Amount
+                  {/* Billing Cycle Selection */}
+                  <div className="space-y-3">
+                    <label className="text-white text-sm font-medium block">
+                      Billing Cycle
                       <span className="text-red-400 ml-1">*</span>
+                    </label>
+                    <RadioGroup value={billingCycle} onChange={setBillingCycle} disabled={isProcessing || paymentSuccess}>
+                      <div className="flex gap-6">
+                        {billingCycles.map((cycle) => (
+                          <RadioGroup.Option
+                            key={cycle.id}
+                            value={cycle.id}
+                            className={({ active, checked }) =>
+                              `${active ? "ring-2 ring-[#7B21BA]/50" : ""}
+                              ${checked ? "text-white" : "text-white"}
+                              relative flex cursor-pointer items-center space-x-2 focus:outline-none ${
+                                isProcessing || paymentSuccess ? 'opacity-50 pointer-events-none' : ''
+                              }`
+                            }
+                          >
+                            {({ checked }) => (
+                              <>
+                                <div
+                                  className={`${
+                                    checked
+                                      ? "bg-[#7B21BA] border-[#7B21BA]"
+                                      : "bg-transparent border-[#A0A0A0]"
+                                  } h-4 w-4 rounded-full border-2 flex items-center justify-center`}
+                                >
+                                  {checked && (
+                                    <div className="h-2 w-2 rounded-full bg-white" />
+                                  )}
+                                </div>
+                                <RadioGroup.Label
+                                  as="span"
+                                  className="text-white text-sm cursor-pointer"
+                                >
+                                  {cycle.name}
+                                </RadioGroup.Label>
+                              </>
+                            )}
+                          </RadioGroup.Option>
+                        ))}
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Amount Display */}
+                  <div className="space-y-2">
+                    <label className="text-white text-sm font-medium block">
+                      Amount
                     </label>
                     <div className="relative bg-[linear-gradient(202deg,rgba(38, 38, 38, 0.30)_11.62%,rgba(19, 19, 19, 0.30)_87.57%)]">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#A0A0A0] text-sm">
                         $
                       </span>
                       <input
-                        id="amount"
-                        type="number"
+                        type="text"
                         value={amount}
-                        onChange={(e) => setAmount(Number(e.target.value))}
-                        className="w-full pl-7 pr-3 py-2 bg-transparent border border-[#3A3A3A] rounded-lg text-white placeholder:text-[#A0A0A0] focus:outline-none focus:ring-2 focus:ring-[#7B21BA]/50 focus:border-[#7B21BA]"
-                        placeholder="1200"
-                        min="0"
-                        readOnly={true}
-                        disabled={isProcessing || paymentSuccess}
+                        className="w-full pl-7 pr-3 py-2 bg-transparent border border-[#3A3A3A] rounded-lg text-white placeholder:text-[#A0A0A0] focus:outline-none"
+                        readOnly
+                        disabled
                       />
                     </div>
                   </div>
 
+                  {/* Payment Mode Selection */}
                   <div className="space-y-3">
                     <label className="text-white text-sm font-medium block">
                       Payment Mode
@@ -522,7 +517,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                               `${active ? "ring-2 ring-[#7B21BA]/50" : ""}
                               ${checked ? "text-white" : "text-white"}
                               relative flex cursor-pointer items-center space-x-2 focus:outline-none ${
-                                isProcessing || paymentSuccess ? 'opacity-50 pointer-types-none' : ''
+                                isProcessing || paymentSuccess ? 'opacity-50 pointer-events-none' : ''
                               }`
                             }
                           >
@@ -580,10 +575,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     </div>
                   )}
 
-                  {selectedPaymentMode.id === "pay-here" && selectedPlanOption && (
+                  {selectedPaymentMode.id === "pay-here" && plan && (
                     <Elements stripe={stripePromise} options={stripeElementsOptions}>
                       <StripePaymentForm
-                        selectedPlan={selectedPlanOption}
+                        selectedPlan={plan}
                         amount={amount}
                         coachID={coachID}
                         coachName={coachName}

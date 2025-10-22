@@ -51,9 +51,10 @@ export class PaymentsClient extends BaseClient{
   }
 
   async createPaymentIntent(data: CreatePaymentIntentRequest) {
-    return this.request<PaymentIntentResponse>('POST', '/create-payment-intent', {
+    const response = await this.request<PaymentIntentResponse>('POST', '/create-payment-intent', {
       body: data,
     });
+    return response.data!;
   }
 
   async processPayment(data: ProcessPaymentRequest): Promise<PaymentResult> {
