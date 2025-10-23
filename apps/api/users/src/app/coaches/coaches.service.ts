@@ -1,7 +1,15 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
-import {CoachQueryParams, CoachStatus, CoachWithStatus, CreateCoach, UpdateCoach, UserEvent} from '@nlc-ai/types';
-import {CreateInviteDto, InviteQueryDto} from "../relationships/dto";
+import {
+  AuthEvent,
+  CoachQueryParams,
+  CoachStatus,
+  CoachWithStatus,
+  CreateCoach,
+  UpdateCoach,
+  UserEvent
+} from '@nlc-ai/types';
+import {InviteClientDto, InviteQueryDto} from "./dto";
 import {v4 as uuid} from "uuid";
 import {OutboxService} from "@nlc-ai/api-messaging";
 
@@ -275,11 +283,25 @@ export class CoachesService {
   }
 
   async create(createCoachDto: CreateCoach) {
-    return this.prisma.coach.create({
+    const coach = await this.prisma.coach.create({
       data: {
         ...createCoachDto,
       },
     });
+
+    await this.outbox.saveAndPublishEvent<AuthEvent>(
+      {
+        eventType: 'auth.coach.registered',
+        schemaVersion: 1,
+        payload: {
+          coachID: coach.id,
+          email: coach.email,
+          firstName: coach.firstName,
+          lastName: coach.lastName,
+        },
+      },
+      'auth.coach.registered'
+    );
   }
 
   async update(id: string, updateCoachDto: UpdateCoach) {
@@ -390,7 +412,7 @@ export class CoachesService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const [totalClients, activeClients, recentInteractions, aiUsage, totalRevenue] = await Promise.all([
+    const [totalClients, activeClients, totalRevenue] = await Promise.all([
       this.prisma.clientCoach.count({
         where: { coachID },
       }),
@@ -398,21 +420,6 @@ export class CoachesService {
         where: {
           coachID,
           status: 'active',
-        },
-      }),
-      this.prisma.aiInteraction.count({
-        where: {
-          userID: coachID,
-          createdAt: { gte: startDate },
-        },
-      }),
-      this.prisma.aiInteraction.aggregate({
-        where: {
-          userID: coachID,
-          createdAt: { gte: startDate },
-        },
-        _sum: {
-          tokensUsed: true,
         },
       }),
       this.prisma.transaction.aggregate({
@@ -430,13 +437,11 @@ export class CoachesService {
     return {
       totalClients,
       activeClients,
-      recentInteractions,
-      tokensUsed: aiUsage._sum?.tokensUsed || 0,
       recentRevenue: Math.round((totalRevenue._sum.amount || 0) / 100),
     };
   }
 
-  async inviteClient(coachID: string, createInviteDto: CreateInviteDto) {
+  async inviteClient(coachID: string, createInviteDto: InviteClientDto) {
     const { email, role = 'client', message } = createInviteDto;
 
     const existingInvite = await this.prisma.clientInvite.findFirst({

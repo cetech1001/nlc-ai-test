@@ -49,8 +49,6 @@ export class EmailInternalController {
       },
     });
 
-    console.log("Email thread: ", emailThread);
-
     if (!emailThread) {
       return { messages: [] };
     }
@@ -60,8 +58,6 @@ export class EmailInternalController {
       coachID,
       emailThread.threadID
     );
-
-    console.log("Messages: ", messages);
 
     return { messages };
   }

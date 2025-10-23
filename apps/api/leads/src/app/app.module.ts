@@ -7,7 +7,7 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 
 import { LeadsModule } from './leads/leads.module';
-import { EventHandlersModule } from './event-handlers/event-handlers.module';
+import { EventsModule } from './events/events.module';
 import leadsConfig from './config/leads.config';
 
 @Module({
@@ -22,7 +22,7 @@ import leadsConfig from './config/leads.config';
     DatabaseModule.forFeature(),
     MessagingModule.forRoot(),
     LeadsModule,
-    EventHandlersModule,
+    EventsModule,
   ],
   providers: [
     {

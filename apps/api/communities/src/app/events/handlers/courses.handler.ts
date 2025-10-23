@@ -6,8 +6,8 @@ import { CommunitiesService } from '../../communities/communities.service';
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
-export class CourseEventsHandler {
-  private readonly logger = new Logger(CourseEventsHandler.name);
+export class CoursesHandler {
+  private readonly logger = new Logger(CoursesHandler.name);
 
   constructor(
     private readonly eventBus: EventBusService,

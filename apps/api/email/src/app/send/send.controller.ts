@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserTypes, UserTypesGuard, CurrentUser } from '@nlc-ai/api-auth';
-import {UserType, type AuthUser} from '@nlc-ai/types';
+import {UserType, type AuthUser, EmailStatus} from '@nlc-ai/types';
 import { PrismaService } from '@nlc-ai/api-database';
 import { SendEmailDto } from './dto';
 import { SendService } from './send.service';
@@ -19,7 +19,7 @@ import { SendService } from './send.service';
 export class SendController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly deliveryService: SendService,
+    private readonly send: SendService,
   ) {}
 
   @Post()
@@ -30,6 +30,18 @@ export class SendController {
     @Body() dto: SendEmailDto,
     @CurrentUser() user: AuthUser,
   ) {
+    let templateID = undefined;
+    if (dto.templateID) {
+      const template = await this.prisma.emailTemplate.findFirst({
+        where: {
+          systemKey: dto.templateID,
+        }
+      });
+      if (template) {
+        templateID = template.id;
+      }
+    }
+
     const message = await this.prisma.emailMessage.create({
       data: {
         userID: user.id,
@@ -39,16 +51,20 @@ export class SendController {
         subject: dto.subject,
         text: dto.text,
         html: dto.html,
-        status: 'pending',
+        emailTemplateID: templateID,
+        status: dto.scheduleFor ? EmailStatus.SCHEDULED : EmailStatus.PENDING,
+        scheduledFor: dto.scheduleFor,
         sentAt: new Date(),
         metadata: dto.metadata || {},
       },
     });
 
-    if (user.type === UserType.COACH) {
-      await this.deliveryService.sendCoachEmail(message.id);
-    } else if (user.type === UserType.ADMIN) {
-      await this.deliveryService.sendAdminEmail(message.id);
+    if (!dto.scheduleFor) {
+      if (user.type === UserType.COACH) {
+        await this.send.sendCoachEmail(message.id);
+      } else if (user.type === UserType.ADMIN) {
+        await this.send.sendAdminEmail(message.id);
+      }
     }
 
     return {
@@ -102,7 +118,7 @@ export class SendController {
       },
     });
 
-    await this.deliveryService.sendCoachEmail(message.id);
+    await this.send.sendCoachEmail(message.id);
 
     return {
       success: true,
@@ -185,7 +201,7 @@ export class SendController {
     const messages = await Promise.all(messagePromises);
 
     await Promise.all(
-      messages.map(msg => this.deliveryService.sendAdminEmail(msg.id))
+      messages.map(msg => this.send.sendAdminEmail(msg.id))
     );
 
     return {

@@ -1,5 +1,5 @@
-import { IsString, IsEmail, IsOptional, IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import {IsString, IsEmail, IsOptional, IsArray, ValidateNested, IsISO8601, IsDateString} from 'class-validator';
+import {Transform, Type} from 'class-transformer';
 import {EmailAttachment, EmailThreadPriority, SendEmailRequest} from '@nlc-ai/types';
 
 export class EmailAttachmentDto implements EmailAttachment {
@@ -47,16 +47,24 @@ export class SendEmailDto implements SendEmailRequest {
   templateID?: string;
 
   @IsOptional()
-  templateVariables?: Record<string, any>;
-
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => EmailAttachmentDto)
   attachments?: EmailAttachment[];
 
   @IsOptional()
-  @IsString()
+  @IsISO8601({ strict: true })
+  @IsDateString()
+  @Transform(({ value }) => {
+    if (value) {
+      const date = new Date(value);
+      const now = new Date();
+      if (date <= now) {
+        throw new Error('Schedule date must be in the future');
+      }
+    }
+    return value;
+  })
   scheduleFor?: string;
 
   @IsOptional()

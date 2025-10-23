@@ -163,7 +163,7 @@ export class CommunitiesService {
     const existingCommunity = await this.prisma.community.findFirst({
       where: {
         type: CommunityType.COACH_CLIENT,
-        coachID: coachID,
+        ownerID: coachID,
       },
     });
 
@@ -188,7 +188,7 @@ export class CommunitiesService {
       slug: communityName.toLowerCase().replace(' ', '-'),
       type: CommunityType.COACH_CLIENT,
       visibility: CommunityVisibility.INVITE_ONLY,
-      coachID: coachID,
+      coachID,
       pricing: {
         type: CommunityPricingType.FREE,
         currency: 'USD'

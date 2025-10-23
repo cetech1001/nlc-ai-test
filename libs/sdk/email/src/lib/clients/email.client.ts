@@ -1,5 +1,4 @@
-import { BaseClient } from "@nlc-ai/sdk-core";
-import { NLCClientConfig } from "@nlc-ai/sdk-main";
+import {BaseClient, ServiceClientConfig} from "@nlc-ai/sdk-core";
 import { AccountsClient } from "./accounts.client";
 import { ThreadsClient } from "./threads.client";
 import { SyncClient } from "./sync.client";
@@ -11,7 +10,7 @@ export class EmailClient extends BaseClient {
   public sequences: SequencesClient;
   public sync: SyncClient;
 
-  constructor(props: NLCClientConfig) {
+  constructor(props: ServiceClientConfig) {
     super(props);
 
     this.accounts = new AccountsClient({
@@ -44,6 +43,7 @@ export class EmailClient extends BaseClient {
     message: string;
     name?: string;
     appName?: string;
+    scheduleFor?: string;
   }): Promise<{ success: boolean; messageID?: string }> {
     if (!body.to || !body.subject || !body.message) {
       throw new Error('Missing required fields: to, subject, or message');
@@ -55,10 +55,10 @@ export class EmailClient extends BaseClient {
       throw new Error('Invalid email address');
     }
 
-    const appName = body.appName || 'NLC AI';
+    // const appName = body.appName || 'NLC AI';
 
     // Construct HTML email
-    const htmlContent = `
+    /*const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -163,7 +163,7 @@ export class EmailClient extends BaseClient {
   </div>
 </body>
 </html>
-    `;
+    `;*/
 
     const response = await this.request<{ success: boolean; messageID?: string }>(
       'POST',
@@ -172,7 +172,15 @@ export class EmailClient extends BaseClient {
         body: {
           to: body.to,
           subject: body.subject,
-          html: htmlContent,
+          scheduleFor: body.scheduleFor,
+          templateID: 'custom_email',
+          // html: htmlContent,
+          metadata: {
+            subject: body.subject,
+            message: body.message,
+            name: body.name,
+            // email: body.email,
+          }
         }
       }
     );

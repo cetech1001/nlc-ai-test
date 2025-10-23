@@ -3,8 +3,8 @@ import { EventBusService } from '@nlc-ai/api-messaging';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class LeadEventsHandler {
-  private readonly logger = new Logger(LeadEventsHandler.name);
+export class LeadsHandler {
+  private readonly logger = new Logger(LeadsHandler.name);
 
   constructor(
     private readonly eventBus: EventBusService,

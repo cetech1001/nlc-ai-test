@@ -11,14 +11,13 @@ export class ProvidersService {
     private readonly templateEngine: TemplateEngineService,
   ) {}
 
-  async sendEmail(message: SendEmailRequest, from?: string, userID?: string): Promise<EmailDeliveryResult> {
-    let processedMessage = { ...message };
+  async sendEmail(message: SendEmailRequest, from?: string): Promise<EmailDeliveryResult> {
+    const processedMessage = { ...message };
 
     if (message.templateID) {
       const template = await this.templateEngine.renderEmailFromTemplate(
         message.templateID,
         message.metadata || {},
-        userID,
       );
 
       processedMessage.subject = template.subject;

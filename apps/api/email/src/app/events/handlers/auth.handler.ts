@@ -13,10 +13,10 @@ export class AuthHandler {
   constructor(
     private readonly eventBus: EventBusService,
     private readonly prisma: PrismaService,
-    private readonly sendService: SendService,
-    private readonly configService: ConfigService,
+    private readonly send: SendService,
+    private readonly config: ConfigService,
   ) {
-    this.systemFromEmail = this.configService.get<string>(
+    this.systemFromEmail = this.config.get<string>(
       'email.mailgun.fromEmail',
       'support@nextlevelcoach.ai'
     );
@@ -90,11 +90,12 @@ export class AuthHandler {
             type: 'transactional',
             verificationCode: code,
             email: email,
+            baseUrl: this.config.get('email.platforms.coach'),
           },
         },
       });
 
-      await this.sendService.sendSystemEmail(message.id);
+      await this.send.sendSystemEmail(message.id);
       this.logger.log(`Verification email queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to handle verification request:', error);
@@ -120,7 +121,7 @@ export class AuthHandler {
         },
       });
 
-      await this.sendService.sendSystemEmail(message.id);
+      await this.send.sendSystemEmail(message.id);
       this.logger.log(`Welcome email queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to send welcome email:', error);
@@ -158,7 +159,7 @@ export class AuthHandler {
         },
       });
 
-      await this.sendService.sendSystemEmail(message.id);
+      await this.send.sendSystemEmail(message.id);
       this.logger.log(`Password reset confirmation queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to send password reset confirmation:', error);
@@ -168,7 +169,7 @@ export class AuthHandler {
   private async handleClientInvited(event: any) {
     try {
       const { email, coachName, token, expiresAt, businessName, message: inviteMessage } = event.payload;
-      const baseUrl = this.configService.get<string>('email.platforms.client', '');
+      const baseUrl = this.config.get<string>('email.platforms.client', '');
       const inviteUrl = `${baseUrl}/login?token=${token}`;
 
       const emailTemplateID = await this.getTemplateID('client_invite');
@@ -193,7 +194,7 @@ export class AuthHandler {
         },
       });
 
-      await this.sendService.sendSystemEmail(message.id);
+      await this.send.sendSystemEmail(message.id);
       this.logger.log(`Client invitation queued for ${email}`);
     } catch (error) {
       this.logger.error('Failed to send client invitation:', error);

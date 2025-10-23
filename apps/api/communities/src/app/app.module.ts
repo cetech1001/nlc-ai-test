@@ -8,7 +8,7 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 import { CommunitiesModule } from './communities/communities.module';
 import { PostsModule } from './posts/posts.module';
-import { EventHandlersModule } from './event-handlers/event-handlers.module';
+import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import communityConfig from './config/community.config';
 import {ModerationModule} from "./moderation/moderation.module";
@@ -32,7 +32,7 @@ import {MembersModule} from "./members/members.module";
     PostsModule,
     CommentsModule,
     MembersModule,
-    EventHandlersModule,
+    EventsModule,
     HealthModule,
   ],
   providers: [

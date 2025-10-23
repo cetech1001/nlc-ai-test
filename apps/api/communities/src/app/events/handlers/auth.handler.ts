@@ -3,8 +3,8 @@ import { EventBusService } from '@nlc-ai/api-messaging';
 import { CommunitiesService } from '../../communities/communities.service';
 
 @Injectable()
-export class AuthEventsHandler {
-  private readonly logger = new Logger(AuthEventsHandler.name);
+export class AuthHandler {
+  private readonly logger = new Logger(AuthHandler.name);
 
   constructor(
     private readonly eventBus: EventBusService,

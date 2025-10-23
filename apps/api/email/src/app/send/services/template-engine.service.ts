@@ -76,7 +76,6 @@ export class TemplateEngineService {
   async renderEmailFromTemplate(
     templateID: string,
     variables: Record<string, any>,
-    userID?: string
   ): Promise<{ subject: string; html: string; text?: string }> {
     variables = {
       ...this.variables,
@@ -87,7 +86,7 @@ export class TemplateEngineService {
       where: {
         id: templateID,
         // systemKey: userID ? undefined : templateID,
-        userID,
+        // userID,
         isActive: true
       }
     });
@@ -95,9 +94,6 @@ export class TemplateEngineService {
     if (!template) {
       throw new NotFoundException('Template not found');
     }
-
-    console.log("Template: ", template);
-    console.log("Variables: ", variables);
 
     const subject = this.processTemplate(template.subjectTemplate || '', variables);
     const html = this.processTemplate(template.bodyTemplate, variables);

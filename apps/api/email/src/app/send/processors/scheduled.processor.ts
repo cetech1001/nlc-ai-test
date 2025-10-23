@@ -1,5 +1,4 @@
 import { Processor, Process } from '@nestjs/bull';
-import { type Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '@nlc-ai/api-database';
 import { ProvidersService } from '../services/providers.service';
@@ -17,11 +16,10 @@ export class ScheduledProcessor {
   ) {}
 
   @Process('process-scheduled-emails')
-  async processScheduledEmails(job: Job) {
+  async processScheduledEmails() {
     this.logger.log('Processing scheduled emails...');
 
     try {
-      // Find all emails that are scheduled and due to be sent
       const now = new Date();
       const scheduledEmails = await this.prisma.emailMessage.findMany({
         where: {
@@ -30,7 +28,7 @@ export class ScheduledProcessor {
             lte: now,
           },
         },
-        take: 100, // Process in batches
+        take: 100,
         orderBy: {
           scheduledFor: 'asc',
         },
@@ -187,9 +185,6 @@ export class ScheduledProcessor {
   }
 
   private async sendSystemEmail(email: any): Promise<void> {
-    // Get template variables from metadata
-    const templateVariables = email.metadata?.templateVariables || {};
-
     const result = await this.providers.sendEmail(
       {
         to: email.to,
@@ -197,16 +192,14 @@ export class ScheduledProcessor {
         text: email.text || '',
         html: email.html || '',
         templateID: email.emailTemplateID,
-        templateVariables,
         metadata: {
           messageID: email.id,
           sequenceID: email.emailSequenceID,
           recipientID: email.recipientID,
           recipientType: email.recipientType,
+          ...email.metadata,
         },
-      },
-      email.from,
-      email.userID
+      }
     );
 
     if (result.status === EmailMessageStatus.SENT) {

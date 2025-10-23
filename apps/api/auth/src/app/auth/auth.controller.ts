@@ -217,6 +217,7 @@ export class AuthController {
     @Body() forgotPasswordDto: ForgotPasswordDto,
     @Query('type') type: UserType = UserType.COACH
   ) {
+    console.log("Body: ", forgotPasswordDto);
     return this.authService.forgotPassword(forgotPasswordDto, type);
   }
 

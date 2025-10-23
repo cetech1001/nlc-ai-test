@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
-import { User, AtSign, FileText, MessageSquare, CheckCircle, XCircle, Mail } from 'lucide-react';
+import { User, AtSign, FileText, MessageSquare, CheckCircle, XCircle, Mail, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import {appConfig, TemplateFrame} from '@nlc-ai/web-shared';
 import {sdkClient} from "@/lib";
@@ -12,6 +12,8 @@ interface EmailFormData {
   email: string;
   subject: string;
   message: string;
+  scheduleEmail: boolean;
+  scheduleFor?: string;
 }
 
 interface FormInputProps {
@@ -126,77 +128,132 @@ const FormSidebar: React.FC<{
   errorMessage: string;
   formData: EmailFormData;
   setFormData: React.Dispatch<React.SetStateAction<EmailFormData>>;
-}> = ({ sendStatus, errorMessage, formData, setFormData }) => (
-  <div className="flex flex-col gap-4 sm:gap-[18px]">
-    <div className="flex flex-col gap-3">
-      <h3 className="text-[#F9F9F9] font-inter text-lg sm:text-xl font-semibold leading-tight">
-        Send Marketing Email
-      </h3>
-      <p className="text-[#C5C5C5] font-inter text-sm font-normal leading-relaxed">
-        Compose and send a personalized marketing email to this lead.
-      </p>
+}> = ({ sendStatus, errorMessage, formData, setFormData }) => {
+  // Get current datetime for min attribute (prevent past dates)
+  const getMinDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 5); // Minimum 5 minutes from now
+    return now.toISOString().slice(0, 16);
+  };
+
+  return (
+    <div className="flex flex-col gap-4 sm:gap-[18px]">
+      <div className="flex flex-col gap-3">
+        <h3 className="text-[#F9F9F9] font-inter text-lg sm:text-xl font-semibold leading-tight">
+          Send Marketing Email
+        </h3>
+        <p className="text-[#C5C5C5] font-inter text-sm font-normal leading-relaxed">
+          Compose and send a personalized marketing email to this lead.
+        </p>
+      </div>
+
+      {sendStatus === 'sending' && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-blue-600/20 border border-blue-400/30 rounded-lg">
+          <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
+          <span className="text-blue-300 text-sm font-medium">
+            {formData.scheduleEmail ? 'Scheduling email...' : 'Sending email...'}
+          </span>
+        </div>
+      )}
+
+      {sendStatus === 'success' && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-green-600/20 border border-green-400/30 rounded-lg">
+          <CheckCircle className="w-4 h-4 text-green-400" />
+          <span className="text-green-300 text-sm font-medium">
+            {formData.scheduleEmail ? 'Email scheduled successfully!' : 'Email sent successfully!'}
+          </span>
+        </div>
+      )}
+
+      {sendStatus === 'error' && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-red-600/20 border border-red-400/30 rounded-lg">
+          <XCircle className="w-4 h-4 text-red-400" />
+          <span className="text-red-300 text-sm">{errorMessage}</span>
+        </div>
+      )}
+
+      <FormInput
+        label="Recipient Name"
+        placeholder="Enter recipient name"
+        value={formData.name}
+        onChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+        required
+        icon={User}
+      />
+
+      <FormInput
+        label="Recipient Email"
+        placeholder="Enter email address"
+        value={formData.email}
+        onChange={(value) => setFormData(prev => ({ ...prev, email: value }))}
+        required
+        type="email"
+        icon={AtSign}
+      />
+
+      <FormInput
+        label="Email Subject"
+        placeholder="Enter email subject"
+        value={formData.subject}
+        onChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}
+        required
+        icon={FileText}
+      />
+
+      <FormInput
+        label="Email Message"
+        placeholder="Enter your message here..."
+        value={formData.message}
+        onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
+        required
+        as="textarea"
+        icon={MessageSquare}
+      />
+
+      {/* Schedule Email Option */}
+      <div className="flex flex-col gap-3 p-4 border border-white/30 rounded-[10px]">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.scheduleEmail}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              scheduleEmail: e.target.checked,
+              scheduleFor: e.target.checked ? prev.scheduleFor : undefined
+            }))}
+            className="w-5 h-5 rounded border-white/30 bg-transparent text-fuchsia-600 focus:ring-2 focus:ring-fuchsia-400/20 cursor-pointer"
+          />
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#F9F9F9]" />
+            <span className="text-[#F9F9F9] font-inter text-sm font-medium">
+              Schedule email for later
+            </span>
+          </div>
+        </label>
+
+        {formData.scheduleEmail && (
+          <div className="flex flex-col gap-2 mt-2">
+            <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px] flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Schedule Date & Time
+              <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={formData.scheduleFor || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, scheduleFor: e.target.value }))}
+              min={getMinDateTime()}
+              className="w-full min-h-[50px] px-4 sm:px-5 py-2 sm:py-[10px] border border-white/30 rounded-[10px] bg-transparent text-white placeholder:text-white/50 font-inter text-sm sm:text-base outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20 transition-all [color-scheme:dark]"
+            />
+            <p className="text-[#C5C5C5] text-xs font-inter">
+              Email will be sent at the scheduled time (minimum 5 minutes from now)
+            </p>
+          </div>
+        )}
+      </div>
     </div>
-
-    {sendStatus === 'sending' && (
-      <div className="flex items-center gap-2 px-4 py-3 bg-blue-600/20 border border-blue-400/30 rounded-lg">
-        <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-        <span className="text-blue-300 text-sm font-medium">Sending email...</span>
-      </div>
-    )}
-
-    {sendStatus === 'success' && (
-      <div className="flex items-center gap-2 px-4 py-3 bg-green-600/20 border border-green-400/30 rounded-lg">
-        <CheckCircle className="w-4 h-4 text-green-400" />
-        <span className="text-green-300 text-sm font-medium">Email sent successfully!</span>
-      </div>
-    )}
-
-    {sendStatus === 'error' && (
-      <div className="flex items-center gap-2 px-4 py-3 bg-red-600/20 border border-red-400/30 rounded-lg">
-        <XCircle className="w-4 h-4 text-red-400" />
-        <span className="text-red-300 text-sm">{errorMessage}</span>
-      </div>
-    )}
-
-    <FormInput
-      label="Recipient Name"
-      placeholder="Enter recipient name"
-      value={formData.name}
-      onChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-      required
-      icon={User}
-    />
-
-    <FormInput
-      label="Recipient Email"
-      placeholder="Enter email address"
-      value={formData.email}
-      onChange={(value) => setFormData(prev => ({ ...prev, email: value }))}
-      required
-      type="email"
-      icon={AtSign}
-    />
-
-    <FormInput
-      label="Email Subject"
-      placeholder="Enter email subject"
-      value={formData.subject}
-      onChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}
-      required
-      icon={FileText}
-    />
-
-    <FormInput
-      label="Email Message"
-      placeholder="Enter your message here..."
-      value={formData.message}
-      onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
-      required
-      as="textarea"
-      icon={MessageSquare}
-    />
-  </div>
-);
+  );
+};
 
 // Move MainContent outside the main component
 const MainContent: React.FC<{
@@ -210,6 +267,16 @@ const MainContent: React.FC<{
     <p className="text-[#C5C5C5] font-inter text-sm mb-4">
       This is how your email will appear to the recipient
     </p>
+
+    {formData.scheduleEmail && formData.scheduleFor && (
+      <div className="flex items-center gap-2 px-4 py-3 bg-purple-600/20 border border-purple-400/30 rounded-lg mb-4">
+        <Clock className="w-4 h-4 text-purple-400" />
+        <span className="text-purple-300 text-sm font-medium">
+          Scheduled for: {new Date(formData.scheduleFor).toLocaleString()}
+        </span>
+      </div>
+    )}
+
     <EmailPreview
       name={formData.name}
       email={formData.email}
@@ -229,7 +296,9 @@ const Marketing: React.FC = () => {
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
+    scheduleEmail: false,
+    scheduleFor: undefined
   });
 
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
@@ -246,7 +315,9 @@ const Marketing: React.FC = () => {
       name: '',
       email: '',
       subject: '',
-      message: ''
+      message: '',
+      scheduleEmail: false,
+      scheduleFor: undefined
     });
   }
 
@@ -258,7 +329,9 @@ const Marketing: React.FC = () => {
         name: response.name,
         email: response.email,
         subject: '',
-        message: ''
+        message: '',
+        scheduleEmail: false,
+        scheduleFor: undefined
       });
     } catch (error: any) {
       toast.error(error.message || 'Failed to load lead');
@@ -282,6 +355,30 @@ const Marketing: React.FC = () => {
       return;
     }
 
+    // Schedule validation
+    if (formData.scheduleEmail && !formData.scheduleFor) {
+      setErrorMessage('Please select a date and time for scheduling');
+      toast.error('Please select a date and time for scheduling');
+      return;
+    }
+
+    // Validate scheduled time is in the future
+    if (formData.scheduleEmail && formData.scheduleFor) {
+      const scheduledTime = new Date(formData.scheduleFor);
+      const now = new Date();
+      if (scheduledTime <= now) {
+        setErrorMessage('Scheduled time must be in the future');
+        toast.error('Scheduled time must be in the future');
+        return;
+      }
+    }
+
+    let scheduleForISO: string | undefined = undefined;
+    if (formData.scheduleEmail && formData.scheduleFor) {
+      const scheduledDate = new Date(formData.scheduleFor);
+      scheduleForISO = scheduledDate.toISOString();
+    }
+
     setSendStatus('sending');
     setErrorMessage('');
 
@@ -293,10 +390,11 @@ const Marketing: React.FC = () => {
         message: formData.message,
         name: formData.name,
         appName: appConfig.app.name,
+        scheduleFor: formData.scheduleEmail && formData.scheduleFor ? scheduleForISO : undefined
       });
 
       setSendStatus('success');
-      toast.success('Email sent successfully!');
+      toast.success(formData.scheduleEmail ? 'Email scheduled successfully!' : 'Email sent successfully!');
 
       // Redirect back after 1.5 seconds
       setTimeout(() => {
@@ -336,7 +434,7 @@ const Marketing: React.FC = () => {
       mainComponent={
         <MainContent formData={formData} />
       }
-      saveButtonText={sendStatus === 'sending' ? 'Sending...' : 'Send Email'}
+      saveButtonText={sendStatus === 'sending' ? (formData.scheduleEmail ? 'Scheduling...' : 'Sending...') : (formData.scheduleEmail ? 'Schedule Email' : 'Send Email')}
     />
   );
 };
