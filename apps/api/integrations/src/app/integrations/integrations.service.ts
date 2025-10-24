@@ -33,6 +33,7 @@ export class IntegrationsService {
     return {
       isConnected: true,
       ...(integration.config as any),
+      accessToken: integration.accessToken,
       lastSync: integration.lastSyncAt,
     };
   }

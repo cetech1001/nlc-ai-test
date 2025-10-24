@@ -4,10 +4,10 @@ import {FC, useEffect, useState} from "react";
 import {AlertCircle, ChevronLeft, ChevronRight, Plus,} from "lucide-react";
 import {Button} from "@nlc-ai/web-ui";
 import {Appointment, CalendarDay, CalendarEvent, UserType} from "@nlc-ai/types";
-import {calendlyAPI} from "@nlc-ai/web-api-client";
 import {CalendarPageSkeleton, CalendlyEmbedModal} from "./partials";
 import {useRouter} from "next/navigation";
 import { getInitials } from "@nlc-ai/web-utils";
+import { NLCClient } from "@nlc-ai/sdk-main";
 
 const MiniCalendarCell = ({ day, isCurrentMonth, isToday, hasEvents, onClick }: {
   day: number;
@@ -127,10 +127,11 @@ const HourlySchedule = ({ appointments, selectedDate }: {
 };
 
 interface IProps {
-  userType: UserType;
+  userType?: UserType;
+  sdkClient: NLCClient;
 }
 
-export const CalendarPage: FC<IProps> = ({ userType }) => {
+export const CalendarPage: FC<IProps> = ({ userType, sdkClient }) => {
   const router = useRouter();
 
   const [today] = useState(new Date());
@@ -224,10 +225,10 @@ export const CalendarPage: FC<IProps> = ({ userType }) => {
   useEffect(() => {
     const checkCalendlyConnection = async () => {
       try {
-        const isConnected = await calendlyAPI.isConnected(userType);
+        const isConnected = await sdkClient.integrations.calendly.isConnected();
         setIsCalendlyConnected(isConnected);
         if (isConnected) {
-          const schedulingUrl = await calendlyAPI.getSchedulingUrl(userType);
+          const schedulingUrl = await sdkClient.integrations.calendly.getSchedulingUrl();
           setCalendlyUrl(schedulingUrl || '');
         }
       } catch (error) {
@@ -235,22 +236,22 @@ export const CalendarPage: FC<IProps> = ({ userType }) => {
       }
     };
     (() => checkCalendlyConnection())();
-  }, []);
+  }, [sdkClient]);
 
   useEffect(() => {
     const loadCalendlyEvents = async () => {
       if (!isCalendlyConnected || isLoading) return;
       try {
         setError('');
-        const convertedEvents = await calendlyAPI.loadEventsForMonth(currentDate, userType);
+        const convertedEvents = await sdkClient.integrations.calendly.loadEventsForMonth(currentDate);
         setCalendarEvents(convertedEvents);
       } catch (error: any) {
-        setError(error.message || 'Failed to load calendar types');
+        setError(error.message || 'Failed to load calendar events');
         setCalendarEvents({});
       }
     };
     (() => loadCalendlyEvents())();
-  }, [isLoading, currentDate, isCalendlyConnected]);
+  }, [isLoading, currentDate, isCalendlyConnected, sdkClient]);
 
   useEffect(() => {
     setDays(getDaysInMonth(currentDate, calendarEvents));
@@ -422,9 +423,9 @@ export const CalendarPage: FC<IProps> = ({ userType }) => {
         onCloseAction={() => {
           setIsCalendlyModalOpen(false);
           if (isCalendlyConnected) {
-            calendlyAPI.loadEventsForMonth(currentDate, userType)
+            sdkClient.integrations.calendly.loadEventsForMonth(currentDate)
               .then(events => setCalendarEvents(events))
-              .catch(error => console.error('Failed to refresh types:', error));
+              .catch(error => console.error('Failed to refresh events:', error));
           }
         }}
         url={calendlyUrl}

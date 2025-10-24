@@ -113,7 +113,7 @@ export const CoachesTable: FC<IProps> = (props) => {
             </button>
             {props.areInactiveCoaches ? (
               <button
-                onClick={() => onRowAction?.('send-email', coach)}
+                onClick={() => props.handleViewDetails(coach.originalID)}
                 className="px-3 py-1 rounded text-sm bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
                 title="Send Marketing Email"
               >
@@ -121,7 +121,7 @@ export const CoachesTable: FC<IProps> = (props) => {
               </button>
             ) : (
               <Button
-                onClick={() => onRowAction?.('view-details', coach)}
+                onClick={() => props.handleViewDetails(coach.originalID)}
                 variant="outline"
                 className="text-fuchsia-400 border-fuchsia-400/30 hover:bg-fuchsia-400/10"
               >

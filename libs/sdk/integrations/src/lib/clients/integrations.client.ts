@@ -1,5 +1,5 @@
 /// <reference lib="dom"/>
-import { BaseClient, SearchQuery, Paginated, FilterValues } from '@nlc-ai/sdk-core';
+import {BaseClient, SearchQuery, Paginated, FilterValues, ServiceClientConfig} from '@nlc-ai/sdk-core';
 import {
   Integration,
   EmailAccount,
@@ -16,8 +16,17 @@ import {
   ToggleEmailSyncRequest,
   EmailAccountStatsQuery
 } from '../types';
+import {CalendlyClient} from "./calendly.client";
 
 export class IntegrationsClient extends BaseClient {
+  public calendly: CalendlyClient;
+
+  constructor(props: ServiceClientConfig) {
+    super(props);
+    this.calendly = new CalendlyClient(props);
+  }
+
+
   /**
    * Get all integrations for the authenticated user
    */

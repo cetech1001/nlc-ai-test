@@ -20,6 +20,7 @@ import type { Response } from "express";
 import { IntegrationFactory } from "./factories/integration.factory";
 import { StateTokenService } from "./services/state-token.service";
 import { IntegrationsService } from "./integrations.service";
+import { CalendlyService } from "./services/apps/calendly.service";
 import { oauthError } from "./templates/oauth-error";
 import { oauthSuccess } from "./templates/oauth-success";
 import { ToggleProfileVisibilityDto } from './dto';
@@ -34,6 +35,7 @@ export class IntegrationsController {
     private readonly integrationFactory: IntegrationFactory,
     private readonly integrationsService: IntegrationsService,
     private readonly stateTokenService: StateTokenService,
+    private readonly calendlyService: CalendlyService,
   ) {}
 
   @Get()
@@ -222,6 +224,8 @@ export class IntegrationsController {
     return { message: 'Integration disconnected' };
   }
 
+  // ==================== CALENDLY SPECIFIC ENDPOINTS ====================
+
   @Post('calendly/events')
   @ApiOperation({ summary: 'Load Calendly events for user' })
   @ApiResponse({ status: 200, description: 'Calendly events loaded successfully' })
@@ -229,15 +233,64 @@ export class IntegrationsController {
     @CurrentUser() user: AuthUser,
     @Body() body: LoadCalendlyEventsRequest
   ) {
+    console.log('Load Calendly events for user');
     const integration = await this.integrationsService.getCalendlyIntegration(user.id, user.type);
-    const provider = this.integrationFactory.getProvider('calendly');
 
-    return provider.fetchScheduledEvents?.(
-      integration.accessToken!,
+    console.log('Integration: ', integration);
+    // Get valid tokens (this will refresh if needed)
+    const { accessToken } = await (this.calendlyService as any).getValidTokens(integration);
+
+    console.log('Access Token : ', accessToken);
+
+    // Fetch scheduled events
+    const events = await this.calendlyService.fetchScheduledEvents(
+      accessToken,
       (integration.config as any).userUri,
       new Date(body.startDate).toISOString(),
       new Date(body.endDate).toISOString(),
     );
+
+    // Fetch invitees for each event
+    const eventsWithInvitees = await Promise.all(
+      events.map(async (event: any) => {
+        const invitees = await this.calendlyService.getEventInvitees(accessToken, event.uri);
+        return {
+          ...event,
+          invitees,
+        };
+      })
+    );
+
+    return { events: eventsWithInvitees };
+  }
+
+  @Get('calendly/event-types')
+  @ApiOperation({ summary: 'Get Calendly event types for user' })
+  @ApiResponse({ status: 200, description: 'Event types retrieved successfully' })
+  async getCalendlyEventTypes(
+    @CurrentUser() user: AuthUser,
+    @Query('organizationUri') organizationUri?: string,
+  ) {
+    const integration = await this.integrationsService.getCalendlyIntegration(user.id, user.type);
+    const { accessToken } = await (this.calendlyService as any).getValidTokens(integration);
+
+    const eventTypes = await this.calendlyService.getEventTypes(accessToken, organizationUri);
+    return { eventTypes };
+  }
+
+  @Post('calendly/events/:eventUri/cancel')
+  @ApiOperation({ summary: 'Cancel a Calendly event' })
+  @ApiResponse({ status: 200, description: 'Event cancelled successfully' })
+  async cancelCalendlyEvent(
+    @CurrentUser() user: AuthUser,
+    @Param('eventUri') eventUri: string,
+    @Body('reason') reason?: string,
+  ) {
+    const integration = await this.integrationsService.getCalendlyIntegration(user.id, user.type);
+    const { accessToken } = await (this.calendlyService as any).getValidTokens(integration);
+
+    const result = await this.calendlyService.cancelEvent(accessToken, eventUri, reason);
+    return { success: true, data: result };
   }
 
   private sendOAuthSuccess(res: Response, platform: string, integration: any, nonce: string) {

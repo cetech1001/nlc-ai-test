@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {Injectable, UnauthorizedException} from "@nestjs/common";
 import {BaseIntegrationService} from "../base-integration.service";
 import {
   AppPlatform,
@@ -15,6 +15,8 @@ export class CalendlyService extends BaseIntegrationService {
   platformName = AppPlatform.CALENDLY;
   integrationType = IntegrationType.APP;
   authType = AuthType.OAUTH;
+
+  private calendlyBaseUrl = 'https://api.calendly.com';
 
   async connect(userID: string, userType: UserType, credentials: OAuthCredentials): Promise<Integration> {
     const profile = await this.getCalendlyProfile(credentials.accessToken);
@@ -46,7 +48,7 @@ export class CalendlyService extends BaseIntegrationService {
 
   async test(integration: Integration): Promise<TestResult> {
     try {
-      const { accessToken } = await this.getDecryptedTokens(integration);
+      const { accessToken } = await this.getValidTokens(integration);
       await this.getCalendlyProfile(accessToken);
       return { success: true, message: 'Calendly connection working' };
     } catch (error: any) {
@@ -56,8 +58,11 @@ export class CalendlyService extends BaseIntegrationService {
 
   async sync(integration: Integration): Promise<SyncResult> {
     try {
-      const { accessToken } = await this.getDecryptedTokens(integration);
-      const events = await this.fetchScheduledEvents(accessToken, integration.config.userUri);
+      const { accessToken } = await this.getValidTokens(integration);
+      const events = await this.fetchScheduledEvents(
+        accessToken,
+        integration.config.userUri
+      );
 
       await this.prisma.integration.update({
         where: { id: integration.id },
@@ -134,6 +139,10 @@ export class CalendlyService extends BaseIntegrationService {
     return this.connect(userID, userType, tokenData);
   }
 
+  /**
+   * Fetch scheduled events from Calendly API
+   * This method handles token refresh automatically
+   */
   async fetchScheduledEvents(
     accessToken: string,
     userUri: string,
@@ -143,15 +152,180 @@ export class CalendlyService extends BaseIntegrationService {
   ) {
     const params = new URLSearchParams({
       user: userUri,
-      min_start_time: startDate || '',
-      max_start_time: endDate || '',
-      status: status || '',
+      status: status || 'active',
     });
-    const response = await fetch(`https://api.calendly.com/scheduled_events?${params}`, {
+
+    if (startDate) {
+      params.append('min_start_time', startDate);
+    }
+
+    if (endDate) {
+      params.append('max_start_time', endDate);
+    }
+
+    const response = await fetch(`${this.calendlyBaseUrl}/scheduled_events?${params}`, {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Calendly API error: ${response.status} ${error}`);
+    }
+
     const data: any = await response.json();
     return data.collection || [];
+  }
+
+  /**
+   * Get event invitees from Calendly API
+   */
+  async getEventInvitees(accessToken: string, eventUri: string) {
+    const eventID = eventUri.split('/').pop();
+    const response = await fetch(`${this.calendlyBaseUrl}/scheduled_events/${eventID}/invitees`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Calendly API error: ${response.status} ${error}`);
+    }
+
+    const data: any = await response.json();
+    return data.collection || [];
+  }
+
+  /**
+   * Get event types from Calendly API
+   */
+  async getEventTypes(accessToken: string, organizationUri?: string) {
+    const params = new URLSearchParams();
+    if (organizationUri) {
+      params.append('organization', organizationUri);
+    }
+
+    const response = await fetch(`${this.calendlyBaseUrl}/event_types?${params}`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Calendly API error: ${response.status} ${error}`);
+    }
+
+    const data: any = await response.json();
+    return data.collection || [];
+  }
+
+  /**
+   * Cancel a Calendly event
+   */
+  async cancelEvent(accessToken: string, eventUri: string, reason?: string) {
+    const eventID = eventUri.split('/').pop();
+    const response = await fetch(`${this.calendlyBaseUrl}/scheduled_events/${eventID}/cancellation`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reason: reason || 'Cancelled by host'
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Calendly API error: ${response.status} ${error}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get valid tokens, refreshing if necessary
+   */
+  private async getValidTokens(integration: Integration): Promise<{ accessToken: string; refreshToken?: string }> {
+    // const { accessToken, refreshToken } = await this.getDecryptedTokens(integration);
+    const { accessToken, refreshToken } = integration;
+
+    // Check if token is expired or about to expire (within 5 minutes)
+    if (integration.tokenExpiresAt && new Date(integration.tokenExpiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+      // Token is expired or about to expire, refresh it
+      if (!refreshToken) {
+        throw new UnauthorizedException('Access token expired and no refresh token available');
+      }
+
+      const newTokens = await this.refreshAccessToken(refreshToken);
+
+      // Update the integration with new tokens
+      await this.updateIntegrationTokens(
+        integration.id,
+        newTokens.accessToken,
+        newTokens.refreshToken,
+        newTokens.tokenExpiresAt,
+      );
+
+      return {
+        accessToken: newTokens.accessToken,
+        refreshToken: newTokens.refreshToken,
+      };
+    }
+
+    return { accessToken: accessToken || '', refreshToken: refreshToken || '' };
+  }
+
+  /**
+   * Refresh the access token using the refresh token
+   */
+  private async refreshAccessToken(refreshToken: string): Promise<OAuthCredentials> {
+    const params = new URLSearchParams({
+      client_id: this.configService.get('integrations.oauth.calendly.clientID', ''),
+      client_secret: this.configService.get('integrations.oauth.calendly.clientSecret', ''),
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    });
+
+    const response = await fetch('https://auth.calendly.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new UnauthorizedException(`Failed to refresh Calendly token: ${error}`);
+    }
+
+    const tokenData: any = await response.json();
+
+    return {
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token || refreshToken,
+      tokenExpiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+    };
+  }
+
+  /**
+   * Update integration tokens in the database
+   */
+  protected override async updateIntegrationTokens(
+    integrationID: string,
+    accessToken: string,
+    refreshToken?: string,
+    expiresAt?: Date,
+  ): Promise<void> {
+    const encryptedAccessToken = await this.encryptionService.encrypt(accessToken);
+    const encryptedRefreshToken = refreshToken
+      ? await this.encryptionService.encrypt(refreshToken)
+      : undefined;
+
+    await this.prisma.integration.update({
+      where: { id: integrationID },
+      data: {
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
+        tokenExpiresAt: expiresAt,
+      },
+    });
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
@@ -179,9 +353,15 @@ export class CalendlyService extends BaseIntegrationService {
   }
 
   private async getCalendlyProfile(accessToken: string) {
-    const response = await fetch('https://api.calendly.com/users/me', {
+    const response = await fetch(`${this.calendlyBaseUrl}/users/me`, {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Calendly API error: ${response.status} ${error}`);
+    }
+
     const data: any = await response.json();
     return data.resource;
   }
