@@ -5,10 +5,8 @@ class CalendlyAPI extends BaseAPI {
   private calendlyBaseUrl = 'https://api.calendly.com';
 
   async getSettings(userType: UserType = UserType.ADMIN): Promise<CalendlySettings> {
-    if (userType === UserType.ADMIN) {
-      return this.makeRequest('/system-settings/calendly');
-    }
-    return this.makeRequest('/integrations/calendly');
+    const response = await this.makeRequest('/integrations/platform/calendly') as any;
+    return response.data!;
   }
 
   async saveSettings(accessToken: string): Promise<{
