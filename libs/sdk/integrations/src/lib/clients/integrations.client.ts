@@ -354,14 +354,13 @@ export class IntegrationsClient extends BaseClient {
 
       const cleanup = () => {
         localStorage.removeItem(`oauth_state_${platform}`);
-        // window.removeEventListener('message', messageHandler);
+        window.removeEventListener('message', messageHandler);
         if (timeoutID !== null) {
           clearTimeout(timeoutID);
         }
       };
 
       const messageHandler = (event: MessageEvent) => {
-        console.log("Called event: ", event);
         if (!event.data || typeof event.data !== 'object') {
           return;
         }
@@ -371,9 +370,6 @@ export class IntegrationsClient extends BaseClient {
         if (messagePlatform !== platform) {
           return;
         }
-
-        console.log("Event data: ", event.data);
-        console.log(`Type: ${type}`);
 
         if (type === 'integration_success' && !resolved) {
           resolved = true;

@@ -4,7 +4,6 @@ import {useEffect, useState} from "react";
 import {PasswordFormData, UpdateProfileRequest, UserType} from "@nlc-ai/types";
 import {Settings} from "@nlc-ai/web-settings";
 import {useRouter, useSearchParams} from "next/navigation";
-import {calendlyAPI} from "@nlc-ai/web-api-client";
 import {sdkClient} from "@/lib";
 
 
@@ -48,22 +47,6 @@ const AdminSettings = () => {
     return sdkClient.users.profiles.getMyProfile();
   }
 
-  const loadCalendlySettings = async () => {
-    return calendlyAPI.getSettings();
-  };
-
-  const handleCalendlyConnect = async (accessToken: string) => {
-    return calendlyAPI.saveSettings(accessToken);
-  };
-
-  const handleCalendlyDisconnect = async () => {
-    return calendlyAPI.deleteSettings();
-  };
-
-  const testConnection = async () => {
-    await calendlyAPI.getCurrentUser();
-  };
-
   return (
     <Settings
       userType={UserType.ADMIN}
@@ -74,11 +57,6 @@ const AdminSettings = () => {
       updateProfile={handleUpdateProfile}
       updatePassword={handleUpdatePassword}
       uploadAvatar={handleAvatarUpload}
-
-      saveCalendlySettings={handleCalendlyConnect}
-      deleteCalendlySettings={handleCalendlyDisconnect}
-      testCalendlyConnection={testConnection}
-      getCalendlySettings={loadCalendlySettings}
     />
   );
 }

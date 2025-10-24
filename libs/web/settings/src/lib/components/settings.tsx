@@ -3,8 +3,7 @@ import { SettingsProvider, useSettings } from '../context/settings.context';
 import { SettingsTabs } from './settings-tabs';
 import { AlertMessages } from './alert-messages';
 import { ProfileSection } from './profile-section';
-import { AdminIntegrations } from './admin/admin-integrations';
-import { SocialIntegrations } from './coach/social-integrations';
+import { SocialIntegrations } from './social-integrations';
 import { ProfileFormData, PasswordFormData } from '../types/settings.types';
 import {UserType} from "@nlc-ai/types";
 import {NLCClient} from "@nlc-ai/sdk-main";
@@ -21,17 +20,6 @@ interface SettingsProps {
   updateProfile: (data: ProfileFormData) => Promise<void>;
   updatePassword: (data: PasswordFormData) => Promise<void>;
   uploadAvatar: (data: string) => Promise<void>;
-
-  // Admin integration functions
-  saveCalendlySettings?: (accessToken: string) => Promise<any>;
-  deleteCalendlySettings?: () => Promise<any>;
-  testCalendlyConnection?: () => Promise<void>;
-  saveEmailProvider?: (provider: any) => Promise<any>;
-  deleteEmailProvider?: (id: string) => Promise<any>;
-  setDefaultEmailProvider?: (id: string) => Promise<any>;
-  testEmailProvider?: (id: string) => Promise<void>;
-  getCalendlySettings?: () => Promise<any>;
-  getEmailProviders?: () => Promise<any[]>;
 }
 
 const SettingsContent: FC<SettingsProps> = ({
@@ -42,17 +30,6 @@ const SettingsContent: FC<SettingsProps> = ({
   updateProfile,
   updatePassword,
   uploadAvatar,
-
-  // Admin functions
-  saveCalendlySettings,
-  deleteCalendlySettings,
-  testCalendlyConnection,
-  saveEmailProvider,
-  deleteEmailProvider,
-  setDefaultEmailProvider,
-  testEmailProvider,
-  getCalendlySettings,
-  getEmailProviders,
 }) => {
   const { error, success, refreshProfile } = useSettings();
 
@@ -89,22 +66,9 @@ const SettingsContent: FC<SettingsProps> = ({
         />
       )}
 
-      {activeTab === 'integrations' && userType === 'admin' && (
-        <AdminIntegrations
-          onSaveCalendly={saveCalendlySettings!}
-          onDeleteCalendly={deleteCalendlySettings!}
-          onTestCalendly={testCalendlyConnection!}
-          onSaveEmailProvider={saveEmailProvider!}
-          onDeleteEmailProvider={deleteEmailProvider!}
-          onSetDefaultEmailProvider={setDefaultEmailProvider!}
-          onTestEmailProvider={testEmailProvider!}
-          getCalendlySettings={getCalendlySettings!}
-          getEmailProviders={getEmailProviders!}
-        />
-      )}
-
-      {activeTab === 'integrations' && userType === 'coach' && (
+      {activeTab === 'integrations' && (
         <SocialIntegrations
+          userType={userType}
           sdkClient={sdkClient}
         />
       )}

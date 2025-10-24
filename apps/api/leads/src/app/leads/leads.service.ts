@@ -77,7 +77,7 @@ export class LeadsService {
         data: {
           name: lead.name,
           phone: lead.phone ?? null,
-          status: qualified ? LeadStatus.CONVERTED : LeadStatus.CONTACTED,
+          status: LeadStatus.NOT_CONVERTED,
           answers: answers as any,
           qualified,
           marketingOptIn: lead.marketingOptIn,
@@ -92,7 +92,7 @@ export class LeadsService {
           email: lead.email,
           phone: lead.phone ?? null,
           source: 'Website',
-          status: qualified ? LeadStatus.CONVERTED : LeadStatus.CONTACTED,
+          status: LeadStatus.NOT_CONVERTED,
           notes: null,
           answers: answers as any,
           qualified,
@@ -619,7 +619,7 @@ export class LeadsService {
     });
   }
 
-  async getRecentLeads(days: number = 7, coachID?: string) {
+  async getRecentLeads(days = 7, coachID?: string) {
     const sinceDate = new Date();
     sinceDate.setDate(sinceDate.getDate() - days);
 

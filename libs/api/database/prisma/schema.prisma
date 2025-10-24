@@ -1729,6 +1729,7 @@ enum LeadStatus {
   scheduled
   converted
   unresponsive
+  not_converted
 }
 
 model Lead {

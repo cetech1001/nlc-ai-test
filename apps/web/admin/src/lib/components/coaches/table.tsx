@@ -3,6 +3,8 @@ import { DataTable, tableRenderers } from "@nlc-ai/web-shared";
 import {TableColumn} from "@nlc-ai/types";
 import {coachesAPI} from "@nlc-ai/web-api-client";
 import {ExtendedCoach, DataTableCoach} from "@nlc-ai/sdk-users";
+import {Edit, Eye, Send, Trash} from "lucide-react";
+import {Button} from "@nlc-ai/web-ui";
 
 interface IProps {
   coaches: ExtendedCoach[];
@@ -89,9 +91,9 @@ export const CoachesTable: FC<IProps> = (props) => {
                 </button>
                 <button
                   onClick={() => onRowAction?.('delete', coach)}
-                  className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400 hover:bg-red-600/30"
+                  className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
                 >
-                  Delete
+                  <Trash className="w-3 h-3" />
                 </button>
               </>
             )}
@@ -105,17 +107,34 @@ export const CoachesTable: FC<IProps> = (props) => {
             )}
             <button
               onClick={() => onRowAction?.('edit', coach)}
-              className="px-3 py-1 rounded text-sm bg-fuchsia-600/20 text-fuchsia-400 hover:bg-fuchsia-600/30"
+              className="px-3 py-1 rounded text-sm bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
             >
-              Edit
+              <Edit className="w-3 h-3" />
             </button>
-            <button
+            {props.areInactiveCoaches ? (
+              <button
+                onClick={() => onRowAction?.('send-email', coach)}
+                className="px-3 py-1 rounded text-sm bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
+                title="Send Marketing Email"
+              >
+                <Send className="w-3 h-3" />
+              </button>
+            ) : (
+              <Button
+                onClick={() => onRowAction?.('view-details', coach)}
+                variant="outline"
+                className="text-fuchsia-400 border-fuchsia-400/30 hover:bg-fuchsia-400/10"
+              >
+                <Eye className="w-3 h-3" />
+              </Button>
+            )}
+            {/*<button
               onClick={() => onRowAction?.(props.areInactiveCoaches ? 'send-mail' : 'make-payment', coach)}
               className="text-fuchsia-400 text-sm font-normal underline leading-relaxed hover:text-fuchsia-300 transition-colors whitespace-nowrap"
               disabled={coach.rawStatus === 'deleted'}
             >
               {props.areInactiveCoaches ? 'Send Mail' : 'View Details'}
-            </button>
+            </button>*/}
           </div>
         )
       },

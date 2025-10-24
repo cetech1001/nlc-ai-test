@@ -3,8 +3,8 @@ import { EventBusService } from "@nlc-ai/api-messaging";
 import { PrismaService } from "@nlc-ai/api-database";
 
 @Injectable()
-export class ContentEventsHandler {
-  private readonly logger = new Logger(ContentEventsHandler.name);
+export class ContentHandler {
+  private readonly logger = new Logger(ContentHandler.name);
 
   constructor(
     private readonly eventBus: EventBusService,

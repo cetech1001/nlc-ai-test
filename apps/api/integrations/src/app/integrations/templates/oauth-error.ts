@@ -175,42 +175,13 @@ export const oauthError = (errorMessage: string, platform: string, nonce: string
 
         <script nonce="${nonce}">
           (function() {
-            const errorData = {
-              type: 'integration_error',
-              platform: '${platform}',
-              error: '${errorMessage.replace(/'/g, "\\'").replace(/\n/g, ' ')}'
-            };
-
-            // Send message immediately
-            function sendMessage() {
-              try {
-                if (window.opener && !window.opener.closed) {
-                  window.opener.postMessage(errorData, '*');
-                  console.log('Error message sent to opener');
-                } else if (window.parent && window.parent !== window) {
-                  window.parent.postMessage(errorData, '*');
-                  console.log('Error message sent to parent');
-                }
-              } catch (e) {
-                console.error('Error sending message:', e);
-              }
-            }
-
-            // Send immediately
-            sendMessage();
-
-            // Send again after short delay to ensure receipt
-            setTimeout(sendMessage, 100);
-            setTimeout(sendMessage, 300);
-
-            // Close window after messages sent
-            /*setTimeout(() => {
+            setTimeout(() => {
               try {
                 window.close();
               } catch (e) {
                 console.log('Could not close window');
               }
-            }, 2000);*/
+            }, 2000);
           })();
         </script>
       </body>

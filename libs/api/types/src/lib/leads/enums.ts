@@ -3,6 +3,7 @@ export enum LeadStatus {
   SCHEDULED = 'scheduled',
   CONVERTED = 'converted',
   UNRESPONSIVE = 'unresponsive',
+  NOT_CONVERTED = 'not_converted',
 }
 
 export enum LeadType {

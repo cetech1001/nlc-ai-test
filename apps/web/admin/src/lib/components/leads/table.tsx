@@ -1,6 +1,6 @@
 import {Button} from "@nlc-ai/web-ui";
 import {DataTableLead, Lead} from "@nlc-ai/sdk-leads";
-import {Mail, Trash, Edit, Eye, Send} from "lucide-react";
+import {Trash, Edit, Eye, Send} from "lucide-react";
 
 export const transformLeadData = (leads: Lead[]): DataTableLead[] => {
   return leads.map(lead => ({
@@ -50,7 +50,7 @@ export const leadColumns = [
     header: 'Qualified?',
     width: `${colWidth * (2 / 3)}%`,
     render: (value: string, row: DataTableLead) => {
-      return row.answers ? (!!value ? 'Yes' : 'No') : 'N/A';
+      return row.answers ? (value ? 'Yes' : 'No') : 'N/A';
     },
   },
   {
@@ -58,7 +58,7 @@ export const leadColumns = [
     header: 'Opted-in?',
     width: `${colWidth * (2 / 3)}%`,
     render: (value: string) => {
-      return !!value ? 'Yes' : 'No';
+      return value ? 'Yes' : 'No';
     },
   },
   {
@@ -106,13 +106,13 @@ export const leadColumns = [
         >
           <Send className="w-3 h-3" />
         </button>
-        <button
+        {/*<button
           onClick={() => onRowAction?.('email', row)}
           className="px-3 py-1 rounded text-sm bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-colors"
           title="Send Email"
         >
           <Mail className="w-3 h-3" />
-        </button>
+        </button>*/}
         <button
           onClick={() => onRowAction?.('delete', row)}
           className="px-3 py-1 rounded text-sm bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"

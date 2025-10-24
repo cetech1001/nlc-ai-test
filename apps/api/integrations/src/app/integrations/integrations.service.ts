@@ -90,17 +90,6 @@ export class IntegrationsService {
     });
   }
 
-  async getCourseIntegrations(userID: string, userType: UserType) {
-    return this.prisma.integration.findMany({
-      where: {
-        userID,
-        userType,
-        integrationType: 'course'
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
   async getCalendlyIntegration(userID: string, userType: UserType) {
     const integration = await this.prisma.integration.findFirst({
       where: {

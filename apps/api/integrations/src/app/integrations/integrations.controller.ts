@@ -78,13 +78,6 @@ export class IntegrationsController {
     return this.integrationsService.getAppIntegrations(user.id, user.type);
   }
 
-  @Get('courses')
-  @ApiOperation({ summary: 'Get course platform integrations only' })
-  @ApiResponse({ status: 200, description: 'Course integrations retrieved successfully' })
-  async getCourseIntegrations(@CurrentUser() user: AuthUser) {
-    return this.integrationsService.getCourseIntegrations(user.id, user.type);
-  }
-
   @Get('platforms')
   @ApiOperation({ summary: 'Get all supported platforms organized by type' })
   @ApiResponse({ status: 200, description: 'Supported platforms retrieved' })

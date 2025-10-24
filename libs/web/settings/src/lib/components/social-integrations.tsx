@@ -14,9 +14,10 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { useSettings } from '../../context/settings.context';
-import { SocialIntegrationsSkeleton } from '../skeletons';
+import { useSettings } from '../context/settings.context';
+import { SocialIntegrationsSkeleton } from './skeletons';
 import {NLCClient} from "@nlc-ai/sdk-main";
+import {UserType} from "@nlc-ai/types";
 
 interface IntegrationData {
   id: string;
@@ -34,26 +35,31 @@ const socialPlatforms = {
     name: 'Facebook',
     icon: <img src="/images/icons/facebook-icon.png" alt="Facebook Icon" className="w-full h-full object-contain"/>,
     type: 'social' as const,
+    userType: [UserType.COACH],
   },
   instagram: {
     name: 'Instagram',
     icon: <img src="/images/icons/instagram-icon.png" alt="Instagram Icon" className="w-full h-full object-contain"/>,
     type: 'social' as const,
+    userType: [UserType.COACH],
   },
   youtube: {
     name: 'YouTube',
     icon: <img src="/images/icons/youtube-icon.svg" alt="YouTube Icon" className="w-full h-full object-contain"/>,
     type: 'social' as const,
+    userType: [UserType.COACH],
   },
   twitter: {
     name: 'X (Twitter)',
     icon: <img src="/images/icons/twitter-icon.svg" alt="X Icon" className="w-full h-full object-contain"/>,
     type: 'social' as const,
+    userType: [UserType.COACH],
   },
   tiktok: {
     name: 'TikTok',
     icon: <img src="/images/icons/tiktok-icon.png" alt="TikTok Icon" className="w-full h-full object-contain"/>,
     type: 'social' as const,
+    userType: [UserType.COACH],
   },
 };
 
@@ -63,26 +69,30 @@ const appPlatforms = {
     icon: <img src="/images/icons/calendly-icon.png" alt="Calendly Icon" className="w-full h-full object-contain"/>,
     description: 'Schedule meetings and sync calendar types',
     type: 'app' as const,
+    userType: [UserType.ADMIN, UserType.COACH],
   },
   gmail: {
     name: 'Gmail',
     icon: <img src="/images/icons/gmail-icon.png" alt="Gmail Icon" className="w-full h-full object-contain"/>,
     description: 'Connect your Gmail account to read and send emails',
     type: 'app' as const,
+    userType: [UserType.COACH],
   },
   outlook: {
     name: 'Outlook',
     icon: <img src="/images/icons/outlook-icon.png" alt="Outlook Icon" className="w-full h-full object-contain"/>,
     description: 'Connect your Outlook account to read and send emails',
     type: 'app' as const,
+    userType: [UserType.COACH],
   },
 };
 
 interface IProps {
   sdkClient: NLCClient;
+  userType: UserType;
 }
 
-export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
+export const SocialIntegrations: FC<IProps> = ({ sdkClient, userType }) => {
   const { setError, setSuccess } = useSettings();
 
   const [socialIntegrations, setSocialIntegrations] = useState<IntegrationData[]>([]);
@@ -113,10 +123,8 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
     try {
       setIsLoading(true);
 
-      // Use the OAuth flow for most platforms
       await sdkClient.integrations.initiateOAuthFlow(platform);
 
-      // Refresh integrations after successful connection
       await loadIntegrations();
 
       const platformConfig = type === 'social' ? socialPlatforms[platform as keyof typeof socialPlatforms] : appPlatforms[platform as keyof typeof appPlatforms];
@@ -227,7 +235,9 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
   const getAvailablePlatforms = (type: 'social' | 'app') => {
     const connected = getConnectedPlatforms(type);
     const platforms = type === 'social' ? socialPlatforms : appPlatforms;
-    return Object.keys(platforms).filter(platform => !connected.includes(platform));
+    return Object.keys(platforms)
+      .filter(platform =>
+        !connected.includes(platform) && (platforms[platform as keyof typeof platforms] as any).userType.includes(userType));
   };
 
   const renderIntegrationCard = (integration: IntegrationData) => {
@@ -308,7 +318,6 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
             </div>
           </div>
 
-          {/* Show on Profile Toggle - Only for Social Integrations */}
           {integration.integrationType === 'social' && (
             <div className="flex items-center justify-between pt-4 border-t border-neutral-700/50">
               <div className="flex items-center gap-3">
@@ -387,28 +396,25 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <div className="mb-8">
+      <div className="mb-8 text-center sm:text-left">
         <h1 className="text-3xl font-bold text-white mb-2">Apps & Social Media</h1>
         <p className="text-[#A0A0A0]">Connect your social media accounts and essential apps to sync content and automate workflows</p>
       </div>
 
-      {/* App Integrations Section */}
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 lg:p-7 overflow-hidden">
-        {/* Background glow orb */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-blue-200 via-blue-600 to-violet-600 rounded-full blur-[112px]" />
         </div>
 
         <div className="relative z-10">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-center sm:items-start justify-between mb-6">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
                 <Mail className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className={"text-center sm:text-left"}>
                 <h3 className="text-xl font-semibold text-white mb-1">Essential Apps</h3>
-                <p className="text-stone-400 text-sm">
+                <p className="text-stone-400 text-sm text-center sm:text-left">
                   Connect your email, calendar, and other essential apps
                 </p>
               </div>
@@ -421,7 +427,6 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
             </div>
           </div>
 
-          {/* Connected App Integrations */}
           {appIntegrations.length > 0 && (
             <div className="mb-6">
               <h4 className="text-white font-medium mb-4">Connected Apps</h4>
@@ -431,7 +436,6 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
             </div>
           )}
 
-          {/* Available App Platforms */}
           <div>
             <h4 className="text-white font-medium mb-4">Available Apps</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -448,35 +452,36 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
         </div>
       </div>
 
-      {/* Social Media Integrations */}
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 lg:p-7 overflow-hidden">
-        {/* Background glow orb */}
+      {userType !== UserType.ADMIN && <div
+        className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-4 sm:p-6 lg:p-7 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
+          <div
+            className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]"/>
         </div>
 
         <div className="relative z-10">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-start justify-between mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 items-center sm:items-start justify-between mb-6">
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center">
-                <LinkIcon className="w-6 h-6 text-white" />
+              <div
+                className="w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center">
+                <LinkIcon className="w-6 h-6 text-white"/>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-white mb-1">Social Media</h3>
-                <p className="text-stone-400 text-sm">
+                <h3 className="text-xl font-semibold text-white text-center sm:text-left mb-1">Social Media</h3>
+                <p className="text-stone-400 text-sm text-center sm:text-left">
                   Connect your social media accounts to sync content and analyze performance
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1 bg-fuchsia-500/20 border border-fuchsia-500/30 rounded-full">
+            <div
+              className="flex items-center gap-2 px-3 py-1 bg-fuchsia-500/20 border border-fuchsia-500/30 rounded-full">
               <span className="text-fuchsia-400 text-sm font-medium">
                 {socialIntegrations.length} Connected
               </span>
             </div>
           </div>
 
-          {/* Connected Social Integrations */}
           {socialIntegrations.length > 0 && (
             <div className="mb-6">
               <h4 className="text-white font-medium mb-4">Connected Accounts</h4>
@@ -486,7 +491,6 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
             </div>
           )}
 
-          {/* Available Social Platforms */}
           <div>
             <h4 className="text-white font-medium mb-4">Available Platforms</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -501,7 +505,7 @@ export const SocialIntegrations: FC<IProps> = ({ sdkClient }) => {
             )}
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 };

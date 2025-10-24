@@ -4,11 +4,10 @@ import { SettingsTabProps } from '../types/settings.types';
 export const SettingsTabs: FC<SettingsTabProps> = ({
  activeTab,
  setActiveTab,
- userType,
 }) => {
   const tabs = [
     { id: 'profile', label: 'Edit Profile' },
-    { id: 'integrations', label: userType === 'admin' ? 'System Integrations' : 'Apps & Socials' },
+    { id: 'integrations', label: 'Apps & Socials' },
   ];
 
   return (
