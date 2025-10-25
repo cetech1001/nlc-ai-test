@@ -164,6 +164,8 @@ export class MessagesService {
     return conversation;
   }
 
+  // Update sendMessage method to check presence and emit email event
+
   async sendMessage(
     conversationID: string,
     createDto: CreateMessageDto,
@@ -247,6 +249,8 @@ export class MessagesService {
 
       const isRecipientViewing = this.messagesGateway.isUserViewingConversation(conversationID, participantID, participantType);
 
+      const isRecipientOnline = await this.messagesGateway.isUserOnline(participantID, participantType);
+
       if (!isRecipientViewing) {
         const recipientName = participantType === UserType.admin
           ? 'Admin Support'
@@ -270,6 +274,28 @@ export class MessagesService {
             createdAt: message.createdAt.toISOString(),
           },
         }, MESSAGING_ROUTING_KEYS.MESSAGE_CREATED);
+
+        if (!isRecipientOnline) {
+          await this.outboxService.saveAndPublishEvent({
+            eventType: 'messaging.notification.email',
+            schemaVersion: 1,
+            payload: {
+              recipientID: participantID,
+              recipientType: participantType,
+              recipientName,
+              senderID,
+              senderType,
+              senderName,
+              messageID: message.id,
+              conversationID,
+              messageContent: message.content,
+              messageType: message.type,
+              timestamp: new Date().toISOString(),
+            },
+          } as any, 'messaging.notification.email');
+
+          this.logger.log(`📧 Email notification queued for offline user: ${participantType}:${participantID}`);
+        }
       }
     }
 
@@ -633,27 +659,28 @@ export class MessagesService {
 
   private async getUserName(userID: string, userType: UserType): Promise<string> {
     try {
+      let user: any;
       switch (userType) {
         case UserType.coach:
-          const coach = await this.prisma.coach.findUnique({
+          user = await this.prisma.coach.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true, businessName: true },
           });
-          return coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach';
+          return user?.businessName || `${user?.firstName} ${user?.lastName}` || 'Unknown Coach';
 
         case UserType.client:
-          const client = await this.prisma.client.findUnique({
+          user = await this.prisma.client.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true },
           });
-          return `${client?.firstName} ${client?.lastName}` || 'Unknown Client';
+          return `${user?.firstName} ${user?.lastName}`;
 
         case UserType.admin:
-          const admin = await this.prisma.admin.findUnique({
+          user = await this.prisma.admin.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true },
           });
-          return `${admin?.firstName} ${admin?.lastName}` || 'Admin';
+          return `${user?.firstName} ${user?.lastName}`;
 
         default:
           return 'Unknown User';

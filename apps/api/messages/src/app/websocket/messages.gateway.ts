@@ -12,6 +12,7 @@ import {Logger} from '@nestjs/common';
 import {JwtService} from '@nestjs/jwt';
 import {PrismaService} from '@nlc-ai/api-database';
 import {UserType} from '@nlc-ai/api-types';
+import {PresenceService} from "../presence/presence.service";
 
 interface AuthenticatedSocket extends Socket {
   userID: string;
@@ -34,11 +35,13 @@ interface ConnectionInfo {
   userName: string;
   joinedRooms: Set<string>;
   lastActivity: number;
+  heartbeatInterval?: NodeJS.Timeout;
 }
 
 const TYPING_TIMEOUT = 3000;
 const CLEANUP_INTERVAL = 30000;
 const INACTIVITY_TIMEOUT = 300000;
+const HEARTBEAT_INTERVAL = 20000;
 
 @WebSocketGateway({
   cors: {
@@ -61,6 +64,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly presenceService: PresenceService,
   ) {
     this.cleanupInterval = setInterval(() => {
       this.performCleanup();
@@ -109,12 +113,25 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       socket.userType = payload.type;
       socket.userName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim();
 
+      // Set user as online in Redis
+      await this.presenceService.setOnline(payload.sub, payload.type, client.id);
+
+      // Start heartbeat interval to keep presence alive
+      const heartbeatInterval = setInterval(async () => {
+        try {
+          await this.presenceService.refreshPresence(payload.sub, payload.type, client.id);
+        } catch (error) {
+          this.logger.error(`Failed to refresh presence for ${payload.sub}:`, error);
+        }
+      }, HEARTBEAT_INTERVAL);
+
       this.connections.set(client.id, {
         userID: payload.sub,
         userType: payload.type,
         userName: socket.userName,
         joinedRooms: new Set(),
         lastActivity: Date.now(),
+        heartbeatInterval,
       });
 
       await client.join(`user:${payload.type}:${payload.sub}`);
@@ -138,6 +155,14 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     if (connectionInfo) {
       const userKey = `${connectionInfo.userType}:${connectionInfo.userID}`;
+
+      // Clear heartbeat interval
+      if (connectionInfo.heartbeatInterval) {
+        clearInterval(connectionInfo.heartbeatInterval);
+      }
+
+      // Set user as offline in Redis
+      this.presenceService.setOffline(connectionInfo.userID, connectionInfo.userType);
 
       connectionInfo.joinedRooms.forEach(roomID => {
         const roomMembers = this.roomMembers.get(roomID);
@@ -167,6 +192,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     } else {
       this.logger.log(`🔌 Unknown client ${client.id} disconnected`);
     }
+  }
+
+  public async isUserOnline(userID: string, userType: UserType): Promise<boolean> {
+    return await this.presenceService.isOnline(userID, userType);
   }
 
   @SubscribeMessage('join_conversation')
@@ -451,10 +480,18 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       });
     });
 
+    this.connections.forEach(connection => {
+      if (connection.heartbeatInterval) {
+        clearInterval(connection.heartbeatInterval);
+      }
+    });
+
     this.connections.clear();
     this.roomMembers.clear();
     this.typingStates.clear();
     this.conversationViewers.clear();
+
+    this.presenceService.cleanup();
   }
 
   getConnectionStats() {

@@ -10,6 +10,7 @@ import {AllExceptionsFilter, HttpExceptionFilter, ValidationPipe} from "@nlc-ai/
 import {AuthLibModule, JwtAuthGuard} from "@nlc-ai/api-auth";
 import {MessagesModule} from "./messages/messages.module";
 import {WebSocketModule} from "./websocket/websocket.module";
+import {PresenceModule} from "./presence/presence.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import {WebSocketModule} from "./websocket/websocket.module";
     HealthModule,
     MessagesModule,
     WebSocketModule,
+    PresenceModule,
   ],
   providers: [
     {
