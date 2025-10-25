@@ -86,11 +86,11 @@ export class InstagramService extends BaseIntegrationService {
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.instagram.appID', ''),
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
+      client_id: this.config.get('integrations.oauth.instagram.appID', ''),
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/instagram/callback`,
       response_type: 'code',
       scope: [
         'instagram_business_basic',
@@ -113,9 +113,9 @@ export class InstagramService extends BaseIntegrationService {
   }
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
-    const clientId = this.configService.get('integrations.oauth.instagram.appID', '')
-    const clientSecret = this.configService.get('integrations.oauth.instagram.appSecret', '')
-    const redirectUri = `${this.configService.get('integrations.baseUrl')}/integrations/auth/instagram/callback`;
+    const clientId = this.config.get('integrations.oauth.instagram.appID', '')
+    const clientSecret = this.config.get('integrations.oauth.instagram.appSecret', '')
+    const redirectUri = `${this.config.get('integrations.baseUrl')}/integrations/auth/instagram/callback`;
 
     const tokenRes = await fetch(
       `https://graph.facebook.com/v20.0/oauth/access_token?` +

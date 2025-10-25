@@ -3,7 +3,7 @@
 import {FC, useEffect, useState} from "react";
 import {AlertCircle, ChevronLeft, ChevronRight, Plus,} from "lucide-react";
 import {Button} from "@nlc-ai/web-ui";
-import {Appointment, CalendarDay, CalendarEvent, UserType} from "@nlc-ai/types";
+import {Appointment, CalendarDay, CalendarEvent} from "@nlc-ai/types";
 import {CalendarPageSkeleton, CalendlyEmbedModal} from "./partials";
 import {useRouter} from "next/navigation";
 import { getInitials } from "@nlc-ai/web-utils";
@@ -63,7 +63,7 @@ const HourlySchedule = ({ appointments, selectedDate }: {
 
   return (
     <div className="bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute w-56 h-56 -right-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
       </div>
 
@@ -127,11 +127,10 @@ const HourlySchedule = ({ appointments, selectedDate }: {
 };
 
 interface IProps {
-  userType?: UserType;
   sdkClient: NLCClient;
 }
 
-export const CalendarPage: FC<IProps> = ({ userType, sdkClient }) => {
+export const CalendarPage: FC<IProps> = ({ sdkClient }) => {
   const router = useRouter();
 
   const [today] = useState(new Date());
@@ -308,7 +307,7 @@ export const CalendarPage: FC<IProps> = ({ userType, sdkClient }) => {
           </div>
           <Button
             onClick={() => {
-              router.push('/settings?tab=system-settings')
+              router.push('/settings?tab=integrations')
             }}
             className="bg-yellow-600 hover:bg-yellow-700 cursor-pointer text-white text-sm px-3 py-1.5"
           >
@@ -318,15 +317,13 @@ export const CalendarPage: FC<IProps> = ({ userType, sdkClient }) => {
       )}
 
       <div className="flex flex-col xl:flex-row gap-6 h-full">
-        {/* Left Sidebar - Mini Calendar */}
         <div className="w-full xl:w-80 xl:flex-shrink-0">
           <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[30px] border border-neutral-700 p-6 overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
+            <div className="absolute inset-0 opacity-20 pointer-events-none">
               <div className="absolute w-56 h-56 -left-12 -top-20 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[112px]" />
             </div>
 
             <div className="relative z-10">
-              {/* Mini Calendar Header */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-stone-50 text-lg font-semibold">
                   {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
@@ -347,7 +344,6 @@ export const CalendarPage: FC<IProps> = ({ userType, sdkClient }) => {
                 </div>
               </div>
 
-              {/* Mini Calendar Grid */}
               <div className="mb-6">
                 <div className="grid grid-cols-7 gap-1 mb-2">
                   {dayNames.map((day) => (
@@ -370,7 +366,6 @@ export const CalendarPage: FC<IProps> = ({ userType, sdkClient }) => {
                 </div>
               </div>
 
-              {/* Today's Appointments */}
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-stone-50 text-sm font-medium">
@@ -409,7 +404,6 @@ export const CalendarPage: FC<IProps> = ({ userType, sdkClient }) => {
           </div>
         </div>
 
-        {/* Right Side - Hourly Schedule */}
         <div className="flex-1">
           <HourlySchedule
             appointments={selectedDayAppointments}

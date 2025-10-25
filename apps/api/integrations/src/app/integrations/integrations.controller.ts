@@ -15,7 +15,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, UserTypes, UserTypesGuard, CurrentUser, Public } from '@nlc-ai/api-auth';
 import {UserType, type AuthUser} from '@nlc-ai/api-types';
-import { ConnectPlatformRequest, LoadCalendlyEventsRequest } from '@nlc-ai/api-types';
+import { ConnectPlatformRequest } from '@nlc-ai/api-types';
 import type { Response } from "express";
 import { IntegrationFactory } from "./factories/integration.factory";
 import { StateTokenService } from "./services/state-token.service";
@@ -24,6 +24,7 @@ import { CalendlyService } from "./services/apps/calendly.service";
 import { oauthError } from "./templates/oauth-error";
 import { oauthSuccess } from "./templates/oauth-success";
 import { ToggleProfileVisibilityDto } from './dto';
+import {DateRangeDto} from "@nlc-ai/api-dto";
 
 @ApiTags('Integrations')
 @Controller('')
@@ -231,26 +232,18 @@ export class IntegrationsController {
   @ApiResponse({ status: 200, description: 'Calendly events loaded successfully' })
   async loadCalendlyEvents(
     @CurrentUser() user: AuthUser,
-    @Body() body: LoadCalendlyEventsRequest
+    @Body() body: DateRangeDto,
   ) {
-    console.log('Load Calendly events for user');
     const integration = await this.integrationsService.getCalendlyIntegration(user.id, user.type);
+    const { accessToken } = await this.calendlyService.getValidTokens(integration);
 
-    console.log('Integration: ', integration);
-    // Get valid tokens (this will refresh if needed)
-    const { accessToken } = await (this.calendlyService as any).getValidTokens(integration);
-
-    console.log('Access Token : ', accessToken);
-
-    // Fetch scheduled events
     const events = await this.calendlyService.fetchScheduledEvents(
       accessToken,
       (integration.config as any).userUri,
-      new Date(body.startDate).toISOString(),
-      new Date(body.endDate).toISOString(),
+      new Date(body.start).toISOString(),
+      new Date(body.end).toISOString(),
     );
 
-    // Fetch invitees for each event
     const eventsWithInvitees = await Promise.all(
       events.map(async (event: any) => {
         const invitees = await this.calendlyService.getEventInvitees(accessToken, event.uri);

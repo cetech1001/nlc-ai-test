@@ -3,7 +3,7 @@ import {BaseIntegrationService} from "../base-integration.service";
 import {
   AppPlatform,
   AuthType,
-  Integration, IntegrationEvent,
+  Integration,
   IntegrationType,
   OAuthCredentials,
   SyncResult,
@@ -26,8 +26,10 @@ export class CalendlyService extends BaseIntegrationService {
       userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
-      accessToken: credentials.accessToken,
-      refreshToken: credentials.refreshToken,
+      accessToken: await this.encryption.encrypt(credentials.accessToken),
+      refreshToken: credentials.refreshToken
+        ? await this.encryption.encrypt(credentials.refreshToken)
+        : undefined,
       tokenExpiresAt: credentials.tokenExpiresAt,
       config: {
         userUri: profile.uri,
@@ -76,54 +78,22 @@ export class CalendlyService extends BaseIntegrationService {
         },
       });
 
-      await this.outbox.saveAndPublishEvent<IntegrationEvent>(
-        {
-          eventType: 'integration.sync.completed',
-          payload: {
-            integrationID: integration.id,
-            userID: integration.userID,
-            userType: integration.userType,
-            platformName: integration.platformName,
-            syncData: { eventCount: events.length },
-            syncedAt: new Date().toISOString(),
-          },
-          schemaVersion: 1,
-        },
-        'integration.sync.completed'
-      );
-
       return {
         success: true,
         message: 'Calendly synced successfully',
         data: { eventCount: events.length },
       };
     } catch (error: any) {
-      await this.outbox.saveAndPublishEvent<IntegrationEvent>(
-        {
-          eventType: 'integration.sync.failed',
-          payload: {
-            integrationID: integration.id,
-            userID: integration.userID,
-            userType: integration.userType,
-            platformName: integration.platformName,
-            error: error.message,
-            failedAt: new Date().toISOString(),
-          },
-          schemaVersion: 1,
-        },
-        'integration.sync.failed'
-      );
-
       return { success: false, message: `Calendly sync failed: ${error.message}` };
     }
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.calendly.clientID', ''),
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/calendly/callback`,
+      client_id: this.config.get('integrations.oauth.calendly.clientID', ''),
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/calendly/callback`,
       response_type: 'code',
       state,
     });
@@ -243,20 +213,16 @@ export class CalendlyService extends BaseIntegrationService {
   /**
    * Get valid tokens, refreshing if necessary
    */
-  private async getValidTokens(integration: Integration): Promise<{ accessToken: string; refreshToken?: string }> {
-    // const { accessToken, refreshToken } = await this.getDecryptedTokens(integration);
-    const { accessToken, refreshToken } = integration;
+  async getValidTokens(integration: Integration): Promise<{ accessToken: string; refreshToken?: string }> {
+    const { accessToken, refreshToken } = await this.getDecryptedTokens(integration);
 
-    // Check if token is expired or about to expire (within 5 minutes)
     if (integration.tokenExpiresAt && new Date(integration.tokenExpiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-      // Token is expired or about to expire, refresh it
       if (!refreshToken) {
         throw new UnauthorizedException('Access token expired and no refresh token available');
       }
 
       const newTokens = await this.refreshAccessToken(refreshToken);
 
-      // Update the integration with new tokens
       await this.updateIntegrationTokens(
         integration.id,
         newTokens.accessToken,
@@ -278,8 +244,8 @@ export class CalendlyService extends BaseIntegrationService {
    */
   private async refreshAccessToken(refreshToken: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.calendly.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.calendly.clientSecret', ''),
+      client_id: this.config.get('integrations.oauth.calendly.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.calendly.clientSecret', ''),
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     });
@@ -313,9 +279,9 @@ export class CalendlyService extends BaseIntegrationService {
     refreshToken?: string,
     expiresAt?: Date,
   ): Promise<void> {
-    const encryptedAccessToken = await this.encryptionService.encrypt(accessToken);
+    const encryptedAccessToken = await this.encryption.encrypt(accessToken);
     const encryptedRefreshToken = refreshToken
-      ? await this.encryptionService.encrypt(refreshToken)
+      ? await this.encryption.encrypt(refreshToken)
       : undefined;
 
     await this.prisma.integration.update({
@@ -330,11 +296,11 @@ export class CalendlyService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.calendly.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.calendly.clientSecret', ''),
+      client_id: this.config.get('integrations.oauth.calendly.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.calendly.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/calendly/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/calendly/callback`,
     });
 
     const response = await fetch('https://auth.calendly.com/oauth/token', {
@@ -344,6 +310,14 @@ export class CalendlyService extends BaseIntegrationService {
     });
 
     const tokenData: any = await response.json();
+
+    /*if (tokenData.access_token) {
+      tokenData.access_token = this.encryption.encrypt(tokenData.access_token);
+    }
+
+    if (tokenData.refresh_token) {
+      tokenData.refresh_token = this.encryption.encrypt(tokenData.refresh_token);
+    }*/
 
     return {
       accessToken: tokenData.access_token,

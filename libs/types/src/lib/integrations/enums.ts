@@ -1,7 +1,8 @@
-export enum IntegrationType {
-  SOCIAL = 'social',
-  APP = 'app',
-}
+export const IntegrationType = {
+  SOCIAL: 'social',
+  APP: 'app',
+} as const;
+export type IntegrationType = (typeof IntegrationType)[keyof typeof IntegrationType];
 
 export enum AuthType {
   OAUTH = 'oauth',

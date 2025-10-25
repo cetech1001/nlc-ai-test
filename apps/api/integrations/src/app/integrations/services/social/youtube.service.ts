@@ -47,12 +47,12 @@ export class YoutubeService extends BaseIntegrationService {
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
+      client_id: this.config.get('integrations.oauth.google.clientID', ''),
       scope: 'https://www.googleapis.com/auth/youtube.readonly',
-      redirect_uri: `${this.configService.get('integrations.baseUrl', '')}/integrations/auth/youtube/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl', '')}/integrations/auth/youtube/callback`,
       response_type: 'code',
       state,
       prompt: 'select_account consent',
@@ -72,7 +72,7 @@ export class YoutubeService extends BaseIntegrationService {
   async test(integration: Integration): Promise<TestResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      const validToken = await this.tokenService.ensureValidToken(integration, accessToken);
+      const validToken = await this.token.ensureValidToken(integration, accessToken);
 
       await this.getChannelInfo(validToken);
 
@@ -88,7 +88,7 @@ export class YoutubeService extends BaseIntegrationService {
   async sync(integration: Integration): Promise<SyncResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      const validToken = await this.tokenService.ensureValidToken(integration, accessToken);
+      const validToken = await this.token.ensureValidToken(integration, accessToken);
 
       // Get basic channel stats and analytics
       const [channelStats, analytics] = await Promise.all([
@@ -188,8 +188,8 @@ export class YoutubeService extends BaseIntegrationService {
     }
 
     const auth = new google.auth.OAuth2(
-      this.configService.get('integrations.oauth.google.clientID'),
-      this.configService.get('integrations.oauth.google.clientSecret')
+      this.config.get('integrations.oauth.google.clientID'),
+      this.config.get('integrations.oauth.google.clientSecret')
     );
 
     auth.setCredentials({ refresh_token: refreshToken });
@@ -221,11 +221,11 @@ export class YoutubeService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.google.clientSecret', ''),
+      client_id: this.config.get('integrations.oauth.google.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.google.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('integrations.baseUrl', '')}/integrations/auth/youtube/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl', '')}/integrations/auth/youtube/callback`,
     });
 
     const response = await fetch('https://oauth2.googleapis.com/token', {

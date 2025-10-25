@@ -80,16 +80,16 @@ export class OutlookService extends BaseIntegrationService {
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.microsoft.clientID', ''),
+      client_id: this.config.get('integrations.oauth.microsoft.clientID', ''),
       scope: [
         'https://graph.microsoft.com/Mail.Read',
         'https://graph.microsoft.com/Mail.Send',
         'https://graph.microsoft.com/User.Read'
       ].join(' '),
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/outlook/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/outlook/callback`,
       response_type: 'code',
       state,
     });
@@ -107,11 +107,11 @@ export class OutlookService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.microsoft.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.microsoft.clientSecret', ''),
+      client_id: this.config.get('integrations.oauth.microsoft.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.microsoft.clientSecret', ''),
       scope: 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read',
       code,
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/outlook/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/outlook/callback`,
       grant_type: 'authorization_code',
     });
 

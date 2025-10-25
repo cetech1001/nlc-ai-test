@@ -67,7 +67,7 @@ export class GmailService extends BaseIntegrationService {
   async test(integration: Integration): Promise<TestResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      const validToken = await this.tokenService.ensureValidToken(integration, accessToken);
+      const validToken = await this.token.ensureValidToken(integration, accessToken);
 
       await this.getEmailProfile(validToken);
       return { success: true, message: 'Gmail connection working' };
@@ -79,7 +79,7 @@ export class GmailService extends BaseIntegrationService {
   async sync(integration: Integration): Promise<SyncResult> {
     try {
       const { accessToken } = await this.getDecryptedTokens(integration);
-      const validToken = await this.tokenService.ensureValidToken(integration, accessToken);
+      const validToken = await this.token.ensureValidToken(integration, accessToken);
 
       const emails = await this.fetchRecentEmails(validToken);
       const threads = await this.fetchEmailThreads(validToken);
@@ -108,17 +108,17 @@ export class GmailService extends BaseIntegrationService {
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
+      client_id: this.config.get('integrations.oauth.google.clientID', ''),
       scope: [
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://www.googleapis.com/auth/gmail.send',
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile'
       ].join(' '),
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/gmail/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/gmail/callback`,
       response_type: 'code',
       access_type: 'offline',
       prompt: 'select_account consent',
@@ -205,11 +205,11 @@ export class GmailService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.google.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.google.clientSecret', ''),
+      client_id: this.config.get('integrations.oauth.google.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.google.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/gmail/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/gmail/callback`,
     });
 
     const response = await fetch('https://oauth2.googleapis.com/token', {

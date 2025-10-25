@@ -90,12 +90,12 @@ export class TwitterService extends BaseIntegrationService {
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.twitter.clientID', ''),
+      client_id: this.config.get('integrations.oauth.twitter.clientID', ''),
       scope: ['tweet.read', 'users.read', 'offline.access'].join(' '),
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/twitter/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/twitter/callback`,
       response_type: 'code',
       code_challenge: 'challenge', // In production, generate a proper PKCE challenge
       code_challenge_method: 'plain',
@@ -115,11 +115,11 @@ export class TwitterService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.twitter.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.twitter.clientSecret', ''),
+      client_id: this.config.get('integrations.oauth.twitter.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.twitter.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/twitter/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/twitter/callback`,
       code_verifier: 'challenge', // In production, use the same verifier from the challenge
     });
 

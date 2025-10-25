@@ -20,10 +20,10 @@ import { StateTokenService } from "./state-token.service";
 export abstract class BaseIntegrationService implements IntegrationProvider {
   constructor(
     protected readonly prisma: PrismaService,
-    protected readonly encryptionService: EncryptionService,
-    protected readonly tokenService: TokenManagementService,
-    protected readonly stateTokenService: StateTokenService,
-    protected readonly configService: ConfigService,
+    protected readonly encryption: EncryptionService,
+    protected readonly token: TokenManagementService,
+    protected readonly stateToken: StateTokenService,
+    protected readonly config: ConfigService,
     protected readonly outbox: OutboxService,
   ) {}
 
@@ -39,7 +39,7 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
   abstract handleCallback?(userID: string, userType: string, code: string, state: string): Promise<Integration>;
 
   async refreshToken?(integration: Integration): Promise<string> {
-    return this.tokenService.ensureValidToken(integration, '');
+    return this.token.ensureValidToken(integration, '');
   }
 
   async disconnect(integration: Integration): Promise<void> {
@@ -65,15 +65,10 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
   }
 
   protected async saveIntegration(data: CreateIntegrationData): Promise<Integration> {
-    let encryptedToken, encryptedRefreshToken;
-    try {
-      encryptedToken = await this.encryptionService.encrypt(data.accessToken);
-      encryptedRefreshToken = data.refreshToken
-        ? await this.encryptionService.encrypt(data.refreshToken)
-        : null;
-    } catch (e: any) {
-      throw e;
-    }
+    const encryptedToken = await this.encryption.encrypt(data.accessToken);
+    const encryptedRefreshToken = data.refreshToken
+      ? await this.encryption.encrypt(data.refreshToken)
+      : null;
 
     const integration = await this.prisma.integration.create({
       data: {
@@ -83,22 +78,6 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
       }
     });
 
-    await this.outbox.saveAndPublishEvent<IntegrationEvent>(
-      {
-        eventType: 'integration.connected',
-        payload: {
-          integrationID: integration.id,
-          userID: integration.userID,
-          userType: integration.userType,
-          platformName: integration.platformName,
-          integrationType: integration.integrationType,
-          connectedAt: new Date().toISOString(),
-        },
-        schemaVersion: 1,
-      },
-      'integration.connected'
-    );
-
     return { ...integration, integrationType: integration.integrationType as IntegrationType };
   }
 
@@ -106,9 +85,9 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
     accessToken: string;
     refreshToken?: string;
   }> {
-    const accessToken = await this.encryptionService.decrypt(integration.accessToken || '');
+    const accessToken = await this.encryption.decrypt(integration.accessToken || '');
     const refreshToken = integration.refreshToken
-      ? await this.encryptionService.decrypt(integration.refreshToken)
+      ? await this.encryption.decrypt(integration.refreshToken)
       : undefined;
 
     return { accessToken, refreshToken };
@@ -130,9 +109,9 @@ export abstract class BaseIntegrationService implements IntegrationProvider {
     refreshToken?: string,
     expiresAt?: Date
   ): Promise<void> {
-    const encryptedAccessToken = await this.encryptionService.encrypt(accessToken);
+    const encryptedAccessToken = await this.encryption.encrypt(accessToken);
     const encryptedRefreshToken = refreshToken
-      ? await this.encryptionService.encrypt(refreshToken)
+      ? await this.encryption.encrypt(refreshToken)
       : undefined;
 
     await this.prisma.integration.update({

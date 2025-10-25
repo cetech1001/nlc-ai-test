@@ -86,12 +86,12 @@ export class FacebookService extends BaseIntegrationService {
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
+      client_id: this.config.get('integrations.oauth.meta.clientID', ''),
       scope: ['public_profile', 'user_likes', 'user_link', 'user_posts', 'user_videos', 'email'].join(','),
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
       response_type: 'code',
       state,
       auth_type: 'rerequest',
@@ -110,10 +110,10 @@ export class FacebookService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_id: this.configService.get('integrations.oauth.meta.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.meta.clientSecret', ''),
+      client_id: this.config.get('integrations.oauth.meta.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.meta.clientSecret', ''),
       code,
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/facebook/callback`,
     });
 
     const response = await fetch(`https://graph.facebook.com/v18.0/oauth/access_token?${params}`);

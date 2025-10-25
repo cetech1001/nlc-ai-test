@@ -99,8 +99,8 @@ export class CalendlyClient extends BaseClient {
       '/calendly/events',
       {
         body: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
         }
       }
     );

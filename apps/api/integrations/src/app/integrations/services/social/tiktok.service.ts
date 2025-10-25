@@ -95,7 +95,7 @@ export class TiktokService extends BaseIntegrationService {
   }
 
   async getAuthUrl(userID: string, userType: UserType): Promise<{ authUrl: string; state: string }> {
-    const state = this.stateTokenService.generateState(userID, userType, this.platformName);
+    const state = this.stateToken.generateState(userID, userType, this.platformName);
 
     // Generate PKCE code verifier and challenge
     const codeVerifier = this.generateCodeVerifier();
@@ -105,7 +105,7 @@ export class TiktokService extends BaseIntegrationService {
     this.codeVerifiers.set(state, codeVerifier);
 
     const params = new URLSearchParams({
-      client_key: this.configService.get('integrations.oauth.tiktok.clientID', ''),
+      client_key: this.config.get('integrations.oauth.tiktok.clientID', ''),
       scope: [
         'user.info.basic',
         'user.info.profile',
@@ -113,7 +113,7 @@ export class TiktokService extends BaseIntegrationService {
         'video.list',
         // 'video.insights'
       ].join(','),
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/tiktok/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/tiktok/callback`,
       response_type: 'code',
       state,
       code_challenge: codeChallenge,
@@ -158,11 +158,11 @@ export class TiktokService extends BaseIntegrationService {
 
   private async exchangeCodeForToken(code: string, codeVerifier: string): Promise<OAuthCredentials> {
     const params = new URLSearchParams({
-      client_key: this.configService.get('integrations.oauth.tiktok.clientID', ''),
-      client_secret: this.configService.get('integrations.oauth.tiktok.clientSecret', ''),
+      client_key: this.config.get('integrations.oauth.tiktok.clientID', ''),
+      client_secret: this.config.get('integrations.oauth.tiktok.clientSecret', ''),
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${this.configService.get('integrations.baseUrl')}/integrations/auth/tiktok/callback`,
+      redirect_uri: `${this.config.get('integrations.baseUrl')}/integrations/auth/tiktok/callback`,
       code_verifier: codeVerifier,
     });
 
