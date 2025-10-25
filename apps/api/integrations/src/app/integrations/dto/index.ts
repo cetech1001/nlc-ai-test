@@ -1,52 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsObject } from 'class-validator';
-
-export class ConnectPlatformDto {
-  @ApiProperty({ example: 'your-api-key-here' })
-  @IsString()
-  apiKey?: string;
-
-  @ApiProperty({ example: 'oauth-access-token' })
-  @IsString()
-  accessToken?: string;
-
-  @ApiProperty({ example: 'oauth-refresh-token' })
-  @IsOptional()
-  @IsString()
-  refreshToken?: string;
-
-  @ApiProperty({ example: 'webhook-secret' })
-  @IsOptional()
-  @IsString()
-  webhookSecret?: string;
-
-  @ApiProperty({ example: {} })
-  @IsOptional()
-  @IsObject()
-  config?: any;
-}
+import { IsISO8601, IsBoolean } from 'class-validator';
 
 export class LoadCalendlyEventsDto {
-  @ApiProperty({ example: '2024-01-01T00:00:00Z' })
-  @IsString()
-  startDate: string;
+  @ApiProperty({
+    example: '2025-01-01T00:00:00.000Z',
+    description: 'Start date in ISO 8601 format'
+  })
+  @IsISO8601({ strict: true })
+  start: string;
 
-  @ApiProperty({ example: '2024-01-31T23:59:59Z' })
-  @IsString()
-  endDate: string;
-}
-
-export class ToggleEmailSyncDto {
-  @ApiProperty({ example: true })
-  @IsBoolean()
-  syncEnabled: boolean;
-}
-
-export class EmailAccountStatsQueryDto {
-  @ApiProperty({ example: 30, required: false })
-  @IsOptional()
-  @IsString()
-  days?: string;
+  @ApiProperty({
+    example: '2025-01-31T23:59:59.999Z',
+    description: 'End date in ISO 8601 format'
+  })
+  @IsISO8601({ strict: true })
+  end: string;
 }
 
 export class ToggleProfileVisibilityDto {

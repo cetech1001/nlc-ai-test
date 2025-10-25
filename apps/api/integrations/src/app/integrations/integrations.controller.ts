@@ -23,8 +23,7 @@ import { IntegrationsService } from "./integrations.service";
 import { CalendlyService } from "./services/apps/calendly.service";
 import { oauthError } from "./templates/oauth-error";
 import { oauthSuccess } from "./templates/oauth-success";
-import { ToggleProfileVisibilityDto } from './dto';
-import {DateRangeDto} from "@nlc-ai/api-dto";
+import {LoadCalendlyEventsDto, ToggleProfileVisibilityDto} from './dto';
 
 @ApiTags('Integrations')
 @Controller('')
@@ -232,7 +231,7 @@ export class IntegrationsController {
   @ApiResponse({ status: 200, description: 'Calendly events loaded successfully' })
   async loadCalendlyEvents(
     @CurrentUser() user: AuthUser,
-    @Body() body: DateRangeDto,
+    @Body() body: LoadCalendlyEventsDto,
   ) {
     const integration = await this.integrationsService.getCalendlyIntegration(user.id, user.type);
     const { accessToken } = await this.calendlyService.getValidTokens(integration);

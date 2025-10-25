@@ -26,10 +26,8 @@ export class CalendlyService extends BaseIntegrationService {
       userType,
       integrationType: this.integrationType,
       platformName: this.platformName,
-      accessToken: await this.encryption.encrypt(credentials.accessToken),
-      refreshToken: credentials.refreshToken
-        ? await this.encryption.encrypt(credentials.refreshToken)
-        : undefined,
+      accessToken: credentials.accessToken,
+      refreshToken: credentials.refreshToken,
       tokenExpiresAt: credentials.tokenExpiresAt,
       config: {
         userUri: profile.uri,
@@ -310,14 +308,6 @@ export class CalendlyService extends BaseIntegrationService {
     });
 
     const tokenData: any = await response.json();
-
-    /*if (tokenData.access_token) {
-      tokenData.access_token = this.encryption.encrypt(tokenData.access_token);
-    }
-
-    if (tokenData.refresh_token) {
-      tokenData.refresh_token = this.encryption.encrypt(tokenData.refresh_token);
-    }*/
 
     return {
       accessToken: tokenData.access_token,
