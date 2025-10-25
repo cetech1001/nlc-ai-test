@@ -5,3 +5,4 @@ export * from './vault/page';
 export * from './chatbot/page';
 export * from './chatbot/customization/page';
 export * from './calendar/page';
+export * from './messages/page';

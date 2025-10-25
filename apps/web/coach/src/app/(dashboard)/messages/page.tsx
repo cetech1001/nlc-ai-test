@@ -1,106 +1,38 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ConversationList, ChatWindow, sdkClient } from '@/lib';
-import { ConversationResponse } from '@nlc-ai/sdk-messages';
+import {useRouter, useSearchParams} from 'next/navigation';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { useAuth } from "@nlc-ai/web-auth";
+import {MessagesPage} from "@nlc-ai/web-shared";
+import {sdkClient} from "@/lib";
 
-const MessagesPage = () => {
+const CoachMessagesPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const { user } = useAuth();
 
-  const [selectedConversation, setSelectedConversation] = useState<ConversationResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMobileView, setIsMobileView] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 1024);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    const conversationID = searchParams.get('conversationID');
-    if (conversationID) {
-      loadConversation(conversationID);
-    } else {
-      setIsLoading(false);
-    }
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [searchParams]);
-
-  const loadConversation = async (conversationID: string) => {
-    try {
-      setIsLoading(true);
-      const conversation = await sdkClient.messages.getConversation(conversationID);
-      setSelectedConversation(conversation);
-    } catch (error) {
-      console.error('Failed to load conversation:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const goToConversation = (conversationID: string) => {
+    router.push(`/messages?conversationID=${conversationID}`, { scroll: false });
   };
 
-  const handleConversationSelect = (conversation: ConversationResponse) => {
-    setSelectedConversation(conversation);
-    router.push(`/messages?conversationID=${conversation.id}`, { scroll: false });
-  };
-
-  const handleBackToList = () => {
-    setSelectedConversation(null);
+  const goToMessages = () => {
     router.push('/messages', { scroll: false });
   };
 
-  return (
-    <div className="py-4 sm:py-6 lg:py-8 space-y-6 max-w-full overflow-hidden">
-      <div className="flex min-h-[85vh] bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] border border-neutral-700 overflow-hidden relative">
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
-        </div>
+  const goBack = () => {
+    router.back();
+  }
 
-        <div className="relative z-10 flex w-full">
-          {isMobileView ? (
-            <>
-              {!selectedConversation ? (
-                <ConversationList
-                  user={user}
-                  selectedConversationID=""
-                  onConversationSelectAction={handleConversationSelect}
-                  onBackClick={() => router.back()}
-                />
-              ) : (
-                <ChatWindow
-                  isConvoLoading={isLoading}
-                  user={user}
-                  conversation={selectedConversation}
-                  onBack={handleBackToList}
-                />
-              )}
-            </>
-          ) : (
-            <>
-              <ConversationList
-                user={user}
-                selectedConversationID={selectedConversation?.id}
-                onConversationSelectAction={handleConversationSelect}
-                onBackClick={() => router.back()}
-              />
-              <ChatWindow
-                isConvoLoading={isLoading}
-                user={user}
-                conversation={selectedConversation}
-              />
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+  return (
+    <MessagesPage
+      user={user}
+      goToConversation={goToConversation}
+      goToMessages={goToMessages}
+      conversationID={searchParams.get('conversationID') as string}
+      sdkClient={sdkClient}
+      goBack={goBack}
+    />
   );
 };
 
-export default MessagesPage;
+export default CoachMessagesPage;

@@ -1,11 +1,11 @@
 import {UserType} from "@nlc-ai/types";
-import {MessageType} from "./index";
+import {MessageType} from "./enums";
 
 export interface DirectMessageResponse {
   id: string;
   conversationID: string;
   senderID: string;
-  senderType: 'admin' | 'coach' | 'client';
+  senderType: UserType;
   type: MessageType;
   content: string;
   mediaUrls: string[];
