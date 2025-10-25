@@ -84,13 +84,10 @@
       "path": "../../../libs/sdk/content"
     },
     {
-      "path": "../../../libs/sdk/users"
-    },
-    {
       "path": "../../../libs/web/utils"
     },
     {
-      "path": "../../../libs/web/api-client"
+      "path": "../../../libs/sdk/users"
     },
     {
       "path": "../../../libs/sdk/email"

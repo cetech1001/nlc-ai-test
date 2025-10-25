@@ -7,6 +7,9 @@
       "path": "../agents"
     },
     {
+      "path": "../../types"
+    },
+    {
       "path": "../core"
     },
     {
