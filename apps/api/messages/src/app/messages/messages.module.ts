@@ -3,6 +3,7 @@ import { MessagingModule } from '@nlc-ai/api-messaging';
 import { MessagesService } from './messages.service';
 import { MessagesController } from './messages.controller';
 import {WebSocketModule} from "../websocket/websocket.module";
+import {ConversationHelperService} from "./conversation-helper.service";
 
 @Module({
   imports: [
@@ -10,7 +11,7 @@ import {WebSocketModule} from "../websocket/websocket.module";
     WebSocketModule,
   ],
   controllers: [MessagesController],
-  providers: [MessagesService],
+  providers: [MessagesService, ConversationHelperService],
   exports: [MessagesService],
 })
 export class MessagesModule {}

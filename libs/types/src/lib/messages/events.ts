@@ -1,6 +1,7 @@
 import { BaseEvent } from '@nlc-ai/api-messaging';
-import { UserType } from '../auth';
+import { UserType } from '../users';
 import { MessageType } from './enums';
+import {ConversationType} from "./common";
 
 export interface MessageCreatedEvent extends BaseEvent {
   eventType: 'messaging.message.created';

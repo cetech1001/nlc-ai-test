@@ -10,6 +10,7 @@ import {
   UpdateMessageDto,
 } from './dto';
 import {MessagesGateway} from '../websocket/messages.gateway';
+import {ConversationHelperService} from "./conversation-helper.service";
 
 @Injectable()
 export class MessagesService {
@@ -19,6 +20,7 @@ export class MessagesService {
     private readonly prisma: PrismaService,
     private readonly messagesGateway: MessagesGateway,
     private readonly outboxService: OutboxService,
+    private readonly conversationHelper: ConversationHelperService,
   ) {}
 
   async createConversation(
@@ -27,6 +29,7 @@ export class MessagesService {
     userType: UserType
   ) {
     try {
+      // Add initiator if not included
       if (userType === UserType.admin) {
         if (!createDto.participantIDs.includes(UserType.admin)) {
           createDto.participantIDs.push(UserType.admin);
@@ -39,10 +42,21 @@ export class MessagesService {
         }
       }
 
+      // Validate conversation type and access
+      await this.conversationHelper.validateConversationAccess(
+        createDto.participantIDs,
+        createDto.participantTypes,
+        userID,
+        userType,
+      );
+
+      const conversationType = this.conversationHelper.getConversationType(createDto.participantTypes);
+
       if (createDto.type === 'direct' && createDto.participantIDs.length !== 2) {
         throw new BadRequestException('Direct conversations must have exactly 2 participants');
       }
 
+      // Check for existing conversation
       if (createDto.type === 'direct') {
         const existingConversation = await this.findExistingDirectConversation(
           createDto.participantIDs,
@@ -53,13 +67,30 @@ export class MessagesService {
         }
       }
 
+      // Generate conversation name if not provided
+      let conversationName = createDto.name;
+      if (!conversationName && createDto.type === 'direct') {
+        if (conversationType === 'coach_to_admin') {
+          conversationName = 'Admin Support';
+        } else {
+          // Get the other participant's name
+          const otherParticipantIndex = createDto.participantIDs[0] === userID ? 1 : 0;
+          const otherParticipant = await this.conversationHelper.getParticipantInfo(
+            createDto.participantIDs[otherParticipantIndex],
+            createDto.participantTypes[otherParticipantIndex] as UserType,
+          );
+          conversationName = otherParticipant.name;
+        }
+      }
+
       const conversation = await this.prisma.conversation.create({
         data: {
           type: createDto.type,
-          name: createDto.name,
+          name: conversationName,
           participantIDs: createDto.participantIDs,
           participantTypes: createDto.participantTypes,
           unreadCount: this.initializeUnreadCount(createDto.participantIDs, createDto.participantTypes),
+          metadata: {}, // Admin will be assigned on first reply
         },
         include: {
           messages: {
@@ -77,6 +108,7 @@ export class MessagesService {
         payload: {
           conversationID: conversation.id,
           type: conversation.type as 'direct' | 'group',
+          conversationType, // NEW: Include conversation type
           name: conversation.name,
           participantIDs: conversation.participantIDs,
           participantTypes: conversation.participantTypes as UserType[],
@@ -87,7 +119,7 @@ export class MessagesService {
         },
       }, MESSAGING_ROUTING_KEYS.CONVERSATION_CREATED);
 
-      this.logger.log(`Conversation created: ${conversation.id}`);
+      this.logger.log(`Conversation created: ${conversation.id} (${conversationType})`);
       return conversation;
     } catch (error) {
       this.logger.error('Failed to create conversation', error);
@@ -100,13 +132,15 @@ export class MessagesService {
     userID: string,
     userType: UserType
   ) {
-    console.log("User ID: ", userID);
     let where: any;
+
     if (userType === UserType.admin) {
+      // Admins only see admin support conversations
       where = {
         participantIDs: { has: UserType.admin },
       };
     } else {
+      // Regular users see their own conversations
       where = {
         participantIDs: { has: userID },
       };
@@ -164,8 +198,6 @@ export class MessagesService {
     return conversation;
   }
 
-  // Update sendMessage method to check presence and emit email event
-
   async sendMessage(
     conversationID: string,
     createDto: CreateMessageDto,
@@ -180,11 +212,30 @@ export class MessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
-    if (!this.isParticipant(conversation, senderID, senderType)) {
+    if (!this.conversationHelper.isParticipant(conversation, senderID, senderType)) {
       throw new ForbiddenException('Not authorized to send messages in this conversation');
     }
 
     const senderName = await this.getUserName(senderID, senderType);
+    const conversationType = this.conversationHelper.getConversationType(
+      conversation.participantTypes as UserType[]
+    );
+
+    // Handle admin assignment for first admin reply
+    let updatedMetadata = conversation.metadata;
+    if (conversationType === 'coach_to_admin' && senderType === UserType.admin) {
+      const assignedAdmin = this.conversationHelper.getAssignedAdmin(conversation);
+
+      if (!assignedAdmin?.adminID) {
+        // First admin reply - assign this admin
+        updatedMetadata = this.conversationHelper.createAdminAssignmentMetadata(
+          senderID,
+          senderName,
+        );
+
+        this.logger.log(`Admin ${senderID} assigned to conversation ${conversationID}`);
+      }
+    }
 
     const message = await this.prisma.directMessage.create({
       data: {
@@ -227,28 +278,33 @@ export class MessagesService {
         lastMessageID: message.id,
         lastMessageAt: new Date(),
         unreadCount: updatedUnreadCount,
+        metadata: JSON.stringify(updatedMetadata), // Update metadata with admin assignment
       },
     });
 
     await this.messagesGateway.broadcastNewMessage(conversationID, message, conversation);
 
+    // Send notifications and check presence
     for (let i = 0; i < conversation.participantIDs.length; i++) {
       const participantID = conversation.participantIDs[i];
       const participantType = conversation.participantTypes[i] as UserType;
 
-      if (senderType === UserType.admin
-        && participantID === UserType.admin) {
+      // Skip sender and handle admin specially
+      if (senderType === UserType.admin && participantID === UserType.admin) {
         continue;
       }
 
-      if (
-        participantID === senderID
-        && participantType === senderType) {
+      if (participantID === senderID && participantType === senderType) {
         continue;
       }
 
-      const isRecipientViewing = this.messagesGateway.isUserViewingConversation(conversationID, participantID, participantType);
+      const isRecipientViewing = this.messagesGateway.isUserViewingConversation(
+        conversationID,
+        participantID,
+        participantType
+      );
 
+      // Check if recipient is online using Redis presence
       const isRecipientOnline = await this.messagesGateway.isUserOnline(participantID, participantType);
 
       if (!isRecipientViewing) {
@@ -262,6 +318,7 @@ export class MessagesService {
           payload: {
             messageID: message.id,
             conversationID,
+            conversationType, // NEW: Include conversation type
             senderID,
             senderType,
             senderName,
@@ -275,6 +332,7 @@ export class MessagesService {
           },
         }, MESSAGING_ROUTING_KEYS.MESSAGE_CREATED);
 
+        // Email notification if recipient is offline
         if (!isRecipientOnline) {
           await this.outboxService.saveAndPublishEvent({
             eventType: 'messaging.notification.email',
@@ -288,6 +346,7 @@ export class MessagesService {
               senderName,
               messageID: message.id,
               conversationID,
+              conversationType, // NEW: Include conversation type
               messageContent: message.content,
               messageType: message.type,
               timestamp: new Date().toISOString(),
@@ -299,7 +358,7 @@ export class MessagesService {
       }
     }
 
-    this.logger.log(`Message sent: ${message.id} in conversation ${conversationID}`);
+    this.logger.log(`Message sent: ${message.id} in conversation ${conversationID} (${conversationType})`);
     return message;
   }
 
@@ -570,9 +629,7 @@ export class MessagesService {
   }
 
   private isParticipant(conversation: any, userID: string, userType: UserType): boolean {
-    userID = userType === UserType.admin ? UserType.admin : userID;
-    const userIndex = conversation.participantIDs.indexOf(userID);
-    return userIndex !== -1 && conversation.participantTypes[userIndex] === userType;
+    return this.conversationHelper.isParticipant(conversation, userID, userType);
   }
 
   private initializeUnreadCount(participantIDs: string[], participantTypes: UserType[]): Record<string, number> {

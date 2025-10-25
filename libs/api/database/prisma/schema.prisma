@@ -1636,6 +1636,7 @@ model Conversation {
   name             String?   @db.VarChar(255)
   participantIDs   String[]
   participantTypes String[]
+  metadata         Json?     @default("{}")
   lastMessageID    String?   @db.Uuid
   lastMessageAt    DateTime? @db.Timestamptz(6)
   unreadCount      Json      @default("{}")

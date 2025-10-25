@@ -8,6 +8,7 @@ export * from './content';
 export * from './email';
 export * from './integrations';
 export * from './media';
+export * from './messages';
 export * from './users';
 
 export * from './activity-log';

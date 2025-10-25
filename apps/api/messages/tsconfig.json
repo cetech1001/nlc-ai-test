@@ -10,6 +10,9 @@
       "path": "../../../libs/api/dto"
     },
     {
+      "path": "../../../libs/types"
+    },
+    {
       "path": "../../../libs/api/auth"
     },
     {
