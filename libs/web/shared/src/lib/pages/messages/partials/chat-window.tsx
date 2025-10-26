@@ -9,6 +9,7 @@ import {toast} from 'sonner';
 import {UserProfile, UserType} from "@nlc-ai/types";
 import {useRouter} from "next/navigation";
 import {NLCClient} from "@nlc-ai/sdk-main";
+import {getOtherParticipant} from "./helpers";
 
 interface ChatWindowProps {
   sdkClient: NLCClient;
@@ -153,7 +154,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // Get other participant info when conversation or user changes
   useEffect(() => {
     if (user?.id && conversation) {
-      getOtherParticipant();
+      fetchParticipantProfile();
     }
   }, [user?.id, conversation?.id]);
 
@@ -330,16 +331,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return conversation.participantTypes.includes(UserType.ADMIN);
   };
 
-  const getOtherParticipant = async () => {
+  const fetchParticipantProfile = async () => {
     if (!conversation || conversation.type !== 'direct') return null;
 
-    let userID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
-    const userType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
-
-    if (userID === UserType.ADMIN) {
-      userID = JSON.parse(conversation.metadata).assignedAdminID;
-      console.log("User ID: ", userID);
-    }
+    const { userID, userType } = getOtherParticipant(
+      conversation.participantIDs,
+      conversation.participantTypes,
+      conversation.metadata,
+      user
+    );
 
     try {
       const participant = await sdkClient.users.profiles.lookupUserProfile(userID, userType);

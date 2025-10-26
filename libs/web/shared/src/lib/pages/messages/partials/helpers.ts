@@ -1,5 +1,28 @@
-import {ConversationType, UserType} from "@nlc-ai/types";
+import {ConversationType, UserProfile, UserType} from "@nlc-ai/types";
 import {ChatContextConfig} from "@nlc-ai/sdk-messages";
+
+export const getOtherParticipant = (
+  participantIDs: string[],
+  types: UserType[],
+  metadata: string,
+  user?: UserProfile | null
+) => {
+  let userID: string, userType: UserType;
+  const id = participantIDs[0];
+  if (user?.type === UserType.ADMIN) {
+    userID = id !== user?.id && id !== UserType.ADMIN ? id : participantIDs[1];
+    userType = types[0] !== UserType.ADMIN ? types[0] : types[1];
+  } else {
+    userID = id === user?.id ? participantIDs[1] : id;
+    userType = id === user?.id ? types[1] : types[0];
+
+    if (userType === UserType.ADMIN) {
+      userID = JSON.parse(metadata).assignedAdminID;
+    }
+  }
+
+  return { userID, userType };
+}
 
 export function getChatContextConfig(userType: UserType): ChatContextConfig {
   switch (userType) {

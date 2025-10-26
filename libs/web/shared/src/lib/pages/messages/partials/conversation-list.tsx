@@ -8,6 +8,7 @@ import {toast} from 'sonner';
 import {UserProfile, UserType} from "@nlc-ai/types";
 import {ConversationListSkeleton} from "./skeletons";
 import {NLCClient} from "@nlc-ai/sdk-main";
+import {getOtherParticipant} from "./helpers";
 
 interface ConversationListProps {
   sdkClient: NLCClient;
@@ -17,7 +18,7 @@ interface ConversationListProps {
   onBackClick?: () => void;
 }
 
-interface ConversationWithMeta extends ConversationResponse {
+interface ConversationWithMeta extends Omit<ConversationResponse, 'metadata'> {
   metadata: {
     displayName: string;
     displayAvatar: string;
@@ -201,18 +202,19 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     }
   };
 
+
+
   const getConversationMetadata = async (conversation: ConversationResponse) => {
     if (conversation.type === 'direct' && user) {
-      let otherUserID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
-      const otherUserType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
-
-      if (otherUserID === UserType.ADMIN) {
-        otherUserID = JSON.parse(conversation.metadata).assignedAdminID;
-        console.log("Other User ID: ", otherUserID);
-      }
+      const { userID, userType } = getOtherParticipant(
+        conversation.participantIDs,
+        conversation.participantTypes,
+        conversation.metadata,
+        user,
+      );
 
       try {
-        const userInfo = await sdkClient.users.profiles.lookupUserProfile(otherUserID, otherUserType);
+        const userInfo = await sdkClient.users.profiles.lookupUserProfile(userID, userType);
 
         return {
           displayName: `${userInfo.firstName} ${userInfo.lastName}`,
@@ -220,16 +222,16 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           isOnline: true,
           lastMessage: getLastMessage(conversation),
           unreadCount: getUserUnreadCount(conversation),
-          contactType: getContactType(otherUserType),
+          contactType: getContactType(userType),
         };
       } catch (error) {
         return {
-          displayName: otherUserType === UserType.ADMIN ? 'Admin Support' : 'Unknown User',
-          displayAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=${otherUserType === UserType.ADMIN ? 'Admin Support' : 'Unknown User'}`,
+          displayName: userType === UserType.ADMIN ? 'Admin Support' : 'Unknown User',
+          displayAvatar: `https://api.dicebear.com/7.x/initials/svg?seed=${userType === UserType.ADMIN ? 'Admin Support' : 'Unknown User'}`,
           isOnline: false,
           lastMessage: getLastMessage(conversation),
           unreadCount: getUserUnreadCount(conversation),
-          contactType: getContactType(otherUserType),
+          contactType: getContactType(userType),
         };
       }
     }
@@ -355,7 +357,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           filteredConversations.map(conversation => (
             <div
               key={conversation.id}
-              onClick={() => onConversationSelectAction(conversation)}
+              onClick={() => {
+                // @ts-expect-error idk
+                onConversationSelectAction(conversation)
+              }}
               className={`flex items-center gap-3 p-4 border-b border-neutral-700/50 hover:bg-neutral-800/30 transition-colors cursor-pointer ${
                 selectedConversationID === conversation.id ? 'bg-neutral-800/50' : ''
               }`}

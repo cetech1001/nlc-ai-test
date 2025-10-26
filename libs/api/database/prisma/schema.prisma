@@ -1687,37 +1687,6 @@ model DirectMessage {
   @@map("messages")
 }
 
-model MessageDelivery {
-  id        String   @id @default(uuid()) @db.Uuid
-  messageID String   @db.Uuid
-  userID    String   @db.Uuid
-  userType  UserType
-  status    String   @default("sent") @db.VarChar(20) // 'sent', 'delivered', 'read'
-  timestamp DateTime @default(now()) @db.Timestamptz(6)
-
-  @@unique([messageID, userID, userType])
-  @@index([userID, userType])
-  @@index([status])
-  @@map("message_deliveries")
-}
-
-model ConversationParticipant {
-  id             String    @id @default(uuid()) @db.Uuid
-  conversationID String    @db.Uuid
-  userID         String    @db.Uuid
-  userType       UserType
-  joinedAt       DateTime  @default(now()) @db.Timestamptz(6)
-  leftAt         DateTime? @db.Timestamptz(6)
-  isActive       Boolean   @default(true)
-  role           String    @default("member") @db.VarChar(20) // 'admin', 'member'
-
-  @@unique([conversationID, userID, userType])
-  @@index([userID, userType])
-  @@index([conversationID])
-  @@index([isActive])
-  @@map("conversation_participants")
-}
-
 // Lead Domain
 
 enum LeadType {
