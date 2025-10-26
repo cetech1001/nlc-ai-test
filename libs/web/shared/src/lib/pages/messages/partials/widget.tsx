@@ -14,10 +14,10 @@ interface ChatPopupWidgetProps {
 }
 
 export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
-  sdkClient,
+                                                                  sdkClient,
                                                                   isOpen: controlledIsOpen,
                                                                   onToggle,
-  user
+                                                                  user
                                                                 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -110,6 +110,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     sendTypingStatus,
     getTypingUsers,
   } = useMessagingWebSocket({
+    user,
     enabled: !!conversation,
     onNewMessage: handleNewMessage,
     onMessageUpdated: handleMessageUpdated,
@@ -136,7 +137,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
   }, [isOpen]);
 
-  // Replace the existing useEffect for unread count with this improved version
+  // Handle unread count
   useEffect(() => {
     if (!conversation) {
       setUnreadCount(0);
@@ -353,19 +354,22 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={handleToggle}
-          className="w-14 h-14 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group hover:scale-105"
+          className="relative w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full shadow-lg shadow-fuchsia-500/50 hover:shadow-xl hover:shadow-fuchsia-500/60 transition-all duration-300 flex items-center justify-center group hover:scale-105"
           aria-label="Open support chat"
         >
-          <MessageCircle className="w-6 h-6 text-white" />
+          <MessageCircle className="w-7 h-7 text-white" />
           {unreadCount > 0 ? (
-            <div className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center"
+            <div className="absolute -top-2 -right-2 min-w-[24px] h-6 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg animate-pulse"
                  title={`${unreadCount} unread messages`}>
-              <span className="text-white text-xs font-bold px-1">{unreadCount > 99 ? '99+' : unreadCount}</span>
+              <span className="text-white text-xs font-bold px-1.5">{unreadCount > 99 ? '99+' : unreadCount}</span>
             </div>
           ) : (
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse shadow-lg"
                  title="Support available"></div>
           )}
+
+          {/* Glow effect on hover */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
         </button>
       </div>
     );
@@ -373,25 +377,26 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <div className={`w-96 bg-gradient-to-b from-neutral-800 to-neutral-900 rounded-2xl border border-neutral-700 shadow-2xl transition-all duration-300 ${
-        isMinimized ? 'h-16' : 'h-[32rem]'
+      <div className={`w-96 bg-gradient-to-b from-neutral-800/95 to-neutral-900/95 backdrop-blur-xl rounded-2xl border border-neutral-700/50 shadow-2xl transition-all duration-300 overflow-hidden ${
+        isMinimized ? 'h-16' : 'h-[36rem]'
       }`}>
-        {/* Glow Effect */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute w-32 h-32 -right-6 -top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[56px]" />
+        {/* Glow Effects */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+          <div className="absolute w-40 h-40 -right-10 -top-10 bg-gradient-to-l from-fuchsia-500/20 via-fuchsia-600/20 to-violet-600/20 rounded-full blur-3xl" />
+          <div className="absolute w-40 h-40 -left-10 -bottom-10 bg-gradient-to-r from-violet-500/20 via-purple-600/20 to-fuchsia-600/20 rounded-full blur-3xl" />
         </div>
 
         {/* Header */}
-        <div className="relative z-10 flex items-center justify-between p-4 border-b border-neutral-700 bg-gradient-to-r from-fuchsia-600/10 to-violet-600/10 rounded-t-2xl">
+        <div className="relative z-10 flex items-center justify-between p-4 border-b border-neutral-700/50 bg-gradient-to-r from-fuchsia-600/10 to-violet-600/10 backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
-              <Headphones className="w-5 h-5 text-white" />
+            <div className="w-11 h-11 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
+              <Headphones className="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 className="text-white font-semibold text-sm">Admin Support</h3>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
-                <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`text-xs font-medium ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
                   {isConnected ? 'Live' : 'Connecting...'}
                 </span>
               </div>
@@ -418,19 +423,19 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         {!isMinimized && (
           <>
             {/* Messages */}
-            <div className="relative z-10 flex-1 p-4 space-y-4 overflow-y-auto" style={{ height: 'calc(32rem - 8rem - 6rem)' }}>
+            <div className="relative z-10 flex-1 p-4 space-y-3 overflow-y-auto" style={{ height: 'calc(36rem - 4rem - 7rem)' }}>
               {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fuchsia-500"></div>
-                  <span className="ml-2 text-stone-400 text-sm">Connecting to support...</span>
+                <div className="flex flex-col items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-fuchsia-500 mb-3"></div>
+                  <span className="text-stone-400 text-sm">Connecting to support...</span>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Headphones className="w-8 h-8 text-white" />
+                <div className="text-center py-10">
+                  <div className="w-20 h-20 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-fuchsia-500/30">
+                    <Headphones className="w-10 h-10 text-white" />
                   </div>
-                  <h4 className="text-white font-medium mb-2">Welcome to Admin Support!</h4>
-                  <p className="text-stone-400 text-sm">How can we help you today? Our support team is here to assist with any questions or issues.</p>
+                  <h4 className="text-white font-semibold mb-2">Welcome to Admin Support!</h4>
+                  <p className="text-stone-400 text-sm px-4">How can we help you today? Our support team is here to assist with any questions or issues.</p>
                 </div>
               ) : (
                 messages.map((message) => {
@@ -440,15 +445,15 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                   return (
                     <div key={message.id} className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] ${isUserMessage ? 'order-2' : 'order-1'}`}>
-                        <div className={`p-3 rounded-2xl text-sm leading-relaxed transition-opacity ${
+                        <div className={`p-3 rounded-2xl text-sm leading-relaxed transition-opacity shadow-lg ${
                           isOptimistic ? 'opacity-70' : 'opacity-100'
                         } ${
                           isUserMessage
-                            ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-br-md'
-                            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-bl-md'
+                            ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-br-md shadow-fuchsia-500/30'
+                            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-bl-md shadow-purple-500/30'
                         }`}>
                           {!isUserMessage && (
-                            <div className="flex items-center gap-2 mb-1 opacity-90">
+                            <div className="flex items-center gap-2 mb-1.5 opacity-90">
                               <User className="w-3 h-3" />
                               <span className="text-xs font-medium">Admin Support</span>
                             </div>
@@ -474,9 +479,9 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
               )}
 
               {isTyping && (
-                <div className="flex justify-start mb-4">
-                  <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 rounded-2xl rounded-bl-md">
-                    <div className="flex items-center gap-2 mb-1 opacity-90">
+                <div className="flex justify-start">
+                  <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 rounded-2xl rounded-bl-md shadow-lg shadow-purple-500/30">
+                    <div className="flex items-center gap-2 mb-1.5 opacity-90">
                       <User className="w-3 h-3" />
                       <span className="text-xs font-medium">Admin Support</span>
                     </div>
@@ -492,7 +497,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
             </div>
 
             {/* Message Input */}
-            <div className="relative z-10 p-4 border-t border-neutral-700 rounded-b-2xl">
+            <div className="relative z-10 p-4 border-t border-neutral-700/50 bg-gradient-to-r from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm">
               <div className="flex items-end gap-2">
                 <div className="flex-1">
                   <textarea
@@ -501,14 +506,14 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                     onKeyDown={handleKeyPress}
                     placeholder="Describe your question or issue..."
                     disabled={isLoading}
-                    className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 resize-none max-h-20 disabled:opacity-50"
+                    className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 resize-none max-h-24 disabled:opacity-50 backdrop-blur-sm"
                     rows={1}
                   />
                 </div>
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || isLoading}
-                  className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-fuchsia-500/30 hover:shadow-fuchsia-500/50"
                   aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />

@@ -38,6 +38,7 @@ export interface ConversationResponse {
   unreadCount: Record<string, number>;
   createdAt: Date;
   updatedAt: Date;
+  metadata: Record<string, any>;
   messages?: DirectMessageResponse[];
 }
 

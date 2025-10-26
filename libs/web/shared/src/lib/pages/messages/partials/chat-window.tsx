@@ -27,7 +27,7 @@ interface Participant {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
-  sdkClient,
+                                                        sdkClient,
                                                         user,
                                                         conversation,
                                                         onBack,
@@ -171,9 +171,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [typingTimeout]);
 
-  // Add this after the existing useEffect hooks, around line 85
+  // Reset unread count when conversation is opened
   useEffect(() => {
-    // Reset unread count when conversation is opened
     if (conversation?.id && user?.id) {
       const resetUnreadCount = async () => {
         try {
@@ -334,8 +333,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const getOtherParticipant = async () => {
     if (!conversation || conversation.type !== 'direct') return null;
 
-    const userID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
+    let userID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
     const userType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
+
+    if (userID === UserType.ADMIN) {
+      userID = JSON.parse(conversation.metadata).assignedAdminID;
+      console.log("User ID: ", userID);
+    }
 
     try {
       const participant = await sdkClient.users.profiles.lookupUserProfile(userID, userType);
@@ -369,13 +373,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-xl font-bold">💬</span>
+      <div className="flex-1 flex items-center justify-center relative">
+        {/* Background glow effects */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute w-96 h-96 -left-48 top-1/4 bg-gradient-to-r from-fuchsia-500/20 via-purple-500/20 to-violet-500/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute w-96 h-96 -right-48 bottom-1/4 bg-gradient-to-l from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+
+        <div className="text-center relative z-10">
+          <div className="w-20 h-20 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-fuchsia-500/50">
+            <span className="text-white text-3xl">💬</span>
           </div>
-          <h3 className="text-white text-lg font-semibold mb-2">Select a conversation</h3>
-          <p className="text-stone-400">Choose from admin support, clients, or community members</p>
+          <h3 className="text-white text-xl font-semibold mb-3">Select a conversation</h3>
+          <p className="text-stone-400 max-w-md">Choose from admin support, clients, or community members to start messaging</p>
         </div>
       </div>
     );
@@ -386,9 +396,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col relative">
+      {/* Background glow effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-96 h-96 -left-48 top-1/4 bg-gradient-to-r from-fuchsia-500/10 via-purple-500/10 to-violet-500/10 rounded-full blur-3xl" />
+        <div className="absolute w-96 h-96 -right-48 bottom-1/4 bg-gradient-to-l from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 rounded-full blur-3xl" />
+      </div>
+
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-6 border-b border-neutral-700 bg-gradient-to-r from-neutral-800/50 to-neutral-900/50">
+      <div className="relative z-10 flex items-center justify-between p-6 border-b border-neutral-700/50 bg-gradient-to-r from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           {onBack && (
             <button
@@ -404,20 +420,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <img
                   src={otherParticipant.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${otherParticipant.name}`}
                   alt={otherParticipant.name}
-                  className="w-10 h-10 rounded-full object-cover border border-neutral-600"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-neutral-600 shadow-lg"
                 />
                 {isConnected && (
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-neutral-900 shadow-lg" />
                 )}
               </div>
               <div>
-                <h3 className="text-white font-semibold">{otherParticipant.name}</h3>
+                <h3 className="text-white font-semibold text-lg">{otherParticipant.name}</h3>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-stone-500'}`}>
+                  <span className={`text-xs font-medium ${isConnected ? 'text-green-400' : 'text-stone-500'}`}>
                     {isConnected ? 'Online' : 'Offline'}
                   </span>
                   <span className="text-stone-500">•</span>
-                  <span className="text-xs text-stone-500 capitalize">
+                  <span className="text-xs text-stone-400 capitalize">
                     {otherParticipant.type}
                   </span>
                   {!isConnected && (
@@ -434,35 +450,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push(`/profile?userID=${otherParticipant?.id}&userType=${otherParticipant?.type}`)}
-            className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
+            className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50"
+          >
             <Info className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 p-6 space-y-1 overflow-y-auto">
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fuchsia-500"></div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="text-center py-8">
+      <div className="relative z-10 flex-1 p-6 space-y-1 overflow-y-auto">
+        {messages.length === 0 ? (
+          <div className="text-center py-12">
             {isAdminConversation() ? (
               <>
-                <div className="w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Headphones className="w-8 h-8 text-white" />
+                <div className="w-20 h-20 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-fuchsia-500/50">
+                  <Headphones className="w-10 h-10 text-white" />
                 </div>
-                <h4 className="text-white font-medium mb-2">Admin Support</h4>
-                <p className="text-stone-400 text-sm">Get help with your account, features, or technical issues.</p>
+                <h4 className="text-white font-semibold text-lg mb-3">Admin Support</h4>
+                <p className="text-stone-400 text-sm max-w-md mx-auto">Get help with your account, features, or technical issues. Our support team is here to assist you.</p>
               </>
             ) : (
               <>
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-white" />
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/50">
+                  <Users className="w-10 h-10 text-white" />
                 </div>
-                <h4 className="text-white font-medium mb-2">Start Conversation</h4>
-                <p className="text-stone-400 text-sm">Send a message to {otherParticipant?.name}</p>
+                <h4 className="text-white font-semibold text-lg mb-3">Start Conversation</h4>
+                <p className="text-stone-400 text-sm max-w-md mx-auto">Send a message to {otherParticipant?.name} to begin your conversation</p>
               </>
             )}
           </div>
@@ -480,7 +493,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     {/* Show header only for non-grouped messages */}
                     {!isGrouped && (
                       <div className={`text-xs text-stone-500 mb-1 flex items-center gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                        <span>
+                        <span className="font-medium">
                           {message.senderType === 'admin' ? 'Admin Support' :
                             isCurrentUser ? 'You' : otherParticipant?.name}
                         </span>
@@ -501,14 +514,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                       </div>
                     )}
 
-                    <div className={`p-3 text-sm leading-relaxed transition-opacity ${
+                    <div className={`p-3 text-sm leading-relaxed transition-opacity shadow-lg ${
                       isOptimistic ? 'opacity-70' : 'opacity-100'
                     } ${
                       isCurrentUser
                         ? `bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white ${isGrouped ? 'rounded-2xl' : 'rounded-2xl rounded-br-md'}`
                         : message.senderType === 'admin'
                           ? `bg-gradient-to-r from-purple-600 to-blue-600 text-white ${isGrouped ? 'rounded-2xl' : 'rounded-2xl rounded-bl-md'}`
-                          : `bg-neutral-700/80 text-white ${isGrouped ? 'rounded-2xl' : 'rounded-2xl rounded-bl-md'}`
+                          : `bg-neutral-700/80 text-white backdrop-blur-sm ${isGrouped ? 'rounded-2xl' : 'rounded-2xl rounded-bl-md'}`
                     }`}>
                       {message.senderType === 'admin' && !isGrouped && (
                         <div className="flex items-center gap-2 mb-2 opacity-90">
@@ -531,10 +544,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         {isTyping && (
           <div className="mt-4">
             <div className="flex justify-start">
-              <div className={`p-3 rounded-2xl rounded-bl-md ${
+              <div className={`p-3 rounded-2xl rounded-bl-md shadow-lg ${
                 isAdminConversation()
                   ? 'bg-gradient-to-r from-purple-600 to-blue-600'
-                  : 'bg-neutral-700/80'
+                  : 'bg-neutral-700/80 backdrop-blur-sm'
               } text-white`}>
                 {isAdminConversation() && (
                   <div className="flex items-center gap-2 mb-2 opacity-90">
@@ -558,7 +571,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
 
       {/* Message Input */}
-      <div className="p-6 border-t border-neutral-700">
+      <div className="relative z-10 p-6 border-t border-neutral-700/50 bg-gradient-to-r from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
             <Camera className="w-5 h-5" />
@@ -569,7 +582,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder={isAdminConversation() ? 'Describe your issue or question...' : 'Type your message...'}
-              className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 resize-none max-h-32"
+              className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 resize-none max-h-32 backdrop-blur-sm"
               rows={1}
             />
           </div>
@@ -579,7 +592,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim()}
-            className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-fuchsia-500/30 hover:shadow-fuchsia-500/50"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -590,8 +603,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               Direct line to admin support • Real-time messaging
             </div>
           )}
-          <div className="flex items-center gap-2 text-xs">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          <div className="flex items-center gap-2 text-xs ml-auto">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
             <span className={isConnected ? 'text-green-400' : 'text-red-400'}>
               {isConnected ? 'Live' : 'Offline'}
             </span>

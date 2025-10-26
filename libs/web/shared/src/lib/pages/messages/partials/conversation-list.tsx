@@ -203,11 +203,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   const getConversationMetadata = async (conversation: ConversationResponse) => {
     if (conversation.type === 'direct' && user) {
-      const otherUserID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
+      let otherUserID = conversation.participantIDs[0] === user?.id ? conversation.participantIDs[1] : conversation.participantIDs[0];
       const otherUserType = conversation.participantIDs[0] === user?.id ? conversation.participantTypes[1] : conversation.participantTypes[0];
 
-      console.log("Other User ID: ", otherUserID);
-      console.log("Other User Type: ", otherUserType);
+      if (otherUserID === UserType.ADMIN) {
+        otherUserID = JSON.parse(conversation.metadata).assignedAdminID;
+        console.log("Other User ID: ", otherUserID);
+      }
 
       try {
         const userInfo = await sdkClient.users.profiles.lookupUserProfile(otherUserID, otherUserType);
