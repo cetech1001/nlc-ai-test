@@ -35,7 +35,7 @@ export interface PostFilters {
 }
 
 export interface CommentFilters {
-  parentCommentID?: string;
+  parentCommentID?: string | null;
   postID?: string;
   search?: string;
   sortOrder?: 'asc' | 'desc';

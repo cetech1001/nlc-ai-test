@@ -23,7 +23,7 @@ export const RecentCoachesTable: FC<IProps> = (props) => {
     {
       key: 'email',
       header: 'Email',
-      width: `${colWidth * (4 / 3)}%`,
+      width: `${colWidth * 2}%`,
     },
     {
       key: 'createdAt',
@@ -33,8 +33,8 @@ export const RecentCoachesTable: FC<IProps> = (props) => {
     },
     {
       key: 'subscriptionStatus',
-      header: 'Subscription Status',
-      width: `${colWidth * (4 / 3)}%`,
+      header: 'Subscription',
+      width: `${colWidth * (2 / 3)}%`,
       render: tableRenderers.basicText
     },
     {

@@ -14,6 +14,7 @@ import {
   PostComment,
   AuthUser
 } from '@nlc-ai/api-types';
+import {ActivityHelperService} from "../helpers/activity-helper.service";
 
 @Injectable()
 export class CommentsService {
@@ -22,7 +23,8 @@ export class CommentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outboxService: OutboxService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly activityHelper: ActivityHelperService,
   ) {}
 
   async createComment(
@@ -95,6 +97,8 @@ export class CommentsService {
         },
       },
     });
+
+    await this.activityHelper.updateLastActivity(communityID, user.id, user.type);
 
     if (createRequest.postID && !createRequest.parentCommentID) {
       await this.prisma.post.update({
@@ -272,6 +276,8 @@ export class CommentsService {
       },
     });
 
+    await this.activityHelper.updateLastActivity(comment.post.communityID, user.id, user.type);
+
     this.logger.log(`Comment ${id} updated by ${user.type} ${user.id}`);
 
     return updatedComment;
@@ -320,6 +326,8 @@ export class CommentsService {
 
       this.logger.log(`Comment ${id} hard deleted (no replies) by ${user.type} ${user.id}`);
     }
+
+    await this.activityHelper.updateLastActivity(comment.post.communityID, user.id, user.type);
 
     if (comment.postID && !comment.parentCommentID) {
       await this.prisma.post.update({

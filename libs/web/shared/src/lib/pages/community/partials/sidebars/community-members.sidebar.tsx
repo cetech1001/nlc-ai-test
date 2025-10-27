@@ -124,11 +124,11 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
-  const formatLastActive = (lastActiveAt?: Date) => {
+  const formatLastActive = (lastActiveAt?: string) => {
     if (!lastActiveAt) return '';
 
     const now = new Date();
-    const diff = now.getTime() - lastActiveAt.getTime();
+    const diff = now.getTime() - (new Date(lastActiveAt)).getTime();
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);

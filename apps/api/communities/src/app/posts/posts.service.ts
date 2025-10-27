@@ -15,6 +15,7 @@ import {
   Post,
   AuthUser
 } from '@nlc-ai/api-types';
+import {ActivityHelperService} from "../helpers/activity-helper.service";
 
 @Injectable()
 export class PostsService {
@@ -22,8 +23,9 @@ export class PostsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly outboxService: OutboxService,
-    private readonly configService: ConfigService
+    private readonly outbox: OutboxService,
+    private readonly config: ConfigService,
+    private readonly activityHelper: ActivityHelperService,
   ) {}
 
   async createPost(
@@ -33,7 +35,7 @@ export class PostsService {
   ) {
     const member = await this.checkCommunityMembership(communityID, user);
 
-    const maxLength = this.configService.get<number>('community.features.maxPostLength', 5000);
+    const maxLength = this.config.get<number>('community.features.maxPostLength', 5000);
     if (createRequest.content.length > maxLength) {
       throw new ForbiddenException(`Post content exceeds maximum length of ${maxLength} characters`);
     }
@@ -70,12 +72,14 @@ export class PostsService {
       },
     });
 
+    this.activityHelper.updateLastActivity(communityID, user.id, user.type);
+
     await this.prisma.community.update({
       where: { id: communityID },
       data: { postCount: { increment: 1 } },
     });
 
-    await this.outboxService.saveAndPublishEvent<CommunityEvent>({
+    await this.outbox.saveAndPublishEvent<CommunityEvent>({
       eventType: 'community.post.created',
       schemaVersion: 1,
       payload: {
@@ -266,6 +270,8 @@ export class PostsService {
       },
     });
 
+    this.activityHelper.updateLastActivity(post.communityID, user.id, user.type);
+
     this.logger.log(`Post ${id} updated by ${user.type} ${user.id}`);
 
     return updatedPost;
@@ -328,6 +334,8 @@ export class PostsService {
       },
     });
 
+    this.activityHelper.updateLastActivity(communityID, user.id, user.type);
+
     this.logger.log(`Post ${id} pin status toggled to ${updatedPost.isPinned} by ${user.type} ${user.id}`);
 
     return updatedPost;
@@ -357,6 +365,8 @@ export class PostsService {
       where: { id: post.communityID },
       data: { postCount: { decrement: 1 } },
     });
+
+    this.activityHelper.updateLastActivity(post.communityID, user.id, user.type);
 
     this.logger.log(`Post ${id} deleted by ${user.type} ${user.id}`);
 
@@ -421,10 +431,12 @@ export class PostsService {
       });
     }
 
+    this.activityHelper.updateLastActivity(post.communityID, user.id, user.type);
+
     if (!existingReaction && reactionChange > 0) {
       const userName = await this.getUserName(user);
 
-      await this.outboxService.saveAndPublishEvent<CommunityEvent>({
+      await this.outbox.saveAndPublishEvent<CommunityEvent>({
         eventType: 'community.post.liked',
         schemaVersion: 1,
         payload: {
@@ -458,8 +470,6 @@ export class PostsService {
       },
     });
 
-    console.log("Member: ", member);
-
     if (!member || member.status !== MemberStatus.ACTIVE) {
       throw new ForbiddenException('Access denied to this community');
     }
@@ -477,35 +487,36 @@ export class PostsService {
     return true;
   }
 
-  private async getUserName(user: AuthUser): Promise<string> {
+  private async getUserName(authUser: AuthUser): Promise<string> {
     try {
-      switch (user.type) {
+      let user: any;
+      switch (authUser.type) {
         case UserType.coach:
-          const coach = await this.prisma.coach.findUnique({
-            where: { id: user.id },
+          user = await this.prisma.coach.findUnique({
+            where: { id: authUser.id },
             select: { firstName: true, lastName: true, businessName: true },
           });
-          return coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach';
+          return user?.businessName || `${user?.firstName} ${user?.lastName}`;
 
         case UserType.client:
-          const client = await this.prisma.client.findUnique({
-            where: { id: user.id },
+          user = await this.prisma.client.findUnique({
+            where: { id: authUser.id },
             select: { firstName: true, lastName: true },
           });
-          return `${client?.firstName} ${client?.lastName}` || 'Unknown Client';
+          return `${user?.firstName} ${user?.lastName}`;
 
         case UserType.admin:
-          const admin = await this.prisma.admin.findUnique({
-            where: { id: user.id },
+          user = await this.prisma.admin.findUnique({
+            where: { id: authUser.id },
             select: { firstName: true, lastName: true },
           });
-          return `${admin?.firstName} ${admin?.lastName}` || 'Admin';
+          return `${user?.firstName} ${user?.lastName}`;
 
         default:
           return 'Unknown User';
       }
     } catch (error) {
-      this.logger.warn(`Failed to get user name for ${user.type} ${user.id}`, error);
+      this.logger.warn(`Failed to get user name for ${authUser.type} ${authUser.id}`, error);
       return 'Unknown User';
     }
   }

@@ -49,7 +49,7 @@ export interface CommunityMember {
   role: MemberRole;
   status: MemberStatus;
   joinedAt: Date;
-  lastActiveAt?: Date;
+  lastActiveAt?: string;
   invitedBy?: string;
   customTitle?: string;
   permissions: string[];

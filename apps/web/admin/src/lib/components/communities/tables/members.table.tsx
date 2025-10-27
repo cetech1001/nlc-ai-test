@@ -274,7 +274,7 @@ export const MembersMobileCard = ({ members, onRowAction, emptyMessage }: Member
               <div className="text-sm">
                 <div className="text-stone-400">Last Active</div>
                 <div className="text-white">
-                  {member.lastActiveAt ? formatDate(member.lastActiveAt) : 'Never'}
+                  {member.lastActiveAt ? formatDate(new Date(member.lastActiveAt)) : 'Never'}
                 </div>
               </div>
 
