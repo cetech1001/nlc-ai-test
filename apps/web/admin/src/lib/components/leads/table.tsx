@@ -23,6 +23,7 @@ export const transformLeadData = (leads: Lead[]): DataTableLead[] => {
     answers: lead.answers,
     qualified: lead.qualified,
     originalID: lead.id,
+    marketingOptIn: lead.marketingOptIn,
   }));
 };
 

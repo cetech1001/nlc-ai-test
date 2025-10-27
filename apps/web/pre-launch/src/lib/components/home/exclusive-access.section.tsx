@@ -29,7 +29,7 @@ export const ExclusiveAccessSection = () => {
                         </p>
 
                         <div className="grid md:grid-cols-3 gap-8 text-left">
-                            <div className="flex flex-col gap-3 items-start space-x-4">
+                            <div className="flex gap-3 items-start">
                                 <img src={"/images/icons/light-bulb.png"} alt="icon" className="w-6 h-6"/>
                                 <div>
                                     <p className="text-lg text-white font-medium mb-2">
@@ -38,7 +38,7 @@ export const ExclusiveAccessSection = () => {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3 items-start space-x-4">
+                            <div className="flex gap-3 items-start">
                                 <img src={"/images/icons/message.png"} alt="icon" className="w-6 h-6"/>
                                 <div>
                                     <p className="text-lg text-white font-medium mb-2">
@@ -47,7 +47,7 @@ export const ExclusiveAccessSection = () => {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3 items-start space-x-4">
+                            <div className="flex gap-3 items-start">
                                 <img src={"/images/icons/community.png"} alt="icon" className="w-6 h-6"/>
                                 <div>
                                     <p className="text-lg text-white font-medium mb-2">

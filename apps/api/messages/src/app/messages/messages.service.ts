@@ -1,6 +1,6 @@
 import {BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException,} from '@nestjs/common';
 import {PrismaService} from '@nlc-ai/api-database';
-import {MessageType, MESSAGING_ROUTING_KEYS, MessagesEvent, UserType} from '@nlc-ai/types';
+import {MessageType, MESSAGING_ROUTING_KEYS, MessagesEvent, UserType, ConversationType} from '@nlc-ai/types';
 import {OutboxService} from '@nlc-ai/api-messaging';
 import {
   ConversationFiltersDto,
@@ -242,7 +242,6 @@ export class MessagesService {
 
     const assignedAdmin = this.conversationHelper.getAssignedAdmin(conversation);
     if (conversationType === 'coach_to_admin' && senderType === UserType.ADMIN) {
-
       if (!assignedAdmin?.adminID) {
         // First admin reply - assign this admin and add them as participant
         updatedMetadata = this.conversationHelper.createAdminAssignmentMetadata(
@@ -295,7 +294,7 @@ export class MessagesService {
       senderID,
       senderType,
       updatedParticipantIDs,
-      updatedParticipantTypes as UserType[]
+      conversationType
     );
 
     await this.prisma.conversation.update({
@@ -707,13 +706,13 @@ export class MessagesService {
     senderID: string,
     senderType: UserType,
     participantIDs: string[],
-    participantTypes: UserType[]
+    conversationType: ConversationType
   ): Record<string, number> {
     const updatedCount = { ...currentCount };
 
     for (let i = 0; i < participantIDs.length; i++) {
       const userID = participantIDs[i];
-      const userType = participantTypes[i];
+      const userType = this.conversationHelper.getParticipantType(conversationType, senderType);
       const key = `${userType}:${userID}`;
 
       if (userID !== senderID || userType !== senderType) {

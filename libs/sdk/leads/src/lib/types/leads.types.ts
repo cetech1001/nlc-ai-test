@@ -31,6 +31,7 @@ export interface Lead {
   lastContactedAt?: Date;
   convertedAt?: Date;
   coach?: Coach;
+  marketingOptIn: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

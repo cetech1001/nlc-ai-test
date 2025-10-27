@@ -96,6 +96,7 @@ export class LeadsService {
           notes: null,
           answers: answers as any,
           qualified,
+          marketingOptIn: lead.marketingOptIn,
           submittedAt: submittedAt ? new Date(submittedAt) : new Date(),
         },
       });
