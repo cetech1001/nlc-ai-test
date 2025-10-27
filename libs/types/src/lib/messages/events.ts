@@ -1,4 +1,4 @@
-import { BaseEvent } from '@nlc-ai/api-messaging';
+import { BaseEvent } from '../base-event';
 import { UserType } from '../users';
 import { MessageType } from './enums';
 import {ConversationType} from "./common";
