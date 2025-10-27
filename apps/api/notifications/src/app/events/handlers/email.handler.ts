@@ -5,8 +5,8 @@ import {NotificationsService} from "../../notifications/notifications.service";
 import {NotificationPriority} from "../../notifications/dto";
 
 @Injectable()
-export class EmailEventsHandler {
-  private readonly logger = new Logger(EmailEventsHandler.name);
+export class EmailHandler {
+  private readonly logger = new Logger(EmailHandler.name);
 
   constructor(
     private readonly eventBus: EventBusService,

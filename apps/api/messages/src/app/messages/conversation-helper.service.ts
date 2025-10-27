@@ -12,6 +12,10 @@ export class ConversationHelperService {
   getConversationType(participantTypes: UserType[]): ConversationType {
     const types = participantTypes.sort();
 
+    if (types.length === 1 && types[0] === UserType.COACH) {
+      return 'coach_to_admin';
+    }
+
     if (types.includes(UserType.ADMIN)) {
       return 'coach_to_admin';
     }
@@ -29,6 +33,30 @@ export class ConversationHelperService {
     }
 
     throw new BadRequestException('Invalid participant combination');
+  }
+
+  /**
+   * Gets all available admins (active) for notifications or assignment
+   */
+  async getAvailableAdmins(): Promise<{ id: string; name: string }[]> {
+    const admins = await this.prisma.admin.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    if (!admins || admins.length === 0) {
+      return [];
+    }
+
+    return admins.map(admin => ({
+      id: admin.id,
+      name: `${admin.firstName} ${admin.lastName}`,
+    }));
   }
 
   /**
@@ -182,10 +210,15 @@ export class ConversationHelperService {
       }
 
       case UserType.ADMIN: {
+        const admin = await this.prisma.admin.findUnique({
+          where: { id: userID },
+          select: { firstName: true, lastName: true },
+        });
+
         return {
-          id: UserType.ADMIN,
+          id: userID,
           type: UserType.ADMIN,
-          name: 'Admin Support',
+          name: `${admin?.firstName} ${admin?.lastName}`,
           avatarUrl: undefined,
         };
       }
@@ -214,12 +247,15 @@ export class ConversationHelperService {
   /**
    * Sets admin assignment in conversation metadata
    */
-  createAdminAssignmentMetadata(adminID: string, adminName: string): any {
+  createAdminAssignmentMetadata(adminID: string, adminName: string, previousMetadata?: any): any {
+    const existingMetadata = previousMetadata || {};
+
     return {
+      ...existingMetadata,
       assignedAdminID: adminID,
       assignedAdminName: adminName,
       assignedAt: new Date().toISOString(),
-      handoffCount: 0,
+      handoffCount: (existingMetadata.handoffCount || 0),
     };
   }
 
@@ -227,12 +263,42 @@ export class ConversationHelperService {
    * Checks if user is participant in conversation
    */
   isParticipant(conversation: any, userID: string, userType: UserType): boolean {
-    // Special handling for admin
+    // Special handling for admin - check if admin is assigned in metadata
     if (userType === UserType.ADMIN) {
-      return conversation.participantTypes.includes(UserType.ADMIN);
+      const conversationType = this.getConversationType(conversation.participantTypes as UserType[]);
+
+      if (conversationType === 'coach_to_admin') {
+        const assignedAdmin = this.getAssignedAdmin(conversation);
+
+        // Admin can access if they are assigned, or if no admin is assigned yet
+        return !assignedAdmin?.adminID || assignedAdmin.adminID === userID;
+      }
+
+      return false;
     }
 
-    const userIndex = conversation.participantIDs.indexOf(userID);
-    return userIndex !== -1 && conversation.participantTypes[userIndex] === userType;
+    return conversation.participantIDs.includes(userID) && conversation.participantTypes.includes(userType);
+  }
+
+  /**
+   * Gets an available admin for assignment (simple round-robin for now)
+   */
+  async getAvailableAdmin(): Promise<{ id: string; name: string } | null> {
+    const admin = await this.prisma.admin.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true
+      },
+    });
+
+    if (!admin) return null;
+
+    return {
+      id: admin.id,
+      name: `${admin.firstName} ${admin.lastName}`,
+    };
   }
 }

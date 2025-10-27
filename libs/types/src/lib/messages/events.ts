@@ -4,7 +4,7 @@ import { MessageType } from './enums';
 import {ConversationType} from "./common";
 
 export interface MessageCreatedEvent extends BaseEvent {
-  eventType: 'messaging.message.created';
+  eventType: 'messages.message.created';
   payload: {
     messageID: string;
     conversationID: string;
@@ -23,7 +23,7 @@ export interface MessageCreatedEvent extends BaseEvent {
 }
 
 export interface ConversationCreatedEvent extends BaseEvent {
-  eventType: 'messaging.conversation.created';
+  eventType: 'messages.conversation.created';
   payload: {
     conversationID: string;
     type: 'direct' | 'group';
@@ -39,7 +39,7 @@ export interface ConversationCreatedEvent extends BaseEvent {
 }
 
 export interface MessageReadEvent extends BaseEvent {
-  eventType: 'messaging.message.read';
+  eventType: 'messages.message.read';
   payload: {
     messageIDs: string[];
     conversationID: string;
@@ -50,7 +50,7 @@ export interface MessageReadEvent extends BaseEvent {
 }
 
 export interface MessageUpdatedEvent extends BaseEvent {
-  eventType: 'messaging.message.updated';
+  eventType: 'messages.message.updated';
   payload: {
     messageID: string;
     conversationID: string;
@@ -62,7 +62,7 @@ export interface MessageUpdatedEvent extends BaseEvent {
 }
 
 export interface MessageDeletedEvent extends BaseEvent {
-  eventType: 'messaging.message.deleted';
+  eventType: 'messages.message.deleted';
   payload: {
     messageID: string;
     conversationID: string;
@@ -72,7 +72,7 @@ export interface MessageDeletedEvent extends BaseEvent {
   };
 }
 
-export type MessagingEvent =
+export type MessagesEvent =
   | MessageCreatedEvent
   | ConversationCreatedEvent
   | MessageReadEvent
@@ -80,9 +80,9 @@ export type MessagingEvent =
   | MessageDeletedEvent;
 
 export const MESSAGING_ROUTING_KEYS = {
-  MESSAGE_CREATED: 'messaging.message.created',
-  CONVERSATION_CREATED: 'messaging.conversation.created',
-  MESSAGE_READ: 'messaging.message.read',
-  MESSAGE_UPDATED: 'messaging.message.updated',
-  MESSAGE_DELETED: 'messaging.message.deleted',
+  MESSAGE_CREATED: 'messages.message.created',
+  CONVERSATION_CREATED: 'messages.conversation.created',
+  MESSAGE_READ: 'messages.message.read',
+  MESSAGE_UPDATED: 'messages.message.updated',
+  MESSAGE_DELETED: 'messages.message.deleted',
 } as const;

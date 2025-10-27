@@ -1,4 +1,4 @@
-import { BaseClient, Paginated } from '@nlc-ai/sdk-core';
+import {BaseClient, Paginated, ServiceClientConfig} from '@nlc-ai/sdk-core';
 import {
   ConversationResponse,
   DirectMessageResponse,
@@ -10,8 +10,20 @@ import {
   MarkAsReadRequest,
   UnreadCountResponse,
 } from '../types';
+import {PresenceClient} from "./presence.client";
 
 export class MessagesClient extends BaseClient {
+  public presence: PresenceClient;
+
+  constructor(props: ServiceClientConfig) {
+    super(props);
+    this.presence = new PresenceClient({
+      ...props,
+      baseURL: `${props.baseURL}/presence`,
+    });
+  }
+
+
   async createConversation(data: CreateConversationRequest): Promise<ConversationResponse> {
     const response = await this.request<ConversationResponse>('POST', '/conversations', { body: data });
     return response.data!;

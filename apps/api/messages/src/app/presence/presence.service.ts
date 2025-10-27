@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { UserType } from '@nlc-ai/api-types';
+import { UserType } from '@nlc-ai/types';
 
 @Injectable()
 export class PresenceService {

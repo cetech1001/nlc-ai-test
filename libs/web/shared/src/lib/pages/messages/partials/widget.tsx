@@ -354,22 +354,35 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={handleToggle}
-          className="relative w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full shadow-lg shadow-fuchsia-500/50 hover:shadow-xl hover:shadow-fuchsia-500/60 transition-all duration-300 flex items-center justify-center group hover:scale-105"
+          className="relative w-16 h-16 bg-gradient-to-r from-fuchsia-600 to-violet-600
+        rounded-full shadow-lg shadow-fuchsia-500/50 hover:shadow-xl hover:shadow-fuchsia-500/60
+        transition-all duration-300 flex items-center justify-center group hover:scale-105"
           aria-label="Open support chat"
         >
           <MessageCircle className="w-7 h-7 text-white" />
+
+          {/* Unread count badge */}
           {unreadCount > 0 ? (
-            <div className="absolute -top-2 -right-2 min-w-[24px] h-6 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg animate-pulse"
+            <div className="absolute -top-2 -right-2 min-w-[24px] h-6
+          bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-white
+          flex items-center justify-center shadow-lg animate-bounce"
                  title={`${unreadCount} unread messages`}>
-              <span className="text-white text-xs font-bold px-1.5">{unreadCount > 99 ? '99+' : unreadCount}</span>
+          <span className="text-white text-xs font-bold px-1.5">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
             </div>
           ) : (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse shadow-lg"
-                 title="Support available"></div>
+            /* Online status indicator */
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full
+          border-2 border-white animate-pulse shadow-lg flex items-center justify-center"
+                 title="Support available">
+              <div className="w-2 h-2 bg-white rounded-full" />
+            </div>
           )}
 
-          {/* Glow effect on hover */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600 opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
+          {/* Pulse effect */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600
+        opacity-0 group-hover:opacity-50 blur-xl transition-opacity animate-pulse" />
         </button>
       </div>
     );

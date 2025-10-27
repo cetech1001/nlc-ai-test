@@ -1,59 +1,102 @@
 import {ConversationType, UserProfile, UserType} from "@nlc-ai/types";
-import {ChatContextConfig} from "@nlc-ai/sdk-messages";
+import {ChatContextConfig, ConversationResponse} from "@nlc-ai/sdk-messages";
 
+/**
+ * Gets the other participant in a direct conversation
+ * For admin conversations, returns the assigned admin ID from metadata
+ */
 export const getOtherParticipant = (
   participantIDs: string[],
   types: UserType[],
-  metadata: string,
+  metadata: any,
   user?: UserProfile | null
 ) => {
-  let userID: string, userType: UserType;
-  const id = participantIDs[0];
-  if (user?.type === UserType.ADMIN) {
-    userID = id !== user?.id && id !== UserType.ADMIN ? id : participantIDs[1];
-    userType = types[0] !== UserType.ADMIN ? types[0] : types[1];
-  } else {
-    userID = id === user?.id ? participantIDs[1] : id;
-    userType = id === user?.id ? types[1] : types[0];
+  // Parse metadata if it's a string
+  const parsedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
 
-    if (userType === UserType.ADMIN) {
-      userID = JSON.parse(metadata).assignedAdminID;
+  // Check if this is an admin conversation
+  const isAdminConversation = types.includes(UserType.ADMIN) || parsedMetadata?.pendingAdminAssignment;
+
+  if (user?.type === UserType.ADMIN) {
+    // Admin viewing conversation - get the coach
+    const coachIndex = types.findIndex(t => t === UserType.COACH);
+    const userID = participantIDs.find(id => id !== user.id)!;
+    if (coachIndex !== -1) {
+      return {
+        userID,
+        userType: UserType.COACH
+      };
     }
   }
 
-  return { userID, userType };
-}
+  if (user?.type === UserType.COACH && isAdminConversation) {
+    // Coach viewing admin conversation
+    const assignedAdminID = parsedMetadata?.assignedAdminID;
+
+    if (assignedAdminID) {
+      // Admin has been assigned
+      return {
+        userID: assignedAdminID,
+        userType: UserType.ADMIN
+      };
+    } else {
+      // No admin assigned yet - return a placeholder
+      return {
+        userID: 'unassigned',
+        userType: UserType.ADMIN
+      };
+    }
+  }
+
+  // Regular conversation - find the other participant
+  const otherIndex = participantIDs.findIndex(id => id !== user?.id);
+  if (otherIndex !== -1) {
+    return {
+      userID: participantIDs[otherIndex],
+      userType: types[otherIndex]
+    };
+  }
+
+  // Fallback
+  return {
+    userID: participantIDs[0],
+    userType: types[0]
+  };
+};
 
 export function getChatContextConfig(userType: UserType): ChatContextConfig {
   switch (userType) {
     case UserType.COACH:
       return {
         userType: UserType.COACH,
-        canMessageCoaches: true,  // Coach-to-coach networking
-        canMessageClients: true,   // Coach-to-client direct messaging
-        canMessageAdmin: true,     // Coach can contact admin support
-        showSupportWidget: true,   // Show admin support widget
+        canMessageCoaches: true,
+        canMessageClients: true,
+        canMessageAdmin: true,
+        showSupportWidget: true,
       };
 
     case UserType.CLIENT:
       return {
         userType: UserType.CLIENT,
-        canMessageCoaches: true,   // Client can message their coach
-        canMessageClients: true,   // Client can message peer clients (same coach)
-        canMessageAdmin: false,    // Clients cannot contact admin directly
-        showSupportWidget: false,  // No admin support widget for clients
+        canMessageCoaches: true,
+        canMessageClients: true,
+        canMessageAdmin: false,
+        showSupportWidget: false,
       };
 
     case UserType.ADMIN:
       return {
         userType: UserType.ADMIN,
-        canMessageCoaches: true,   // Admin responds to coaches
-        canMessageClients: false,  // Admin doesn't message clients directly
-        canMessageAdmin: false,    // Admin doesn't message other admins
-        showSupportWidget: false,  // Admins don't need support widget
-        conversationFilter: (conv) => {
-          // Admins only see admin support conversations
-          return conv.participantTypes.includes(UserType.ADMIN);
+        canMessageCoaches: true,
+        canMessageClients: false,
+        canMessageAdmin: false,
+        showSupportWidget: false,
+        conversationFilter: (conv: ConversationResponse) => {
+          // Admins only see conversations where they are assigned
+          const metadata = typeof conv.metadata === 'string'
+            ? JSON.parse(conv.metadata)
+            : conv.metadata;
+          return !!metadata?.assignedAdminID;
         },
       };
 
@@ -150,3 +193,51 @@ export function canInitiateConversation(
 
   return false;
 }
+
+/**
+ * Format presence status for display
+ */
+export function formatPresenceStatus(
+  isOnline: boolean,
+  isViewingChat: boolean,
+  lastSeen?: Date | null
+): { status: string; color: string; label: string } {
+  if (isViewingChat) {
+    return {
+      status: 'online',
+      color: 'bg-green-500',
+      label: 'Online'
+    };
+  }
+
+  if (isOnline) {
+    return {
+      status: 'away',
+      color: 'bg-yellow-500',
+      label: 'Away'
+    };
+  }
+
+  return {
+    status: 'offline',
+    color: 'bg-gray-500',
+    label: 'Offline'
+  };
+}
+
+export const formatRelativeTime = (date: Date): string => {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+
+  return date.toLocaleDateString();
+};

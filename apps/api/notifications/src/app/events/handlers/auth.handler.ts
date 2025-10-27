@@ -5,8 +5,8 @@ import {NotificationsService} from "../../notifications/notifications.service";
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
-export class AuthEventsHandler {
-  private readonly logger = new Logger(AuthEventsHandler.name);
+export class AuthHandler {
+  private readonly logger = new Logger(AuthHandler.name);
 
   constructor(
     private readonly prisma: PrismaService,

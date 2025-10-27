@@ -53,10 +53,13 @@ export class EmailConfigSchema {
   AUTH_SERVICE_URL: string;
 
   @IsString()
-  COACH_PLATFORM_URL: string;
+  ADMIN_PLATFORM_URL: string;
 
   @IsString()
   CLIENT_PLATFORM_URL: string;
+
+  @IsString()
+  COACH_PLATFORM_URL: string;
 
   @IsOptional()
   @IsString()

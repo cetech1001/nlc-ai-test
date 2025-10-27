@@ -11,7 +11,7 @@ import {Server, Socket} from 'socket.io';
 import {Logger} from '@nestjs/common';
 import {JwtService} from '@nestjs/jwt';
 import {PrismaService} from '@nlc-ai/api-database';
-import {UserType} from '@nlc-ai/api-types';
+import {UserType} from '@nlc-ai/types';
 import {PresenceService} from "../presence/presence.service";
 
 interface AuthenticatedSocket extends Socket {
@@ -384,7 +384,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       if (!conversation) return false;
 
-      const userIndex = conversation.participantIDs.indexOf(userType === UserType.admin ? UserType.admin : userID);
+      const userIndex = conversation.participantIDs.indexOf(userType === UserType.ADMIN ? UserType.ADMIN : userID);
       return userIndex !== -1 && conversation.participantTypes[userIndex] === userType;
     } catch (error) {
       this.logger.error('Error verifying conversation access:', error);
@@ -392,17 +392,20 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
+  // Key fix in the broadcastTypingStatus method:
+
   private broadcastTypingStatus(conversationID: string, sender: AuthenticatedSocket, isTyping: boolean) {
     const roomID = `conversation:${conversationID}`;
 
+    // Only broadcast to others in the room, not to the sender
     sender.to(roomID).emit('user_typing', {
-      userID: sender.userType === UserType.admin ? UserType.admin : sender.userID,
+      userID: sender.userID,  // Use actual userID, not conditional
       userType: sender.userType,
       conversationID,
       isTyping,
     });
 
-    this.logger.debug(`👀 User ${sender.userType === UserType.admin ? UserType.admin : sender.userID} typing status: ${isTyping} in conversation ${conversationID}`);
+    this.logger.debug(`👀 User ${sender.userID} (${sender.userType}) typing status: ${isTyping} in conversation ${conversationID}`);
   }
 
   private clearTypingForUser(conversationID: string, userID: string, userType: UserType) {

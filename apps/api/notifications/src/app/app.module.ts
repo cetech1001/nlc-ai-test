@@ -8,7 +8,7 @@ import { DatabaseModule } from '@nlc-ai/api-database';
 import { MessagingModule } from '@nlc-ai/api-messaging';
 
 import { NotificationsModule } from './notifications/notifications.module';
-import { EventHandlersModule } from './event-handlers/event-handlers.module';
+import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import notificationsConfig from './config/notifications.config';
 
@@ -26,7 +26,7 @@ import notificationsConfig from './config/notifications.config';
     AuthLibModule,
     HealthModule,
     NotificationsModule,
-    EventHandlersModule,
+    EventsModule,
   ],
   providers: [
     {

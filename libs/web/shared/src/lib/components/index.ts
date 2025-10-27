@@ -7,6 +7,8 @@ export * from './input';
 
 export * from './image-cropper';
 export * from './image-upload';
+export * from './message-status';
+export * from './presence-indicator';
 export * from './rich-text-editor';
 export * from './s3-video-player';
 export * from './template-frame';

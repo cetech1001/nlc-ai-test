@@ -4,8 +4,8 @@ import { UserType } from '@nlc-ai/api-types';
 import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
-export class MessagingEventsHandler implements OnApplicationBootstrap {
-  private readonly logger = new Logger(MessagingEventsHandler.name);
+export class MessagesHandler implements OnApplicationBootstrap {
+  private readonly logger = new Logger(MessagesHandler.name);
 
   constructor(
     private readonly eventBus: EventBusService,
@@ -19,19 +19,19 @@ export class MessagingEventsHandler implements OnApplicationBootstrap {
   private async subscribeToEvents() {
     try {
       await this.eventBus.subscribe(
-        'notifications-service.messaging-events',
+        'notifications-service.messages-events',
         [
-          'messaging.message.created',
-          'messaging.conversation.created',
-          'messaging.message.read',
-          // Add more messaging events as they're implemented
+          'messages.message.created',
+          'messages.conversation.created',
+          'messages.message.read',
+          // Add more messages events as they're implemented
         ],
         this.handleMessagingEvent.bind(this)
       );
 
-      this.logger.log('✅ Subscribed to messaging events');
+      this.logger.log('✅ Subscribed to messages events');
     } catch (error) {
-      this.logger.error('❌ Failed to subscribe to messaging events:', error);
+      this.logger.error('❌ Failed to subscribe to messages events:', error);
     }
   }
 
@@ -39,23 +39,23 @@ export class MessagingEventsHandler implements OnApplicationBootstrap {
     try {
       const { eventType, payload } = event;
 
-      this.logger.log(`💬 Received messaging event: ${eventType}`);
+      this.logger.log(`💬 Received messages event: ${eventType}`);
 
       switch (eventType) {
-        case 'messaging.message.created':
+        case 'messages.message.created':
           await this.handleMessageCreated(payload);
           break;
-        case 'messaging.conversation.created':
+        case 'messages.conversation.created':
           await this.handleConversationCreated(payload);
           break;
-        case 'messaging.message.read':
+        case 'messages.message.read':
           await this.handleMessageRead(payload);
           break;
         default:
-          this.logger.warn(`Unknown messaging event type: ${eventType}`);
+          this.logger.warn(`Unknown messages event type: ${eventType}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to handle messaging event: ${event.eventType}`, error);
+      this.logger.error(`Failed to handle messages event: ${event.eventType}`, error);
     }
   }
 
@@ -73,7 +73,7 @@ export class MessagingEventsHandler implements OnApplicationBootstrap {
           conversationID: payload.conversationID,
           messageID: payload.messageID,
           senderID: payload.senderID,
-          eventType: 'messaging.message.created',
+          eventType: 'messages.message.created',
         },
       });
 
@@ -96,7 +96,7 @@ export class MessagingEventsHandler implements OnApplicationBootstrap {
             metadata: {
               conversationID: payload.conversationID,
               creatorID: payload.creatorID,
-              eventType: 'messaging.conversation.created',
+              eventType: 'messages.conversation.created',
             },
           });
 

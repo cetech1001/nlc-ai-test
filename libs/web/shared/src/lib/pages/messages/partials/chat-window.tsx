@@ -1,8 +1,6 @@
 'use client'
 
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Camera, Headphones, Info, Send, Smile, User, Users} from 'lucide-react';
-import {ChatWindowSkeleton} from './skeletons';
 import {useMessagingWebSocket} from "../hooks";
 import {ConversationResponse, DirectMessageResponse, MessageType} from '@nlc-ai/sdk-messages';
 import {toast} from 'sonner';
@@ -10,6 +8,11 @@ import {UserProfile, UserType} from "@nlc-ai/types";
 import {useRouter} from "next/navigation";
 import {NLCClient} from "@nlc-ai/sdk-main";
 import {getOtherParticipant} from "./helpers";
+import {ChatWindowSkeleton} from './skeletons';
+import {ChatHeader} from './chat-window/chat-header';
+import {MessagesList} from './chat-window/messages-list';
+import {MessageInput} from './chat-window/message-input';
+import {EmptyChatState} from './chat-window/empty-chat-state';
 
 interface ChatWindowProps {
   sdkClient: NLCClient;
@@ -24,7 +27,12 @@ interface Participant {
   name: string;
   type: UserType;
   avatar: string;
+}
+
+interface PresenceData {
   isOnline: boolean;
+  lastSeen: Date | null;
+  status: 'online' | 'away' | 'offline';
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -41,20 +49,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isLoading, setIsLoading] = useState(isConvoLoading);
   const [otherParticipant, setOtherParticipant] = useState<Participant | null>(null);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [otherParticipantPresence, setOtherParticipantPresence] = useState<PresenceData | null>(null);
+  const [isActivelyViewing, setIsActivelyViewing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
     if (data.conversationID === conversation?.id) {
       setMessages(prev => {
-        // Check if message already exists (including optimistic messages)
         const exists = prev.some(msg =>
           msg.id === data.message.id ||
           (msg.id.startsWith('optimistic-') && msg.content === data.message.content && msg.senderID === data.message.senderID)
         );
 
         if (exists) {
-          console.log('Message exists, replacing optimistic with real:', data.message.id);
-          // Replace optimistic message with real one
           return prev.map(msg =>
             (msg.id.startsWith('optimistic-') && msg.content === data.message.content && msg.senderID === data.message.senderID)
               ? data.message
@@ -102,10 +109,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [conversation?.id]);
 
-  const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
-    // The typing state is managed by the hook itself
-  }, []);
-
   const handleError = useCallback((error: any) => {
     console.error('🚫 WebSocket error:', error);
     toast.error('Connection error - messages may not update in real-time');
@@ -124,46 +127,43 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     onMessageUpdated: handleMessageUpdated,
     onMessageDeleted: handleMessageDeleted,
     onMessagesRead: handleMessagesRead,
-    onUserTyping: handleUserTyping,
     onError: handleError,
   });
 
   const typingUsers = conversation ? getTypingUsers(conversation.id) : [];
   const isTyping = typingUsers.length > 0;
 
+  // Load messages when conversation changes
   useEffect(() => {
     if (conversation) {
       loadMessages();
     }
   }, [conversation?.id]);
 
-  // Join/leave conversation when connection status changes
+  // Join/leave conversation
   useEffect(() => {
     if (conversation && isConnected) {
-      console.log('🚪 Joining conversation via WebSocket:', conversation.id);
       joinConversation(conversation.id);
-
       return () => {
-        console.log('🚪 Leaving conversation:', conversation.id);
         leaveConversation(conversation.id);
       };
     }
     return () => { /* empty */ };
   }, [conversation?.id, isConnected, joinConversation, leaveConversation]);
 
-  // Get other participant info when conversation or user changes
+  // Get participant info
   useEffect(() => {
     if (user?.id && conversation) {
       fetchParticipantProfile();
     }
   }, [user?.id, conversation?.id]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  // Clean up typing timeout on unmount
+  // Clean up typing timeout
   useEffect(() => {
     return () => {
       if (typingTimeout) {
@@ -172,12 +172,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [typingTimeout]);
 
-  // Reset unread count when conversation is opened
+  // Reset unread count when conversation opens
   useEffect(() => {
     if (conversation?.id && user?.id) {
       const resetUnreadCount = async () => {
         try {
-          // Mark unread messages as read when opening conversation
           const unreadMessages = messages.filter(msg =>
             !msg.isRead &&
             msg.senderID !== user.id &&
@@ -196,13 +195,83 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [conversation?.id, user?.id]);
 
+  // Check presence for other participant
+  useEffect(() => {
+    if (!otherParticipant?.id || !conversation?.id) return;
+
+    const checkPresence = async () => {
+      try {
+        const status = await sdkClient.messages.presence.checkOnlineStatus(
+          otherParticipant.id,
+          otherParticipant.type
+        );
+
+        setOtherParticipantPresence({
+          isOnline: status.isOnline,
+          lastSeen: status.lastSeen ? new Date(status.lastSeen) : null,
+          status: status.isOnline ? 'away' : 'offline'
+        });
+      } catch (error) {
+        console.error('Failed to check presence:', error);
+      }
+    };
+
+    checkPresence();
+    const interval = setInterval(checkPresence, 15000);
+
+    return () => clearInterval(interval);
+  }, [otherParticipant?.id, otherParticipant?.type, conversation?.id, sdkClient]);
+
+  // Detect active viewing from typing
+  useEffect(() => {
+    if (!conversation?.id) return;
+
+    const otherUserTyping = typingUsers.some(
+      u => u.userID === otherParticipant?.id && u.userType === otherParticipant?.type
+    );
+
+    if (otherUserTyping) {
+      setIsActivelyViewing(true);
+
+      const timeout = setTimeout(() => {
+        setIsActivelyViewing(false);
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    }
+    return () => undefined;
+  }, [typingUsers, conversation?.id, otherParticipant?.id, otherParticipant?.type]);
+
+  // Detect active viewing from recent messages
+  useEffect(() => {
+    if (!messages.length) return;
+
+    const latestMessage = messages[messages.length - 1];
+
+    if (
+      latestMessage.senderID === otherParticipant?.id &&
+      latestMessage.senderType === otherParticipant?.type
+    ) {
+      const messageAge = Date.now() - new Date(latestMessage.createdAt).getTime();
+
+      if (messageAge < 30000) {
+        setIsActivelyViewing(true);
+
+        const timeout = setTimeout(() => {
+          setIsActivelyViewing(false);
+        }, 30000);
+
+        return () => clearTimeout(timeout);
+      }
+    }
+    return () => undefined;
+  }, [messages, otherParticipant?.id, otherParticipant?.type]);
+
   const loadMessages = async () => {
     if (!conversation) return;
 
     try {
       setIsLoading(true);
-      console.log('📥 Loading messages from API for conversation:', conversation.id);
-
       const response = await sdkClient.messages.getMessages(conversation.id, {
         page: 1,
         limit: 50,
@@ -212,7 +281,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
 
-      console.log('📥 Loaded messages:', sortedMessages.length);
       setMessages(sortedMessages);
     } catch (error: any) {
       console.error('❌ Failed to load messages:', error);
@@ -231,20 +299,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     if (!conversation || !isConnected) return;
 
-    // Send typing indicator
     if (value.trim() && !typingTimeout) {
-      console.log('⌨️ Sending typing start');
       sendTypingStatus(conversation.id, true);
     }
 
-    // Clear existing timeout
     if (typingTimeout) {
       clearTimeout(typingTimeout);
     }
 
-    // Set new timeout to stop typing indicator
     const newTimeout = setTimeout(() => {
-      console.log('⌨️ Sending typing stop');
       sendTypingStatus(conversation.id, false);
       setTypingTimeout(null);
     }, 1000);
@@ -258,7 +321,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const messageContent = inputMessage.trim();
     const tempID = `optimistic-${Date.now()}-${Math.random()}`;
 
-    // Create optimistic message for instant UI feedback
     const optimisticMessage: DirectMessageResponse = {
       id: tempID,
       conversationID: conversation.id,
@@ -272,13 +334,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       createdAt: new Date(),
     };
 
-    // Add optimistic message immediately for instant feedback
     setMessages(prev => [...prev, optimisticMessage]);
     setInputMessage('');
 
-    console.log('📤 Sending message with optimistic update:', messageContent);
-
-    // Clear typing status
     if (typingTimeout) {
       clearTimeout(typingTimeout);
       setTypingTimeout(null);
@@ -288,23 +346,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
 
     try {
-      // Send the message - WebSocket will handle real-time updates and replace optimistic message
       const sentMessage = await sdkClient.messages.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
       });
 
-      // Replace optimistic message with real message
       setMessages(prev =>
         prev.map(msg => msg.id === tempID ? sentMessage : msg)
       );
-
-      console.log('✅ Message sent successfully:', sentMessage.id);
     } catch (error: any) {
       console.error('❌ Failed to send message:', error);
       toast.error('Failed to send message');
-
-      // Remove optimistic message on error and restore input
       setMessages(prev => prev.filter(msg => msg.id !== tempID));
       setInputMessage(messageContent);
     }
@@ -313,7 +365,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const markMessageAsRead = async (messageIDs: string[]) => {
     try {
       await sdkClient.messages.markAsRead({ messageIDs });
-      console.log('👁️ Marked messages as read:', messageIDs);
     } catch (error) {
       console.error('❌ Failed to mark messages as read:', error);
     }
@@ -349,51 +400,40 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         type: userType,
         name: participant.firstName + ' ' + participant.lastName,
         avatar: participant.avatarUrl || '',
-        isOnline: isConnected, // Use WebSocket connection status as proxy
       });
     } catch (error) {
       console.error('❌ Failed to load participant info:', error);
     }
   };
 
-  const isCurrentUserMessage = (message: DirectMessageResponse) => {
-    return message.senderID === user?.id && message.senderType === user?.type;
-  };
-
-  const shouldGroupWithPrevious = (message: DirectMessageResponse, previousMessage: DirectMessageResponse | null) => {
-    if (!previousMessage) return false;
-
-    // Group if same sender and messages are within 2 minutes of each other
-    const isSameSender = message.senderID === previousMessage.senderID && message.senderType === previousMessage.senderType;
-    const timeDiff = new Date(message.createdAt).getTime() - new Date(previousMessage.createdAt).getTime();
-    const isWithinTimeLimit = timeDiff < 2 * 60 * 1000; // 2 minutes
-
-    return isSameSender && isWithinTimeLimit;
-  };
-
   if (!conversation) {
-    return (
-      <div className="flex-1 flex items-center justify-center relative">
-        {/* Background glow effects */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute w-96 h-96 -left-48 top-1/4 bg-gradient-to-r from-fuchsia-500/20 via-purple-500/20 to-violet-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute w-96 h-96 -right-48 bottom-1/4 bg-gradient-to-l from-violet-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
-
-        <div className="text-center relative z-10">
-          <div className="w-20 h-20 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-fuchsia-500/50">
-            <span className="text-white text-3xl">💬</span>
-          </div>
-          <h3 className="text-white text-xl font-semibold mb-3">Select a conversation</h3>
-          <p className="text-stone-400 max-w-md">Choose from admin support, clients, or community members to start messaging</p>
-        </div>
-      </div>
-    );
+    return <EmptyChatState />;
   }
 
   if (isLoading) {
     return <ChatWindowSkeleton/>
   }
+
+  // Calculate final presence status
+  const finalPresenceStatus = (() => {
+    if (!otherParticipantPresence) {
+      return { status: 'offline' as const, color: 'bg-gray-500', label: 'Offline' };
+    }
+
+    if (isActivelyViewing && otherParticipantPresence.isOnline) {
+      return { status: 'online' as const, color: 'bg-green-500', label: 'Active now' };
+    }
+
+    if (otherParticipantPresence.isOnline) {
+      return { status: 'away' as const, color: 'bg-yellow-500', label: 'Active on platform' };
+    }
+
+    return {
+      status: 'offline' as const,
+      color: 'bg-gray-500',
+      label: 'Offline'
+    };
+  })();
 
   return (
     <div className="flex-1 flex flex-col relative">
@@ -403,214 +443,35 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <div className="absolute w-96 h-96 -right-48 bottom-1/4 bg-gradient-to-l from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Chat Header */}
-      <div className="relative z-10 flex items-center justify-between p-6 border-b border-neutral-700/50 bg-gradient-to-r from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="p-2 text-stone-300 hover:text-white transition-colors rounded-lg hover:bg-neutral-800/50 lg:hidden"
-            >
-              ←
-            </button>
-          )}
-          {otherParticipant && (
-            <>
-              <div className="relative">
-                <img
-                  src={otherParticipant.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${otherParticipant.name}`}
-                  alt={otherParticipant.name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-neutral-600 shadow-lg"
-                />
-                {isConnected && (
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-neutral-900 shadow-lg" />
-                )}
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg">{otherParticipant.name}</h3>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium ${isConnected ? 'text-green-400' : 'text-stone-500'}`}>
-                    {isConnected ? 'Online' : 'Offline'}
-                  </span>
-                  <span className="text-stone-500">•</span>
-                  <span className="text-xs text-stone-400 capitalize">
-                    {otherParticipant.type}
-                  </span>
-                  {!isConnected && (
-                    <>
-                      <span className="text-stone-500">•</span>
-                      <span className="text-xs text-red-400">Offline mode</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push(`/profile?userID=${otherParticipant?.id}&userType=${otherParticipant?.type}`)}
-            className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50"
-          >
-            <Info className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+      <ChatHeader
+        otherParticipant={otherParticipant}
+        presenceStatus={finalPresenceStatus}
+        isConnected={isConnected}
+        onBack={onBack}
+        onProfileClick={() =>
+          router.push(`/profile?userID=${otherParticipant?.id}&userType=${otherParticipant?.type}`)
+        }
+      />
 
-      {/* Messages */}
-      <div className="relative z-10 flex-1 p-6 space-y-1 overflow-y-auto">
-        {messages.length === 0 ? (
-          <div className="text-center py-12">
-            {isAdminConversation() ? (
-              <>
-                <div className="w-20 h-20 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-fuchsia-500/50">
-                  <Headphones className="w-10 h-10 text-white" />
-                </div>
-                <h4 className="text-white font-semibold text-lg mb-3">Admin Support</h4>
-                <p className="text-stone-400 text-sm max-w-md mx-auto">Get help with your account, features, or technical issues. Our support team is here to assist you.</p>
-              </>
-            ) : (
-              <>
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/50">
-                  <Users className="w-10 h-10 text-white" />
-                </div>
-                <h4 className="text-white font-semibold text-lg mb-3">Start Conversation</h4>
-                <p className="text-stone-400 text-sm max-w-md mx-auto">Send a message to {otherParticipant?.name} to begin your conversation</p>
-              </>
-            )}
-          </div>
-        ) : (
-          messages.map((message, index) => {
-            const previousMessage = index > 0 ? messages[index - 1] : null;
-            const isGrouped = shouldGroupWithPrevious(message, previousMessage);
-            const isCurrentUser = isCurrentUserMessage(message);
-            const isOptimistic = message.id.startsWith('optimistic-');
+      <MessagesList
+        messages={messages}
+        currentUserID={user?.id}
+        currentUserType={user?.type}
+        otherParticipant={otherParticipant}
+        isTyping={isTyping}
+        isAdminConversation={isAdminConversation()}
+        messagesEndRef={messagesEndRef}
+      />
 
-            return (
-              <div key={message.id} className={`${isGrouped ? 'mt-1' : 'mt-4'}`}>
-                <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[70%] ${isCurrentUser ? 'order-2' : 'order-1'}`}>
-                    {/* Show header only for non-grouped messages */}
-                    {!isGrouped && (
-                      <div className={`text-xs text-stone-500 mb-1 flex items-center gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                        <span className="font-medium">
-                          {message.senderType === 'admin' ? 'Admin Support' :
-                            isCurrentUser ? 'You' : otherParticipant?.name}
-                        </span>
-                        <span>•</span>
-                        <span>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        {isOptimistic && (
-                          <>
-                            <span>•</span>
-                            <span className="text-stone-400">Sending...</span>
-                          </>
-                        )}
-                        {message.isRead && isCurrentUser && !isOptimistic && (
-                          <>
-                            <span>•</span>
-                            <span className="text-blue-400">Read</span>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    <div className={`p-3 text-sm leading-relaxed transition-opacity shadow-lg ${
-                      isOptimistic ? 'opacity-70' : 'opacity-100'
-                    } ${
-                      isCurrentUser
-                        ? `bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white ${isGrouped ? 'rounded-2xl' : 'rounded-2xl rounded-br-md'}`
-                        : message.senderType === 'admin'
-                          ? `bg-gradient-to-r from-purple-600 to-blue-600 text-white ${isGrouped ? 'rounded-2xl' : 'rounded-2xl rounded-bl-md'}`
-                          : `bg-neutral-700/80 text-white backdrop-blur-sm ${isGrouped ? 'rounded-2xl' : 'rounded-2xl rounded-bl-md'}`
-                    }`}>
-                      {message.senderType === 'admin' && !isGrouped && (
-                        <div className="flex items-center gap-2 mb-2 opacity-90">
-                          <User className="w-3 h-3" />
-                          <span className="text-xs font-medium">Support Team</span>
-                        </div>
-                      )}
-                      <div className="whitespace-pre-line">{message.content}</div>
-                      {message.isEdited && (
-                        <div className="text-xs opacity-60 mt-1">(edited)</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-
-        {isTyping && (
-          <div className="mt-4">
-            <div className="flex justify-start">
-              <div className={`p-3 rounded-2xl rounded-bl-md shadow-lg ${
-                isAdminConversation()
-                  ? 'bg-gradient-to-r from-purple-600 to-blue-600'
-                  : 'bg-neutral-700/80 backdrop-blur-sm'
-              } text-white`}>
-                {isAdminConversation() && (
-                  <div className="flex items-center gap-2 mb-2 opacity-90">
-                    <User className="w-3 h-3" />
-                    <span className="text-xs font-medium">Support Team</span>
-                  </div>
-                )}
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-            <div className="text-xs text-stone-500 mt-1">
-              {isAdminConversation() ? 'Admin support is typing...' : `${otherParticipant?.name} is typing...`}
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Message Input */}
-      <div className="relative z-10 p-6 border-t border-neutral-700/50 bg-gradient-to-r from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
-            <Camera className="w-5 h-5" />
-          </button>
-          <div className="flex-1">
-            <textarea
-              value={inputMessage}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder={isAdminConversation() ? 'Describe your issue or question...' : 'Type your message...'}
-              className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 resize-none max-h-32 backdrop-blur-sm"
-              rows={1}
-            />
-          </div>
-          <button className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50">
-            <Smile className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim()}
-            className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-fuchsia-500/30 hover:shadow-fuchsia-500/50"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          {isAdminConversation() && (
-            <div className="text-xs text-stone-500 text-center flex-1">
-              Direct line to admin support • Real-time messaging
-            </div>
-          )}
-          <div className="flex items-center gap-2 text-xs ml-auto">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
-            <span className={isConnected ? 'text-green-400' : 'text-red-400'}>
-              {isConnected ? 'Live' : 'Offline'}
-            </span>
-          </div>
-        </div>
-      </div>
+      <MessageInput
+        value={inputMessage}
+        onChange={handleInputChange}
+        onSend={handleSendMessage}
+        onKeyPress={handleKeyPress}
+        isConnected={isConnected}
+        isAdminConversation={isAdminConversation()}
+        disabled={isLoading}
+      />
     </div>
   );
 };

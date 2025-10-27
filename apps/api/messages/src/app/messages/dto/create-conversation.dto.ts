@@ -1,6 +1,6 @@
 import {ApiProperty} from "@nestjs/swagger";
 import {IsArray, IsEnum, IsOptional, IsString} from "class-validator";
-import {UserType} from "@nlc-ai/api-types";
+import {UserType} from "@nlc-ai/types";
 
 export class CreateConversationDto {
   @ApiProperty({ enum: ['direct', 'group'] })

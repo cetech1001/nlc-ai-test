@@ -1,6 +1,6 @@
 import {BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException,} from '@nestjs/common';
 import {PrismaService} from '@nlc-ai/api-database';
-import {MessageType, MESSAGING_ROUTING_KEYS, MessagingEvent, UserType} from '@nlc-ai/api-types';
+import {MessageType, MESSAGING_ROUTING_KEYS, MessagesEvent, UserType} from '@nlc-ai/types';
 import {OutboxService} from '@nlc-ai/api-messaging';
 import {
   ConversationFiltersDto,
@@ -11,6 +11,7 @@ import {
 } from './dto';
 import {MessagesGateway} from '../websocket/messages.gateway';
 import {ConversationHelperService} from "./conversation-helper.service";
+import {Prisma} from "@prisma/client";
 
 @Injectable()
 export class MessagesService {
@@ -29,38 +30,48 @@ export class MessagesService {
     userType: UserType
   ) {
     try {
-      // Add initiator if not included
-      if (userType === UserType.admin) {
-        if (!createDto.participantIDs.includes(UserType.admin)) {
-          createDto.participantIDs.push(UserType.admin);
-          createDto.participantTypes.push(UserType.admin);
-        }
-      } else {
-        if (!createDto.participantIDs.includes(userID)) {
-          createDto.participantIDs.push(userID);
-          createDto.participantTypes.push(userType);
-        }
+      // Add initiator if not included (non-admin users)
+      if (userType !== UserType.ADMIN && !createDto.participantIDs.includes(userID)) {
+        createDto.participantIDs.push(userID);
+        createDto.participantTypes.push(userType);
       }
 
-      // Validate conversation type and access
-      await this.conversationHelper.validateConversationAccess(
-        createDto.participantIDs,
-        createDto.participantTypes,
-        userID,
-        userType,
-      );
-
+      // Special handling for admin conversations
       const conversationType = this.conversationHelper.getConversationType(createDto.participantTypes);
+      const metadata: any = {};
 
-      if (createDto.type === 'direct' && createDto.participantIDs.length !== 2) {
+      if (conversationType === 'coach_to_admin') {
+        // Don't add admin to participantIDs yet - only the coach is a participant at creation
+        // Remove admin from participants if accidentally added
+        const adminIndex = createDto.participantTypes.indexOf(UserType.ADMIN);
+        if (adminIndex !== -1) {
+          createDto.participantIDs.splice(adminIndex, 1);
+          createDto.participantTypes.splice(adminIndex, 1);
+        }
+
+        // Mark in metadata that this conversation needs admin assignment
+        metadata.pendingAdminAssignment = true;
+        metadata.createdAt = new Date().toISOString();
+      } else {
+        // Validate conversation type and access for non-admin conversations
+        await this.conversationHelper.validateConversationAccess(
+          createDto.participantIDs,
+          createDto.participantTypes,
+          userID,
+          userType,
+        );
+      }
+
+      if (createDto.type === 'direct' && createDto.participantIDs.length !== 2 && conversationType !== 'coach_to_admin') {
         throw new BadRequestException('Direct conversations must have exactly 2 participants');
       }
 
-      // Check for existing conversation
+      // Check for existing conversation (including admin conversations)
       if (createDto.type === 'direct') {
         const existingConversation = await this.findExistingDirectConversation(
           createDto.participantIDs,
-          createDto.participantTypes
+          createDto.participantTypes,
+          conversationType
         );
         if (existingConversation) {
           return existingConversation;
@@ -90,7 +101,7 @@ export class MessagesService {
           participantIDs: createDto.participantIDs,
           participantTypes: createDto.participantTypes,
           unreadCount: this.initializeUnreadCount(createDto.participantIDs, createDto.participantTypes),
-          metadata: {}, // Admin will be assigned on first reply
+          metadata,
         },
         include: {
           messages: {
@@ -100,15 +111,15 @@ export class MessagesService {
         },
       });
 
-      const creatorName = await this.getUserName(userID, userType);
+      const { name: creatorName } = await this.getUserName(userID, userType);
 
-      await this.outboxService.saveAndPublishEvent<MessagingEvent>({
-        eventType: 'messaging.conversation.created',
+      await this.outboxService.saveAndPublishEvent<MessagesEvent>({
+        eventType: 'messages.conversation.created',
         schemaVersion: 1,
         payload: {
           conversationID: conversation.id,
           type: conversation.type as 'direct' | 'group',
-          conversationType, // NEW: Include conversation type
+          conversationType,
           name: conversation.name,
           participantIDs: conversation.participantIDs,
           participantTypes: conversation.participantTypes as UserType[],
@@ -134,10 +145,13 @@ export class MessagesService {
   ) {
     let where: any;
 
-    if (userType === UserType.admin) {
-      // Admins only see admin support conversations
+    if (userType === UserType.ADMIN) {
+      // Admins see conversations where they are assigned in metadata
       where = {
-        participantIDs: { has: UserType.admin },
+        metadata: {
+          path: ['assignedAdminID'],
+          equals: userID,
+        },
       };
     } else {
       // Regular users see their own conversations
@@ -189,7 +203,7 @@ export class MessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
-    if (!this.isParticipant(conversation, userID, userType)) {
+    if (!this.conversationHelper.isParticipant(conversation, userID, userType)) {
       throw new ForbiddenException('Access denied to this conversation');
     }
 
@@ -216,26 +230,37 @@ export class MessagesService {
       throw new ForbiddenException('Not authorized to send messages in this conversation');
     }
 
-    const senderName = await this.getUserName(senderID, senderType);
+    const { name: senderName, email: senderEmail } = await this.getUserName(senderID, senderType);
     const conversationType = this.conversationHelper.getConversationType(
       conversation.participantTypes as UserType[]
     );
 
     // Handle admin assignment for first admin reply
-    let updatedMetadata = conversation.metadata;
-    if (conversationType === 'coach_to_admin' && senderType === UserType.admin) {
-      const assignedAdmin = this.conversationHelper.getAssignedAdmin(conversation);
+    let updatedMetadata = conversation.metadata || {};
+    const updatedParticipantIDs = [...conversation.participantIDs];
+    const updatedParticipantTypes = [...conversation.participantTypes];
+
+    const assignedAdmin = this.conversationHelper.getAssignedAdmin(conversation);
+    if (conversationType === 'coach_to_admin' && senderType === UserType.ADMIN) {
 
       if (!assignedAdmin?.adminID) {
-        // First admin reply - assign this admin
+        // First admin reply - assign this admin and add them as participant
         updatedMetadata = this.conversationHelper.createAdminAssignmentMetadata(
           senderID,
           senderName,
+          updatedMetadata
         );
+
+        // Add admin to participants
+        updatedParticipantIDs.push(senderID);
+        updatedParticipantTypes.push(UserType.ADMIN);
 
         this.logger.log(`Admin ${senderID} assigned to conversation ${conversationID}`);
       }
     }
+
+    // Get sender avatar
+    const senderAvatarUrl = await this.getUserAvatar(senderID, senderType);
 
     const message = await this.prisma.directMessage.create({
       data: {
@@ -243,6 +268,7 @@ export class MessagesService {
         senderID,
         senderType,
         senderName,
+        senderAvatarUrl,
         type: createDto.type || MessageType.TEXT,
         content: createDto.content,
         mediaUrls: createDto.mediaUrls || [],
@@ -268,8 +294,8 @@ export class MessagesService {
       conversation.unreadCount as Record<string, number>,
       senderID,
       senderType,
-      conversation.participantIDs,
-      conversation.participantTypes as UserType[]
+      updatedParticipantIDs,
+      updatedParticipantTypes as UserType[]
     );
 
     await this.prisma.conversation.update({
@@ -278,22 +304,20 @@ export class MessagesService {
         lastMessageID: message.id,
         lastMessageAt: new Date(),
         unreadCount: updatedUnreadCount,
-        metadata: JSON.stringify(updatedMetadata), // Update metadata with admin assignment
+        metadata: updatedMetadata,
+        participantIDs: updatedParticipantIDs,
+        participantTypes: updatedParticipantTypes,
       },
     });
 
     await this.messagesGateway.broadcastNewMessage(conversationID, message, conversation);
 
     // Send notifications and check presence
-    for (let i = 0; i < conversation.participantIDs.length; i++) {
-      const participantID = conversation.participantIDs[i];
-      const participantType = conversation.participantTypes[i] as UserType;
+    for (let i = 0; i < updatedParticipantIDs.length; i++) {
+      const participantID = updatedParticipantIDs[i];
+      const participantType = updatedParticipantTypes[i] as UserType;
 
-      // Skip sender and handle admin specially
-      if (senderType === UserType.admin && participantID === UserType.admin) {
-        continue;
-      }
-
+      // Skip sender
       if (participantID === senderID && participantType === senderType) {
         continue;
       }
@@ -308,17 +332,15 @@ export class MessagesService {
       const isRecipientOnline = await this.messagesGateway.isUserOnline(participantID, participantType);
 
       if (!isRecipientViewing) {
-        const recipientName = participantType === UserType.admin
-          ? 'Admin Support'
-          : await this.getUserName(participantID, participantType);
+        const { name: recipientName } = await this.getUserName(participantID, participantType);
 
-        await this.outboxService.saveAndPublishEvent<MessagingEvent>({
-          eventType: 'messaging.message.created',
+        await this.outboxService.saveAndPublishEvent<MessagesEvent>({
+          eventType: 'messages.message.created',
           schemaVersion: 1,
           payload: {
             messageID: message.id,
             conversationID,
-            conversationType, // NEW: Include conversation type
+            conversationType,
             senderID,
             senderType,
             senderName,
@@ -335,7 +357,7 @@ export class MessagesService {
         // Email notification if recipient is offline
         if (!isRecipientOnline) {
           await this.outboxService.saveAndPublishEvent({
-            eventType: 'messaging.notification.email',
+            eventType: 'messages.notification.email',
             schemaVersion: 1,
             payload: {
               recipientID: participantID,
@@ -346,16 +368,46 @@ export class MessagesService {
               senderName,
               messageID: message.id,
               conversationID,
-              conversationType, // NEW: Include conversation type
+              conversationType,
+              senderEmail,
               messageContent: message.content,
               messageType: message.type,
               timestamp: new Date().toISOString(),
             },
-          } as any, 'messaging.notification.email');
+          } as any, 'messages.notification.email');
 
           this.logger.log(`📧 Email notification queued for offline user: ${participantType}:${participantID}`);
         }
       }
+    }
+
+    if (!assignedAdmin?.adminID && conversationType === 'coach_to_admin' && senderType === UserType.COACH) {
+      // Notify available admins, even though they’re not yet participants
+      const availableAdmins = await this.conversationHelper.getAvailableAdmins();
+
+      for (const admin of availableAdmins) {
+        await this.outboxService.saveAndPublishEvent({
+          eventType: 'messages.notification.email',
+          schemaVersion: 1,
+          payload: {
+            recipientID: admin.id,
+            recipientType: UserType.ADMIN,
+            recipientName: admin.name,
+            senderID,
+            senderType,
+            senderName,
+            messageID: message.id,
+            conversationID,
+            conversationType,
+            senderEmail,
+            messageContent: message.content,
+            messageType: message.type,
+            timestamp: new Date().toISOString(),
+          },
+        } as any, 'messages.notification.email');
+      }
+
+      this.logger.log(`📧 Coach sent message — admin notified for pending assignment`);
     }
 
     this.logger.log(`Message sent: ${message.id} in conversation ${conversationID} (${conversationType})`);
@@ -376,7 +428,7 @@ export class MessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
-    if (!this.isParticipant(conversation, userID, userType)) {
+    if (!this.conversationHelper.isParticipant(conversation, userID, userType)) {
       throw new ForbiddenException('Access denied to this conversation');
     }
 
@@ -444,12 +496,10 @@ export class MessagesService {
       },
     });
 
-    // Broadcast the message update via WebSocket
     await this.messagesGateway.broadcastMessageUpdate(message.conversationID, updatedMessage);
 
-    // Emit message updated event
-    await this.outboxService.saveAndPublishEvent<MessagingEvent>({
-      eventType: 'messaging.message.updated',
+    await this.outboxService.saveAndPublishEvent<MessagesEvent>({
+      eventType: 'messages.message.updated',
       schemaVersion: 1,
       payload: {
         messageID,
@@ -482,12 +532,10 @@ export class MessagesService {
       where: { id: messageID },
     });
 
-    // Broadcast the message deletion via WebSocket
     await this.messagesGateway.broadcastMessageDelete(message.conversationID, messageID);
 
-    // Emit message deleted event
-    await this.outboxService.saveAndPublishEvent<MessagingEvent>({
-      eventType: 'messaging.message.deleted',
+    await this.outboxService.saveAndPublishEvent<MessagesEvent>({
+      eventType: 'messages.message.deleted',
       schemaVersion: 1,
       payload: {
         messageID,
@@ -503,7 +551,6 @@ export class MessagesService {
   }
 
   async markAsRead(messageIDs: string[], userID: string, userType: UserType) {
-    // Update messages as read
     await this.prisma.directMessage.updateMany({
       where: {
         id: { in: messageIDs },
@@ -518,14 +565,12 @@ export class MessagesService {
       },
     });
 
-    // Get conversation ID for broadcasting
     const firstMessage = await this.prisma.directMessage.findFirst({
       where: { id: { in: messageIDs } },
       select: { conversationID: true },
     });
 
     if (firstMessage) {
-      // Broadcast read status via WebSocket
       await this.messagesGateway.broadcastReadStatus(
         firstMessage.conversationID,
         messageIDs,
@@ -533,21 +578,7 @@ export class MessagesService {
         userType
       );
 
-      // Update conversation unread count
       await this.updateConversationUnreadCount(firstMessage.conversationID, userID, userType);
-
-      // Emit message read event
-      await this.outboxService.saveAndPublishEvent<MessagingEvent>({
-        eventType: 'messaging.message.read',
-        schemaVersion: 1,
-        payload: {
-          messageIDs,
-          conversationID: firstMessage.conversationID,
-          readerID: userID,
-          readerType: userType,
-          readAt: new Date().toISOString(),
-        },
-      }, MESSAGING_ROUTING_KEYS.MESSAGE_READ);
     }
 
     this.logger.log(`Messages marked as read: ${messageIDs.length} messages`);
@@ -563,7 +594,7 @@ export class MessagesService {
       throw new NotFoundException('Conversation not found');
     }
 
-    if (!this.isParticipant(conversation, userID, userType)) {
+    if (!this.conversationHelper.isParticipant(conversation, userID, userType)) {
       throw new ForbiddenException('Access denied to this conversation');
     }
 
@@ -574,33 +605,39 @@ export class MessagesService {
   }
 
   async createSupportConversation(coachID: string) {
-    const admin = await this.prisma.admin.findFirst({
-      where: { isActive: true },
-      orderBy: { createdAt: 'asc' },
+    // Check for existing admin conversation for this coach
+    const existingConversation = await this.prisma.conversation.findFirst({
+      where: {
+        type: 'direct',
+        participantIDs: { has: coachID },
+        participantTypes: { has: UserType.COACH },
+        metadata: {
+          path: ['pendingAdminAssignment'],
+          not: Prisma.JsonNull,
+        },
+      },
+      include: {
+        messages: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
-
-    if (!admin) {
-      throw new NotFoundException('No admin available for support');
-    }
-
-    const existingConversation = await this.findExistingDirectConversation(
-      [coachID, admin.id],
-      [UserType.coach, UserType.admin]
-    );
 
     if (existingConversation) {
       return existingConversation;
     }
 
+    // Create new admin conversation (only coach as participant initially)
     const conversation = await this.createConversation(
       {
         type: 'direct',
-        name: 'Support Chat',
-        participantIDs: [coachID, admin.id],
-        participantTypes: [UserType.coach, UserType.admin],
+        name: 'Admin Support',
+        participantIDs: [coachID],
+        participantTypes: [UserType.COACH, UserType.ADMIN], // This will trigger admin logic
       },
       coachID,
-      UserType.coach
+      UserType.COACH
     );
 
     this.logger.log(`Support conversation created: ${conversation.id} for coach ${coachID}`);
@@ -608,8 +645,35 @@ export class MessagesService {
   }
 
   // Helper methods
-  private async findExistingDirectConversation(participantIDs: string[], participantTypes: UserType[]) {
-    if (participantIDs.length !== 2) return null;
+  private async findExistingDirectConversation(
+    participantIDs: string[],
+    participantTypes: UserType[],
+    conversationType?: string
+  ) {
+    if (participantIDs.length !== 2 && conversationType !== 'coach_to_admin') return null;
+
+    // Special handling for admin conversations
+    if (conversationType === 'coach_to_admin') {
+      const coachID = participantIDs.find((id, idx) => participantTypes[idx] === UserType.COACH);
+
+      return this.prisma.conversation.findFirst({
+        where: {
+          type: 'direct',
+          participantIDs: { has: coachID },
+          participantTypes: { has: UserType.COACH },
+          metadata: {
+            path: ['pendingAdminAssignment'],
+            not: Prisma.JsonNull,
+          },
+        },
+        include: {
+          messages: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
+    }
 
     return this.prisma.conversation.findFirst({
       where: {
@@ -626,10 +690,6 @@ export class MessagesService {
         },
       },
     });
-  }
-
-  private isParticipant(conversation: any, userID: string, userType: UserType): boolean {
-    return this.conversationHelper.isParticipant(conversation, userID, userType);
   }
 
   private initializeUnreadCount(participantIDs: string[], participantTypes: UserType[]): Record<string, number> {
@@ -714,37 +774,82 @@ export class MessagesService {
     }
   }
 
-  private async getUserName(userID: string, userType: UserType): Promise<string> {
+  private async getUserName(userID: string, userType: UserType): Promise<{ name: string; email: string; }> {
     try {
       let user: any;
       switch (userType) {
-        case UserType.coach:
+        case UserType.COACH:
           user = await this.prisma.coach.findUnique({
             where: { id: userID },
-            select: { firstName: true, lastName: true, businessName: true },
+            select: { firstName: true, lastName: true, businessName: true, email: true },
           });
-          return user?.businessName || `${user?.firstName} ${user?.lastName}` || 'Unknown Coach';
+          return {
+            name: user?.businessName || `${user?.firstName} ${user?.lastName}` || 'Unknown Coach',
+            email: user?.email,
+          };
 
-        case UserType.client:
+        case UserType.CLIENT:
           user = await this.prisma.client.findUnique({
             where: { id: userID },
-            select: { firstName: true, lastName: true },
+            select: { firstName: true, lastName: true, email: true },
           });
-          return `${user?.firstName} ${user?.lastName}`;
+          return {
+            name: `${user?.firstName} ${user?.lastName}`,
+            email: user?.email,
+          };
 
-        case UserType.admin:
+        case UserType.ADMIN:
           user = await this.prisma.admin.findUnique({
             where: { id: userID },
-            select: { firstName: true, lastName: true },
+            select: { firstName: true, lastName: true, email: true },
           });
-          return `${user?.firstName} ${user?.lastName}`;
+          return {
+            name: `${user?.firstName} ${user?.lastName}`,
+            email: user?.email,
+          };
 
         default:
-          return 'Unknown User';
+          return {
+            name: 'Unknown User',
+            email: 'Unknown Email',
+          };
       }
     } catch (error) {
       this.logger.warn(`Failed to get user name for ${userType} ${userID}`, error);
-      return 'Unknown User';
+      return {
+        name: 'Unknown User',
+        email: 'Unknown Email',
+      };
+    }
+  }
+
+  private async getUserAvatar(userID: string, userType: UserType): Promise<string | undefined> {
+    try {
+      let user: any;
+      switch (userType) {
+        case UserType.COACH:
+          user = await this.prisma.coach.findUnique({
+            where: { id: userID },
+            select: { avatarUrl: true },
+          });
+          return user?.avatarUrl;
+
+        case UserType.CLIENT:
+          user = await this.prisma.client.findUnique({
+            where: { id: userID },
+            select: { avatarUrl: true },
+          });
+          return user?.avatarUrl;
+
+        case UserType.ADMIN:
+          return undefined;
+
+        default:
+          return undefined;
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to get user avatar for ${userType} ${userID}`, error);
+      return undefined;
     }
   }
 }

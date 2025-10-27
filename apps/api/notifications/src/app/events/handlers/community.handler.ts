@@ -6,8 +6,8 @@ import {CommunityMember} from "@prisma/client";
 import {PrismaService} from "@nlc-ai/api-database";
 
 @Injectable()
-export class CommunityEventsHandler implements OnApplicationBootstrap {
-  private readonly logger = new Logger(CommunityEventsHandler.name);
+export class CommunityHandler implements OnApplicationBootstrap {
+  private readonly logger = new Logger(CommunityHandler.name);
 
   constructor(
     private readonly prisma: PrismaService,

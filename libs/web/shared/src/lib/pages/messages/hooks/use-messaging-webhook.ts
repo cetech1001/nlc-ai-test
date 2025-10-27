@@ -136,11 +136,9 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
   }, [options.onMessagesRead]);
 
   const handleUserTyping = useCallback((data: { userID: string; userType: string; conversationID: string; isTyping: boolean }) => {
-    // Don't show typing for current user
     if (data.userID === options.user?.id && data.userType === options.user?.type) {
       return;
     }
-
 
     const userKey = `${data.userType}:${data.userID}`;
 

@@ -60,8 +60,9 @@ export const emailConfig = registerAs('email', () => {
       auth: config.AUTH_SERVICE_URL,
     },
     platforms: {
-      coach: config.COACH_PLATFORM_URL,
+      admin: config.ADMIN_PLATFORM_URL,
       client: config.CLIENT_PLATFORM_URL,
+      coach: config.COACH_PLATFORM_URL,
     },
     redis: {
       host: config.REDIS_HOST,
