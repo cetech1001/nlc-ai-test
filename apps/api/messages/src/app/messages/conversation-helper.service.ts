@@ -259,6 +259,21 @@ export class ConversationHelperService {
     };
   }
 
+  getParticipantType(conversationType: ConversationType, senderType: UserType) {
+    switch (conversationType) {
+      case 'coach_to_coach':
+        return UserType.COACH;
+      case 'client_to_client':
+        return UserType.CLIENT;
+      case 'client_to_coach':
+        return senderType === UserType.CLIENT ? UserType.COACH : UserType.CLIENT;
+      case 'coach_to_admin':
+        return senderType === UserType.ADMIN ? UserType.COACH : UserType.ADMIN;
+      default:
+        throw new BadRequestException('Invalid conversation type');
+    }
+  }
+
   /**
    * Checks if user is participant in conversation
    */

@@ -13,6 +13,7 @@ import {JwtService} from '@nestjs/jwt';
 import {PrismaService} from '@nlc-ai/api-database';
 import {UserType} from '@nlc-ai/types';
 import {PresenceService} from "../presence/presence.service";
+import {ConversationHelperService} from "../messages/conversation-helper.service";
 
 interface AuthenticatedSocket extends Socket {
   userID: string;
@@ -62,9 +63,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   private readonly cleanupInterval: NodeJS.Timeout;
 
   constructor(
-    private readonly jwtService: JwtService,
+    private readonly jwt: JwtService,
     private readonly prisma: PrismaService,
-    private readonly presenceService: PresenceService,
+    private readonly presence: PresenceService,
+    private readonly conversationHelper: ConversationHelperService,
   ) {
     this.cleanupInterval = setInterval(() => {
       this.performCleanup();
@@ -100,7 +102,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       let payload;
       try {
-        payload = this.jwtService.verify(token);
+        payload = this.jwt.verify(token);
       } catch (error: any) {
         this.logger.error('❌ Token verification failed:', error.message);
         client.emit('connect_error', { message: 'Invalid token' });
@@ -114,12 +116,12 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       socket.userName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim();
 
       // Set user as online in Redis
-      await this.presenceService.setOnline(payload.sub, payload.type, client.id);
+      await this.presence.setOnline(payload.sub, payload.type, client.id);
 
       // Start heartbeat interval to keep presence alive
       const heartbeatInterval = setInterval(async () => {
         try {
-          await this.presenceService.refreshPresence(payload.sub, payload.type, client.id);
+          await this.presence.refreshPresence(payload.sub, payload.type, client.id);
         } catch (error) {
           this.logger.error(`Failed to refresh presence for ${payload.sub}:`, error);
         }
@@ -162,7 +164,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
 
       // Set user as offline in Redis
-      this.presenceService.setOffline(connectionInfo.userID, connectionInfo.userType);
+      this.presence.setOffline(connectionInfo.userID, connectionInfo.userType);
 
       connectionInfo.joinedRooms.forEach(roomID => {
         const roomMembers = this.roomMembers.get(roomID);
@@ -195,7 +197,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   public async isUserOnline(userID: string, userType: UserType): Promise<boolean> {
-    return await this.presenceService.isOnline(userID, userType);
+    return await this.presence.isOnline(userID, userType);
   }
 
   @SubscribeMessage('join_conversation')
@@ -384,8 +386,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       if (!conversation) return false;
 
-      const userIndex = conversation.participantIDs.indexOf(userType === UserType.ADMIN ? UserType.ADMIN : userID);
-      return userIndex !== -1 && conversation.participantTypes[userIndex] === userType;
+      return this.conversationHelper.isParticipant(conversation, userID, userType);
     } catch (error) {
       this.logger.error('Error verifying conversation access:', error);
       return false;
@@ -494,7 +495,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.typingStates.clear();
     this.conversationViewers.clear();
 
-    this.presenceService.cleanup();
+    this.presence.cleanup();
   }
 
   getConnectionStats() {

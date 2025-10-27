@@ -315,12 +315,13 @@ export class MessagesService {
     // Send notifications and check presence
     for (let i = 0; i < updatedParticipantIDs.length; i++) {
       const participantID = updatedParticipantIDs[i];
-      const participantType = updatedParticipantTypes[i] as UserType;
 
       // Skip sender
-      if (participantID === senderID && participantType === senderType) {
+      if (participantID === senderID) {
         continue;
       }
+
+      const participantType = this.conversationHelper.getParticipantType(conversationType, senderType);
 
       const isRecipientViewing = this.messagesGateway.isUserViewingConversation(
         conversationID,
