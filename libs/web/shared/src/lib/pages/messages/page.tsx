@@ -15,6 +15,8 @@ interface IProps {
   goBack: () => void;
 }
 
+export { ChatPopupWidget } from './partials/widget';
+
 export const MessagesPage: FC<IProps> = (props) => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);

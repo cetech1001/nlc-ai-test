@@ -1,10 +1,11 @@
 'use client'
 
 import {ReactNode, useEffect} from 'react';
-import { DashboardSidebarWrapper, DashboardHeader } from '@nlc-ai/web-shared';
+import { DashboardSidebarWrapper, DashboardHeader, ChatPopupWidget } from '@nlc-ai/web-shared';
 import {usePathname, useRouter} from "next/navigation";
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import {useAuth} from "@nlc-ai/web-auth";
-import {ChatPopupWidget, menuItems, pageConfig, sdkClient, settingsItems} from "@/lib";
+import {menuItems, pageConfig, sdkClient, settingsItems} from "@/lib";
 import {UserType} from "@nlc-ai/types";
 
 
@@ -24,7 +25,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
   const pathname = usePathname();
   const { SidebarComponent, MobileMenuButton } = DashboardSidebarWrapper();
 
-  let path = pathname.split('/').filter(Boolean).shift();
+  const path = pathname.split('/').filter(Boolean).shift();
   const currentConfig = pageConfig[path as keyof typeof pageConfig] || defaultConfig;
 
   useEffect(() => {
@@ -85,7 +86,7 @@ const CoachDashboardLayout = ({ children }: DashboardLayoutProps) => {
             {children}
           </div>
         </main>
-        <ChatPopupWidget/>
+        <ChatPopupWidget sdkClient={sdkClient} user={user} />
       </div>
     </div>
   );

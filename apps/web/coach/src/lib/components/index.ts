@@ -1,7 +1,6 @@
 export * from './account';
 export * from './billing';
 export * from './calendar';
-export * from './chat';
 export * from './clients';
 export * from './content';
 export * from './courses';
