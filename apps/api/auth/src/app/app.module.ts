@@ -7,9 +7,9 @@ import {AuthLibModule, JwtAuthGuard} from '@nlc-ai/api-auth';
 import { DatabaseModule } from '@nlc-ai/api-database';
 import {MessagingModule} from "@nlc-ai/api-messaging";
 import { AuthModule } from './auth/auth.module';
-import { HealthModule } from './health/health.module';
 import {authConfig} from './config/auth.config';
 import {ActivityModule} from "./activity/activity.module";
+import {EventsModule} from "./events/events.module";
 
 @Module({
   imports: [
@@ -25,7 +25,7 @@ import {ActivityModule} from "./activity/activity.module";
     AuthLibModule,
     AuthModule,
     ActivityModule,
-    HealthModule,
+    EventsModule,
   ],
   providers: [
     {
