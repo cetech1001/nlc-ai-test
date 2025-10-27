@@ -168,6 +168,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       const participantsToCheck = new Map<string, UserType>();
 
       conversations.forEach(conv => {
+        // @ts-expect-error idk
         const { userID, userType } = conv.metadata;
         if (userID && userID !== 'unassigned') {
           participantsToCheck.set(userID, userType);

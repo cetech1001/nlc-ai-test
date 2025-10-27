@@ -3,7 +3,7 @@
   "include": [],
   "references": [
     {
-      "path": "../utils"
+      "path": "../../sdk/messages"
     },
     {
       "path": "../../sdk/communities"
@@ -16,6 +16,9 @@
     },
     {
       "path": "../settings"
+    },
+    {
+      "path": "../utils"
     },
     {
       "path": "../../sdk/notifications"

@@ -32,7 +32,7 @@
   ],
   "references": [
     {
-      "path": "../utils/tsconfig.lib.json"
+      "path": "../../sdk/messages/tsconfig.lib.json"
     },
     {
       "path": "../../sdk/communities/tsconfig.lib.json"
@@ -45,6 +45,9 @@
     },
     {
       "path": "../settings/tsconfig.lib.json"
+    },
+    {
+      "path": "../utils/tsconfig.lib.json"
     },
     {
       "path": "../../sdk/notifications/tsconfig.lib.json"
