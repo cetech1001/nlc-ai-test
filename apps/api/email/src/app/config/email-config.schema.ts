@@ -13,6 +13,9 @@ export class EmailConfigSchema {
   DATABASE_SCHEMA?: string = 'comms';
 
   @IsString()
+  REDIS_URL: string;
+
+  @IsString()
   RABBITMQ_URL: string;
 
   @IsOptional()

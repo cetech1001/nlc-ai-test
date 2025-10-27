@@ -7,7 +7,6 @@ export * from './courses';
 export * from './home';
 export * from './icons';
 export * from './leads';
-export * from './notifications';
 export * from './onboarding';
 export * from './retention';
 export * from './sidebar';

@@ -14,8 +14,6 @@ export class SchedulerService implements OnModuleInit {
   async onModuleInit() {
     await this.scheduledEmailsQueue.clean(0, 'completed');
     await this.scheduledEmailsQueue.clean(0, 'failed');
-
-    this.logger.log('Scheduler service initialized');
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -34,15 +32,12 @@ export class SchedulerService implements OnModuleInit {
           removeOnFail: false,
         }
       );
-
-      this.logger.debug('Scheduled email processing job queued');
     } catch (error) {
       this.logger.error('Failed to queue scheduled email processing:', error);
     }
   }
 
   async triggerScheduledEmailProcessing(): Promise<void> {
-    this.logger.log('Manually triggering scheduled email processing');
     await this.processScheduledEmails();
   }
 

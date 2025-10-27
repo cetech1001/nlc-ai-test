@@ -131,8 +131,6 @@ export class SmtpService {
 
     const result = await gmail.users.messages.send(sendParams);
 
-    this.logger.log(`Email sent via Gmail: ${result.data.id}`);
-
     return {
       success: true,
       messageID: result.data.id!,
@@ -216,8 +214,6 @@ export class SmtpService {
       );
     }
 
-    this.logger.log(`Email sent via Outlook`);
-
     return {
       success: true,
       messageID: response.data?.id || 'sent',
@@ -257,8 +253,6 @@ export class SmtpService {
           tokenExpiresAt: new Date(Date.now() + data.expires_in * 1000),
         },
       });
-
-      this.logger.log(`Outlook token refreshed for account ${accountID}`);
     } catch (error: any) {
       this.logger.error(`Failed to refresh Outlook token for account ${accountID}:`, error);
 
@@ -316,8 +310,6 @@ export class SmtpService {
           tokenExpiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : null,
         },
       });
-
-      this.logger.log(`Gmail token refreshed for account ${accountID}`);
     } catch (error: any) {
       this.logger.error(`Failed to refresh Gmail token for account ${accountID}:`, error);
 

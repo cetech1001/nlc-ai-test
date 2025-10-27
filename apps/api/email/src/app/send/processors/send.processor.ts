@@ -42,16 +42,9 @@ export class SendProcessor {
         throw new Error('No email account connected for this thread');
       }
 
-      // CRITICAL: Extract threading headers from message metadata
       const metadata = message.metadata as any;
       const inReplyTo = metadata?.inReplyTo;
       const references = metadata?.references;
-
-      this.logger.log(`Sending thread reply with headers:`, {
-        threadID: emailThread.threadID,
-        inReplyTo,
-        references,
-      });
 
       const result = await this.smtpService.sendViaCoachAccount({
         accountID: emailThread.emailAccount.id,
@@ -73,8 +66,6 @@ export class SendProcessor {
             sentAt: new Date(),
           },
         });
-
-        this.logger.log(`Thread reply sent successfully via coach's account: ${messageID}`);
       } else {
         throw new Error(result.error || 'Failed to send via coach account');
       }
@@ -129,8 +120,6 @@ export class SendProcessor {
               sentAt: new Date(),
             },
           });
-
-          this.logger.log(`Coach email sent successfully via their account: ${messageID}`);
         } else {
           throw new Error(result.error || 'Failed to send via coach account');
         }
@@ -159,8 +148,6 @@ export class SendProcessor {
               sentAt: new Date(),
             },
           });
-
-          this.logger.log(`Coach email sent successfully via Mailgun: ${messageID}`);
         } else {
           throw new Error(result.error || 'Failed to send via Mailgun');
         }
@@ -216,8 +203,6 @@ export class SendProcessor {
             sentAt: new Date(),
           },
         });
-
-        this.logger.log(`System email sent successfully: ${messageID}`);
       } else {
         throw new Error(result.error || 'Failed to send');
       }
@@ -272,8 +257,6 @@ export class SendProcessor {
             sentAt: new Date(),
           },
         });
-
-        this.logger.log(`Admin email sent successfully: ${messageID}`);
       } else {
         throw new Error(result.error || 'Failed to send');
       }

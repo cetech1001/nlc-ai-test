@@ -1,15 +1,15 @@
-import {Injectable, NotFoundException, Logger, BadRequestException} from '@nestjs/common';
-import { PrismaService } from '@nlc-ai/api-database';
-import { OutboxService } from '@nlc-ai/api-messaging';
+import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {PrismaService} from '@nlc-ai/api-database';
+import {OutboxService} from '@nlc-ai/api-messaging';
 import {
-  CreateLead,
   CreateLandingLead,
-  UpdateLead,
+  CreateLead,
+  LEAD_ROUTING_KEYS,
+  LeadEvent,
   LeadQueryParams,
   LeadStatus,
   LeadType,
-  LEAD_ROUTING_KEYS,
-  LeadEvent
+  UpdateLead
 } from '@nlc-ai/api-types';
 
 @Injectable()
@@ -120,11 +120,8 @@ export class LeadsService {
       LEAD_ROUTING_KEYS.LANDING_SUBMITTED
     );
 
-    this.logger.log(`Landing page lead created: ${newLead.id} (${newLead.email})`);
     return newLead;
   }
-
-  // Add this method to the LeadsService class
 
   async createFromChatbot(dto: {
     coachID: string;
@@ -136,7 +133,6 @@ export class LeadsService {
   }) {
     const { coachID, threadID, name, email, phone, marketingOptIn } = dto;
 
-    // Check if lead already exists for this coach and email
     let existingLead = null;
     if (email) {
       existingLead = await this.prisma.lead.findFirst({
@@ -153,7 +149,6 @@ export class LeadsService {
     let lead;
 
     if (existingLead) {
-      // Update existing lead with new information
       lead = await this.prisma.lead.update({
         where: {
           id: existingLead.id,
@@ -171,7 +166,6 @@ export class LeadsService {
 
       this.logger.log(`Updated existing lead from chatbot: ${lead.id} (${lead.email})`);
     } else {
-      // Create new lead
       lead = await this.prisma.lead.create({
         data: {
           leadType: LeadType.COACH_LEAD,
@@ -185,28 +179,6 @@ export class LeadsService {
           notes: `Chatbot Thread: ${threadID}`,
         },
       });
-
-      // Emit event for new lead
-      await this.outbox.saveAndPublishEvent<LeadEvent>(
-        {
-          eventType: 'lead.created',
-          schemaVersion: 1,
-          payload: {
-            leadID: lead.id,
-            coachID: lead.coachID || undefined,
-            leadType: lead.leadType as LeadType,
-            name: lead.name,
-            email: lead.email,
-            phone: lead.phone || undefined,
-            source: lead.source || undefined,
-            status: lead.status as LeadStatus,
-            createdAt: lead.createdAt.toISOString(),
-          },
-        },
-        LEAD_ROUTING_KEYS.CREATED
-      );
-
-      this.logger.log(`Chatbot lead created: ${lead.id} (${lead.email})`);
     }
 
     return lead;
@@ -300,7 +272,7 @@ export class LeadsService {
   }
 
   async create(createLeadDto: CreateLead, coachID?: string) {
-    const lead = await this.prisma.lead.create({
+    return await this.prisma.lead.create({
       data: {
         leadType: coachID ? LeadType.COACH_LEAD : LeadType.ADMIN_LEAD,
         coachID,
@@ -309,93 +281,31 @@ export class LeadsService {
         meetingDate: createLeadDto.meetingDate ? new Date(createLeadDto.meetingDate) : null,
       },
     });
-
-    // Emit event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.created',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID: lead.coachID || undefined,
-          leadType: lead.leadType as LeadType,
-          name: lead.name,
-          email: lead.email,
-          phone: lead.phone || undefined,
-          source: lead.source || undefined,
-          status: lead.status as LeadStatus,
-          qualified: lead.qualified || undefined,
-          createdAt: lead.createdAt.toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.CREATED
-    );
-
-    this.logger.log(`Lead created: ${lead.id} (${lead.email})`);
-    return lead;
   }
 
   async update(id: string, updateLeadDto: UpdateLead) {
     await this.findOne(id);
 
-    const lead = await this.prisma.lead.update({
-      where: { id },
+    return await this.prisma.lead.update({
+      where: {id},
       data: {
         ...updateLeadDto,
         meetingDate: updateLeadDto.meetingDate ? new Date(updateLeadDto.meetingDate) : undefined,
         updatedAt: new Date(),
       },
     });
-
-    // Emit update event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.updated',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID: lead.coachID || undefined,
-          changes: updateLeadDto,
-          updatedAt: lead.updatedAt.toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.UPDATED
-    );
-
-    this.logger.log(`Lead updated: ${lead.id}`);
-    return lead;
   }
 
   async remove(id: string) {
-    const lead = await this.findOne(id);
-
     await this.prisma.lead.delete({
       where: { id },
     });
 
-    // Emit deletion event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.deleted',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID: lead.coachID || undefined,
-          name: lead.name,
-          email: lead.email,
-          deletedAt: new Date().toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.DELETED
-    );
-
-    this.logger.log(`Lead deleted: ${lead.id}`);
     return { success: true, message: 'Lead deleted successfully' };
   }
 
   async updateStatus(id: string, status: string) {
-    const existingLead = await this.findOne(id);
-    const previousStatus = existingLead.status as LeadStatus;
+    await this.findOne(id);
 
     const data: any = {
       status,
@@ -410,47 +320,10 @@ export class LeadsService {
       data.lastContactedAt = new Date();
     }
 
-    const lead = await this.prisma.lead.update({
-      where: { id },
+    return await this.prisma.lead.update({
+      where: {id},
       data,
     });
-
-    // Emit status change event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.status.changed',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID: lead.coachID || undefined,
-          previousStatus,
-          newStatus: status as LeadStatus,
-          changedAt: lead.updatedAt.toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.STATUS_CHANGED
-    );
-
-    // Emit specific events for important status changes
-    if (status === LeadStatus.CONVERTED) {
-      await this.outbox.saveAndPublishEvent<LeadEvent>(
-        {
-          eventType: 'lead.converted',
-          schemaVersion: 1,
-          payload: {
-            leadID: lead.id,
-            coachID: lead.coachID!,
-            name: lead.name,
-            email: lead.email,
-            convertedAt: lead.convertedAt!.toISOString(),
-          },
-        },
-        LEAD_ROUTING_KEYS.CONVERTED
-      );
-    }
-
-    this.logger.log(`Lead status updated: ${lead.id} (${previousStatus} → ${status})`);
-    return lead;
   }
 
   async getStats(coachID?: string) {
@@ -480,8 +353,8 @@ export class LeadsService {
     };
   }
 
-  async markAsContacted(leadID: string, contactMethod: 'email' | 'phone' | 'meeting', notes?: string) {
-    const lead = await this.findOne(leadID);
+  async markAsContacted(leadID: string) {
+    await this.findOne(leadID);
 
     await this.prisma.lead.update({
       where: { id: leadID },
@@ -491,172 +364,20 @@ export class LeadsService {
       },
     });
 
-    // Emit contacted event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.contacted',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID: lead.coachID || undefined,
-          contactMethod,
-          notes,
-          contactedAt: new Date().toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.CONTACTED
-    );
-
-    this.logger.log(`Lead contacted: ${leadID} via ${contactMethod}`);
     return { success: true, message: 'Lead marked as contacted' };
   }
 
   async scheduleMeeting(leadID: string, meetingDate: string, meetingTime?: string) {
-    const lead = await this.findOne(leadID);
+    await this.findOne(leadID);
 
-    const updatedLead = await this.prisma.lead.update({
-      where: { id: leadID },
+    return await this.prisma.lead.update({
+      where: {id: leadID},
       data: {
         status: LeadStatus.SCHEDULED,
         meetingDate: new Date(meetingDate),
         meetingTime,
         updatedAt: new Date(),
       },
-    });
-
-    // Emit meeting scheduled event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.meeting.scheduled',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID: lead.coachID || undefined,
-          meetingDate: updatedLead.meetingDate!.toISOString(),
-          meetingTime,
-          scheduledAt: updatedLead.updatedAt.toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.MEETING_SCHEDULED
-    );
-
-    this.logger.log(`Meeting scheduled for lead: ${leadID} on ${meetingDate}`);
-    return updatedLead;
-  }
-
-  async assignToCoach(leadID: string, coachID: string) {
-    const lead = await this.findOne(leadID);
-
-    const updatedLead = await this.prisma.lead.update({
-      where: { id: leadID },
-      data: {
-        coachID,
-        leadType: LeadType.COACH_LEAD,
-        updatedAt: new Date(),
-      },
-    });
-
-    // Emit assignment event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.updated',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID,
-          changes: { coachID, leadType: LeadType.COACH_LEAD },
-          updatedAt: updatedLead.updatedAt.toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.UPDATED
-    );
-
-    this.logger.log(`Lead assigned to coach: ${leadID} → ${coachID}`);
-    return updatedLead;
-  }
-
-  async updateScore(leadID: string, score: number, scoreFactors?: Record<string, any>) {
-    const lead = await this.findOne(leadID);
-
-    // Note: This assumes you add a score field to the Lead model
-    // For now, we'll store it in notes or a custom field
-    const updatedLead = await this.prisma.lead.update({
-      where: { id: leadID },
-      data: {
-        // score, // Uncomment when score field is added to schema
-        updatedAt: new Date(),
-      },
-    });
-
-    // Emit score update event
-    await this.outbox.saveAndPublishEvent<LeadEvent>(
-      {
-        eventType: 'lead.score.updated',
-        schemaVersion: 1,
-        payload: {
-          leadID: lead.id,
-          coachID: lead.coachID || undefined,
-          newScore: score,
-          scoreFactors,
-          updatedAt: updatedLead.updatedAt.toISOString(),
-        },
-      },
-      LEAD_ROUTING_KEYS.SCORE_UPDATED
-    );
-
-    this.logger.log(`Lead score updated: ${leadID} (score: ${score})`);
-    return updatedLead;
-  }
-
-  async getLeadsByStatus(status: LeadStatus, coachID?: string) {
-    const where: any = { status };
-    if (coachID) {
-      where.coachID = coachID;
-    }
-
-    return this.prisma.lead.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async getRecentLeads(days = 7, coachID?: string) {
-    const sinceDate = new Date();
-    sinceDate.setDate(sinceDate.getDate() - days);
-
-    const where: any = {
-      createdAt: { gte: sinceDate },
-    };
-
-    if (coachID) {
-      where.coachID = coachID;
-    }
-
-    return this.prisma.lead.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async getLeadsRequiringFollowup(coachID?: string) {
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-    const where: any = {
-      status: { in: [LeadStatus.CONTACTED, LeadStatus.SCHEDULED] },
-      OR: [
-        { lastContactedAt: { lt: threeDaysAgo } },
-        { lastContactedAt: null },
-      ],
-    };
-
-    if (coachID) {
-      where.coachID = coachID;
-    }
-
-    return this.prisma.lead.findMany({
-      where,
-      orderBy: { createdAt: 'asc' },
     });
   }
 }

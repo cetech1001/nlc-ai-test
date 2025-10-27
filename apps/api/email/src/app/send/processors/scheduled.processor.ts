@@ -17,8 +17,6 @@ export class ScheduledProcessor {
 
   @Process('process-scheduled-emails')
   async processScheduledEmails() {
-    this.logger.log('Processing scheduled emails...');
-
     try {
       const now = new Date();
       const scheduledEmails = await this.prisma.emailMessage.findMany({
@@ -41,18 +39,12 @@ export class ScheduledProcessor {
         },
       });
 
-      this.logger.log(`Found ${scheduledEmails.length} scheduled emails to process`);
-
       const results = await Promise.allSettled(
         scheduledEmails.map(email => this.sendScheduledEmail(email))
       );
 
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
-
-      this.logger.log(
-        `Processed ${scheduledEmails.length} scheduled emails: ${successful} successful, ${failed} failed`
-      );
 
       return {
         processed: scheduledEmails.length,
@@ -67,29 +59,21 @@ export class ScheduledProcessor {
 
   private async sendScheduledEmail(email: any): Promise<void> {
     try {
-      // Update status to processing
       await this.prisma.emailMessage.update({
         where: { id: email.id },
         data: { status: EmailStatus.PROCESSING },
       });
 
-      // Determine how to send based on email type
       if (email.emailThread && email.emailThread.emailAccount) {
-        // Thread reply - send via coach's connected account
         await this.sendViaCoachAccount(email);
       } else if (email.userType === UserType.COACH && email.recipientType) {
-        // Coach email to client/lead - try coach account first
         await this.sendCoachEmail(email);
       } else {
-        // System email - send via Mailgun
         await this.sendSystemEmail(email);
       }
-
-      this.logger.log(`Successfully sent scheduled email: ${email.id}`);
     } catch (error: any) {
       this.logger.error(`Failed to send scheduled email ${email.id}:`, error);
 
-      // Update email with error
       await this.prisma.emailMessage.update({
         where: { id: email.id },
         data: {
@@ -99,7 +83,6 @@ export class ScheduledProcessor {
         },
       });
 
-      // If retry count is less than 3, reschedule for retry
       if (email.retryCount < 3) {
         const retryDelay = Math.pow(2, email.retryCount) * 60 * 1000; // Exponential backoff
         const newScheduledFor = new Date(Date.now() + retryDelay);
@@ -111,10 +94,6 @@ export class ScheduledProcessor {
             scheduledFor: newScheduledFor,
           },
         });
-
-        this.logger.log(
-          `Rescheduled failed email ${email.id} for retry at ${newScheduledFor}`
-        );
       }
 
       throw error;
@@ -148,7 +127,6 @@ export class ScheduledProcessor {
   }
 
   private async sendCoachEmail(email: any): Promise<void> {
-    // Try to find coach's primary email account
     const primaryAccount = await this.prisma.emailAccount.findFirst({
       where: {
         userID: email.userID,
@@ -180,7 +158,6 @@ export class ScheduledProcessor {
       }
     }
 
-    // Fallback to system email if no coach account
     await this.sendSystemEmail(email);
   }
 

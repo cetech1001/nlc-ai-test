@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { UserType } from '@nlc-ai/types';
+import {ConfigService} from "@nestjs/config";
 
 @Injectable()
 export class PresenceService {
@@ -8,8 +9,8 @@ export class PresenceService {
   private readonly redis: Redis;
   private readonly ONLINE_TTL = 30; // seconds
 
-  constructor() {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+  constructor(config: ConfigService) {
+    this.redis = new Redis(config.get('REDIS_URL') as string);
   }
 
   async setOnline(userID: string, userType: UserType, socketID: string): Promise<void> {
