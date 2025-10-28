@@ -71,15 +71,10 @@ export class CommunityHandler implements OnApplicationBootstrap {
 
   private async handlePostCreated(payload: any) {
     try {
-      // Get all community members except the post author
       const membersToNotify = await this.getCommunityMembers(payload.communityID, payload.authorID);
-      /*const membersToNotify = communityMembers.filter(
-        member => member.userID !== payload.authorID
-      );*/
 
       this.logger.log(`Notifying ${membersToNotify.length} members about new post in ${payload.communityName}`);
 
-      // Create notifications for each member
       const notifications = await Promise.allSettled(
         membersToNotify.map(member =>
           this.notificationsService.createNotification({
@@ -88,7 +83,7 @@ export class CommunityHandler implements OnApplicationBootstrap {
             type: 'post_created',
             title: `New post in ${payload.communityName}`,
             message: `${payload.authorName} created a new post in ${payload.communityName}`,
-            actionUrl: `/communities/${payload.communityID}/posts/${payload.postID}`,
+            actionUrl: `/community/${payload.slug}/post/${payload.postID}`,
             priority: 'normal',
             metadata: {
               communityID: payload.communityID,
@@ -152,12 +147,15 @@ export class CommunityHandler implements OnApplicationBootstrap {
       type: 'post_liked',
       title: 'Your post was liked! 👍',
       message: `${payload.likedByName} liked your post in ${payload.communityName}`,
+      actionUrl: `/community/${payload.slug}/post/${payload.postID}`,
       metadata: {
         communityID: payload.communityID,
         postID: payload.postID,
         likedByID: payload.likedByID,
         reactionType: payload.reactionType,
         eventType: 'community.post.liked',
+        communityName: payload.communityName,
+        authorName: payload.likedByName,
       },
     });
 
@@ -173,8 +171,11 @@ export class CommunityHandler implements OnApplicationBootstrap {
         type: 'post_commented',
         title: 'New comment on your post 💬',
         message: `${payload.commentAuthorName} commented on your post in ${payload.communityName}`,
+        actionUrl: `/community/${payload.slug}/post/${payload.postID}`,
         metadata: {
           communityID: payload.communityID,
+          communityName: payload.communityName,
+          authorName: payload.commentAuthorName,
           postID: payload.postID,
           commentID: payload.commentID,
           commentAuthorID: payload.commentAuthorID,
@@ -187,9 +188,8 @@ export class CommunityHandler implements OnApplicationBootstrap {
   }
 
   private async handleMemberJoined(payload: any) {
-    // Notify community owner/admin about new member
     const notification = await this.notificationsService.createNotification({
-      userID: payload.communityOwnerID || 'community-admin', // You'd need to get this from community data
+      userID: payload.communityOwnerID,
       userType: UserType.coach,
       type: 'member_joined',
       title: 'New community member! 🎉',
@@ -199,6 +199,8 @@ export class CommunityHandler implements OnApplicationBootstrap {
         memberID: payload.memberID,
         userID: payload.userID,
         eventType: 'community.member.joined',
+        communityName: payload.communityName,
+        authorName: payload.memberName,
       },
     });
 
@@ -218,6 +220,8 @@ export class CommunityHandler implements OnApplicationBootstrap {
         inviteID: payload.inviteID,
         inviterID: payload.inviterID,
         eventType: 'community.member.invited',
+        communityName: payload.communityName,
+        authorName: payload.inviterName,
       },
     });
 

@@ -57,7 +57,7 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
         {isOwnComment && (
           <>
             <button
-              onClick={() => handleAction(onEdit || (() => {}))}
+              onClick={() => handleAction(onEdit || (() => { /* empty */ }))}
               className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-neutral-700/50 transition-colors text-left"
             >
               <Edit className="w-4 h-4" />
@@ -67,7 +67,7 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
             <div className="border-t border-neutral-700 my-2"></div>
 
             <button
-              onClick={() => handleAction(onDelete || (() => {}))}
+              onClick={() => handleAction(onDelete || (() => { /* empty */ }))}
               className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-500/10 transition-colors text-left"
             >
               <Trash2 className="w-4 h-4" />
@@ -78,7 +78,7 @@ export const CommentActionsDropdown: React.FC<CommentActionsDropdownProps> = ({
 
         {!isOwnComment && (
           <button
-            onClick={() => handleAction(onReport || (() => {}))}
+            onClick={() => handleAction(onReport || (() => { /* empty */ }))}
             className="w-full flex items-center gap-3 px-4 py-2 text-yellow-400 hover:bg-yellow-500/10 transition-colors text-left"
           >
             <Flag className="w-4 h-4" />

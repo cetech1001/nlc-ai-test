@@ -38,6 +38,7 @@ export interface PostCreatedEvent extends BaseEvent {
   eventType: 'community.post.created';
   payload: {
     postID: string;
+    slug: string;
     communityID: string;
     communityName: string;
     authorID: string;

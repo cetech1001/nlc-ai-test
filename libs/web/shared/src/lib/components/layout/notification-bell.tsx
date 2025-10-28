@@ -139,6 +139,10 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ goToNotifica
     if (notification.actionUrl) {
       window.location.href = notification.actionUrl;
       setIsOpen(false);
+    } else {
+      // If no actionUrl, navigate to notifications page
+      goToNotifications();
+      setIsOpen(false);
     }
   };
 

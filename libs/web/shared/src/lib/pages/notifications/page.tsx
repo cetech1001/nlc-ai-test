@@ -1,6 +1,6 @@
 'use client'
 
-import {FC, useState} from 'react';
+import {FC, useState, useEffect} from 'react';
 import {
   Bell,
   X,
@@ -16,10 +16,10 @@ import {
   DollarSign,
   AlertCircle
 } from 'lucide-react';
-import {BackTo, DataFilter, PageHeader } from '../../components';
+import {BackTo, DataFilter, PageHeader, Pagination, MobilePagination } from '../../components';
 import {useNotifications} from "../../hooks";
 import {NotificationResponse} from "@nlc-ai/sdk-notifications";
-import { notificationFilters } from "./partials";
+import { notificationFilters, NotificationDetailsModal } from "./partials";
 import {NLCClient} from "@nlc-ai/sdk-main";
 
 
@@ -113,6 +113,9 @@ export const NotificationsPage: FC<IProps> = ({ sdkClient, goBack, goToActionUrl
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedNotification, setSelectedNotification] = useState<NotificationResponse | null>(null);
+  const notificationsPerPage = 10;
 
   const {
     notifications,
@@ -156,6 +159,27 @@ export const NotificationsPage: FC<IProps> = ({ sdkClient, goBack, goToActionUrl
     return true;
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredNotifications.length / notificationsPerPage);
+  const paginatedNotifications = filteredNotifications.slice(
+    (currentPage - 1) * notificationsPerPage,
+    currentPage * notificationsPerPage
+  );
+
+  const pagination = {
+    page: currentPage,
+    limit: notificationsPerPage,
+    total: filteredNotifications.length,
+    totalPages: totalPages,
+    hasNext: currentPage < totalPages,
+    hasPrev: currentPage > 1,
+  };
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, filterStatus, filterPriority, searchQuery]);
+
   const handleMarkAsRead = async (notificationIDs: string[]) => {
     for (const id of notificationIDs) {
       await markAsRead(id);
@@ -188,8 +212,12 @@ export const NotificationsPage: FC<IProps> = ({ sdkClient, goBack, goToActionUrl
     if (!notification.isRead) {
       await markAsRead(notification.id);
     }
+
     if (notification.actionUrl) {
       goToActionUrl(notification.actionUrl);
+    } else {
+      // Open modal to show full message
+      setSelectedNotification(notification);
     }
   };
 
@@ -283,7 +311,7 @@ export const NotificationsPage: FC<IProps> = ({ sdkClient, goBack, goToActionUrl
         </div>
 
         {/* Notifications List */}
-        <div className="space-y-2">
+        <div className="space-y-2" data-table-container>
           {loading && notifications.length === 0 ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-3"></div>
@@ -300,7 +328,7 @@ export const NotificationsPage: FC<IProps> = ({ sdkClient, goBack, goToActionUrl
               </p>
             </div>
           ) : (
-            filteredNotifications.map((notification) => (
+            paginatedNotifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`relative bg-gradient-to-r from-neutral-800/30 to-neutral-900/30 border border-neutral-700 rounded-lg overflow-hidden transition-all hover:border-neutral-600 ${
@@ -411,6 +439,22 @@ export const NotificationsPage: FC<IProps> = ({ sdkClient, goBack, goToActionUrl
           )}
         </div>
 
+        {/* Pagination */}
+        {filteredNotifications.length > 0 && (
+          <>
+            <Pagination
+              totalPages={pagination.totalPages}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              isLoading={loading}
+            />
+
+            {!loading && (
+              <MobilePagination pagination={pagination}/>
+            )}
+          </>
+        )}
+
         {/* Load More */}
         {filteredNotifications.length > 0 && (
           <div className="text-center pt-6">
@@ -424,6 +468,16 @@ export const NotificationsPage: FC<IProps> = ({ sdkClient, goBack, goToActionUrl
           </div>
         )}
       </div>
+
+      {/* Notification Details Modal */}
+      {selectedNotification && (
+        <NotificationDetailsModal
+          notification={selectedNotification}
+          onClose={() => setSelectedNotification(null)}
+          getNotificationIcon={getNotificationIcon}
+          formatTimestamp={formatTimestamp}
+        />
+      )}
     </div>
   );
 };

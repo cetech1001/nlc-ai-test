@@ -4,7 +4,7 @@ import {NotificationsPage} from '@nlc-ai/web-shared';
 import { sdkClient } from '@/lib/sdk-client';
 
 
-const CoachNotificationsPage = () => {
+const AdminNotificationsPage = () => {
   const router = useRouter();
 
   const goToActionUrl = (url: string) => {
@@ -20,4 +20,4 @@ const CoachNotificationsPage = () => {
   );
 };
 
-export default CoachNotificationsPage;
+export default AdminNotificationsPage;

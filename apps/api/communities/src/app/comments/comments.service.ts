@@ -118,7 +118,7 @@ export class CommentsService {
       const post = await this.prisma.post.findUnique({
         where: { id: createRequest.postID },
         include: {
-          community: { select: { name: true } },
+          community: { select: { name: true, slug: true } },
           communityMember: { select: { userID: true, userType: true } },
         }
       });
@@ -130,6 +130,7 @@ export class CommentsService {
           commentID: comment.id,
           postID: createRequest.postID,
           communityID,
+          slug: post!.community.slug,
           communityName: post!.community.name,
           postAuthorID: post!.communityMember.userID,
           postAuthorType: post!.communityMember.userType as UserType,

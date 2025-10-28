@@ -86,6 +86,7 @@ export class PostsService {
         postID: post.id,
         communityID: post.communityID,
         communityName: post.community.name,
+        slug: post.community.slug,
         authorID: user.id,
         authorType: user.type,
         authorName: post.communityMember.userName,
@@ -377,7 +378,7 @@ export class PostsService {
     const post = await this.prisma.post.findUnique({
       where: { id: postID },
       include: {
-        community: { select: { name: true } },
+        community: { select: { name: true, slug: true }, },
         communityMember: { select: { userID: true, userType: true, userName: true } },
       },
     });
@@ -443,6 +444,7 @@ export class PostsService {
           postID,
           communityID: post.communityID,
           communityName: post.community.name,
+          slug: post.community.slug,
           postAuthorID: post.communityMember.userID,
           postAuthorType: post.communityMember.userType as UserType,
           likedByID: user.id,
