@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { type AuthUser, UserType } from '@nlc-ai/types';
+import {AuthResponse, type AuthUser, UserType} from '@nlc-ai/types';
 import {CurrentUser, Public, UserTypes, UserTypesGuard} from "@nlc-ai/api-auth";
 import { AuthService } from './auth.service';
 import { GoogleAuthService } from './services/google-auth.service';
@@ -42,9 +42,12 @@ export class AuthController {
     this.publicTokenName = this.config.get('auth.tokens.public')!;
   }
 
-  private setAuthCookie(res: Response, req: Request, token: string, rememberMe = false) {
+  private setAuthCookie(res: Response, req: Request, token: string, userType: UserType, rememberMe = false) {
     const isProduction = this.config.get('auth.service.env') === 'production';
     const domain = this.getBaseDomain(req);
+
+    // Use different cookie names based on user type
+    const cookieName = `${this.publicTokenName}_${userType}`;
 
     const cookieOptions = {
       httpOnly: true,
@@ -55,12 +58,14 @@ export class AuthController {
       ...(domain && { domain }),
     };
 
-    res.cookie(this.publicTokenName, token, cookieOptions);
+    res.cookie(cookieName, token, cookieOptions);
   }
 
-  private clearAuthCookie(res: Response, req: Request) {
+  private clearAuthCookie(res: Response, req: Request, userType: UserType) {
     const domain = this.getBaseDomain(req);
     const isProduction = this.config.get('auth.service.env') === 'production';
+
+    const cookieName = `${this.publicTokenName}_${userType}`;
 
     const clearOptions = {
       httpOnly: true,
@@ -70,7 +75,7 @@ export class AuthController {
       ...(domain && { domain }),
     };
 
-    res.clearCookie(this.publicTokenName, clearOptions);
+    res.clearCookie(cookieName, clearOptions);
   }
 
   private getBaseDomain(req: Request): string | undefined {
@@ -101,7 +106,7 @@ export class AuthController {
     @Req() req: Request
   ) {
     const result = await this.authService.loginAdmin(loginDto);
-    this.setAuthCookie(res, req, result.access_token, loginDto.rememberMe);
+    this.setAuthCookie(res, req, result.access_token, UserType.ADMIN, loginDto.rememberMe);
     return result;
   }
 
@@ -126,7 +131,7 @@ export class AuthController {
     @Req() req: Request
   ) {
     const result = await this.authService.loginCoach(loginDto, req);
-    this.setAuthCookie(res, req, result.access_token, loginDto.rememberMe);
+    this.setAuthCookie(res, req, result.access_token, UserType.COACH, loginDto.rememberMe);
     return result;
   }
 
@@ -142,7 +147,7 @@ export class AuthController {
     @Req() req: Request
   ) {
     const result = await this.googleAuthService.coachGoogleAuth(googleAuthDto.idToken, req);
-    this.setAuthCookie(res, req, result.access_token);
+    this.setAuthCookie(res, req, result.access_token, UserType.COACH);
     return result;
   }
 
@@ -167,7 +172,7 @@ export class AuthController {
     @Req() req: Request
   ) {
     const result = await this.authService.loginClient(loginDto);
-    this.setAuthCookie(res, req, result.access_token, loginDto.rememberMe);
+    this.setAuthCookie(res, req, result.access_token, UserType.CLIENT, loginDto.rememberMe);
     return result;
   }
 
@@ -186,7 +191,7 @@ export class AuthController {
       clientGoogleAuthDto.idToken,
       clientGoogleAuthDto.inviteToken
     );
-    this.setAuthCookie(res, req, (result as any).access_token);
+    this.setAuthCookie(res, req, (result as any).access_token, UserType.CLIENT);
     return result;
   }
 
@@ -203,7 +208,7 @@ export class AuthController {
     @Req() req: Request
   ) {
     const result = await this.authService.switchCoachContext(user.id, switchCoachDto.coachID);
-    this.setAuthCookie(res, req, result.access_token);
+    this.setAuthCookie(res, req, result.access_token, UserType.CLIENT);
     return result;
   }
 
@@ -234,8 +239,8 @@ export class AuthController {
   ) {
     const result = await this.authService.verifyCode(verifyCodeDto, req);
 
-    if ((result as any).access_token) {
-      this.setAuthCookie(res, req, (result as any).access_token);
+    if ((result as AuthResponse).access_token) {
+      this.setAuthCookie(res, req, (result as AuthResponse).access_token, (result as AuthResponse).user.type);
     }
 
     return result;
@@ -272,9 +277,11 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout' })
   async logout(
     @Res({ passthrough: true }) res: Response,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
-    this.clearAuthCookie(res, req);
+    [UserType.ADMIN, UserType.COACH, UserType.CLIENT].forEach(type => {
+      this.clearAuthCookie(res, req, type);
+    });
     return { message: 'Logged out successfully' };
   }
 }

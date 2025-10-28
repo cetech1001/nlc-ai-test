@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
+import { UserType } from '@nlc-ai/types';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -43,9 +44,20 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private extractTokenFromRequest(request: any): string | undefined {
-    const cookieToken = request.cookies?.[this.publicTokenName];
-    if (cookieToken && typeof cookieToken === 'string' && cookieToken.length > 0) {
-      return cookieToken;
+    // Check all user-type-specific cookies first
+    const userTypes = [UserType.ADMIN, UserType.COACH, UserType.CLIENT];
+    for (const userType of userTypes) {
+      const cookieName = `${this.publicTokenName}_${userType}`;
+      const cookieToken = request.cookies?.[cookieName];
+      if (cookieToken && typeof cookieToken === 'string' && cookieToken.length > 0) {
+        return cookieToken;
+      }
+    }
+
+    // Fallback: check legacy single cookie for backward compatibility
+    const legacyCookieToken = request.cookies?.[this.publicTokenName];
+    if (legacyCookieToken && typeof legacyCookieToken === 'string' && legacyCookieToken.length > 0) {
+      return legacyCookieToken;
     }
 
     const authHeader = request.headers?.authorization;

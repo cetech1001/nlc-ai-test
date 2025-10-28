@@ -32,6 +32,10 @@ export class MailgunService implements IEmailProvider {
     try {
       from = from || this.defaultSender;
 
+      if (message.to === this.config.get('email.mailgun.fromEmail')) {
+        from = `${this.config.get('email.appName')} <noreply@nextlevelcoach.ai>`;
+      }
+
       const mailgunMessage = this.transformMessage(message);
 
       const result = await this.mailgun.messages.create(this.domain, {
