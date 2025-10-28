@@ -182,10 +182,21 @@ export class CommunitiesService {
 
     const communityName = coach.businessName || `${coach.firstName} ${coach.lastName}'s Community`;
 
+    const baseSlug = communityName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+    while (await this.prisma.community.findUnique({ where: { slug: uniqueSlug } })) {
+      uniqueSlug = `${baseSlug}-${counter++}`;
+    }
+
     return this.createCommunity({
       name: communityName,
       description: `Welcome to ${communityName}! This is your space to connect with your coach and fellow community members.`,
-      slug: communityName.toLowerCase().replace(' ', '-'),
+      slug: uniqueSlug,
       type: CommunityType.COACH_CLIENT,
       visibility: CommunityVisibility.INVITE_ONLY,
       coachID,

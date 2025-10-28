@@ -1,5 +1,5 @@
 import {BaseClient, ServiceClientConfig} from "@nlc-ai/sdk-core";
-import { UserType } from "@nlc-ai/types";
+import {RegistrationRequest, UserType} from "@nlc-ai/types";
 import {ActivityClient} from "./activity.client";
 
 export class AuthClient extends BaseClient {
@@ -32,12 +32,7 @@ export class AuthClient extends BaseClient {
     return response.data!;
   }
 
-  async registerCoach(data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-  }) {
+  async registerCoach(data: RegistrationRequest) {
     const response = await this.request<{
       message: string;
       coachID?: string;

@@ -13,6 +13,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import {usersConfig} from './config/users.config';
 import {OnboardingModule} from "./onboarding/onboarding.module";
 import {ChatbotCustomizationModule} from "./chatbot-customization/chatbot-customization.module";
+import {EventsModule} from "./events/events.module";
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import {ChatbotCustomizationModule} from "./chatbot-customization/chatbot-custom
     AdminModule,
     ProfilesModule,
     OnboardingModule,
+    EventsModule,
   ],
   providers: [
     {

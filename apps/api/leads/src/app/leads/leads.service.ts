@@ -297,9 +297,24 @@ export class LeadsService {
   }
 
   async remove(id: string) {
-    await this.prisma.lead.delete({
+    const lead = await this.prisma.lead.delete({
       where: { id },
     });
+
+    await this.outbox.saveAndPublishEvent<LeadEvent>(
+      {
+        eventType: 'lead.deleted',
+        schemaVersion: 1,
+        payload: {
+          leadID: lead.id,
+          coachID: lead.coachID || undefined,
+          name: lead.name,
+          email: lead.email,
+          deletedAt: new Date().toISOString(),
+        },
+      },
+      LEAD_ROUTING_KEYS.DELETED
+    );
 
     return { success: true, message: 'Lead deleted successfully' };
   }

@@ -22,8 +22,6 @@ export class SyncProcessor {
     const { accountID, forceFull } = job.data;
 
     try {
-      this.logger.log(`Processing sync for account: ${accountID}`);
-
       const result = await this.sync.processAccountSync(accountID, forceFull);
 
       await this.syncRepo.createSyncResult({
@@ -32,13 +30,6 @@ export class SyncProcessor {
         newEmails: result.clientEmailsFound,
         status: 'completed',
       });
-
-      this.logger.log(
-        `Sync completed for account: ${accountID}, ` +
-        `processed ${result.totalProcessed} emails, ` +
-        `found ${result.clientEmailsFound} client emails, ` +
-        `created ${result.threadsCreated} new threads`
-      );
 
       return {
         success: true,

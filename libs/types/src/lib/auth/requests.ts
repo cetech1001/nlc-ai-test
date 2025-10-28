@@ -41,6 +41,7 @@ export interface RegistrationRequest {
   email: string;
   password: string;
   marketingOptIn?: boolean;
+  triggerPasswordReset?: boolean;
 }
 
 export interface CoachRegistrationRequest extends RegistrationRequest {}

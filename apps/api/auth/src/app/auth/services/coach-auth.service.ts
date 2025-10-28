@@ -151,20 +151,35 @@ export class CoachAuthService {
 
     if (provider !== 'google') {
       const code = this.tokenService.generateVerificationCode();
-      await this.tokenService.storeVerificationToken(email, code, 'reset');
+      await this.tokenService.storeVerificationToken(email, code, 'verification');
 
-      await this.outbox.saveAndPublishEvent<AuthEvent>(
-        {
-          eventType: 'auth.verification.requested',
-          schemaVersion: 1,
-          payload: {
-            email: coach.email,
-            code: code,
-            type: 'password_reset',
+      if (registerDto.triggerPasswordReset) {
+        await this.outbox.saveAndPublishEvent<any>(
+          {
+            eventType: 'auth.password_reset.request',
+            schemaVersion: 1,
+            payload: {
+              email: coach.email,
+              userType: UserType.COACH,
+              resetAt: new Date().toISOString(),
+            },
           },
-        },
-        'auth.verification.requested'
-      );
+          'auth.password_reset.request'
+        );
+      } else {
+        await this.outbox.saveAndPublishEvent<AuthEvent>(
+          {
+            eventType: 'auth.verification.requested',
+            schemaVersion: 1,
+            payload: {
+              email: coach.email,
+              code: code,
+              type: 'email_verification',
+            },
+          },
+          'auth.verification.requested'
+        );
+      }
     }
 
     await this.outbox.saveAndPublishEvent<AuthEvent>(

@@ -1,6 +1,6 @@
 import {RegistrationRequest} from "@nlc-ai/types";
 import {ApiProperty} from "@nestjs/swagger";
-import {IsBoolean, IsEmail, IsString, Matches, MinLength} from "class-validator";
+import {IsBoolean, IsEmail, IsOptional, IsString, Matches, MinLength} from "class-validator";
 
 export class CoachRegisterDto implements RegistrationRequest {
   @ApiProperty({ example: 'John' })
@@ -30,4 +30,9 @@ export class CoachRegisterDto implements RegistrationRequest {
   @ApiProperty({ required: true })
   @IsBoolean()
   marketingOptIn: boolean;
+
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  triggerPasswordReset = false;
 }

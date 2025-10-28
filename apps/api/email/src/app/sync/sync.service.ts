@@ -123,8 +123,6 @@ export class SyncService {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async syncAllAccountsForCoach(coachID?: string) {
-    this.logger.log('Starting automatic email sync for all active accounts...');
-
     const accounts = await this.syncRepo.getAllActiveAccounts(coachID);
 
     for (const account of accounts) {

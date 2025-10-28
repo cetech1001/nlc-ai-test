@@ -22,6 +22,7 @@ interface CoachFormProps {
   onDiscard: () => void;
   onSave: (formData: CreateCoach) => void;
   coach?: ExtendedCoach;
+  formType?: 'create' | 'edit';
 }
 
 const initialFormData: CreateCoach = {
@@ -39,6 +40,7 @@ export const CoachForm: React.FC<CoachFormProps> = ({
                                                       onDiscard,
                                                       onSave,
                                                       coach,
+  formType,
                                                     }) => {
   const [formData, setFormData] = useState<CreateCoach>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -186,84 +188,87 @@ export const CoachForm: React.FC<CoachFormProps> = ({
           </div>
         </div>
 
-        {/* Business Information */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
-              <Building className="w-4 h-4 text-violet-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-white">Business Information</h3>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">Business Name</label>
-              <input
-                type="text"
-                value={formData.businessName || ''}
-                onChange={(e) => handleInputChange('businessName', e.target.value)}
-                className="w-full px-4 py-3 bg-background border border-[#3A3A3A] rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500"
-                placeholder="Enter business name"
+        {formType !== 'create' && (
+          <>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
+                  <Building className="w-4 h-4 text-violet-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Business Information</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">Business Name</label>
+                  <input
+                    type="text"
+                    value={formData.businessName || ''}
+                    onChange={(e) => handleInputChange('businessName', e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-[#3A3A3A] rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    placeholder="Enter business name"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">Website URL</label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]" />
+                    <input
+                      type="text"
+                      value={formData.websiteUrl || ''}
+                      onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 bg-background border rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 ${
+                        errors.websiteUrl ? 'border-red-500' : 'border-[#3A3A3A]'
+                      }`}
+                      placeholder="example.com"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {errors.websiteUrl && <p className="text-red-400 text-sm mt-1">{errors.websiteUrl}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white text-sm font-medium mb-2">Timezone</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]" />
+                  <select
+                    value={formData.timezone || ''}
+                    onChange={(e) => handleInputChange('timezone', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    disabled={isLoading}
+                  >
+                    <option value="">Select timezone</option>
+                    {timezoneOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-violet-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Bio & Additional Information</h3>
+              </div>
+
+              <textarea
+                value={formData.bio || ''}
+                onChange={(e) => handleInputChange('bio', e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 bg-background border border-[#3A3A3A] rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                placeholder="Enter a brief bio or description of coaching expertise..."
                 disabled={isLoading}
               />
             </div>
-
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">Website URL</label>
-              <div className="relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]" />
-                <input
-                  type="text"
-                  value={formData.websiteUrl || ''}
-                  onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 bg-background border rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 ${
-                    errors.websiteUrl ? 'border-red-500' : 'border-[#3A3A3A]'
-                  }`}
-                  placeholder="example.com"
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.websiteUrl && <p className="text-red-400 text-sm mt-1">{errors.websiteUrl}</p>}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">Timezone</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666]" />
-              <select
-                value={formData.timezone || ''}
-                onChange={(e) => handleInputChange('timezone', e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-background border border-[#3A3A3A] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                disabled={isLoading}
-              >
-                <option value="">Select timezone</option>
-                {timezoneOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Bio */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 rounded-lg flex items-center justify-center">
-              <FileText className="w-4 h-4 text-violet-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-white">Bio & Additional Information</h3>
-          </div>
-
-          <textarea
-            value={formData.bio || ''}
-            onChange={(e) => handleInputChange('bio', e.target.value)}
-            rows={4}
-            className="w-full px-4 py-3 bg-background border border-[#3A3A3A] rounded-lg text-white placeholder-[#666] focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-            placeholder="Enter a brief bio or description of coaching expertise..."
-            disabled={isLoading}
-          />
-        </div>
+          </>
+        )}
       </div>
 
       {/* Submit Error */}

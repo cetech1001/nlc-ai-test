@@ -9,7 +9,14 @@ const AdminCreateCoachPage = () => {
   const router = useRouter();
 
   const handleSubmit = async (formData: CreateCoach) => {
-    await sdkClient.users.coaches.createCoach(formData);
+    await sdkClient.auth.registerCoach({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      password: Math.random().toString(36).slice(-12) + 'A1!',
+      triggerPasswordReset: true,
+      marketingOptIn: false,
+    })
     router.push('/coaches?success=created');
   };
 
@@ -21,6 +28,7 @@ const AdminCreateCoachPage = () => {
         <CoachForm
           onDiscard={router.back}
           onSave={handleSubmit}
+          formType={'create'}
         />
       </div>
     </div>

@@ -335,15 +335,23 @@ export class CoachesService {
   async remove(id: string) {
     await this.findOne(id);
 
-    return this.prisma.coach.update({
-      where: { id },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-        isActive: false,
-        updatedAt: new Date(),
-      },
-    });
+    return this.prisma.executeInTransaction(async (tx) => {
+      await tx.coach.delete({
+        where: { id },
+      });
+      await tx.communityMember.deleteMany({
+        where: {
+          userID: id,
+        },
+      });
+      await tx.conversation.deleteMany({
+        where: {
+          participantIDs: {
+            has: id,
+          },
+        }
+      });
+    })
   }
 
   async restore(id: string) {
