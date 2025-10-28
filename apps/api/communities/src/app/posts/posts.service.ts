@@ -1,19 +1,19 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@nlc-ai/api-database';
-import { OutboxService } from '@nlc-ai/api-messaging';
+import {ForbiddenException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {ConfigService} from '@nestjs/config';
+import {PrismaService} from '@nlc-ai/api-database';
+import {OutboxService} from '@nlc-ai/api-messaging';
 import {
-  UserType,
-  PostType,
-  MemberStatus,
-  CommunityEvent,
+  AuthUser,
   COMMUNITY_ROUTING_KEYS,
+  CommunityEvent,
   CreatePostRequest,
-  UpdatePostRequest,
-  PostFilters,
-  ReactToPostRequest,
+  MemberStatus,
   Post,
-  AuthUser
+  PostFilters,
+  PostType,
+  ReactToPostRequest,
+  UpdatePostRequest,
+  UserType
 } from '@nlc-ai/api-types';
 import {ActivityHelperService} from "../helpers/activity-helper.service";
 
@@ -102,7 +102,9 @@ export class PostsService {
   }
 
   async getPosts(communityID: string, filters: PostFilters, user: AuthUser) {
-    await this.checkCommunityMembership(communityID, user);
+    if (user.type !== UserType.admin) {
+      await this.checkCommunityMembership(communityID, user);
+    }
 
     const where: any = {};
 
@@ -480,6 +482,10 @@ export class PostsService {
   }
 
   private async checkCommunityPermission(communityID: string, user: AuthUser, permission: string) {
+    /*if (user.type === UserType.admin) {
+      return true;
+    }*/
+
     const member = await this.checkCommunityMembership(communityID, user);
 
     if (!member.permissions.includes(permission) && !member.permissions.includes('all')) {

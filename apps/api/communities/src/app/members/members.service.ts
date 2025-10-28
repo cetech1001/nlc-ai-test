@@ -38,7 +38,7 @@ export class MembersService {
 
     const where: any = {
       communityID,
-      status: MemberStatus.ACTIVE,
+      // status: MemberStatus.ACTIVE,
     };
 
     if (filters.role) {
@@ -306,6 +306,85 @@ export class MembersService {
     return member;
   }
 
+  async updateMemberRole(
+    communityID: string,
+    memberID: string,
+    role: string,
+    user: AuthUser
+  ) {
+    await this.checkPermission(communityID, user, 'manage_members');
+
+    const member = await this.prisma.communityMember.findUnique({
+      where: { id: memberID },
+    });
+
+    if (!member || member.communityID !== communityID) {
+      throw new NotFoundException('Member not found in this community');
+    }
+
+    if (!Object.values(MemberRole).includes(role as MemberRole)) {
+      throw new BadRequestException('Invalid role');
+    }
+
+    if (member.role === MemberRole.OWNER) {
+      throw new ForbiddenException('Cannot change role of community owner');
+    }
+
+    const updatedMember = await this.prisma.communityMember.update({
+      where: { id: memberID },
+      data: {
+        role: role as MemberRole,
+        permissions: this.getDefaultPermissions(role as MemberRole),
+      },
+    });
+
+    this.logger.log(
+      `Member ${memberID} role updated to ${role} in community ${communityID} by ${user.type} ${user.id}`
+    );
+
+    return updatedMember;
+  }
+
+  async updateMemberStatus(
+    communityID: string,
+    memberID: string,
+    status: string,
+    user: AuthUser
+  ) {
+    await this.checkPermission(communityID, user, 'manage_members');
+
+    const member = await this.prisma.communityMember.findUnique({
+      where: { id: memberID },
+    });
+
+    if (!member || member.communityID !== communityID) {
+      throw new NotFoundException('Member not found in this community');
+    }
+
+    if (!Object.values(MemberStatus).includes(status as MemberStatus)) {
+      throw new BadRequestException('Invalid status');
+    }
+
+    if (member.role === MemberRole.OWNER) {
+      throw new ForbiddenException('Cannot change status of community owner');
+    }
+
+    const updatedMember = await this.prisma.communityMember.update({
+      where: { id: memberID },
+      data: {
+        status: status as MemberStatus,
+      },
+    });
+
+    await this.updateMemberCount(communityID);
+
+    this.logger.log(
+      `Member ${memberID} status updated to ${status} in community ${communityID} by ${user.type} ${user.id}`
+    );
+
+    return updatedMember;
+  }
+
   async removeMemberFromCommunity(
     communityID: string,
     targetUserID: string,
@@ -516,38 +595,39 @@ export class MembersService {
     avatarUrl: string;
   }> {
     try {
+      let user: any;
       switch (userType) {
         case UserType.COACH:
-          const coach = await this.prisma.coach.findUnique({
+          user = await this.prisma.coach.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true, businessName: true },
           });
           return {
-            name: coach?.businessName || `${coach?.firstName} ${coach?.lastName}` || 'Unknown Coach',
-            email: coach?.email || '',
-            avatarUrl: coach?.avatarUrl || '',
+            name: user?.businessName || `${user?.firstName} ${user?.lastName}`,
+            email: user?.email || '',
+            avatarUrl: user?.avatarUrl || '',
           };
 
         case UserType.CLIENT:
-          const client = await this.prisma.client.findUnique({
+          user = await this.prisma.client.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
           return {
-            name: `${client?.firstName} ${client?.lastName}` || 'Unknown Client',
-            email: client?.email || '',
-            avatarUrl: client?.avatarUrl || '',
+            name: `${user?.firstName} ${user?.lastName}`,
+            email: user?.email || '',
+            avatarUrl: user?.avatarUrl || '',
           };
 
         case UserType.ADMIN:
-          const admin = await this.prisma.admin.findUnique({
+          user = await this.prisma.admin.findUnique({
             where: { id: userID },
             select: { firstName: true, lastName: true, email: true, avatarUrl: true },
           });
           return {
-            name: `${admin?.firstName} ${admin?.lastName}` || 'Admin',
-            email: admin?.email || '',
-            avatarUrl: admin?.avatarUrl || '',
+            name: `${user?.firstName} ${user?.lastName}`,
+            email: user?.email || '',
+            avatarUrl: user?.avatarUrl || '',
           };
 
         default:

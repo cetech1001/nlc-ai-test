@@ -247,7 +247,7 @@ const AdminCommunityDetailPage = () => {
         </div>
 
         <div className="space-y-6">
-          <CommunityDetailsQuickActions communityID={communityID}/>
+          <CommunityDetailsQuickActions communityID={communityID} slug={community.slug}/>
           <CommunityDetailsInfo community={community}/>
           <CommunityDetailsRecentMembers community={community}/>
         </div>

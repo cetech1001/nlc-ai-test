@@ -3,7 +3,7 @@ import {Button} from "@nlc-ai/web-ui";
 import {useRouter} from "next/navigation";
 import {FC} from "react";
 
-export const CommunityDetailsQuickActions: FC<{ communityID: string }> = ({ communityID }) => {
+export const CommunityDetailsQuickActions: FC<{ communityID: string, slug: string; }> = ({ communityID, slug }) => {
   const router = useRouter();
   return (
     <div className="bg-gradient-to-br from-neutral-800/40 to-neutral-900/60 rounded-2xl border border-neutral-700/50 p-6">
@@ -21,7 +21,7 @@ export const CommunityDetailsQuickActions: FC<{ communityID: string }> = ({ comm
         </Button>
 
         <Button
-          onClick={() => router.push(`/communities/${communityID}/posts`)}
+          onClick={() => router.push(`/community/${slug}/posts`)}
           variant="outline"
           className="w-full justify-start"
           size="sm"

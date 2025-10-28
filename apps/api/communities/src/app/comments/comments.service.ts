@@ -154,7 +154,9 @@ export class CommentsService {
   }
 
   async getComments(communityID: string, filters: CommentFilters, user: AuthUser) {
-    await this.checkCommunityMembership(communityID, user);
+    if (user.type !== UserType.admin) {
+      await this.checkCommunityMembership(communityID, user);
+    }
 
     const where: any = {};
 

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Delete,
+  Patch,
   Body,
   Param,
   Query,
@@ -80,6 +81,46 @@ export class MembersController {
     @CurrentUser() user: AuthUser
   ) {
     return this.membersService.getCommunityMemberStats(communityID);
+  }
+
+  @Patch(':memberID/role')
+  @ApiOperation({ summary: 'Update member role' })
+  @ApiParam({ name: 'communityID', description: 'Community ID' })
+  @ApiParam({ name: 'memberID', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Member role updated successfully' })
+  @UserTypes(UserType.COACH, UserType.ADMIN)
+  async updateMemberRole(
+    @Param('communityID') communityID: string,
+    @Param('memberID') memberID: string,
+    @Body() body: { role: string },
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.membersService.updateMemberRole(
+      communityID,
+      memberID,
+      body.role,
+      user
+    );
+  }
+
+  @Patch(':memberID/status')
+  @ApiOperation({ summary: 'Update member status' })
+  @ApiParam({ name: 'communityID', description: 'Community ID' })
+  @ApiParam({ name: 'memberID', description: 'Member ID' })
+  @ApiResponse({ status: 200, description: 'Member status updated successfully' })
+  @UserTypes(UserType.COACH, UserType.ADMIN)
+  async updateMemberStatus(
+    @Param('communityID') communityID: string,
+    @Param('memberID') memberID: string,
+    @Body() body: { status: string },
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.membersService.updateMemberStatus(
+      communityID,
+      memberID,
+      body.status,
+      user
+    );
   }
 
   @Delete(':userID/:userType')

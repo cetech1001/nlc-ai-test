@@ -11,12 +11,13 @@ import {
   sdkClient,
   InviteMemberModal,
   AddMemberModal,
+  ChangeMemberRoleModal,
   memberColumns,
-  // MembersMobileCard,
   memberFilters,
   emptyMemberFilterValues
 } from "@/lib";
 import {ExtendedCommunityMember} from "@nlc-ai/sdk-communities";
+import { MemberRole, MemberStatus } from '@nlc-ai/types';
 
 interface MemberStats {
   totalMembers: number;
@@ -54,6 +55,8 @@ const AdminCommunityMembersPage = () => {
   // Modal states
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<ExtendedCommunityMember | null>(null);
 
   // Effects
   useEffect(() => {
@@ -103,45 +106,80 @@ const AdminCommunityMembersPage = () => {
     }
   };
 
-  // Event handlers
+  // Action handlers
   const handleMemberAction = async (action: string, member: ExtendedCommunityMember) => {
     console.log(`${action} member:`, member?.id);
 
     switch (action) {
       case 'view-profile':
-        toast.info('View profile functionality to be implemented');
+        router.push(`/profile/${member.userID}`);
         break;
+
       case 'change-role':
-        toast.info('Change role functionality to be implemented');
+        setSelectedMember(member);
+        setShowChangeRoleModal(true);
         break;
+
       case 'suspend':
-        toast.info('Suspend member functionality to be implemented');
-        break;
-      case 'activate':
-        toast.info('Activate member functionality to be implemented');
-        break;
-      case 'remove':
-        if (confirm('Are you sure you want to remove this member?')) {
+        if (confirm(`Are you sure you want to suspend ${member.userName}?`)) {
           try {
-            const targetMember: ExtendedCommunityMember | undefined = members.find(m => m.id === member?.id);
-            if (targetMember) {
-              await sdkClient.communities.members.removeMember(
-                communityID,
-                targetMember.userID,
-                targetMember.userType
-              );
-              toast.success('Member removed successfully');
-              await fetchMembersData();
-              await fetchStats();
-            }
+            await sdkClient.communities.members.updateMemberStatus(
+              communityID,
+              member.id,
+              MemberStatus.SUSPENDED
+            );
+            toast.success('Member suspended successfully');
+            await fetchMembersData();
+            await fetchStats();
           } catch (error: any) {
-            toast.error(error.message || 'Failed to remove member');
+            toast.error(error.message || 'Failed to suspend member');
           }
         }
         break;
+
+      case 'activate':
+        try {
+          await sdkClient.communities.members.updateMemberStatus(
+            communityID,
+            member.id,
+            MemberStatus.ACTIVE
+          );
+          toast.success('Member activated successfully');
+          await fetchMembersData();
+          await fetchStats();
+        } catch (error: any) {
+          toast.error(error.message || 'Failed to activate member');
+        }
+        break;
+
+      case 'delete':
+        if (confirm(`Are you sure you want to permanently delete ${member.userName} from this community? This action cannot be undone.`)) {
+          try {
+            await sdkClient.communities.members.removeMember(
+              communityID,
+              member.userID,
+              member.userType
+            );
+            toast.success('Member deleted successfully');
+            await fetchMembersData();
+            await fetchStats();
+          } catch (error: any) {
+            toast.error(error.message || 'Failed to delete member');
+          }
+        }
+        break;
+
       default:
         toast.info(`${action} functionality to be implemented`);
     }
+  };
+
+  const handleRoleChange = async (memberID: string, newRole: MemberRole) => {
+    await sdkClient.communities.members.updateMemberRole(
+      communityID,
+      memberID,
+      newRole
+    );
   };
 
   const handleSearch = (query: string) => {
@@ -166,6 +204,11 @@ const AdminCommunityMembersPage = () => {
   };
 
   const onMemberInvited = () => {
+    fetchStats();
+  };
+
+  const onRoleChanged = () => {
+    fetchMembersData();
     fetchStats();
   };
 
@@ -282,22 +325,20 @@ const AdminCommunityMembersPage = () => {
           </>
         </PageHeader>
 
-        {/*<MembersMobileCard members={members}/>*/}
-
         {/* Members Table */}
         <DataTable
           columns={memberColumns}
           data={members}
           onRowAction={handleMemberAction}
           showMobileCards={true}
-          // mobileCardComponent={MembersMobileCard}
           emptyMessage="No members found matching your criteria"
           isLoading={isLoading}
           actions={[
             { action: 'view-profile', label: 'View Profile' },
             { action: 'change-role', label: 'Change Role' },
             { action: 'suspend', label: 'Suspend' },
-            { action: 'remove', label: 'Remove' },
+            { action: 'activate', label: 'Activate' },
+            { action: 'delete', label: 'Delete' },
           ]}
         />
 
@@ -322,6 +363,18 @@ const AdminCommunityMembersPage = () => {
           onClose={() => setShowAddMemberModal(false)}
           communityID={communityID}
           onAddSuccess={onMemberAdded}
+        />
+
+        <ChangeMemberRoleModal
+          isOpen={showChangeRoleModal}
+          onClose={() => {
+            setShowChangeRoleModal(false);
+            setSelectedMember(null);
+          }}
+          member={selectedMember}
+          communityID={communityID}
+          onSuccess={onRoleChanged}
+          onRoleChange={handleRoleChange}
         />
       </div>
     </div>

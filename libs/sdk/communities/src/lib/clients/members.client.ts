@@ -93,6 +93,32 @@ export class MembersClient extends BaseClient {
     return response.data!;
   }
 
+  async updateMemberRole(
+    communityID: string,
+    memberID: string,
+    role: string
+  ): Promise<CommunityMember> {
+    const response = await this.request<CommunityMember>(
+      'PATCH',
+      `/${communityID}/members/${memberID}/role`,
+      { body: { role } }
+    );
+    return response.data!;
+  }
+
+  async updateMemberStatus(
+    communityID: string,
+    memberID: string,
+    status: string
+  ): Promise<CommunityMember> {
+    const response = await this.request<CommunityMember>(
+      'PATCH',
+      `/${communityID}/members/${memberID}/status`,
+      { body: { status } }
+    );
+    return response.data!;
+  }
+
   async removeMember(
     communityID: string,
     userID: string,
