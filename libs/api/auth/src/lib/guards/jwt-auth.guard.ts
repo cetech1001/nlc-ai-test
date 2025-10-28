@@ -43,8 +43,34 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 
+  private getUserTypeFromHost(host: string | undefined): UserType | null {
+    if (!host) return null;
+
+    if (host.startsWith('admin.')) {
+      return UserType.ADMIN;
+    } else if (host.startsWith('coach.')) {
+      return UserType.COACH;
+    } else if (host.startsWith('app.') || host.startsWith('client.')) {
+      return UserType.CLIENT;
+    }
+
+    return null;
+  }
+
   private extractTokenFromRequest(request: any): string | undefined {
-    // Check all user-type-specific cookies first
+    const host = request.get('host');
+    const expectedUserType = this.getUserTypeFromHost(host);
+
+    // If we know the expected user type from subdomain, check that cookie first
+    if (expectedUserType) {
+      const cookieName = `${this.publicTokenName}_${expectedUserType}`;
+      const cookieToken = request.cookies?.[cookieName];
+      if (cookieToken && typeof cookieToken === 'string' && cookieToken.length > 0) {
+        return cookieToken;
+      }
+    }
+
+    // Fallback: check all user-type-specific cookies
     const userTypes = [UserType.ADMIN, UserType.COACH, UserType.CLIENT];
     for (const userType of userTypes) {
       const cookieName = `${this.publicTokenName}_${userType}`;
