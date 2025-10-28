@@ -54,7 +54,7 @@ export const PostActionsDropdown: React.FC<PostActionsDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-8 w-48 bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-lg shadow-lg z-50 py-2 max-h-[280px] overflow-y-auto"
+      className="absolute right-0 bottom-8 w-48 bg-gradient-to-b from-neutral-800 to-neutral-900 border border-neutral-700 rounded-lg shadow-lg z-[100] py-2 max-h-[280px] overflow-y-auto"
       style={{
         scrollbarWidth: 'thin',
         scrollbarColor: '#a855f7 #404040'

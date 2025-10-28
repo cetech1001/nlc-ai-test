@@ -61,6 +61,11 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
   const nestedReplies = repliesData[comment.id] || [];
   const isAtMaxDepth = isDetailView ? false : depth >= maxDepth;
 
+  // Display "Admin" if the comment is from an admin
+  const displayName = comment.communityMember?.userType === UserType.ADMIN
+    ? 'Admin'
+    : (comment.communityMember?.userName || 'Unknown User');
+
   const handleLoadRepliesClick = () => {
     if (isAtMaxDepth && onViewAllComments) {
       onViewAllComments();
@@ -107,17 +112,17 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         {!isDeleted && comment.communityMember?.userAvatarUrl ? (
           <img
             src={comment.communityMember.userAvatarUrl}
-            alt={comment.communityMember.userName || "User"}
+            alt={displayName}
             className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => onUserClick?.(comment.communityMember?.userID!, comment.communityMember?.userType as UserType)}
+            onClick={() => onUserClick?.(comment.communityMember?.userID || '', comment.communityMember?.userType as UserType)}
           />
         ) : (
           <div
             className={`w-8 h-8 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center ${!isDeleted ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-            onClick={() => !isDeleted && onUserClick?.(comment.communityMember?.userID!, comment.communityMember?.userType as UserType)}
+            onClick={() => !isDeleted && onUserClick?.(comment.communityMember?.userID || '', comment.communityMember?.userType as UserType)}
           >
             <span className="text-white text-xs font-semibold">
-              {isDeleted ? '?' : getInitials(comment.communityMember?.userName)}
+              {isDeleted ? '?' : getInitials(displayName)}
             </span>
           </div>
         )}
@@ -133,7 +138,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
             {/* Header */}
             <div className="flex items-center gap-2 mb-1">
               <h4 className={`text-sm font-medium ${isDeleted ? 'text-stone-500' : 'text-white'}`}>
-                {isDeleted ? 'N/A' : comment.communityMember?.userName || 'Unknown User'}
+                {isDeleted ? 'N/A' : displayName}
               </h4>
               <span className="text-stone-400 text-xs">
                 {comment.isOptimistic ? 'Just now' : formatTimeAgo(comment.createdAt)}
@@ -234,7 +239,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
                 isOwnComment={isOwnComment}
                 onEdit={() => onEdit(comment.id, comment.content)}
                 onDelete={() => onDelete(comment.id)}
-                onReport={() => {}}
+                onReport={() => { /* empty */ }}
               />
             </div>
           )}
@@ -261,7 +266,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
             <div className="flex-1 flex gap-2">
               <input
                 type="text"
-                placeholder={`Reply to ${comment.communityMember?.userName}...`}
+                placeholder={`Reply to ${displayName}...`}
                 value={currentReplyText}
                 onChange={(e) => onReplyTextChange?.(comment.id, e.target.value)}
                 className="flex-1 bg-neutral-800/50 border border-neutral-600 rounded-lg px-3 py-1 text-white placeholder:text-stone-400 text-xs focus:outline-none focus:border-fuchsia-500"

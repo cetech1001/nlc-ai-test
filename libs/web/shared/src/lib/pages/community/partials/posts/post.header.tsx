@@ -31,22 +31,27 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
   const [showActions, setShowActions] = useState(false);
   const actionsRef = useRef<HTMLButtonElement>(null);
 
+  // Display "Admin" if the post is from an admin
+  const displayName = post.communityMember?.userType === UserType.ADMIN
+    ? 'Admin'
+    : (post.communityMember?.userName || 'Unknown User');
+
   return (
     <div className="flex items-center gap-3 mb-4">
       <div
         className="w-10 sm:w-12 h-10 sm:h-12 rounded-full flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-        onClick={() => onUserClick?.(post.communityMember?.userID!, post.communityMember?.userType as UserType)}
+        onClick={() => onUserClick?.(post.communityMember?.userID || '', post.communityMember?.userType as UserType)}
       >
         {post.communityMember?.userAvatarUrl ? (
           <img
             src={post.communityMember.userAvatarUrl}
-            alt={post.communityMember.userName}
+            alt={displayName}
             className="w-full h-full rounded-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center">
             <span className="text-white font-semibold text-sm">
-              {getInitials(post.communityMember?.userName)}
+              {getInitials(displayName)}
             </span>
           </div>
         )}
@@ -54,7 +59,7 @@ export const PostHeader: React.FC<PostHeaderProps> = ({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="text-white text-sm sm:text-base font-semibold truncate">
-            {post.communityMember?.userName || 'Unknown User'}
+            {displayName}
           </h3>
           {post.communityMember?.role && (
             <span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs font-medium capitalize">

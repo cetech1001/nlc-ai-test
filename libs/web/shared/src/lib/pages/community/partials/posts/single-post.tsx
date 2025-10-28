@@ -96,7 +96,7 @@ export const SinglePost: React.FC<SinglePostProps> = ({
     }
   };
 
-  const loadComments = async (postID: string, page: number = 1) => {
+  const loadComments = async (postID: string, page = 1) => {
     try {
       setLoadingComments(prev => ({ ...prev, [postID]: true }));
 
@@ -137,7 +137,7 @@ export const SinglePost: React.FC<SinglePostProps> = ({
     }
   };
 
-  const handleLoadReplies = async (commentID: string, depth: number = 0) => {
+  const handleLoadReplies = async (commentID: string, depth = 0) => {
     // If we're at max depth and not in detail view, navigate to post detail
     if (depth >= MAX_DEPTH && !isDetailView) {
       handleViewAllComments();
@@ -232,8 +232,8 @@ export const SinglePost: React.FC<SinglePostProps> = ({
       updatedAt: new Date(),
       communityMember: {
         id: '',
-        userID: props.user?.id!,
-        userType: props.user?.type!,
+        userID: props.user?.id || '',
+        userType: props.user?.type || UserType.COACH,
         userName: props.user?.firstName + ' ' + props.user?.lastName,
         userAvatarUrl: props.user?.avatarUrl || undefined,
         role: 'member' as any
@@ -506,8 +506,8 @@ export const SinglePost: React.FC<SinglePostProps> = ({
 
   return (
     <>
-      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[16px] sm:rounded-[20px] border border-neutral-700 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+      <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[16px] sm:rounded-[20px] border border-neutral-700">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute w-24 sm:w-32 h-24 sm:h-32 -left-4 sm:-left-6 -top-6 sm:-top-10 bg-gradient-to-l from-fuchsia-200 via-fuchsia-600 to-violet-600 rounded-full blur-[40px] sm:blur-[56px]" />
         </div>
 

@@ -23,14 +23,14 @@ interface GroupedMembers {
 }
 
 export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = ({
-  communityID,
-  user,
-  sdkClient,
-  isMobileOpen = false,
-  handleMessages,
-  onMobileToggle,
-  onMemberClick,
-}) => {
+                                                                                  communityID,
+                                                                                  user,
+                                                                                  sdkClient,
+                                                                                  isMobileOpen = false,
+                                                                                  handleMessages,
+                                                                                  onMobileToggle,
+                                                                                  onMemberClick,
+                                                                                }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [members, setMembers] = useState<ExtendedCommunityMember[]>([]);
@@ -94,9 +94,10 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
     }, 0);
   };
 
-  const filteredMembers = members.filter(member =>
-    member.userName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMembers = members.filter(member => {
+    const displayName = member.userType === UserType.ADMIN ? 'Admin' : member.userName;
+    return displayName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const groupedMembers: GroupedMembers = filteredMembers.reduce((groups, member) => {
     const role = member.role;
@@ -139,6 +140,10 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
     return `${days}d ago`;
   };
 
+  const getDisplayName = (member: ExtendedCommunityMember) => {
+    return member.userType === UserType.ADMIN ? 'Admin' : member.userName;
+  };
+
   const SidebarContent = () => (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -179,38 +184,49 @@ export const CommunityMembersSidebar: React.FC<CommunityMembersSidebarProps> = (
                 {getRoleLabel(role)}s ({roleMembers.length})
               </h3>
               <div className="space-y-1">
-                {roleMembers.map(member => (
-                  <div
-                    key={member.id}
-                    onClick={() => handleMemberClick(member)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer group"
-                  >
-                    <div className="relative">
-                      <img
-                        src={member.userAvatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${member.userName.split(' ')[0]} ${member.userName.split(' ')[1]}`}
-                        alt={member.userName}
-                        className="w-10 h-10 rounded-full object-cover border border-neutral-600"
-                      />
-                      <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
-                        member.isOnline ? 'bg-green-500' : 'bg-gray-500'
-                      }`}></div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-white text-sm font-medium truncate">{member.userName}</h3>
-                        {getRoleIcon(member.role)}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-stone-400 text-xs">
-                          {member.isOnline ? 'Online' : formatLastActive(member.lastActiveAt)}
-                        </p>
-                        {member.userID !== user?.id && (
-                          <MessageCircle className="w-3 h-3 text-stone-500 group-hover:text-fuchsia-400 transition-colors" />
+                {roleMembers.map(member => {
+                  const displayName = getDisplayName(member);
+                  return (
+                    <div
+                      key={member.id}
+                      onClick={() => handleMemberClick(member)}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-800/50 transition-colors cursor-pointer group"
+                    >
+                      <div className="relative">
+                        {member.userAvatarUrl ? (
+                          <img
+                            src={member.userAvatarUrl}
+                            alt={displayName}
+                            className="w-10 h-10 rounded-full object-cover border border-neutral-600"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center border border-neutral-600">
+                            <span className="text-white font-semibold text-sm">
+                              {displayName.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
                         )}
+                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
+                          member.isOnline ? 'bg-green-500' : 'bg-gray-500'
+                        }`}></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-white text-sm font-medium truncate">{displayName}</h3>
+                          {getRoleIcon(member.role)}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-stone-400 text-xs">
+                            {member.isOnline ? 'Online' : formatLastActive(member.lastActiveAt)}
+                          </p>
+                          {member.userID !== user?.id && (
+                            <MessageCircle className="w-3 h-3 text-stone-500 group-hover:text-fuchsia-400 transition-colors" />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))
