@@ -18,7 +18,7 @@ export class MessagesHandler implements OnApplicationBootstrap {
   ) {
     this.systemFromEmail = this.config.get<string>(
       'email.mailgun.fromEmail',
-      'noreply@nextlevelcoach.ai'
+      'support@mail.nextlevelcoach.ai'
     );
   }
 
@@ -142,11 +142,9 @@ export class MessagesHandler implements OnApplicationBootstrap {
         ? messageContent.substring(0, 97) + '...'
         : messageContent;
 
-      const fromEmail = recipientEmail === this.systemFromEmail ? 'noreply@nextlevelcoach.ai' : this.systemFromEmail;
-
       const message = await this.prisma.emailMessage.create({
         data: {
-          from: fromEmail,
+          from: this.systemFromEmail,
           to: recipientEmail,
           emailTemplateID,
           status: EmailStatus.PENDING,
