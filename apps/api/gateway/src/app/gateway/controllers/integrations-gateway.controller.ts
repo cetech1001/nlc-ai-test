@@ -89,6 +89,7 @@ export class IntegrationsGatewayController {
       'x-forwarded-for': req.headers['x-forwarded-for'] as string || req.ip || '',
       'x-real-ip': req.ip || '',
       'cookie': req.headers.cookie || '',
+      'origin': req.headers.origin || '',
     };
   }
 }

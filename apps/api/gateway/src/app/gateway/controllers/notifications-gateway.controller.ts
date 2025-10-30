@@ -38,7 +38,8 @@ export class NotificationsGatewayController {
       'user-agent': req.headers['user-agent'] || '',
       'x-forwarded-for': req.headers['x-forwarded-for'] as string || req.ip || '',
       'x-real-ip': req.ip || '',
-'cookie': req.headers.cookie || '',
+      'cookie': req.headers.cookie || '',
+      'origin': req.headers.origin || '',
     };
   }
 }

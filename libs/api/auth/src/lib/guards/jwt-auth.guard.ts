@@ -46,22 +46,23 @@ export class JwtAuthGuard implements CanActivate {
   private getUserTypeFromHost(host: string | undefined): UserType | null {
     if (!host) return null;
 
-    if (host.startsWith('admin.')) {
-      return UserType.ADMIN;
-    } else if (host.startsWith('coach.')) {
-      return UserType.COACH;
-    } else if (host.startsWith('app.') || host.startsWith('client.')) {
-      return UserType.CLIENT;
-    }
+    host = host.toLowerCase();
+
+    if (host.includes('admin.')) return 'admin';
+    if (host.includes('coach.')) return 'coach';
+    if (host.includes('app.') || host.includes('client.')) return 'client';
+
+    if (host.includes('4200')) return 'admin';
+    if (host.includes('4300')) return 'coach';
+    if (host.includes('4400')) return 'client';
 
     return null;
   }
 
   private extractTokenFromRequest(request: any): string | undefined {
-    const host = request.get('host');
+    const host = request.headers['origin'];
     const expectedUserType = this.getUserTypeFromHost(host);
 
-    // If we know the expected user type from subdomain, check that cookie first
     if (expectedUserType) {
       const cookieName = `${this.publicTokenName}_${expectedUserType}`;
       const cookieToken = request.cookies?.[cookieName];
@@ -70,7 +71,6 @@ export class JwtAuthGuard implements CanActivate {
       }
     }
 
-    // Fallback: check all user-type-specific cookies
     const userTypes = [UserType.ADMIN, UserType.COACH, UserType.CLIENT];
     for (const userType of userTypes) {
       const cookieName = `${this.publicTokenName}_${userType}`;
@@ -80,7 +80,6 @@ export class JwtAuthGuard implements CanActivate {
       }
     }
 
-    // Fallback: check legacy single cookie for backward compatibility
     const legacyCookieToken = request.cookies?.[this.publicTokenName];
     if (legacyCookieToken && typeof legacyCookieToken === 'string' && legacyCookieToken.length > 0) {
       return legacyCookieToken;

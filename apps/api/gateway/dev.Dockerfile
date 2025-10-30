@@ -15,6 +15,7 @@ RUN set -eux; \
 COPY apps/api/gateway ./apps/api/gateway
 COPY libs/api/auth ./libs/api/auth
 COPY libs/api/types ./libs/api/types
+COPY libs/types ./libs/types
 COPY libs/api/validation ./libs/api/validation
 COPY libs/api/database/prisma/schema.prisma ./libs/api/database/prisma/schema.prisma
 COPY eslint.config.mjs tsconfig.json ./
