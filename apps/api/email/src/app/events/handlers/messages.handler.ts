@@ -103,10 +103,12 @@ export class MessagesHandler implements OnApplicationBootstrap {
         }
 
         case UserType.ADMIN: {
+          this.logger.log(`Came in here: Recipient ID: ${recipientID}`);
           const admin = await this.prisma.admin.findUnique({
             where: { id: recipientID },
             select: { email: true },
           });
+          console.log("Admin: ", admin);
           recipientEmail = admin?.email || null;
           break;
         }
@@ -140,10 +142,12 @@ export class MessagesHandler implements OnApplicationBootstrap {
         ? messageContent.substring(0, 97) + '...'
         : messageContent;
 
+      const fromEmail = recipientEmail === this.systemFromEmail ? 'noreply@nextlevelcoach.ai' : this.systemFromEmail;
+
       const message = await this.prisma.emailMessage.create({
         data: {
           from: this.systemFromEmail,
-          to: recipientEmail,
+          to: fromEmail,
           emailTemplateID,
           status: EmailStatus.PENDING,
           metadata: {
