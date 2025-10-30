@@ -146,8 +146,8 @@ export class MessagesHandler implements OnApplicationBootstrap {
 
       const message = await this.prisma.emailMessage.create({
         data: {
-          from: this.systemFromEmail,
-          to: fromEmail,
+          from: fromEmail,
+          to: recipientEmail,
           emailTemplateID,
           status: EmailStatus.PENDING,
           metadata: {
