@@ -18,7 +18,7 @@ export class AuthHandler {
   ) {
     this.systemFromEmail = this.config.get<string>(
       'email.mailgun.fromEmail',
-      'support@nextlevelcoach.ai'
+      'noreply@nextlevelcoach.ai'
     );
     this.subscribeToEvents();
   }

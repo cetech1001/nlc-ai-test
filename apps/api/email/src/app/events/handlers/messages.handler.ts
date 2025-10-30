@@ -18,7 +18,7 @@ export class MessagesHandler implements OnApplicationBootstrap {
   ) {
     this.systemFromEmail = this.config.get<string>(
       'email.mailgun.fromEmail',
-      'support@nextlevelcoach.ai'
+      'noreply@nextlevelcoach.ai'
     );
   }
 
