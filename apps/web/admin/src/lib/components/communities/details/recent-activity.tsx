@@ -5,7 +5,7 @@ import {CommunityActivity} from "@nlc-ai/types";
 import {FC} from "react";
 
 interface IProps {
-  communityID: string;
+  slug: string;
   activities: CommunityActivity[];
 }
 
@@ -47,7 +47,7 @@ const formatTimeAgo = (date: Date) => {
   return `${days} day${days > 1 ? 's' : ''} ago`;
 }
 
-export const CommunityDetailsRecentActivity: FC<IProps> = ({ communityID, activities }) => {
+export const CommunityDetailsRecentActivity: FC<IProps> = ({ slug, activities }) => {
   const router = useRouter();
 
   return (
@@ -55,7 +55,7 @@ export const CommunityDetailsRecentActivity: FC<IProps> = ({ communityID, activi
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-white">Recent Activity</h3>
         <Button
-          onClick={() => router.push(`/communities/${communityID}/posts`)}
+          onClick={() => router.push(`/community/${slug}/posts`)}
           variant="outline"
           size="sm"
         >

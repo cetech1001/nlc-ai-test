@@ -74,6 +74,8 @@ services:
       dockerfile: ./apps/api/gateway/dev.Dockerfile
     container_name: gateway
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3000:3000"
       - "5555:5555"
@@ -86,8 +88,6 @@ services:
         condition: service_healthy
       postgres-init:
         condition: service_completed_successfully
-    volumes:
-      - ./.env:/app/.env
 
   agents:
     build:
@@ -95,6 +95,8 @@ services:
       dockerfile: ./apps/api/agents/dev.Dockerfile
     container_name: agents
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3011:3011"
     depends_on:
@@ -104,12 +106,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/agents:/app/apps/api/agents
-      - ./libs/types:/app/libs/types
-      - ./libs/api:/app/libs/api
-      - ./.env:/app/.env
-      - /app/node_modules
 
   analytics:
     build:
@@ -117,6 +113,8 @@ services:
       dockerfile: ./apps/api/analytics/dev.Dockerfile
     container_name: analytics
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3010:3010"
     depends_on:
@@ -126,12 +124,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/analytics:/app/apps/api/analytics
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
-      - ./.env:/app/.env
-      - /app/node_modules
 
   auth:
     build:
@@ -139,6 +131,8 @@ services:
       dockerfile: ./apps/api/auth/dev.Dockerfile
     container_name: auth
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3001:3001"
     depends_on:
@@ -148,8 +142,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./.env:/app/.env
 
   billing:
     build:
@@ -157,6 +149,8 @@ services:
       dockerfile: ./apps/api/billing/dev.Dockerfile
     container_name: billing
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3005:3005"
     depends_on:
@@ -166,12 +160,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/billing:/app/apps/api/billing
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
-      - ./.env:/app/.env
-      - /app/node_modules
 
   content:
     build:
@@ -179,6 +167,8 @@ services:
       dockerfile: ./apps/api/content/dev.Dockerfile
     container_name: content
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3014:3014"
     depends_on:
@@ -188,8 +178,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./.env:/app/.env
 
   messages:
     build:
@@ -197,6 +185,8 @@ services:
       dockerfile: apps/api/messages/dev.Dockerfile
     container_name: messages
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3012:3012"
     depends_on:
@@ -206,12 +196,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/messages:/app/apps/api/messages
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
-      - ./.env:/app/.env
-      - /app/node_modules
 
   communities:
     build:
@@ -219,6 +203,8 @@ services:
       dockerfile: apps/api/communities/dev.Dockerfile
     container_name: communities
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3009:3009"
     depends_on:
@@ -228,12 +214,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/communities:/app/apps/api/communities
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
-      - ./.env:/app/.env
-      - /app/node_modules
 
   courses:
     build:
@@ -241,6 +221,8 @@ services:
       dockerfile: apps/api/courses/dev.Dockerfile
     container_name: courses
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3013:3013"
     depends_on:
@@ -250,12 +232,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/courses:/app/apps/api/courses
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
-      - ./.env:/app/.env
-      - /app/node_modules
 
   email:
     build:
@@ -263,6 +239,8 @@ services:
       dockerfile: ./apps/api/email/dev.Dockerfile
     container_name: email
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3004:3004"
     depends_on:
@@ -272,8 +250,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./.env:/app/.env
 
   integrations:
     build:
@@ -281,6 +257,8 @@ services:
       dockerfile: ./apps/api/integrations/dev.Dockerfile
     container_name: integrations
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3008:3008"
     depends_on:
@@ -290,8 +268,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./.env:/app/.env
 
   leads:
     build:
@@ -299,6 +275,8 @@ services:
       dockerfile: ./apps/api/leads/dev.Dockerfile
     container_name: leads
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3006:3006"
     depends_on:
@@ -308,12 +286,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/leads:/app/apps/api/leads
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
-      - ./.env:/app/.env
-      - /app/node_modules
 
   media:
     build:
@@ -321,6 +293,8 @@ services:
       dockerfile: ./apps/api/media/dev.Dockerfile
     container_name: media
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3003:3003"
     depends_on:
@@ -330,12 +304,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/media:/app/apps/api/media
-      - ./libs/api:/app/libs/api
-      - ./libs/types:/app/libs/types
-      - ./.env:/app/.env
-      - /app/node_modules
 
   notifications:
     build:
@@ -343,6 +311,8 @@ services:
       dockerfile: ./apps/api/notifications/dev.Dockerfile
     container_name: notifications
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3007:3007"
     depends_on:
@@ -352,8 +322,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./.env:/app/.env
 
   users:
     build:
@@ -361,6 +329,8 @@ services:
       dockerfile: ./apps/api/users/dev.Dockerfile
     container_name: users
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3002:3002"
     depends_on:
@@ -370,8 +340,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./.env:/app/.env
 
 volumes:
   postgres_data:

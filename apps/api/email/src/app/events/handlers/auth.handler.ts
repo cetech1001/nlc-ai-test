@@ -117,6 +117,7 @@ export class AuthHandler {
           metadata: {
             type: 'transactional',
             name: `${firstName} ${lastName}`,
+            baseUrl: this.config.get('email.platforms.coach'),
           },
         },
       });

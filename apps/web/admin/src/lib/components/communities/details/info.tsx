@@ -1,9 +1,10 @@
-import {Crown} from "lucide-react";
+import {Crown, Copy} from "lucide-react";
 import {FC, useEffect, useState} from "react";
 import {CommunityResponse} from "@nlc-ai/types";
 import { appConfig } from "@nlc-ai/web-shared";
 import { formatCurrency } from "@nlc-ai/web-utils";
 import {sdkClient} from "@/lib";
+import {toast} from "sonner";
 
 export const CommunityDetailsInfo: FC<{ community: CommunityResponse }> = ({ community }) => {
   const [owner, setOwner] = useState<any>(null);
@@ -47,6 +48,12 @@ export const CommunityDetailsInfo: FC<{ community: CommunityResponse }> = ({ com
     return `${formatCurrency(amount, community.currency)} ${period}`;
   };
 
+  const handleCopyUrl = () => {
+    const url = `${appConfig.publicUrl}/communities/${community.slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Community URL copied!');
+  };
+
   return (
     <div className="bg-gradient-to-br from-neutral-800/40 to-neutral-900/60 rounded-2xl border border-neutral-700/50 p-6">
       <h3 className="text-lg font-bold text-white mb-4">Information</h3>
@@ -83,9 +90,12 @@ export const CommunityDetailsInfo: FC<{ community: CommunityResponse }> = ({ com
         {community.slug && (
           <div>
             <span className="text-stone-400 block">Community URL</span>
-            <span className="text-stone-200 font-mono text-xs">
-              {`${appConfig.publicUrl}/communities/${community.slug}`}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-stone-200 font-mono text-xs break-all">{`${appConfig.publicUrl}/communities/${community.slug}`}</span>
+              <button onClick={handleCopyUrl} className="text-stone-400 hover:text-white transition">
+                <Copy className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 

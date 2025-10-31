@@ -63,8 +63,8 @@ export const CommunityPage: FC<IProps> = ({
     try {
       const member = await sdkClient.communities.members.getMyMembership(communityID);
       setMyMembership(member);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      toast.error(e.message);
     }
   }
 

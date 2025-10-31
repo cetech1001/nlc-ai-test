@@ -61,6 +61,7 @@ export class LeadsHandler {
           email,
           marketingOptIn,
           password: this.generateTemporaryPassword(),
+          triggerPasswordReset: true,
         });
 
         this.logger.log(`Coach account created successfully for lead ${leadID}`);

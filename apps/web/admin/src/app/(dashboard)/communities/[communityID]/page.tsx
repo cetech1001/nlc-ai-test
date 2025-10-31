@@ -241,7 +241,7 @@ const AdminCommunityDetailPage = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CommunityDetailsRecentActivity communityID={communityID} activities={activities}/>
+            <CommunityDetailsRecentActivity slug={community.slug} activities={activities}/>
             <CommunityDetailsSettingsPreview community={community}/>
           </div>
         </div>
