@@ -13,6 +13,7 @@ import {ChatHeader} from './chat-window/chat-header';
 import {MessagesList} from './chat-window/messages-list';
 import {MessageInput} from './chat-window/message-input';
 import {EmptyChatState} from './chat-window/empty-chat-state';
+import type { UploadedImage, UploadedVideo } from '../../../components';
 
 interface ChatWindowProps {
   sdkClient: NLCClient;
@@ -35,6 +36,12 @@ interface PresenceData {
   status: 'online' | 'away' | 'offline';
 }
 
+interface AttachedFiles {
+  images: UploadedImage[];
+  videos: UploadedVideo[];
+  documents: any[];
+}
+
 export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                         sdkClient,
                                                         user,
@@ -51,6 +58,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [otherParticipantPresence, setOtherParticipantPresence] = useState<PresenceData | null>(null);
   const [isActivelyViewing, setIsActivelyViewing] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFiles>({ images: [], videos: [], documents: [] });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
@@ -315,11 +323,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setTypingTimeout(newTimeout);
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !conversation || !user?.id) return;
+  const handleFileAttached = (files: AttachedFiles) => {
+    setAttachedFiles(files);
+  };
 
-    const messageContent = inputMessage.trim();
+  const handleSendMessage = async () => {
+    const hasText = inputMessage.trim();
+    const hasFiles = attachedFiles.images.length > 0 || attachedFiles.videos.length > 0 || attachedFiles.documents.length > 0;
+
+    if (!hasText && !hasFiles) return;
+    if (!conversation || !user?.id) return;
+
+    const messageContent = inputMessage.trim() || '📎 Attachment';
     const tempID = `optimistic-${Date.now()}-${Math.random()}`;
+
+    // Collect all media URLs
+    const mediaUrls: string[] = [
+      ...attachedFiles.images.map(img => img.url),
+      ...attachedFiles.videos.map(vid => vid.url),
+      ...attachedFiles.documents.map(doc => doc.url),
+    ];
 
     const optimisticMessage: DirectMessageResponse = {
       id: tempID,
@@ -328,7 +351,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       senderType: user.type as any,
       type: MessageType.TEXT,
       content: messageContent,
-      mediaUrls: [],
+      mediaUrls: mediaUrls,
       isRead: false,
       isEdited: false,
       createdAt: new Date(),
@@ -336,6 +359,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     setMessages(prev => [...prev, optimisticMessage]);
     setInputMessage('');
+    setAttachedFiles({ images: [], videos: [], documents: [] });
 
     if (typingTimeout) {
       clearTimeout(typingTimeout);
@@ -349,6 +373,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       const sentMessage = await sdkClient.messages.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
       });
 
       setMessages(prev =>
@@ -359,6 +384,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       toast.error('Failed to send message');
       setMessages(prev => prev.filter(msg => msg.id !== tempID));
       setInputMessage(messageContent);
+      setAttachedFiles({ images: attachedFiles.images, videos: attachedFiles.videos, documents: attachedFiles.documents });
     }
   };
 
@@ -471,6 +497,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         isConnected={isConnected}
         isAdminConversation={isAdminConversation()}
         disabled={isLoading}
+        sdkClient={sdkClient}
+        onFileAttached={handleFileAttached}
       />
     </div>
   );

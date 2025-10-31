@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, MessageCircle, Send, Minimize2, Maximize2, Headphones, User } from 'lucide-react';
+import { X, MessageCircle, Send, Minimize2, Maximize2, Headphones, User, Paperclip, FileText } from 'lucide-react';
 import { useMessagingWebSocket } from '../hooks';
 import { DirectMessageResponse, ConversationResponse, MessageType } from '@nlc-ai/sdk-messages';
 import { toast } from 'sonner';
 import {UserProfile, UserType} from "@nlc-ai/types";
 import {NLCClient} from "@nlc-ai/sdk-main";
+import { ImageUpload, VideoUpload, UploadedImage, UploadedVideo } from '../../../components';
 
 interface ChatPopupWidgetProps {
   sdkClient: NLCClient;
@@ -27,7 +28,14 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showFileMenu, setShowFileMenu] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [uploadedVideos, setUploadedVideos] = useState<UploadedVideo[]>([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileMenuRef = useRef<HTMLDivElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
 
   // Use controlled state if provided, otherwise use internal state
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
@@ -37,14 +45,12 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
   const handleNewMessage = useCallback((data: { conversationID: string; message: DirectMessageResponse }) => {
     if (data.conversationID === conversation?.id) {
       setMessages(prev => {
-        // Check if message already exists (including optimistic messages)
         const exists = prev.some(msg =>
           msg.id === data.message.id ||
           (msg.id.startsWith('optimistic-') && msg.content === data.message.content && msg.senderID === data.message.senderID)
         );
 
         if (exists) {
-          // Replace optimistic message with real one
           return prev.map(msg =>
             (msg.id.startsWith('optimistic-') && msg.content === data.message.content && msg.senderID === data.message.senderID)
               ? data.message
@@ -57,7 +63,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         );
       });
 
-      // Auto-mark as read if message is not from current user
       if (data.message.senderID !== user?.id || data.message.senderType !== user?.type) {
         setTimeout(() => {
           markMessageAsRead([data.message.id]);
@@ -102,7 +107,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     toast.error('Connection error - messages may not update in real-time');
   }, []);
 
-  // WebSocket integration
   const {
     isConnected,
     joinConversation,
@@ -137,7 +141,18 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
   }, [isOpen]);
 
-  // Handle unread count
+  // Close file menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (fileMenuRef.current && !fileMenuRef.current.contains(event.target as Node)) {
+        setShowFileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     if (!conversation) {
       setUnreadCount(0);
@@ -145,10 +160,8 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
 
     if (isOpen) {
-      // Reset unread count when widget is opened
       setUnreadCount(0);
 
-      // Mark unread messages as read
       const unreadMessages = messages.filter(msg =>
         !msg.isRead &&
         msg.senderID !== user?.id &&
@@ -159,28 +172,23 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         markMessageAsRead(unreadMessages.map(msg => msg.id));
       }
     } else {
-      // Calculate unread count from conversation data when widget is closed
       const currentUserKey = `${user?.type}:${user?.id}`;
       const count = (conversation.unreadCount as Record<string, number>)[currentUserKey] || 0;
       setUnreadCount(count);
     }
   }, [isOpen, conversation?.id, conversation?.unreadCount, messages, user?.id, user?.type]);
 
-  // Join/leave conversation when connection status changes
   useEffect(() => {
     if (conversation && isConnected) {
-      console.log('🚪 Widget joining conversation via WebSocket:', conversation.id);
       joinConversation(conversation.id);
 
       return () => {
-        console.log('🚪 Widget leaving conversation:', conversation.id);
         leaveConversation(conversation.id);
       };
     }
     return () => { /* empty */ };
   }, [conversation?.id, isConnected, joinConversation, leaveConversation]);
 
-  // Clean up typing timeout on unmount
   useEffect(() => {
     return () => {
       if (typingTimeout) {
@@ -194,7 +202,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
 
     setIsLoading(true);
     try {
-      // First check if we already have an admin conversation
       const conversations = await sdkClient.messages.getConversations({
         page: 1,
         limit: 50,
@@ -249,17 +256,14 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
 
     if (!conversation || !isConnected) return;
 
-    // Send typing indicator
     if (value.trim() && !typingTimeout) {
       sendTypingStatus(conversation.id, true);
     }
 
-    // Clear existing timeout
     if (typingTimeout) {
       clearTimeout(typingTimeout);
     }
 
-    // Set new timeout to stop typing indicator
     const newTimeout = setTimeout(() => {
       sendTypingStatus(conversation.id, false);
       setTypingTimeout(null);
@@ -268,13 +272,57 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     setTypingTimeout(newTimeout);
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !conversation || !user?.id) return;
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const messageContent = inputMessage.trim();
+    const newDocuments = [];
+    for (const file of Array.from(files)) {
+      try {
+        const result = await sdkClient.media.uploadAsset(file, {
+          folder: 'nlc-ai/uploads/documents',
+          tags: ['document', 'message-attachment'],
+          metadata: {
+            uploadedFor: 'message',
+            originalSize: file.size,
+          },
+        });
+
+        if (result.success && result.data?.asset) {
+          newDocuments.push({
+            id: result.data.asset.id,
+            url: result.data.asset.secureUrl,
+            name: result.data.asset.originalName || file.name,
+            size: result.data.asset.fileSize || file.size,
+            type: file.type,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to upload document:', error);
+      }
+    }
+
+    setUploadedDocuments([...uploadedDocuments, ...newDocuments]);
+    setShowFileMenu(false);
+  };
+
+  const hasAttachments = uploadedImages.length > 0 || uploadedVideos.length > 0 || uploadedDocuments.length > 0;
+
+  const handleSendMessage = async () => {
+    const hasText = inputMessage.trim();
+    if (!hasText && !hasAttachments) return;
+    if (!conversation || !user?.id) return;
+
+    const messageContent = inputMessage.trim() || '📎 Attachment';
     const tempID = `optimistic-${Date.now()}-${Math.random()}`;
 
-    // Create optimistic message for instant UI feedback
+    // Collect all media URLs
+    const mediaUrls: string[] = [
+      ...uploadedImages.map(img => img.url),
+      ...uploadedVideos.map(vid => vid.url),
+      ...uploadedDocuments.map(doc => doc.url),
+    ];
+
     const optimisticMessage: DirectMessageResponse = {
       id: tempID,
       conversationID: conversation.id,
@@ -282,17 +330,18 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       senderType: user.type as any,
       type: MessageType.TEXT,
       content: messageContent,
-      mediaUrls: [],
+      mediaUrls: mediaUrls,
       isRead: false,
       isEdited: false,
       createdAt: new Date(),
     };
 
-    // Add optimistic message immediately
     setMessages(prev => [...prev, optimisticMessage]);
     setInputMessage('');
+    setUploadedImages([]);
+    setUploadedVideos([]);
+    setUploadedDocuments([]);
 
-    // Clear typing status
     if (typingTimeout) {
       clearTimeout(typingTimeout);
       setTypingTimeout(null);
@@ -305,9 +354,9 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       const sentMessage = await sdkClient.messages.sendMessage(conversation.id, {
         type: MessageType.TEXT,
         content: messageContent,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
       });
 
-      // Replace optimistic message with real message
       setMessages(prev =>
         prev.map(msg => msg.id === tempID ? sentMessage : msg)
       );
@@ -316,8 +365,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     } catch (error: any) {
       console.error('❌ Failed to send message:', error);
       toast.error('Failed to send message');
-
-      // Remove optimistic message on error and restore input
       setMessages(prev => prev.filter(msg => msg.id !== tempID));
       setInputMessage(messageContent);
     }
@@ -361,7 +408,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
         >
           <MessageCircle className="w-7 h-7 text-white" />
 
-          {/* Unread count badge */}
           {unreadCount > 0 ? (
             <div className="absolute -top-2 -right-2 min-w-[24px] h-6
           bg-gradient-to-r from-red-500 to-red-600 rounded-full border-2 border-white
@@ -372,7 +418,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
           </span>
             </div>
           ) : (
-            /* Online status indicator */
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full
           border-2 border-white animate-pulse shadow-lg flex items-center justify-center"
                  title="Support available">
@@ -380,7 +425,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
             </div>
           )}
 
-          {/* Pulse effect */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-fuchsia-600 to-violet-600
         opacity-0 group-hover:opacity-50 blur-xl transition-opacity animate-pulse" />
         </button>
@@ -393,13 +437,11 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       <div className={`w-96 bg-gradient-to-b from-neutral-800/95 to-neutral-900/95 backdrop-blur-xl rounded-2xl border border-neutral-700/50 shadow-2xl transition-all duration-300 overflow-hidden ${
         isMinimized ? 'h-16' : 'h-[36rem]'
       }`}>
-        {/* Glow Effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
           <div className="absolute w-40 h-40 -right-10 -top-10 bg-gradient-to-l from-fuchsia-500/20 via-fuchsia-600/20 to-violet-600/20 rounded-full blur-3xl" />
           <div className="absolute w-40 h-40 -left-10 -bottom-10 bg-gradient-to-r from-violet-500/20 via-purple-600/20 to-fuchsia-600/20 rounded-full blur-3xl" />
         </div>
 
-        {/* Header */}
         <div className="relative z-10 flex items-center justify-between p-4 border-b border-neutral-700/50 bg-gradient-to-r from-fuchsia-600/10 to-violet-600/10 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
@@ -435,7 +477,6 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
 
         {!isMinimized && (
           <>
-            {/* Messages */}
             <div className="relative z-10 flex-1 p-4 space-y-3 overflow-y-auto" style={{ height: 'calc(36rem - 4rem - 7rem)' }}>
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full">
@@ -472,6 +513,21 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                             </div>
                           )}
                           <div className="whitespace-pre-line">{message.content}</div>
+                          {message.mediaUrls?.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {message.mediaUrls.map((url, idx) => (
+                                <a
+                                  key={idx}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs underline text-blue-300 hover:text-blue-400"
+                                >
+                                  Attachment {idx + 1}
+                                </a>
+                              ))}
+                            </div>
+                          )}
                           {message.isEdited && (
                             <div className="text-xs opacity-60 mt-1">(edited)</div>
                           )}
@@ -509,9 +565,55 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <div className="relative z-10 p-4 border-t border-neutral-700/50 bg-gradient-to-r from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm">
-              <div className="flex items-end gap-2">
+            <div className="z-10 p-4 border-t border-neutral-700/50 bg-gradient-to-r from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <div ref={fileMenuRef}>
+                  <button
+                    onClick={() => setShowFileMenu(!showFileMenu)}
+                    className="p-2 text-stone-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700/50"
+                    aria-label="Attach file"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </button>
+
+                  {showFileMenu && (
+                    <div className="bottom-full left-0 mb-2 bg-neutral-800 border border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 min-w-[160px]">
+                      <div className="py-2">
+                        <ImageUpload
+                          sdkClient={sdkClient}
+                          onImagesUploaded={setUploadedImages}
+                          maxFiles={5}
+                          showPreview={false}
+                          className="px-4 py-2 hover:bg-neutral-700/50 transition-colors w-full text-left"
+                        />
+                        <VideoUpload
+                          sdkClient={sdkClient}
+                          onVideosUploaded={setUploadedVideos}
+                          maxFiles={3}
+                          showPreview={false}
+                          className="px-4 py-2 hover:bg-neutral-700/50 transition-colors w-full text-left"
+                        />
+                        <button
+                          onClick={() => documentInputRef.current?.click()}
+                          className="px-4 py-2 hover:bg-neutral-700/50 transition-colors w-full text-left flex items-center gap-2 text-stone-400 hover:text-white text-sm"
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>Documents</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <input
+                    ref={documentInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                    onChange={handleDocumentUpload}
+                    className="hidden"
+                  />
+                </div>
+
                 <div className="flex-1">
                   <textarea
                     value={inputMessage}
@@ -520,12 +622,13 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                     placeholder="Describe your question or issue..."
                     disabled={isLoading}
                     className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 resize-none max-h-24 disabled:opacity-50 backdrop-blur-sm"
-                    rows={1}
+                    rows={2}
                   />
                 </div>
+
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || isLoading}
+                  disabled={(!inputMessage.trim() && !hasAttachments) || isLoading}
                   className="bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white p-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-fuchsia-500/30 hover:shadow-fuchsia-500/50"
                   aria-label="Send message"
                 >

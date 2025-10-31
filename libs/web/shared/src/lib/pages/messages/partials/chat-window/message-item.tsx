@@ -80,6 +80,21 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               </div>
             )}
             <div className="whitespace-pre-line">{message.content}</div>
+            {message.mediaUrls?.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {message.mediaUrls.map((url, idx) => (
+                  <a
+                    key={idx}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs underline text-blue-300 hover:text-blue-400"
+                  >
+                    Attachment {idx + 1}
+                  </a>
+                ))}
+              </div>
+            )}
             {message.isEdited && (
               <div className="text-xs opacity-60 mt-1">(edited)</div>
             )}

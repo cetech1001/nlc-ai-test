@@ -47,11 +47,19 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         {otherParticipant && (
           <>
             <div className="relative">
-              <img
-                src={otherParticipant.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${otherParticipant.name}`}
-                alt={otherParticipant.name}
-                className="w-12 h-12 rounded-full object-cover border-2 border-neutral-600 shadow-lg"
-              />
+              {otherParticipant.avatar ? (
+                <img
+                  src={otherParticipant.avatar}
+                  alt={otherParticipant.name}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-neutral-600 shadow-lg"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center border-2 border-neutral-600 shadow-lg">
+                  <span className="text-white font-semibold text-sm">
+                    {otherParticipant.name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+              )}
 
               {/* Presence indicator */}
               <div className="absolute -bottom-1 -right-1">

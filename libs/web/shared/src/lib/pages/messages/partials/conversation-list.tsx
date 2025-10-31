@@ -260,7 +260,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
         return {
           displayName: `${userInfo.firstName} ${userInfo.lastName}`,
-          displayAvatar: userInfo.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${userInfo.firstName} ${userInfo.lastName}`,
+          displayAvatar: userInfo.avatarUrl || '',
           lastMessage: getLastMessage(conversation),
           unreadCount: getUserUnreadCount(conversation),
           contactType: getContactType(userType),

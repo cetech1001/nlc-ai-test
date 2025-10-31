@@ -101,12 +101,20 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
 
       {/* Avatar with presence */}
       <div className="relative flex-shrink-0 z-10">
-        <img
-          src={conversation.metadata.displayAvatar}
-          alt={conversation.metadata.displayName}
-          className="w-12 h-12 rounded-full object-cover border border-neutral-600
-            group-hover:border-fuchsia-500/50 transition-colors"
-        />
+        {conversation.metadata.displayAvatar ? (
+          <img
+            src={conversation.metadata.displayAvatar}
+            alt={conversation.metadata.displayName}
+            className="w-12 h-12 rounded-full object-cover border border-neutral-600
+              group-hover:border-fuchsia-500/50 transition-colors"
+          />
+        ) : (
+          <div className="w-12 h-12 bg-gradient-to-r from-fuchsia-600 to-violet-600 rounded-full flex items-center justify-center border border-neutral-600 group-hover:border-fuchsia-500/50 transition-colors">
+            <span className="text-white font-semibold text-sm">
+              {conversation.metadata.displayName.split(' ').map(n => n[0]).join('')}
+            </span>
+          </div>
+        )}
 
         {/* Presence indicator */}
         <div className="absolute -bottom-1 -right-1">
