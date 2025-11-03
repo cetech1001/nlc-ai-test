@@ -31,7 +31,7 @@ export const Leaderboard: FC<IProps> = ({ isLoading }) => {
             { rank: 3, name: "Andrew Kramer", milestones: "12/24", streak: "15", points: "+11pt", isTop3: true },
             { rank: 4, name: "Andrew Kramer", milestones: "14/24", streak: "15", points: "+8pt", isTop3: false },
           ].map((user, index) => (
-            <div key={index} className="grid grid-cols-[2fr_1.5fr] py-2">
+            <div key={index} className="grid grid-cols-[3fr_1fr] xl:grid-cols-[2fr_1.5fr] py-2">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 {/* Replace the rank badge section (around line 30-40) */}
                 {user.rank === 1 ? (
@@ -60,8 +60,8 @@ export const Leaderboard: FC<IProps> = ({ isLoading }) => {
                 <span className="text-stone-300 text-sm truncate">{user.name}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 text-sm">
-                <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 text-sm">
+                <div className="hidden xl:grid grid-cols-2 gap-6">
                   <div className="flex flex-col items-end">
                     <span className="text-stone-400 text-xs">Milestones</span>
                     <span className="text-white font-semibold">{user.milestones}</span>
