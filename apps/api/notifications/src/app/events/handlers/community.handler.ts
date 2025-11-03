@@ -76,13 +76,14 @@ export class CommunityHandler implements OnApplicationBootstrap {
       this.logger.log(`Notifying ${membersToNotify.length} members about new post in ${payload.communityName}`);
 
       const notifications = await Promise.allSettled(
-        membersToNotify.map(member =>
-          this.notificationsService.createNotification({
-            userID: member.userID!,
+        membersToNotify.map(member => {
+          const authorName = payload.authorType === UserType.admin ? 'Admin' : payload.authorName;
+          return this.notificationsService.createNotification({
+            userID: member.userID as string,
             userType: member.userType as UserType,
             type: 'post_created',
             title: `New post in ${payload.communityName}`,
-            message: `${payload.authorName} created a new post in ${payload.communityName}`,
+            message: `${authorName} created a new post in ${payload.communityName}`,
             actionUrl: `/community/${payload.slug}/post/${payload.postID}`,
             priority: 'normal',
             metadata: {
@@ -90,11 +91,11 @@ export class CommunityHandler implements OnApplicationBootstrap {
               communityName: payload.communityName,
               postID: payload.postID,
               authorID: payload.authorID,
-              authorName: payload.authorName,
+              authorName,
               eventType: 'community.post.created',
             },
-          })
-        )
+          });
+        })
       );
 
       // Count successful notifications
@@ -140,42 +141,45 @@ export class CommunityHandler implements OnApplicationBootstrap {
   }
 
   private async handlePostLiked(payload: any) {
-    // Notify the post author that someone liked their post
-    const notification = await this.notificationsService.createNotification({
-      userID: payload.postAuthorID,
-      userType: payload.postAuthorType,
-      type: 'post_liked',
-      title: 'Your post was liked! 👍',
-      message: `${payload.likedByName} liked your post in ${payload.communityName}`,
-      actionUrl: `/community/${payload.slug}/post/${payload.postID}`,
-      metadata: {
-        communityID: payload.communityID,
-        postID: payload.postID,
-        likedByID: payload.likedByID,
-        reactionType: payload.reactionType,
-        eventType: 'community.post.liked',
-        communityName: payload.communityName,
-        authorName: payload.likedByName,
-      },
-    });
+    if (payload.postAuthorID !== payload.likedByID) {
+      const authorName = payload.likedByType === UserType.admin ? 'Admin' : payload.likedByName;
+      const notification = await this.notificationsService.createNotification({
+        userID: payload.postAuthorID,
+        userType: payload.postAuthorType,
+        type: 'post_liked',
+        title: 'Your post was liked! 👍',
+        message: `${authorName} liked your post in ${payload.communityName}`,
+        actionUrl: `/community/${payload.slug}/post/${payload.postID}`,
+        metadata: {
+          communityID: payload.communityID,
+          postID: payload.postID,
+          likedByID: payload.likedByID,
+          reactionType: payload.reactionType,
+          eventType: 'community.post.liked',
+          communityName: payload.communityName,
+          authorName,
+        },
+      });
 
-    this.logger.log(`Created notification for post liked: ${notification.id}`);
+      this.logger.log(`Created notification for post liked: ${notification.id}`);
+    }
   }
 
   private async handlePostCommented(payload: any) {
     // Notify the post author that someone commented on their post
     if (payload.postAuthorID !== payload.commentAuthorID) {
+      const authorName = payload.commentAuthorType === UserType.admin ? 'Admin' : payload.commentAuthorName;
       const notification = await this.notificationsService.createNotification({
         userID: payload.postAuthorID,
         userType: payload.postAuthorType,
         type: 'post_commented',
         title: 'New comment on your post 💬',
-        message: `${payload.commentAuthorName} commented on your post in ${payload.communityName}`,
+        message: `${authorName} commented on your post in ${payload.communityName}`,
         actionUrl: `/community/${payload.slug}/post/${payload.postID}`,
         metadata: {
           communityID: payload.communityID,
           communityName: payload.communityName,
-          authorName: payload.commentAuthorName,
+          authorName,
           postID: payload.postID,
           commentID: payload.commentID,
           commentAuthorID: payload.commentAuthorID,
@@ -209,19 +213,20 @@ export class CommunityHandler implements OnApplicationBootstrap {
 
   private async handleMemberInvited(payload: any) {
     // Notify the invited person
+    const authorName = payload.inviterType === UserType.admin ? 'Admin' : payload.inviterName;
     const notification = await this.notificationsService.createNotification({
       userID: payload.inviteeID,
       userType: payload.inviteeType,
       type: 'member_invited',
       title: 'Community invitation 📧',
-      message: `${payload.inviterName} invited you to join ${payload.communityName}`,
+      message: `${authorName} invited you to join ${payload.communityName}`,
       metadata: {
         communityID: payload.communityID,
         inviteID: payload.inviteID,
         inviterID: payload.inviterID,
         eventType: 'community.member.invited',
         communityName: payload.communityName,
-        authorName: payload.inviterName,
+        authorName,
       },
     });
 
