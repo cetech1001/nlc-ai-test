@@ -323,6 +323,14 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       ...uploadedDocuments.map(doc => doc.url),
     ];
 
+    // Determine if we should show the auto-reply: first message OR last message older than 10 minutes
+    const TEN_MIN_MS = 10 * 60 * 1000;
+    const now = Date.now();
+    const lastTimestamp = messages.length
+      ? Math.max(...messages.map(m => new Date(m.createdAt).getTime()))
+      : undefined;
+    const shouldAutoReply = messages.length === 0 || (lastTimestamp !== undefined && (now - lastTimestamp) >= TEN_MIN_MS);
+
     const optimisticMessage: DirectMessageResponse = {
       id: tempID,
       conversationID: conversation.id,
@@ -336,6 +344,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
       createdAt: new Date(),
     };
 
+    // Push the optimistic message immediately
     setMessages(prev => [...prev, optimisticMessage]);
     setInputMessage('');
     setUploadedImages([]);
@@ -348,6 +357,23 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
     }
     if (isConnected) {
       sendTypingStatus(conversation.id, false);
+    }
+
+    // Optionally append auto-reply right away
+    if (shouldAutoReply) {
+      const autoReply: DirectMessageResponse = {
+        id: `auto-reply-${Date.now()}`,
+        conversationID: conversation.id,
+        senderID: 'system',
+        senderType: 'system' as any,
+        type: MessageType.TEXT,
+        content: 'Someone will be right with you.',
+        mediaUrls: [],
+        isRead: true,
+        isEdited: false,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, autoReply]);
     }
 
     try {
