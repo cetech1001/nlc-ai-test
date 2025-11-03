@@ -96,6 +96,12 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
     // Clear typing timeouts
     typingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
     typingTimeoutsRef.current.clear();
+
+    if (reason !== 'io client disconnect') {
+      reconnectTimeoutRef.current = setTimeout(() => {
+        socketRef.current?.connect();
+      }, RECONNECT_DELAY);
+    }
   }, []);
 
   const handleConnectError = useCallback((error: any) => {
@@ -298,7 +304,10 @@ export const useMessagingWebSocket = (options: UseMessagingWebSocketOptions = {}
     socket.on('user_typing', handleUserTyping);
     socket.on('error', handleError);
 
-    return disconnect;
+    return () => {
+      socket.off();
+      disconnect();
+    };
   }, [
     options.enabled,
     token,

@@ -144,6 +144,12 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         userType: payload.type,
         socketID: client.id,
       });
+      client.emit('gateway_ready', {
+        userID: payload.sub,
+        userType: payload.type,
+        socketID: client.id,
+        reconnected: client.recovered,
+      });
 
     } catch (error) {
       this.logger.error('💥 Connection error:', error);

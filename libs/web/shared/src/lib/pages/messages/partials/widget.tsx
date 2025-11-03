@@ -435,7 +435,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
   return (
     <div className="fixed bottom-6 right-6 z-50">
       <div className={`w-96 bg-gradient-to-b from-neutral-800/95 to-neutral-900/95 backdrop-blur-xl rounded-2xl border border-neutral-700/50 shadow-2xl transition-all duration-300 overflow-hidden ${
-        isMinimized ? 'h-16' : 'h-[36rem]'
+        isMinimized ? 'h-16' : 'h-[39rem]'
       }`}>
         <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
           <div className="absolute w-40 h-40 -right-10 -top-10 bg-gradient-to-l from-fuchsia-500/20 via-fuchsia-600/20 to-violet-600/20 rounded-full blur-3xl" />
@@ -622,7 +622,7 @@ export const ChatPopupWidget: React.FC<ChatPopupWidgetProps> = ({
                     placeholder="Describe your question or issue..."
                     disabled={isLoading}
                     className="w-full bg-neutral-700/50 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder:text-stone-400 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 resize-none max-h-24 disabled:opacity-50 backdrop-blur-sm"
-                    rows={2}
+                    rows={3}
                   />
                 </div>
 
