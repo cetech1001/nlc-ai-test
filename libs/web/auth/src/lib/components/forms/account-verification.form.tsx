@@ -57,7 +57,7 @@ export const AccountVerificationForm = (props: AccountVerificationFormProps) => 
     try {
       const response = await authAPI.verifyCode(props.email, data.verificationCode);
 
-      if (response.verified) {
+      if (response.access_token) {
         setSuccessMessage('Email verified successfully! Redirecting...');
         setTimeout(() => {
           if (props.handleHome) {

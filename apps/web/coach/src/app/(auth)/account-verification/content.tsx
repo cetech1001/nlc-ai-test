@@ -2,6 +2,7 @@
 
 import {useMemo} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { AccountVerificationForm, useAuthPage } from '@nlc-ai/web-auth';
 import {UserType} from "@nlc-ai/types";
 

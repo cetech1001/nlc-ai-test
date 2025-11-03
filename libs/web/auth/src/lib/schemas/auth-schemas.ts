@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import {UserType} from "@nlc-ai/types";
 
 const emailSchema = z
   .string()
@@ -28,9 +27,6 @@ const lastNameSchema = z
   .max(50, 'Last name must be less than 50 characters')
   .regex(/^[a-zA-Z\s]+$/, 'Last name can only contain letters and spaces');
 
-const inviteTokenSchema = z
-  .string();
-
 const verificationCodeSchema = z
   .string()
   .min(1, 'Verification code is required')
@@ -43,29 +39,14 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
-const registerTypeSchema = z.object({
-  firstName: firstNameSchema,
-  lastName: lastNameSchema,
-  inviteToken: inviteTokenSchema,
-  email: emailSchema,
-  password: passwordSchema,
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
-})
-
-export const registerSchema = (userType: UserType) => z
+export const registerSchema = z
   .object({
     firstName: firstNameSchema,
     lastName: lastNameSchema,
-    inviteToken: inviteTokenSchema,
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((data) => {
-    return userType === UserType.CLIENT && !data.inviteToken;
-  }, {
-    message: 'Invite token is required',
-    path: ['inviteToken'],
+    marketingOptIn: z.coerce.boolean(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -92,7 +73,7 @@ export const accountVerificationSchema = z.object({
 
 
 export type LoginFormData = z.infer<typeof loginSchema>;
-export type RegisterFormData = z.infer<typeof registerTypeSchema>;
+export type RegisterFormData = z.infer<typeof registerSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export type AccountVerificationFormData = z.infer<typeof accountVerificationSchema>;

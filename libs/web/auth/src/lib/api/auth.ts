@@ -86,7 +86,7 @@ class AuthAPI {
     marketingOptIn?: boolean,
     inviteToken?: string,
   ): Promise<{ message: string; coachID?: string; clientID?: string; requiresVerification?: boolean }> {
-    const data = { firstName, lastName, email, password };
+    const data = { firstName, lastName, email, password, marketingOptIn };
 
     switch (userType) {
       case UserType.COACH:
@@ -96,12 +96,8 @@ class AuthAPI {
           throw new Error('Invitation token is required');
         }
         return this.auth.registerClient({
-          firstName,
-          lastName,
-          email,
-          password,
+          ...data,
           inviteToken,
-          marketingOptIn,
         });
       default:
         throw new Error('Invalid user type for registration');

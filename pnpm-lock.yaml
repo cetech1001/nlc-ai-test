@@ -556,9 +556,17 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(webpack@5.101.3)
 
-  apps/api/agents: {}
+  apps/api/agents:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/analytics: {}
+  apps/api/analytics:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
   apps/api/auth:
     dependencies:
@@ -622,6 +630,9 @@ importers:
       passport-local:
         specifier: ^1.0.0
         version: 1.0.0
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
     devDependencies:
       '@types/express':
         specifier: ^4.17.23
@@ -633,25 +644,65 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
 
-  apps/api/billing: {}
+  apps/api/billing:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/communities: {}
+  apps/api/communities:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/content: {}
+  apps/api/content:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/courses: {}
+  apps/api/courses:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/email: {}
+  apps/api/email:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/gateway: {}
+  apps/api/gateway:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/integrations: {}
+  apps/api/integrations:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/leads: {}
+  apps/api/leads:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/media: {}
+  apps/api/media:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/messages: {}
+  apps/api/messages:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
   apps/api/monolith:
     dependencies:
@@ -663,9 +714,17 @@ importers:
         specifier: ^6.12.0
         version: 6.16.1(typescript@5.8.3)
 
-  apps/api/notifications: {}
+  apps/api/notifications:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
-  apps/api/users: {}
+  apps/api/users:
+    dependencies:
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
   apps/web/admin: {}
 

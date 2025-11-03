@@ -21,17 +21,19 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
 
   const {
     register,
+    watch,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema(props.userType)),
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
-      inviteToken: props.inviteToken,
       email: '',
       password: '',
       confirmPassword: '',
+      marketingOptIn: true,
     },
   });
 
@@ -74,6 +76,7 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
         props.inviteToken
       );
       props.handleAccountVerification(data.email);
+      console.log("Data: ", data);
     } catch (err: unknown) {
       const apiError = err as ApiResponse<undefined>;
       setError(apiError.error?.message || 'Registration failed');
@@ -83,7 +86,7 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
   };
 
   const handleGoogleSignIn = () => {
-    if (UserType.CLIENT && !props.inviteToken) {
+    if (props.userType === UserType.CLIENT && !props.inviteToken) {
       setError('Invite token is required');
     } else {
       signIn();
@@ -184,23 +187,18 @@ export const RegisterForm: FC<RegisterFormProps> = (props) => {
           )}
         </div>
 
-        {props.userType === UserType.CLIENT && (
-          <div className="space-y-2">
-            <label className="block text-[14px] text-[#F9F9F9] leading-6">
-              Invite Token<span className="text-[#FF3030]">*</span>
-            </label>
-            <Input
-              type="text"
-              placeholder="Invite token"
-              disabled={true}
-              {...register('inviteToken')}
-              className="min-h-[64px] px-4 text-[16px] leading-5 border-[#EFEFEF] bg-transparent text-[#F9F9F9] placeholder:text-[#F9F9F9]/50 focus:border-magenta-light focus:ring-magenta-light/20 rounded-[12px]"
-            />
-            {errors.inviteToken && (
-              <p className="text-sm text-red-400">{errors.inviteToken.message}</p>
-            )}
-          </div>
-        )}
+        <label className="flex items-center cursor-pointer group">
+          <input
+            type="checkbox"
+            {...register('marketingOptIn')}
+            onChange={(e) => setValue("marketingOptIn", e.target.checked, { shouldValidate: true })}
+            checked={watch("marketingOptIn")}
+            className="mt-1 w-5 h-5 rounded border-gray-700 bg-black/30 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+          />
+          <span className="ml-3 text-sm text-white/80 group-hover:text-white transition-colors">
+            I'd like to receive exclusive updates, automation strategies, and insider tips via email to help scale my coaching business smarter.
+          </span>
+        </label>
 
         {props.showGoogleAuth && (
           <div className="space-y-4">

@@ -3,7 +3,6 @@ services:
   postgres:
     image: postgres:16
     container_name: postgres
-    restart: unless-stopped
     environment:
       POSTGRES_USER: nlc_ai_user
       POSTGRES_PASSWORD: 12345678
@@ -22,7 +21,6 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
-    restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: secret
@@ -41,7 +39,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -71,11 +68,13 @@ services:
   gateway:
     build:
       context: .
-      dockerfile: ./apps/api/gateway/dev.Dockerfile
+      dockerfile: apps/api/gateway/Dockerfile
+      args:
+        SERVICE_NAME: gateway
     container_name: gateway
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/gateway/.env
     ports:
       - "3000:3000"
       - "5555:5555"
@@ -92,11 +91,13 @@ services:
   agents:
     build:
       context: .
-      dockerfile: ./apps/api/agents/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: agents
     container_name: agents
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/agents/.env
     ports:
       - "3011:3011"
     depends_on:
@@ -110,11 +111,13 @@ services:
   analytics:
     build:
       context: .
-      dockerfile: ./apps/api/analytics/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: analytics
     container_name: analytics
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/analytics/.env
     ports:
       - "3010:3010"
     depends_on:
@@ -128,11 +131,13 @@ services:
   auth:
     build:
       context: .
-      dockerfile: ./apps/api/auth/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: auth
     container_name: auth
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/auth/.env
     ports:
       - "3001:3001"
     depends_on:
@@ -146,11 +151,13 @@ services:
   billing:
     build:
       context: .
-      dockerfile: ./apps/api/billing/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: billing
     container_name: billing
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/billing/.env
     ports:
       - "3005:3005"
     depends_on:
@@ -164,11 +171,13 @@ services:
   content:
     build:
       context: .
-      dockerfile: ./apps/api/content/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: content
     container_name: content
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/content/.env
     ports:
       - "3014:3014"
     depends_on:
@@ -182,11 +191,13 @@ services:
   messages:
     build:
       context: .
-      dockerfile: apps/api/messages/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: messages
     container_name: messages
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/messages/.env
     ports:
       - "3012:3012"
     depends_on:
@@ -200,11 +211,13 @@ services:
   communities:
     build:
       context: .
-      dockerfile: apps/api/communities/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: communities
     container_name: communities
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/communities/.env
     ports:
       - "3009:3009"
     depends_on:
@@ -218,11 +231,13 @@ services:
   courses:
     build:
       context: .
-      dockerfile: apps/api/courses/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: courses
     container_name: courses
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/courses/.env
     ports:
       - "3013:3013"
     depends_on:
@@ -236,11 +251,13 @@ services:
   email:
     build:
       context: .
-      dockerfile: ./apps/api/email/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: email
     container_name: email
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/email/.env
     ports:
       - "3004:3004"
     depends_on:
@@ -254,11 +271,13 @@ services:
   integrations:
     build:
       context: .
-      dockerfile: ./apps/api/integrations/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: integrations
     container_name: integrations
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/integrations/.env
     ports:
       - "3008:3008"
     depends_on:
@@ -272,11 +291,13 @@ services:
   leads:
     build:
       context: .
-      dockerfile: ./apps/api/leads/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: leads
     container_name: leads
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/leads/.env
     ports:
       - "3006:3006"
     depends_on:
@@ -290,11 +311,13 @@ services:
   media:
     build:
       context: .
-      dockerfile: ./apps/api/media/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: media
     container_name: media
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/media/.env
     ports:
       - "3003:3003"
     depends_on:
@@ -308,11 +331,13 @@ services:
   notifications:
     build:
       context: .
-      dockerfile: ./apps/api/notifications/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: notifications
     container_name: notifications
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/notifications/.env
     ports:
       - "3007:3007"
     depends_on:
@@ -326,11 +351,13 @@ services:
   users:
     build:
       context: .
-      dockerfile: ./apps/api/users/dev.Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: users
     container_name: users
-    restart: unless-stopped
     env_file:
       - .env
+      - apps/api/users/.env
     ports:
       - "3002:3002"
     depends_on:
