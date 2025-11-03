@@ -11,6 +11,5 @@ watchPatterns = [
 ]
 
 [deploy]
-preDeployCommand = ["npm run db:deploy"]
 healthcheckPath = ""
 restartPolicyType = "never"
