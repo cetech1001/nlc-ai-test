@@ -3,7 +3,7 @@
 import React, {memo, useState, useCallback} from 'react';
 import { useRouter } from 'next/navigation';
 import {ChevronRight, CheckCircle, ChevronLeft} from 'lucide-react';
-import { PageBackground } from '@/lib/components';
+import { PageBackground, Header } from '@/lib';
 import {hashString, LeadAnswers, LeadQuestionOption, questions} from "@nlc-ai/sdk-leads";
 
 const persistAnswersWithHash = (answers: LeadAnswers) => {
@@ -196,7 +196,6 @@ const QuizPage = () => {
       setShowOtherInput(false);
       setOtherText('');
     } else {
-      // Store answers + hash in sessionStorage and navigate to lead form
       persistAnswersWithHash(updatedAnswers);
       router.push('/lead-form');
     }
@@ -221,6 +220,7 @@ const QuizPage = () => {
 
   return (
     <PageBackground>
+      <Header />
       <div className="container mx-auto px-6 py-20">
         <div className="max-w-3xl mx-auto">
           <div className="glass-card rounded-3xl p-8 md:p-12 border border-purple-500/20 relative overflow-hidden">
@@ -239,22 +239,20 @@ const QuizPage = () => {
                 )}
               </div>
 
-              {/* Text-only question */}
               {currentQ?.textOnly ? (
                 <div className="space-y-6">
-                                    <textarea
-                                      value={textAnswers[currentQ.id] || ''}
-                                      onChange={(e) => handleTextAnswerChange(currentQ.id, e.target.value)}
-                                      className="w-full px-6 py-4 rounded-2xl bg-black/30 border border-gray-700 focus:border-purple-400 focus:outline-none text-white placeholder-white/50 min-h-[120px] resize-none"
-                                      placeholder={currentQ.placeholder || "Type your answer here..."}
-                                      autoFocus
-                                    />
+                  <textarea
+                    value={textAnswers[currentQ.id] || ''}
+                    onChange={(e) => handleTextAnswerChange(currentQ.id, e.target.value)}
+                    className="w-full px-6 py-4 rounded-2xl bg-black/30 border border-gray-700 focus:border-purple-400 focus:outline-none text-white placeholder-white/50 min-h-[120px] resize-none"
+                    placeholder={currentQ.placeholder || "Type your answer here..."}
+                    autoFocus
+                  />
                   <p className="text-sm text-white/50">
                     {textAnswers[currentQ.id]?.length || 0} characters
                   </p>
                 </div>
               ) : (
-                /* Multiple choice questions */
                 <div className="space-y-4">
                   {currentQ?.options?.map((option, index) => {
                     const isSelected = currentQ?.multiSelect

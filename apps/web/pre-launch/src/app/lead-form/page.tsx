@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, User } from 'lucide-react';
-import { PageBackground } from '@/lib/components';
+import { PageBackground, Header } from '@/lib';
 import Image from "next/image";
 import Link from "next/link";
 import {sdkClient} from "@/lib";
@@ -146,6 +146,7 @@ const LeadFormPage = () => {
 
   return (
     <PageBackground>
+      <Header />
       <div className="container mx-auto px-6 py-20">
         <div className="max-w-3xl mx-auto">
           <div className="glass-card rounded-3xl p-8 md:p-12 border border-purple-500/20 relative overflow-hidden">

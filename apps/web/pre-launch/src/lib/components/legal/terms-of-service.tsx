@@ -178,13 +178,13 @@ export const TermsOfService = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-white">
       <div className="glow-orb glow-orb--lg -top-96 -right-96 opacity-40" />
       <div className="glow-orb glow-orb--lg glow-orb--purple -bottom-96 -left-96 opacity-40" />
 
       <div className="container mx-auto px-6 py-20 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="glass-card rounded-3xl p-8 md:p-12 border border-purple-500/20">
+          <div className="glass-card rounded-3xl py-8 md:py-12 px-4 md:px-8 border border-purple-500/20">
             <div className="flex items-center justify-center mb-6">
               <FileText className="w-12 h-12 text-purple-400 mr-4" />
               <h1 className="text-4xl md:text-5xl font-bold text-white">Terms of Service</h1>

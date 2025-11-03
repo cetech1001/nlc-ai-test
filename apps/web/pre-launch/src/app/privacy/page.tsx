@@ -1,9 +1,14 @@
 'use client'
 
-import {PrivacyPolicy} from "@/lib";
+import { PageBackground, Header, PrivacyPolicy } from "@/lib";
 
 const PrivacyPage = () => {
-  return <PrivacyPolicy/>
+  return (
+    <PageBackground>
+      <Header />
+      <PrivacyPolicy />
+    </PageBackground>
+  );
 };
 
 export default PrivacyPage;

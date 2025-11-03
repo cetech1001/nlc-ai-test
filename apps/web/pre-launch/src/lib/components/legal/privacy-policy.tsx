@@ -189,7 +189,7 @@ export const PrivacyPolicy = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-white">
       <div className="glow-orb glow-orb--lg -top-96 -right-96 opacity-40" />
       <div className="glow-orb glow-orb--lg glow-orb--purple -bottom-96 -left-96 opacity-40" />
 

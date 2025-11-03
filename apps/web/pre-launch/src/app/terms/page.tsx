@@ -1,9 +1,14 @@
 'use client'
 
-import {TermsOfService} from "@/lib";
+import { PageBackground, Header, TermsOfService } from "@/lib";
 
 const TermsPage = () => {
-  return <TermsOfService/>
+  return (
+    <PageBackground>
+      <Header />
+      <TermsOfService />
+    </PageBackground>
+  );
 };
 
 export default TermsPage;
