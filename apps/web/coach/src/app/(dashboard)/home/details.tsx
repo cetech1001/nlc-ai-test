@@ -25,6 +25,7 @@ import {
   Lightbulb
 } from "lucide-react";
 import { CoachDashboardData } from '@nlc-ai/sdk-analytics';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { useAuth } from "@nlc-ai/web-auth";
 
 export const CoachDetailsPage = () => {
@@ -117,35 +118,35 @@ export const CoachDetailsPage = () => {
       icon: Users,
       label: "Leads Captured",
       link: '/leads',
-      count: dashboardData?.agentStats.leadsCaptured!,
+      count: dashboardData?.agentStats.leadsCaptured || 0,
       color: "text-fuchsia-400"
     },
     {
       icon: Mail,
       label: "Follow Up Emails Sent",
       link: '/agents/followup',
-      count: dashboardData?.agentStats.followUpEmailsSent!,
+      count: dashboardData?.agentStats.followUpEmailsSent || 0,
       color: "text-purple-400"
     },
     {
       icon: MessagesSquare,
       label: "Feedback Surveys Sent",
       link: '/agents/retention',
-      count: dashboardData?.agentStats.feedbackSurveysSent!,
+      count: dashboardData?.agentStats.feedbackSurveysSent || 0,
       color: "text-red-400"
     },
     {
       icon: MessageCircleHeart,
       label: "Testimonials Received",
       link: '/agents/testimonials',
-      count: dashboardData?.agentStats.testimonialsReceived!,
+      count: dashboardData?.agentStats.testimonialsReceived || 0,
       color: "text-yellow-400"
     },
     {
       icon: Lightbulb,
       label: "Content Ideas Generated",
       link: '/agents/suggestion',
-      count: dashboardData?.agentStats.contentIdeasGenerated!,
+      count: dashboardData?.agentStats.contentIdeasGenerated || 0,
       color: "text-orange-400"
     }
   ];
@@ -157,12 +158,12 @@ export const CoachDetailsPage = () => {
           isLoading={isLoading}
           title="Total Clients"
           value={dashboardData?.totalClients.toString()}
-          growth={dashboardData?.totalClients! > 0 ? 25 : undefined}
+          growth={(dashboardData?.totalClients || 0) > 0 ? 25 : undefined}
           description="Number Of enrolled students or active clients"
         />
         <CoachConfidenceScore
           title={'Coach Confidence Score'}
-          value={dashboardData?.confidenceScore!}
+          value={dashboardData?.confidenceScore || 0}
           description={'Accuracy of AI outputs based on coach approval/edit history'}
         />
       </div>
@@ -179,21 +180,21 @@ export const CoachDetailsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <div className="h-full">
           <RevenueChart
-            data={dashboardData?.revenueData!}
-            growth={dashboardData?.revenueGrowth!}
+            data={dashboardData?.revenueData as any}
+            growth={dashboardData?.revenueGrowth || 0}
           />
         </div>
         <div className="h-full">
-          <TimeSavedWidget data={dashboardData?.timeSavedData!} />
+          <TimeSavedWidget data={dashboardData?.timeSavedData as any} />
         </div>
       </div>
 
       <div className={"grid grid-cols-1 sm:grid-cols-2 gap-3"}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <TestimonialOpportunity opportunity={dashboardData?.testimonialOpportunity!} />
-          <ClientEmailWidget stats={dashboardData?.clientEmailStats!} />
+          <TestimonialOpportunity opportunity={dashboardData?.testimonialOpportunity as any} />
+          <ClientEmailWidget stats={dashboardData?.clientEmailStats as any} />
         </div>
-        <TopPerformingContent content={dashboardData?.topPerformingContent!} />
+        <TopPerformingContent content={dashboardData?.topPerformingContent as any} />
       </div>
     </div>
   );

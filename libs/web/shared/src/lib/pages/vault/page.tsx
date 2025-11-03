@@ -44,7 +44,7 @@ export const VaultPage: FC<IProps> = ({ sdkClient, handleMessages, user, onNavig
   };
 
   return (
-    <div className="py-2 sm:py-4 lg:py-6 max-w-full overflow-hidden">
+    <div className="py-2 px-4 sm:py-4 lg:py-6 max-w-full overflow-hidden">
       {successMessage && (
         <AlertBanner type="success" message={successMessage} onDismiss={clearMessages} />
       )}

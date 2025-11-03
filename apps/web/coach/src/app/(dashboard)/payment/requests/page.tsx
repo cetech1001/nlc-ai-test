@@ -103,7 +103,7 @@ const PaymentRequests = () => {
 
   return (
     <div className={'flex flex-col'}>
-      <div className="flex-1 py-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
+      <div className="flex-1 py-4 px-4 sm:py-6 lg:py-8 space-y-6 lg:space-y-8 max-w-full sm:overflow-hidden">
         {error && (
           <AlertBanner type={"error"} message={error} onDismiss={() => setError('')}/>
         )}
