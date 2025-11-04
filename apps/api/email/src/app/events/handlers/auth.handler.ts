@@ -171,7 +171,7 @@ export class AuthHandler {
     try {
       const { email, coachName, token, expiresAt, businessName, message: inviteMessage } = event.payload;
       const baseUrl = this.config.get<string>('email.platforms.client', '');
-      const inviteUrl = `${baseUrl}/login?token=${token}`;
+      const inviteUrl = `${baseUrl}/register?token=${token}`;
 
       const emailTemplateID = await this.getTemplateID('client_invite');
 
@@ -186,7 +186,7 @@ export class AuthHandler {
             inviteUrl,
             coachName,
             businessName: businessName || `${coachName}'s coaching program`,
-            businessTagline: '',
+            businessNameTagline: '',
             message: inviteMessage || 'N/A',
             expiryText: expiresAt
               ? `This invitation expires on ${new Date(expiresAt).toLocaleDateString()}.`

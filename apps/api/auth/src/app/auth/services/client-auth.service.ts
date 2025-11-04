@@ -12,13 +12,15 @@ import {
 } from '@nlc-ai/types';
 import {Client} from "@prisma/client";
 import {AuthResponse} from "@nlc-ai/types";
+import {TokenService} from "./token.service";
 
 @Injectable()
 export class ClientAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outbox: OutboxService,
-    private readonly jwtService: JwtService,
+    private readonly jwt: JwtService,
+    private readonly token: TokenService,
   ) {}
 
   async login(loginDto: LoginRequest, provider?: 'google') {
@@ -135,8 +137,6 @@ export class ClientAuthService {
         }
       });
 
-      console.log("Client coach: ", clientCoach);
-
       await tx.clientInvite.update({
         where: { id: invite.id },
         data: {
@@ -168,6 +168,22 @@ export class ClientAuthService {
             clientCoach,
           ]
         }, true);
+      } else {
+        const code = this.token.generateVerificationCode();
+        await this.token.storeVerificationToken(email, code, 'verification');
+
+        await this.outbox.saveAndPublishEvent<AuthEvent>(
+          {
+            eventType: 'auth.verification.requested',
+            schemaVersion: 1,
+            payload: {
+              email: client.email,
+              code: code,
+              type: 'email_verification',
+            },
+          },
+          'auth.verification.requested'
+        );
       }
 
       return {
@@ -239,7 +255,7 @@ export class ClientAuthService {
     };
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwt.sign(payload),
       currentCoach: {
         coachID: relationship.coach.id,
         coachName: `${relationship.coach.firstName} ${relationship.coach.lastName}`,
@@ -406,7 +422,7 @@ export class ClientAuthService {
     };
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwt.sign(payload),
       user: {
         id: client.id,
         type: UserType.CLIENT,
