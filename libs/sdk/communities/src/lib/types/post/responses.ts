@@ -41,7 +41,7 @@ export interface PostResponse extends Post{
   };
   userReaction?: ReactionType;
   comments?: PostCommentResponse[];
-  _count?: {
+  _count: {
     reactions: number;
     comments: number;
   };

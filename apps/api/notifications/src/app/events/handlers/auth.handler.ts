@@ -127,7 +127,7 @@ export class AuthHandler {
       type: 'client_invite',
       title: 'Client Invitation Sent 📧',
       message: `Invitation sent to ${payload.email}. They'll receive an email to join your coaching program.`,
-      actionUrl: '/dashboard/clients',
+      actionUrl: '/clients/invites',
       priority: 'normal',
       metadata: {
         source: 'auth.client.invited',

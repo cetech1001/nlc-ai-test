@@ -531,7 +531,7 @@ export const SinglePost: React.FC<SinglePostProps> = ({
 
           <PostActions
             likeCount={optimisticPost.likeCount}
-            commentCount={optimisticPost.commentCount}
+            commentCount={optimisticPost._count.comments}
             userReaction={optimisticPost.userReaction}
             isReacting={isReacting}
             showComments={showComments[optimisticPost.id]}
