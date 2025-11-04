@@ -1,6 +1,6 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "apps/api/notifications/Dockerfile"
+dockerfilePath = "Dockerfile"
 watchPatterns = [
   "apps/api/notifications/**",
   "libs/api/**",

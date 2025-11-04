@@ -1,6 +1,6 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "apps/api/auth/Dockerfile"
+dockerfilePath = "Dockerfile"
 watchPatterns = [
   "apps/api/auth/**",
   "libs/api/**",

@@ -1,9 +1,10 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "apps/api/content/Dockerfile"
+dockerfilePath = "Dockerfile"
 watchPatterns = [
   "apps/api/content/**",
   "libs/api/**",
+  "libs/types/**",
   "nx.json",
   "package.json",
   "tsconfig*.json"
