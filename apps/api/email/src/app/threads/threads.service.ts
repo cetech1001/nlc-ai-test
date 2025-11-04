@@ -59,7 +59,7 @@ export class ThreadsService {
         userID,
         ...(status && { status }),
         ...(isRead !== undefined && { isRead }),
-        ...(clientID && { clientID }),
+        ...(clientID && { participantID: clientID }),
       },
       orderBy: { lastMessageAt: 'desc' },
       take: limit,
