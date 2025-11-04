@@ -197,7 +197,7 @@ const ClientDetailsPage = () => {
                 Edit Client
               </button>
               <button
-                onClick={() => router.push(`/emails?clientID=${client.id}`)}
+                onClick={() => router.push(`/agents/emails?clientID=${client.id}`)}
                 className="px-4 py-2 border border-neutral-600 text-stone-300 rounded-lg hover:border-fuchsia-400 hover:text-white transition-colors"
               >
                 View Emails
