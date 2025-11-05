@@ -1,18 +1,15 @@
 import React from 'react';
-import { Video, FileText, FileDown } from 'lucide-react';
 import type { ExtendedCourse } from '@nlc-ai/sdk-courses';
 
 interface CurriculumContentProps {
   course: ExtendedCourse | null;
   activeTab: string;
-  onCreateLesson: (type: 'video' | 'text' | 'pdf') => void;
   onTabChange: (tab: string) => void;
 }
 
 export const CurriculumContent: React.FC<CurriculumContentProps> = ({
  course,
  activeTab,
- onCreateLesson,
 }) => {
   if (activeTab !== 'Curriculum') {
     return null;
@@ -20,38 +17,6 @@ export const CurriculumContent: React.FC<CurriculumContentProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-8 relative z-10">
-        <button
-          onClick={() => onCreateLesson('video')}
-          className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center"
-        >
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-            <Video className="w-6 h-6 text-white" />
-          </div>
-          <div className="text-white font-medium">Video</div>
-        </button>
-
-        <button
-          onClick={() => onCreateLesson('text')}
-          className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center"
-        >
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-            <FileText className="w-6 h-6 text-white" />
-          </div>
-          <div className="text-white font-medium">Text</div>
-        </button>
-
-        <button
-          onClick={() => onCreateLesson('pdf')}
-          className="bg-gradient-to-b from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm border border-neutral-600 rounded-xl p-6 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20 transition-all group flex flex-col items-center"
-        >
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-            <FileDown className="w-6 h-6 text-white" />
-          </div>
-          <div className="text-white font-medium">PDF</div>
-        </button>
-      </div>
-
       {course && (
         <div className="relative bg-gradient-to-r from-purple-600/20 via-fuchsia-600/20 to-violet-600/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 overflow-hidden z-10 mb-6">
           <div className="absolute inset-0 opacity-30">
@@ -80,6 +45,9 @@ export const CurriculumContent: React.FC<CurriculumContentProps> = ({
           </div>
         </div>
       )}
+      <div className="text-center text-stone-300 mt-6">
+        Add a chapter, add a lesson, or select an existing lesson to modify.
+      </div>
     </>
   );
 };

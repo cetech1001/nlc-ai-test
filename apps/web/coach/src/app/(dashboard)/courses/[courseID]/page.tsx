@@ -568,46 +568,46 @@ const CourseEditPage = () => {
     return selectedChapter?.title || '';
   };
 
-  if (showChapterModal) {
-    return (
-      <>
-        <div className="min-h-screen w-full relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
-          <div className="absolute top-32 left-20 w-40 h-40 bg-gradient-to-br from-purple-400/15 to-violet-500/15 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-40 right-32 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl"></div>
+  return (
+    <>
+      <div className="min-h-screen w-full relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
+        <div className="absolute top-32 left-20 w-40 h-40 bg-gradient-to-br from-purple-400/15 to-violet-500/15 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-40 right-32 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl"></div>
 
-          <div className="pt-4 md:pt-8 pb-8 px-4 md:px-6 w-full relative z-10">
-            <CourseHeader
-              course={course}
-              onBack={handleBack}
-              onPreview={handlePreview}
-              onUpdateStatus={handleUpdateStatus}
-            />
+        <div className="pt-4 md:pt-8 pb-16 px-4 md:px-6 w-full relative z-10">
+          <CourseHeader
+            course={course}
+            onBack={handleBack}
+            onPreview={handlePreview}
+            onUpdateStatus={handleUpdateStatus}
+          />
 
-            <TabNavigation
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
+          <TabNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
 
-            <div className="h-[calc(100vh-240px)] md:h-[calc(100vh-280px)] relative">
-              <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[16px] md:rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
-                <CurriculumSidebar
-                  course={course}
-                  curriculum={curriculum}
-                  onToggleChapter={toggleChapter}
-                  onAddLesson={handleAddLesson}
-                  onEditChapter={handleEditChapter}
-                  onEditLesson={handleEditLesson}
-                  onDeleteChapter={handleDeleteChapter}
-                  onDeleteLesson={handleDeleteLesson}
-                  onAddChapter={handleAddChapter}
-                  onUploadContent={handleUploadContent}
-                  onReorderChapters={handleReorderChapters}
-                  onReorderLessons={handleReorderLessons}
-                  isMobileOpen={sidebarOpen}
-                  onMobileClose={() => setSidebarOpen(false)}
-                />
+          <div className="h-[calc(100vh-240px)] md:h-[calc(100vh-280px)] relative">
+            <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[16px] md:rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
+              <CurriculumSidebar
+                course={course}
+                curriculum={curriculum}
+                onToggleChapter={toggleChapter}
+                onAddLesson={handleAddLesson}
+                onEditChapter={handleEditChapter}
+                onEditLesson={handleEditLesson}
+                onDeleteChapter={handleDeleteChapter}
+                onDeleteLesson={handleDeleteLesson}
+                onAddChapter={handleAddChapter}
+                onUploadContent={handleUploadContent}
+                onReorderChapters={handleReorderChapters}
+                onReorderLessons={handleReorderLessons}
+                isMobileOpen={sidebarOpen}
+                onMobileClose={() => setSidebarOpen(false)}
+              />
 
+              {viewState === 'course' && (
                 <div className="flex-1 flex flex-col">
                   <div className="md:hidden p-4 border-b border-neutral-700 bg-gradient-to-r from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm">
                     <button
@@ -620,10 +620,11 @@ const CourseEditPage = () => {
 
                   <div className="flex-1 overflow-hidden">
                     <div className="h-full p-4 md:p-8 flex flex-col relative overflow-auto">
+                      <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-violet-500/10 rounded-full blur-2xl"></div>
+
                       <CurriculumContent
                         course={course}
                         activeTab={activeTab}
-                        onCreateLesson={() => {/* empty */}}
                         onTabChange={setActiveTab}
                       />
 
@@ -647,11 +648,67 @@ const CourseEditPage = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {viewState === 'lesson-selector' && (
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full p-4 md:p-8 flex flex-col relative overflow-auto">
+                    <LessonTypeSelector
+                      selectedChapter={selectedChapter}
+                      onBack={handleBackToCourse}
+                      onSelectType={handleSelectLessonType}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {viewState === 'lesson-form' && (
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-auto">
+                    {lessonType === 'video' && (
+                      <VideoLessonForm
+                        chapterID={selectedChapter?.chapterID || ''}
+                        lessonID={editingLesson?.id || ""}
+                        lessonToEdit={editingLesson}
+                        chapterTitle={getCurrentChapterTitle()}
+                        onSave={handleCreateLesson}
+                        onBack={handleBackToSelector}
+                        onUploadVideo={handleUploadVideo}
+                        onUploadFile={handleUploadFile}
+                        onCheckProcessingStatus={handleCheckProcessingStatus}
+                      />
+                    )}
+
+                    {lessonType === 'pdf' && (
+                      <PDFLessonForm
+                        chapterID={selectedChapter?.chapterID || ''}
+                        lessonID={editingLesson?.id || ""}
+                        lessonToEdit={editingLesson}
+                        chapterTitle={getCurrentChapterTitle()}
+                        onSave={handleCreateLesson}
+                        onBack={handleBackToSelector}
+                        onUploadPDF={handleUploadPDF}
+                      />
+                    )}
+
+                    {lessonType === 'text' && (
+                      <TextLessonForm
+                        chapterID={selectedChapter?.chapterID || ''}
+                        lessonID={editingLesson?.id || ""}
+                        lessonToEdit={editingLesson}
+                        chapterTitle={getCurrentChapterTitle()}
+                        onSave={handleCreateLesson}
+                        onBack={handleBackToSelector}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
-
+      </div>
+      {showChapterModal && (
         <ChapterForm
           courseID={courseID}
           course={course}
@@ -664,150 +721,8 @@ const CourseEditPage = () => {
             setEditingChapter(null);
           }}
         />
-      </>
-    );
-  }
-
-  return (
-    <div className="min-h-screen w-full relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-transparent to-purple-900/30"></div>
-      <div className="absolute top-32 left-20 w-40 h-40 bg-gradient-to-br from-purple-400/15 to-violet-500/15 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-40 right-32 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl"></div>
-
-      <div className="pt-4 md:pt-8 pb-16 px-4 md:px-6 w-full relative z-10">
-        <CourseHeader
-          course={course}
-          onBack={handleBack}
-          onPreview={handlePreview}
-          onUpdateStatus={handleUpdateStatus}
-        />
-
-        <TabNavigation
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-
-        <div className="h-[calc(100vh-240px)] md:h-[calc(100vh-280px)] relative">
-          <div className="h-full bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 backdrop-blur-sm rounded-[16px] md:rounded-[20px] border border-neutral-700 overflow-hidden flex relative">
-            <CurriculumSidebar
-              course={course}
-              curriculum={curriculum}
-              onToggleChapter={toggleChapter}
-              onAddLesson={handleAddLesson}
-              onEditChapter={handleEditChapter}
-              onEditLesson={handleEditLesson}
-              onDeleteChapter={handleDeleteChapter}
-              onDeleteLesson={handleDeleteLesson}
-              onAddChapter={handleAddChapter}
-              onUploadContent={handleUploadContent}
-              onReorderChapters={handleReorderChapters}
-              onReorderLessons={handleReorderLessons}
-              isMobileOpen={sidebarOpen}
-              onMobileClose={() => setSidebarOpen(false)}
-            />
-
-            {viewState === 'course' && (
-              <div className="flex-1 flex flex-col">
-                <div className="md:hidden p-4 border-b border-neutral-700 bg-gradient-to-r from-neutral-800/50 to-neutral-900/50 backdrop-blur-sm">
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors border border-white/10"
-                  >
-                    <Menu className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-hidden">
-                  <div className="h-full p-4 md:p-8 flex flex-col relative overflow-auto">
-                    <div className="absolute top-40 right-20 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-violet-500/10 rounded-full blur-2xl"></div>
-
-                    <CurriculumContent
-                      course={course}
-                      activeTab={activeTab}
-                      onCreateLesson={() => setViewState('lesson-selector')}
-                      onTabChange={setActiveTab}
-                    />
-
-                    {activeTab === 'Settings' && (
-                      <SettingsTab
-                        course={course}
-                        onCourseUpdate={handleCourseUpdate}
-                      />
-                    )}
-
-                    {activeTab === 'Drip schedule' && (
-                      <DripScheduleTab courseID={courseID} course={course} />
-                    )}
-
-                    {activeTab === 'Pricing' && (
-                      <PaywallTab
-                        course={course}
-                        onCourseUpdate={handleCourseUpdate}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {viewState === 'lesson-selector' && (
-              <div className="flex-1 overflow-hidden">
-                <div className="h-full p-4 md:p-8 flex flex-col relative overflow-auto">
-                  <LessonTypeSelector
-                    selectedChapter={selectedChapter}
-                    onBack={handleBackToCourse}
-                    onSelectType={handleSelectLessonType}
-                  />
-                </div>
-              </div>
-            )}
-
-            {viewState === 'lesson-form' && (
-              <div className="flex-1 overflow-hidden">
-                <div className="h-full overflow-auto">
-                  {lessonType === 'video' && (
-                    <VideoLessonForm
-                      chapterID={selectedChapter?.chapterID || ''}
-                      lessonID={editingLesson?.id || ""}
-                      lessonToEdit={editingLesson}
-                      chapterTitle={getCurrentChapterTitle()}
-                      onSave={handleCreateLesson}
-                      onBack={handleBackToSelector}
-                      onUploadVideo={handleUploadVideo}
-                      onUploadFile={handleUploadFile}
-                      onCheckProcessingStatus={handleCheckProcessingStatus}
-                    />
-                  )}
-
-                  {lessonType === 'pdf' && (
-                    <PDFLessonForm
-                      chapterID={selectedChapter?.chapterID || ''}
-                      lessonID={editingLesson?.id || ""}
-                      lessonToEdit={editingLesson}
-                      chapterTitle={getCurrentChapterTitle()}
-                      onSave={handleCreateLesson}
-                      onBack={handleBackToSelector}
-                      onUploadPDF={handleUploadPDF}
-                    />
-                  )}
-
-                  {lessonType === 'text' && (
-                    <TextLessonForm
-                      chapterID={selectedChapter?.chapterID || ''}
-                      lessonID={editingLesson?.id || ""}
-                      lessonToEdit={editingLesson}
-                      chapterTitle={getCurrentChapterTitle()}
-                      onSave={handleCreateLesson}
-                      onBack={handleBackToSelector}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
