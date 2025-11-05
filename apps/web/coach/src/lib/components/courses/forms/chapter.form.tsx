@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, {useState, useMemo, FC} from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import { CreateCourseChapter, type ExtendedCourse } from '@nlc-ai/sdk-courses';
 
-interface ChapterFormProps {
-  courseID: string;
+interface FormContentProps {
   course?: ExtendedCourse | null;
   chapterToEdit?: {
     id: string;
@@ -12,19 +11,18 @@ interface ChapterFormProps {
     orderIndex: number;
   } | null;
   onBack: () => void;
-  onSave: (chapterData: CreateCourseChapter) => void;
   isModal?: boolean;
   onClose?: () => void;
+  onSave: (chapterData: CreateCourseChapter) => void;
 }
 
-export const ChapterForm: React.FC<ChapterFormProps> = ({
-  courseID,
+const FormContent: FC<FormContentProps> = ({
+  onBack,
+  isModal,
+  onClose,
   course,
   chapterToEdit,
-  onBack,
   onSave,
-  isModal = false,
-  onClose
 }) => {
   const [formData, setFormData] = useState({
     title: chapterToEdit?.title || '',
@@ -33,7 +31,6 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
     dripDelay: 0,
     isLocked: false
   });
-
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Generate order options based on existing chapters
@@ -45,7 +42,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
     course.chapters
       .filter(ch => chapterToEdit ? ch.id !== chapterToEdit.id : true)
       .sort((a, b) => a.orderIndex - b.orderIndex)
-      .forEach((chapter, index) => {
+      .forEach((chapter) => {
         options.push({
           value: chapter.orderIndex + 1,
           label: `After "${chapter.title}"`
@@ -94,7 +91,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
     onSave(chapterData);
   };
 
-  const FormContent = () => (
+  return (
     <div className="space-y-6">
       {/* Title */}
       <div className="space-y-2">
@@ -143,7 +140,8 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none" />
+          <ChevronDown
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 pointer-events-none"/>
         </div>
         {errors.orderIndex && (
           <p className="text-red-400 text-sm">{errors.orderIndex}</p>
@@ -202,7 +200,31 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
       </div>
     </div>
   );
+};
 
+interface ChapterFormProps {
+  courseID: string;
+  course?: ExtendedCourse | null;
+  chapterToEdit?: {
+    id: string;
+    title: string;
+    description?: string;
+    orderIndex: number;
+  } | null;
+  onBack: () => void;
+  onSave: (chapterData: CreateCourseChapter) => void;
+  isModal?: boolean;
+  onClose?: () => void;
+}
+
+export const ChapterForm: React.FC<ChapterFormProps> = ({
+  course,
+  chapterToEdit,
+  onBack,
+  onSave,
+  isModal = false,
+  onClose
+}) => {
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="relative bg-gradient-to-b from-neutral-800/30 to-neutral-900/30 rounded-[20px] lg:rounded-[30px] border border-neutral-700 p-6 lg:p-8 w-full max-w-2xl max-h-[90vh] overflow-auto">
@@ -222,7 +244,14 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({
               <X className="w-5 h-5" />
             </button>
           </div>
-          <FormContent />
+          <FormContent
+            onBack={onBack}
+            onSave={onSave}
+            isModal={isModal}
+            chapterToEdit={chapterToEdit}
+            course={course}
+            onClose={onClose}
+          />
         </div>
       </div>
     </div>
