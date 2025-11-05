@@ -19,6 +19,7 @@ import {
   InviteClientModal,
   sdkClient
 } from "@/lib";
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { useAuth } from "@nlc-ai/web-auth";
 
 const ClientInvitesPage = () => {
@@ -103,7 +104,7 @@ const ClientInvitesPage = () => {
 
   const handleRowAction = async (action: string, id: string) => {
     if (action === 'resend') {
-      const data = await sdkClient.users.coaches.resendClientInvite(user?.id!, id);
+      const data = await sdkClient.users.coaches.resendClientInvite(user?.id as string, id);
       setSuccessMessage(data.message);
       await fetchClientInvites();
     } else if (action === 'delete') {
@@ -129,7 +130,12 @@ const ClientInvitesPage = () => {
           <AlertBanner type="error" message={error} onDismiss={clearMessages}/>
         )}
 
-        <PageHeader title="Client Invites List">
+        <PageHeader
+          title="Client Invites List"
+          backButton={{
+            onClick: () => router.back(),
+          }}
+        >
           <>
             <div className="relative bg-transparent rounded-xl border border-white/50 px-5 py-2.5 flex items-center gap-3 w-full max-w-md">
               <input

@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode } from 'react';
-import { Search, Settings2 } from 'lucide-react';
+import { Search, Settings2, ArrowLeft } from 'lucide-react';
 import { Button } from '@nlc-ai/web-ui';
 
 interface PageHeaderProps {
@@ -20,31 +20,47 @@ interface PageHeaderProps {
     icon?: ReactNode;
     variant?: 'primary' | 'secondary';
   };
+  backButton?: {
+    onClick: () => void;
+  };
   className?: string;
   showActionOnMobile?: boolean;
 }
 
 export const PageHeader = ({
-  title,
-  subtitle,
-  children,
-  searchPlaceholder = "Search...",
-  searchValue = "",
-  onSearchChange,
-  showSearch = false,
-  showFilterButton = false,
-  onFilterClick,
-  actionButton,
-  className = "",
-  showActionOnMobile = false
-}: PageHeaderProps) => {
+                             title,
+                             subtitle,
+                             children,
+                             searchPlaceholder = "Search...",
+                             searchValue = "",
+                             onSearchChange,
+                             showSearch = false,
+                             showFilterButton = false,
+                             onFilterClick,
+                             actionButton,
+                             backButton,
+                             className = "",
+                             showActionOnMobile = false
+                           }: PageHeaderProps) => {
   return (
     <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 ${className}`}>
       <div className={"flex"}>
         <div className="min-w-0 flex-1 w-full sm:w-1/3">
-          <h2 className="text-stone-50 text-2xl font-medium leading-relaxed mb-2">
-            {title}
-          </h2>
+          {backButton ? (
+            <button
+              onClick={backButton.onClick}
+              className="flex items-center gap-2 text-stone-50 hover:text-[#7B21BA] transition-colors mb-2 text-left"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <h2 className="text-2xl font-medium leading-relaxed">
+                {title}
+              </h2>
+            </button>
+          ) : (
+            <h2 className="text-stone-50 text-2xl font-medium leading-relaxed mb-2">
+              {title}
+            </h2>
+          )}
           {subtitle && (
             <p className="text-stone-300 text-sm leading-tight">
               {subtitle}
