@@ -146,7 +146,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ course, onCourseUpdate
         ]
       };
 
-      // @ts-ignore
+      // @ts-expect-error idk
       const result = await sdkClient.media.uploadAsset(coverCroppedBlob, uploadOptions);
 
       if (result.success && result.data?.asset) {
@@ -232,19 +232,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ course, onCourseUpdate
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
-
-  const categories = [
-    'Business & Entrepreneurship',
-    'Health & Fitness',
-    'Personal Development',
-    'Technology & Programming',
-    'Creative Arts',
-    'Marketing & Sales',
-    'Finance & Investing',
-    'Education & Teaching',
-    'Lifestyle',
-    'Other'
-  ];
 
   return (
     <div className="h-full flex flex-col relative border border-neutral-800/50 rounded-[20px] md:rounded-[30px] overflow-y-auto">
@@ -380,24 +367,14 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ course, onCourseUpdate
                 <label className="text-[#F9F9F9] font-inter text-sm font-medium leading-[25.6px]">
                   Category
                 </label>
-                <div className="flex h-[50px] px-5 justify-between items-center self-stretch rounded-[10px] border border-white/30 bg-white/5">
-                  <select
+                <div className="flex px-5 py-[15px] justify-between items-center self-stretch rounded-[10px] border border-white/30 bg-white/5">
+                  <input
+                    type="text"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="flex-1 bg-transparent text-white font-inter text-base font-normal outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="" className="bg-neutral-800 text-white">Select a category</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat} className="bg-neutral-800 text-white">
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none">
-                    <svg className="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                    placeholder="Enter category"
+                    className="flex-1 bg-transparent text-white font-inter text-base font-normal placeholder:text-white/50 outline-none"
+                  />
                 </div>
               </div>
 
