@@ -68,6 +68,8 @@ export const CurriculumSidebar: React.FC<CurriculumSidebarProps> = ({
           onAddLesson={onAddLesson}
           onEditChapter={onEditChapter}
           onEditLesson={onEditLesson}
+          onDeleteLesson={onDeleteLesson}
+          onDeleteChapter={onDeleteChapter}
           onAddChapter={onAddChapter}
           onUploadContent={onUploadContent}
           onReorderChapters={onReorderChapters}
@@ -99,6 +101,8 @@ export const CurriculumSidebar: React.FC<CurriculumSidebarProps> = ({
               onAddLesson={onAddLesson}
               onEditChapter={onEditChapter}
               onEditLesson={onEditLesson}
+              onDeleteLesson={onDeleteLesson}
+              onDeleteChapter={onDeleteChapter}
               onAddChapter={onAddChapter}
               onUploadContent={onUploadContent}
               onReorderChapters={onReorderChapters}
@@ -152,7 +156,9 @@ const SidebarContent: React.FC<{
       try {
         // Some browsers (e.g., Firefox) require data to be set to initiate DnD
         e.dataTransfer.setData('text/plain', '');
-      } catch {}
+      } catch (e: any) {
+        console.log(e);
+      }
     }
     dragItem.current = { index, type, chapterID };
     setDragState({
