@@ -367,8 +367,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                   />
                 </div>
                 <div className="text-sm text-neutral-400 space-y-1">
-                  <p>Pick a thumbnail image, add closed captions, update settings, and track your video performance analytics in the video library.</p>
-                  <p><span className="text-purple-400 underline cursor-pointer">Learn more</span> about the video library.</p>
                   <p>Videos larger than 40MB are processed asynchronously for optimal quality and may take a few minutes to be ready for playback.</p>
                 </div>
               </div>
@@ -451,64 +449,6 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                     )}
                   </div>
                 )}
-              </div>
-
-              <div className="space-y-6">
-                <h3 className="text-white text-lg font-semibold">Lesson Settings</h3>
-
-                <div className="space-y-4">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.settings.isFreePreview}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        settings: { ...prev.settings, isFreePreview: e.target.checked }
-                      }))}
-                      className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
-                    />
-                    <span className="text-white">Make this a free preview lesson</span>
-                  </label>
-
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.settings.isPrerequisite}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        settings: { ...prev.settings, isPrerequisite: e.target.checked }
-                      }))}
-                      className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
-                    />
-                    <span className="text-white">Make this a prerequisite</span>
-                  </label>
-
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.settings.enableDiscussions}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        settings: { ...prev.settings, enableDiscussions: e.target.checked }
-                      }))}
-                      className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
-                    />
-                    <span className="text-white">Enable discussions for this lesson</span>
-                  </label>
-
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.settings.makeVideoDownloadable}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        settings: { ...prev.settings, makeVideoDownloadable: e.target.checked }
-                      }))}
-                      className="w-4 h-4 text-purple-600 bg-neutral-700 border-neutral-600 rounded focus:ring-purple-500"
-                    />
-                    <span className="text-white">Make this file downloadable</span>
-                  </label>
-                </div>
               </div>
 
               <div className="pt-4">

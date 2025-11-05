@@ -576,7 +576,7 @@ const CourseEditPage = () => {
           <div className="absolute top-32 left-20 w-40 h-40 bg-gradient-to-br from-purple-400/15 to-violet-500/15 rounded-full blur-3xl"></div>
           <div className="absolute bottom-40 right-32 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-2xl"></div>
 
-          <div className="pt-4 md:pt-8 pb-16 px-4 md:px-6 w-full relative z-10">
+          <div className="pt-4 md:pt-8 pb-8 px-4 md:px-6 w-full relative z-10">
             <CourseHeader
               course={course}
               onBack={handleBack}
@@ -623,7 +623,7 @@ const CourseEditPage = () => {
                       <CurriculumContent
                         course={course}
                         activeTab={activeTab}
-                        onCreateLesson={() => {}}
+                        onCreateLesson={() => {/* empty */}}
                         onTabChange={setActiveTab}
                       />
 

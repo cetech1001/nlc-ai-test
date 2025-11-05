@@ -85,7 +85,8 @@ Educational Principles:
 Course Structure Standards:
 - Chapters should have 3-8 lessons each (optimal: 4-6)
 - Lessons should be 15-45 minutes each (optimal: 20-30 minutes)
-- Include variety in lesson types (video, text, interactive, practical)
+- Supported lesson types: video, text, and pdf
+- Include variety in lesson delivery while staying within supported formats
 - Ensure each chapter builds upon previous knowledge
 - End chapters with practical applications or assessments
 
@@ -102,7 +103,7 @@ ADDITIONAL REQUIREMENTS:
 - Target Audience: ${request.targetAudience || 'General audience seeking to learn this topic'}
 - Difficulty Level: ${request.difficultyLevel || 'Beginner to Intermediate'}
 - Estimated Duration: ${request.estimatedDuration || 'Flexible, optimize for learning outcomes'}
-- Preferred Format: ${request.preferredFormat || 'Mixed (video, text, interactive)'}
+- Preferred Format: ${request.preferredFormat || 'Mixed (video, text, pdf)'}
 - Budget Considerations: ${request.budget || 'Standard pricing'}
 - Special Requirements: ${request.specialRequirements?.join(', ') || 'None specified'}
 

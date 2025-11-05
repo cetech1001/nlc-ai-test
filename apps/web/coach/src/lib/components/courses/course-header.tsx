@@ -20,7 +20,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-8">
+      <div className="flex flex-col xl:flex-row items-center justify-between">
         <BackTo onClick={router.back} title={course?.title}/>
 
         <div className="flex items-center gap-3">
