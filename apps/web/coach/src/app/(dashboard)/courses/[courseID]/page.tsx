@@ -304,7 +304,7 @@ const CourseEditPage = () => {
       }
 
       // Reset state
-      setViewState('course');
+      // setViewState('course');
       setSelectedChapter(null);
       setEditingLesson(null);
       setLessonType('');

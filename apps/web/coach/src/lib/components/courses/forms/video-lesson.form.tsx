@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ChevronDown, Upload, X, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { S3VideoPlayer } from '@nlc-ai/web-shared';
+import { ArrowLeft, ChevronDown, Upload, X, Clock, CheckCircle, AlertCircle, Link as LinkIcon } from 'lucide-react';
+import { UniversalVideoPlayer } from '@nlc-ai/web-shared';
 
 interface VideoLessonFormProps {
   chapterID?: string;
@@ -36,7 +36,8 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                                                                 }) => {
   const [formData, setFormData] = useState({
     title: '',
-    selectedVideo: '',
+    videoSource: 'upload' as 'upload' | 'link',
+    videoLink: '',
     uploadedFile: null as File | null,
     uploadedVideoUrl: '',
     uploadedAssetID: '',
@@ -83,7 +84,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
         } catch (error) {
           console.error('Failed to check processing status:', error);
         }
-      }, 5000); // Check every 5 seconds
+      }, 5000);
     }
 
     return () => {
@@ -96,11 +97,18 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
   // Populate form when editing
   useEffect(() => {
     if (lessonToEdit) {
+      const isExternalLink = lessonToEdit.videoUrl &&
+        (lessonToEdit.videoUrl.includes('youtube.com') ||
+          lessonToEdit.videoUrl.includes('youtu.be') ||
+          lessonToEdit.videoUrl.includes('vimeo.com'));
+
       setFormData(prev => ({
         ...prev,
         title: lessonToEdit.title,
         text: lessonToEdit.content || lessonToEdit.description || '',
-        uploadedVideoUrl: lessonToEdit.videoUrl || '',
+        videoSource: isExternalLink ? 'link' : 'upload',
+        videoLink: isExternalLink ? lessonToEdit.videoUrl as string : '',
+        uploadedVideoUrl: !isExternalLink ? (lessonToEdit.videoUrl || '') : '',
         estimatedMinutes: lessonToEdit.estimatedMinutes || 30,
         settings: {
           ...prev.settings,
@@ -112,8 +120,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
         setShowAddText(true);
       }
 
-      // If editing and has video, assume it's processed
-      if (lessonToEdit.videoUrl) {
+      if (lessonToEdit.videoUrl && !isExternalLink) {
         setVideoProcessingStatus('complete');
       }
     }
@@ -128,7 +135,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
       return;
     }
 
-    if (file.size > 500 * 1024 * 1024) { // 500MB limit
+    if (file.size > 500 * 1024 * 1024) {
       setUploadError('Video file size must be less than 500MB');
       return;
     }
@@ -198,17 +205,41 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
       ...prev,
       uploadedFile: null,
       uploadedVideoUrl: '',
-      uploadedAssetID: ''
+      uploadedAssetID: '',
+      videoLink: ''
     }));
     setVideoProcessingStatus('idle');
     setProcessingMessage('');
+  };
+
+  const validateVideoLink = (url: string): boolean => {
+    if (!url) return false;
+
+    const youtubePattern = /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([^&\n?#]+)/;
+    const vimeoPattern = /vimeo\.com\/(?:video\/)?(\d+)/;
+
+    return youtubePattern.test(url) || vimeoPattern.test(url);
+  };
+
+  const getVideoUrl = (): string => {
+    if (formData.videoSource === 'link') {
+      return formData.videoLink;
+    }
+    return formData.uploadedVideoUrl;
+  };
+
+  const hasValidVideo = (): boolean => {
+    if (formData.videoSource === 'link') {
+      return validateVideoLink(formData.videoLink);
+    }
+    return !!formData.uploadedVideoUrl;
   };
 
   const handleSave = () => {
     const lessonData = {
       ...formData,
       type: 'video',
-      videoUrl: formData.uploadedVideoUrl || formData.selectedVideo,
+      videoUrl: getVideoUrl(),
       downloadUrls: formData.uploadedDownloads,
       chapterID,
       lessonID,
@@ -316,87 +347,159 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
               </div>
 
               <div className="space-y-4">
-                <label className="block text-white text-sm font-medium">Upload a video file</label>
+                <label className="block text-white text-sm font-medium">Video Source</label>
 
-                {formData.uploadedVideoUrl ? (
-                  <div className="space-y-4">
-                    <div className="aspect-video rounded-lg overflow-hidden border border-neutral-600">
-                      <S3VideoPlayer
-                        src={formData.uploadedVideoUrl}
-                        autoGenerateThumbnail={true}
-                      />
-                    </div>
+                {/* Video Source Toggle */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, videoSource: 'upload' }))}
+                    className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                      formData.videoSource === 'upload'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-neutral-800/50 text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload Video
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, videoSource: 'link' }))}
+                    className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                      formData.videoSource === 'link'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-neutral-800/50 text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                    YouTube / Vimeo
+                  </button>
+                </div>
 
-                    {videoProcessingStatus !== 'idle' && (
-                      <div className={`border rounded-lg p-4 ${getProcessingStatusColor()}`}>
-                        <div className="flex items-center justify-center gap-3 mb-2">
-                          {getProcessingStatusIcon()}
-                          <p className="text-white font-medium">
-                            {videoProcessingStatus === 'processing' && 'Processing Video'}
-                            {videoProcessingStatus === 'complete' && 'Video Ready'}
-                            {videoProcessingStatus === 'error' && 'Processing Failed'}
-                          </p>
+                {/* Upload Video Section */}
+                {formData.videoSource === 'upload' && (
+                  <>
+                    {formData.uploadedVideoUrl ? (
+                      <div className="space-y-4">
+                        <div className="aspect-video rounded-lg overflow-hidden border border-neutral-600">
+                          <UniversalVideoPlayer
+                            src={formData.uploadedVideoUrl}
+                            autoGenerateThumbnail={true}
+                          />
                         </div>
-                        {processingMessage && (
-                          <p className="text-sm text-neutral-300 text-center">{processingMessage}</p>
+
+                        {videoProcessingStatus !== 'idle' && (
+                          <div className={`border rounded-lg p-4 ${getProcessingStatusColor()}`}>
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                              {getProcessingStatusIcon()}
+                              <p className="text-white font-medium">
+                                {videoProcessingStatus === 'processing' && 'Processing Video'}
+                                {videoProcessingStatus === 'complete' && 'Video Ready'}
+                                {videoProcessingStatus === 'error' && 'Processing Failed'}
+                              </p>
+                            </div>
+                            {processingMessage && (
+                              <p className="text-sm text-neutral-300 text-center">{processingMessage}</p>
+                            )}
+                          </div>
                         )}
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('video-upload')?.click()}
+                            disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
+                            className="flex-1 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Upload className="w-4 h-4" />
+                            Replace Video
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveVideo}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`border-2 border-dashed rounded-lg p-8 text-center ${getProcessingStatusColor()}`}>
+                        <button
+                          type="button"
+                          disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
+                          onClick={() => document.getElementById('video-upload')?.click()}
+                          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
+                        >
+                          {isUploadingVideo ? (
+                            <>
+                              <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4" />
+                              Browse files
+                            </>
+                          )}
+                        </button>
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => document.getElementById('video-upload')?.click()}
-                        disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
-                        className="flex-1 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Upload className="w-4 h-4" />
-                        Replace Video
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleRemoveVideo}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`border-2 border-dashed rounded-lg p-8 text-center ${getProcessingStatusColor()}`}>
-                    <button
-                      type="button"
+                    <input
+                      id="video-upload"
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      className="hidden"
                       disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
-                      onClick={() => document.getElementById('video-upload')?.click()}
-                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
-                    >
-                      {isUploadingVideo ? (
-                        <>
-                          <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" />
-                          Browse files
-                        </>
-                      )}
-                    </button>
-                  </div>
+                    />
+
+                    <div className="text-sm text-neutral-400 space-y-1">
+                      <p>Videos larger than 40MB are processed asynchronously for optimal quality and may take a few minutes to be ready for playback.</p>
+                    </div>
+                  </>
                 )}
 
-                <input
-                  id="video-upload"
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoUpload}
-                  className="hidden"
-                  disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
-                />
+                {/* YouTube/Vimeo Link Section */}
+                {formData.videoSource === 'link' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <input
+                        type="url"
+                        placeholder="Paste YouTube or Vimeo URL here..."
+                        value={formData.videoLink}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, videoLink: e.target.value }));
+                          setUploadError('');
+                        }}
+                        className="w-full bg-neutral-800/50 border border-neutral-600 text-white rounded-lg px-4 py-3 placeholder-neutral-400 focus:border-purple-500 focus:outline-none"
+                      />
+                      <p className="text-neutral-400 text-xs">
+                        Supported formats: YouTube (youtube.com, youtu.be) and Vimeo (vimeo.com)
+                      </p>
+                    </div>
 
-                <div className="text-sm text-neutral-400 space-y-1">
-                  <p>Videos larger than 40MB are processed asynchronously for optimal quality and may take a few minutes to be ready for playback.</p>
-                </div>
+                    {/* Video Preview */}
+                    {formData.videoLink && validateVideoLink(formData.videoLink) && (
+                      <div className="space-y-2">
+                        <label className="block text-white text-sm font-medium">Preview</label>
+                        <div className="aspect-video rounded-lg overflow-hidden border border-neutral-600">
+                          <UniversalVideoPlayer src={formData.videoLink} />
+                        </div>
+                      </div>
+                    )}
+
+                    {formData.videoLink && !validateVideoLink(formData.videoLink) && (
+                      <div className="p-3 bg-yellow-800/20 border border-yellow-600 rounded-lg">
+                        <p className="text-yellow-400 text-sm">
+                          Please enter a valid YouTube or Vimeo URL
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -482,7 +585,7 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
               <div className="pt-4">
                 <button
                   onClick={handleSave}
-                  disabled={videoProcessingStatus === 'processing'}
+                  disabled={videoProcessingStatus === 'processing' || !hasValidVideo()}
                   className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
                 >
                   {videoProcessingStatus === 'processing' && (

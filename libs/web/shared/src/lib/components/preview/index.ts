@@ -4,3 +4,4 @@ export { S3VideoPlayer } from './s3-video-player';
 export * from './image-upload';
 export * from './video-upload';
 export { ImageCropper } from './image-cropper';
+export { UniversalVideoPlayer } from './universal-video-player';
