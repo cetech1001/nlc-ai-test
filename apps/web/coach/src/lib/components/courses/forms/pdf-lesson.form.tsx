@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload } from 'lucide-react';
+import { PDFPreview } from '@nlc-ai/web-shared';
 
 interface PDFLessonFormProps {
   chapterID?: string;
@@ -92,6 +93,14 @@ export const PDFLessonForm: React.FC<PDFLessonFormProps> = ({
     }
   };
 
+  const handleRemovePdf = () => {
+    setFormData(prev => ({
+      ...prev,
+      uploadedFile: null,
+      uploadedPdfUrl: ''
+    }));
+  };
+
   const handleSave = () => {
     const lessonData = {
       ...formData,
@@ -179,49 +188,48 @@ export const PDFLessonForm: React.FC<PDFLessonFormProps> = ({
                 <label className="block text-white text-sm font-medium">
                   Upload a PDF File <span className="text-red-400">*</span>
                 </label>
-                <div className="border-2 border-dashed border-neutral-600 rounded-lg p-8 text-center">
-                  {formData.uploadedPdfUrl && (
-                    <div className="mb-4">
-                      <div className="bg-green-800/20 border border-green-600 rounded-lg p-3">
-                        <p className="text-green-400 text-sm">✓ PDF uploaded successfully</p>
-                      </div>
-                    </div>
-                  )}
 
-                  <div className="text-neutral-400 mb-4">
-                    {formData.uploadedFile ?
-                      `${formData.uploadedFile.name} ${formData.uploadedPdfUrl ? '(Uploaded)' : '(Ready to upload)'}` :
-                      lessonToEdit?.pdfUrl ? 'Current PDF file uploaded' : 'No file selected'}
+                {formData.uploadedPdfUrl ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <PDFPreview
+                      src={formData.uploadedPdfUrl}
+                      name={formData.uploadedFile?.name || formData.title || 'Document.pdf'}
+                      onRemove={handleRemovePdf}
+                      className="w-full"
+                    />
                   </div>
+                ) : (
+                  <div className="border-2 border-dashed border-neutral-600 rounded-lg p-8 text-center">
+                    <button
+                      type="button"
+                      disabled={isUploadingPdf}
+                      onClick={() => document.getElementById('pdf-upload')?.click()}
+                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
+                    >
+                      {isUploadingPdf ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Browse files
+                        </>
+                      )}
+                    </button>
 
-                  <button
-                    type="button"
-                    disabled={isUploadingPdf}
-                    onClick={() => document.getElementById('pdf-upload')?.click()}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
-                  >
-                    {isUploadingPdf ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4" />
-                        {lessonToEdit?.pdfUrl || formData.uploadedPdfUrl ? 'Replace PDF' : 'Browse files'}
-                      </>
-                    )}
-                  </button>
+                    <input
+                      id="pdf-upload"
+                      type="file"
+                      accept=".pdf"
+                      onChange={handlePdfUpload}
+                      className="hidden"
+                      disabled={isUploadingPdf}
+                    />
+                  </div>
+                )}
 
-                  <input
-                    id="pdf-upload"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handlePdfUpload}
-                    className="hidden"
-                    disabled={isUploadingPdf}
-                  />
-                </div>
                 <p className="text-neutral-400 text-sm">You can upload PDF files up to 50MB in size</p>
               </div>
 

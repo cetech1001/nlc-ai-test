@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ChevronDown, Upload, X, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { S3VideoPlayer } from '@nlc-ai/web-shared';
 
 interface VideoLessonFormProps {
   chapterID?: string;
@@ -192,6 +193,17 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
     }));
   };
 
+  const handleRemoveVideo = () => {
+    setFormData(prev => ({
+      ...prev,
+      uploadedFile: null,
+      uploadedVideoUrl: '',
+      uploadedAssetID: ''
+    }));
+    setVideoProcessingStatus('idle');
+    setProcessingMessage('');
+  };
+
   const handleSave = () => {
     const lessonData = {
       ...formData,
@@ -305,9 +317,17 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
 
               <div className="space-y-4">
                 <label className="block text-white text-sm font-medium">Upload a video file</label>
-                <div className={`border-2 border-dashed rounded-lg p-8 text-center ${getProcessingStatusColor()}`}>
-                  {(formData.uploadedVideoUrl || videoProcessingStatus !== 'idle') && (
-                    <div className="mb-4">
+
+                {formData.uploadedVideoUrl ? (
+                  <div className="space-y-4">
+                    <div className="aspect-video rounded-lg overflow-hidden border border-neutral-600">
+                      <S3VideoPlayer
+                        src={formData.uploadedVideoUrl}
+                        autoGenerateThumbnail={true}
+                      />
+                    </div>
+
+                    {videoProcessingStatus !== 'idle' && (
                       <div className={`border rounded-lg p-4 ${getProcessingStatusColor()}`}>
                         <div className="flex items-center justify-center gap-3 mb-2">
                           {getProcessingStatusIcon()}
@@ -318,54 +338,62 @@ export const VideoLessonForm: React.FC<VideoLessonFormProps> = ({
                           </p>
                         </div>
                         {processingMessage && (
-                          <p className="text-sm text-neutral-300">{processingMessage}</p>
-                        )}
-                        {videoProcessingStatus === 'processing' && (
-                          <div className="mt-3">
-                            <div className="w-full bg-neutral-700 rounded-full h-2">
-                              <div className="bg-gradient-to-r from-purple-600 to-violet-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-                            </div>
-                            <p className="text-xs text-neutral-400 mt-2">This may take several minutes for large files</p>
-                          </div>
+                          <p className="text-sm text-neutral-300 text-center">{processingMessage}</p>
                         )}
                       </div>
-                    </div>
-                  )}
-
-                  <div className="text-neutral-400 mb-4">
-                    {formData.uploadedFile ?
-                      `${formData.uploadedFile.name} ${formData.uploadedVideoUrl ? '(Uploaded)' : '(Ready to upload)'}` :
-                      lessonToEdit?.videoUrl ? 'Current video file uploaded' : 'No file selected'}
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
-                    onClick={() => document.getElementById('video-upload')?.click()}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
-                  >
-                    {isUploadingVideo ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4" />
-                        {formData.uploadedVideoUrl ? 'Replace Video' : 'Browse files'}
-                      </>
                     )}
-                  </button>
 
-                  <input
-                    id="video-upload"
-                    type="file"
-                    accept="video/*"
-                    onChange={handleVideoUpload}
-                    className="hidden"
-                    disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
-                  />
-                </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('video-upload')?.click()}
+                        disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
+                        className="flex-1 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Replace Video
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRemoveVideo}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`border-2 border-dashed rounded-lg p-8 text-center ${getProcessingStatusColor()}`}>
+                    <button
+                      type="button"
+                      disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
+                      onClick={() => document.getElementById('video-upload')?.click()}
+                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 mx-auto"
+                    >
+                      {isUploadingVideo ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Browse files
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                <input
+                  id="video-upload"
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                  disabled={isUploadingVideo || videoProcessingStatus === 'processing'}
+                />
+
                 <div className="text-sm text-neutral-400 space-y-1">
                   <p>Videos larger than 40MB are processed asynchronously for optimal quality and may take a few minutes to be ready for playback.</p>
                 </div>

@@ -5,6 +5,7 @@ import { Image, X, Upload, AlertCircle } from 'lucide-react';
 import { NLCClient } from '@nlc-ai/sdk-main';
 import { MediaTransformationType } from '@nlc-ai/types';
 import { ImageCropper } from './image-cropper';
+import { ImagePreview } from './image-preview';
 
 export interface UploadedImage {
   id: string;
@@ -30,19 +31,19 @@ interface ImageUploadProps {
 }
 
 export const ImageUpload: FC<ImageUploadProps> = ({
-  sdkClient,
-  onImagesUploaded,
-  maxFiles = 10,
-  maxSizeMB = 10,
-  folder = 'nlc-ai/uploads/images',
-  tags = ['image'],
-  enableCropping = false,
-  cropType = 'square',
-  aspectRatio,
-  showPreview = true,
-  className = '',
-  disabled = false,
-}) => {
+                                                    sdkClient,
+                                                    onImagesUploaded,
+                                                    maxFiles = 10,
+                                                    maxSizeMB = 10,
+                                                    folder = 'nlc-ai/uploads/images',
+                                                    tags = ['image'],
+                                                    enableCropping = false,
+                                                    cropType = 'square',
+                                                    aspectRatio,
+                                                    showPreview = true,
+                                                    className = '',
+                                                    disabled = false,
+                                                  }) => {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
@@ -225,14 +226,6 @@ export const ImageUpload: FC<ImageUploadProps> = ({
     onImagesUploaded(newImages);
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   const triggerFileInput = () => {
     if (disabled || isUploading) return;
     fileInputRef.current?.click();
@@ -305,27 +298,13 @@ export const ImageUpload: FC<ImageUploadProps> = ({
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {uploadedImages.map((image) => (
-                <div key={image.id} className="relative group">
-                  <div className="aspect-square rounded-lg overflow-hidden bg-neutral-800 border border-neutral-600">
-                    <img
-                      src={image.thumbnailUrl || image.url}
-                      alt={image.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <button
-                    onClick={() => removeImage(image.id)}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-
-                  <div className="mt-1">
-                    <p className="text-xs text-stone-400 truncate">{image.name}</p>
-                    <p className="text-xs text-stone-500">{formatFileSize(image.size)}</p>
-                  </div>
-                </div>
+                <ImagePreview
+                  key={image.id}
+                  src={image.url}
+                  alt={image.name}
+                  onRemove={() => removeImage(image.id)}
+                  className="aspect-square"
+                />
               ))}
             </div>
           </div>
