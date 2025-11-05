@@ -398,13 +398,6 @@ const SidebarContent: React.FC<{
             <Plus className="w-4 h-4" />
             Chapter
           </button>
-          <button
-            onClick={onUploadContent}
-            className="flex-1 px-3 py-2 bg-transparent border border-white/20 text-white rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2 text-sm justify-center"
-          >
-            <Upload className="w-4 h-4" />
-            Upload content
-          </button>
         </div>
       </div>
     </div>
